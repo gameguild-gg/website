@@ -13,15 +13,28 @@ vi.mock("@game-guild/client", () => ({ createServerClient: mocks.createServerCli
 import {
   createPostComment,
   createSocialPost,
+  createStory,
+  deletePostComment,
+  deleteSocialPost,
+  deleteStory,
+  FeedMutationError,
   followCreator,
+  getSocialMediaStatus,
+  markStoryViewed,
+  recordPostView,
   repostPost,
   savePost,
+  sharePost,
   setPostReaction,
+  updatePostComment,
+  updateSocialPost,
+  uploadSocialMedia,
 } from "./actions";
 
 describe("social feed actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.request.mockReset();
     mocks.getSession.mockResolvedValue({
       user: { id: "user-1", email: "builder@example.com", name: "Ari Builder" },
     });
@@ -99,5 +112,102 @@ describe("social feed actions", () => {
     const saved = await savePost("post-1", true);
 
     expect(saved).toEqual({ postId: "post-1", isSaved: true });
+  });
+
+  it("returns an explicit unfollow state when the generated endpoint has no response body", async () => {
+    mocks.request.mockResolvedValue({ ok: true, data: undefined });
+
+    await expect(followCreator("user-2", false)).resolves.toEqual({
+      userId: "user-2",
+      isFollowing: false,
+    });
+  });
+
+  it("maps each remaining mutation to a concrete authoritative response", async () => {
+    mocks.request
+      .mockResolvedValueOnce({ ok: true, data: { id: "post-1", content: "Updated" } })
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: { id: "comment-1", postId: "post-1", content: "Updated comment" } })
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: { assetReferenceId: "asset-1", state: "Ready", sizeBytes: 1 } })
+      .mockResolvedValueOnce({ ok: true, data: { assetReferenceId: "asset-1", state: "Ready", sizeBytes: 1 } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "profile-1", userId: "user-1" } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "story-1", assetReferenceId: "asset-1" } })
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: undefined });
+
+    await expect(updateSocialPost("post-1", " Updated ")).resolves.toEqual({ id: "post-1", content: "Updated" });
+    await expect(deleteSocialPost("post-1")).resolves.toEqual({ postId: "post-1", deleted: true });
+    await expect(updatePostComment("post-1", "comment-1", " Updated comment ")).resolves.toEqual({ id: "comment-1", postId: "post-1", content: "Updated comment" });
+    await expect(deletePostComment("post-1", "comment-1")).resolves.toEqual({ postId: "post-1", commentId: "comment-1", deleted: true });
+    await expect(sharePost("post-1")).resolves.toEqual({ postId: "post-1", shared: true });
+    await expect(recordPostView("post-1")).resolves.toEqual({ postId: "post-1", viewed: true });
+    await expect(uploadSocialMedia(new FormData())).resolves.toEqual({ assetReferenceId: "asset-1", deliveryUrl: null, mimeType: null, sizeBytes: 1, state: "Ready" });
+    await expect(getSocialMediaStatus("asset-1")).resolves.toEqual({ assetReferenceId: "asset-1", deliveryUrl: null, mimeType: null, sizeBytes: 1, state: "Ready" });
+    await expect(createStory("asset-1")).resolves.toMatchObject({ id: "story-1", assetReferenceId: "asset-1" });
+    await expect(markStoryViewed("story-1")).resolves.toEqual({ storyId: "story-1", viewed: true });
+    await expect(deleteStory("story-1")).resolves.toEqual({ storyId: "story-1", deleted: true });
+  });
+
+  it("normalizes every API failure to the public typed mutation error", async () => {
+    mocks.request.mockResolvedValue({
+      ok: false,
+      error: { status: 403, code: "FORBIDDEN", message: "No permission" },
+    });
+
+    await expect(setPostReaction("post-1", "Like")).rejects.toEqual(
+      expect.objectContaining<Partial<FeedMutationError>>({
+        name: "FeedMutationError",
+        status: 403,
+        code: "FORBIDDEN",
+      }),
+    );
+  });
+
+  it("returns concrete states for reaction removal, unsaving, and following", async () => {
+    mocks.request
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: undefined })
+      .mockResolvedValueOnce({ ok: true, data: { id: "follow-1", followedEntityId: "user-2" } });
+
+    await expect(setPostReaction("post-1", null)).resolves.toBeNull();
+    await expect(savePost("post-1", false)).resolves.toEqual({ postId: "post-1", isSaved: false });
+    await expect(followCreator("user-2", true)).resolves.toEqual({ userId: "user-2", isFollowing: true });
+  });
+
+  it("maps failures from every Task 8 mutation wrapper to FeedMutationError", async () => {
+    const failure = { ok: false as const, error: { status: 503, code: "OFFLINE", message: "offline" } };
+    const mutations: Array<() => Promise<unknown>> = [
+      () => createSocialPost({ content: "Post" }),
+      () => updateSocialPost("post-1", "Post"),
+      () => deleteSocialPost("post-1"),
+      () => setPostReaction("post-1", "Like"),
+      () => createPostComment("post-1", { content: "Comment" }),
+      () => updatePostComment("post-1", "comment-1", "Comment"),
+      () => deletePostComment("post-1", "comment-1"),
+      () => repostPost("post-1"),
+      () => savePost("post-1", true),
+      () => savePost("post-1", false),
+      () => followCreator("user-2", true),
+      () => followCreator("user-2", false),
+      () => sharePost("post-1"),
+      () => recordPostView("post-1"),
+      () => uploadSocialMedia(new FormData()),
+      () => getSocialMediaStatus("asset-1"),
+      () => createStory("asset-1"),
+      () => markStoryViewed("story-1"),
+      () => deleteStory("story-1"),
+    ];
+
+    for (const mutate of mutations) {
+      mocks.request.mockResolvedValueOnce(failure);
+      await expect(mutate()).rejects.toEqual(expect.objectContaining({
+        name: "FeedMutationError",
+        status: 503,
+        code: "OFFLINE",
+      }));
+    }
   });
 });

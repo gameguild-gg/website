@@ -1,7 +1,7 @@
 "use client";
 
 import { PostCard } from "@/components/feed/post-card";
-import { loadSocialFeedAction } from "@/lib/feed/actions";
+import { loadSocialFeedPage } from "@/lib/feed/pagination";
 import type { FeedScope, SocialFeedItem } from "@/lib/feed/contracts";
 import { Bookmark, Gamepad2, Loader2, Users } from "lucide-react";
 import * as React from "react";
@@ -35,11 +35,13 @@ const EMPTY = {
 
 export function InfinitePostFeed({
   scope,
+  tag = null,
   initialItems,
   initialNextCursor,
   currentUserId,
 }: {
   scope: FeedScope;
+  tag?: string | null;
   initialItems: SocialFeedItem[];
   initialNextCursor: string | null;
   currentUserId?: string | null;
@@ -53,24 +55,36 @@ export function InfinitePostFeed({
   const loadingRef = React.useRef(false);
   const seenRef = React.useRef(new Set(initialItems.map((item) => item.id)));
   const requestRef = React.useRef(0);
+  const activeControllerRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
+    activeControllerRef.current?.abort();
+    activeControllerRef.current = null;
+    loadingRef.current = false;
+    setLoading(false);
     setItems(initialItems);
     setNextCursor(initialNextCursor);
     setError(false);
     cursorRef.current = initialNextCursor;
     seenRef.current = new Set(initialItems.map((item) => item.id));
     requestRef.current += 1;
-  }, [initialItems, initialNextCursor, scope]);
+  }, [initialItems, initialNextCursor, scope, tag]);
+
+  React.useEffect(
+    () => () => activeControllerRef.current?.abort(),
+    [],
+  );
 
   const loadMore = React.useCallback(() => {
     if (loadingRef.current || cursorRef.current === null) return;
     const cursor = cursorRef.current;
     const requestId = ++requestRef.current;
+    const controller = new AbortController();
+    activeControllerRef.current = controller;
     loadingRef.current = true;
     setLoading(true);
     setError(false);
-    void loadSocialFeedAction({ scope, cursor })
+    void loadSocialFeedPage({ scope, cursor, tag, signal: controller.signal })
       .then((page) => {
         if (requestId !== requestRef.current) return;
         const fresh = page.items.filter(
@@ -82,14 +96,16 @@ export function InfinitePostFeed({
         setNextCursor(page.nextCursor);
       })
       .catch(() => {
-        if (requestId === requestRef.current) setError(true);
+        if (controller.signal.aborted || requestId !== requestRef.current) return;
+        setError(true);
       })
       .finally(() => {
-        if (requestId !== requestRef.current) return;
+        if (controller.signal.aborted || requestId !== requestRef.current) return;
+        if (activeControllerRef.current === controller) activeControllerRef.current = null;
         loadingRef.current = false;
         setLoading(false);
       });
-  }, [scope]);
+  }, [scope, tag]);
 
   React.useEffect(() => {
     const node = sentinelRef.current;

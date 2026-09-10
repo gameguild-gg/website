@@ -173,6 +173,7 @@ export async function loadSocialFeed(input: {
   cursor?: string | null;
   take?: number;
   tag?: string | null;
+  signal?: AbortSignal;
 }): Promise<SocialFeedPage> {
   const data = record(
     await request<unknown>({
@@ -185,6 +186,7 @@ export async function loadSocialFeed(input: {
         tag: input.tag ?? undefined,
       },
       requiresAuth: true,
+      ...(input.signal ? { signal: input.signal } : {}),
     }),
   );
   return {

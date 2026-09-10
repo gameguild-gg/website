@@ -1,16 +1,29 @@
 "use server";
 
 import { getSession, getToken } from "@/auth";
-import { createServerClient, type ApiError } from "@game-guild/client";
+import {
+  createServerClient,
+  type ApiError,
+  type AssetsSocialMediaSocialMediaAssetDescriptor,
+  type SocialFollowsControllersFollowDto,
+  type SocialReactionsReactionDto,
+} from "@game-guild/client";
 import type {
+  DeletedPostComment,
+  DeletedSocialPost,
+  DeletedStoryState,
   PostComment,
   SavedPostState,
+  SharedPostState,
+  SocialFollowState,
   SocialFeedPage,
   SocialMediaAsset,
   SocialProfile,
   SocialPostMutation,
   SocialReaction,
   SocialStory,
+  ViewedPostState,
+  ViewedStoryState,
 } from "./contracts";
 import {
   loadPostComments,
@@ -34,7 +47,7 @@ async function request<T>(input: Parameters<ReturnType<typeof createClient>["req
   return result.data;
 }
 
-class FeedMutationError extends Error {
+export class FeedMutationError extends Error {
   readonly status: number;
   readonly code: string;
 
@@ -44,6 +57,28 @@ class FeedMutationError extends Error {
     this.status = error.status ?? 0;
     this.code = error.code ?? "UNKNOWN";
   }
+}
+
+// The generated Social Posts declarations are `void`, while the deployed API
+// returns post/comment projections. Keep that generator mismatch narrow and
+// never expose `unknown` to Task 8 callers.
+function postMutation(value: SocialPostMutation): SocialPostMutation {
+  return {
+    id: value.id,
+    content: value.content,
+    createdAt: value.createdAt,
+    visibility: value.visibility,
+  };
+}
+
+function mediaAsset(value: AssetsSocialMediaSocialMediaAssetDescriptor): SocialMediaAsset {
+  return {
+    assetReferenceId: value.assetReferenceId ?? "",
+    deliveryUrl: value.deliveryUrl ?? null,
+    mimeType: value.mimeType ?? null,
+    sizeBytes: value.sizeBytes ?? 0,
+    state: value.state ?? "Processing",
+  };
 }
 
 function defaultHandle(email: string | null | undefined, userId: string) {
@@ -100,7 +135,7 @@ export async function createSocialPost(input: {
   visibility?: "Public" | "Followers" | "Private" | "Unlisted";
   assetReferenceId?: string | null;
   tags?: string[];
-}) {
+}): Promise<SocialPostMutation> {
   await ensureCurrentSocialProfile();
   const data = await request<SocialPostMutation>({
     method: "POST",
@@ -113,24 +148,28 @@ export async function createSocialPost(input: {
     },
     requiresAuth: true,
   });
-  return data;
+  return postMutation(data);
 }
 
-export async function updateSocialPost(postId: string, content: string) {
+export async function updateSocialPost(postId: string, content: string): Promise<SocialPostMutation> {
   const data = await request<SocialPostMutation>({
     method: "PUT",
     path: `/api/v1/posts/${postId}`,
     body: { content: content.trim() },
     requiresAuth: true,
   });
-  return data;
+  return postMutation(data);
 }
 
-export async function deleteSocialPost(postId: string) {
+export async function deleteSocialPost(postId: string): Promise<DeletedSocialPost> {
   await request<void>({ method: "DELETE", path: `/api/v1/posts/${postId}`, requiresAuth: true });
+  return { postId, deleted: true };
 }
 
-export async function setPostReaction(postId: string, reaction: SocialReaction | null) {
+export async function setPostReaction(
+  postId: string,
+  reaction: SocialReaction | null,
+): Promise<SocialReactionsReactionDto | null> {
   if (!reaction) {
     await request<void>({
       method: "DELETE",
@@ -140,7 +179,7 @@ export async function setPostReaction(postId: string, reaction: SocialReaction |
     });
     return null;
   }
-  return request<{ id: string; type: SocialReaction; targetId: string }>({
+  return request<SocialReactionsReactionDto>({
     method: "PUT",
     path: "/api/social/reactions",
     body: { targetType: "Post", targetId: postId, type: reaction },
@@ -151,7 +190,7 @@ export async function setPostReaction(postId: string, reaction: SocialReaction |
 export async function createPostComment(
   postId: string,
   input: { content: string; parentCommentId?: string | null },
-) {
+): Promise<PostComment> {
   const data = await request<PostComment>({
     method: "POST",
     path: `/api/v1/posts/${postId}/comments`,
@@ -161,7 +200,7 @@ export async function createPostComment(
   return data;
 }
 
-export async function updatePostComment(postId: string, commentId: string, content: string) {
+export async function updatePostComment(postId: string, commentId: string, content: string): Promise<PostComment> {
   return request<PostComment>({
     method: "PUT",
     path: `/api/v1/posts/${postId}/comments/${commentId}`,
@@ -170,22 +209,23 @@ export async function updatePostComment(postId: string, commentId: string, conte
   });
 }
 
-export async function deletePostComment(postId: string, commentId: string) {
+export async function deletePostComment(postId: string, commentId: string): Promise<DeletedPostComment> {
   await request<void>({
     method: "DELETE",
     path: `/api/v1/posts/${postId}/comments/${commentId}`,
     requiresAuth: true,
   });
+  return { postId, commentId, deleted: true };
 }
 
-export async function repostPost(postId: string, content = "") {
+export async function repostPost(postId: string, content = ""): Promise<SocialPostMutation> {
   const data = await request<SocialPostMutation>({
     method: "POST",
     path: `/api/v1/posts/${postId}/reposts`,
     body: { content: content.trim() || null },
     requiresAuth: true,
   });
-  return data;
+  return postMutation(data);
 }
 
 export async function savePost(postId: string, save: boolean): Promise<SavedPostState> {
@@ -205,51 +245,55 @@ export async function savePost(postId: string, save: boolean): Promise<SavedPost
   return { postId, isSaved: false };
 }
 
-export async function followCreator(userId: string, follow: boolean) {
+export async function followCreator(userId: string, follow: boolean): Promise<SocialFollowState> {
   if (!follow) {
-    const result = await request<unknown>({
+    await request<void>({
       method: "DELETE",
       path: "/api/followers/unfollow",
       params: { entityId: userId, entityType: "User" },
       requiresAuth: true,
     });
-    return result;
+    return { userId, isFollowing: false };
   }
-  const result = await request<unknown>({
+  await request<SocialFollowsControllersFollowDto>({
     method: "POST",
     path: "/api/followers/follow",
     body: { entityId: userId, entityType: "User", notificationsEnabled: true },
     requiresAuth: true,
   });
-  return result;
+  return { userId, isFollowing: true };
 }
 
-export async function sharePost(postId: string) {
+export async function sharePost(postId: string): Promise<SharedPostState> {
   await request<void>({ method: "POST", path: `/api/v1/posts/${postId}/share`, requiresAuth: true });
+  return { postId, shared: true };
 }
 
-export async function recordPostView(postId: string) {
+export async function recordPostView(postId: string): Promise<ViewedPostState> {
   await request<void>({ method: "POST", path: `/api/v1/posts/${postId}/view`, requiresAuth: true });
+  return { postId, viewed: true };
 }
 
 export async function uploadSocialMedia(formData: FormData): Promise<SocialMediaAsset> {
-  return request<SocialMediaAsset>({
+  const asset = await request<AssetsSocialMediaSocialMediaAssetDescriptor>({
     method: "POST",
     path: "/v1/assets/social-media",
     body: formData,
     requiresAuth: true,
   });
+  return mediaAsset(asset);
 }
 
 export async function getSocialMediaStatus(assetReferenceId: string): Promise<SocialMediaAsset> {
-  return request<SocialMediaAsset>({
+  const asset = await request<AssetsSocialMediaSocialMediaAssetDescriptor>({
     method: "GET",
     path: `/v1/assets/social-media/${assetReferenceId}`,
     requiresAuth: true,
   });
+  return mediaAsset(asset);
 }
 
-export async function createStory(assetReferenceId: string, caption?: string | null) {
+export async function createStory(assetReferenceId: string, caption?: string | null): Promise<SocialStory> {
   await ensureCurrentSocialProfile();
   const data = await request<SocialStory>({
     method: "POST",
@@ -260,14 +304,16 @@ export async function createStory(assetReferenceId: string, caption?: string | n
   return data;
 }
 
-export async function markStoryViewed(storyId: string) {
+export async function markStoryViewed(storyId: string): Promise<ViewedStoryState> {
   await request<void>({
     method: "POST",
     path: `/api/social/stories/${storyId}/views`,
     requiresAuth: true,
   });
+  return { storyId, viewed: true };
 }
 
-export async function deleteStory(storyId: string) {
+export async function deleteStory(storyId: string): Promise<DeletedStoryState> {
   await request<void>({ method: "DELETE", path: `/api/social/stories/${storyId}`, requiresAuth: true });
+  return { storyId, deleted: true };
 }

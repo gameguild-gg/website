@@ -84,8 +84,17 @@ export type SocialReaction =
 export interface SocialPostMutation {
   id: string;
   content: string;
-  [key: string]: unknown;
+  createdAt?: string;
+  visibility?: string;
 }
+
+export interface DeletedSocialPost { postId: string; deleted: true; }
+export interface DeletedPostComment { postId: string; commentId: string; deleted: true; }
+export interface SocialFollowState { userId: string; isFollowing: boolean; }
+export interface SharedPostState { postId: string; shared: true; }
+export interface ViewedPostState { postId: string; viewed: true; }
+export interface ViewedStoryState { storyId: string; viewed: true; }
+export interface DeletedStoryState { storyId: string; deleted: true; }
 
 export interface PostComment {
   id: string;

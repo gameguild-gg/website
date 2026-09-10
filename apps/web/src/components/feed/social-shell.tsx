@@ -128,6 +128,7 @@ export async function SocialShell({
           ) : (
             <InfinitePostFeed
               scope={scope}
+              tag={tag}
               initialItems={primary.items}
               initialNextCursor={primary.nextCursor}
               currentUserId={currentUserId}
