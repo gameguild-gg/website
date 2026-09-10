@@ -262,6 +262,11 @@ public sealed class TestingRequestsControllerAuthorizationTests
         var mediator = new Mock<IMediator>();
         mediator
             .Setup(candidate => candidate.Send(
+                It.Is<CreateSimpleTestingRequestEndpointCommand>(command => command.UserId == userId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdRequest);
+        mediator
+            .Setup(candidate => candidate.Send(
                 It.Is<GetTestingRequestDetailQuery>(query => query.RequestId == requestId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success(projection));
@@ -323,6 +328,11 @@ public sealed class TestingRequestsControllerAuthorizationTests
         var mediator = new Mock<IMediator>();
         mediator
             .Setup(candidate => candidate.Send(
+                It.Is<UpdateTestingRequestEndpointCommand>(command => command.RequestId == requestId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingRequest);
+        mediator
+            .Setup(candidate => candidate.Send(
                 It.Is<GetTestingRequestDetailQuery>(query => query.RequestId == requestId),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success(projection));
@@ -355,11 +365,17 @@ public sealed class TestingRequestsControllerAuthorizationTests
             .ThrowsAsync(new KeyNotFoundException("Project not found."));
         var actorAccessor = new ActorContextAccessor();
         actorAccessor.SetActorContext(ActorContextBuilder.ForUser(userId).WithTenantId(Guid.NewGuid()).Build());
+        var mediator = new Mock<IMediator>();
+        mediator
+            .Setup(candidate => candidate.Send(
+                It.IsAny<CreateSimpleTestingRequestEndpointCommand>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new KeyNotFoundException("Project not found."));
         var controller = new TestingRequestsController(
             requestService.Object,
             actorAccessor,
             NullLogger<TestingRequestsController>.Instance,
-            new Mock<IMediator>().Object);
+            mediator.Object);
 
         var result = await controller.SubmitSimpleTestingRequest(new CreateSimpleTestingRequestDto
         {
@@ -392,8 +408,16 @@ public sealed class TestingParticipantsControllerResponseTests
         var service = new Mock<ITestingParticipantOperations>();
         service.Setup(candidate => candidate.AddParticipantAsync(requestId, userId))
             .ReturnsAsync(participant);
+        var sender = new Mock<GameGuild.CQRS.ISender>();
+        sender
+            .Setup(candidate => candidate.Send(
+                It.Is<AddTestingParticipantEndpointCommand>(command =>
+                    command.TestingRequestId == requestId && command.UserId == userId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(participant);
         var controller = new TestingParticipantsController(
             service.Object,
+            sender.Object,
             new Mock<IActorContextAccessor>().Object);
 
         var result = await controller.AddParticipant(requestId, userId);

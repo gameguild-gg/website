@@ -1,4 +1,6 @@
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -22,10 +24,8 @@ public sealed record FeedItemDto(
     DateTime CreatedAt);
 
 public sealed record AddFeedItemRequest(
-    Guid UserId,
     Guid ContentId,
     FeedContentType ContentType,
-    Guid AuthorId,
     FeedItemReason Reason,
     DateTime? ContentCreatedAt = null,
     double RelevanceScore = 1.0);
@@ -41,9 +41,9 @@ public sealed record AddFeedItemCommand(
 
 public sealed record GetUserFeedQuery(Guid UserId, int Skip = 0, int Take = 50, bool IncludeRead = true) : IQuery<IReadOnlyList<FeedItemDto>>;
 
-public sealed record MarkFeedItemReadCommand(Guid FeedItemId) : ICommand<bool>;
+public sealed record MarkFeedItemReadCommand(Guid UserId, Guid FeedItemId) : ICommand<bool>;
 
-public sealed record HideFeedItemCommand(Guid FeedItemId) : ICommand<bool>;
+public sealed record HideFeedItemCommand(Guid UserId, Guid FeedItemId) : ICommand<bool>;
 
 public interface IFeedRepository
 {
@@ -99,9 +99,9 @@ public interface IFeedService
 
     Task<IReadOnlyList<FeedItemDto>> GetFeedAsync(GetUserFeedQuery query, CancellationToken cancellationToken = default);
 
-    Task<bool> MarkReadAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> MarkReadAsync(Guid userId, Guid id, CancellationToken cancellationToken = default);
 
-    Task<bool> HideAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> HideAsync(Guid userId, Guid id, CancellationToken cancellationToken = default);
 }
 
 public sealed class FeedService(IFeedRepository repository) : IFeedService
@@ -127,10 +127,10 @@ public sealed class FeedService(IFeedRepository repository) : IFeedService
             .Select(ToDto)
             .ToList();
 
-    public async Task<bool> MarkReadAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<bool> MarkReadAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var item = await repository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
-        if (item is null)
+        if (item is null || item.UserId != userId)
         {
             return false;
         }
@@ -140,10 +140,10 @@ public sealed class FeedService(IFeedRepository repository) : IFeedService
         return true;
     }
 
-    public async Task<bool> HideAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<bool> HideAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var item = await repository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
-        if (item is null)
+        if (item is null || item.UserId != userId)
         {
             return false;
         }
@@ -183,52 +183,93 @@ public sealed class GetUserFeedQueryHandler(IFeedService service) : IQueryHandle
 public sealed class MarkFeedItemReadCommandHandler(IFeedService service) : ICommandHandler<MarkFeedItemReadCommand, bool>
 {
     public Task<bool> Handle(MarkFeedItemReadCommand request, CancellationToken cancellationToken)
-        => service.MarkReadAsync(request.FeedItemId, cancellationToken);
+        => service.MarkReadAsync(request.UserId, request.FeedItemId, cancellationToken);
 }
 
 public sealed class HideFeedItemCommandHandler(IFeedService service) : ICommandHandler<HideFeedItemCommand, bool>
 {
     public Task<bool> Handle(HideFeedItemCommand request, CancellationToken cancellationToken)
-        => service.HideAsync(request.FeedItemId, cancellationToken);
+        => service.HideAsync(request.UserId, request.FeedItemId, cancellationToken);
 }
 
 [ApiController]
 [Route("api/social/feed")]
-public sealed class FeedController(ISender sender) : ControllerBase
+[Authorize]
+public sealed class FeedController(ISender sender, IActorContextAccessor actorContextAccessor) : ControllerBase
 {
     [HttpGet("users/{userId:guid}")]
-    public Task<IReadOnlyList<FeedItemDto>> GetUserFeed(
+    public async Task<ActionResult<IReadOnlyList<FeedItemDto>>> GetUserFeed(
         Guid userId,
         [FromQuery] int skip,
         [FromQuery] int take,
         [FromQuery] bool includeRead,
         CancellationToken cancellationToken)
-        => sender.Send(new GetUserFeedQuery(userId, skip, take <= 0 ? 50 : take, includeRead), cancellationToken);
+    {
+        var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (actorId.Value != userId)
+        {
+            return Forbid();
+        }
+
+        var items = await sender.Send(
+            new GetUserFeedQuery(actorId.Value, skip, take <= 0 ? 50 : take, includeRead),
+            cancellationToken).ConfigureAwait(false);
+        return new ActionResult<IReadOnlyList<FeedItemDto>>(items);
+    }
 
     [HttpPost]
-    public Task<FeedItemDto> Add(AddFeedItemRequest request, CancellationToken cancellationToken)
-        => sender.Send(
+    public async Task<ActionResult<FeedItemDto>> Add(AddFeedItemRequest request, CancellationToken cancellationToken)
+    {
+        var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        return await sender.Send(
             new AddFeedItemCommand(
-                request.UserId,
+                actorId.Value,
                 request.ContentId,
                 request.ContentType,
-                request.AuthorId,
+                actorId.Value,
                 request.Reason,
                 request.ContentCreatedAt ?? SystemClock.UtcNow,
                 request.RelevanceScore),
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
+    }
 
     [HttpPost("{id:guid}/read")]
     public async Task<IActionResult> MarkRead(Guid id, CancellationToken cancellationToken)
-        => await sender.Send(new MarkFeedItemReadCommand(id), cancellationToken).ConfigureAwait(false)
+    {
+        var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        return await sender.Send(new MarkFeedItemReadCommand(actorId.Value, id), cancellationToken).ConfigureAwait(false)
             ? NoContent()
             : NotFound();
+    }
 
     [HttpPost("{id:guid}/hide")]
     public async Task<IActionResult> Hide(Guid id, CancellationToken cancellationToken)
-        => await sender.Send(new HideFeedItemCommand(id), cancellationToken).ConfigureAwait(false)
+    {
+        var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        return await sender.Send(new HideFeedItemCommand(actorId.Value, id), cancellationToken).ConfigureAwait(false)
             ? NoContent()
             : NotFound();
+    }
 }
 
 public sealed class FeedModelConfiguration : IModelConfiguration
@@ -295,6 +336,7 @@ public static class FeedDependencyInjection
     {
         services.AddScoped<IFeedRepository, FeedRepository>();
         services.AddScoped<IFeedService, FeedService>();
+        services.AddScoped<ISocialFeedQueryService, SocialFeedQueryService>();
         services.AddScoped<ISavedPostService, SavedPostService>();
         services.AddScoped<IStoryService, StoryService>();
         services.AddScoped<ICommandHandler<CreateStoryCommand, StoryDto>, CreateStoryCommandHandler>();

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -111,8 +112,9 @@ public sealed class FeedServiceTests
             .ReturnsAsync((FeedItem?)null);
         var service = new FeedService(repository.Object);
 
-        var read = await service.MarkReadAsync(Guid.NewGuid());
-        var hidden = await service.HideAsync(Guid.NewGuid());
+        var actorId = Guid.NewGuid();
+        var read = await service.MarkReadAsync(actorId, Guid.NewGuid());
+        var hidden = await service.HideAsync(actorId, Guid.NewGuid());
 
         read.Should().BeFalse();
         hidden.Should().BeFalse();
@@ -129,8 +131,8 @@ public sealed class FeedServiceTests
         repository.Setup(repo => repo.GetByIdAsync(hideItem.Id, It.IsAny<CancellationToken>())).ReturnsAsync(hideItem);
         var service = new FeedService(repository.Object);
 
-        var read = await service.MarkReadAsync(readItem.Id);
-        var hidden = await service.HideAsync(hideItem.Id);
+        var read = await service.MarkReadAsync(readItem.UserId, readItem.Id);
+        var hidden = await service.HideAsync(hideItem.UserId, hideItem.Id);
 
         read.Should().BeTrue();
         hidden.Should().BeTrue();
@@ -138,6 +140,24 @@ public sealed class FeedServiceTests
         hideItem.IsHidden.Should().BeTrue();
         repository.Verify(repo => repo.UpdateAsync(readItem, It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(repo => repo.UpdateAsync(hideItem, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarkReadAndHide_RejectItemsOwnedByAnotherUser()
+    {
+        var item = FeedItem.Create(Guid.NewGuid(), Guid.NewGuid(), FeedContentType.Post, Guid.NewGuid(), FeedItemReason.Following, DateTime.UtcNow);
+        var repository = new Mock<IFeedRepository>();
+        repository.Setup(repo => repo.GetByIdAsync(item.Id, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        var service = new FeedService(repository.Object);
+
+        var read = await service.MarkReadAsync(Guid.NewGuid(), item.Id);
+        var hidden = await service.HideAsync(Guid.NewGuid(), item.Id);
+
+        read.Should().BeFalse();
+        hidden.Should().BeFalse();
+        item.IsRead.Should().BeFalse();
+        item.IsHidden.Should().BeFalse();
+        repository.Verify(repo => repo.UpdateAsync(It.IsAny<FeedItem>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
 
@@ -150,17 +170,17 @@ public sealed class FeedHandlerTests
         var service = new Mock<IFeedService>();
         service.Setup(s => s.AddAsync(It.IsAny<AddFeedItemCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         service.Setup(s => s.GetFeedAsync(It.IsAny<GetUserFeedQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync([dto]);
-        service.Setup(s => s.MarkReadAsync(dto.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        service.Setup(s => s.HideAsync(dto.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        service.Setup(s => s.MarkReadAsync(dto.UserId, dto.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        service.Setup(s => s.HideAsync(dto.UserId, dto.Id, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var added = await new AddFeedItemCommandHandler(service.Object)
             .Handle(new AddFeedItemCommand(dto.UserId, dto.ContentId, dto.ContentType, dto.AuthorId, dto.Reason, dto.ContentCreatedAt, dto.RelevanceScore), CancellationToken.None);
         var feed = await new GetUserFeedQueryHandler(service.Object)
             .Handle(new GetUserFeedQuery(dto.UserId), CancellationToken.None);
         var read = await new MarkFeedItemReadCommandHandler(service.Object)
-            .Handle(new MarkFeedItemReadCommand(dto.Id), CancellationToken.None);
+            .Handle(new MarkFeedItemReadCommand(dto.UserId, dto.Id), CancellationToken.None);
         var hidden = await new HideFeedItemCommandHandler(service.Object)
-            .Handle(new HideFeedItemCommand(dto.Id), CancellationToken.None);
+            .Handle(new HideFeedItemCommand(dto.UserId, dto.Id), CancellationToken.None);
 
         added.Should().Be(dto);
         feed.Should().ContainSingle().Which.Should().Be(dto);
@@ -192,11 +212,11 @@ public sealed class FeedControllerTests
         var sender = new Mock<ISender>();
         sender.Setup(s => s.Send(It.Is<GetUserFeedQuery>(query => query.UserId == dto.UserId && query.Skip == 3 && query.Take == 50 && !query.IncludeRead), It.IsAny<CancellationToken>()))
             .ReturnsAsync([dto]);
-        var controller = new FeedController(sender.Object);
+        var controller = new FeedController(sender.Object, Actor(dto.UserId));
 
         var result = await controller.GetUserFeed(dto.UserId, 3, 0, false, CancellationToken.None);
 
-        result.Should().ContainSingle().Which.Should().Be(dto);
+        result.Value.Should().ContainSingle().Which.Should().Be(dto);
     }
 
     [Fact]
@@ -206,32 +226,33 @@ public sealed class FeedControllerTests
         var sender = new Mock<ISender>();
         sender.Setup(s => s.Send(It.Is<GetUserFeedQuery>(query => query.UserId == dto.UserId && query.Skip == 0 && query.Take == 12 && query.IncludeRead), It.IsAny<CancellationToken>()))
             .ReturnsAsync([dto]);
-        var controller = new FeedController(sender.Object);
+        var controller = new FeedController(sender.Object, Actor(dto.UserId));
 
         var result = await controller.GetUserFeed(dto.UserId, 0, 12, true, CancellationToken.None);
 
-        result.Should().ContainSingle().Which.Should().Be(dto);
+        result.Value.Should().ContainSingle().Which.Should().Be(dto);
     }
 
     [Fact]
     public async Task Add_UsesRequestTimestampOrCurrentTime()
     {
         var explicitCreatedAt = DateTime.UtcNow.AddDays(-3);
-        var requestWithTimestamp = new AddFeedItemRequest(Guid.NewGuid(), Guid.NewGuid(), FeedContentType.BlogPost, Guid.NewGuid(), FeedItemReason.Trending, explicitCreatedAt, 2);
-        var requestWithoutTimestamp = new AddFeedItemRequest(Guid.NewGuid(), Guid.NewGuid(), FeedContentType.Post, Guid.NewGuid(), FeedItemReason.Following);
+        var requestWithTimestamp = new AddFeedItemRequest(Guid.NewGuid(), FeedContentType.BlogPost, FeedItemReason.Trending, explicitCreatedAt, 2);
+        var requestWithoutTimestamp = new AddFeedItemRequest(Guid.NewGuid(), FeedContentType.Post, FeedItemReason.Following);
         var dto = FeedHandlerTests.CreateDto();
         var sender = new Mock<ISender>();
-        sender.Setup(s => s.Send(It.Is<AddFeedItemCommand>(command => command.UserId == requestWithTimestamp.UserId && command.ContentCreatedAt == explicitCreatedAt), It.IsAny<CancellationToken>()))
+        var actorId = Guid.NewGuid();
+        sender.Setup(s => s.Send(It.Is<AddFeedItemCommand>(command => command.UserId == actorId && command.AuthorId == actorId && command.ContentCreatedAt == explicitCreatedAt), It.IsAny<CancellationToken>()))
             .ReturnsAsync(dto);
-        sender.Setup(s => s.Send(It.Is<AddFeedItemCommand>(command => command.UserId == requestWithoutTimestamp.UserId && command.ContentCreatedAt > DateTime.UtcNow.AddMinutes(-1)), It.IsAny<CancellationToken>()))
+        sender.Setup(s => s.Send(It.Is<AddFeedItemCommand>(command => command.UserId == actorId && command.AuthorId == actorId && command.ContentCreatedAt > DateTime.UtcNow.AddMinutes(-1)), It.IsAny<CancellationToken>()))
             .ReturnsAsync(dto);
-        var controller = new FeedController(sender.Object);
+        var controller = new FeedController(sender.Object, Actor(actorId));
 
         var explicitResult = await controller.Add(requestWithTimestamp, CancellationToken.None);
         var fallbackResult = await controller.Add(requestWithoutTimestamp, CancellationToken.None);
 
-        explicitResult.Should().Be(dto);
-        fallbackResult.Should().Be(dto);
+        explicitResult.Value.Should().Be(dto);
+        fallbackResult.Value.Should().Be(dto);
     }
 
     [Theory]
@@ -241,9 +262,10 @@ public sealed class FeedControllerTests
     {
         var id = Guid.NewGuid();
         var sender = new Mock<ISender>();
-        sender.Setup(s => s.Send(It.Is<MarkFeedItemReadCommand>(command => command.FeedItemId == id), It.IsAny<CancellationToken>()))
+        var actorId = Guid.NewGuid();
+        sender.Setup(s => s.Send(It.Is<MarkFeedItemReadCommand>(command => command.UserId == actorId && command.FeedItemId == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(handled);
-        var controller = new FeedController(sender.Object);
+        var controller = new FeedController(sender.Object, Actor(actorId));
 
         var result = await controller.MarkRead(id, CancellationToken.None);
 
@@ -257,13 +279,49 @@ public sealed class FeedControllerTests
     {
         var id = Guid.NewGuid();
         var sender = new Mock<ISender>();
-        sender.Setup(s => s.Send(It.Is<HideFeedItemCommand>(command => command.FeedItemId == id), It.IsAny<CancellationToken>()))
+        var actorId = Guid.NewGuid();
+        sender.Setup(s => s.Send(It.Is<HideFeedItemCommand>(command => command.UserId == actorId && command.FeedItemId == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(handled);
-        var controller = new FeedController(sender.Object);
+        var controller = new FeedController(sender.Object, Actor(actorId));
 
         var result = await controller.Hide(id, CancellationToken.None);
 
         result.Should().BeOfType(handled ? typeof(NoContentResult) : typeof(NotFoundResult));
+    }
+
+    [Fact]
+    public async Task GetUserFeed_ForbidsReadingAnotherUsersLegacyFeed()
+    {
+        var sender = new Mock<ISender>();
+        var controller = new FeedController(sender.Object, Actor(Guid.NewGuid()));
+
+        var result = await controller.GetUserFeed(Guid.NewGuid(), 0, 10, true, CancellationToken.None);
+
+        result.Result.Should().BeOfType<ForbidResult>();
+        sender.Verify(s => s.Send(It.IsAny<GetUserFeedQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Add_OverridesRequestIdentityWithAuthenticatedActor()
+    {
+        var actorId = Guid.NewGuid();
+        var request = new AddFeedItemRequest(Guid.NewGuid(), FeedContentType.Post, FeedItemReason.Following);
+        var dto = FeedHandlerTests.CreateDto();
+        var sender = new Mock<ISender>();
+        sender.Setup(s => s.Send(It.Is<AddFeedItemCommand>(command => command.UserId == actorId && command.AuthorId == actorId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
+        var controller = new FeedController(sender.Object, Actor(actorId));
+
+        var result = await controller.Add(request, CancellationToken.None);
+
+        result.Value.Should().Be(dto);
+    }
+
+    private static IActorContextAccessor Actor(Guid userId)
+    {
+        var accessor = new ActorContextAccessor();
+        accessor.SetActorContext(ActorContextBuilder.ForUser(userId).Build());
+        return accessor;
     }
 }
 
