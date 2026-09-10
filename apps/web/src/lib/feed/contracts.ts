@@ -71,6 +71,11 @@ export interface SocialFeedItem {
 /** The complete persisted feed projection returned after publishing a post. */
 export type SocialPostItem = SocialFeedItem;
 
+/** Serializable Server Action result that preserves a committed post receipt. */
+export type SocialPostPublicationResult =
+  | { kind: "published"; post: SocialPostItem }
+  | { kind: "needs-hydration"; postId: string };
+
 export interface SocialFeedPage {
   items: SocialFeedItem[];
   nextCursor: string | null;

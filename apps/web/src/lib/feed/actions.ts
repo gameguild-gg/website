@@ -7,7 +7,7 @@ import {
   type SocialFollowsControllersFollowDto,
   type SocialReactionsReactionDto,
 } from "@game-guild/client";
-import { FeedMutationError, SocialPostHydrationError } from "./errors";
+import { FeedMutationError } from "./errors";
 import type {
   DeletedPostComment,
   DeletedSocialPost,
@@ -21,6 +21,7 @@ import type {
   SocialProfile,
   SocialPostItem,
   SocialPostMutation,
+  SocialPostPublicationResult,
   SocialReaction,
   SocialStory,
   ViewedPostState,
@@ -130,7 +131,7 @@ export async function createSocialPost(input: {
   visibility?: "Public" | "Followers" | "Private" | "Unlisted";
   assetReferenceId?: string | null;
   tags?: string[];
-}): Promise<SocialPostItem> {
+}): Promise<SocialPostPublicationResult> {
   await ensureCurrentSocialProfile();
   const data = await request<SocialPostMutation>({
     method: "POST",
@@ -145,9 +146,9 @@ export async function createSocialPost(input: {
   });
   const post = postMutation(data);
   try {
-    return await hydrateSocialPost(post.id);
+    return { kind: "published", post: await hydrateSocialPost(post.id) };
   } catch {
-    throw new SocialPostHydrationError(post.id);
+    return { kind: "needs-hydration", postId: post.id };
   }
 }
 

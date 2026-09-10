@@ -1,7 +1,6 @@
 "use client";
 
 import { createSocialPost, getSocialMediaStatus, hydrateSocialPost } from "@/lib/feed/actions";
-import { SocialPostHydrationError } from "@/lib/feed/errors";
 import type { SocialMediaAsset, SocialPostItem } from "@/lib/feed/contracts";
 import { uploadSocialMediaWithProgress } from "@/lib/feed/social-media-upload";
 import { Button } from "@game-guild/ui/components/button";
@@ -61,13 +60,22 @@ export function SocialComposer({ userName, onPublished }: { userName: string; on
         const uploaded = await uploadSocialMediaWithProgress(media.file, { signal: controller.signal, onProgress: setProgress });
         assetReferenceId = (await waitUntilReady(uploaded, controller.signal, () => setPhase("processing"))).assetReferenceId;
       }
-      const post = committedPostId ? await hydrateSocialPost(committedPostId) : await createSocialPost({ content: text, visibility: "Public", assetReferenceId, tags: tagsFrom(text) });
+      const publication = committedPostId
+        ? { kind: "published" as const, post: await hydrateSocialPost(committedPostId) }
+        : await createSocialPost({ content: text, visibility: "Public", assetReferenceId, tags: tagsFrom(text) });
+      if (publication.kind === "needs-hydration") {
+        const message = "Your post was published. Retry to add it to the feed.";
+        setCommittedPostId(publication.postId);
+        setFailure(message);
+        setPhase("failed");
+        toast.error(message);
+        return;
+      }
+      const post = publication.post;
       if (!publishedIdsRef.current.has(post.id)) { publishedIdsRef.current.add(post.id); onPublished?.(post); }
       setContent(""); setMedia(null); setProgress(null); setPhase("idle"); setCommittedPostId(null); setExpanded(false); toast.success("Post published.");
     } catch (error) {
-      const receipt = error instanceof SocialPostHydrationError ? error.postId : null;
-      if (receipt) setCommittedPostId(receipt);
-      const message = receipt ? "Your post was published. Retry to add it to the feed." : error instanceof Error ? error.message : "The post could not be published.";
+      const message = error instanceof Error ? error.message : "The post could not be published.";
       setFailure(message); setPhase("failed"); toast.error(message);
     } finally {
       if (controllerRef.current === controller) controllerRef.current = null;

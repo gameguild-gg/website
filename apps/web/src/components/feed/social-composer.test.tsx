@@ -8,11 +8,9 @@ const mocks = vi.hoisted(() => ({
   getSocialMediaStatus: vi.fn(),
   uploadSocialMediaWithProgress: vi.fn(),
   hydrateSocialPost: vi.fn(),
-  SocialPostHydrationError: class SocialPostHydrationError extends Error { constructor(readonly postId: string) { super("pending"); } },
 }));
 
 vi.mock("@/lib/feed/actions", () => mocks);
-vi.mock("@/lib/feed/errors", () => ({ SocialPostHydrationError: mocks.SocialPostHydrationError }));
 vi.mock("@/lib/feed/social-media-upload", () => ({ uploadSocialMediaWithProgress: mocks.uploadSocialMediaWithProgress }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { SocialComposer } from "./social-composer";
@@ -27,7 +25,10 @@ describe("SocialComposer", () => {
       sizeBytes: 3,
       state: "Ready",
     });
-    mocks.createSocialPost.mockResolvedValue({ id: "post-1", kind: "Post" });
+    mocks.createSocialPost.mockResolvedValue({
+      kind: "published",
+      post: { id: "post-1", kind: "Post" },
+    });
     URL.createObjectURL = vi.fn(() => "blob:preview");
     URL.revokeObjectURL = vi.fn();
   });
@@ -82,7 +83,7 @@ describe("SocialComposer", () => {
   });
 
   it("does not submit the same draft twice while publishing", async () => {
-    let release!: (value: { id: string; kind: string }) => void;
+    let release!: (value: { kind: "published"; post: { id: string; kind: string } }) => void;
     mocks.createSocialPost.mockImplementationOnce(() => new Promise((resolve) => { release = resolve; }));
     render(<SocialComposer userName="Ada Builder" />);
     fireEvent.click(screen.getByRole("button", { name: /share your progress/i }));
@@ -92,7 +93,7 @@ describe("SocialComposer", () => {
     fireEvent.submit(form);
 
     expect(mocks.createSocialPost).toHaveBeenCalledTimes(1);
-    release({ id: "post-1" });
+    release({ kind: "published", post: { id: "post-1", kind: "Post" } });
     await waitFor(() => expect(screen.getByRole("button", { name: /share your progress/i })).toBeInTheDocument());
   });
 
@@ -109,7 +110,10 @@ describe("SocialComposer", () => {
 
   it("hydrates a committed post on retry without issuing a second POST", async () => {
     const onPublished = vi.fn();
-    mocks.createSocialPost.mockRejectedValueOnce(new mocks.SocialPostHydrationError("post-1"));
+    mocks.createSocialPost.mockResolvedValueOnce({
+      kind: "needs-hydration",
+      postId: "post-1",
+    });
     mocks.hydrateSocialPost.mockResolvedValueOnce({ id: "post-1", kind: "Post" });
     render(React.createElement(SocialComposer, { userName: "Ada Builder", onPublished } as never));
     fireEvent.click(screen.getByRole("button", { name: /share your progress/i }));

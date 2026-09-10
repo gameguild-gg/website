@@ -54,7 +54,25 @@ describe("social feed actions", () => {
     }));
     expect(mocks.request.mock.calls[1]?.[0].body).not.toHaveProperty("userId");
     expect(mocks.request.mock.calls[1]?.[0].body).not.toHaveProperty("tenantId");
-    expect(post.id).toBe("post-1");
+    expect(post).toEqual({
+      kind: "published",
+      post: expect.objectContaining({ id: "post-1" }),
+    });
+  });
+
+  it("returns a serializable receipt when projection hydration fails after creation", async () => {
+    mocks.request
+      .mockResolvedValueOnce({ ok: true, data: { id: "profile-1", userId: "user-1" } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "post-1", content: "Ship it" } })
+      .mockResolvedValueOnce({
+        ok: false,
+        error: { status: 503, code: "PROJECTION_PENDING", message: "Not ready" },
+      });
+
+    await expect(createSocialPost({ content: "Ship it" })).resolves.toEqual({
+      kind: "needs-hydration",
+      postId: "post-1",
+    });
   });
 
   it("provisions a social profile before a user's first post", async () => {
