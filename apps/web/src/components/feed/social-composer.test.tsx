@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   createSocialPost: vi.fn(),
   getSocialMediaStatus: vi.fn(),
   uploadSocialMediaWithProgress: vi.fn(),
+  hydrateSocialPost: vi.fn(),
+  SocialPostHydrationError: class SocialPostHydrationError extends Error { constructor(readonly postId: string) { super("pending"); } },
 }));
 
 vi.mock("@/lib/feed/actions", () => mocks);
@@ -99,5 +101,20 @@ describe("SocialComposer", () => {
 
     await waitFor(() => expect(onPublished).toHaveBeenCalledWith({ id: "post-1", kind: "Post" }));
     expect(onPublished).toHaveBeenCalledTimes(1);
+  });
+
+  it("hydrates a committed post on retry without issuing a second POST", async () => {
+    const onPublished = vi.fn();
+    mocks.createSocialPost.mockRejectedValueOnce(new mocks.SocialPostHydrationError("post-1"));
+    mocks.hydrateSocialPost.mockResolvedValueOnce({ id: "post-1", kind: "Post" });
+    render(React.createElement(SocialComposer, { userName: "Ada Builder", onPublished } as never));
+    fireEvent.click(screen.getByRole("button", { name: /share your progress/i }));
+    fireEvent.change(screen.getByPlaceholderText(/what are you building/i), { target: { value: "One post" } });
+    fireEvent.click(screen.getByRole("button", { name: /^publish$/i }));
+    expect(await screen.findByRole("button", { name: /retry feed update/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /retry feed update/i }));
+    await waitFor(() => expect(onPublished).toHaveBeenCalledWith({ id: "post-1", kind: "Post" }));
+    expect(mocks.createSocialPost).toHaveBeenCalledTimes(1);
+    expect(mocks.hydrateSocialPost).toHaveBeenCalledWith("post-1");
   });
 });

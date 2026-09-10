@@ -101,6 +101,16 @@ describe("InfinitePostFeed", () => {
     expect(screen.getAllByTestId("post-card")).toHaveLength(2);
   });
 
+  it("does not carry a published item into another scope or tag", async () => {
+    intersectionCallback();
+    const created = post("created", "Only for you");
+    const view = render(<InfinitePostFeed scope="for-you" initialItems={[post("p-1")]} initialNextCursor={null} publishedItem={created} publishedIdentity="for-you:" />);
+    await waitFor(() => expect(screen.getAllByTestId("post-card")).toHaveLength(2));
+    view.rerender(<InfinitePostFeed scope="saved" initialItems={[post("saved-1")]} initialNextCursor={null} publishedItem={created} publishedIdentity="for-you:" />);
+    await waitFor(() => expect(screen.getAllByTestId("post-card")).toHaveLength(1));
+    expect(screen.queryByText("Only for you")).not.toBeInTheDocument();
+  });
+
   it("keeps the SSR tag on every subsequent page request", async () => {
     const io = intersectionCallback();
     mocks.loadSocialFeedPage.mockResolvedValue({ items: [post("p-2")], nextCursor: null });
