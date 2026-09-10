@@ -6,6 +6,8 @@ public sealed record StoryDto(
     Guid Id,
     Guid AuthorId,
     Guid AssetReferenceId,
+    string MediaUrl,
+    string MediaType,
     string? Caption,
     DateTime ExpiresAt,
     bool IsViewed,

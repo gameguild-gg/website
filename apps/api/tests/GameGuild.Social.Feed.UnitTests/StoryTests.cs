@@ -32,19 +32,22 @@ public sealed class StoryServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_RejectsAnotherUsersOrMissingAsset()
+    public async Task CreateAsync_RejectsAnotherUsersMissingOrProcessingAsset()
     {
         await using var context = CreateContext();
         var actorId = Guid.NewGuid();
         var otherAsset = AddAsset(context, Guid.NewGuid());
+        var processingAsset = AddAsset(context, actorId, ready: false);
         await context.SaveChangesAsync();
         var service = new StoryService(context);
 
         var missing = () => service.CreateAsync(actorId, Guid.NewGuid(), null, default);
         var anotherUsers = () => service.CreateAsync(actorId, otherAsset.Id, null, default);
+        var processing = () => service.CreateAsync(actorId, processingAsset.Id, null, default);
 
         await missing.Should().ThrowAsync<StoryAssetUnavailableException>();
         await anotherUsers.Should().ThrowAsync<StoryAssetUnavailableException>();
+        await processing.Should().ThrowAsync<StoryAssetUnavailableException>();
     }
 
     [Fact]
@@ -111,12 +114,23 @@ public sealed class StoryServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
-    private static AssetReference AddAsset(StoryTestDbContext context, Guid ownerId)
+    private static AssetReference AddAsset(StoryTestDbContext context, Guid ownerId, bool ready = true)
     {
-        var asset = new AssetReference(Guid.NewGuid(), ownerId, "story", AssetAccessPolicy.Private, "SocialStory", null)
+        var content = new AssetContent("assets", Guid.NewGuid().ToString("N"), new string('a', 64), "image/png", 128, 1, 1)
         {
             Id = Guid.NewGuid()
         };
+        if (ready)
+        {
+            content.SetVirusScanStatus(VirusScanStatus.Clean);
+            content.SetModerationStatus(ModerationStatus.Approved);
+        }
+        var asset = new AssetReference(content.Id, ownerId, "story", AssetAccessPolicy.Authenticated, "SocialStory", null)
+        {
+            Id = Guid.NewGuid(),
+            Content = content
+        };
+        context.Set<AssetContent>().Add(content);
         context.Set<AssetReference>().Add(asset);
         return asset;
     }
@@ -129,7 +143,16 @@ public sealed class StoriesControllerTests
     {
         var actorId = Guid.NewGuid();
         var assetId = Guid.NewGuid();
-        var dto = new StoryDto(Guid.NewGuid(), actorId, assetId, "caption", DateTime.UtcNow.AddHours(24), false, DateTime.UtcNow);
+        var dto = new StoryDto(
+            Guid.NewGuid(),
+            actorId,
+            assetId,
+            $"/api/assets/{assetId}/content",
+            "image/png",
+            "caption",
+            DateTime.UtcNow.AddHours(24),
+            false,
+            DateTime.UtcNow);
         var sender = new Mock<ISender>();
         sender.Setup(value => value.Send(
                 It.Is<CreateStoryCommand>(command => command.AuthorId == actorId && command.AssetReferenceId == assetId && command.Caption == "caption"),

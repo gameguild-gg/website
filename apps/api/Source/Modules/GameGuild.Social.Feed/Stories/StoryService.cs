@@ -1,4 +1,5 @@
 using GameGuild.Assets;
+using GameGuild.Assets.SocialMedia;
 using GameGuild.CQRS;
 using GameGuild.Social.Follows;
 using Microsoft.EntityFrameworkCore;
@@ -13,15 +14,18 @@ public sealed class StoryService(IApplicationDbContext context) : IStoryService
         string? caption,
         CancellationToken cancellationToken = default)
     {
-        var ownsAsset = await context.Set<AssetReference>()
+        var asset = await context.Set<AssetReference>()
             .AsNoTracking()
-            .AnyAsync(
+            .Include(reference => reference.Content)
+            .FirstOrDefaultAsync(
                 asset => asset.Id == assetReferenceId &&
                          asset.CreatedByUserId == authorId &&
                          asset.DeletedAt == null,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (!ownsAsset)
+        if (asset?.Content is null ||
+            !SocialMediaAssetPolicy.IsSupported(asset.Content.MimeType, asset.Content.SizeBytes) ||
+            SocialMediaAssetPolicy.GetProcessingState(asset.Content) != SocialMediaProcessingState.Ready)
         {
             throw new StoryAssetUnavailableException(assetReferenceId);
         }
@@ -29,7 +33,7 @@ public sealed class StoryService(IApplicationDbContext context) : IStoryService
         var story = Story.Create(authorId, assetReferenceId, caption, SystemClock.UtcNow);
         context.Set<Story>().Add(story);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return ToDto(story, false);
+        return ToDto(story, asset, false);
     }
 
     public async Task<IReadOnlyList<StoryDto>> GetActiveAsync(
@@ -66,7 +70,23 @@ public sealed class StoryService(IApplicationDbContext context) : IStoryService
             .ToHashSetAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return stories.Select(story => ToDto(story, viewedIds.Contains(story.Id))).ToList();
+        var assetIds = stories.Select(story => story.AssetReferenceId).Distinct().ToArray();
+        var assetRows = await context.Set<AssetReference>()
+            .AsNoTracking()
+            .Include(reference => reference.Content)
+            .Where(reference => assetIds.Contains(reference.Id) && reference.DeletedAt == null)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var readyAssets = assetRows
+            .Where(reference => reference.Content is not null &&
+                                SocialMediaAssetPolicy.IsSupported(reference.Content.MimeType, reference.Content.SizeBytes) &&
+                                SocialMediaAssetPolicy.GetProcessingState(reference.Content) == SocialMediaProcessingState.Ready)
+            .ToDictionary(reference => reference.Id);
+
+        return stories
+            .Where(story => readyAssets.ContainsKey(story.AssetReferenceId))
+            .Select(story => ToDto(story, readyAssets[story.AssetReferenceId], viewedIds.Contains(story.Id)))
+            .ToList();
     }
 
     public async Task<bool> MarkViewedAsync(
@@ -134,11 +154,13 @@ public sealed class StoryService(IApplicationDbContext context) : IStoryService
         return true;
     }
 
-    private static StoryDto ToDto(Story story, bool isViewed)
+    private static StoryDto ToDto(Story story, AssetReference asset, bool isViewed)
         => new(
             story.Id,
             story.AuthorId,
             story.AssetReferenceId,
+            $"/api/assets/{story.AssetReferenceId}/content",
+            SocialMediaAssetPolicy.NormalizeMimeType(asset.Content.MimeType),
             story.Caption,
             story.ExpiresAt,
             isViewed,
