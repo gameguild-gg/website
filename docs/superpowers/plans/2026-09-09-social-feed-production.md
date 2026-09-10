@@ -31,7 +31,7 @@
 - Modify: `apps/api/Source/Modules/GameGuild.Social.Reactions/GameGuild.Social.Reactions.csproj`
 - Modify: `apps/api/Source/Modules/GameGuild.Social.Profiles/Controllers/SocialProfilesController.cs`
 - Test: `apps/api/tests/GameGuild.Social.Reactions.UnitTests/ReactionModuleApiTests.cs`
-- Test: `apps/api/tests/GameGuild.Social.Profiles.UnitTests/SocialProfilesModuleTests.cs`
+- Create: `apps/api/tests/GameGuild.Social.Profiles.UnitTests/Controllers/SocialProfilesControllerTests.cs`
 
 **Interfaces:**
 - Produces: `SetReactionRequest(Guid TargetId, ReactionTargetType TargetType, ReactionType Type)`.
@@ -495,7 +495,7 @@ git commit -m "refactor(web): consume composed social feed"
 - Modify: `apps/web/src/components/feed/infinite-post-feed.tsx`
 
 **Interfaces:**
-- Produces: validated `SelectedSocialMedia` and a returned `SocialPostItem` inserted once the top once.
+- Produces: validated `SelectedSocialMedia` and a returned `SocialPostItem` inserted at the top exactly once.
 
 - [ ] **Step 1: Inspect shadcn configuration and official component docs.**
 
