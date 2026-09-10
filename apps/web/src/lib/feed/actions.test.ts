@@ -1,0 +1,103 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  request: vi.fn(),
+  createServerClient: vi.fn(),
+  getSession: vi.fn(),
+  getToken: vi.fn(),
+}));
+
+vi.mock("@/auth", () => ({ getSession: mocks.getSession, getToken: mocks.getToken }));
+vi.mock("@game-guild/client", () => ({ createServerClient: mocks.createServerClient }));
+
+import {
+  createPostComment,
+  createSocialPost,
+  followCreator,
+  repostPost,
+  savePost,
+  setPostReaction,
+} from "./actions";
+
+describe("social feed actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getSession.mockResolvedValue({
+      user: { id: "user-1", email: "builder@example.com", name: "Ari Builder" },
+    });
+    mocks.getToken.mockResolvedValue("access-token");
+    mocks.createServerClient.mockReturnValue({ request: mocks.request });
+  });
+
+  it("creates posts without accepting a caller-supplied actor or tenant", async () => {
+    mocks.request.mockResolvedValue({ ok: true, data: { id: "post-1", content: "Ship it" } });
+
+    const post = await createSocialPost({ content: " Ship it ", tags: ["release"] });
+
+    expect(mocks.request).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      method: "POST",
+      path: "/api/v1/posts",
+      body: { content: "Ship it", visibility: "Public", assetReferenceId: null, tags: ["release"] },
+    }));
+    expect(mocks.request.mock.calls[1]?.[0].body).not.toHaveProperty("userId");
+    expect(mocks.request.mock.calls[1]?.[0].body).not.toHaveProperty("tenantId");
+    expect(post.id).toBe("post-1");
+  });
+
+  it("provisions a social profile before a user's first post", async () => {
+    mocks.request
+      .mockResolvedValueOnce({ ok: true, data: null })
+      .mockResolvedValueOnce({ ok: true, data: { id: "profile-1", userId: "user-1" } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "post-1", content: "First post" } });
+
+    await createSocialPost({ content: "First post" });
+
+    expect(mocks.request).toHaveBeenNthCalledWith(2, {
+      method: "PUT",
+      path: "/api/social/profiles/users/user-1",
+      body: {
+        handle: "builder-user1",
+        displayName: "Ari Builder",
+        socialLinksJson: "{}",
+      },
+      requiresAuth: true,
+    });
+  });
+
+  it("returns authoritative reaction, comment, repost and save responses", async () => {
+    mocks.request
+      .mockResolvedValueOnce({ ok: true, data: { id: "r-1", type: "Love", targetId: "post-1" } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "c-1", postId: "post-1", content: "Nice" } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "rp-1", repostOfPostId: "post-1", content: "Boost" } })
+      .mockResolvedValueOnce({ ok: true, data: { postId: "post-1", isSaved: true } });
+
+    await expect(setPostReaction("post-1", "Love")).resolves.toMatchObject({ type: "Love" });
+    await expect(createPostComment("post-1", { content: "Nice" })).resolves.toMatchObject({ id: "c-1" });
+    await expect(repostPost("post-1", "Boost")).resolves.toMatchObject({ id: "rp-1" });
+    await expect(savePost("post-1", true)).resolves.toEqual({ postId: "post-1", isSaved: true });
+  });
+
+  it("uses the actor-safe follow contract", async () => {
+    mocks.request.mockResolvedValue({ ok: true, data: undefined });
+
+    await followCreator("user-2", false);
+
+    expect(mocks.request).toHaveBeenCalledWith({
+      method: "DELETE",
+      path: "/api/followers/unfollow",
+      params: { entityId: "user-2", entityType: "User" },
+      requiresAuth: true,
+    });
+  });
+
+  it("returns the persisted saved state after saving a post", async () => {
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: { postId: "post-1", isSaved: true },
+    });
+
+    const saved = await savePost("post-1", true);
+
+    expect(saved).toEqual({ postId: "post-1", isSaved: true });
+  });
+});

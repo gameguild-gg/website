@@ -8,5 +8,6 @@ export default async function Page({
 }): Promise<React.JSX.Element> {
   const query = await searchParams;
   const rawTab = typeof query?.tab === 'string' ? query.tab : undefined;
-  return <SocialShell tab={isSocialFeedTab(rawTab) ? rawTab : 'foryou'} />;
+  const tag = typeof query?.tag === 'string' ? query.tag : null;
+  return <SocialShell tab={isSocialFeedTab(rawTab) ? rawTab : 'foryou'} tag={tag} />;
 }

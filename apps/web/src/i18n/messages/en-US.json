@@ -32,6 +32,8 @@
       "accountLabel": "Signed-in account",
       "accountDescription": "Your account identity is managed by your sign-in provider.",
       "displayName": "Display name",
+      "handle": "Community handle",
+      "handleDescription": "Your unique community address. Use letters, numbers, underscores, or hyphens.",
       "bio": "Bio",
       "optional": "Optional",
       "location": "Location",

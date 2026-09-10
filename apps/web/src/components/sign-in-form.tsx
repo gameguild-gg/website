@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
 import { Link } from "@/i18n/navigation"
 import { useLocale } from "next-intl"
 import { useAuth } from "@game-guild/client/react"
@@ -34,7 +34,12 @@ export function SignInForm({
 }) {
   const { signIn, isLoading, error, clearError } = useAuth()
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [isHydrated, setIsHydrated] = useState(false)
   const locale = useLocale()
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -87,7 +92,12 @@ export function SignInForm({
               </div>
             </>
           )}
-          <form method="post" onSubmit={handleSubmit} noValidate>
+          <form
+            method="post"
+            onSubmit={handleSubmit}
+            noValidate
+            data-auth-ready={isHydrated ? "true" : "false"}
+          >
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -143,7 +153,7 @@ export function SignInForm({
                 <FieldError>{error.message}</FieldError>
               )}
               <Field>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading || !isHydrated}>
                   {isLoading ? "Signing in..." : "Sign in"}
                 </Button>
                 <FieldDescription className="text-center text-slate-300">

@@ -26,6 +26,7 @@ interface ProfileFormProps {
 type FieldErrors = Partial<Record<keyof ProfileFormInput, string>>;
 
 const FIELD_LIMITS = {
+  handle: 80,
   displayName: 100,
   bio: 1000,
   location: 100,
@@ -54,6 +55,7 @@ export function ProfileForm({ defaultValues, accountName, accountEmail }: Profil
 
     const formData = new FormData(event.currentTarget);
     const input: ProfileFormInput = {
+      handle: String(formData.get('handle') ?? ''),
       displayName: String(formData.get('displayName') ?? ''),
       bio: String(formData.get('bio') ?? ''),
       location: String(formData.get('location') ?? ''),
@@ -97,6 +99,28 @@ export function ProfileForm({ defaultValues, accountName, accountEmail }: Profil
             </div>
           </div>
           <FieldDescription>{t('accountDescription')}</FieldDescription>
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="profile-handle">{t('handle')}</FieldLabel>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">@</span>
+            <Input
+              id="profile-handle"
+              name="handle"
+              type="text"
+              required
+              pattern="[a-zA-Z0-9_-]+"
+              maxLength={FIELD_LIMITS.handle}
+              defaultValue={defaultValues.handle}
+              disabled={isPending}
+              aria-invalid={Boolean(fieldErrors.handle)}
+              className="pl-7"
+              onChange={() => clearFieldError('handle')}
+            />
+          </div>
+          {fieldErrors.handle && <FieldError>{fieldErrors.handle}</FieldError>}
+          <FieldDescription>{t('handleDescription')}</FieldDescription>
         </Field>
 
         <Field>

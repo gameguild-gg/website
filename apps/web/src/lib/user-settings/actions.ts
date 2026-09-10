@@ -29,6 +29,7 @@ export type ActionResult<T = void> =
   | { readonly success: false; readonly error: string };
 
 const PROFILE_FIELD_LIMITS = {
+  handle: 80,
   displayName: 100,
   bio: 1000,
   location: 100,
@@ -38,6 +39,7 @@ const PROFILE_FIELD_LIMITS = {
 } as const;
 
 export interface ProfileFormInput {
+  readonly handle: string;
   readonly displayName: string;
   readonly bio: string;
   readonly location: string;
@@ -47,6 +49,7 @@ export interface ProfileFormInput {
 }
 
 const PROFILE_FIELDS = [
+  'handle',
   'displayName',
   'bio',
   'location',
@@ -105,6 +108,7 @@ export async function updateProfileAction(input: ProfileFormInput): Promise<Acti
   if (!userId) return { success: false, error: 'Not authenticated.' };
 
   const trimmed: ProfileFormInput = {
+    handle: input.handle.trim().replace(/^@/, '').toLowerCase(),
     displayName: input.displayName.trim(),
     bio: input.bio.trim(),
     location: input.location.trim(),
@@ -118,6 +122,9 @@ export async function updateProfileAction(input: ProfileFormInput): Promise<Acti
     if (trimmed[field].length > limit) {
       return { success: false, error: `Field "${field}" must be at most ${limit} characters.` };
     }
+  }
+  if (!/^[a-z0-9_-]{3,80}$/.test(trimmed.handle)) {
+    return { success: false, error: 'Community handle must use 3–80 letters, numbers, underscores, or hyphens.' };
   }
 
   const client = getUserSettingsApiClient();
@@ -137,6 +144,25 @@ export async function updateProfileAction(input: ProfileFormInput): Promise<Acti
 
   if (!result.ok) {
     return { success: false, error: result.error.message || 'Failed to save profile.' };
+  }
+
+  const socialProfile = await client.request<void>({
+    method: 'PUT',
+    path: `/api/social/profiles/users/${userId}`,
+    body: {
+      handle: trimmed.handle,
+      displayName: trimmed.displayName,
+      bio: trimmed.bio || null,
+      headline: [trimmed.jobTitle, trimmed.company].filter(Boolean).join(' at ') || null,
+      location: trimmed.location || null,
+      websiteUrl: trimmed.website || null,
+      socialLinksJson: '{}',
+    },
+    requiresAuth: true,
+  });
+
+  if (!socialProfile.ok) {
+    return { success: false, error: socialProfile.error.message || 'Failed to save community profile.' };
   }
 
   return { success: true, data: undefined };

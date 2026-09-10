@@ -1,120 +1,90 @@
-import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  loadPostsAction: vi.fn(),
-}));
+const mocks = vi.hoisted(() => ({ loadSocialFeedAction: vi.fn() }));
 
-vi.mock('@/lib/posts/actions', () => ({
-  loadPostsAction: mocks.loadPostsAction,
-}));
-vi.mock('next/image', () => ({
-  default: (props: Record<string, unknown>) => <img alt="" {...props} />,
-}));
+vi.mock("@/lib/feed/actions", () => ({ loadSocialFeedAction: mocks.loadSocialFeedAction }));
+vi.mock("next/image", () => ({ default: (props: Record<string, unknown>) => <img alt="" {...props} /> }));
+vi.mock("@/i18n/navigation", () => ({ Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a> }));
 
-import { InfinitePostFeed } from './infinite-post-feed';
-import type { PostCardData } from '@/lib/posts/queries';
+import { InfinitePostFeed } from "./infinite-post-feed";
+import type { SocialFeedItem } from "@/lib/feed/contracts";
 
-function post(id: string, content = id): PostCardData {
+function post(id: string, content = id): SocialFeedItem {
   return {
     id,
-    authorId: 'author-1',
-    authorName: 'Ada Builder',
-    content,
-    mediaUrl: null,
-    mediaType: null,
-    likesCount: 3,
-    commentsCount: 1,
+    kind: "Post",
     createdAt: new Date().toISOString(),
+    author: { userId: "author-1", displayName: "Ada Builder", handle: "ada", avatarUrl: null, isVerified: false },
+    post: { content, mediaUrl: null, mediaType: null, visibility: "Public", isEdited: false, editedAt: null, repostedPost: null },
+    testingSession: null,
+    engagement: { reactionsCount: 3, commentsCount: 1, repostsCount: 0, viewsCount: 0 },
+    viewer: { reaction: null, isSaved: false, isFollowingAuthor: false, hasReposted: false, canEdit: false, canDelete: false },
+    tags: [],
   };
 }
 
 function intersectionCallback() {
-  // jsdom lacks IntersectionObserver; capture the registered callback
   let callback: IntersectionObserverCallback | undefined;
   const observe = vi.fn();
   const stub = class {
-    constructor(cb: IntersectionObserverCallback) {
-      callback = cb;
-    }
+    constructor(cb: IntersectionObserverCallback) { callback = cb; }
     observe = observe;
     disconnect = vi.fn();
   };
-  vi.stubGlobal('IntersectionObserver', stub);
+  vi.stubGlobal("IntersectionObserver", stub);
   return {
-    trigger(entries: boolean) {
-      callback?.([{ isIntersecting: entries } as IntersectionObserverEntry], {} as IntersectionObserver);
+    trigger(intersects: boolean) {
+      callback?.([{ isIntersecting: intersects } as IntersectionObserverEntry], {} as IntersectionObserver);
     },
     observe,
   };
 }
 
-describe('InfinitePostFeed', () => {
+describe("InfinitePostFeed", () => {
   beforeEach(() => vi.clearAllMocks());
-  afterEach(() => {
-    cleanup();
-    vi.unstubAllGlobals();
-  });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-  it('renders the SSR page as post cards', () => {
+  it("renders the server page and requests the next opaque cursor", async () => {
     const io = intersectionCallback();
+    mocks.loadSocialFeedAction.mockResolvedValue({ items: [post("p-2")], nextCursor: "cursor-2" });
 
-    render(<InfinitePostFeed stream="trending" initialItems={[post('p-1'), post('p-2')]} initialNextSkip={2} />);
+    render(<InfinitePostFeed scope="following" initialItems={[post("p-1")]} initialNextCursor="opaque+/=" />);
 
-    expect(screen.getAllByTestId('post-card')).toHaveLength(2);
-    expect(screen.getByText('p-1')).toBeInTheDocument();
-    expect(io.observe).toHaveBeenCalled();
+    expect(screen.getAllByTestId("post-card")).toHaveLength(1);
+    io.trigger(true);
+    await waitFor(() => expect(mocks.loadSocialFeedAction).toHaveBeenCalledWith({ scope: "following", cursor: "opaque+/=" }));
+    await waitFor(() => expect(screen.getAllByTestId("post-card")).toHaveLength(2));
   });
 
-  it('appends the next page when the sentinel intersects and paginates onward', async () => {
+  it("deduplicates items and stops when the API closes the cursor", async () => {
     const io = intersectionCallback();
-    mocks.loadPostsAction
-      .mockResolvedValueOnce({ items: [post('p-3'), post('p-4')], nextSkip: 4 })
-      .mockResolvedValueOnce({ items: [post('p-5')], nextSkip: 5 });
+    mocks.loadSocialFeedAction.mockResolvedValue({ items: [post("p-1"), post("p-2")], nextCursor: null });
 
-    render(<InfinitePostFeed stream="trending" initialItems={[post('p-1'), post('p-2')]} initialNextSkip={2} />);
-
+    render(<InfinitePostFeed scope="community" initialItems={[post("p-1")]} initialNextCursor="cursor-1" />);
     io.trigger(true);
-    await waitFor(() => expect(mocks.loadPostsAction).toHaveBeenCalledWith('trending', 2));
-    await waitFor(() => expect(screen.getAllByTestId('post-card')).toHaveLength(4));
 
+    await waitFor(() => expect(screen.getAllByTestId("post-card")).toHaveLength(2));
+    expect(screen.getByText(/all caught up/i)).toBeInTheDocument();
     io.trigger(true);
-    await waitFor(() => expect(mocks.loadPostsAction).toHaveBeenCalledWith('trending', 4));
-    await waitFor(() => expect(screen.getAllByTestId('post-card')).toHaveLength(5));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mocks.loadSocialFeedAction).toHaveBeenCalledTimes(1);
   });
 
-  it('stops paginating once the stream reports no more pages', async () => {
+  it("shows a retry action instead of fake content when pagination fails", async () => {
     const io = intersectionCallback();
-    mocks.loadPostsAction.mockResolvedValue({ items: [], nextSkip: null });
+    mocks.loadSocialFeedAction.mockRejectedValue(new Error("offline"));
 
-    render(<InfinitePostFeed stream="trending" initialItems={[post('p-1')]} initialNextSkip={1} />);
-
+    render(<InfinitePostFeed scope="for-you" initialItems={[post("p-1")]} initialNextCursor="cursor-1" />);
     io.trigger(true);
-    await waitFor(() => expect(mocks.loadPostsAction).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByText(/all caught up/i)).toBeInTheDocument());
 
-    io.trigger(true);
-    await new Promise((r) => setTimeout(r, 20));
-    expect(mocks.loadPostsAction).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('deduplicates posts already rendered', async () => {
-    const io = intersectionCallback();
-    mocks.loadPostsAction.mockResolvedValue({ items: [post('p-1'), post('p-2')], nextSkip: 2 });
-
-    render(<InfinitePostFeed stream="public" initialItems={[post('p-1')]} initialNextSkip={1} />);
-
-    io.trigger(true);
-    await waitFor(() => expect(mocks.loadPostsAction).toHaveBeenCalled());
-    await waitFor(() => expect(screen.getAllByTestId('post-card')).toHaveLength(2));
-  });
-
-  it('shows the empty state for an empty initial page', () => {
+  it("shows a scope-specific empty state", () => {
     intersectionCallback();
-
-    render(<InfinitePostFeed stream="feed" initialItems={[]} initialNextSkip={null} />);
-
-    expect(screen.getByText(/your feed is ready for its first build/i)).toBeInTheDocument();
+    render(<InfinitePostFeed scope="saved" initialItems={[]} initialNextCursor={null} />);
+    expect(screen.getByText(/posts you save will appear here/i)).toBeInTheDocument();
   });
 });

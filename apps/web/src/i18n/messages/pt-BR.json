@@ -32,6 +32,8 @@
       "accountLabel": "Conta conectada",
       "accountDescription": "A identidade da sua conta é gerenciada pelo provedor de login.",
       "displayName": "Nome de exibição",
+      "handle": "Nome de usuário na comunidade",
+      "handleDescription": "Seu endereço único na comunidade. Use letras, números, sublinhados ou hífens.",
       "bio": "Bio",
       "optional": "Opcional",
       "location": "Localização",

@@ -1,11 +1,23 @@
-import { Link } from "@/i18n/navigation";
-import type {
-  SocialCreatorPreview,
-  SocialPlaytestPreview,
-} from "@/lib/posts/demo";
-import { CalendarDays, Users } from "lucide-react";
+"use client";
 
-function initials(name: string): string {
+import { Link } from "@/i18n/navigation";
+import { followCreator } from "@/lib/feed/actions";
+import type {
+  SocialFeedTestingSession,
+  SocialProfile,
+  TrendingTag,
+} from "@/lib/feed/contracts";
+import { Button } from "@game-guild/ui/components/button";
+import { CalendarDays, Users } from "lucide-react";
+import * as React from "react";
+import { formatSocialDateTime } from "@/lib/feed/format";
+import { toast } from "sonner";
+
+export interface SocialSessionPreview extends SocialFeedTestingSession {
+  id: string;
+}
+
+function initials(name: string) {
   return name
     .split(/\s+/)
     .filter(Boolean)
@@ -15,89 +27,107 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-export function SocialRail({
-  playtests,
-  creators,
-}: {
-  playtests: SocialPlaytestPreview[];
-  creators: SocialCreatorPreview[];
-}): React.JSX.Element {
-  const featuredCreator = creators[0] ?? null;
-  const suggestedCreators = creators.slice(1, 4);
+function FollowButton({ profile }: { profile: SocialProfile }) {
+  const [following, setFollowing] = React.useState(profile.isFollowing);
+  const [pending, startTransition] = React.useTransition();
+  return (
+    <Button
+      type="button"
+      variant={following ? "secondary" : "outline"}
+      size="xs"
+      disabled={pending}
+      onClick={() => {
+        const next = !following;
+        setFollowing(next);
+        startTransition(async () => {
+          try {
+            await followCreator(profile.userId, next);
+          } catch (error) {
+            setFollowing(!next);
+            toast.error(
+              error instanceof Error ? error.message : "Follow could not be updated.",
+            );
+          }
+        });
+      }}
+    >
+      {following ? "Following" : "Follow"}
+    </Button>
+  );
+}
 
+export function SocialRail({
+  currentProfile,
+  sessions,
+  creators,
+  tags,
+}: {
+  currentProfile: SocialProfile | null;
+  sessions: SocialSessionPreview[];
+  creators: SocialProfile[];
+  tags: TrendingTag[];
+}): React.JSX.Element {
   return (
     <aside className="sticky top-5 hidden h-fit space-y-3 xl:block">
-      {featuredCreator ? (
+      {currentProfile ? (
         <section className="rounded-xl bg-card p-4 text-card-foreground">
           <div className="flex items-start gap-3">
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-highlight/50 bg-highlight/15 text-sm font-bold text-foreground">
-              {initials(featuredCreator.name)}
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-highlight/15 text-sm font-bold text-foreground">
+              {initials(currentProfile.displayName)}
             </span>
             <div className="min-w-0 flex-1 pt-0.5">
-              <p className="truncate text-sm font-semibold text-foreground">{featuredCreator.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{featuredCreator.handle}</p>
-              <p className="mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground">{featuredCreator.focus}</p>
+              <p className="truncate text-sm font-semibold text-foreground">
+                {currentProfile.displayName}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                @{currentProfile.handle}
+              </p>
+              {currentProfile.headline ? (
+                <p className="mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground">
+                  {currentProfile.headline}
+                </p>
+              ) : null}
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 divide-x divide-border text-center">
+          <div className="mt-4 grid grid-cols-3 divide-x divide-border/40 text-center">
             {[
-              ["128", "Posts"],
-              ["2.4K", "Followers"],
-              ["312", "Following"],
+              [currentProfile.postCount, "Posts"],
+              [currentProfile.followerCount, "Followers"],
+              [currentProfile.followingCount, "Following"],
             ].map(([value, label]) => (
               <div key={label}>
                 <p className="text-sm font-semibold text-foreground">{value}</p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground/70">{label}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">{label}</p>
               </div>
             ))}
           </div>
-          <Link
-            href="/workspace/settings/profile"
-            className="mt-4 flex h-9 items-center justify-center rounded-lg bg-accent/50 text-xs font-semibold text-accent-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            View profile
-          </Link>
+          <Button asChild variant="secondary" size="sm" className="mt-4 w-full">
+            <Link href={`/social/profiles/${currentProfile.handle}`}>View profile</Link>
+          </Button>
         </section>
       ) : null}
 
       <section className="rounded-xl bg-card p-4 text-card-foreground">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <CalendarDays
-              className="size-4 text-primary"
-              aria-hidden="true"
-            />
-            Upcoming community events
+            <CalendarDays className="size-4 text-primary" aria-hidden="true" />
+            Upcoming community sessions
           </h2>
-          <Link
-            href="/testing-lab"
-            className="text-xs font-medium text-primary hover:text-foreground"
-          >
+          <Link href="/testing-lab" className="text-xs font-medium text-primary hover:text-foreground">
             View all
           </Link>
         </div>
-        <div className="mt-3 divide-y divide-border">
-          {playtests.length === 0 ? (
-            <p className="py-4 text-sm leading-6 text-muted-foreground">
-              New community events will appear here when registrations open.
+        <div className="mt-3 space-y-1">
+          {sessions.length === 0 ? (
+            <p className="py-3 text-sm leading-6 text-muted-foreground">
+              New sessions will appear here when registration opens.
             </p>
           ) : (
-            playtests.map((playtest) => (
-              <Link
-                key={`${playtest.title}-${playtest.date}`}
-                href={playtest.href}
-                className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-              >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-accent/50 text-[10px] font-bold text-primary">
-                  {initials(playtest.title)}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
-                    {playtest.title}
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">{playtest.detail}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground/70">{playtest.date}</span>
-                </span>
+            sessions.slice(0, 3).map((session) => (
+              <Link key={session.id} href={`/testing-lab/events/${session.id}`} className="block rounded-lg px-2 py-2.5 transition hover:bg-accent">
+                <span className="block truncate text-sm font-semibold text-foreground">{session.name}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{formatSocialDateTime(session.startsAt)}</span>
+                <span className="mt-1 block text-xs text-primary">{session.availableTesterCount} spots · {session.mode}</span>
               </Link>
             ))
           )}
@@ -105,68 +135,45 @@ export function SocialRail({
       </section>
 
       <section className="rounded-xl bg-card p-4 text-card-foreground">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Users className="size-4 text-highlight" aria-hidden="true" />
-            Suggested creators
-          </h2>
-          <Link
-            href="/console/community/members/users"
-            className="text-xs font-medium text-highlight hover:text-foreground"
-          >
-            View all
-          </Link>
-        </div>
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Users className="size-4 text-highlight" aria-hidden="true" />
+          Suggested creators
+        </h2>
         <div className="mt-4 space-y-4">
-          {suggestedCreators.length === 0 ? (
+          {creators.length === 0 ? (
             <p className="text-sm leading-6 text-muted-foreground">
-              Creators with published projects will appear here.
+              Suggestions improve as creators publish and connect.
             </p>
           ) : (
-            suggestedCreators.map((creator) => (
-              <div key={creator.handle} className="flex items-center gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-highlight/25 text-[11px] font-bold text-foreground">
-                  {initials(creator.name)}
+            creators.slice(0, 4).map((creator) => (
+              <div key={creator.userId} className="flex items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-foreground">
+                  {initials(creator.displayName)}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">
-                    {creator.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground/70">
-                    {creator.handle} · {creator.focus}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-primary/40 hover:bg-primary/10"
-                >
-                  Follow
-                </button>
+                <Link href={`/social/profiles/${creator.handle}`} className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{creator.displayName}</p>
+                  <p className="truncate text-xs text-muted-foreground">@{creator.handle}</p>
+                </Link>
+                <FollowButton profile={creator} />
               </div>
             ))
           )}
         </div>
       </section>
 
-      <section className="rounded-xl bg-card p-4 text-card-foreground">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-foreground">Trending tags</h2>
-          <Link href="/projects" className="text-xs font-medium text-highlight hover:text-foreground">
-            View all
-          </Link>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {["#indiedev", "#playtesting", "#madewithunity", "#gamedev"].map((tag) => (
-            <Link
-              key={tag}
-              href="/projects"
-              className="rounded-lg bg-accent/50 px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
-            >
-              {tag}
-            </Link>
-          ))}
-        </div>
-      </section>
+      {tags.length > 0 ? (
+        <section className="rounded-xl bg-card p-4 text-card-foreground">
+          <h2 className="text-sm font-semibold text-foreground">Trending now</h2>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {tags.map((tag) => (
+              <Link key={tag.name} href={`/?tag=${encodeURIComponent(tag.name)}`} className="rounded-lg bg-accent/50 px-3 py-2 text-xs transition hover:bg-accent">
+                <span className="block truncate font-medium text-foreground">#{tag.name}</span>
+                <span className="mt-0.5 block text-[10px] text-muted-foreground">{tag.postCount} posts</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </aside>
   );
 }

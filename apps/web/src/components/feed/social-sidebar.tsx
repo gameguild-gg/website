@@ -7,7 +7,6 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -18,18 +17,16 @@ import {
   FlaskConical,
   GraduationCap,
   Home,
-  MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
-const socialNavigation = [
+export const SOCIAL_NAVIGATION = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Explore', href: '/projects', icon: Compass },
-  { label: 'Testing Lab', href: '/testing-lab', icon: FlaskConical },
-  { label: 'Messages', href: '/workspace/invitations', icon: MessageCircle, badge: '5' },
-  { label: 'Saved', href: '/workspace/projects', icon: Bookmark },
+  { label: 'Testing Lab', href: '/workspace/testing-lab', icon: FlaskConical },
+  { label: 'Saved', href: '/?tab=saved', icon: Bookmark },
 ] as const;
 
 export function SocialSidebarToggle({ placement = 'header' }: { placement?: 'header' | 'footer' }): React.JSX.Element {
@@ -91,13 +88,12 @@ export function SocialSidebar(): React.JSX.Element {
 
       <SidebarContent className="px-2 py-3">
         <SidebarMenu aria-label="Social navigation" className="gap-1.5">
-          {socialNavigation.map(({ label, href, icon: Icon, ...item }) => {
+          {SOCIAL_NAVIGATION.map(({ label, href, icon: Icon }) => {
             const active =
               (label === 'Home' && pathname === '/' && !activeTab) ||
-              (label === 'Testing Lab' && pathname.startsWith('/testing-lab')) ||
+              (label === 'Testing Lab' && pathname.startsWith('/workspace/testing-lab')) ||
               (label === 'Explore' && pathname.startsWith('/projects')) ||
-              (label === 'Messages' && pathname.startsWith('/workspace/invitations')) ||
-              (label === 'Saved' && pathname.startsWith('/workspace/projects'));
+              (label === 'Saved' && pathname === '/' && activeTab === 'saved');
             return (
               <SidebarMenuItem key={label} className="group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8">
                 <SidebarMenuButton
@@ -112,11 +108,6 @@ export function SocialSidebar(): React.JSX.Element {
                     <span className="group-data-[collapsible=icon]:hidden">{label}</span>
                   </Link>
                 </SidebarMenuButton>
-                {'badge' in item ? (
-                  <SidebarMenuBadge className="bg-highlight/25 text-[10px] font-bold text-highlight">
-                    {item.badge}
-                  </SidebarMenuBadge>
-                ) : null}
               </SidebarMenuItem>
             );
           })}
