@@ -11,3 +11,10 @@ export class FeedMutationError extends Error {
     this.code = error.code ?? "UNKNOWN";
   }
 }
+
+export class SocialPostHydrationError extends Error {
+  constructor(readonly postId: string) {
+    super("Your post was published, but it is still being prepared for the feed.");
+    this.name = "SocialPostHydrationError";
+  }
+}

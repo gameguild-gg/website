@@ -7,7 +7,7 @@ import {
   type SocialFollowsControllersFollowDto,
   type SocialReactionsReactionDto,
 } from "@game-guild/client";
-import { FeedMutationError } from "./errors";
+import { FeedMutationError, SocialPostHydrationError } from "./errors";
 import type {
   DeletedPostComment,
   DeletedSocialPost,
@@ -59,13 +59,6 @@ function postMutation(value: SocialPostMutation): SocialPostMutation {
     createdAt: value.createdAt,
     visibility: value.visibility,
   };
-}
-
-export class SocialPostHydrationError extends Error {
-  constructor(readonly postId: string) {
-    super("Your post was published, but it is still being prepared for the feed.");
-    this.name = "SocialPostHydrationError";
-  }
 }
 
 export async function hydrateSocialPost(postId: string): Promise<SocialPostItem> {

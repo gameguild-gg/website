@@ -1,6 +1,7 @@
 "use client";
 
-import { createSocialPost, getSocialMediaStatus, hydrateSocialPost, SocialPostHydrationError } from "@/lib/feed/actions";
+import { createSocialPost, getSocialMediaStatus, hydrateSocialPost } from "@/lib/feed/actions";
+import { SocialPostHydrationError } from "@/lib/feed/errors";
 import type { SocialMediaAsset, SocialPostItem } from "@/lib/feed/contracts";
 import { uploadSocialMediaWithProgress } from "@/lib/feed/social-media-upload";
 import { Button } from "@game-guild/ui/components/button";

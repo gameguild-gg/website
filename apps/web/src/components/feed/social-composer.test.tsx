@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/feed/actions", () => mocks);
+vi.mock("@/lib/feed/errors", () => ({ SocialPostHydrationError: mocks.SocialPostHydrationError }));
 vi.mock("@/lib/feed/social-media-upload", () => ({ uploadSocialMediaWithProgress: mocks.uploadSocialMediaWithProgress }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import { SocialComposer } from "./social-composer";
