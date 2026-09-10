@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -117,5 +117,30 @@ describe("SocialComposer", () => {
     await waitFor(() => expect(onPublished).toHaveBeenCalledWith({ id: "post-1", kind: "Post" }));
     expect(mocks.createSocialPost).toHaveBeenCalledTimes(1);
     expect(mocks.hydrateSocialPost).toHaveBeenCalledWith("post-1");
+  });
+
+  it("renders byte-level upload progress accessibly", async () => {
+    let release!: (value: { assetReferenceId: string; state: "Ready"; sizeBytes: number; deliveryUrl: null; mimeType: string }) => void;
+    mocks.uploadSocialMediaWithProgress.mockImplementationOnce((_file: File, options: { onProgress: (progress: { loaded: number; total: number; percent: number }) => void }) => {
+      options.onProgress({ loaded: 50, total: 100, percent: 50 });
+      return new Promise((resolve) => { release = resolve; });
+    });
+    render(<SocialComposer userName="Ada Builder" />);
+    fireEvent.click(screen.getByRole("button", { name: /share your progress/i }));
+    fireEvent.change(screen.getByLabelText(/add photo or video/i), { target: { files: [new File(["png"], "build.png", { type: "image/png" })] } });
+    fireEvent.click(screen.getByRole("button", { name: /^publish$/i }));
+    expect(await screen.findByRole("progressbar", { name: /media upload progress/i })).toHaveAttribute("aria-valuenow", "50");
+    expect(screen.getByText(/uploading 50 of 100 bytes/i)).toBeInTheDocument();
+    await act(async () => { release({ assetReferenceId: "asset-1", state: "Ready", sizeBytes: 100, deliveryUrl: null, mimeType: "image/png" }); });
+  });
+
+  it("shows 1000-character feedback and normalizes at most ten tags", async () => {
+    render(<SocialComposer userName="Ada Builder" />);
+    fireEvent.click(screen.getByRole("button", { name: /share your progress/i }));
+    const text = `${"x".repeat(1000)} #ONE #one #two #three #four #five #six #seven #eight #nine #ten #eleven`;
+    fireEvent.change(screen.getByPlaceholderText(/what are you building/i), { target: { value: text } });
+    expect(screen.getByText(`${text.length}/4000 characters`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^publish$/i }));
+    await waitFor(() => expect(mocks.createSocialPost).toHaveBeenCalledWith(expect.objectContaining({ tags: ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"] })));
   });
 });
