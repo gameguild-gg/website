@@ -3,11 +3,11 @@
 import { getSession, getToken } from "@/auth";
 import {
   createServerClient,
-  type ApiError,
   type AssetsSocialMediaSocialMediaAssetDescriptor,
   type SocialFollowsControllersFollowDto,
   type SocialReactionsReactionDto,
 } from "@game-guild/client";
+import { FeedMutationError } from "./errors";
 import type {
   DeletedPostComment,
   DeletedSocialPost,
@@ -45,18 +45,6 @@ async function request<T>(input: Parameters<ReturnType<typeof createClient>["req
   const result = await createClient().request<T>(input);
   if (!result.ok) throw new FeedMutationError(result.error);
   return result.data;
-}
-
-export class FeedMutationError extends Error {
-  readonly status: number;
-  readonly code: string;
-
-  constructor(error: Partial<ApiError> & { message?: string }) {
-    super(error.message || "The social action failed.");
-    this.name = "FeedMutationError";
-    this.status = error.status ?? 0;
-    this.code = error.code ?? "UNKNOWN";
-  }
 }
 
 // The generated Social Posts declarations are `void`, while the deployed API

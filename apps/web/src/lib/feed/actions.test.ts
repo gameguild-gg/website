@@ -17,7 +17,6 @@ import {
   deletePostComment,
   deleteSocialPost,
   deleteStory,
-  FeedMutationError,
   followCreator,
   getSocialMediaStatus,
   markStoryViewed,
@@ -30,6 +29,7 @@ import {
   updateSocialPost,
   uploadSocialMedia,
 } from "./actions";
+import { FeedMutationError } from "./errors";
 
 describe("social feed actions", () => {
   beforeEach(() => {
