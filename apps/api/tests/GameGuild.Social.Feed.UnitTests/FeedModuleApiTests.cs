@@ -302,6 +302,11 @@ public sealed class FeedInfrastructureTests
         scoped.GetRequiredService<IFeedRepository>().Should().BeOfType<FeedRepository>();
         scoped.GetRequiredService<IFeedService>().Should().BeOfType<FeedService>();
         scoped.GetRequiredService<ISavedPostService>().Should().BeOfType<SavedPostService>();
+        scoped.GetRequiredService<IStoryService>().Should().BeOfType<StoryService>();
+        scoped.GetRequiredService<ICommandHandler<CreateStoryCommand, StoryDto>>().Should().BeOfType<CreateStoryCommandHandler>();
+        scoped.GetRequiredService<ICommandHandler<MarkStoryViewedCommand, bool>>().Should().BeOfType<MarkStoryViewedCommandHandler>();
+        scoped.GetRequiredService<ICommandHandler<DeleteStoryCommand, bool>>().Should().BeOfType<DeleteStoryCommandHandler>();
+        scoped.GetRequiredService<IQueryHandler<GetActiveStoriesQuery, IReadOnlyList<StoryDto>>>().Should().BeOfType<GetActiveStoriesQueryHandler>();
         scoped.GetRequiredService<ICommandHandler<SavePostCommand, SavedPostStateDto>>().Should().BeOfType<SavePostCommandHandler>();
         scoped.GetRequiredService<ICommandHandler<UnsavePostCommand, bool>>().Should().BeOfType<UnsavePostCommandHandler>();
         scoped.GetRequiredService<IQueryHandler<GetSavedPostStateQuery, SavedPostStateDto>>().Should().BeOfType<GetSavedPostStateQueryHandler>();

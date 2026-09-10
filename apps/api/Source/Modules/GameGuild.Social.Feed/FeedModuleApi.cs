@@ -237,6 +237,8 @@ public sealed class FeedModelConfiguration : IModelConfiguration
     {
         modelBuilder.ApplyConfiguration(new FeedItemConfiguration());
         modelBuilder.ApplyConfiguration(new SavedPostConfiguration());
+        modelBuilder.ApplyConfiguration(new StoryConfiguration());
+        modelBuilder.ApplyConfiguration(new StoryViewConfiguration());
     }
 }
 
@@ -248,6 +250,29 @@ public sealed class SavedPostConfiguration : IEntityTypeConfiguration<SavedPost>
         builder.HasKey(saved => saved.Id);
         builder.HasIndex(saved => new { saved.UserId, saved.PostId }).IsUnique();
         builder.HasIndex(saved => new { saved.UserId, saved.CreatedAt });
+    }
+}
+
+public sealed class StoryConfiguration : IEntityTypeConfiguration<Story>
+{
+    public void Configure(EntityTypeBuilder<Story> builder)
+    {
+        builder.ToTable("social_stories");
+        builder.HasKey(story => story.Id);
+        builder.Property(story => story.Caption).HasMaxLength(280);
+        builder.HasIndex(story => new { story.AuthorId, story.ExpiresAt });
+        builder.HasIndex(story => story.AssetReferenceId);
+    }
+}
+
+public sealed class StoryViewConfiguration : IEntityTypeConfiguration<StoryView>
+{
+    public void Configure(EntityTypeBuilder<StoryView> builder)
+    {
+        builder.ToTable("social_story_views");
+        builder.HasKey(view => view.Id);
+        builder.HasIndex(view => new { view.StoryId, view.ViewerId }).IsUnique();
+        builder.HasIndex(view => new { view.ViewerId, view.ViewedAt });
     }
 }
 
@@ -271,6 +296,15 @@ public static class FeedDependencyInjection
         services.AddScoped<IFeedRepository, FeedRepository>();
         services.AddScoped<IFeedService, FeedService>();
         services.AddScoped<ISavedPostService, SavedPostService>();
+        services.AddScoped<IStoryService, StoryService>();
+        services.AddScoped<ICommandHandler<CreateStoryCommand, StoryDto>, CreateStoryCommandHandler>();
+        services.AddScoped<IRequestHandler<CreateStoryCommand, StoryDto>>(sp => sp.GetRequiredService<ICommandHandler<CreateStoryCommand, StoryDto>>());
+        services.AddScoped<ICommandHandler<MarkStoryViewedCommand, bool>, MarkStoryViewedCommandHandler>();
+        services.AddScoped<IRequestHandler<MarkStoryViewedCommand, bool>>(sp => sp.GetRequiredService<ICommandHandler<MarkStoryViewedCommand, bool>>());
+        services.AddScoped<ICommandHandler<DeleteStoryCommand, bool>, DeleteStoryCommandHandler>();
+        services.AddScoped<IRequestHandler<DeleteStoryCommand, bool>>(sp => sp.GetRequiredService<ICommandHandler<DeleteStoryCommand, bool>>());
+        services.AddScoped<IQueryHandler<GetActiveStoriesQuery, IReadOnlyList<StoryDto>>, GetActiveStoriesQueryHandler>();
+        services.AddScoped<IRequestHandler<GetActiveStoriesQuery, IReadOnlyList<StoryDto>>>(sp => sp.GetRequiredService<IQueryHandler<GetActiveStoriesQuery, IReadOnlyList<StoryDto>>>());
         services.AddScoped<ICommandHandler<SavePostCommand, SavedPostStateDto>, SavePostCommandHandler>();
         services.AddScoped<IRequestHandler<SavePostCommand, SavedPostStateDto>>(sp => sp.GetRequiredService<ICommandHandler<SavePostCommand, SavedPostStateDto>>());
         services.AddScoped<ICommandHandler<UnsavePostCommand, bool>, UnsavePostCommandHandler>();
