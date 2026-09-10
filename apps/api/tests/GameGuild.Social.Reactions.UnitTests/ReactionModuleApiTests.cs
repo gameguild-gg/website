@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -203,15 +204,15 @@ public sealed class ReactionsControllerTests
             .ReturnsAsync(dto);
         sender.Setup(s => s.Send(It.Is<SetReactionCommand>(command => command.UserId == dto.UserId && command.TargetId == dto.TargetId && command.TargetType == dto.TargetType && command.Type == dto.Type), It.IsAny<CancellationToken>()))
             .ReturnsAsync(dto);
-        var controller = new ReactionsController(sender.Object);
+        var controller = new ReactionsController(sender.Object, Actor(dto.UserId));
 
         var target = await controller.GetTargetSummary(dto.TargetType, dto.TargetId, CancellationToken.None);
-        var user = await controller.GetUserReaction(dto.UserId, dto.TargetType, dto.TargetId, CancellationToken.None);
-        var set = await controller.Set(new SetReactionRequest(dto.UserId, dto.TargetId, dto.TargetType, dto.Type), CancellationToken.None);
+        var user = await controller.GetUserReaction(dto.TargetType, dto.TargetId, CancellationToken.None);
+        var set = await controller.Set(new SetReactionRequest(dto.TargetId, dto.TargetType, dto.Type), CancellationToken.None);
 
         target.Should().Be(summary);
-        user.Should().Be(dto);
-        set.Should().Be(dto);
+        user.Value.Should().Be(dto);
+        set.Value.Should().Be(dto);
     }
 
     [Theory]
@@ -219,15 +220,63 @@ public sealed class ReactionsControllerTests
     [InlineData(false)]
     public async Task Remove_ReturnsNoContentOrNotFound(bool removed)
     {
-        var request = new RemoveReactionRequest(Guid.NewGuid(), Guid.NewGuid(), ReactionTargetType.Post);
+        var userId = Guid.NewGuid();
+        var request = new RemoveReactionRequest(Guid.NewGuid(), ReactionTargetType.Post);
         var sender = new Mock<ISender>();
-        sender.Setup(s => s.Send(It.Is<RemoveReactionCommand>(command => command.UserId == request.UserId && command.TargetId == request.TargetId && command.TargetType == request.TargetType), It.IsAny<CancellationToken>()))
+        sender.Setup(s => s.Send(It.Is<RemoveReactionCommand>(command => command.UserId == userId && command.TargetId == request.TargetId && command.TargetType == request.TargetType), It.IsAny<CancellationToken>()))
             .ReturnsAsync(removed);
-        var controller = new ReactionsController(sender.Object);
+        var controller = new ReactionsController(sender.Object, Actor(userId));
 
         var result = await controller.Remove(request, CancellationToken.None);
 
         result.Should().BeOfType(removed ? typeof(NoContentResult) : typeof(NotFoundResult));
+    }
+
+    [Fact]
+    public async Task Set_UsesAuthenticatedActor()
+    {
+        var userId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+        var dto = new ReactionDto(Guid.NewGuid(), userId, targetId, ReactionTargetType.Post, ReactionType.Like, DateTime.UtcNow, DateTime.UtcNow);
+        var sender = new Mock<ISender>();
+        sender.Setup(s => s.Send(
+                It.Is<SetReactionCommand>(command => command.UserId == userId && command.TargetId == targetId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
+        var controller = new ReactionsController(sender.Object, Actor(userId));
+
+        var result = await controller.Set(new SetReactionRequest(targetId, ReactionTargetType.Post, ReactionType.Like), CancellationToken.None);
+
+        result.Value.Should().Be(dto);
+        sender.VerifyAll();
+    }
+
+    [Fact]
+    public async Task Set_WithoutActor_ReturnsUnauthorized()
+    {
+        var sender = new Mock<ISender>();
+        var controller = new ReactionsController(sender.Object, Actor(Guid.Empty));
+
+        var result = await controller.Set(new SetReactionRequest(Guid.NewGuid(), ReactionTargetType.Post, ReactionType.Like), CancellationToken.None);
+
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+        sender.Verify(s => s.Send(It.IsAny<SetReactionCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private static IActorContextAccessor Actor(Guid userId)
+    {
+        var accessor = new Mock<IActorContextAccessor>();
+        accessor.SetupGet(value => value.ActorContext).Returns(userId == Guid.Empty
+            ? ActorContext.Anonymous
+            : new ActorContext
+            {
+                ActorKind = ActorKind.User,
+                SubjectId = userId.ToString(),
+                Roles = new HashSet<string>(),
+                Permissions = new HashSet<string>(),
+                IsAuthenticated = true
+            });
+        return accessor.Object;
     }
 }
 

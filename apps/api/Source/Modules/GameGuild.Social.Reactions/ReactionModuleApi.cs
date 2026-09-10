@@ -1,4 +1,6 @@
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -24,13 +26,11 @@ public sealed record TargetReactionSummaryDto(
     int Total);
 
 public sealed record SetReactionRequest(
-    Guid UserId,
     Guid TargetId,
     ReactionTargetType TargetType,
     ReactionType Type);
 
 public sealed record RemoveReactionRequest(
-    Guid UserId,
     Guid TargetId,
     ReactionTargetType TargetType);
 
@@ -206,7 +206,8 @@ public sealed class GetUserReactionQueryHandler(IReactionService service) : IQue
 
 [ApiController]
 [Route("api/social/reactions")]
-public sealed class ReactionsController(ISender sender) : ControllerBase
+[Authorize]
+public sealed class ReactionsController(ISender sender, IActorContextAccessor actorContextAccessor) : ControllerBase
 {
     [HttpGet("target/{targetType}/{targetId:guid}")]
     public Task<TargetReactionSummaryDto> GetTargetSummary(
@@ -215,27 +216,51 @@ public sealed class ReactionsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
         => sender.Send(new GetTargetReactionsQuery(targetId, targetType), cancellationToken);
 
-    [HttpGet("users/{userId:guid}/target/{targetType}/{targetId:guid}")]
-    public Task<ReactionDto?> GetUserReaction(
-        Guid userId,
+    [HttpGet("me/target/{targetType}/{targetId:guid}")]
+    public async Task<ActionResult<ReactionDto?>> GetUserReaction(
         ReactionTargetType targetType,
         Guid targetId,
         CancellationToken cancellationToken)
-        => sender.Send(new GetUserReactionQuery(userId, targetId, targetType), cancellationToken);
+    {
+        if (ActorId is not { } actorId)
+        {
+            return Unauthorized();
+        }
+
+        return await sender.Send(new GetUserReactionQuery(actorId, targetId, targetType), cancellationToken)
+            .ConfigureAwait(false);
+    }
 
     [HttpPut]
-    public Task<ReactionDto> Set(SetReactionRequest request, CancellationToken cancellationToken)
-        => sender.Send(new SetReactionCommand(request.UserId, request.TargetId, request.TargetType, request.Type), cancellationToken);
+    public async Task<ActionResult<ReactionDto>> Set(SetReactionRequest request, CancellationToken cancellationToken)
+    {
+        if (ActorId is not { } actorId)
+        {
+            return Unauthorized();
+        }
+
+        return await sender.Send(
+                new SetReactionCommand(actorId, request.TargetId, request.TargetType, request.Type),
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
 
     [HttpDelete]
     public async Task<IActionResult> Remove(RemoveReactionRequest request, CancellationToken cancellationToken)
     {
+        if (ActorId is not { } actorId)
+        {
+            return Unauthorized();
+        }
+
         var removed = await sender.Send(
-            new RemoveReactionCommand(request.UserId, request.TargetId, request.TargetType),
+            new RemoveReactionCommand(actorId, request.TargetId, request.TargetType),
             cancellationToken).ConfigureAwait(false);
 
         return removed ? NoContent() : NotFound();
     }
+
+    private Guid? ActorId => actorContextAccessor.ActorContext.SubjectIdAsGuid;
 }
 
 public sealed class ReactionsModelConfiguration : IModelConfiguration
