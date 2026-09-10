@@ -41,11 +41,11 @@ public class PostService : IPostService
     public Task<Result<Post>> CreatePostAsync(Guid authorId, string content, PostVisibility visibility = PostVisibility.Public, string? mediaUrl = null, MediaType? mediaType = null, Guid? tenantId = null, CancellationToken cancellationToken = default) =>
         _crudService.CreatePostAsync(authorId, content, visibility, mediaUrl, mediaType, tenantId, cancellationToken);
 
-    public Task<Result<Post>> UpdatePostAsync(Guid postId, string content, CancellationToken cancellationToken = default) =>
-        _crudService.UpdatePostAsync(postId, content, cancellationToken);
+    public Task<Result<Post>> UpdatePostAsync(Guid postId, Guid actorId, string content, CancellationToken cancellationToken = default) =>
+        _crudService.UpdatePostAsync(postId, actorId, content, cancellationToken);
 
-    public Task<Result> DeletePostAsync(Guid postId, CancellationToken cancellationToken = default) =>
-        _crudService.DeletePostAsync(postId, cancellationToken);
+    public Task<Result> DeletePostAsync(Guid postId, Guid actorId, CancellationToken cancellationToken = default) =>
+        _crudService.DeletePostAsync(postId, actorId, cancellationToken);
 
     public Task<Result> RestorePostAsync(Guid postId, CancellationToken cancellationToken = default) =>
         _crudService.RestorePostAsync(postId, cancellationToken);
@@ -84,8 +84,11 @@ public class PostService : IPostService
     public Task<Result<bool>> TogglePostLikeAsync(Guid postId, Guid userId, string reactionType = "like", CancellationToken cancellationToken = default) =>
         _engagementService.TogglePostLikeAsync(postId, userId, reactionType, cancellationToken);
 
-    public Task<Result<bool>> TogglePostPinAsync(Guid postId, CancellationToken cancellationToken = default) =>
-        _engagementService.TogglePostPinAsync(postId, cancellationToken);
+    public Task<Result<bool>> TogglePostPinAsync(Guid postId, Guid actorId, CancellationToken cancellationToken = default) =>
+        _engagementService.TogglePostPinAsync(postId, actorId, cancellationToken);
+
+    public Task<Result<Post>> CreateRepostAsync(Guid sourcePostId, Guid actorId, string? content = null, CancellationToken cancellationToken = default) =>
+        _engagementService.CreateRepostAsync(sourcePostId, actorId, content, cancellationToken);
 
     public Task<Result> SharePostAsync(Guid postId, CancellationToken cancellationToken = default) =>
         _engagementService.SharePostAsync(postId, cancellationToken);
@@ -127,11 +130,11 @@ public class PostService : IPostService
     public Task<Result<PostComment>> AddCommentAsync(Guid postId, Guid authorId, string content, Guid? parentCommentId = null, CancellationToken cancellationToken = default) =>
         _commentService.AddCommentAsync(postId, authorId, content, parentCommentId, cancellationToken);
 
-    public Task<Result<PostComment>> UpdateCommentAsync(Guid commentId, string content, CancellationToken cancellationToken = default) =>
-        _commentService.UpdateCommentAsync(commentId, content, cancellationToken);
+    public Task<Result<PostComment>> UpdateCommentAsync(Guid commentId, Guid actorId, string content, CancellationToken cancellationToken = default) =>
+        _commentService.UpdateCommentAsync(commentId, actorId, content, cancellationToken);
 
-    public Task<Result> DeleteCommentAsync(Guid commentId, CancellationToken cancellationToken = default) =>
-        _commentService.DeleteCommentAsync(commentId, cancellationToken);
+    public Task<Result> DeleteCommentAsync(Guid commentId, Guid actorId, CancellationToken cancellationToken = default) =>
+        _commentService.DeleteCommentAsync(commentId, actorId, cancellationToken);
 
     public Task<Result<IEnumerable<PostComment>>> GetPostCommentsAsync(Guid postId, int skip = 0, int take = 50, CancellationToken cancellationToken = default) =>
         _commentService.GetPostCommentsAsync(postId, skip, take, cancellationToken);

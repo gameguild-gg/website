@@ -42,6 +42,15 @@ public class Post : EntityBase
         };
     }
 
+    public static Post CreateRepost(Guid authorId, Post source, string? content = null)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        var repost = Create(authorId, content?.Trim() ?? string.Empty, PostVisibility.Public, source.TenantId);
+        repost.RepostOfPostId = source.Id;
+        return repost;
+    }
+
     public void AttachMedia(string mediaUrl, MediaType? mediaType)
     {
         if (string.IsNullOrWhiteSpace(mediaUrl)) throw new ArgumentException("Media URL is required.", nameof(mediaUrl));
@@ -65,6 +74,7 @@ public class Post : EntityBase
     public void IncrementComments() => CommentsCount++;
     public void DecrementComments() { if (CommentsCount > 0) CommentsCount--; }
     public void IncrementShares() => SharesCount++;
+    public void DecrementShares() { if (SharesCount > 0) SharesCount--; }
     public void IncrementViews() => ViewsCount++;
     public void Delete() => SoftDelete();
 }

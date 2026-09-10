@@ -210,7 +210,7 @@ public class PostCrudServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.UpdatePostAsync(post.Id, "Updated content");
+        var result = await _service.UpdatePostAsync(post.Id, post.AuthorId, "Updated content");
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -226,11 +226,26 @@ public class PostCrudServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.UpdatePostAsync(Guid.NewGuid(), "Updated content");
+        var result = await _service.UpdatePostAsync(Guid.NewGuid(), Guid.NewGuid(), "Updated content");
 
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Code.Should().Be("Post.NotFound");
+    }
+
+    [Fact]
+    public async Task UpdatePostAsync_WhenActorIsNotAuthor_ShouldReturnForbiddenWithoutMutation()
+    {
+        var post = Post.Create(Guid.NewGuid(), "Original content", PostVisibility.Public);
+        _posts.Add(post);
+        SetupDbSets();
+
+        var result = await _service.UpdatePostAsync(post.Id, Guid.NewGuid(), "Hijacked content");
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("Post.Forbidden");
+        post.Content.Should().Be("Original content");
+        _dbContextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -247,7 +262,7 @@ public class PostCrudServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.DeletePostAsync(post.Id);
+        var result = await _service.DeletePostAsync(post.Id, post.AuthorId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -262,11 +277,26 @@ public class PostCrudServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.DeletePostAsync(Guid.NewGuid());
+        var result = await _service.DeletePostAsync(Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Code.Should().Be("Post.NotFound");
+    }
+
+    [Fact]
+    public async Task DeletePostAsync_WhenActorIsNotAuthor_ShouldReturnForbiddenWithoutMutation()
+    {
+        var post = Post.Create(Guid.NewGuid(), "Protected content", PostVisibility.Public);
+        SimulatePersisted(post);
+        _posts.Add(post);
+        SetupDbSets();
+
+        var result = await _service.DeletePostAsync(post.Id, Guid.NewGuid());
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("Post.Forbidden");
+        post.IsDeleted.Should().BeFalse();
     }
 
     #endregion

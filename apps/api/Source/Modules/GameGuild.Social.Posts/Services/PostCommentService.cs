@@ -16,6 +16,7 @@ public class PostCommentService : IPostCommentService
         public static Error NotFound => Error.NotFound("Post.NotFound", "Post not found");
         public static Error CommentNotFound => Error.NotFound("Comment.NotFound", "Comment not found");
         public static Error ParentCommentNotFound => Error.NotFound("ParentComment.NotFound", "Parent comment not found");
+        public static Error Forbidden => Error.Forbidden("Comment.Forbidden", "Only the comment author can perform this action");
     }
 
     public PostCommentService(IApplicationDbContext context, ILogger<PostCommentService> logger)
@@ -53,7 +54,7 @@ public class PostCommentService : IPostCommentService
         return Result.Success(comment);
     }
 
-    public async Task<Result<PostComment>> UpdateCommentAsync(Guid commentId, string content, CancellationToken cancellationToken = default)
+    public async Task<Result<PostComment>> UpdateCommentAsync(Guid commentId, Guid actorId, string content, CancellationToken cancellationToken = default)
     {
         var comment = await _context.Set<PostComment>()
             .FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null, cancellationToken).ConfigureAwait(false);
@@ -61,19 +62,25 @@ public class PostCommentService : IPostCommentService
         if (comment is null)
             return Result.Failure<PostComment>(PostErrors.CommentNotFound);
 
+        if (comment.AuthorId != actorId)
+            return Result.Failure<PostComment>(PostErrors.Forbidden);
+
         comment.Edit(content);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return Result.Success(comment);
     }
 
-    public async Task<Result> DeleteCommentAsync(Guid commentId, CancellationToken cancellationToken = default)
+    public async Task<Result> DeleteCommentAsync(Guid commentId, Guid actorId, CancellationToken cancellationToken = default)
     {
         var comment = await _context.Set<PostComment>()
-            .FirstOrDefaultAsync(c => c.Id == commentId, cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (comment is null)
             return Result.Failure(PostErrors.CommentNotFound);
+
+        if (comment.AuthorId != actorId)
+            return Result.Failure(PostErrors.Forbidden);
 
         var post = await _context.Set<Post>()
             .FirstOrDefaultAsync(p => p.Id == comment.PostId, cancellationToken).ConfigureAwait(false);

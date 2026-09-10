@@ -14,6 +14,7 @@ public class PostEngagementService : IPostEngagementService
     private static class PostErrors
     {
         public static Error NotFound => Error.NotFound("Post.NotFound", "Post not found");
+        public static Error Forbidden => Error.Forbidden("Post.Forbidden", "This action is not allowed for the current user");
         public static Error StatisticsNotFound => Error.NotFound("PostStatistics.NotFound", "Statistics not found for post");
         public static Error ViewNotFound => Error.NotFound("PostView.NotFound", "View not found");
         public static Error NotFollowing => Error.NotFound("PostFollower.NotFound", "Not following this post");
@@ -55,13 +56,16 @@ public class PostEngagementService : IPostEngagementService
         }
     }
 
-    public async Task<Result<bool>> TogglePostPinAsync(Guid postId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> TogglePostPinAsync(Guid postId, Guid actorId, CancellationToken cancellationToken = default)
     {
         var post = await _context.Set<Post>()
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
             return Result.Failure<bool>(PostErrors.NotFound);
+
+        if (post.AuthorId != actorId)
+            return Result.Failure<bool>(PostErrors.Forbidden);
 
         if (post.IsPinned)
             post.Unpin();
@@ -71,6 +75,40 @@ public class PostEngagementService : IPostEngagementService
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return Result.Success(post.IsPinned);
+    }
+
+    public async Task<Result<Post>> CreateRepostAsync(
+        Guid sourcePostId,
+        Guid actorId,
+        string? content = null,
+        CancellationToken cancellationToken = default)
+    {
+        var source = await _context.Set<Post>()
+            .FirstOrDefaultAsync(
+                p => p.Id == sourcePostId && p.DeletedAt == null && p.Visibility == PostVisibility.Public,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (source is null)
+            return Result.Failure<Post>(PostErrors.NotFound);
+
+        var existing = await _context.Set<Post>()
+            .FirstOrDefaultAsync(
+                p => p.AuthorId == actorId && p.RepostOfPostId == sourcePostId && p.DeletedAt == null,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (existing is not null)
+            return Result.Success(existing);
+
+        var repost = Post.CreateRepost(actorId, source, content);
+        _context.Set<Post>().Add(repost);
+        _context.Set<PostStatistics>().Add(PostStatistics.Create(repost.Id));
+        source.IncrementShares();
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return Result.Success(repost);
     }
 
     public async Task<Result> SharePostAsync(Guid postId, CancellationToken cancellationToken = default)

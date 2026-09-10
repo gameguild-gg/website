@@ -26,6 +26,9 @@ public class PostEntityConfiguration : IEntityTypeConfiguration<Post>
         builder.HasIndex(p => p.Visibility);
         builder.HasIndex(p => p.IsPinned);
         builder.HasIndex(p => p.CreatedAt);
+        builder.HasIndex(p => new { p.AuthorId, p.RepostOfPostId })
+            .IsUnique()
+            .HasFilter("\"RepostOfPostId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
     }
 }
 

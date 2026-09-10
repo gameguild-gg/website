@@ -27,10 +27,10 @@ public interface IPostCrudService
         CancellationToken cancellationToken = default);
 
     /// <summary>Updates an existing post</summary>
-    Task<Result<Post>> UpdatePostAsync(Guid postId, string content, CancellationToken cancellationToken = default);
+    Task<Result<Post>> UpdatePostAsync(Guid postId, Guid actorId, string content, CancellationToken cancellationToken = default);
 
     /// <summary>Deletes a post (soft delete)</summary>
-    Task<Result> DeletePostAsync(Guid postId, CancellationToken cancellationToken = default);
+    Task<Result> DeletePostAsync(Guid postId, Guid actorId, CancellationToken cancellationToken = default);
 
     /// <summary>Restores a soft-deleted post</summary>
     Task<Result> RestorePostAsync(Guid postId, CancellationToken cancellationToken = default);

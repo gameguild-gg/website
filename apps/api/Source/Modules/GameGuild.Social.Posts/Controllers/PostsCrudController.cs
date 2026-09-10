@@ -3,6 +3,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Social.Posts.Commands;
 using GameGuild.Social.Posts.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GameGuild.Social.Posts.Controllers;
@@ -146,17 +147,12 @@ public class PostsCrudController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        // Check ownership
-        var canPerform = await postService.CanUserPerformActionAsync(postId, userId, "edit", cancellationToken).ConfigureAwait(false);
-        if (!canPerform.IsSuccess || !canPerform.Value)
-            return Forbid();
-
         var result = await sender.Send(
-            new UpdatePostEndpointCommand(postId, request.Content),
+            new UpdatePostEndpointCommand(postId, userId, request.Content),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(PostMappings.MapToDto(result.Value!))
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
     }
 
     /// <summary>Delete a post</summary>
@@ -167,20 +163,22 @@ public class PostsCrudController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        // Check ownership
-        var canPerform = await postService.CanUserPerformActionAsync(postId, userId, "delete", cancellationToken).ConfigureAwait(false);
-        if (!canPerform.IsSuccess || !canPerform.Value)
-            return Forbid();
-
         var result = await sender.Send(
-            new DeletePostEndpointCommand(postId),
+            new DeletePostEndpointCommand(postId, userId),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? NoContent()
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
     }
 
     #endregion
+
+    private IActionResult MapMutationFailure(Error error) => error.Type switch
+    {
+        ErrorType.NotFound => NotFound(error),
+        ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, error),
+        _ => BadRequest(error)
+    };
 }
 
 #region Request DTOs

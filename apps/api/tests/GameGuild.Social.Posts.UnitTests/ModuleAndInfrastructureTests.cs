@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Social.Posts.Configuration;
 using GameGuild.Social.Posts.Controllers;
@@ -110,21 +111,21 @@ public class PostsControllerConstructorTests
     [Fact]
     public void PostsCrudController_CanBeInstantiated()
     {
-        var sut = new PostsCrudController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>());
+        var sut = new PostsCrudController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>(), Mock.Of<ISender>());
         sut.Should().NotBeNull();
     }
 
     [Fact]
     public void PostCommentsController_CanBeInstantiated()
     {
-        var sut = new PostCommentsController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>());
+        var sut = new PostCommentsController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>(), Mock.Of<ISender>());
         sut.Should().NotBeNull();
     }
 
     [Fact]
     public void PostInteractionsController_CanBeInstantiated()
     {
-        var sut = new PostInteractionsController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>());
+        var sut = new PostInteractionsController(Mock.Of<IPostService>(), Mock.Of<IActorContextAccessor>(), Mock.Of<ISender>());
         sut.Should().NotBeNull();
     }
 }

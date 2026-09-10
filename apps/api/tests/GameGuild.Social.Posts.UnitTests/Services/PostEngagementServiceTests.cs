@@ -128,7 +128,7 @@ public class PostEngagementServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.TogglePostPinAsync(post.Id);
+        var result = await _service.TogglePostPinAsync(post.Id, post.AuthorId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -146,7 +146,7 @@ public class PostEngagementServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.TogglePostPinAsync(post.Id);
+        var result = await _service.TogglePostPinAsync(post.Id, post.AuthorId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -161,11 +161,79 @@ public class PostEngagementServiceTests
         SetupDbSets();
 
         // Act
-        var result = await _service.TogglePostPinAsync(Guid.NewGuid());
+        var result = await _service.TogglePostPinAsync(Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Code.Should().Be("Post.NotFound");
+    }
+
+    [Fact]
+    public async Task TogglePostPinAsync_WhenActorIsNotAuthor_ShouldReturnForbidden()
+    {
+        var post = Post.Create(Guid.NewGuid(), "Protected post", PostVisibility.Public);
+        _posts.Add(post);
+        SetupDbSets();
+
+        var result = await _service.TogglePostPinAsync(post.Id, Guid.NewGuid());
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("Post.Forbidden");
+        post.IsPinned.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region Repost Tests
+
+    [Fact]
+    public async Task CreateRepostAsync_WhenSourceIsPublic_CreatesRepostAndCountsShareOnce()
+    {
+        var source = Post.Create(Guid.NewGuid(), "Original", PostVisibility.Public);
+        var actorId = Guid.NewGuid();
+        _posts.Add(source);
+        SetupDbSets();
+
+        var result = await _service.CreateRepostAsync(source.Id, actorId, "My take");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.AuthorId.Should().Be(actorId);
+        result.Value.RepostOfPostId.Should().Be(source.Id);
+        result.Value.Content.Should().Be("My take");
+        source.SharesCount.Should().Be(1);
+        _dbContextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRepostAsync_WhenSourceIsPrivate_DoesNotExposeIt()
+    {
+        var source = Post.Create(Guid.NewGuid(), "Private", PostVisibility.Private);
+        _posts.Add(source);
+        SetupDbSets();
+
+        var result = await _service.CreateRepostAsync(source.Id, Guid.NewGuid());
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("Post.NotFound");
+        source.SharesCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreateRepostAsync_WhenRepeated_ReturnsExistingRepostWithoutDoubleCounting()
+    {
+        var source = Post.Create(Guid.NewGuid(), "Original", PostVisibility.Public);
+        var actorId = Guid.NewGuid();
+        var existing = Post.CreateRepost(actorId, source, "Worth sharing");
+        source.IncrementShares();
+        _posts.AddRange([source, existing]);
+        SetupDbSets();
+
+        var result = await _service.CreateRepostAsync(source.Id, actorId, "Ignored duplicate");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(existing.Id);
+        source.SharesCount.Should().Be(1);
+        _dbContextMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
