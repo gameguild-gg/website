@@ -18,9 +18,9 @@ type NodeRow = {
   podCount?: number;
 };
 
-// ponytail: the canonical 3 zones for this cluster. New zones fall back to
+// ponytail: the canonical zones for this cluster. New zones fall back to
 // "unknown" so they still render (just not in a dedicated column).
-const ZONE_ORDER = ["home", "champlain", "cloud"] as const;
+const ZONE_ORDER = ["home", "champlain", "cloud", "leahy"] as const;
 
 type VectorResult = {
   data?: {
@@ -175,7 +175,7 @@ export default function NodesPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Node Topology</h1>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
         {ZONE_ORDER.map((zone) => (
           <section key={zone} className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">

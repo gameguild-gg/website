@@ -12,6 +12,9 @@ const ZONE_MAP: Record<string, string> = {
   wario: "champlain",
   waluigi: "champlain",
   oracle: "cloud",
+  "gx10-01": "leahy",
+  "gx10-02": "leahy",
+  "gx10-03": "leahy",
 };
 
 export function hostnameToZone(hostname: string): string {
