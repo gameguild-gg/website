@@ -301,6 +301,10 @@ public sealed class FeedInfrastructureTests
         var scoped = scope.ServiceProvider;
         scoped.GetRequiredService<IFeedRepository>().Should().BeOfType<FeedRepository>();
         scoped.GetRequiredService<IFeedService>().Should().BeOfType<FeedService>();
+        scoped.GetRequiredService<ISavedPostService>().Should().BeOfType<SavedPostService>();
+        scoped.GetRequiredService<ICommandHandler<SavePostCommand, SavedPostStateDto>>().Should().BeOfType<SavePostCommandHandler>();
+        scoped.GetRequiredService<ICommandHandler<UnsavePostCommand, bool>>().Should().BeOfType<UnsavePostCommandHandler>();
+        scoped.GetRequiredService<IQueryHandler<GetSavedPostStateQuery, SavedPostStateDto>>().Should().BeOfType<GetSavedPostStateQueryHandler>();
         scoped.GetRequiredService<ICommandHandler<AddFeedItemCommand, FeedItemDto>>().Should().BeOfType<AddFeedItemCommandHandler>();
         scoped.GetRequiredService<IRequestHandler<AddFeedItemCommand, FeedItemDto>>().Should().BeSameAs(scoped.GetRequiredService<ICommandHandler<AddFeedItemCommand, FeedItemDto>>());
         scoped.GetRequiredService<IQueryHandler<GetUserFeedQuery, IReadOnlyList<FeedItemDto>>>().Should().BeOfType<GetUserFeedQueryHandler>();

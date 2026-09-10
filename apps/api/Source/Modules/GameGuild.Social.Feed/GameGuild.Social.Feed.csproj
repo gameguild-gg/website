@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
+        <ProjectReference Include="..\GameGuild.Identity.Context\GameGuild.Identity.Context.csproj" />
         <ProjectReference Include="..\GameGuild.Social.Profiles\GameGuild.Social.Profiles.csproj" />
         <ProjectReference Include="..\GameGuild.Social.Posts\GameGuild.Social.Posts.csproj" />
     </ItemGroup>

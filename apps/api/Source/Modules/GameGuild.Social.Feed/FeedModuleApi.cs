@@ -236,6 +236,18 @@ public sealed class FeedModelConfiguration : IModelConfiguration
     public void Configure(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new FeedItemConfiguration());
+        modelBuilder.ApplyConfiguration(new SavedPostConfiguration());
+    }
+}
+
+public sealed class SavedPostConfiguration : IEntityTypeConfiguration<SavedPost>
+{
+    public void Configure(EntityTypeBuilder<SavedPost> builder)
+    {
+        builder.ToTable("social_saved_posts");
+        builder.HasKey(saved => saved.Id);
+        builder.HasIndex(saved => new { saved.UserId, saved.PostId }).IsUnique();
+        builder.HasIndex(saved => new { saved.UserId, saved.CreatedAt });
     }
 }
 
@@ -258,6 +270,13 @@ public static class FeedDependencyInjection
     {
         services.AddScoped<IFeedRepository, FeedRepository>();
         services.AddScoped<IFeedService, FeedService>();
+        services.AddScoped<ISavedPostService, SavedPostService>();
+        services.AddScoped<ICommandHandler<SavePostCommand, SavedPostStateDto>, SavePostCommandHandler>();
+        services.AddScoped<IRequestHandler<SavePostCommand, SavedPostStateDto>>(sp => sp.GetRequiredService<ICommandHandler<SavePostCommand, SavedPostStateDto>>());
+        services.AddScoped<ICommandHandler<UnsavePostCommand, bool>, UnsavePostCommandHandler>();
+        services.AddScoped<IRequestHandler<UnsavePostCommand, bool>>(sp => sp.GetRequiredService<ICommandHandler<UnsavePostCommand, bool>>());
+        services.AddScoped<IQueryHandler<GetSavedPostStateQuery, SavedPostStateDto>, GetSavedPostStateQueryHandler>();
+        services.AddScoped<IRequestHandler<GetSavedPostStateQuery, SavedPostStateDto>>(sp => sp.GetRequiredService<IQueryHandler<GetSavedPostStateQuery, SavedPostStateDto>>());
         services.AddScoped<ICommandHandler<AddFeedItemCommand, FeedItemDto>, AddFeedItemCommandHandler>();
         services.AddScoped<IRequestHandler<AddFeedItemCommand, FeedItemDto>>(sp => sp.GetRequiredService<ICommandHandler<AddFeedItemCommand, FeedItemDto>>());
         services.AddScoped<IQueryHandler<GetUserFeedQuery, IReadOnlyList<FeedItemDto>>, GetUserFeedQueryHandler>();
