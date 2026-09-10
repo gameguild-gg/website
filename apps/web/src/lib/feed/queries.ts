@@ -353,7 +353,8 @@ export async function loadSocialProfileByHandle(handle: string) {
     requiresAuth: true,
   });
   if (!data) return null;
-  return mapProfile(data);
+  const [profile] = await hydrateFollowState([mapProfile(data)]);
+  return profile ?? null;
 }
 
 export async function searchSocialProfiles(query = "", take = 5) {

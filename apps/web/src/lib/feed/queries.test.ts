@@ -163,16 +163,24 @@ describe("social feed queries", () => {
   });
 
   it("loads the viewer-aware aggregate social profile by handle", async () => {
-    mocks.request.mockResolvedValueOnce({
-      ok: true,
-      data: { userId: "user-2", handle: "lin", displayName: "Lin", projectCount: 3, isFollowing: true },
-    });
+    mocks.request
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { userId: "user-2", handle: "lin", displayName: "Lin", projectCount: 3, isFollowing: false },
+      })
+      .mockResolvedValueOnce({ ok: true, data: { "user-2": true } });
 
     const profile = await loadSocialProfileByHandle("@lin");
 
     expect(mocks.request).toHaveBeenNthCalledWith(1, {
       method: "GET",
       path: "/api/social/feed/profiles/lin",
+      requiresAuth: true,
+    });
+    expect(mocks.request).toHaveBeenNthCalledWith(2, {
+      method: "POST",
+      path: "/api/followers/batch/status",
+      body: { entityIds: ["user-2"], entityType: "User" },
       requiresAuth: true,
     });
     expect(profile).toMatchObject({ handle: "lin", displayName: "Lin", projectCount: 3, isFollowing: true });
