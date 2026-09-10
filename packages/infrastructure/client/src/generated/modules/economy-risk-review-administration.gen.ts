@@ -18,10 +18,10 @@ export class EconomyRiskReviewAdministrationModule {
   /**
    */
   async getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviews(query?: {
-    status?: Types.EconomyRiskRiskReviewStatus;
+    status?: Types.FinanceEconomyRiskRiskReviewStatus;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyRiskRiskReviewPage, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyRiskRiskReviewPage, ApiError>> {
     const url = '/api/v1/admin/economy/risk-reviews';
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class EconomyRiskReviewAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskRiskReviewPageSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskRiskReviewPageSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -42,7 +42,7 @@ export class EconomyRiskReviewAdministrationModule {
 
   /**
    */
-  async getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewId(reviewId: string): Promise<Result<Types.EconomyRiskRiskReviewCase, ApiError>> {
+  async getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewId(reviewId: string): Promise<Result<Types.FinanceEconomyRiskRiskReviewCase, ApiError>> {
     const url = `/api/v1/admin/economy/risk-reviews/${reviewId}`;
 
     const result = await this.client.request({
@@ -53,7 +53,7 @@ export class EconomyRiskReviewAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskRiskReviewCaseSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskRiskReviewCaseSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -65,7 +65,7 @@ export class EconomyRiskReviewAdministrationModule {
   async postAdminEconomyRiskReviewsApprove(
     reviewId: string,
     body: Types.APIControllersResolveEconomyRiskReviewInput,
-  ): Promise<Result<Types.EconomyRiskRiskReviewCase, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskRiskReviewCase, ApiError>> {
     const url = `/api/v1/admin/economy/risk-reviews/${reviewId}:approve`;
 
     // Validate request body
@@ -80,7 +80,7 @@ export class EconomyRiskReviewAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskRiskReviewCaseSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskRiskReviewCaseSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -92,7 +92,7 @@ export class EconomyRiskReviewAdministrationModule {
   async postAdminEconomyRiskReviewsReject(
     reviewId: string,
     body: Types.APIControllersResolveEconomyRiskReviewInput,
-  ): Promise<Result<Types.EconomyRiskRiskReviewCase, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskRiskReviewCase, ApiError>> {
     const url = `/api/v1/admin/economy/risk-reviews/${reviewId}:reject`;
 
     // Validate request body
@@ -107,7 +107,7 @@ export class EconomyRiskReviewAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskRiskReviewCaseSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskRiskReviewCaseSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -116,7 +116,7 @@ export class EconomyRiskReviewAdministrationModule {
 
   /**
    */
-  async getAdminEconomyRiskReviewsAudit(reviewId: string): Promise<Result<Array<Types.EconomyRiskRiskReviewEvent>, ApiError>> {
+  async getAdminEconomyRiskReviewsAudit(reviewId: string): Promise<Result<Array<Types.FinanceEconomyRiskRiskReviewEvent>, ApiError>> {
     const url = `/api/v1/admin/economy/risk-reviews/${reviewId}/audit`;
 
     const result = await this.client.request({
@@ -125,7 +125,7 @@ export class EconomyRiskReviewAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyRiskRiskReviewEvent>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyRiskRiskReviewEvent>, ApiError>;
   }
 }
 

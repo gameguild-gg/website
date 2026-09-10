@@ -19,7 +19,7 @@ export class EconomyAdRewardsModule {
    */
   async postEconomyAdRewardsSessions(
     body: Types.APIControllersStartMyAdRewardSessionInput,
-  ): Promise<Result<Types.EconomyAdRewardsDurableAdRewardSessionResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyAdRewardsDurableAdRewardSessionResult, ApiError>> {
     const url = '/api/v1/economy/ad-rewards/sessions';
 
     // Validate request body
@@ -34,7 +34,7 @@ export class EconomyAdRewardsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyAdRewardsDurableAdRewardSessionResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyAdRewardsDurableAdRewardSessionResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -43,7 +43,7 @@ export class EconomyAdRewardsModule {
 
   /**
    */
-  async getEconomyAdRewardsSessions(sessionId: string): Promise<Result<Types.EconomyAdRewardsDurableAdRewardSessionStatus, ApiError>> {
+  async getEconomyAdRewardsSessions(sessionId: string): Promise<Result<Types.FinanceEconomyAdRewardsDurableAdRewardSessionStatus, ApiError>> {
     const url = `/api/v1/economy/ad-rewards/sessions/${sessionId}`;
 
     const result = await this.client.request({
@@ -54,7 +54,7 @@ export class EconomyAdRewardsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyAdRewardsDurableAdRewardSessionStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyAdRewardsDurableAdRewardSessionStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -66,7 +66,7 @@ export class EconomyAdRewardsModule {
   async postEconomyAdRewardsSessionsComplete(
     sessionId: string,
     body: Types.APIControllersCompleteMyAdRewardSessionInput,
-  ): Promise<Result<Types.EconomyAdRewardsDurableAdRewardCompletionResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyAdRewardsDurableAdRewardCompletionResult, ApiError>> {
     const url = `/api/v1/economy/ad-rewards/sessions/${sessionId}/complete`;
 
     // Validate request body
@@ -81,7 +81,7 @@ export class EconomyAdRewardsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyAdRewardsDurableAdRewardCompletionResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyAdRewardsDurableAdRewardCompletionResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

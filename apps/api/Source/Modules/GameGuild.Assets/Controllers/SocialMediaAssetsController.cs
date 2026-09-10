@@ -42,7 +42,7 @@ public sealed class SocialMediaAssetsController(
     [ProducesResponseType(typeof(SocialMediaAssetDescriptor), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Upload([FromForm] IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> Upload(IFormFile file, CancellationToken cancellationToken)
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue || !actor.TenantId.HasValue)

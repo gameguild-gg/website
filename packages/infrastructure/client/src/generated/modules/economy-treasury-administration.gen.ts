@@ -19,7 +19,7 @@ export class EconomyTreasuryAdministrationModule {
    */
   async getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawals(query?: {
     limit?: number;
-  }): Promise<Result<Array<Types.EconomyTreasuryAdminWithdrawalRun>, ApiError>> {
+  }): Promise<Result<Array<Types.FinanceEconomyTreasuryAdminWithdrawalRun>, ApiError>> {
     const url = '/api/v1/admin/economy/treasury/withdrawals';
 
     const result = await this.client.request({
@@ -29,14 +29,14 @@ export class EconomyTreasuryAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyTreasuryAdminWithdrawalRun>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyTreasuryAdminWithdrawalRun>, ApiError>;
   }
 
   /**
    */
   async postAdminEconomyTreasuryWithdrawals(
     body: Types.APIControllersProposeTreasuryWithdrawalInput,
-  ): Promise<Result<Types.EconomyTreasuryAdminWithdrawalRun, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun, ApiError>> {
     const url = '/api/v1/admin/economy/treasury/withdrawals';
 
     // Validate request body
@@ -51,7 +51,7 @@ export class EconomyTreasuryAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -62,7 +62,7 @@ export class EconomyTreasuryAdministrationModule {
    */
   async getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsByRunId(
     runId: string,
-  ): Promise<Result<Types.EconomyTreasuryAdminWithdrawalRun, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun, ApiError>> {
     const url = `/api/v1/admin/economy/treasury/withdrawals/${runId}`;
 
     const result = await this.client.request({
@@ -73,7 +73,7 @@ export class EconomyTreasuryAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -85,7 +85,7 @@ export class EconomyTreasuryAdministrationModule {
   async postAdminEconomyTreasuryWithdrawalsApprove(
     runId: string,
     body: Types.APIControllersApproveTreasuryWithdrawalInput,
-  ): Promise<Result<Types.EconomyTreasuryAdminWithdrawalRun, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun, ApiError>> {
     const url = `/api/v1/admin/economy/treasury/withdrawals/${runId}/approve`;
 
     // Validate request body
@@ -100,7 +100,7 @@ export class EconomyTreasuryAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -109,7 +109,7 @@ export class EconomyTreasuryAdministrationModule {
 
   /**
    */
-  async getAdminEconomyTreasuryWithdrawalsAudit(runId: string): Promise<Result<Types.EconomyTreasuryAdminWithdrawalAuditView, ApiError>> {
+  async getAdminEconomyTreasuryWithdrawalsAudit(runId: string): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalAuditView, ApiError>> {
     const url = `/api/v1/admin/economy/treasury/withdrawals/${runId}/audit`;
 
     const result = await this.client.request({
@@ -120,7 +120,7 @@ export class EconomyTreasuryAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyTreasuryAdminWithdrawalAuditViewSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyTreasuryAdminWithdrawalAuditViewSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -132,7 +132,7 @@ export class EconomyTreasuryAdministrationModule {
   async postAdminEconomyTreasuryWithdrawalsDispatch(
     runId: string,
     body: Types.APIControllersDispatchTreasuryWithdrawalInput,
-  ): Promise<Result<Types.EconomyTreasuryAdminWithdrawalRun, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun, ApiError>> {
     const url = `/api/v1/admin/economy/treasury/withdrawals/${runId}/dispatch`;
 
     // Validate request body
@@ -147,7 +147,7 @@ export class EconomyTreasuryAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -156,7 +156,7 @@ export class EconomyTreasuryAdministrationModule {
 
   /**
    */
-  async postAdminEconomyTreasuryWithdrawalsReconcile(runId: string): Promise<Result<Types.EconomyTreasuryAdminWithdrawalRun, ApiError>> {
+  async postAdminEconomyTreasuryWithdrawalsReconcile(runId: string): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun, ApiError>> {
     const url = `/api/v1/admin/economy/treasury/withdrawals/${runId}/reconcile`;
 
     const result = await this.client.request({
@@ -167,7 +167,7 @@ export class EconomyTreasuryAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyTreasuryAdminWithdrawalRunSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

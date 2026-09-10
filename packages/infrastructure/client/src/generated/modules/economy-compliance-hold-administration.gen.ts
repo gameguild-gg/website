@@ -19,10 +19,10 @@ export class EconomyComplianceHoldAdministrationModule {
    */
   async getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHolds(query?: {
     active?: boolean;
-    capability?: Types.EconomyRiskEconomyValueMovementCapability;
+    capability?: Types.FinanceEconomyRiskEconomyValueMovementCapability;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyRiskComplianceHoldPage, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyRiskComplianceHoldPage, ApiError>> {
     const url = '/api/v1/admin/economy/compliance/holds';
 
     const result = await this.client.request({
@@ -34,7 +34,7 @@ export class EconomyComplianceHoldAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskComplianceHoldPageSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskComplianceHoldPageSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -45,7 +45,7 @@ export class EconomyComplianceHoldAdministrationModule {
    */
   async getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHoldId(
     holdId: string,
-  ): Promise<Result<Types.EconomyRiskComplianceHoldAdministrationState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskComplianceHoldAdministrationState, ApiError>> {
     const url = `/api/v1/admin/economy/compliance/holds/${holdId}`;
 
     const result = await this.client.request({
@@ -56,7 +56,7 @@ export class EconomyComplianceHoldAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskComplianceHoldAdministrationStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskComplianceHoldAdministrationStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -65,7 +65,7 @@ export class EconomyComplianceHoldAdministrationModule {
 
   /**
    */
-  async getAdminEconomyComplianceHoldsAudit(holdId: string): Promise<Result<Array<Types.EconomyRiskComplianceHoldEvent>, ApiError>> {
+  async getAdminEconomyComplianceHoldsAudit(holdId: string): Promise<Result<Array<Types.FinanceEconomyRiskComplianceHoldEvent>, ApiError>> {
     const url = `/api/v1/admin/economy/compliance/holds/${holdId}/audit`;
 
     const result = await this.client.request({
@@ -74,7 +74,7 @@ export class EconomyComplianceHoldAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyRiskComplianceHoldEvent>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyRiskComplianceHoldEvent>, ApiError>;
   }
 
   /**
@@ -82,7 +82,7 @@ export class EconomyComplianceHoldAdministrationModule {
   async postAdminEconomyComplianceHoldsReleaseApprovals(
     holdId: string,
     body: Types.APIControllersEconomyStepUpInput,
-  ): Promise<Result<Types.EconomyRiskComplianceHoldAdministrationState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskComplianceHoldAdministrationState, ApiError>> {
     const url = `/api/v1/admin/economy/compliance/holds/${holdId}/release-approvals`;
 
     // Validate request body
@@ -97,7 +97,7 @@ export class EconomyComplianceHoldAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskComplianceHoldAdministrationStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskComplianceHoldAdministrationStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -109,7 +109,7 @@ export class EconomyComplianceHoldAdministrationModule {
   async postAdminEconomyComplianceHoldsReleaseProposals(
     holdId: string,
     body: Types.APIControllersEconomyStepUpInput,
-  ): Promise<Result<Types.EconomyRiskComplianceHoldAdministrationState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskComplianceHoldAdministrationState, ApiError>> {
     const url = `/api/v1/admin/economy/compliance/holds/${holdId}/release-proposals`;
 
     // Validate request body
@@ -124,7 +124,7 @@ export class EconomyComplianceHoldAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskComplianceHoldAdministrationStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskComplianceHoldAdministrationStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

@@ -11,6 +11,16 @@ import type * as Types from './types.gen.js';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Endpoint Definitions
 
+export type GetWellKnownJwksJsonInput = void;
+export type GetWellKnownJwksJsonOutput = void;
+export const getWellKnownJwksJsonEndpoint = {
+  operationId: 'getWellKnownJwksJson' as const,
+  method: 'GET' as const,
+  path: '/.well-known/jwks.json' as const,
+  tags: ['LearningLti'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAnalyticsDashboardsInput {
   query?: {
     tenantId?: string;
@@ -1856,6 +1866,23 @@ export const postApiSocialDiscussionsUnpinEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetApiSocialFeedInput {
+  query?: {
+    scope?: string;
+    cursor?: string;
+    take?: number;
+    tag?: string;
+  };
+}
+export type GetApiSocialFeedOutput = Types.SocialFeedSocialFeedPageDto;
+export const getApiSocialFeedEndpoint = {
+  operationId: 'getApiSocialFeed' as const,
+  method: 'GET' as const,
+  path: '/api/social/feed' as const,
+  tags: ['SocialFeedSocialFeed'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface PostApiSocialFeedInput {
   body?: Types.SocialFeedAddFeedItemInput;
 }
@@ -2280,19 +2307,6 @@ export const putApiSocialProfilesUsersPrivacyEndpoint = {
   requiresAuth: true,
 } as const;
 
-export interface PutApiSocialProfilesUsersStatsInput {
-  userId: string;
-  body?: Types.SocialProfilesUpdateProfileStatsBody;
-}
-export type PutApiSocialProfilesUsersStatsOutput = Types.SocialProfilesSocialProfileDto;
-export const putApiSocialProfilesUsersStatsEndpoint = {
-  operationId: 'putApiSocialProfilesUsersStats' as const,
-  method: 'PUT' as const,
-  path: '/api/social/profiles/users/{userId}/stats' as const,
-  tags: ['SocialProfiles'] as const,
-  requiresAuth: true,
-} as const;
-
 export interface PutApiSocialReactionsInput {
   body?: Types.SocialReactionsSetReactionInput;
 }
@@ -2317,6 +2331,19 @@ export const deleteApiSocialReactionsEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetApiSocialReactionsMeTargetInput {
+  targetType: Types.SocialReactionsReactionTargetType;
+  targetId: string;
+}
+export type GetApiSocialReactionsMeTargetOutput = Types.SocialReactionsReactionDto;
+export const getApiSocialReactionsMeTargetEndpoint = {
+  operationId: 'getApiSocialReactionsMeTarget' as const,
+  method: 'GET' as const,
+  path: '/api/social/reactions/me/target/{targetType}/{targetId}' as const,
+  tags: ['SocialReactions'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiSocialReactionsTargetInput {
   targetType: Types.SocialReactionsReactionTargetType;
   targetId: string;
@@ -2326,20 +2353,6 @@ export const getApiSocialReactionsTargetEndpoint = {
   operationId: 'getApiSocialReactionsTarget' as const,
   method: 'GET' as const,
   path: '/api/social/reactions/target/{targetType}/{targetId}' as const,
-  tags: ['SocialReactions'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetApiSocialReactionsUsersTargetInput {
-  userId: string;
-  targetType: Types.SocialReactionsReactionTargetType;
-  targetId: string;
-}
-export type GetApiSocialReactionsUsersTargetOutput = Types.SocialReactionsReactionDto;
-export const getApiSocialReactionsUsersTargetEndpoint = {
-  operationId: 'getApiSocialReactionsUsersTarget' as const,
-  method: 'GET' as const,
-  path: '/api/social/reactions/users/{userId}/target/{targetType}/{targetId}' as const,
   tags: ['SocialReactions'] as const,
   requiresAuth: true,
 } as const;
@@ -2477,6 +2490,88 @@ export const getApiSocialReviewsMeEndpoint = {
   method: 'GET' as const,
   path: '/api/social/reviews/me' as const,
   tags: ['LearningExperienceSocialReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiSocialSavedPostsInput {
+  postId: string;
+}
+export type GetApiSocialSavedPostsOutput = Types.SocialFeedSavedPostStateDto;
+export const getApiSocialSavedPostsEndpoint = {
+  operationId: 'getApiSocialSavedPosts' as const,
+  method: 'GET' as const,
+  path: '/api/social/saved-posts/{postId}' as const,
+  tags: ['SocialSavedPosts'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiSocialSavedPostsInput {
+  postId: string;
+}
+export type PutApiSocialSavedPostsOutput = Types.SocialFeedSavedPostStateDto;
+export const putApiSocialSavedPostsEndpoint = {
+  operationId: 'putApiSocialSavedPosts' as const,
+  method: 'PUT' as const,
+  path: '/api/social/saved-posts/{postId}' as const,
+  tags: ['SocialSavedPosts'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteApiSocialSavedPostsInput {
+  postId: string;
+}
+export type DeleteApiSocialSavedPostsOutput = void;
+export const deleteApiSocialSavedPostsEndpoint = {
+  operationId: 'deleteApiSocialSavedPosts' as const,
+  method: 'DELETE' as const,
+  path: '/api/social/saved-posts/{postId}' as const,
+  tags: ['SocialSavedPosts'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetApiSocialStoriesInput = void;
+export type GetApiSocialStoriesOutput = Array<Types.SocialFeedStoryDto>;
+export const getApiSocialStoriesEndpoint = {
+  operationId: 'getApiSocialStories' as const,
+  method: 'GET' as const,
+  path: '/api/social/stories' as const,
+  tags: ['SocialStories'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiSocialStoriesInput {
+  body?: Types.SocialFeedCreateStoryInput;
+}
+export type PostApiSocialStoriesOutput = Types.SocialFeedStoryDto;
+export const postApiSocialStoriesEndpoint = {
+  operationId: 'postApiSocialStories' as const,
+  method: 'POST' as const,
+  path: '/api/social/stories' as const,
+  tags: ['SocialStories'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteApiSocialStoriesInput {
+  storyId: string;
+}
+export type DeleteApiSocialStoriesOutput = void;
+export const deleteApiSocialStoriesEndpoint = {
+  operationId: 'deleteApiSocialStories' as const,
+  method: 'DELETE' as const,
+  path: '/api/social/stories/{storyId}' as const,
+  tags: ['SocialStories'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiSocialStoriesViewsInput {
+  storyId: string;
+}
+export type PostApiSocialStoriesViewsOutput = void;
+export const postApiSocialStoriesViewsEndpoint = {
+  operationId: 'postApiSocialStoriesViews' as const,
+  method: 'POST' as const,
+  path: '/api/social/stories/{storyId}/views' as const,
+  tags: ['SocialStories'] as const,
   requiresAuth: true,
 } as const;
 
@@ -2763,7 +2858,7 @@ export interface GetAdminEconomyAdRewardsPendingClaimsInput {
     cursor?: string;
   };
 }
-export type GetAdminEconomyAdRewardsPendingClaimsOutput = Types.EconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatus;
+export type GetAdminEconomyAdRewardsPendingClaimsOutput = Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatus;
 export const getAdminEconomyAdRewardsPendingClaimsEndpoint = {
   operationId: 'getAdminEconomyAdRewardsPendingClaims' as const,
   method: 'GET' as const,
@@ -2779,7 +2874,7 @@ export interface GetAdminEconomyAdRewardsReconciliationsInput {
     cursor?: string;
   };
 }
-export type GetAdminEconomyAdRewardsReconciliationsOutput = Types.EconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatus;
+export type GetAdminEconomyAdRewardsReconciliationsOutput = Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatus;
 export const getAdminEconomyAdRewardsReconciliationsEndpoint = {
   operationId: 'getAdminEconomyAdRewardsReconciliations' as const,
   method: 'GET' as const,
@@ -2794,7 +2889,7 @@ export interface GetAdminEconomyAdRewardsReportsInput {
     limit?: number;
   };
 }
-export type GetAdminEconomyAdRewardsReportsOutput = Array<Types.EconomyAdRewardsDurableAdProviderReportStatus>;
+export type GetAdminEconomyAdRewardsReportsOutput = Array<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus>;
 export const getAdminEconomyAdRewardsReportsEndpoint = {
   operationId: 'getAdminEconomyAdRewardsReports' as const,
   method: 'GET' as const,
@@ -2804,9 +2899,9 @@ export const getAdminEconomyAdRewardsReportsEndpoint = {
 } as const;
 
 export interface PostAdminEconomyAdRewardsReportsInput {
-  body?: Types.EconomyAdRewardsAdProviderReport;
+  body?: Types.FinanceEconomyAdRewardsAdProviderReport;
 }
-export type PostAdminEconomyAdRewardsReportsOutput = Types.EconomyAdRewardsDurableAdProviderReportImportResult;
+export type PostAdminEconomyAdRewardsReportsOutput = Types.FinanceEconomyAdRewardsDurableAdProviderReportImportResult;
 export const postAdminEconomyAdRewardsReportsEndpoint = {
   operationId: 'postAdminEconomyAdRewardsReports' as const,
   method: 'POST' as const,
@@ -2817,14 +2912,14 @@ export const postAdminEconomyAdRewardsReportsEndpoint = {
 
 export interface GetAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsInput {
   query?: {
-    state?: Types.EconomyAdRewardsDurableAdRewardSessionState;
+    state?: Types.FinanceEconomyAdRewardsDurableAdRewardSessionState;
     network?: string;
     limit?: number;
     cursor?: string;
   };
 }
 export type GetAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsOutput =
-  Types.EconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummary;
+  Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummary;
 export const getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsEndpoint = {
   operationId: 'getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessions' as const,
   method: 'GET' as const,
@@ -2836,7 +2931,8 @@ export const getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessions
 export interface GetAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsBySessionIdInput {
   sessionId: string;
 }
-export type GetAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsBySessionIdOutput = Types.EconomyAdRewardsAdRewardSessionOperationalDetails;
+export type GetAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsBySessionIdOutput =
+  Types.FinanceEconomyAdRewardsAdRewardSessionOperationalDetails;
 export const getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsBySessionIdEndpoint = {
   operationId: 'getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsBySessionId' as const,
   method: 'GET' as const,
@@ -2846,7 +2942,7 @@ export const getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessions
 } as const;
 
 export type GetAdminEconomyBountiesExpiredInput = void;
-export type GetAdminEconomyBountiesExpiredOutput = Array<Types.EconomyBountiesDurableBountyView>;
+export type GetAdminEconomyBountiesExpiredOutput = Array<Types.FinanceEconomyBountiesDurableBountyView>;
 export const getAdminEconomyBountiesExpiredEndpoint = {
   operationId: 'getAdminEconomyBountiesExpired' as const,
   method: 'GET' as const,
@@ -2861,7 +2957,7 @@ export interface GetAdminEconomyCapabilitiesConfigurationInput {
     limit?: number;
   };
 }
-export type GetAdminEconomyCapabilitiesConfigurationOutput = Types.EconomyOperationsEconomyCapabilityConfigurationSnapshot;
+export type GetAdminEconomyCapabilitiesConfigurationOutput = Types.FinanceEconomyOperationsEconomyCapabilityConfigurationSnapshot;
 export const getAdminEconomyCapabilitiesConfigurationEndpoint = {
   operationId: 'getAdminEconomyCapabilitiesConfiguration' as const,
   method: 'GET' as const,
@@ -2873,7 +2969,7 @@ export const getAdminEconomyCapabilitiesConfigurationEndpoint = {
 export interface PostAdminEconomyCapabilitiesReadinessInput {
   body?: Types.APIControllersInspectEconomyCapabilityReadinessInput;
 }
-export type PostAdminEconomyCapabilitiesReadinessOutput = Types.EconomyRiskEconomyCapabilityEvaluationResult;
+export type PostAdminEconomyCapabilitiesReadinessOutput = Types.FinanceEconomyRiskEconomyCapabilityEvaluationResult;
 export const postAdminEconomyCapabilitiesReadinessEndpoint = {
   operationId: 'postAdminEconomyCapabilitiesReadiness' as const,
   method: 'POST' as const,
@@ -2953,12 +3049,12 @@ export const postAdminEconomyComplianceFinancialCrimeCasesRegulatoryReferencesEn
 export interface GetAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsInput {
   query?: {
     active?: boolean;
-    capability?: Types.EconomyRiskEconomyValueMovementCapability;
+    capability?: Types.FinanceEconomyRiskEconomyValueMovementCapability;
     limit?: number;
     cursor?: string;
   };
 }
-export type GetAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsOutput = Types.EconomyRiskComplianceHoldPage;
+export type GetAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsOutput = Types.FinanceEconomyRiskComplianceHoldPage;
 export const getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsEndpoint = {
   operationId: 'getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHolds' as const,
   method: 'GET' as const,
@@ -2970,7 +3066,7 @@ export const getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsEndp
 export interface GetAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHoldIdInput {
   holdId: string;
 }
-export type GetAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHoldIdOutput = Types.EconomyRiskComplianceHoldAdministrationState;
+export type GetAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHoldIdOutput = Types.FinanceEconomyRiskComplianceHoldAdministrationState;
 export const getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHoldIdEndpoint = {
   operationId: 'getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHoldId' as const,
   method: 'GET' as const,
@@ -2982,7 +3078,7 @@ export const getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHo
 export interface GetAdminEconomyComplianceHoldsAuditInput {
   holdId: string;
 }
-export type GetAdminEconomyComplianceHoldsAuditOutput = Array<Types.EconomyRiskComplianceHoldEvent>;
+export type GetAdminEconomyComplianceHoldsAuditOutput = Array<Types.FinanceEconomyRiskComplianceHoldEvent>;
 export const getAdminEconomyComplianceHoldsAuditEndpoint = {
   operationId: 'getAdminEconomyComplianceHoldsAudit' as const,
   method: 'GET' as const,
@@ -2995,7 +3091,7 @@ export interface PostAdminEconomyComplianceHoldsReleaseApprovalsInput {
   holdId: string;
   body?: Types.APIControllersEconomyStepUpInput;
 }
-export type PostAdminEconomyComplianceHoldsReleaseApprovalsOutput = Types.EconomyRiskComplianceHoldAdministrationState;
+export type PostAdminEconomyComplianceHoldsReleaseApprovalsOutput = Types.FinanceEconomyRiskComplianceHoldAdministrationState;
 export const postAdminEconomyComplianceHoldsReleaseApprovalsEndpoint = {
   operationId: 'postAdminEconomyComplianceHoldsReleaseApprovals' as const,
   method: 'POST' as const,
@@ -3008,7 +3104,7 @@ export interface PostAdminEconomyComplianceHoldsReleaseProposalsInput {
   holdId: string;
   body?: Types.APIControllersEconomyStepUpInput;
 }
-export type PostAdminEconomyComplianceHoldsReleaseProposalsOutput = Types.EconomyRiskComplianceHoldAdministrationState;
+export type PostAdminEconomyComplianceHoldsReleaseProposalsOutput = Types.FinanceEconomyRiskComplianceHoldAdministrationState;
 export const postAdminEconomyComplianceHoldsReleaseProposalsEndpoint = {
   operationId: 'postAdminEconomyComplianceHoldsReleaseProposals' as const,
   method: 'POST' as const,
@@ -3065,7 +3161,7 @@ export interface GetAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObse
   };
 }
 export type GetAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservationsOutput =
-  Types.EconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatus;
+  Types.FinanceEconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatus;
 export const getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservationsEndpoint = {
   operationId: 'getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservations' as const,
   method: 'GET' as const,
@@ -3075,9 +3171,9 @@ export const getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservat
 } as const;
 
 export interface PostAdminEconomyCustodyObservationsInput {
-  body?: Types.EconomyReservesCustodyObservationCommand;
+  body?: Types.FinanceEconomyReservesCustodyObservationCommand;
 }
-export type PostAdminEconomyCustodyObservationsOutput = Types.EconomyReservesDurableCustodyObservation;
+export type PostAdminEconomyCustodyObservationsOutput = Types.FinanceEconomyReservesDurableCustodyObservation;
 export const postAdminEconomyCustodyObservationsEndpoint = {
   operationId: 'postAdminEconomyCustodyObservations' as const,
   method: 'POST' as const,
@@ -3090,7 +3186,7 @@ export interface GetAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObse
   observationId: string;
 }
 export type GetAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservationsByObservationIdOutput =
-  Types.EconomyOperationsEconomyCustodyObservationOperationalStatus;
+  Types.FinanceEconomyOperationsEconomyCustodyObservationOperationalStatus;
 export const getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservationsByObservationIdEndpoint = {
   operationId: 'getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservationsByObservationId' as const,
   method: 'GET' as const,
@@ -3102,7 +3198,7 @@ export const getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservat
 export interface PostAdminEconomyKillSwitchesInput {
   body?: Types.APIControllersActivateEconomyKillSwitchInput;
 }
-export type PostAdminEconomyKillSwitchesOutput = Types.EconomyRiskEconomyKillSwitchState;
+export type PostAdminEconomyKillSwitchesOutput = Types.FinanceEconomyRiskEconomyKillSwitchState;
 export const postAdminEconomyKillSwitchesEndpoint = {
   operationId: 'postAdminEconomyKillSwitches' as const,
   method: 'POST' as const,
@@ -3114,7 +3210,7 @@ export const postAdminEconomyKillSwitchesEndpoint = {
 export interface PostAdminEconomyKillSwitchesReleaseInput {
   killSwitchId: string;
 }
-export type PostAdminEconomyKillSwitchesReleaseOutput = Types.EconomyRiskEconomyKillSwitchState;
+export type PostAdminEconomyKillSwitchesReleaseOutput = Types.FinanceEconomyRiskEconomyKillSwitchState;
 export const postAdminEconomyKillSwitchesReleaseEndpoint = {
   operationId: 'postAdminEconomyKillSwitchesRelease' as const,
   method: 'POST' as const,
@@ -3127,7 +3223,7 @@ export interface PostAdminEconomyKillSwitchesReleaseApprovalsInput {
   killSwitchId: string;
   body?: Types.APIControllersEconomyStepUpInput;
 }
-export type PostAdminEconomyKillSwitchesReleaseApprovalsOutput = Types.EconomyRiskEconomyKillSwitchState;
+export type PostAdminEconomyKillSwitchesReleaseApprovalsOutput = Types.FinanceEconomyRiskEconomyKillSwitchState;
 export const postAdminEconomyKillSwitchesReleaseApprovalsEndpoint = {
   operationId: 'postAdminEconomyKillSwitchesReleaseApprovals' as const,
   method: 'POST' as const,
@@ -3140,7 +3236,7 @@ export interface PostAdminEconomyKillSwitchesReleaseProposalsInput {
   killSwitchId: string;
   body?: Types.APIControllersEconomyStepUpInput;
 }
-export type PostAdminEconomyKillSwitchesReleaseProposalsOutput = Types.EconomyRiskEconomyKillSwitchState;
+export type PostAdminEconomyKillSwitchesReleaseProposalsOutput = Types.FinanceEconomyRiskEconomyKillSwitchState;
 export const postAdminEconomyKillSwitchesReleaseProposalsEndpoint = {
   operationId: 'postAdminEconomyKillSwitchesReleaseProposals' as const,
   method: 'POST' as const,
@@ -3155,7 +3251,8 @@ export interface GetAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsInpu
     cursor?: string;
   };
 }
-export type GetAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsOutput = Types.EconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetails;
+export type GetAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsOutput =
+  Types.FinanceEconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetails;
 export const getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsEndpoint = {
   operationId: 'getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchors' as const,
   method: 'GET' as const,
@@ -3167,7 +3264,7 @@ export const getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsEndpoint
 export interface PostAdminEconomyLedgerAnchorsInput {
   body?: Types.APIControllersPublishEconomyAnchorInput;
 }
-export type PostAdminEconomyLedgerAnchorsOutput = Types.EconomyLedgerEconomyAnchorPublicationResult;
+export type PostAdminEconomyLedgerAnchorsOutput = Types.FinanceEconomyLedgerEconomyAnchorPublicationResult;
 export const postAdminEconomyLedgerAnchorsEndpoint = {
   operationId: 'postAdminEconomyLedgerAnchors' as const,
   method: 'POST' as const,
@@ -3179,7 +3276,7 @@ export const postAdminEconomyLedgerAnchorsEndpoint = {
 export interface GetAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchorIdInput {
   anchorId: string;
 }
-export type GetAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchorIdOutput = Types.EconomyOperationsEconomyAnchorOperationalDetails;
+export type GetAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchorIdOutput = Types.FinanceEconomyOperationsEconomyAnchorOperationalDetails;
 export const getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchorIdEndpoint = {
   operationId: 'getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchorId' as const,
   method: 'GET' as const,
@@ -3191,7 +3288,7 @@ export const getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchor
 export interface GetAdminEconomyLedgerAnchorsVerificationsInput {
   anchorId: string;
 }
-export type GetAdminEconomyLedgerAnchorsVerificationsOutput = Array<Types.EconomyOperationsEconomyAnchorVerificationOperationalStatus>;
+export type GetAdminEconomyLedgerAnchorsVerificationsOutput = Array<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus>;
 export const getAdminEconomyLedgerAnchorsVerificationsEndpoint = {
   operationId: 'getAdminEconomyLedgerAnchorsVerifications' as const,
   method: 'GET' as const,
@@ -3201,7 +3298,7 @@ export const getAdminEconomyLedgerAnchorsVerificationsEndpoint = {
 } as const;
 
 export type PostAdminEconomyLedgerAnchorsVerificationRunsInput = void;
-export type PostAdminEconomyLedgerAnchorsVerificationRunsOutput = Types.EconomyLedgerAnchorVerificationRunResult;
+export type PostAdminEconomyLedgerAnchorsVerificationRunsOutput = Types.FinanceEconomyLedgerAnchorVerificationRunResult;
 export const postAdminEconomyLedgerAnchorsVerificationRunsEndpoint = {
   operationId: 'postAdminEconomyLedgerAnchorsVerificationRuns' as const,
   method: 'POST' as const,
@@ -3211,7 +3308,7 @@ export const postAdminEconomyLedgerAnchorsVerificationRunsEndpoint = {
 } as const;
 
 export type GetAdminEconomyLedgerHealthInput = void;
-export type GetAdminEconomyLedgerHealthOutput = Types.EconomyOperationsEconomyLedgerHealthSnapshot;
+export type GetAdminEconomyLedgerHealthOutput = Types.FinanceEconomyOperationsEconomyLedgerHealthSnapshot;
 export const getAdminEconomyLedgerHealthEndpoint = {
   operationId: 'getAdminEconomyLedgerHealth' as const,
   method: 'GET' as const,
@@ -3227,7 +3324,7 @@ export interface GetAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLed
   };
 }
 export type GetAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerationsOutput =
-  Types.EconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetails;
+  Types.FinanceEconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetails;
 export const getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerationsEndpoint = {
   operationId: 'getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerations' as const,
   method: 'GET' as const,
@@ -3237,7 +3334,7 @@ export const getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerP
 } as const;
 
 export type PostAdminEconomyLedgerProjectionGenerationsInput = void;
-export type PostAdminEconomyLedgerProjectionGenerationsOutput = Types.EconomyProjectionsProjectionGenerationState;
+export type PostAdminEconomyLedgerProjectionGenerationsOutput = Types.FinanceEconomyProjectionsProjectionGenerationState;
 export const postAdminEconomyLedgerProjectionGenerationsEndpoint = {
   operationId: 'postAdminEconomyLedgerProjectionGenerations' as const,
   method: 'POST' as const,
@@ -3250,7 +3347,7 @@ export interface GetAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLed
   generation: number;
 }
 export type GetAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerationsByGenerationOutput =
-  Types.EconomyOperationsEconomyProjectionGenerationOperationalDetails;
+  Types.FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetails;
 export const getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerationsByGenerationEndpoint = {
   operationId: 'getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerationsByGeneration' as const,
   method: 'GET' as const,
@@ -3263,7 +3360,7 @@ export interface PostAdminEconomyLedgerProjectionGenerationsApprovalsInput {
   generation: number;
   body?: Types.APIControllersEconomyStepUpInput;
 }
-export type PostAdminEconomyLedgerProjectionGenerationsApprovalsOutput = Types.EconomyProjectionsProjectionGenerationState;
+export type PostAdminEconomyLedgerProjectionGenerationsApprovalsOutput = Types.FinanceEconomyProjectionsProjectionGenerationState;
 export const postAdminEconomyLedgerProjectionGenerationsApprovalsEndpoint = {
   operationId: 'postAdminEconomyLedgerProjectionGenerationsApprovals' as const,
   method: 'POST' as const,
@@ -3275,7 +3372,7 @@ export const postAdminEconomyLedgerProjectionGenerationsApprovalsEndpoint = {
 export interface GetAdminEconomyLedgerProjectionGenerationsAuditInput {
   generation: number;
 }
-export type GetAdminEconomyLedgerProjectionGenerationsAuditOutput = Array<Types.EconomyOperationsEconomyProjectionApprovalAuditEntry>;
+export type GetAdminEconomyLedgerProjectionGenerationsAuditOutput = Array<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry>;
 export const getAdminEconomyLedgerProjectionGenerationsAuditEndpoint = {
   operationId: 'getAdminEconomyLedgerProjectionGenerationsAudit' as const,
   method: 'GET' as const,
@@ -3291,7 +3388,7 @@ export interface GetAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVe
   };
 }
 export type GetAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRunsOutput =
-  Types.EconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetails;
+  Types.FinanceEconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetails;
 export const getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRunsEndpoint = {
   operationId: 'getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRuns' as const,
   method: 'GET' as const,
@@ -3301,7 +3398,7 @@ export const getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerifi
 } as const;
 
 export type PostAdminEconomyLedgerVerificationRunsInput = void;
-export type PostAdminEconomyLedgerVerificationRunsOutput = Types.EconomyLedgerJournalIntegrityRunResult;
+export type PostAdminEconomyLedgerVerificationRunsOutput = Types.FinanceEconomyLedgerJournalIntegrityRunResult;
 export const postAdminEconomyLedgerVerificationRunsEndpoint = {
   operationId: 'postAdminEconomyLedgerVerificationRuns' as const,
   method: 'POST' as const,
@@ -3314,7 +3411,7 @@ export interface GetAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVe
   verificationId: string;
 }
 export type GetAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRunsByVerificationIdOutput =
-  Types.EconomyOperationsEconomyJournalVerificationRunDetails;
+  Types.FinanceEconomyOperationsEconomyJournalVerificationRunDetails;
 export const getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRunsByVerificationIdEndpoint = {
   operationId: 'getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRunsByVerificationId' as const,
   method: 'GET' as const,
@@ -3325,13 +3422,13 @@ export const getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerifi
 
 export interface GetAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesInput {
   query?: {
-    state?: Types.EconomyOperationsLegacyEconomyShadowState;
+    state?: Types.FinanceEconomyOperationsLegacyEconomyShadowState;
     limit?: number;
     cursor?: string;
   };
 }
 export type GetAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesOutput =
-  Types.EconomyOperationsEconomyOperationalPageLegacyEconomyShadowBatchSummary;
+  Types.FinanceEconomyOperationsEconomyOperationalPageLegacyEconomyShadowBatchSummary;
 export const getAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesEndpoint = {
   operationId: 'getAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatches' as const,
   method: 'GET' as const,
@@ -3343,7 +3440,7 @@ export const getAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrat
 export interface PostAdminEconomyLegacyMigrationBatchesInput {
   body?: Types.APIControllersCaptureLegacyEconomyMigrationInput;
 }
-export type PostAdminEconomyLegacyMigrationBatchesOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type PostAdminEconomyLegacyMigrationBatchesOutput = Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const postAdminEconomyLegacyMigrationBatchesEndpoint = {
   operationId: 'postAdminEconomyLegacyMigrationBatches' as const,
   method: 'POST' as const,
@@ -3355,7 +3452,8 @@ export const postAdminEconomyLegacyMigrationBatchesEndpoint = {
 export interface GetAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesByBatchIdInput {
   batchId: string;
 }
-export type GetAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesByBatchIdOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type GetAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesByBatchIdOutput =
+  Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const getAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesByBatchIdEndpoint = {
   operationId: 'getAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrationBatchesByBatchId' as const,
   method: 'GET' as const,
@@ -3367,7 +3465,7 @@ export const getAdminEconomyLegacyMigrationBatchesForGetAdminEconomyLegacyMigrat
 export interface PostAdminEconomyLegacyMigrationBatchesReconcileInput {
   batchId: string;
 }
-export type PostAdminEconomyLegacyMigrationBatchesReconcileOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type PostAdminEconomyLegacyMigrationBatchesReconcileOutput = Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const postAdminEconomyLegacyMigrationBatchesReconcileEndpoint = {
   operationId: 'postAdminEconomyLegacyMigrationBatchesReconcile' as const,
   method: 'POST' as const,
@@ -3380,7 +3478,7 @@ export interface PostAdminEconomyLegacyMigrationBatchesCutoverApproveInput {
   batchId: string;
   body?: Types.APIControllersApproveLegacyEconomyCutoverInput;
 }
-export type PostAdminEconomyLegacyMigrationBatchesCutoverApproveOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type PostAdminEconomyLegacyMigrationBatchesCutoverApproveOutput = Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const postAdminEconomyLegacyMigrationBatchesCutoverApproveEndpoint = {
   operationId: 'postAdminEconomyLegacyMigrationBatchesCutoverApprove' as const,
   method: 'POST' as const,
@@ -3393,7 +3491,7 @@ export interface PostAdminEconomyLegacyMigrationBatchesCutoverProposeInput {
   batchId: string;
   body?: Types.APIControllersProposeLegacyEconomyCutoverInput;
 }
-export type PostAdminEconomyLegacyMigrationBatchesCutoverProposeOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type PostAdminEconomyLegacyMigrationBatchesCutoverProposeOutput = Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const postAdminEconomyLegacyMigrationBatchesCutoverProposeEndpoint = {
   operationId: 'postAdminEconomyLegacyMigrationBatchesCutoverPropose' as const,
   method: 'POST' as const,
@@ -3406,7 +3504,7 @@ export interface PostAdminEconomyLegacyMigrationBatchesCutoverRollbackInput {
   batchId: string;
   body?: Types.APIControllersRollbackLegacyEconomyCutoverInput;
 }
-export type PostAdminEconomyLegacyMigrationBatchesCutoverRollbackOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type PostAdminEconomyLegacyMigrationBatchesCutoverRollbackOutput = Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const postAdminEconomyLegacyMigrationBatchesCutoverRollbackEndpoint = {
   operationId: 'postAdminEconomyLegacyMigrationBatchesCutoverRollback' as const,
   method: 'POST' as const,
@@ -3419,7 +3517,7 @@ export interface PostAdminEconomyLegacyMigrationBatchesWalletsBackfillInput {
   batchId: string;
   body?: Types.APIControllersBackfillLegacyEconomyWalletInput;
 }
-export type PostAdminEconomyLegacyMigrationBatchesWalletsBackfillOutput = Types.EconomyOperationsLegacyEconomyShadowBatchView;
+export type PostAdminEconomyLegacyMigrationBatchesWalletsBackfillOutput = Types.FinanceEconomyOperationsLegacyEconomyShadowBatchView;
 export const postAdminEconomyLegacyMigrationBatchesWalletsBackfillEndpoint = {
   operationId: 'postAdminEconomyLegacyMigrationBatchesWalletsBackfill' as const,
   method: 'POST' as const,
@@ -3435,7 +3533,7 @@ export interface GetAdminEconomyMarketplaceOutboxInput {
     cursor?: string;
   };
 }
-export type GetAdminEconomyMarketplaceOutboxOutput = Types.EconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatus;
+export type GetAdminEconomyMarketplaceOutboxOutput = Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatus;
 export const getAdminEconomyMarketplaceOutboxEndpoint = {
   operationId: 'getAdminEconomyMarketplaceOutbox' as const,
   method: 'GET' as const,
@@ -3451,7 +3549,7 @@ export interface GetAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceR
   };
 }
 export type GetAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsOutput =
-  Types.EconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatus;
+  Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatus;
 export const getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsEndpoint = {
   operationId: 'getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefunds' as const,
   method: 'GET' as const,
@@ -3463,7 +3561,8 @@ export const getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefun
 export interface GetAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsByRefundIdInput {
   refundId: string;
 }
-export type GetAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsByRefundIdOutput = Types.EconomyMarketplaceMarketplaceRefundOperationalStatus;
+export type GetAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsByRefundIdOutput =
+  Types.FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus;
 export const getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsByRefundIdEndpoint = {
   operationId: 'getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsByRefundId' as const,
   method: 'GET' as const,
@@ -3474,13 +3573,13 @@ export const getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefun
 
 export interface GetAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsInput {
   query?: {
-    status?: Types.EconomyMarketplaceMarketplaceSettlementStatus;
+    status?: Types.FinanceEconomyMarketplaceMarketplaceSettlementStatus;
     limit?: number;
     cursor?: string;
   };
 }
 export type GetAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsOutput =
-  Types.EconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummary;
+  Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummary;
 export const getAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsEndpoint = {
   operationId: 'getAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlements' as const,
   method: 'GET' as const,
@@ -3493,7 +3592,7 @@ export interface GetAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketpl
   settlementId: string;
 }
 export type GetAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsBySettlementIdOutput =
-  Types.EconomyMarketplaceMarketplaceSettlementOperationalDetails;
+  Types.FinanceEconomyMarketplaceMarketplaceSettlementOperationalDetails;
 export const getAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsBySettlementIdEndpoint = {
   operationId: 'getAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsBySettlementId' as const,
   method: 'GET' as const,
@@ -3506,7 +3605,7 @@ export interface PostAdminEconomyMarketplaceSettlementsRefundInput {
   settlementId: string;
   body?: Types.APIControllersRefundMarketplaceSettlementInput;
 }
-export type PostAdminEconomyMarketplaceSettlementsRefundOutput = Types.EconomyMarketplaceDurableMarketplaceRefundResult;
+export type PostAdminEconomyMarketplaceSettlementsRefundOutput = Types.FinanceEconomyMarketplaceDurableMarketplaceRefundResult;
 export const postAdminEconomyMarketplaceSettlementsRefundEndpoint = {
   operationId: 'postAdminEconomyMarketplaceSettlementsRefund' as const,
   method: 'POST' as const,
@@ -3523,7 +3622,7 @@ export interface GetAdminEconomyPayoutRequestsInput {
     take?: number;
   };
 }
-export type GetAdminEconomyPayoutRequestsOutput = Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto>;
+export type GetAdminEconomyPayoutRequestsOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto>;
 export const getAdminEconomyPayoutRequestsEndpoint = {
   operationId: 'getAdminEconomyPayoutRequests' as const,
   method: 'GET' as const,
@@ -3539,9 +3638,9 @@ export const getAdminEconomyPayoutRequestsEndpoint = {
  */
 export interface PostAdminEconomyPayoutRequestsApproveInput {
   requestId: string;
-  body?: Types.EconomyPayoutsCommandsReviewPayoutRequestInput;
+  body?: Types.FinanceEconomyPayoutsCommandsReviewPayoutRequestInput;
 }
-export type PostAdminEconomyPayoutRequestsApproveOutput = Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto;
+export type PostAdminEconomyPayoutRequestsApproveOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto;
 export const postAdminEconomyPayoutRequestsApproveEndpoint = {
   operationId: 'postAdminEconomyPayoutRequestsApprove' as const,
   method: 'POST' as const,
@@ -3556,7 +3655,7 @@ export const postAdminEconomyPayoutRequestsApproveEndpoint = {
 export interface GetAdminEconomyPayoutRequestsAuditInput {
   requestId: string;
 }
-export type GetAdminEconomyPayoutRequestsAuditOutput = Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewAuditDto>;
+export type GetAdminEconomyPayoutRequestsAuditOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewAuditDto>;
 export const getAdminEconomyPayoutRequestsAuditEndpoint = {
   operationId: 'getAdminEconomyPayoutRequestsAudit' as const,
   method: 'GET' as const,
@@ -3570,9 +3669,9 @@ export const getAdminEconomyPayoutRequestsAuditEndpoint = {
  */
 export interface PostAdminEconomyPayoutRequestsRejectInput {
   requestId: string;
-  body?: Types.EconomyPayoutsCommandsReviewPayoutRequestInput;
+  body?: Types.FinanceEconomyPayoutsCommandsReviewPayoutRequestInput;
 }
-export type PostAdminEconomyPayoutRequestsRejectOutput = Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto;
+export type PostAdminEconomyPayoutRequestsRejectOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto;
 export const postAdminEconomyPayoutRequestsRejectEndpoint = {
   operationId: 'postAdminEconomyPayoutRequestsReject' as const,
   method: 'POST' as const,
@@ -3666,12 +3765,13 @@ export const postAdminEconomyPayoutRequestsOperationsReconcileEndpoint = {
 
 export interface GetAdminEconomyPoliciesForGetAdminEconomyPoliciesInput {
   query?: {
-    capability?: Types.EconomyRiskEconomyValueMovementCapability;
+    capability?: Types.FinanceEconomyRiskEconomyValueMovementCapability;
     limit?: number;
     cursor?: string;
   };
 }
-export type GetAdminEconomyPoliciesForGetAdminEconomyPoliciesOutput = Types.EconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatus;
+export type GetAdminEconomyPoliciesForGetAdminEconomyPoliciesOutput =
+  Types.FinanceEconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatus;
 export const getAdminEconomyPoliciesForGetAdminEconomyPoliciesEndpoint = {
   operationId: 'getAdminEconomyPoliciesForGetAdminEconomyPolicies' as const,
   method: 'GET' as const,
@@ -3683,7 +3783,7 @@ export const getAdminEconomyPoliciesForGetAdminEconomyPoliciesEndpoint = {
 export interface PostAdminEconomyPoliciesInput {
   body?: Types.APIControllersProposeEconomyPolicyInput;
 }
-export type PostAdminEconomyPoliciesOutput = Types.EconomyRiskEconomyCapabilityPolicy;
+export type PostAdminEconomyPoliciesOutput = Types.FinanceEconomyRiskEconomyCapabilityPolicy;
 export const postAdminEconomyPoliciesEndpoint = {
   operationId: 'postAdminEconomyPolicies' as const,
   method: 'POST' as const,
@@ -3695,7 +3795,7 @@ export const postAdminEconomyPoliciesEndpoint = {
 export interface GetAdminEconomyPoliciesForGetAdminEconomyPoliciesByPolicyIdInput {
   policyId: string;
 }
-export type GetAdminEconomyPoliciesForGetAdminEconomyPoliciesByPolicyIdOutput = Types.EconomyOperationsEconomyPolicyOperationalDetails;
+export type GetAdminEconomyPoliciesForGetAdminEconomyPoliciesByPolicyIdOutput = Types.FinanceEconomyOperationsEconomyPolicyOperationalDetails;
 export const getAdminEconomyPoliciesForGetAdminEconomyPoliciesByPolicyIdEndpoint = {
   operationId: 'getAdminEconomyPoliciesForGetAdminEconomyPoliciesByPolicyId' as const,
   method: 'GET' as const,
@@ -3708,7 +3808,7 @@ export interface PostAdminEconomyPoliciesApproveInput {
   policyId: string;
   body?: Types.APIControllersApproveEconomyPolicyInput;
 }
-export type PostAdminEconomyPoliciesApproveOutput = Types.EconomyRiskEconomyCapabilityPolicy;
+export type PostAdminEconomyPoliciesApproveOutput = Types.FinanceEconomyRiskEconomyCapabilityPolicy;
 export const postAdminEconomyPoliciesApproveEndpoint = {
   operationId: 'postAdminEconomyPoliciesApprove' as const,
   method: 'POST' as const,
@@ -3720,7 +3820,7 @@ export const postAdminEconomyPoliciesApproveEndpoint = {
 export interface GetAdminEconomyPoliciesAuditInput {
   policyId: string;
 }
-export type GetAdminEconomyPoliciesAuditOutput = Array<Types.EconomyOperationsEconomyPolicyAuditEntry>;
+export type GetAdminEconomyPoliciesAuditOutput = Array<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry>;
 export const getAdminEconomyPoliciesAuditEndpoint = {
   operationId: 'getAdminEconomyPoliciesAudit' as const,
   method: 'GET' as const,
@@ -3730,7 +3830,7 @@ export const getAdminEconomyPoliciesAuditEndpoint = {
 } as const;
 
 export type GetAdminEconomyReservesActiveInput = void;
-export type GetAdminEconomyReservesActiveOutput = Types.EconomyOperationsEconomyActiveReserveOperationalDetails;
+export type GetAdminEconomyReservesActiveOutput = Types.FinanceEconomyOperationsEconomyActiveReserveOperationalDetails;
 export const getAdminEconomyReservesActiveEndpoint = {
   operationId: 'getAdminEconomyReservesActive' as const,
   method: 'GET' as const,
@@ -3740,7 +3840,7 @@ export const getAdminEconomyReservesActiveEndpoint = {
 } as const;
 
 export type GetAdminEconomyReservesLiabilitiesInput = void;
-export type GetAdminEconomyReservesLiabilitiesOutput = Types.EconomyReservesEconomyLiabilitySnapshot;
+export type GetAdminEconomyReservesLiabilitiesOutput = Types.FinanceEconomyReservesEconomyLiabilitySnapshot;
 export const getAdminEconomyReservesLiabilitiesEndpoint = {
   operationId: 'getAdminEconomyReservesLiabilities' as const,
   method: 'GET' as const,
@@ -3756,7 +3856,7 @@ export interface GetAdminEconomyReservesProposalsForGetAdminEconomyReservesPropo
   };
 }
 export type GetAdminEconomyReservesProposalsForGetAdminEconomyReservesProposalsOutput =
-  Types.EconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatus;
+  Types.FinanceEconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatus;
 export const getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposalsEndpoint = {
   operationId: 'getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposals' as const,
   method: 'GET' as const,
@@ -3768,7 +3868,7 @@ export const getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposals
 export interface PostAdminEconomyReservesProposalsInput {
   body?: Types.APIControllersProposeEconomyReserveInput;
 }
-export type PostAdminEconomyReservesProposalsOutput = Types.EconomyReservesDurableReserveProposalState;
+export type PostAdminEconomyReservesProposalsOutput = Types.FinanceEconomyReservesDurableReserveProposalState;
 export const postAdminEconomyReservesProposalsEndpoint = {
   operationId: 'postAdminEconomyReservesProposals' as const,
   method: 'POST' as const,
@@ -3781,7 +3881,7 @@ export interface GetAdminEconomyReservesProposalsForGetAdminEconomyReservesPropo
   proposalId: string;
 }
 export type GetAdminEconomyReservesProposalsForGetAdminEconomyReservesProposalsByProposalIdOutput =
-  Types.EconomyOperationsEconomyReserveProposalOperationalStatus;
+  Types.FinanceEconomyOperationsEconomyReserveProposalOperationalStatus;
 export const getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposalsByProposalIdEndpoint = {
   operationId: 'getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposalsByProposalId' as const,
   method: 'GET' as const,
@@ -3794,7 +3894,7 @@ export interface PostAdminEconomyReservesProposalsApproveInput {
   proposalId: string;
   body?: Types.APIControllersEconomyStepUpInput;
 }
-export type PostAdminEconomyReservesProposalsApproveOutput = Types.EconomyReservesReserveHead;
+export type PostAdminEconomyReservesProposalsApproveOutput = Types.FinanceEconomyReservesReserveHead;
 export const postAdminEconomyReservesProposalsApproveEndpoint = {
   operationId: 'postAdminEconomyReservesProposalsApprove' as const,
   method: 'POST' as const,
@@ -3805,12 +3905,12 @@ export const postAdminEconomyReservesProposalsApproveEndpoint = {
 
 export interface GetAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsInput {
   query?: {
-    status?: Types.EconomyRiskRiskReviewStatus;
+    status?: Types.FinanceEconomyRiskRiskReviewStatus;
     limit?: number;
     cursor?: string;
   };
 }
-export type GetAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsOutput = Types.EconomyRiskRiskReviewPage;
+export type GetAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsOutput = Types.FinanceEconomyRiskRiskReviewPage;
 export const getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsEndpoint = {
   operationId: 'getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviews' as const,
   method: 'GET' as const,
@@ -3822,7 +3922,7 @@ export const getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsEndpoint = {
 export interface GetAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewIdInput {
   reviewId: string;
 }
-export type GetAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewIdOutput = Types.EconomyRiskRiskReviewCase;
+export type GetAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewIdOutput = Types.FinanceEconomyRiskRiskReviewCase;
 export const getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewIdEndpoint = {
   operationId: 'getAdminEconomyRiskReviewsForGetAdminEconomyRiskReviewsByReviewId' as const,
   method: 'GET' as const,
@@ -3835,7 +3935,7 @@ export interface PostAdminEconomyRiskReviewsApproveInput {
   reviewId: string;
   body?: Types.APIControllersResolveEconomyRiskReviewInput;
 }
-export type PostAdminEconomyRiskReviewsApproveOutput = Types.EconomyRiskRiskReviewCase;
+export type PostAdminEconomyRiskReviewsApproveOutput = Types.FinanceEconomyRiskRiskReviewCase;
 export const postAdminEconomyRiskReviewsApproveEndpoint = {
   operationId: 'postAdminEconomyRiskReviewsApprove' as const,
   method: 'POST' as const,
@@ -3848,7 +3948,7 @@ export interface PostAdminEconomyRiskReviewsRejectInput {
   reviewId: string;
   body?: Types.APIControllersResolveEconomyRiskReviewInput;
 }
-export type PostAdminEconomyRiskReviewsRejectOutput = Types.EconomyRiskRiskReviewCase;
+export type PostAdminEconomyRiskReviewsRejectOutput = Types.FinanceEconomyRiskRiskReviewCase;
 export const postAdminEconomyRiskReviewsRejectEndpoint = {
   operationId: 'postAdminEconomyRiskReviewsReject' as const,
   method: 'POST' as const,
@@ -3860,7 +3960,7 @@ export const postAdminEconomyRiskReviewsRejectEndpoint = {
 export interface GetAdminEconomyRiskReviewsAuditInput {
   reviewId: string;
 }
-export type GetAdminEconomyRiskReviewsAuditOutput = Array<Types.EconomyRiskRiskReviewEvent>;
+export type GetAdminEconomyRiskReviewsAuditOutput = Array<Types.FinanceEconomyRiskRiskReviewEvent>;
 export const getAdminEconomyRiskReviewsAuditEndpoint = {
   operationId: 'getAdminEconomyRiskReviewsAudit' as const,
   method: 'GET' as const,
@@ -3874,7 +3974,7 @@ export interface GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWit
     limit?: number;
   };
 }
-export type GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsOutput = Array<Types.EconomyTreasuryAdminWithdrawalRun>;
+export type GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsOutput = Array<Types.FinanceEconomyTreasuryAdminWithdrawalRun>;
 export const getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsEndpoint = {
   operationId: 'getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawals' as const,
   method: 'GET' as const,
@@ -3886,7 +3986,7 @@ export const getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdra
 export interface PostAdminEconomyTreasuryWithdrawalsInput {
   body?: Types.APIControllersProposeTreasuryWithdrawalInput;
 }
-export type PostAdminEconomyTreasuryWithdrawalsOutput = Types.EconomyTreasuryAdminWithdrawalRun;
+export type PostAdminEconomyTreasuryWithdrawalsOutput = Types.FinanceEconomyTreasuryAdminWithdrawalRun;
 export const postAdminEconomyTreasuryWithdrawalsEndpoint = {
   operationId: 'postAdminEconomyTreasuryWithdrawals' as const,
   method: 'POST' as const,
@@ -3898,7 +3998,7 @@ export const postAdminEconomyTreasuryWithdrawalsEndpoint = {
 export interface GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsByRunIdInput {
   runId: string;
 }
-export type GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsByRunIdOutput = Types.EconomyTreasuryAdminWithdrawalRun;
+export type GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsByRunIdOutput = Types.FinanceEconomyTreasuryAdminWithdrawalRun;
 export const getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsByRunIdEndpoint = {
   operationId: 'getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsByRunId' as const,
   method: 'GET' as const,
@@ -3911,7 +4011,7 @@ export interface PostAdminEconomyTreasuryWithdrawalsApproveInput {
   runId: string;
   body?: Types.APIControllersApproveTreasuryWithdrawalInput;
 }
-export type PostAdminEconomyTreasuryWithdrawalsApproveOutput = Types.EconomyTreasuryAdminWithdrawalRun;
+export type PostAdminEconomyTreasuryWithdrawalsApproveOutput = Types.FinanceEconomyTreasuryAdminWithdrawalRun;
 export const postAdminEconomyTreasuryWithdrawalsApproveEndpoint = {
   operationId: 'postAdminEconomyTreasuryWithdrawalsApprove' as const,
   method: 'POST' as const,
@@ -3923,7 +4023,7 @@ export const postAdminEconomyTreasuryWithdrawalsApproveEndpoint = {
 export interface GetAdminEconomyTreasuryWithdrawalsAuditInput {
   runId: string;
 }
-export type GetAdminEconomyTreasuryWithdrawalsAuditOutput = Types.EconomyTreasuryAdminWithdrawalAuditView;
+export type GetAdminEconomyTreasuryWithdrawalsAuditOutput = Types.FinanceEconomyTreasuryAdminWithdrawalAuditView;
 export const getAdminEconomyTreasuryWithdrawalsAuditEndpoint = {
   operationId: 'getAdminEconomyTreasuryWithdrawalsAudit' as const,
   method: 'GET' as const,
@@ -3936,7 +4036,7 @@ export interface PostAdminEconomyTreasuryWithdrawalsDispatchInput {
   runId: string;
   body?: Types.APIControllersDispatchTreasuryWithdrawalInput;
 }
-export type PostAdminEconomyTreasuryWithdrawalsDispatchOutput = Types.EconomyTreasuryAdminWithdrawalRun;
+export type PostAdminEconomyTreasuryWithdrawalsDispatchOutput = Types.FinanceEconomyTreasuryAdminWithdrawalRun;
 export const postAdminEconomyTreasuryWithdrawalsDispatchEndpoint = {
   operationId: 'postAdminEconomyTreasuryWithdrawalsDispatch' as const,
   method: 'POST' as const,
@@ -3948,7 +4048,7 @@ export const postAdminEconomyTreasuryWithdrawalsDispatchEndpoint = {
 export interface PostAdminEconomyTreasuryWithdrawalsReconcileInput {
   runId: string;
 }
-export type PostAdminEconomyTreasuryWithdrawalsReconcileOutput = Types.EconomyTreasuryAdminWithdrawalRun;
+export type PostAdminEconomyTreasuryWithdrawalsReconcileOutput = Types.FinanceEconomyTreasuryAdminWithdrawalRun;
 export const postAdminEconomyTreasuryWithdrawalsReconcileEndpoint = {
   operationId: 'postAdminEconomyTreasuryWithdrawalsReconcile' as const,
   method: 'POST' as const,
@@ -4510,7 +4610,7 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
 export interface PostEconomyAdRewardsSessionsInput {
   body?: Types.APIControllersStartMyAdRewardSessionInput;
 }
-export type PostEconomyAdRewardsSessionsOutput = Types.EconomyAdRewardsDurableAdRewardSessionResult;
+export type PostEconomyAdRewardsSessionsOutput = Types.FinanceEconomyAdRewardsDurableAdRewardSessionResult;
 export const postEconomyAdRewardsSessionsEndpoint = {
   operationId: 'postEconomyAdRewardsSessions' as const,
   method: 'POST' as const,
@@ -4522,7 +4622,7 @@ export const postEconomyAdRewardsSessionsEndpoint = {
 export interface GetEconomyAdRewardsSessionsInput {
   sessionId: string;
 }
-export type GetEconomyAdRewardsSessionsOutput = Types.EconomyAdRewardsDurableAdRewardSessionStatus;
+export type GetEconomyAdRewardsSessionsOutput = Types.FinanceEconomyAdRewardsDurableAdRewardSessionStatus;
 export const getEconomyAdRewardsSessionsEndpoint = {
   operationId: 'getEconomyAdRewardsSessions' as const,
   method: 'GET' as const,
@@ -4535,7 +4635,7 @@ export interface PostEconomyAdRewardsSessionsCompleteInput {
   sessionId: string;
   body?: Types.APIControllersCompleteMyAdRewardSessionInput;
 }
-export type PostEconomyAdRewardsSessionsCompleteOutput = Types.EconomyAdRewardsDurableAdRewardCompletionResult;
+export type PostEconomyAdRewardsSessionsCompleteOutput = Types.FinanceEconomyAdRewardsDurableAdRewardCompletionResult;
 export const postEconomyAdRewardsSessionsCompleteEndpoint = {
   operationId: 'postEconomyAdRewardsSessionsComplete' as const,
   method: 'POST' as const,
@@ -4546,10 +4646,10 @@ export const postEconomyAdRewardsSessionsCompleteEndpoint = {
 
 export interface GetEconomyBountiesForGetEconomyBountiesInput {
   query?: {
-    status?: Types.EconomyBountiesBountyStatus;
+    status?: Types.FinanceEconomyBountiesBountyStatus;
   };
 }
-export type GetEconomyBountiesForGetEconomyBountiesOutput = Array<Types.EconomyBountiesDurableBountyView>;
+export type GetEconomyBountiesForGetEconomyBountiesOutput = Array<Types.FinanceEconomyBountiesDurableBountyView>;
 export const getEconomyBountiesForGetEconomyBountiesEndpoint = {
   operationId: 'getEconomyBountiesForGetEconomyBounties' as const,
   method: 'GET' as const,
@@ -4561,7 +4661,7 @@ export const getEconomyBountiesForGetEconomyBountiesEndpoint = {
 export interface PostEconomyBountiesInput {
   body?: Types.APIControllersCreateMyBountyInput;
 }
-export type PostEconomyBountiesOutput = Types.EconomyBountiesDurableBountyView;
+export type PostEconomyBountiesOutput = Types.FinanceEconomyBountiesDurableBountyView;
 export const postEconomyBountiesEndpoint = {
   operationId: 'postEconomyBounties' as const,
   method: 'POST' as const,
@@ -4573,7 +4673,7 @@ export const postEconomyBountiesEndpoint = {
 export interface GetEconomyBountiesForGetEconomyBountiesByBountyIdInput {
   bountyId: string;
 }
-export type GetEconomyBountiesForGetEconomyBountiesByBountyIdOutput = Types.EconomyBountiesDurableBountyView;
+export type GetEconomyBountiesForGetEconomyBountiesByBountyIdOutput = Types.FinanceEconomyBountiesDurableBountyView;
 export const getEconomyBountiesForGetEconomyBountiesByBountyIdEndpoint = {
   operationId: 'getEconomyBountiesForGetEconomyBountiesByBountyId' as const,
   method: 'GET' as const,
@@ -4586,7 +4686,7 @@ export interface PostEconomyBountiesClaimInput {
   bountyId: string;
   body?: Types.APIControllersCompleteMyBountyInput;
 }
-export type PostEconomyBountiesClaimOutput = Types.EconomyBountiesDurableBountyView;
+export type PostEconomyBountiesClaimOutput = Types.FinanceEconomyBountiesDurableBountyView;
 export const postEconomyBountiesClaimEndpoint = {
   operationId: 'postEconomyBountiesClaim' as const,
   method: 'POST' as const,
@@ -4599,7 +4699,7 @@ export interface PostEconomyBountiesReclaimInput {
   bountyId: string;
   body?: Types.APIControllersCompleteMyBountyInput;
 }
-export type PostEconomyBountiesReclaimOutput = Types.EconomyBountiesDurableBountyView;
+export type PostEconomyBountiesReclaimOutput = Types.FinanceEconomyBountiesDurableBountyView;
 export const postEconomyBountiesReclaimEndpoint = {
   operationId: 'postEconomyBountiesReclaim' as const,
   method: 'POST' as const,
@@ -4625,9 +4725,9 @@ export const getEconomyCapabilitiesEndpoint = {
  * Convert my confirmed HardCoin balance into SoftCoin
  */
 export interface PostEconomyConversionsHardToSoftInput {
-  body?: Types.EconomyCommandsConvertMyHardToSoftInput;
+  body?: Types.FinanceEconomyCommandsConvertMyHardToSoftInput;
 }
-export type PostEconomyConversionsHardToSoftOutput = Types.EconomyFundingSelfServiceHardToSoftConversionReceipt;
+export type PostEconomyConversionsHardToSoftOutput = Types.FinanceEconomyFundingSelfServiceHardToSoftConversionReceipt;
 export const postEconomyConversionsHardToSoftEndpoint = {
   operationId: 'postEconomyConversionsHardToSoft' as const,
   method: 'POST' as const,
@@ -4674,7 +4774,7 @@ export interface PostEconomyMarketplaceOrdersSettleInput {
   orderId: string;
   body?: Types.APIControllersSettleMyMarketplaceOrderInput;
 }
-export type PostEconomyMarketplaceOrdersSettleOutput = Types.EconomyMarketplaceDurableMarketplaceSettlementResult;
+export type PostEconomyMarketplaceOrdersSettleOutput = Types.FinanceEconomyMarketplaceDurableMarketplaceSettlementResult;
 export const postEconomyMarketplaceOrdersSettleEndpoint = {
   operationId: 'postEconomyMarketplaceOrdersSettle' as const,
   method: 'POST' as const,
@@ -4687,7 +4787,7 @@ export interface PostEconomyMarketplaceSettlementsRefundInput {
   settlementId: string;
   body?: Types.APIControllersRefundMarketplaceSettlementInput;
 }
-export type PostEconomyMarketplaceSettlementsRefundOutput = Types.EconomyMarketplaceDurableMarketplaceRefundResult;
+export type PostEconomyMarketplaceSettlementsRefundOutput = Types.FinanceEconomyMarketplaceDurableMarketplaceRefundResult;
 export const postEconomyMarketplaceSettlementsRefundEndpoint = {
   operationId: 'postEconomyMarketplaceSettlementsRefund' as const,
   method: 'POST' as const,
@@ -4704,7 +4804,7 @@ export interface GetEconomyPayoutRequestsInput {
     take?: number;
   };
 }
-export type GetEconomyPayoutRequestsOutput = Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestDto>;
+export type GetEconomyPayoutRequestsOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto>;
 export const getEconomyPayoutRequestsEndpoint = {
   operationId: 'getEconomyPayoutRequests' as const,
   method: 'GET' as const,
@@ -4719,9 +4819,9 @@ export const getEconomyPayoutRequestsEndpoint = {
  * Records a withdrawal request only. It does not reserve or transfer value until KYC, risk, provider, and FIFO eligibility checks pass.
  */
 export interface PostEconomyPayoutRequestsInput {
-  body?: Types.EconomyPayoutsCommandsCreateMyPayoutRequestInput;
+  body?: Types.FinanceEconomyPayoutsCommandsCreateMyPayoutRequestInput;
 }
-export type PostEconomyPayoutRequestsOutput = Types.EconomyPayoutsQueriesEconomyPayoutRequestDto;
+export type PostEconomyPayoutRequestsOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto;
 export const postEconomyPayoutRequestsEndpoint = {
   operationId: 'postEconomyPayoutRequests' as const,
   method: 'POST' as const,
@@ -4736,7 +4836,7 @@ export const postEconomyPayoutRequestsEndpoint = {
 export interface PostEconomyPayoutRequestsCancelInput {
   requestId: string;
 }
-export type PostEconomyPayoutRequestsCancelOutput = Types.EconomyPayoutsQueriesEconomyPayoutRequestDto;
+export type PostEconomyPayoutRequestsCancelOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto;
 export const postEconomyPayoutRequestsCancelEndpoint = {
   operationId: 'postEconomyPayoutRequestsCancel' as const,
   method: 'POST' as const,
@@ -4753,7 +4853,7 @@ export interface GetEconomyPayoutsForGetEconomyPayoutsInput {
     take?: number;
   };
 }
-export type GetEconomyPayoutsForGetEconomyPayoutsOutput = Array<Types.EconomyPayoutsQueriesEconomyPayoutOperationDto>;
+export type GetEconomyPayoutsForGetEconomyPayoutsOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutOperationDto>;
 export const getEconomyPayoutsForGetEconomyPayoutsEndpoint = {
   operationId: 'getEconomyPayoutsForGetEconomyPayouts' as const,
   method: 'GET' as const,
@@ -4768,7 +4868,7 @@ export const getEconomyPayoutsForGetEconomyPayoutsEndpoint = {
 export interface GetEconomyPayoutsForGetEconomyPayoutsByOperationIdInput {
   operationId: string;
 }
-export type GetEconomyPayoutsForGetEconomyPayoutsByOperationIdOutput = Types.EconomyPayoutsQueriesEconomyPayoutOperationDto;
+export type GetEconomyPayoutsForGetEconomyPayoutsByOperationIdOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutOperationDto;
 export const getEconomyPayoutsForGetEconomyPayoutsByOperationIdEndpoint = {
   operationId: 'getEconomyPayoutsForGetEconomyPayoutsByOperationId' as const,
   method: 'GET' as const,
@@ -4781,7 +4881,7 @@ export const getEconomyPayoutsForGetEconomyPayoutsByOperationIdEndpoint = {
  * Get my payout provider account readiness
  */
 export type GetEconomyPayoutsAccountInput = void;
-export type GetEconomyPayoutsAccountOutput = Types.EconomyPayoutsConnectAccountSnapshot;
+export type GetEconomyPayoutsAccountOutput = Types.FinanceEconomyPayoutsConnectAccountSnapshot;
 export const getEconomyPayoutsAccountEndpoint = {
   operationId: 'getEconomyPayoutsAccount' as const,
   method: 'GET' as const,
@@ -4794,7 +4894,7 @@ export const getEconomyPayoutsAccountEndpoint = {
  * Create or refresh my payout provider onboarding
  */
 export type PostEconomyPayoutsOnboardingInput = void;
-export type PostEconomyPayoutsOnboardingOutput = Types.EconomyPayoutsConnectOnboardingResult;
+export type PostEconomyPayoutsOnboardingOutput = Types.FinanceEconomyPayoutsConnectOnboardingResult;
 export const postEconomyPayoutsOnboardingEndpoint = {
   operationId: 'postEconomyPayoutsOnboarding' as const,
   method: 'POST' as const,
@@ -4811,7 +4911,7 @@ export interface GetEconomyTopUpsForGetEconomyTopUpsInput {
     take?: number;
   };
 }
-export type GetEconomyTopUpsForGetEconomyTopUpsOutput = Array<Types.EconomyFundingEconomyTopUpStatusDto>;
+export type GetEconomyTopUpsForGetEconomyTopUpsOutput = Array<Types.FinanceEconomyFundingEconomyTopUpStatusDto>;
 export const getEconomyTopUpsForGetEconomyTopUpsEndpoint = {
   operationId: 'getEconomyTopUpsForGetEconomyTopUps' as const,
   method: 'GET' as const,
@@ -4826,9 +4926,9 @@ export const getEconomyTopUpsForGetEconomyTopUpsEndpoint = {
  * The server derives tenant, wallet, jurisdiction, signed quote, amount, provider binding, and idempotency authority.
  */
 export interface PostEconomyTopUpsInput {
-  body?: Types.EconomyCommandsCreateMyHardCoinTopUpInput;
+  body?: Types.FinanceEconomyCommandsCreateMyHardCoinTopUpInput;
 }
-export type PostEconomyTopUpsOutput = Types.EconomyFundingSelfServiceHardCoinTopUpReceipt;
+export type PostEconomyTopUpsOutput = Types.FinanceEconomyFundingSelfServiceHardCoinTopUpReceipt;
 export const postEconomyTopUpsEndpoint = {
   operationId: 'postEconomyTopUps' as const,
   method: 'POST' as const,
@@ -4843,7 +4943,7 @@ export const postEconomyTopUpsEndpoint = {
 export interface GetEconomyTopUpsForGetEconomyTopUpsByTopUpIdInput {
   topUpId: string;
 }
-export type GetEconomyTopUpsForGetEconomyTopUpsByTopUpIdOutput = Types.EconomyFundingEconomyTopUpStatusDto;
+export type GetEconomyTopUpsForGetEconomyTopUpsByTopUpIdOutput = Types.FinanceEconomyFundingEconomyTopUpStatusDto;
 export const getEconomyTopUpsForGetEconomyTopUpsByTopUpIdEndpoint = {
   operationId: 'getEconomyTopUpsForGetEconomyTopUpsByTopUpId' as const,
   method: 'GET' as const,
@@ -4858,9 +4958,9 @@ export const getEconomyTopUpsForGetEconomyTopUpsByTopUpIdEndpoint = {
  * The server resolves wallets, jurisdiction, policy, reserve, risk, and posting authority. The request contains business intent only.
  */
 export interface PostEconomyTransfersInput {
-  body?: Types.EconomyTransfersSelfServiceEconomyTransferInput;
+  body?: Types.FinanceEconomyTransfersSelfServiceEconomyTransferInput;
 }
-export type PostEconomyTransfersOutput = Types.EconomyTransfersSelfServiceEconomyTransferReceipt;
+export type PostEconomyTransfersOutput = Types.FinanceEconomyTransfersSelfServiceEconomyTransferReceipt;
 export const postEconomyTransfersEndpoint = {
   operationId: 'postEconomyTransfers' as const,
   method: 'POST' as const,
@@ -4873,7 +4973,7 @@ export const postEconomyTransfersEndpoint = {
  * Get my Economy wallet
  */
 export type GetEconomyWalletInput = void;
-export type GetEconomyWalletOutput = Types.EconomyContractsEconomyWalletSummaryDto;
+export type GetEconomyWalletOutput = Types.FinanceEconomyContractsEconomyWalletSummaryDto;
 export const getEconomyWalletEndpoint = {
   operationId: 'getEconomyWallet' as const,
   method: 'GET' as const,
@@ -4890,7 +4990,7 @@ export interface GetEconomyWalletTransactionsInput {
     take?: number;
   };
 }
-export type GetEconomyWalletTransactionsOutput = Array<Types.EconomyContractsEconomyWalletTransactionDto>;
+export type GetEconomyWalletTransactionsOutput = Array<Types.FinanceEconomyContractsEconomyWalletTransactionDto>;
 export const getEconomyWalletTransactionsEndpoint = {
   operationId: 'getEconomyWalletTransactions' as const,
   method: 'GET' as const,
@@ -5449,6 +5549,19 @@ export const postPostsPinEndpoint = {
   operationId: 'postPostsPin' as const,
   method: 'POST' as const,
   path: '/api/v1/posts/{postId}/pin' as const,
+  tags: ['SocialPostsInteractions'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostPostsRepostsInput {
+  postId: string;
+  body?: Types.SocialPostsControllersCreateRepostInput;
+}
+export type PostPostsRepostsOutput = void;
+export const postPostsRepostsEndpoint = {
+  operationId: 'postPostsReposts' as const,
+  method: 'POST' as const,
+  path: '/api/v1/posts/{postId}/reposts' as const,
   tags: ['SocialPostsInteractions'] as const,
   requiresAuth: true,
 } as const;
@@ -6948,6 +7061,26 @@ export const getLiveEndpoint = {
   requiresAuth: true,
 } as const;
 
+export type PostLtiLaunchInput = void;
+export type PostLtiLaunchOutput = void;
+export const postLtiLaunchEndpoint = {
+  operationId: 'postLtiLaunch' as const,
+  method: 'POST' as const,
+  path: '/lti/launch' as const,
+  tags: ['LearningLti'] as const,
+  requiresAuth: true,
+} as const;
+
+export type PostLtiLoginInput = void;
+export type PostLtiLoginOutput = void;
+export const postLtiLoginEndpoint = {
+  operationId: 'postLtiLogin' as const,
+  method: 'POST' as const,
+  path: '/lti/login' as const,
+  tags: ['LearningLti'] as const,
+  requiresAuth: true,
+} as const;
+
 /**
  * Prometheus metrics endpoint
  *
@@ -7556,6 +7689,41 @@ export const getAdminAuditLogsStatisticsEndpoint = {
   method: 'GET' as const,
   path: '/v1/admin/audit-logs/statistics' as const,
   tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAdminEventsReplayInput {
+  eventId: string;
+  query?: {
+    consumerName?: string;
+  };
+}
+export type PostAdminEventsReplayOutput = void;
+export const postAdminEventsReplayEndpoint = {
+  operationId: 'postAdminEventsReplay' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/events/{eventId}:replay' as const,
+  tags: ['ApiAdminEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetAdminEventsDeadLettersInput = void;
+export type GetAdminEventsDeadLettersOutput = Array<Types.APIEventingDeadLetterEvent>;
+export const getAdminEventsDeadLettersEndpoint = {
+  operationId: 'getAdminEventsDeadLetters' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/events/dead-letters' as const,
+  tags: ['ApiAdminEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetAdminEventsStatusInput = void;
+export type GetAdminEventsStatusOutput = Types.APIEventingEventTransportStatus;
+export const getAdminEventsStatusEndpoint = {
+  operationId: 'getAdminEventsStatus' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/events/status' as const,
+  tags: ['ApiAdminEvents'] as const,
   requiresAuth: true,
 } as const;
 
@@ -8672,6 +8840,30 @@ export const getAssetsSearchEndpoint = {
   method: 'GET' as const,
   path: '/v1/assets/search' as const,
   tags: ['Assets'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssetsSocialMediaInput {
+  body?: FormData;
+}
+export type PostAssetsSocialMediaOutput = Types.AssetsSocialMediaSocialMediaAssetDescriptor;
+export const postAssetsSocialMediaEndpoint = {
+  operationId: 'postAssetsSocialMedia' as const,
+  method: 'POST' as const,
+  path: '/v1/assets/social-media' as const,
+  tags: ['AssetsSocialMediaAssets'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAssetsSocialMediaInput {
+  assetReferenceId: string;
+}
+export type GetAssetsSocialMediaOutput = Types.AssetsSocialMediaSocialMediaAssetDescriptor;
+export const getAssetsSocialMediaEndpoint = {
+  operationId: 'getAssetsSocialMedia' as const,
+  method: 'GET' as const,
+  path: '/v1/assets/social-media/{assetReferenceId}' as const,
+  tags: ['AssetsSocialMediaAssets'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12987,6 +13179,31 @@ export const getLearningMeSearchEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface PostLtiDeploymentsInput {
+  body?: Types.LearningLtiCreateLtiDeploymentInput;
+}
+export type PostLtiDeploymentsOutput = void;
+export const postLtiDeploymentsEndpoint = {
+  operationId: 'postLtiDeployments' as const,
+  method: 'POST' as const,
+  path: '/v1/lti/deployments' as const,
+  tags: ['LearningLti'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostLtiDeploymentsLineItemsInput {
+  id: string;
+  body?: Types.LearningLtiCreateLtiLineItemInput;
+}
+export type PostLtiDeploymentsLineItemsOutput = void;
+export const postLtiDeploymentsLineItemsEndpoint = {
+  operationId: 'postLtiDeploymentsLineItems' as const,
+  method: 'POST' as const,
+  path: '/v1/lti/deployments/{id}/line-items' as const,
+  tags: ['LearningLti'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetMarketingLeadsInput {
   query?: {
     source?: string;
@@ -16995,7 +17212,6 @@ export type GetTenantsResourcesLimitsOutput = {
   Programs?: boolean;
   Projects?: boolean;
   PromoCodes?: boolean;
-  Properties?: boolean;
   Roles?: boolean;
   SLOs?: boolean;
   SoDRules?: boolean;
@@ -17239,7 +17455,6 @@ export type GetTenantsResourcesUsageSummaryOutput = {
   Programs?: number;
   Projects?: number;
   PromoCodes?: number;
-  Properties?: number;
   Roles?: number;
   SLOs?: number;
   SoDRules?: number;
@@ -20388,7 +20603,6 @@ export type GetUsersResourcesLimitsOutput = {
   Programs?: boolean;
   Projects?: boolean;
   PromoCodes?: boolean;
-  Properties?: boolean;
   Roles?: boolean;
   SLOs?: boolean;
   SoDRules?: boolean;
@@ -20567,7 +20781,6 @@ export type GetUsersResourcesUsageSummaryOutput = {
   Programs?: number;
   Projects?: number;
   PromoCodes?: number;
-  Properties?: number;
   Roles?: number;
   SLOs?: number;
   SoDRules?: number;
@@ -20621,6 +20834,7 @@ export const getUsersProfilesEndpoint = {
 
 /** Registry of all endpoints */
 export const endpoints = {
+  getWellKnownJwksJson: getWellKnownJwksJsonEndpoint,
   getApiAnalyticsDashboards: getApiAnalyticsDashboardsEndpoint,
   postApiAnalyticsDashboards: postApiAnalyticsDashboardsEndpoint,
   getAnalyticsDashboardById: getAnalyticsDashboardByIdEndpoint,
@@ -20766,6 +20980,7 @@ export const endpoints = {
   postApiSocialDiscussionsPin: postApiSocialDiscussionsPinEndpoint,
   postApiSocialDiscussionsResolve: postApiSocialDiscussionsResolveEndpoint,
   postApiSocialDiscussionsUnpin: postApiSocialDiscussionsUnpinEndpoint,
+  getApiSocialFeed: getApiSocialFeedEndpoint,
   postApiSocialFeed: postApiSocialFeedEndpoint,
   postApiSocialFeedDismiss: postApiSocialFeedDismissEndpoint,
   postApiSocialFeedHide: postApiSocialFeedHideEndpoint,
@@ -20798,11 +21013,10 @@ export const endpoints = {
   getApiSocialProfilesUsers: getApiSocialProfilesUsersEndpoint,
   putApiSocialProfilesUsers: putApiSocialProfilesUsersEndpoint,
   putApiSocialProfilesUsersPrivacy: putApiSocialProfilesUsersPrivacyEndpoint,
-  putApiSocialProfilesUsersStats: putApiSocialProfilesUsersStatsEndpoint,
   putApiSocialReactions: putApiSocialReactionsEndpoint,
   deleteApiSocialReactions: deleteApiSocialReactionsEndpoint,
+  getApiSocialReactionsMeTarget: getApiSocialReactionsMeTargetEndpoint,
   getApiSocialReactionsTarget: getApiSocialReactionsTargetEndpoint,
-  getApiSocialReactionsUsersTarget: getApiSocialReactionsUsersTargetEndpoint,
   deleteApiSocialReplies: deleteApiSocialRepliesEndpoint,
   postApiSocialRepliesAccept: postApiSocialRepliesAcceptEndpoint,
   postApiSocialRepliesUpvote: postApiSocialRepliesUpvoteEndpoint,
@@ -20814,6 +21028,13 @@ export const endpoints = {
   postApiSocialReviewsHelpful: postApiSocialReviewsHelpfulEndpoint,
   patchApiSocialReviewsModeration: patchApiSocialReviewsModerationEndpoint,
   getApiSocialReviewsMe: getApiSocialReviewsMeEndpoint,
+  getApiSocialSavedPosts: getApiSocialSavedPostsEndpoint,
+  putApiSocialSavedPosts: putApiSocialSavedPostsEndpoint,
+  deleteApiSocialSavedPosts: deleteApiSocialSavedPostsEndpoint,
+  getApiSocialStories: getApiSocialStoriesEndpoint,
+  postApiSocialStories: postApiSocialStoriesEndpoint,
+  deleteApiSocialStories: deleteApiSocialStoriesEndpoint,
+  postApiSocialStoriesViews: postApiSocialStoriesViewsEndpoint,
   postApiSocialWishlist: postApiSocialWishlistEndpoint,
   deleteApiSocialWishlist: deleteApiSocialWishlistEndpoint,
   getApiSocialWishlistCheck: getApiSocialWishlistCheckEndpoint,
@@ -21043,6 +21264,7 @@ export const endpoints = {
   deletePostsFollow: deletePostsFollowEndpoint,
   postPostsLike: postPostsLikeEndpoint,
   postPostsPin: postPostsPinEndpoint,
+  postPostsReposts: postPostsRepostsEndpoint,
   postPostsShare: postPostsShareEndpoint,
   getPostsStatistics: getPostsStatisticsEndpoint,
   getPostsTags: getPostsTagsEndpoint,
@@ -21135,6 +21357,8 @@ export const endpoints = {
   getHealthDependencies: getHealthDependenciesEndpoint,
   getInfo: getInfoEndpoint,
   getLive: getLiveEndpoint,
+  postLtiLaunch: postLtiLaunchEndpoint,
+  postLtiLogin: postLtiLoginEndpoint,
   getMetrics: getMetricsEndpoint,
   getReady: getReadyEndpoint,
   getT: getTEndpoint,
@@ -21180,6 +21404,9 @@ export const endpoints = {
   getAdminAuditLogs: getAdminAuditLogsEndpoint,
   postAdminAuditLogsExport: postAdminAuditLogsExportEndpoint,
   getAdminAuditLogsStatistics: getAdminAuditLogsStatisticsEndpoint,
+  postAdminEventsReplay: postAdminEventsReplayEndpoint,
+  getAdminEventsDeadLetters: getAdminEventsDeadLettersEndpoint,
+  getAdminEventsStatus: getAdminEventsStatusEndpoint,
   getAdminSecurityAudit: getAdminSecurityAuditEndpoint,
   postAdminSecurityAuditExport: postAdminSecurityAuditExportEndpoint,
   getAdminSecurityAuditAuthentication: getAdminSecurityAuditAuthenticationEndpoint,
@@ -21262,6 +21489,8 @@ export const endpoints = {
   postAssetsChunkedUploadsComplete: postAssetsChunkedUploadsCompleteEndpoint,
   postAssetsChunkedUploadsParts: postAssetsChunkedUploadsPartsEndpoint,
   getAssetsSearch: getAssetsSearchEndpoint,
+  postAssetsSocialMedia: postAssetsSocialMediaEndpoint,
+  getAssetsSocialMedia: getAssetsSocialMediaEndpoint,
   getAuthApiKeys: getAuthApiKeysEndpoint,
   postAuthApiKeys: postAuthApiKeysEndpoint,
   postAuthApiKeysRevoke: postAuthApiKeysRevokeEndpoint,
@@ -21571,6 +21800,8 @@ export const endpoints = {
   getLearningCoursesWorkspace: getLearningCoursesWorkspaceEndpoint,
   getLearningMeDashboard: getLearningMeDashboardEndpoint,
   getLearningMeSearch: getLearningMeSearchEndpoint,
+  postLtiDeployments: postLtiDeploymentsEndpoint,
+  postLtiDeploymentsLineItems: postLtiDeploymentsLineItemsEndpoint,
   getMarketingLeads: getMarketingLeadsEndpoint,
   postMarketingLeads: postMarketingLeadsEndpoint,
   getMarketingLeadById: getMarketingLeadByIdEndpoint,

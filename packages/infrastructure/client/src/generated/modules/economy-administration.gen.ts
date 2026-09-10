@@ -21,7 +21,7 @@ export class EconomyAdministrationModule {
     confirmed?: boolean;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/ad-rewards/pending-claims';
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -46,7 +46,7 @@ export class EconomyAdministrationModule {
     network?: string;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/ad-rewards/reconciliations';
 
     const result = await this.client.request({
@@ -58,7 +58,11 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(
+        Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatusSchema,
+        result.data,
+        'response',
+      );
       return { ok: true, data: validatedData };
     }
 
@@ -70,7 +74,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyAdRewardsReports(query?: {
     network?: string;
     limit?: number;
-  }): Promise<Result<Array<Types.EconomyAdRewardsDurableAdProviderReportStatus>, ApiError>> {
+  }): Promise<Result<Array<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus>, ApiError>> {
     const url = '/api/v1/admin/economy/ad-rewards/reports';
 
     const result = await this.client.request({
@@ -80,18 +84,18 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyAdRewardsDurableAdProviderReportStatus>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus>, ApiError>;
   }
 
   /**
    */
   async postAdminEconomyAdRewardsReports(
-    body: Types.EconomyAdRewardsAdProviderReport,
-  ): Promise<Result<Types.EconomyAdRewardsDurableAdProviderReportImportResult, ApiError>> {
+    body: Types.FinanceEconomyAdRewardsAdProviderReport,
+  ): Promise<Result<Types.FinanceEconomyAdRewardsDurableAdProviderReportImportResult, ApiError>> {
     const url = '/api/v1/admin/economy/ad-rewards/reports';
 
     // Validate request body
-    const validatedBody = safeParse(Types.EconomyAdRewardsAdProviderReportSchema, body, 'request');
+    const validatedBody = safeParse(Types.FinanceEconomyAdRewardsAdProviderReportSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -102,7 +106,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyAdRewardsDurableAdProviderReportImportResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyAdRewardsDurableAdProviderReportImportResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -112,11 +116,11 @@ export class EconomyAdministrationModule {
   /**
    */
   async getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessions(query?: {
-    state?: Types.EconomyAdRewardsDurableAdRewardSessionState;
+    state?: Types.FinanceEconomyAdRewardsDurableAdRewardSessionState;
     network?: string;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummary, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummary, ApiError>> {
     const url = '/api/v1/admin/economy/ad-rewards/sessions';
 
     const result = await this.client.request({
@@ -128,7 +132,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummarySchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummarySchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -139,7 +143,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessionsBySessionId(
     sessionId: string,
-  ): Promise<Result<Types.EconomyAdRewardsAdRewardSessionOperationalDetails, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyAdRewardsAdRewardSessionOperationalDetails, ApiError>> {
     const url = `/api/v1/admin/economy/ad-rewards/sessions/${sessionId}`;
 
     const result = await this.client.request({
@@ -150,7 +154,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyAdRewardsAdRewardSessionOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyAdRewardsAdRewardSessionOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -159,7 +163,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async getAdminEconomyBountiesExpired(): Promise<Result<Array<Types.EconomyBountiesDurableBountyView>, ApiError>> {
+  async getAdminEconomyBountiesExpired(): Promise<Result<Array<Types.FinanceEconomyBountiesDurableBountyView>, ApiError>> {
     const url = '/api/v1/admin/economy/bounties/expired';
 
     const result = await this.client.request({
@@ -168,7 +172,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyBountiesDurableBountyView>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyBountiesDurableBountyView>, ApiError>;
   }
 
   /**
@@ -176,7 +180,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyCapabilitiesConfiguration(query?: {
     includeInactiveKillSwitches?: boolean;
     limit?: number;
-  }): Promise<Result<Types.EconomyOperationsEconomyCapabilityConfigurationSnapshot, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyCapabilityConfigurationSnapshot, ApiError>> {
     const url = '/api/v1/admin/economy/capabilities/configuration';
 
     const result = await this.client.request({
@@ -188,7 +192,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyCapabilityConfigurationSnapshotSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyCapabilityConfigurationSnapshotSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -199,7 +203,7 @@ export class EconomyAdministrationModule {
    */
   async postAdminEconomyCapabilitiesReadiness(
     body: Types.APIControllersInspectEconomyCapabilityReadinessInput,
-  ): Promise<Result<Types.EconomyRiskEconomyCapabilityEvaluationResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskEconomyCapabilityEvaluationResult, ApiError>> {
     const url = '/api/v1/admin/economy/capabilities/readiness';
 
     // Validate request body
@@ -214,7 +218,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyCapabilityEvaluationResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyCapabilityEvaluationResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -226,7 +230,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservations(query?: {
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/custody/observations';
 
     const result = await this.client.request({
@@ -238,7 +242,11 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(
+        Types.FinanceEconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatusSchema,
+        result.data,
+        'response',
+      );
       return { ok: true, data: validatedData };
     }
 
@@ -248,12 +256,12 @@ export class EconomyAdministrationModule {
   /**
    */
   async postAdminEconomyCustodyObservations(
-    body: Types.EconomyReservesCustodyObservationCommand,
-  ): Promise<Result<Types.EconomyReservesDurableCustodyObservation, ApiError>> {
+    body: Types.FinanceEconomyReservesCustodyObservationCommand,
+  ): Promise<Result<Types.FinanceEconomyReservesDurableCustodyObservation, ApiError>> {
     const url = '/api/v1/admin/economy/custody/observations';
 
     // Validate request body
-    const validatedBody = safeParse(Types.EconomyReservesCustodyObservationCommandSchema, body, 'request');
+    const validatedBody = safeParse(Types.FinanceEconomyReservesCustodyObservationCommandSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -264,7 +272,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyReservesDurableCustodyObservationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyReservesDurableCustodyObservationSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -275,7 +283,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyCustodyObservationsForGetAdminEconomyCustodyObservationsByObservationId(
     observationId: string,
-  ): Promise<Result<Types.EconomyOperationsEconomyCustodyObservationOperationalStatus, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyCustodyObservationOperationalStatus, ApiError>> {
     const url = `/api/v1/admin/economy/custody/observations/${observationId}`;
 
     const result = await this.client.request({
@@ -286,7 +294,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyCustodyObservationOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyCustodyObservationOperationalStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -297,7 +305,7 @@ export class EconomyAdministrationModule {
    */
   async postAdminEconomyKillSwitches(
     body: Types.APIControllersActivateEconomyKillSwitchInput,
-  ): Promise<Result<Types.EconomyRiskEconomyKillSwitchState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskEconomyKillSwitchState, ApiError>> {
     const url = '/api/v1/admin/economy/kill-switches';
 
     // Validate request body
@@ -312,7 +320,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -321,7 +329,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async postAdminEconomyKillSwitchesRelease(killSwitchId: string): Promise<Result<Types.EconomyRiskEconomyKillSwitchState, ApiError>> {
+  async postAdminEconomyKillSwitchesRelease(killSwitchId: string): Promise<Result<Types.FinanceEconomyRiskEconomyKillSwitchState, ApiError>> {
     const url = `/api/v1/admin/economy/kill-switches/${killSwitchId}/release`;
 
     const result = await this.client.request({
@@ -332,7 +340,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -344,7 +352,7 @@ export class EconomyAdministrationModule {
   async postAdminEconomyKillSwitchesReleaseApprovals(
     killSwitchId: string,
     body: Types.APIControllersEconomyStepUpInput,
-  ): Promise<Result<Types.EconomyRiskEconomyKillSwitchState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskEconomyKillSwitchState, ApiError>> {
     const url = `/api/v1/admin/economy/kill-switches/${killSwitchId}/release-approvals`;
 
     // Validate request body
@@ -359,7 +367,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -371,7 +379,7 @@ export class EconomyAdministrationModule {
   async postAdminEconomyKillSwitchesReleaseProposals(
     killSwitchId: string,
     body: Types.APIControllersEconomyStepUpInput,
-  ): Promise<Result<Types.EconomyRiskEconomyKillSwitchState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskEconomyKillSwitchState, ApiError>> {
     const url = `/api/v1/admin/economy/kill-switches/${killSwitchId}/release-proposals`;
 
     // Validate request body
@@ -386,7 +394,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyKillSwitchStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -398,7 +406,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchors(query?: {
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetails, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetails, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/anchors';
 
     const result = await this.client.request({
@@ -410,7 +418,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -421,7 +429,7 @@ export class EconomyAdministrationModule {
    */
   async postAdminEconomyLedgerAnchors(
     body: Types.APIControllersPublishEconomyAnchorInput,
-  ): Promise<Result<Types.EconomyLedgerEconomyAnchorPublicationResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyLedgerEconomyAnchorPublicationResult, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/anchors';
 
     // Validate request body
@@ -436,7 +444,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyLedgerEconomyAnchorPublicationResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyLedgerEconomyAnchorPublicationResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -447,7 +455,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchorId(
     anchorId: string,
-  ): Promise<Result<Types.EconomyOperationsEconomyAnchorOperationalDetails, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyAnchorOperationalDetails, ApiError>> {
     const url = `/api/v1/admin/economy/ledger/anchors/${anchorId}`;
 
     const result = await this.client.request({
@@ -458,7 +466,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyAnchorOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyAnchorOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -469,7 +477,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerAnchorsVerifications(
     anchorId: string,
-  ): Promise<Result<Array<Types.EconomyOperationsEconomyAnchorVerificationOperationalStatus>, ApiError>> {
+  ): Promise<Result<Array<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus>, ApiError>> {
     const url = `/api/v1/admin/economy/ledger/anchors/${anchorId}/verifications`;
 
     const result = await this.client.request({
@@ -478,12 +486,12 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyOperationsEconomyAnchorVerificationOperationalStatus>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus>, ApiError>;
   }
 
   /**
    */
-  async postAdminEconomyLedgerAnchorsVerificationRuns(): Promise<Result<Types.EconomyLedgerAnchorVerificationRunResult, ApiError>> {
+  async postAdminEconomyLedgerAnchorsVerificationRuns(): Promise<Result<Types.FinanceEconomyLedgerAnchorVerificationRunResult, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/anchors/verification-runs';
 
     const result = await this.client.request({
@@ -494,7 +502,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyLedgerAnchorVerificationRunResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyLedgerAnchorVerificationRunResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -503,7 +511,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async getAdminEconomyLedgerHealth(): Promise<Result<Types.EconomyOperationsEconomyLedgerHealthSnapshot, ApiError>> {
+  async getAdminEconomyLedgerHealth(): Promise<Result<Types.FinanceEconomyOperationsEconomyLedgerHealthSnapshot, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/health';
 
     const result = await this.client.request({
@@ -514,7 +522,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyLedgerHealthSnapshotSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyLedgerHealthSnapshotSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -526,7 +534,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerations(query?: {
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetails, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetails, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/projection-generations';
 
     const result = await this.client.request({
@@ -539,7 +547,7 @@ export class EconomyAdministrationModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(
-        Types.EconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetailsSchema,
+        Types.FinanceEconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetailsSchema,
         result.data,
         'response',
       );
@@ -551,7 +559,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async postAdminEconomyLedgerProjectionGenerations(): Promise<Result<Types.EconomyProjectionsProjectionGenerationState, ApiError>> {
+  async postAdminEconomyLedgerProjectionGenerations(): Promise<Result<Types.FinanceEconomyProjectionsProjectionGenerationState, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/projection-generations';
 
     const result = await this.client.request({
@@ -562,7 +570,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyProjectionsProjectionGenerationStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyProjectionsProjectionGenerationStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -573,7 +581,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerProjectionGenerationsForGetAdminEconomyLedgerProjectionGenerationsByGeneration(
     generation: number,
-  ): Promise<Result<Types.EconomyOperationsEconomyProjectionGenerationOperationalDetails, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetails, ApiError>> {
     const url = `/api/v1/admin/economy/ledger/projection-generations/${generation}`;
 
     const result = await this.client.request({
@@ -584,7 +592,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyProjectionGenerationOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -596,7 +604,7 @@ export class EconomyAdministrationModule {
   async postAdminEconomyLedgerProjectionGenerationsApprovals(
     generation: number,
     body: Types.APIControllersEconomyStepUpInput,
-  ): Promise<Result<Types.EconomyProjectionsProjectionGenerationState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyProjectionsProjectionGenerationState, ApiError>> {
     const url = `/api/v1/admin/economy/ledger/projection-generations/${generation}/approvals`;
 
     // Validate request body
@@ -611,7 +619,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyProjectionsProjectionGenerationStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyProjectionsProjectionGenerationStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -622,7 +630,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerProjectionGenerationsAudit(
     generation: number,
-  ): Promise<Result<Array<Types.EconomyOperationsEconomyProjectionApprovalAuditEntry>, ApiError>> {
+  ): Promise<Result<Array<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry>, ApiError>> {
     const url = `/api/v1/admin/economy/ledger/projection-generations/${generation}/audit`;
 
     const result = await this.client.request({
@@ -631,7 +639,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyOperationsEconomyProjectionApprovalAuditEntry>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry>, ApiError>;
   }
 
   /**
@@ -639,7 +647,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRuns(query?: {
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetails, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetails, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/verification-runs';
 
     const result = await this.client.request({
@@ -651,7 +659,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -660,7 +668,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async postAdminEconomyLedgerVerificationRuns(): Promise<Result<Types.EconomyLedgerJournalIntegrityRunResult, ApiError>> {
+  async postAdminEconomyLedgerVerificationRuns(): Promise<Result<Types.FinanceEconomyLedgerJournalIntegrityRunResult, ApiError>> {
     const url = '/api/v1/admin/economy/ledger/verification-runs';
 
     const result = await this.client.request({
@@ -671,7 +679,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyLedgerJournalIntegrityRunResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyLedgerJournalIntegrityRunResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -682,7 +690,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerVerificationRunsForGetAdminEconomyLedgerVerificationRunsByVerificationId(
     verificationId: string,
-  ): Promise<Result<Types.EconomyOperationsEconomyJournalVerificationRunDetails, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyJournalVerificationRunDetails, ApiError>> {
     const url = `/api/v1/admin/economy/ledger/verification-runs/${verificationId}`;
 
     const result = await this.client.request({
@@ -693,7 +701,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyJournalVerificationRunDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyJournalVerificationRunDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -706,7 +714,7 @@ export class EconomyAdministrationModule {
     published?: boolean;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/marketplace/outbox';
 
     const result = await this.client.request({
@@ -718,7 +726,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -730,7 +738,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefunds(query?: {
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/marketplace/refunds';
 
     const result = await this.client.request({
@@ -742,7 +750,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -753,7 +761,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyMarketplaceRefundsForGetAdminEconomyMarketplaceRefundsByRefundId(
     refundId: string,
-  ): Promise<Result<Types.EconomyMarketplaceMarketplaceRefundOperationalStatus, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus, ApiError>> {
     const url = `/api/v1/admin/economy/marketplace/refunds/${refundId}`;
 
     const result = await this.client.request({
@@ -764,7 +772,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyMarketplaceMarketplaceRefundOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyMarketplaceMarketplaceRefundOperationalStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -774,10 +782,10 @@ export class EconomyAdministrationModule {
   /**
    */
   async getAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlements(query?: {
-    status?: Types.EconomyMarketplaceMarketplaceSettlementStatus;
+    status?: Types.FinanceEconomyMarketplaceMarketplaceSettlementStatus;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummary, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummary, ApiError>> {
     const url = '/api/v1/admin/economy/marketplace/settlements';
 
     const result = await this.client.request({
@@ -789,7 +797,11 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummarySchema, result.data, 'response');
+      const validatedData = safeParse(
+        Types.FinanceEconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummarySchema,
+        result.data,
+        'response',
+      );
       return { ok: true, data: validatedData };
     }
 
@@ -800,7 +812,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyMarketplaceSettlementsForGetAdminEconomyMarketplaceSettlementsBySettlementId(
     settlementId: string,
-  ): Promise<Result<Types.EconomyMarketplaceMarketplaceSettlementOperationalDetails, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyMarketplaceMarketplaceSettlementOperationalDetails, ApiError>> {
     const url = `/api/v1/admin/economy/marketplace/settlements/${settlementId}`;
 
     const result = await this.client.request({
@@ -811,7 +823,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyMarketplaceMarketplaceSettlementOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyMarketplaceMarketplaceSettlementOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -823,7 +835,7 @@ export class EconomyAdministrationModule {
   async postAdminEconomyMarketplaceSettlementsRefund(
     settlementId: string,
     body: Types.APIControllersRefundMarketplaceSettlementInput,
-  ): Promise<Result<Types.EconomyMarketplaceDurableMarketplaceRefundResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyMarketplaceDurableMarketplaceRefundResult, ApiError>> {
     const url = `/api/v1/admin/economy/marketplace/settlements/${settlementId}:refund`;
 
     // Validate request body
@@ -838,7 +850,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyMarketplaceDurableMarketplaceRefundResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyMarketplaceDurableMarketplaceRefundResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -970,10 +982,10 @@ export class EconomyAdministrationModule {
   /**
    */
   async getAdminEconomyPoliciesForGetAdminEconomyPolicies(query?: {
-    capability?: Types.EconomyRiskEconomyValueMovementCapability;
+    capability?: Types.FinanceEconomyRiskEconomyValueMovementCapability;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/policies';
 
     const result = await this.client.request({
@@ -985,7 +997,11 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(
+        Types.FinanceEconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatusSchema,
+        result.data,
+        'response',
+      );
       return { ok: true, data: validatedData };
     }
 
@@ -994,7 +1010,9 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async postAdminEconomyPolicies(body: Types.APIControllersProposeEconomyPolicyInput): Promise<Result<Types.EconomyRiskEconomyCapabilityPolicy, ApiError>> {
+  async postAdminEconomyPolicies(
+    body: Types.APIControllersProposeEconomyPolicyInput,
+  ): Promise<Result<Types.FinanceEconomyRiskEconomyCapabilityPolicy, ApiError>> {
     const url = '/api/v1/admin/economy/policies';
 
     // Validate request body
@@ -1009,7 +1027,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyCapabilityPolicySchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyCapabilityPolicySchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1020,7 +1038,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyPoliciesForGetAdminEconomyPoliciesByPolicyId(
     policyId: string,
-  ): Promise<Result<Types.EconomyOperationsEconomyPolicyOperationalDetails, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyPolicyOperationalDetails, ApiError>> {
     const url = `/api/v1/admin/economy/policies/${policyId}`;
 
     const result = await this.client.request({
@@ -1031,7 +1049,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyPolicyOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyPolicyOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1043,7 +1061,7 @@ export class EconomyAdministrationModule {
   async postAdminEconomyPoliciesApprove(
     policyId: string,
     body: Types.APIControllersApproveEconomyPolicyInput,
-  ): Promise<Result<Types.EconomyRiskEconomyCapabilityPolicy, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyRiskEconomyCapabilityPolicy, ApiError>> {
     const url = `/api/v1/admin/economy/policies/${policyId}/approve`;
 
     // Validate request body
@@ -1058,7 +1076,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyRiskEconomyCapabilityPolicySchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyRiskEconomyCapabilityPolicySchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1067,7 +1085,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async getAdminEconomyPoliciesAudit(policyId: string): Promise<Result<Array<Types.EconomyOperationsEconomyPolicyAuditEntry>, ApiError>> {
+  async getAdminEconomyPoliciesAudit(policyId: string): Promise<Result<Array<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry>, ApiError>> {
     const url = `/api/v1/admin/economy/policies/${policyId}/audit`;
 
     const result = await this.client.request({
@@ -1076,12 +1094,12 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyOperationsEconomyPolicyAuditEntry>, ApiError>;
+    return result as Result<Array<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry>, ApiError>;
   }
 
   /**
    */
-  async getAdminEconomyReservesActive(): Promise<Result<Types.EconomyOperationsEconomyActiveReserveOperationalDetails, ApiError>> {
+  async getAdminEconomyReservesActive(): Promise<Result<Types.FinanceEconomyOperationsEconomyActiveReserveOperationalDetails, ApiError>> {
     const url = '/api/v1/admin/economy/reserves/active';
 
     const result = await this.client.request({
@@ -1092,7 +1110,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyActiveReserveOperationalDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyActiveReserveOperationalDetailsSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1101,7 +1119,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async getAdminEconomyReservesLiabilities(): Promise<Result<Types.EconomyReservesEconomyLiabilitySnapshot, ApiError>> {
+  async getAdminEconomyReservesLiabilities(): Promise<Result<Types.FinanceEconomyReservesEconomyLiabilitySnapshot, ApiError>> {
     const url = '/api/v1/admin/economy/reserves/liabilities';
 
     const result = await this.client.request({
@@ -1112,7 +1130,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyReservesEconomyLiabilitySnapshotSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyReservesEconomyLiabilitySnapshotSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1124,7 +1142,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposals(query?: {
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatus, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatus, ApiError>> {
     const url = '/api/v1/admin/economy/reserves/proposals';
 
     const result = await this.client.request({
@@ -1136,7 +1154,11 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(
+        Types.FinanceEconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatusSchema,
+        result.data,
+        'response',
+      );
       return { ok: true, data: validatedData };
     }
 
@@ -1147,7 +1169,7 @@ export class EconomyAdministrationModule {
    */
   async postAdminEconomyReservesProposals(
     body: Types.APIControllersProposeEconomyReserveInput,
-  ): Promise<Result<Types.EconomyReservesDurableReserveProposalState, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyReservesDurableReserveProposalState, ApiError>> {
     const url = '/api/v1/admin/economy/reserves/proposals';
 
     // Validate request body
@@ -1162,7 +1184,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyReservesDurableReserveProposalStateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyReservesDurableReserveProposalStateSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1173,7 +1195,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyReservesProposalsForGetAdminEconomyReservesProposalsByProposalId(
     proposalId: string,
-  ): Promise<Result<Types.EconomyOperationsEconomyReserveProposalOperationalStatus, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyReserveProposalOperationalStatus, ApiError>> {
     const url = `/api/v1/admin/economy/reserves/proposals/${proposalId}`;
 
     const result = await this.client.request({
@@ -1184,7 +1206,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyOperationsEconomyReserveProposalOperationalStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyOperationsEconomyReserveProposalOperationalStatusSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -1196,7 +1218,7 @@ export class EconomyAdministrationModule {
   async postAdminEconomyReservesProposalsApprove(
     proposalId: string,
     body: Types.APIControllersEconomyStepUpInput,
-  ): Promise<Result<Types.EconomyReservesReserveHead, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyReservesReserveHead, ApiError>> {
     const url = `/api/v1/admin/economy/reserves/proposals/${proposalId}/approve`;
 
     // Validate request body
@@ -1211,7 +1233,7 @@ export class EconomyAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyReservesReserveHeadSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyReservesReserveHeadSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
