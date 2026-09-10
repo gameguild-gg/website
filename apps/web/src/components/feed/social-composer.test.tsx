@@ -125,6 +125,10 @@ describe("SocialComposer", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /^publish$/i }));
     expect(await screen.findByRole("button", { name: /retry feed update/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /remove media/i }));
+    fireEvent.change(screen.getByPlaceholderText(/what are you building/i), {
+      target: { value: "" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /retry feed update/i }));
     await waitFor(() => expect(onPublished).toHaveBeenCalledWith({ id: "post-1", kind: "Post" }));
     expect(mocks.createSocialPost).toHaveBeenCalledTimes(1);

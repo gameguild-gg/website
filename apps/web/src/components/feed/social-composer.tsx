@@ -50,7 +50,7 @@ export function SocialComposer({ userName, onPublished }: { userName: string; on
     if (pendingRef.current) return;
     const text = content.trim();
     if (text.length > CHARACTER_LIMIT) { setFailure(`Posts can be up to ${CHARACTER_LIMIT} characters.`); return; }
-    if (!text && !media) return;
+    if (!text && !media && !committedPostId) return;
     pendingRef.current = true; setPending(true); setFailure(null);
     const controller = new AbortController(); controllerRef.current = controller;
     try {
