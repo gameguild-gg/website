@@ -44,7 +44,7 @@ internal static class FeedProjection
             .ToList();
         var profiles = await context.Set<SocialProfile>()
             .AsNoTracking()
-            .Where(profile => authorIds.Contains(profile.UserId))
+            .Where(profile => authorIds.Contains(profile.UserId) && profile.DeletedAt == null)
             .ToDictionaryAsync(profile => profile.UserId, cancellationToken)
             .ConfigureAwait(false);
         var reactions = await context.Set<Reaction>()
@@ -65,12 +65,12 @@ internal static class FeedProjection
             .Select(comment => comment.PostId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        var repostSourceIds = await context.Set<Post>()
+        var repostRows = await context.Set<Post>()
             .AsNoTracking()
             .Where(post => post.RepostOfPostId.HasValue &&
                            postIds.Contains(post.RepostOfPostId.Value) &&
                            post.DeletedAt == null)
-            .Select(post => post.RepostOfPostId!.Value)
+            .Select(post => new { SourceId = post.RepostOfPostId!.Value, post.AuthorId })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         var tagRows = await (from assignment in context.Set<PostTagAssignment>().AsNoTracking()
@@ -93,9 +93,13 @@ internal static class FeedProjection
         var commentCounts = commentPostIds
             .GroupBy(id => id)
             .ToDictionary(group => group.Key, group => group.Count());
-        var repostCounts = repostSourceIds
-            .GroupBy(id => id)
+        var repostCounts = repostRows
+            .GroupBy(row => row.SourceId)
             .ToDictionary(group => group.Key, group => group.Count());
+        var viewerRepostSourceIds = repostRows
+            .Where(row => row.AuthorId == viewerId)
+            .Select(row => row.SourceId)
+            .ToHashSet();
         var tags = tagRows
             .GroupBy(row => row.PostId)
             .ToDictionary(
@@ -117,6 +121,7 @@ internal static class FeedProjection
                     savedPostIds,
                     commentCounts,
                     repostCounts,
+                    viewerRepostSourceIds,
                     tags,
                     followed))
             .ToList();
@@ -144,7 +149,7 @@ internal static class FeedProjection
                 session.RegisteredTesterCount,
                 Math.Max(0, session.MaxTesters - session.RegisteredTesterCount)),
             new FeedEngagementDto(0, 0, 0, 0),
-            new FeedViewerStateDto(null, false, followed.Contains(session.ManagerId), false, false),
+            new FeedViewerStateDto(null, false, followed.Contains(session.ManagerId), false, false, false),
             Array.Empty<string>());
     }
 
@@ -159,6 +164,7 @@ internal static class FeedProjection
         IReadOnlySet<Guid> savedPostIds,
         IReadOnlyDictionary<Guid, int> commentCounts,
         IReadOnlyDictionary<Guid, int> repostCounts,
+        IReadOnlySet<Guid> viewerRepostSourceIds,
         IReadOnlyDictionary<Guid, IReadOnlyList<string>> tags,
         IReadOnlySet<Guid> followed)
     {
@@ -197,6 +203,7 @@ internal static class FeedProjection
                 viewerReactions.GetValueOrDefault(post.Id),
                 savedPostIds.Contains(post.Id),
                 followed.Contains(post.AuthorId),
+                viewerRepostSourceIds.Contains(post.Id),
                 post.AuthorId == viewerId,
                 post.AuthorId == viewerId),
             tags.GetValueOrDefault(post.Id) ?? Array.Empty<string>());

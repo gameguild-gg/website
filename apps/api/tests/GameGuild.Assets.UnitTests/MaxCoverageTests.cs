@@ -1642,10 +1642,10 @@ public class SecureUploadServiceMaxTests
     }
 
     [Fact]
-    public async Task UploadWithSecurityChecksAsync_ImageFile_RequiresModeration()
+    public async Task UploadWithSecurityChecksAsync_ImageFile_RunsModerationAndBecomesReadyWhenApproved()
     {
-        _virusScanOptions.Mode = VirusScanMode.Async;
-        var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        _virusScanOptions.Enabled = false;
+        var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a });
         var refId = Guid.NewGuid();
         var contentId = Guid.NewGuid();
         _mockUploadService.Setup(x => x.UploadAsync(
@@ -1657,6 +1657,12 @@ public class SecureUploadServiceMaxTests
         contentEntity.Id = contentId;
         _mockContentRepo.Setup(x => x.GetByIdAsync(contentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(contentEntity);
+        _mockModeration.Setup(x => x.ModerateAsync(
+                contentId,
+                It.IsAny<Stream>(),
+                "image/png",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ModerationResult(true, ModerationStatus.Approved, 0.99, null, null));
 
         var options = new UploadAssetOptions();
 
@@ -1664,8 +1670,13 @@ public class SecureUploadServiceMaxTests
             stream, "photo.png", "image/png", Guid.NewGuid(), Guid.NewGuid(), options);
 
         result.Success.Should().BeTrue();
-        result.RequiresModerationReview.Should().BeTrue();
-        result.Status.Should().Be(SecureUploadStatus.PendingModeration);
+        result.RequiresModerationReview.Should().BeFalse();
+        result.Status.Should().Be(SecureUploadStatus.Completed);
+        _mockModeration.Verify(x => x.ModerateAsync(
+            contentId,
+            It.IsAny<Stream>(),
+            "image/png",
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

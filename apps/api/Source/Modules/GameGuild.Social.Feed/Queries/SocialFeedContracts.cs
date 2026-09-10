@@ -74,8 +74,29 @@ public sealed record FeedViewerStateDto(
     string? Reaction,
     bool IsSaved,
     bool IsFollowingAuthor,
+    bool HasReposted,
     bool CanEdit,
     bool CanDelete);
+
+public sealed record SocialFeedProfileDto(
+    Guid Id,
+    Guid UserId,
+    string Handle,
+    string DisplayName,
+    string? Bio,
+    string? AvatarUrl,
+    string? BannerUrl,
+    string? Headline,
+    string? Location,
+    string? TimeZone,
+    string? WebsiteUrl,
+    string AvailabilityStatus,
+    bool IsVerified,
+    int FollowerCount,
+    int FollowingCount,
+    int PostCount,
+    int ProjectCount,
+    bool IsFollowing);
 
 public sealed class InvalidFeedCursorException : Exception
 {

@@ -78,6 +78,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
         "Social.Announcements",
         "Social.Blog",
         "Social.Feed",
+        "Social.Follows",
         "Social.Groups",
         "Social.Posts",
         "Social.Profiles",

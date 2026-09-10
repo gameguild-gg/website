@@ -64,6 +64,21 @@ public sealed class SocialFeedQueryServiceTests
     }
 
     [Fact]
+    public async Task ForYou_ProjectsWhetherTheViewerAlreadyRepostedEachPost()
+    {
+        await using var context = CreateContext();
+        var viewerId = Guid.NewGuid();
+        var source = AddPost(context, Guid.NewGuid(), "source");
+        context.Set<Post>().Add(Post.CreateRepost(viewerId, source, "boost"));
+        await context.SaveChangesAsync();
+
+        var page = await new SocialFeedQueryService(context)
+            .GetAsync(viewerId, FeedScope.ForYou, null, 30, null, default);
+
+        page.Items.Single(item => item.Id == source.Id).Viewer.HasReposted.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Saved_ReturnsOnlyActorsSavedPostsInSaveOrder()
     {
         await using var context = CreateContext();
@@ -127,6 +142,96 @@ public sealed class SocialFeedQueryServiceTests
         secondPage.Items.Select(item => item.Id).Should().Equal(second.Id);
         firstPage.NextCursor.Should().NotBeNull();
         secondPage.Items.Should().NotIntersectWith(firstPage.Items);
+    }
+
+    [Fact]
+    public async Task GetPostAsync_ReturnsAViewerAwarePermalinkAndRejectsInvisiblePosts()
+    {
+        await using var context = CreateContext();
+        var viewerId = Guid.NewGuid();
+        var visible = AddPost(context, Guid.NewGuid(), "shared post");
+        var privatePost = AddPost(context, Guid.NewGuid(), "private", PostVisibility.Private);
+        context.Set<SavedPost>().Add(SavedPost.Create(viewerId, visible.Id));
+        await context.SaveChangesAsync();
+        var service = new SocialFeedQueryService(context);
+
+        var item = await service.GetPostAsync(viewerId, visible.Id, default);
+        var hidden = await service.GetPostAsync(viewerId, privatePost.Id, default);
+
+        item.Should().NotBeNull();
+        item!.Id.Should().Be(visible.Id);
+        item.Viewer.IsSaved.Should().BeTrue();
+        hidden.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetProfileByHandleAsync_UsesLiveSocialCountsAndViewerFollowState()
+    {
+        await using var context = CreateContext();
+        var viewerId = Guid.NewGuid();
+        var creatorId = Guid.NewGuid();
+        AddProfile(context, creatorId, "live-creator", "Live Creator");
+        AddPost(context, creatorId, "one");
+        AddPost(context, creatorId, "two");
+        context.Set<Follow>().AddRange(
+            Follow.Create(viewerId, creatorId, FollowableEntityTypes.User),
+            Follow.Create(creatorId, Guid.NewGuid(), FollowableEntityTypes.User));
+        await context.SaveChangesAsync();
+
+        var profile = await new SocialFeedQueryService(context)
+            .GetProfileByHandleAsync(viewerId, "@Live-Creator", default);
+
+        profile.Should().NotBeNull();
+        profile!.FollowerCount.Should().Be(1);
+        profile.FollowingCount.Should().Be(1);
+        profile.PostCount.Should().Be(2);
+        profile.IsFollowing.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetProfileByUserAsync_HidesPrivateAndBlockedProfiles()
+    {
+        await using var context = CreateContext();
+        var viewerId = Guid.NewGuid();
+        var privateUserId = Guid.NewGuid();
+        var blockedUserId = Guid.NewGuid();
+        context.Set<SocialProfile>().AddRange(
+            new SocialProfile
+            {
+                Id = Guid.NewGuid(), UserId = privateUserId, Handle = "private", DisplayName = "Private",
+                Visibility = ProfileVisibility.Private
+            },
+            new SocialProfile
+            {
+                Id = Guid.NewGuid(), UserId = blockedUserId, Handle = "blocked", DisplayName = "Blocked",
+                Visibility = ProfileVisibility.Public
+            });
+        context.Set<Block>().Add(Block.Create(viewerId, blockedUserId));
+        await context.SaveChangesAsync();
+        var service = new SocialFeedQueryService(context);
+
+        (await service.GetProfileByUserAsync(viewerId, privateUserId, default)).Should().BeNull();
+        (await service.GetProfileByUserAsync(viewerId, blockedUserId, default)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ProfileQueries_ExcludeSoftDeletedProfiles()
+    {
+        await using var context = CreateContext();
+        var viewerId = Guid.NewGuid();
+        var deletedUserId = Guid.NewGuid();
+        var deletedProfile = new SocialProfile
+        {
+            Id = Guid.NewGuid(), UserId = deletedUserId, Handle = "deleted", DisplayName = "Deleted",
+            Visibility = ProfileVisibility.Public
+        };
+        deletedProfile.DeletedAt = DateTime.UtcNow;
+        context.Set<SocialProfile>().Add(deletedProfile);
+        await context.SaveChangesAsync();
+        var service = new SocialFeedQueryService(context);
+
+        (await service.GetProfileByUserAsync(viewerId, deletedUserId, default)).Should().BeNull();
+        (await service.GetProfileByHandleAsync(viewerId, "deleted", default)).Should().BeNull();
     }
 
     private static SocialFeedTestDbContext CreateContext()

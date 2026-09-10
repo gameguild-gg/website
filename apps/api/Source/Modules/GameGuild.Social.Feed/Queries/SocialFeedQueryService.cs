@@ -17,6 +17,21 @@ public interface ISocialFeedQueryService
         int take,
         string? tag,
         CancellationToken cancellationToken = default);
+
+    Task<SocialFeedItemDto?> GetPostAsync(
+        Guid viewerId,
+        Guid postId,
+        CancellationToken cancellationToken = default);
+
+    Task<SocialFeedProfileDto?> GetProfileByUserAsync(
+        Guid viewerId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    Task<SocialFeedProfileDto?> GetProfileByHandleAsync(
+        Guid viewerId,
+        string handle,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISocialFeedQueryService
@@ -100,6 +115,138 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
             : null;
 
         return new SocialFeedPageDto(items, nextCursor);
+    }
+
+    public async Task<SocialFeedItemDto?> GetPostAsync(
+        Guid viewerId,
+        Guid postId,
+        CancellationToken cancellationToken = default)
+    {
+        if (viewerId == Guid.Empty)
+            throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+
+        var excludedAuthors = await GetBlockedAuthorIdsAsync(viewerId, cancellationToken).ConfigureAwait(false);
+        var mutedAuthorIds = await context.Set<Mute>()
+            .AsNoTracking()
+            .Where(mute => mute.MuterId == viewerId && (!mute.ExpiresAt.HasValue || mute.ExpiresAt > DateTime.UtcNow))
+            .Select(mute => mute.MutedId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        excludedAuthors.UnionWith(mutedAuthorIds);
+
+        var followedAuthorIds = await context.Set<Follow>()
+            .AsNoTracking()
+            .Where(follow => follow.FollowerId == viewerId && follow.FollowedEntityType == FollowableEntityTypes.User)
+            .Select(follow => follow.FollowedEntityId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var post = await context.Set<Post>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.Id == postId && candidate.DeletedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+        if (post is null || excludedAuthors.Contains(post.AuthorId)) return null;
+        if (post.AuthorId != viewerId &&
+            post.Visibility != PostVisibility.Public &&
+            !(post.Visibility == PostVisibility.Followers && followedAuthorIds.Contains(post.AuthorId)))
+            return null;
+
+        var items = await FeedProjection.ProjectAsync(
+            context,
+            viewerId,
+            [new FeedProjection.Candidate(post, null, post.CreatedAt)],
+            followedAuthorIds,
+            cancellationToken).ConfigureAwait(false);
+        return items.SingleOrDefault();
+    }
+
+    public async Task<SocialFeedProfileDto?> GetProfileByUserAsync(
+        Guid viewerId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (viewerId == Guid.Empty)
+            throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+
+        var profile = await context.Set<SocialProfile>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.UserId == userId && candidate.DeletedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+        return await ProjectProfileAsync(viewerId, profile, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<SocialFeedProfileDto?> GetProfileByHandleAsync(
+        Guid viewerId,
+        string handle,
+        CancellationToken cancellationToken = default)
+    {
+        if (viewerId == Guid.Empty)
+            throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+
+        var normalizedHandle = SocialProfile.NormalizeHandle(handle);
+        var profile = await context.Set<SocialProfile>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.Handle == normalizedHandle && candidate.DeletedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+        return await ProjectProfileAsync(viewerId, profile, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<SocialFeedProfileDto?> ProjectProfileAsync(
+        Guid viewerId,
+        SocialProfile? profile,
+        CancellationToken cancellationToken)
+    {
+        if (profile is null ||
+            (profile.UserId != viewerId && profile.Visibility != ProfileVisibility.Public))
+            return null;
+
+        var isBlocked = await context.Set<Block>()
+            .AsNoTracking()
+            .AnyAsync(block =>
+                (block.BlockerId == viewerId && block.BlockedId == profile.UserId) ||
+                (block.BlockerId == profile.UserId && block.BlockedId == viewerId), cancellationToken)
+            .ConfigureAwait(false);
+        if (isBlocked) return null;
+
+        var followerCount = await context.Set<Follow>()
+            .AsNoTracking()
+            .CountAsync(follow => follow.FollowedEntityId == profile.UserId &&
+                                  follow.FollowedEntityType == FollowableEntityTypes.User, cancellationToken)
+            .ConfigureAwait(false);
+        var followingCount = await context.Set<Follow>()
+            .AsNoTracking()
+            .CountAsync(follow => follow.FollowerId == profile.UserId &&
+                                  follow.FollowedEntityType == FollowableEntityTypes.User, cancellationToken)
+            .ConfigureAwait(false);
+        var postCount = await context.Set<Post>()
+            .AsNoTracking()
+            .CountAsync(post => post.AuthorId == profile.UserId && post.DeletedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+        var isFollowing = await context.Set<Follow>()
+            .AsNoTracking()
+            .AnyAsync(follow => follow.FollowerId == viewerId &&
+                                follow.FollowedEntityId == profile.UserId &&
+                                follow.FollowedEntityType == FollowableEntityTypes.User, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new SocialFeedProfileDto(
+            profile.Id,
+            profile.UserId,
+            profile.Handle,
+            profile.DisplayName,
+            profile.Bio,
+            profile.AvatarUrl,
+            profile.BannerUrl,
+            profile.Headline,
+            profile.Location,
+            profile.TimeZone,
+            profile.WebsiteUrl,
+            profile.AvailabilityStatus.ToString(),
+            profile.VerifiedAt.HasValue,
+            followerCount,
+            followingCount,
+            postCount,
+            profile.ProjectCount,
+            isFollowing);
     }
 
     private async Task<IReadOnlyList<FeedCandidate>> GetPostCandidatesAsync(
