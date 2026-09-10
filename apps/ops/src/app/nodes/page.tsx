@@ -25,7 +25,7 @@ const ZONE_ORDER = ["home", "champlain", "cloud"] as const;
 type VectorResult = {
   data?: {
     result?: Array<{
-      metric?: { instance?: string; node?: string };
+      metric?: { instance?: string; node?: string; mountpoint?: string };
       value?: [number, string];
     }>;
   };
@@ -44,6 +44,25 @@ function extractMap(data: unknown): Record<string, number> {
     if (!key || raw === undefined) continue;
     const num = Number.parseFloat(raw);
     if (Number.isFinite(num)) out[key] = num;
+  }
+  return out;
+}
+
+function extractFsMap(
+  data: unknown,
+): Record<string, Record<string, number>> {
+  if (!data || typeof data !== "object") return {};
+  const result = (data as VectorResult).data?.result ?? [];
+  const out: Record<string, Record<string, number>> = {};
+  for (const point of result) {
+    const node =
+      point.metric?.node ?? point.metric?.instance?.split(":")[0];
+    const mount = point.metric?.mountpoint;
+    const raw = point.value?.[1];
+    if (!node || !mount || raw === undefined) continue;
+    const num = Number.parseFloat(raw);
+    if (!Number.isFinite(num)) continue;
+    (out[node] ??= {})[mount] = num;
   }
   return out;
 }
@@ -88,9 +107,10 @@ function MetricBar({
   );
 }
 
-// Root filesystem per node. overlay/squashfs excluded so containers do not
-// shadow the host mountpoint.
-const DISK_FS_SELECTOR = 'mountpoint="/",fstype!~"overlay|squashfs"';
+// All real disks per node. vfat/boot, tmpfs and overlay are excluded as noise;
+// /var/snap/* binds duplicate the root disk.
+const DISK_FS_SELECTOR =
+  'fstype=~"ext[234]|xfs|zfs|btrfs|f2fs",mountpoint!~"/var/snap/.*"';
 
 export default function NodesPage() {
   const nodes = useNodes();
@@ -127,18 +147,24 @@ export default function NodesPage() {
   const nodeList: NodeRow[] = Array.isArray(nodes.data) ? nodes.data : [];
   const cpuMap = extractMap(cpu.data);
   const memMap = extractMap(mem.data);
-  const diskSizeMap = extractMap(diskSize.data);
-  const diskAvailMap = extractMap(diskAvail.data);
+  const diskSizeMap = extractFsMap(diskSize.data);
+  const diskAvailMap = extractFsMap(diskAvail.data);
 
-  function diskUsage(name: string): { ratio?: number; detail?: string } {
-    const size = diskSizeMap[name];
-    const avail = diskAvailMap[name];
-    if (size === undefined || avail === undefined || size <= 0) return {};
-    const used = size - avail;
-    return {
-      ratio: used / size,
-      detail: `${formatBytes(used)} / ${formatBytes(size)}`,
-    };
+  function disksFor(name: string): Array<{
+    mount: string;
+    used: number;
+    size: number;
+  }> {
+    const sizes = diskSizeMap[name] ?? {};
+    const avails = diskAvailMap[name] ?? {};
+    return Object.keys(sizes)
+      .filter((mount) => avails[mount] !== undefined && sizes[mount] > 0)
+      .map((mount) => ({
+        mount,
+        used: sizes[mount] - avails[mount],
+        size: sizes[mount],
+      }))
+      .sort((a, b) => b.size - a.size);
   }
 
   const byZone: Record<string, NodeRow[]> = {};
@@ -160,7 +186,7 @@ export default function NodesPage() {
             </h2>
             <div className="space-y-3">
               {(byZone[zone] ?? []).map((n) => {
-                const disk = diskUsage(n.name);
+                const disks = disksFor(n.name);
                 return (
                   <Card key={n.name} className="node-card gap-3 py-4">
                     <CardHeader>
@@ -198,11 +224,18 @@ export default function NodesPage() {
                       </div>
                       <MetricBar label="CPU" ratio={cpuMap[n.name]} />
                       <MetricBar label="Memory" ratio={memMap[n.name]} />
-                      <MetricBar
-                        label="Disk"
-                        ratio={disk.ratio}
-                        detail={disk.detail}
-                      />
+                      {disks.length === 0 ? (
+                        <MetricBar label="Disk" ratio={undefined} />
+                      ) : (
+                        disks.map((d) => (
+                          <MetricBar
+                            key={d.mount}
+                            label={`Disk ${d.mount}`}
+                            ratio={d.used / d.size}
+                            detail={`${formatBytes(d.used)} / ${formatBytes(d.size)}`}
+                          />
+                        ))
+                      )}
                     </CardContent>
                   </Card>
                 );
