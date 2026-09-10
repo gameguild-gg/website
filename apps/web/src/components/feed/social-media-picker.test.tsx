@@ -26,6 +26,13 @@ describe("SocialMediaPicker", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/up to 10 mb/i);
   });
 
+  it("rejects MP4 files larger than 100 MiB", () => {
+    render(<SocialMediaPicker value={null} onChange={vi.fn()} />);
+    const oversized = new File([new Uint8Array(100 * 1024 * 1024 + 1)], "too-big.mp4", { type: "video/mp4" });
+    fireEvent.change(screen.getByLabelText(/add photo or video/i), { target: { files: [oversized] } });
+    expect(screen.getByRole("alert")).toHaveTextContent(/up to 100 mb/i);
+  });
+
   it("releases the object URL when selected media is removed", () => {
     const onChange = vi.fn();
     const view = render(<SocialMediaPicker value={null} onChange={onChange} />);
@@ -36,5 +43,13 @@ describe("SocialMediaPicker", () => {
     fireEvent.click(screen.getByRole("button", { name: /remove media/i }));
     view.rerender(<SocialMediaPicker value={null} onChange={onChange} />);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:selected-media");
+  });
+
+  it("releases previous and current object URLs on replacement and unmount", () => {
+    const view = render(<SocialMediaPicker value={{ file: new File(["a"], "a.png", { type: "image/png" }), previewUrl: "blob:first", kind: "image" }} onChange={vi.fn()} />);
+    view.rerender(<SocialMediaPicker value={{ file: new File(["b"], "b.png", { type: "image/png" }), previewUrl: "blob:second", kind: "image" }} onChange={vi.fn()} />);
+    view.unmount();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:first");
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:second");
   });
 });

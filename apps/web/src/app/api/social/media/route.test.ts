@@ -46,6 +46,19 @@ describe("social media upload proxy", () => {
     expect(mocks.fetch).not.toHaveBeenCalled();
   });
 
+  it("sanitizes aborted upstream uploads with a private no-store response", async () => {
+    mocks.fetch.mockRejectedValue(new DOMException("internal details", "AbortError"));
+    const request = new NextRequest("http://localhost/api/social/media", { method: "POST" });
+    const incoming = new FormData();
+    incoming.append("file", new Blob(["png"]), "build.png");
+    vi.spyOn(request, "formData").mockResolvedValue(incoming);
+    const response = await POST(request);
+    expect(response.status).toBe(499);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    await expect(response.json()).resolves.toEqual({ error: "Upload cancelled." });
+    expect(mocks.fetch.mock.calls[0]?.[1].signal).toBe(request.signal);
+  });
+
   it("rejects anonymous uploads without contacting the API", async () => {
     mocks.getToken.mockResolvedValue(null);
     const response = await POST(new NextRequest("http://localhost/api/social/media", { method: "POST", body: new FormData() }));
