@@ -132,4 +132,18 @@ describe('Fetch Transport - Request ID', () => {
 
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:8080/dynamic', expect.objectContaining({ cache: 'no-store' }));
   });
+
+  it('sends FormData without JSON encoding or an explicit content type', async () => {
+    const transport = createFetchTransport({
+      baseUrl: 'http://localhost:8080',
+    });
+    const body = new FormData();
+    body.set('file', new Blob(['image-bytes'], { type: 'image/png' }), 'story.png');
+
+    await transport.request({ method: 'POST', path: '/upload', body });
+
+    const options = (global.fetch as any).mock.calls[0][1] as RequestInit;
+    expect(options.body).toBe(body);
+    expect((options.headers as Headers).has('Content-Type')).toBe(false);
+  });
 });

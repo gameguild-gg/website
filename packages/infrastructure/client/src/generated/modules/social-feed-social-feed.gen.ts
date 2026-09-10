@@ -40,6 +40,66 @@ export class SocialFeedSocialFeedModule {
 
     return result;
   }
+
+  /**
+   */
+  async getApiSocialFeedPosts(postId: string): Promise<Result<Types.SocialFeedSocialFeedItemDto, ApiError>> {
+    const url = `/api/social/feed/posts/${postId}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.SocialFeedSocialFeedItemDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async getApiSocialFeedProfiles(handle: string): Promise<Result<Types.SocialFeedSocialFeedProfileDto, ApiError>> {
+    const url = `/api/social/feed/profiles/${handle}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.SocialFeedSocialFeedProfileDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async getApiSocialFeedProfilesUsers(userId: string): Promise<Result<Types.SocialFeedSocialFeedProfileDto, ApiError>> {
+    const url = `/api/social/feed/profiles/users/${userId}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.SocialFeedSocialFeedProfileDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
 }
 
 export function createSocialFeedSocialFeedModule(client: ApiClient): SocialFeedSocialFeedModule {

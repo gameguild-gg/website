@@ -11360,6 +11360,7 @@ export type SocialFeedFeedItemReason = 'Following' | 'Trending' | 'Recommended' 
 export interface SocialFeedFeedViewerStateDto {
   canDelete?: boolean;
   canEdit?: boolean;
+  hasReposted?: boolean;
   isFollowingAuthor?: boolean;
   isSaved?: boolean;
   reaction?: string | null;
@@ -11398,6 +11399,27 @@ export interface SocialFeedSocialFeedPageDto {
   nextCursor?: string | null;
 }
 
+export interface SocialFeedSocialFeedProfileDto {
+  id?: string;
+  availabilityStatus?: string | null;
+  avatarUrl?: string | null;
+  bannerUrl?: string | null;
+  bio?: string | null;
+  displayName?: string | null;
+  followerCount?: number;
+  followingCount?: number;
+  handle?: string | null;
+  headline?: string | null;
+  isFollowing?: boolean;
+  isVerified?: boolean;
+  location?: string | null;
+  postCount?: number;
+  projectCount?: number;
+  timeZone?: string | null;
+  userId?: string;
+  websiteUrl?: string | null;
+}
+
 export interface SocialFeedSocialPostContentDto {
   content?: string | null;
   editedAt?: string | null;
@@ -11429,6 +11451,85 @@ export interface SocialFeedTestingSessionFeedDto {
   registeredTesterCount?: number;
   startsAt?: string;
   status?: string | null;
+}
+
+export interface SocialFollowsControllersBatchCountsInput {
+  entityIds?: Array<string> | null;
+  entityType?: string | null;
+}
+
+export interface SocialFollowsControllersBatchStatusInput {
+  entityIds?: Array<string> | null;
+  entityType?: string | null;
+}
+
+export interface SocialFollowsControllersBlockDto {
+  id?: string;
+  blockedAt?: string;
+  blockedId?: string;
+  blockerId?: string;
+  reason?: string | null;
+}
+
+export interface SocialFollowsControllersBlockInput {
+  blockedUserId?: string;
+  reason?: string | null;
+}
+
+export interface SocialFollowsControllersFollowDto {
+  id?: string;
+  followedAt?: string;
+  followedEntityId?: string;
+  followedEntityType?: string | null;
+  followerId?: string;
+  notificationsEnabled?: boolean;
+}
+
+export interface SocialFollowsControllersFollowInput {
+  entityId?: string;
+  entityType?: string | null;
+  notificationsEnabled?: boolean;
+}
+
+export interface SocialFollowsControllersFollowPrivacySettingsDto {
+  id?: string;
+  allowFollowers?: boolean;
+  isFollowerListPublic?: boolean;
+  isFollowingListPublic?: boolean;
+  notifyOnNewFollower?: boolean;
+  showFollowerCount?: boolean;
+  showFollowingCount?: boolean;
+  userId?: string;
+}
+
+export interface SocialFollowsControllersMuteDto {
+  id?: string;
+  expiresAt?: string | null;
+  mutedAt?: string;
+  mutedId?: string;
+  muterId?: string;
+  reason?: string | null;
+}
+
+export interface SocialFollowsControllersMuteInput {
+  expiresAt?: string | null;
+  mutedUserId?: string;
+  reason?: string | null;
+}
+
+export interface SocialFollowsControllersUpdateNotificationsInput {
+  entityId?: string;
+  entityType?: string | null;
+  notificationsEnabled?: boolean;
+}
+
+export interface SocialFollowsControllersUpdatePrivacySettingsInput {
+  allowFollowers?: boolean;
+  isFollowerListPublic?: boolean;
+  isFollowingListPublic?: boolean;
+  notifyOnNewFollower?: boolean;
+  showFollowerCount?: boolean;
+  showFollowingCount?: boolean;
 }
 
 export interface SocialGroupsApproveSocialGroupMemberInput {
@@ -14476,9 +14577,21 @@ export let SocialFeedSavedPostStateDtoSchema: z.ZodType<SocialFeedSavedPostState
 export let SocialFeedSocialFeedItemDtoSchema: z.ZodType<SocialFeedSocialFeedItemDto>;
 export let SocialFeedSocialFeedItemKindSchema: z.ZodType<SocialFeedSocialFeedItemKind>;
 export let SocialFeedSocialFeedPageDtoSchema: z.ZodType<SocialFeedSocialFeedPageDto>;
+export let SocialFeedSocialFeedProfileDtoSchema: z.ZodType<SocialFeedSocialFeedProfileDto>;
 export let SocialFeedSocialPostContentDtoSchema: z.ZodType<SocialFeedSocialPostContentDto>;
 export let SocialFeedStoryDtoSchema: z.ZodType<SocialFeedStoryDto>;
 export let SocialFeedTestingSessionFeedDtoSchema: z.ZodType<SocialFeedTestingSessionFeedDto>;
+export let SocialFollowsControllersBatchCountsInputSchema: z.ZodType<SocialFollowsControllersBatchCountsInput>;
+export let SocialFollowsControllersBatchStatusInputSchema: z.ZodType<SocialFollowsControllersBatchStatusInput>;
+export let SocialFollowsControllersBlockDtoSchema: z.ZodType<SocialFollowsControllersBlockDto>;
+export let SocialFollowsControllersBlockInputSchema: z.ZodType<SocialFollowsControllersBlockInput>;
+export let SocialFollowsControllersFollowDtoSchema: z.ZodType<SocialFollowsControllersFollowDto>;
+export let SocialFollowsControllersFollowInputSchema: z.ZodType<SocialFollowsControllersFollowInput>;
+export let SocialFollowsControllersFollowPrivacySettingsDtoSchema: z.ZodType<SocialFollowsControllersFollowPrivacySettingsDto>;
+export let SocialFollowsControllersMuteDtoSchema: z.ZodType<SocialFollowsControllersMuteDto>;
+export let SocialFollowsControllersMuteInputSchema: z.ZodType<SocialFollowsControllersMuteInput>;
+export let SocialFollowsControllersUpdateNotificationsInputSchema: z.ZodType<SocialFollowsControllersUpdateNotificationsInput>;
+export let SocialFollowsControllersUpdatePrivacySettingsInputSchema: z.ZodType<SocialFollowsControllersUpdatePrivacySettingsInput>;
 export let SocialGroupsApproveSocialGroupMemberInputSchema: z.ZodType<SocialGroupsApproveSocialGroupMemberInput>;
 export let SocialGroupsChangeSocialGroupMemberRoleInputSchema: z.ZodType<SocialGroupsChangeSocialGroupMemberRoleInput>;
 export let SocialGroupsCreateSocialGroupInputSchema: z.ZodType<SocialGroupsCreateSocialGroupInput>;
@@ -28328,6 +28441,7 @@ SocialFeedFeedItemReasonSchema = z.enum(['Following', 'Trending', 'Recommended',
 SocialFeedFeedViewerStateDtoSchema = z.object({
   canDelete: z.boolean().optional(),
   canEdit: z.boolean().optional(),
+  hasReposted: z.boolean().optional(),
   isFollowingAuthor: z.boolean().optional(),
   isSaved: z.boolean().optional(),
   reaction: z.string().nullable().optional(),
@@ -28374,6 +28488,28 @@ SocialFeedSocialFeedPageDtoSchema = z.object({
   nextCursor: z.string().nullable().optional(),
 });
 
+/** Zod schema for SocialFeedSocialFeedProfileDto */
+SocialFeedSocialFeedProfileDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  availabilityStatus: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
+  bannerUrl: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  followerCount: z.number().int().optional(),
+  followingCount: z.number().int().optional(),
+  handle: z.string().nullable().optional(),
+  headline: z.string().nullable().optional(),
+  isFollowing: z.boolean().optional(),
+  isVerified: z.boolean().optional(),
+  location: z.string().nullable().optional(),
+  postCount: z.number().int().optional(),
+  projectCount: z.number().int().optional(),
+  timeZone: z.string().nullable().optional(),
+  userId: z.string().uuid().optional(),
+  websiteUrl: z.string().nullable().optional(),
+});
+
 /** Zod schema for SocialFeedSocialPostContentDto */
 SocialFeedSocialPostContentDtoSchema = z.object({
   content: z.string().nullable().optional(),
@@ -28408,6 +28544,96 @@ SocialFeedTestingSessionFeedDtoSchema = z.object({
   registeredTesterCount: z.number().int().optional(),
   startsAt: z.string().datetime().optional(),
   status: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersBatchCountsInput */
+SocialFollowsControllersBatchCountsInputSchema = z.object({
+  entityIds: z.array(z.string().uuid()).nullable().optional(),
+  entityType: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersBatchStatusInput */
+SocialFollowsControllersBatchStatusInputSchema = z.object({
+  entityIds: z.array(z.string().uuid()).nullable().optional(),
+  entityType: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersBlockDto */
+SocialFollowsControllersBlockDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  blockedAt: z.string().datetime().optional(),
+  blockedId: z.string().uuid().optional(),
+  blockerId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersBlockInput */
+SocialFollowsControllersBlockInputSchema = z.object({
+  blockedUserId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersFollowDto */
+SocialFollowsControllersFollowDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  followedAt: z.string().datetime().optional(),
+  followedEntityId: z.string().uuid().optional(),
+  followedEntityType: z.string().nullable().optional(),
+  followerId: z.string().uuid().optional(),
+  notificationsEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersFollowInput */
+SocialFollowsControllersFollowInputSchema = z.object({
+  entityId: z.string().uuid().optional(),
+  entityType: z.string().nullable().optional(),
+  notificationsEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersFollowPrivacySettingsDto */
+SocialFollowsControllersFollowPrivacySettingsDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  allowFollowers: z.boolean().optional(),
+  isFollowerListPublic: z.boolean().optional(),
+  isFollowingListPublic: z.boolean().optional(),
+  notifyOnNewFollower: z.boolean().optional(),
+  showFollowerCount: z.boolean().optional(),
+  showFollowingCount: z.boolean().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersMuteDto */
+SocialFollowsControllersMuteDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  mutedAt: z.string().datetime().optional(),
+  mutedId: z.string().uuid().optional(),
+  muterId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersMuteInput */
+SocialFollowsControllersMuteInputSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  mutedUserId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersUpdateNotificationsInput */
+SocialFollowsControllersUpdateNotificationsInputSchema = z.object({
+  entityId: z.string().uuid().optional(),
+  entityType: z.string().nullable().optional(),
+  notificationsEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for SocialFollowsControllersUpdatePrivacySettingsInput */
+SocialFollowsControllersUpdatePrivacySettingsInputSchema = z.object({
+  allowFollowers: z.boolean().optional(),
+  isFollowerListPublic: z.boolean().optional(),
+  isFollowingListPublic: z.boolean().optional(),
+  notifyOnNewFollower: z.boolean().optional(),
+  showFollowerCount: z.boolean().optional(),
+  showFollowingCount: z.boolean().optional(),
 });
 
 /** Zod schema for SocialGroupsApproveSocialGroupMemberInput */
@@ -31095,12 +31321,22 @@ export type SocialFeedSocialFeedItem = SocialFeedSocialFeedItemDto;
 export { SocialFeedSocialFeedItemDtoSchema as SocialFeedSocialFeedItemSchema };
 export type SocialFeedSocialFeedPage = SocialFeedSocialFeedPageDto;
 export { SocialFeedSocialFeedPageDtoSchema as SocialFeedSocialFeedPageSchema };
+export type SocialFeedSocialFeedProfile = SocialFeedSocialFeedProfileDto;
+export { SocialFeedSocialFeedProfileDtoSchema as SocialFeedSocialFeedProfileSchema };
 export type SocialFeedSocialPostContent = SocialFeedSocialPostContentDto;
 export { SocialFeedSocialPostContentDtoSchema as SocialFeedSocialPostContentSchema };
 export type SocialFeedStory = SocialFeedStoryDto;
 export { SocialFeedStoryDtoSchema as SocialFeedStorySchema };
 export type SocialFeedTestingSessionFeed = SocialFeedTestingSessionFeedDto;
 export { SocialFeedTestingSessionFeedDtoSchema as SocialFeedTestingSessionFeedSchema };
+export type SocialFollowsControllersBlock = SocialFollowsControllersBlockDto;
+export { SocialFollowsControllersBlockDtoSchema as SocialFollowsControllersBlockSchema };
+export type SocialFollowsControllersFollow = SocialFollowsControllersFollowDto;
+export { SocialFollowsControllersFollowDtoSchema as SocialFollowsControllersFollowSchema };
+export type SocialFollowsControllersFollowPrivacySettings = SocialFollowsControllersFollowPrivacySettingsDto;
+export { SocialFollowsControllersFollowPrivacySettingsDtoSchema as SocialFollowsControllersFollowPrivacySettingsSchema };
+export type SocialFollowsControllersMute = SocialFollowsControllersMuteDto;
+export { SocialFollowsControllersMuteDtoSchema as SocialFollowsControllersMuteSchema };
 export type SocialGroupsSocialGroup = SocialGroupsSocialGroupDto;
 export { SocialGroupsSocialGroupDtoSchema as SocialGroupsSocialGroupSchema };
 export type SocialGroupsSocialGroupMember = SocialGroupsSocialGroupMemberDto;

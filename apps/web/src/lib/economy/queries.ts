@@ -4,13 +4,13 @@ import {
   GeneratedApi,
   type APIControllersEconomySelfServiceCapability,
   type APIControllersEconomyKycStatus,
-  type EconomyBountiesDurableBountyView,
-  type EconomyContractsEconomyWalletSummary,
-  type EconomyContractsEconomyWalletTransaction,
-  type EconomyFundingEconomyTopUpStatus,
-  type EconomyPayoutsConnectAccountSnapshot,
-  type EconomyPayoutsQueriesEconomyPayoutOperation,
-  type EconomyPayoutsQueriesEconomyPayoutRequestDto,
+  type FinanceEconomyBountiesDurableBountyView as EconomyBountiesDurableBountyView,
+  type FinanceEconomyContractsEconomyWalletSummary as EconomyContractsEconomyWalletSummary,
+  type FinanceEconomyContractsEconomyWalletTransaction as EconomyContractsEconomyWalletTransaction,
+  type FinanceEconomyFundingEconomyTopUpStatus as EconomyFundingEconomyTopUpStatus,
+  type FinanceEconomyPayoutsConnectAccountSnapshot as EconomyPayoutsConnectAccountSnapshot,
+  type FinanceEconomyPayoutsQueriesEconomyPayoutOperation as EconomyPayoutsQueriesEconomyPayoutOperation,
+  type FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto as EconomyPayoutsQueriesEconomyPayoutRequestDto,
 } from '@game-guild/client';
 import { cache } from 'react';
 

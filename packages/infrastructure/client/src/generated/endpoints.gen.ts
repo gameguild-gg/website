@@ -974,6 +974,285 @@ export const getApiContentsVersioningPendingReviewEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface PostApiFollowersBatchCountsInput {
+  body?: Types.SocialFollowsControllersBatchCountsInput;
+}
+export type PostApiFollowersBatchCountsOutput = Record<string, number>;
+export const postApiFollowersBatchCountsEndpoint = {
+  operationId: 'postApiFollowersBatchCounts' as const,
+  method: 'POST' as const,
+  path: '/api/followers/batch/counts' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiFollowersBatchStatusInput {
+  body?: Types.SocialFollowsControllersBatchStatusInput;
+}
+export type PostApiFollowersBatchStatusOutput = Record<string, boolean>;
+export const postApiFollowersBatchStatusEndpoint = {
+  operationId: 'postApiFollowersBatchStatus' as const,
+  method: 'POST' as const,
+  path: '/api/followers/batch/status' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiFollowersBlockInput {
+  body?: Types.SocialFollowsControllersBlockInput;
+}
+export type PostApiFollowersBlockOutput = Types.SocialFollowsControllersBlockDto;
+export const postApiFollowersBlockEndpoint = {
+  operationId: 'postApiFollowersBlock' as const,
+  method: 'POST' as const,
+  path: '/api/followers/block' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersBlockedUsersInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiFollowersBlockedUsersOutput = Array<Types.SocialFollowsControllersBlockDto>;
+export const getApiFollowersBlockedUsersEndpoint = {
+  operationId: 'getApiFollowersBlockedUsers' as const,
+  method: 'GET' as const,
+  path: '/api/followers/blocked-users' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersCountFollowersInput {
+  entityId: string;
+  query?: {
+    entityType?: string;
+  };
+}
+export type GetApiFollowersCountFollowersOutput = number;
+export const getApiFollowersCountFollowersEndpoint = {
+  operationId: 'getApiFollowersCountFollowers' as const,
+  method: 'GET' as const,
+  path: '/api/followers/count/followers/{entityId}' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersCountFollowingInput {
+  query?: {
+    entityType?: string;
+  };
+}
+export type GetApiFollowersCountFollowingOutput = number;
+export const getApiFollowersCountFollowingEndpoint = {
+  operationId: 'getApiFollowersCountFollowing' as const,
+  method: 'GET' as const,
+  path: '/api/followers/count/following' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiFollowersFollowInput {
+  body?: Types.SocialFollowsControllersFollowInput;
+}
+export type PostApiFollowersFollowOutput = Types.SocialFollowsControllersFollowDto;
+export const postApiFollowersFollowEndpoint = {
+  operationId: 'postApiFollowersFollow' as const,
+  method: 'POST' as const,
+  path: '/api/followers/follow' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersFollowersInput {
+  entityId: string;
+  query?: {
+    entityType?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiFollowersFollowersOutput = Array<Types.SocialFollowsControllersFollowDto>;
+export const getApiFollowersFollowersEndpoint = {
+  operationId: 'getApiFollowersFollowers' as const,
+  method: 'GET' as const,
+  path: '/api/followers/followers/{entityId}' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersFollowingInput {
+  query?: {
+    entityType?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiFollowersFollowingOutput = Array<Types.SocialFollowsControllersFollowDto>;
+export const getApiFollowersFollowingEndpoint = {
+  operationId: 'getApiFollowersFollowing' as const,
+  method: 'GET' as const,
+  path: '/api/followers/following' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersIsBlockedInput {
+  blockedUserId: string;
+}
+export type GetApiFollowersIsBlockedOutput = boolean;
+export const getApiFollowersIsBlockedEndpoint = {
+  operationId: 'getApiFollowersIsBlocked' as const,
+  method: 'GET' as const,
+  path: '/api/followers/is-blocked/{blockedUserId}' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersIsFollowingInput {
+  query?: {
+    entityId?: string;
+    entityType?: string;
+  };
+}
+export type GetApiFollowersIsFollowingOutput = boolean;
+export const getApiFollowersIsFollowingEndpoint = {
+  operationId: 'getApiFollowersIsFollowing' as const,
+  method: 'GET' as const,
+  path: '/api/followers/is-following' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersIsMutedInput {
+  mutedUserId: string;
+}
+export type GetApiFollowersIsMutedOutput = boolean;
+export const getApiFollowersIsMutedEndpoint = {
+  operationId: 'getApiFollowersIsMuted' as const,
+  method: 'GET' as const,
+  path: '/api/followers/is-muted/{mutedUserId}' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiFollowersMuteInput {
+  body?: Types.SocialFollowsControllersMuteInput;
+}
+export type PostApiFollowersMuteOutput = Types.SocialFollowsControllersMuteDto;
+export const postApiFollowersMuteEndpoint = {
+  operationId: 'postApiFollowersMute' as const,
+  method: 'POST' as const,
+  path: '/api/followers/mute' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersMutedUsersInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiFollowersMutedUsersOutput = Array<Types.SocialFollowsControllersMuteDto>;
+export const getApiFollowersMutedUsersEndpoint = {
+  operationId: 'getApiFollowersMutedUsers' as const,
+  method: 'GET' as const,
+  path: '/api/followers/muted-users' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiFollowersMutualInput {
+  query?: {
+    userId1?: string;
+    userId2?: string;
+  };
+}
+export type GetApiFollowersMutualOutput = boolean;
+export const getApiFollowersMutualEndpoint = {
+  operationId: 'getApiFollowersMutual' as const,
+  method: 'GET' as const,
+  path: '/api/followers/mutual' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiFollowersNotificationsInput {
+  body?: Types.SocialFollowsControllersUpdateNotificationsInput;
+}
+export type PutApiFollowersNotificationsOutput = Types.SocialFollowsControllersFollowDto;
+export const putApiFollowersNotificationsEndpoint = {
+  operationId: 'putApiFollowersNotifications' as const,
+  method: 'PUT' as const,
+  path: '/api/followers/notifications' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetApiFollowersPrivacySettingsInput = void;
+export type GetApiFollowersPrivacySettingsOutput = Types.SocialFollowsControllersFollowPrivacySettingsDto;
+export const getApiFollowersPrivacySettingsEndpoint = {
+  operationId: 'getApiFollowersPrivacySettings' as const,
+  method: 'GET' as const,
+  path: '/api/followers/privacy-settings' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiFollowersPrivacySettingsInput {
+  body?: Types.SocialFollowsControllersUpdatePrivacySettingsInput;
+}
+export type PutApiFollowersPrivacySettingsOutput = Types.SocialFollowsControllersFollowPrivacySettingsDto;
+export const putApiFollowersPrivacySettingsEndpoint = {
+  operationId: 'putApiFollowersPrivacySettings' as const,
+  method: 'PUT' as const,
+  path: '/api/followers/privacy-settings' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteApiFollowersUnblockInput {
+  blockedUserId: string;
+}
+export type DeleteApiFollowersUnblockOutput = void;
+export const deleteApiFollowersUnblockEndpoint = {
+  operationId: 'deleteApiFollowersUnblock' as const,
+  method: 'DELETE' as const,
+  path: '/api/followers/unblock/{blockedUserId}' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteApiFollowersUnfollowInput {
+  query?: {
+    entityId?: string;
+    entityType?: string;
+  };
+}
+export type DeleteApiFollowersUnfollowOutput = void;
+export const deleteApiFollowersUnfollowEndpoint = {
+  operationId: 'deleteApiFollowersUnfollow' as const,
+  method: 'DELETE' as const,
+  path: '/api/followers/unfollow' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteApiFollowersUnmuteInput {
+  mutedUserId: string;
+}
+export type DeleteApiFollowersUnmuteOutput = void;
+export const deleteApiFollowersUnmuteEndpoint = {
+  operationId: 'deleteApiFollowersUnmute' as const,
+  method: 'DELETE' as const,
+  path: '/api/followers/unmute/{mutedUserId}' as const,
+  tags: ['SocialFollowsFollowers'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiGameJamsForGetApiGameJamsInput {
   query?: {
     status?: Types.GameJamsJamStatus;
@@ -1966,6 +2245,42 @@ export const postApiSocialFeedMeGenerateEndpoint = {
   method: 'POST' as const,
   path: '/api/social/feed/me/generate' as const,
   tags: ['LearningExperienceSocialFeed'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiSocialFeedPostsInput {
+  postId: string;
+}
+export type GetApiSocialFeedPostsOutput = Types.SocialFeedSocialFeedItemDto;
+export const getApiSocialFeedPostsEndpoint = {
+  operationId: 'getApiSocialFeedPosts' as const,
+  method: 'GET' as const,
+  path: '/api/social/feed/posts/{postId}' as const,
+  tags: ['SocialFeedSocialFeed'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiSocialFeedProfilesInput {
+  handle: string;
+}
+export type GetApiSocialFeedProfilesOutput = Types.SocialFeedSocialFeedProfileDto;
+export const getApiSocialFeedProfilesEndpoint = {
+  operationId: 'getApiSocialFeedProfiles' as const,
+  method: 'GET' as const,
+  path: '/api/social/feed/profiles/{handle}' as const,
+  tags: ['SocialFeedSocialFeed'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiSocialFeedProfilesUsersInput {
+  userId: string;
+}
+export type GetApiSocialFeedProfilesUsersOutput = Types.SocialFeedSocialFeedProfileDto;
+export const getApiSocialFeedProfilesUsersEndpoint = {
+  operationId: 'getApiSocialFeedProfilesUsers' as const,
+  method: 'GET' as const,
+  path: '/api/social/feed/profiles/users/{userId}' as const,
+  tags: ['SocialFeedSocialFeed'] as const,
   requiresAuth: true,
 } as const;
 
@@ -20910,6 +21225,27 @@ export const endpoints = {
   postApiContentsVersioningEntityRollback: postApiContentsVersioningEntityRollbackEndpoint,
   getApiContentsVersioningEntityVersion: getApiContentsVersioningEntityVersionEndpoint,
   getApiContentsVersioningPendingReview: getApiContentsVersioningPendingReviewEndpoint,
+  postApiFollowersBatchCounts: postApiFollowersBatchCountsEndpoint,
+  postApiFollowersBatchStatus: postApiFollowersBatchStatusEndpoint,
+  postApiFollowersBlock: postApiFollowersBlockEndpoint,
+  getApiFollowersBlockedUsers: getApiFollowersBlockedUsersEndpoint,
+  getApiFollowersCountFollowers: getApiFollowersCountFollowersEndpoint,
+  getApiFollowersCountFollowing: getApiFollowersCountFollowingEndpoint,
+  postApiFollowersFollow: postApiFollowersFollowEndpoint,
+  getApiFollowersFollowers: getApiFollowersFollowersEndpoint,
+  getApiFollowersFollowing: getApiFollowersFollowingEndpoint,
+  getApiFollowersIsBlocked: getApiFollowersIsBlockedEndpoint,
+  getApiFollowersIsFollowing: getApiFollowersIsFollowingEndpoint,
+  getApiFollowersIsMuted: getApiFollowersIsMutedEndpoint,
+  postApiFollowersMute: postApiFollowersMuteEndpoint,
+  getApiFollowersMutedUsers: getApiFollowersMutedUsersEndpoint,
+  getApiFollowersMutual: getApiFollowersMutualEndpoint,
+  putApiFollowersNotifications: putApiFollowersNotificationsEndpoint,
+  getApiFollowersPrivacySettings: getApiFollowersPrivacySettingsEndpoint,
+  putApiFollowersPrivacySettings: putApiFollowersPrivacySettingsEndpoint,
+  deleteApiFollowersUnblock: deleteApiFollowersUnblockEndpoint,
+  deleteApiFollowersUnfollow: deleteApiFollowersUnfollowEndpoint,
+  deleteApiFollowersUnmute: deleteApiFollowersUnmuteEndpoint,
   getApiGameJamsForGetApiGameJams: getApiGameJamsForGetApiGameJamsEndpoint,
   postApiGameJams: postApiGameJamsEndpoint,
   getApiGameJamsForGetApiGameJamsById: getApiGameJamsForGetApiGameJamsByIdEndpoint,
@@ -20988,6 +21324,9 @@ export const endpoints = {
   postApiSocialFeedViewed: postApiSocialFeedViewedEndpoint,
   getApiSocialFeedMe: getApiSocialFeedMeEndpoint,
   postApiSocialFeedMeGenerate: postApiSocialFeedMeGenerateEndpoint,
+  getApiSocialFeedPosts: getApiSocialFeedPostsEndpoint,
+  getApiSocialFeedProfiles: getApiSocialFeedProfilesEndpoint,
+  getApiSocialFeedProfilesUsers: getApiSocialFeedProfilesUsersEndpoint,
   getApiSocialFeedUsers: getApiSocialFeedUsersEndpoint,
   getApiSocialGroupsForGetApiSocialGroups: getApiSocialGroupsForGetApiSocialGroupsEndpoint,
   postApiSocialGroups: postApiSocialGroupsEndpoint,

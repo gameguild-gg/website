@@ -27,6 +27,7 @@ export * from './modules/learning-cohorts.gen.js';
 export * from './modules/compliance-consent.gen.js';
 export * from './modules/compliance-ferpa.gen.js';
 export * from './modules/resources-contents-versioning.gen.js';
+export * from './modules/social-follows-followers.gen.js';
 export * from './modules/game-jams.gen.js';
 export * from './modules/health.gen.js';
 export * from './modules/learning-enrollments.gen.js';

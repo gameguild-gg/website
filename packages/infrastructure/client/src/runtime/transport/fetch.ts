@@ -104,13 +104,25 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
   // Build URL
   const url = buildUrl(transportConfig.baseUrl, requestConfig.path, requestConfig.params);
 
+  const multipartBody =
+    typeof FormData !== 'undefined' && requestConfig.body instanceof FormData
+      ? requestConfig.body
+      : null;
+  const isMultipartBody = multipartBody !== null;
+
   // Build headers
   const headers = new Headers({
-    'Content-Type': 'application/json',
     Accept: 'application/json',
     ...transportConfig.headers,
     ...requestConfig.headers,
   });
+  if (!isMultipartBody && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  } else if (isMultipartBody) {
+    // Fetch must generate the multipart boundary itself. A caller-provided
+    // content type would omit that boundary and make the payload unreadable.
+    headers.delete('Content-Type');
+  }
 
   // Add request ID header for distributed tracing
   if (requestConfig.requestId) {
@@ -127,7 +139,9 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
 
   // Add body for non-GET requests
   if (requestConfig.body !== undefined && requestConfig.method !== 'GET' && requestConfig.method !== 'HEAD') {
-    options.body = JSON.stringify(requestConfig.body);
+    options.body = multipartBody
+      ? multipartBody
+      : JSON.stringify(requestConfig.body);
   }
 
   // Add timeout
