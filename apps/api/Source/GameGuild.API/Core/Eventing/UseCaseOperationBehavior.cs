@@ -49,30 +49,34 @@ internal sealed class UseCaseOperationBehavior<TRequest, TResponse>(
             return response;
         }
 
-        await using var transaction = await context.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-        try
+        var executionStrategy = context.Database.CreateExecutionStrategy();
+        return await executionStrategy.ExecuteAsync(async () =>
         {
-            var response = await next().ConfigureAwait(false);
-            if (CommandOutcome.IsFailure(response))
+            await using var transaction = await context.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var response = await next().ConfigureAwait(false);
+                if (CommandOutcome.IsFailure(response))
+                {
+                    await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                    context.ChangeTracker.Clear();
+                    return response;
+                }
+
+                await EnsureOperationEventStoredAsync(request, operationContext, cancellationToken).ConfigureAwait(false);
+                if (contract is not null && eventVerifier is not null)
+                    await eventVerifier.VerifyAsync(contract, operationContext, cancellationToken).ConfigureAwait(false);
+
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                return response;
+            }
+            catch
             {
                 await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                 context.ChangeTracker.Clear();
-                return response;
+                throw;
             }
-
-            await EnsureOperationEventStoredAsync(request, operationContext, cancellationToken).ConfigureAwait(false);
-            if (contract is not null && eventVerifier is not null)
-                await eventVerifier.VerifyAsync(contract, operationContext, cancellationToken).ConfigureAwait(false);
-
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return response;
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-            context.ChangeTracker.Clear();
-            throw;
-        }
+        }).ConfigureAwait(false);
     }
 
     private async Task EnsureOperationEventStoredAsync(

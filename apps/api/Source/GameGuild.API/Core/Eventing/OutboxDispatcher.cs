@@ -45,15 +45,18 @@ public sealed class OutboxDispatcher(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var isPostgres = db.Database.ProviderName?.Contains("Npgsql", StringComparison.Ordinal) == true;
-        await using var transaction = isPostgres
-            ? await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
-            : null;
-
-        List<OutboxMessage> messages;
-        if (isPostgres)
+        var executionStrategy = db.Database.CreateExecutionStrategy();
+        return await executionStrategy.ExecuteAsync(async () =>
         {
-            messages = await db.Set<OutboxMessage>().FromSqlInterpolated($$"""
+            var isPostgres = db.Database.ProviderName?.Contains("Npgsql", StringComparison.Ordinal) == true;
+            await using var transaction = isPostgres
+                ? await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
+                : null;
+
+            List<OutboxMessage> messages;
+            if (isPostgres)
+            {
+                messages = await db.Set<OutboxMessage>().FromSqlInterpolated($$"""
                 SELECT message.*
                 FROM "gameguild.integration"."outbox_messages" AS message
                 WHERE message."CompletedAtUtc" IS NULL
@@ -86,61 +89,62 @@ public sealed class OutboxDispatcher(
                 LIMIT {{BatchSize}}
                 FOR UPDATE SKIP LOCKED
                 """).ToListAsync(cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
-            var receipts = await db.Set<InboxReceipt>().AsNoTracking().ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-            var candidates = await db.Set<OutboxMessage>()
-                .Where(message => message.CompletedAtUtc == null
-                                  && message.DeadLetteredAtUtc == null
-                                  && (message.ClaimedUntilUtc == null || message.ClaimedUntilUtc <= now))
-                .OrderBy(message => message.OccurredAtUtc)
-                .ThenBy(message => message.EventId)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-            var blockers = await db.Set<OutboxMessage>().AsNoTracking()
-                .Where(message => message.CompletedAtUtc == null)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-            messages = candidates
-                .Where(message =>
-                {
-                    var eventReceipts = receipts.Where(receipt => receipt.EventId == message.EventId).ToList();
-                    var isDue = eventReceipts.Count == 0 || eventReceipts.All(receipt =>
-                            receipt.CompletedAtUtc is not null || receipt.DeadLetteredAtUtc is not null)
-                        || eventReceipts.Any(receipt =>
-                            receipt.CompletedAtUtc is null
-                            && receipt.DeadLetteredAtUtc is null
-                            && receipt.NextAttemptAtUtc <= now);
-                    var hasEarlierBlocker = blockers.Any(earlier =>
-                        earlier.EventId != message.EventId
-                        && earlier.TenantId == message.TenantId
-                        && earlier.AggregateType == message.AggregateType
-                        && earlier.AggregateId == message.AggregateId
-                        && (earlier.OccurredAtUtc < message.OccurredAtUtc
-                            || earlier.OccurredAtUtc == message.OccurredAtUtc
-                            && string.CompareOrdinal(earlier.EventId.ToString(), message.EventId.ToString()) < 0));
-                    return isDue && !hasEarlierBlocker;
-                })
-                .OrderBy(message => message.OccurredAtUtc)
-                .ThenBy(message => message.EventId)
-                .Take(BatchSize)
-                .ToList();
-        }
+            }
+            else
+            {
+                var receipts = await db.Set<InboxReceipt>().AsNoTracking().ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                var candidates = await db.Set<OutboxMessage>()
+                    .Where(message => message.CompletedAtUtc == null
+                                      && message.DeadLetteredAtUtc == null
+                                      && (message.ClaimedUntilUtc == null || message.ClaimedUntilUtc <= now))
+                    .OrderBy(message => message.OccurredAtUtc)
+                    .ThenBy(message => message.EventId)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                var blockers = await db.Set<OutboxMessage>().AsNoTracking()
+                    .Where(message => message.CompletedAtUtc == null)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                messages = candidates
+                    .Where(message =>
+                    {
+                        var eventReceipts = receipts.Where(receipt => receipt.EventId == message.EventId).ToList();
+                        var isDue = eventReceipts.Count == 0 || eventReceipts.All(receipt =>
+                                receipt.CompletedAtUtc is not null || receipt.DeadLetteredAtUtc is not null)
+                            || eventReceipts.Any(receipt =>
+                                receipt.CompletedAtUtc is null
+                                && receipt.DeadLetteredAtUtc is null
+                                && receipt.NextAttemptAtUtc <= now);
+                        var hasEarlierBlocker = blockers.Any(earlier =>
+                            earlier.EventId != message.EventId
+                            && earlier.TenantId == message.TenantId
+                            && earlier.AggregateType == message.AggregateType
+                            && earlier.AggregateId == message.AggregateId
+                            && (earlier.OccurredAtUtc < message.OccurredAtUtc
+                                || earlier.OccurredAtUtc == message.OccurredAtUtc
+                                && string.CompareOrdinal(earlier.EventId.ToString(), message.EventId.ToString()) < 0));
+                        return isDue && !hasEarlierBlocker;
+                    })
+                    .OrderBy(message => message.OccurredAtUtc)
+                    .ThenBy(message => message.EventId)
+                    .Take(BatchSize)
+                    .ToList();
+            }
 
-        foreach (var message in messages)
-        {
-            message.ClaimedUntilUtc = now + ClaimDuration;
-        }
+            foreach (var message in messages)
+            {
+                message.ClaimedUntilUtc = now + ClaimDuration;
+            }
 
-        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        if (transaction is not null)
-        {
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-        }
+            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
 
-        return messages;
+            return messages;
+        }).ConfigureAwait(false);
     }
 
     private async Task DispatchAsync(OutboxMessage message, CancellationToken cancellationToken)
@@ -206,65 +210,72 @@ public sealed class OutboxDispatcher(
         await using (var consumerScope = scopeFactory.CreateAsyncScope())
         {
             var consumerDb = consumerScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            await using var transaction = consumerDb.Database.IsRelational()
-                ? await consumerDb.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
-                : null;
-            try
+            var executionStrategy = consumerDb.Database.CreateExecutionStrategy();
+            var completed = await executionStrategy.ExecuteAsync(async () =>
             {
-                var consumerInbox = consumerScope.ServiceProvider.GetRequiredService<IInboxStore>();
-                var receipt = await consumerInbox.TryLockAsync(
-                        eventId,
-                        consumerName,
-                        timeProvider.GetUtcNow(),
-                        cancellationToken)
-                    .ConfigureAwait(false);
-                if (receipt is null)
+                await using var transaction = consumerDb.Database.IsRelational()
+                    ? await consumerDb.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
+                    : null;
+                try
+                {
+                    var consumerInbox = consumerScope.ServiceProvider.GetRequiredService<IInboxStore>();
+                    var receipt = await consumerInbox.TryLockAsync(
+                            eventId,
+                            consumerName,
+                            timeProvider.GetUtcNow(),
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    if (receipt is null)
+                    {
+                        if (transaction is not null)
+                        {
+                            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                        }
+
+                        return true;
+                    }
+
+                    var handler = ((IEnumerable<object>?)consumerScope.ServiceProvider.GetService(
+                            typeof(IEnumerable<>).MakeGenericType(handlerContract)))
+                        ?.First(candidate => candidate.GetType() == handlerType)
+                        ?? throw new InvalidOperationException($"Consumer '{consumerName}' could not be resolved.");
+                    var task = (Task?)handlerContract.GetMethod(nameof(IIntegrationEventHandler<IIntegrationEvent>.HandleAsync))!
+                        .Invoke(handler, [integrationEvent, cancellationToken]);
+                    await (task ?? throw new InvalidOperationException($"Consumer '{consumerName}' returned no task."))
+                        .ConfigureAwait(false);
+                    await consumerInbox.CompleteAsync(receipt, timeProvider.GetUtcNow(), cancellationToken)
+                        .ConfigureAwait(false);
+                    if (transaction is not null)
+                    {
+                        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                    }
+
+                    EventTransportMetrics.RecordConsumerCompletion(integrationEvent.EventName, consumerName);
+                    return true;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     if (transaction is not null)
                     {
-                        await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                        await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
                     }
 
-                    return;
+                    throw;
                 }
-
-                var handler = ((IEnumerable<object>?)consumerScope.ServiceProvider.GetService(
-                        typeof(IEnumerable<>).MakeGenericType(handlerContract)))
-                    ?.First(candidate => candidate.GetType() == handlerType)
-                    ?? throw new InvalidOperationException($"Consumer '{consumerName}' could not be resolved.");
-                var task = (Task?)handlerContract.GetMethod(nameof(IIntegrationEventHandler<IIntegrationEvent>.HandleAsync))!
-                    .Invoke(handler, [integrationEvent, cancellationToken]);
-                await (task ?? throw new InvalidOperationException($"Consumer '{consumerName}' returned no task."))
-                    .ConfigureAwait(false);
-                await consumerInbox.CompleteAsync(receipt, timeProvider.GetUtcNow(), cancellationToken)
-                    .ConfigureAwait(false);
-                if (transaction is not null)
+                catch (Exception exception)
                 {
-                    await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-                }
+                    failure = exception is TargetInvocationException { InnerException: not null }
+                        ? exception.InnerException
+                        : exception;
+                    if (transaction is not null)
+                    {
+                        await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+                    }
 
-                EventTransportMetrics.RecordConsumerCompletion(integrationEvent.EventName, consumerName);
-                return;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                if (transaction is not null)
-                {
-                    await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+                    return false;
                 }
-
-                throw;
-            }
-            catch (Exception exception)
-            {
-                failure = exception is TargetInvocationException { InnerException: not null }
-                    ? exception.InnerException
-                    : exception;
-                if (transaction is not null)
-                {
-                    await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
-                }
-            }
+            }).ConfigureAwait(false);
+            if (completed) return;
         }
 
         await using var failureScope = scopeFactory.CreateAsyncScope();
