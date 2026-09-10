@@ -19,6 +19,7 @@ import type {
   SocialFeedPage,
   SocialMediaAsset,
   SocialProfile,
+  SocialPostItem,
   SocialPostMutation,
   SocialReaction,
   SocialStory,
@@ -28,6 +29,7 @@ import type {
 import {
   loadPostComments,
   loadSocialFeed,
+  mapSocialFeedItem,
   type SocialFeedRequestError,
 } from "./queries";
 
@@ -123,7 +125,7 @@ export async function createSocialPost(input: {
   visibility?: "Public" | "Followers" | "Private" | "Unlisted";
   assetReferenceId?: string | null;
   tags?: string[];
-}): Promise<SocialPostMutation> {
+}): Promise<SocialPostItem> {
   await ensureCurrentSocialProfile();
   const data = await request<SocialPostMutation>({
     method: "POST",
@@ -136,7 +138,13 @@ export async function createSocialPost(input: {
     },
     requiresAuth: true,
   });
-  return postMutation(data);
+  const post = postMutation(data);
+  const item = await request<unknown>({
+    method: "GET",
+    path: `/api/social/feed/posts/${post.id}`,
+    requiresAuth: true,
+  });
+  return mapSocialFeedItem(item);
 }
 
 export async function updateSocialPost(postId: string, content: string): Promise<SocialPostMutation> {

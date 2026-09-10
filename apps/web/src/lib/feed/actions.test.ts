@@ -61,6 +61,7 @@ describe("social feed actions", () => {
     mocks.request
       .mockResolvedValueOnce({ ok: true, data: null })
       .mockResolvedValueOnce({ ok: true, data: { id: "profile-1", userId: "user-1" } })
+      .mockResolvedValueOnce({ ok: true, data: { id: "post-1", content: "First post" } })
       .mockResolvedValueOnce({ ok: true, data: { id: "post-1", content: "First post" } });
 
     await createSocialPost({ content: "First post" });

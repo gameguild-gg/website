@@ -68,6 +68,9 @@ export interface SocialFeedItem {
   tags: string[];
 }
 
+/** The complete persisted feed projection returned after publishing a post. */
+export type SocialPostItem = SocialFeedItem;
+
 export interface SocialFeedPage {
   items: SocialFeedItem[];
   nextCursor: string | null;

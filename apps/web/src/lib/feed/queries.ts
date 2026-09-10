@@ -95,7 +95,7 @@ function publicMediaUrl(value: unknown) {
   return new URL(mediaUrl.startsWith("/") ? mediaUrl : `/${mediaUrl}`, `${apiBaseUrl}/`).toString();
 }
 
-function mapFeedItem(value: unknown): SocialFeedItem {
+export function mapSocialFeedItem(value: unknown): SocialFeedItem {
   const raw = record(value);
   const post = record(raw.post);
   const original = record(post.repostedPost);
@@ -190,7 +190,7 @@ export async function loadSocialFeed(input: {
     }),
   );
   return {
-    items: Array.isArray(data.items) ? data.items.map(mapFeedItem) : [],
+    items: Array.isArray(data.items) ? data.items.map(mapSocialFeedItem) : [],
     nextCursor: nullableText(data.nextCursor),
   };
 }
@@ -201,7 +201,7 @@ export async function loadSocialPost(postId: string) {
     path: `/api/social/feed/posts/${postId}`,
     requiresAuth: true,
   });
-  return data ? mapFeedItem(data) : null;
+  return data ? mapSocialFeedItem(data) : null;
 }
 
 function mapComment(

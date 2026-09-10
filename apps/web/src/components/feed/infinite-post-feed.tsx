@@ -39,12 +39,14 @@ export function InfinitePostFeed({
   initialItems,
   initialNextCursor,
   currentUserId,
+  publishedItem = null,
 }: {
   scope: FeedScope;
   tag?: string | null;
   initialItems: SocialFeedItem[];
   initialNextCursor: string | null;
   currentUserId?: string | null;
+  publishedItem?: SocialFeedItem | null;
 }): React.JSX.Element {
   const [items, setItems] = React.useState(initialItems);
   const [nextCursor, setNextCursor] = React.useState(initialNextCursor);
@@ -56,19 +58,28 @@ export function InfinitePostFeed({
   const seenRef = React.useRef(new Set(initialItems.map((item) => item.id)));
   const requestRef = React.useRef(0);
   const activeControllerRef = React.useRef<AbortController | null>(null);
+  const publishedItemRef = React.useRef<SocialFeedItem | null>(null);
 
   React.useEffect(() => {
     activeControllerRef.current?.abort();
     activeControllerRef.current = null;
     loadingRef.current = false;
     setLoading(false);
-    setItems(initialItems);
+    const retained = publishedItemRef.current;
+    setItems(retained && !initialItems.some((item) => item.id === retained.id) ? [retained, ...initialItems] : initialItems);
     setNextCursor(initialNextCursor);
     setError(false);
     cursorRef.current = initialNextCursor;
-    seenRef.current = new Set(initialItems.map((item) => item.id));
+    seenRef.current = new Set([...(retained ? [retained] : []), ...initialItems].map((item) => item.id));
     requestRef.current += 1;
   }, [initialItems, initialNextCursor, scope, tag]);
+
+  React.useEffect(() => {
+    if (!publishedItem || seenRef.current.has(publishedItem.id)) return;
+    publishedItemRef.current = publishedItem;
+    seenRef.current.add(publishedItem.id);
+    setItems((current) => [publishedItem, ...current]);
+  }, [publishedItem]);
 
   React.useEffect(
     () => () => activeControllerRef.current?.abort(),

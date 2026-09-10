@@ -3,8 +3,7 @@ import {
   BuildStories,
   type SocialStoryPreview,
 } from "@/components/feed/build-stories";
-import { InfinitePostFeed } from "@/components/feed/infinite-post-feed";
-import { SocialComposer } from "@/components/feed/social-composer";
+import { SocialFeedClient } from "@/components/feed/social-feed-client";
 import {
   SocialFeedTabs,
   type SocialFeedTab,
@@ -116,7 +115,6 @@ export async function SocialShell({
             userName={userName}
             stories={storyPreviews}
           />
-          <SocialComposer userName={userName} />
           {primaryError ? (
             <div role="alert" className="mx-4 my-8 flex items-start gap-3 rounded-xl bg-card px-5 py-6 sm:mx-6">
               <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
@@ -126,7 +124,8 @@ export async function SocialShell({
               </div>
             </div>
           ) : (
-            <InfinitePostFeed
+            <SocialFeedClient
+              userName={userName}
               scope={scope}
               tag={tag}
               initialItems={primary.items}
