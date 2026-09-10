@@ -32,6 +32,28 @@ describe('shared UI compatibility', () => {
     expect(screen.getByRole('menu')).toBeVisible();
   });
 
+  it('does not forward unsupported autofocus props to the menu DOM node', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      render(
+        <DropdownMenu>
+          <DropdownMenuTrigger>Open menu</DropdownMenuTrigger>
+          <DropdownMenuContent onOpenAutoFocus={() => undefined}>
+            <DropdownMenuItem>Action</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>,
+      );
+
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Open menu' }));
+      expect(await screen.findByRole('menu')).toBeVisible();
+      expect(
+        consoleError.mock.calls.some((call) => call.join(' ').includes('initialFocus')),
+      ).toBe(false);
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it('renders legacy Select item labels before the popup mounts and changes the controlled value', async () => {
     function Example() {
       const [value, setValue] = React.useState('daily');
