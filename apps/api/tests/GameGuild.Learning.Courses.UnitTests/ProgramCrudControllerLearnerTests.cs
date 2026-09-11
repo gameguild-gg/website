@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using GameGuild.CQRS;
 using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -55,7 +56,7 @@ public sealed class ProgramCrudControllerLearnerTests
       Roles = new HashSet<string>(),
       Permissions = new HashSet<string>()
     });
-    return new ProgramCrudController(service, actorAccessor.Object, new Mock<GameGuild.Identity.Authorization.IPermissionQueryService>().Object)
+    return new ProgramCrudController(service, actorAccessor.Object, new Mock<GameGuild.Identity.Authorization.IPermissionQueryService>().Object, Mock.Of<ISender>())
     {
       ControllerContext = new ControllerContext
       {

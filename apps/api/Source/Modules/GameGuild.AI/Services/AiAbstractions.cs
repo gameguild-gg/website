@@ -10,6 +10,22 @@ public interface IAiOrchestrator
     Task<Result<AiCompletionResponse>> ChatAsync(AiChatRequest request, CancellationToken cancellationToken = default);
 
     Task<Result<AiCompletionResponse>> GenerateAsync(AiGenerateRequest request, CancellationToken cancellationToken = default);
+
+    Task<Result<AiResolvedModelDto>> DescribeGenerateAsync(
+        AiExecutionActor actor,
+        AiGenerateRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<AiCompletionResponse>> GenerateForActorAsync(
+        AiExecutionActor actor,
+        AiGenerateRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<AiCompletionResponse>> GenerateForActorStreamingAsync(
+        AiExecutionActor actor,
+        AiGenerateRequest request,
+        Func<string, CancellationToken, ValueTask> onDelta,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IAiConversationHistoryReader
@@ -60,4 +76,16 @@ internal interface IAiProviderAdapter
     AiProvider Provider { get; }
 
     Task<Result<AiProviderExecutionResult>> CompleteAsync(AiResolvedRequest request, CancellationToken cancellationToken = default);
+
+    async Task<Result<AiProviderExecutionResult>> CompleteStreamingAsync(
+        AiResolvedRequest request,
+        Func<string, CancellationToken, ValueTask> onDelta,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(onDelta);
+        var completion = await CompleteAsync(request, cancellationToken).ConfigureAwait(false);
+        if (completion.IsSuccess)
+            await onDelta(completion.Value.Text, cancellationToken).ConfigureAwait(false);
+        return completion;
+    }
 }

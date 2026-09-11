@@ -25,6 +25,8 @@
         <ProjectReference Include="..\GameGuild.Tags\GameGuild.Tags.csproj" />
         <ProjectReference Include="..\GameGuild.Learning\GameGuild.Learning.csproj" />
         <ProjectReference Include="..\GameGuild.Notifications\GameGuild.Notifications.csproj" />
+        <ProjectReference Include="..\GameGuild.AI\GameGuild.AI.csproj" />
+        <ProjectReference Include="..\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj" />
     </ItemGroup>
 
 </Project>

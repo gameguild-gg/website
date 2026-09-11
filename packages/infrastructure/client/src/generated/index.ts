@@ -119,6 +119,7 @@ export * from './modules/learning-courses-support-tickets.gen.js';
 export * from './modules/learning-courses-program-lifecycle.gen.js';
 export * from './modules/learning-courses-activity-grade.gen.js';
 export * from './modules/learning-courses-program-content.gen.js';
+export * from './modules/learning-courses-program-content-authoring.gen.js';
 export * from './modules/learning-courses-lesson-interaction-events.gen.js';
 export * from './modules/access-control-delegated-admin.gen.js';
 export * from './modules/learning-experience-discovery.gen.js';

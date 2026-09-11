@@ -16,6 +16,102 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
 
     public AiProvider Provider => AiProvider.OpenAi;
 
+    public async Task<Result<AiProviderExecutionResult>> CompleteStreamingAsync(
+        AiResolvedRequest request,
+        Func<string, CancellationToken, ValueTask> onDelta,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(onDelta);
+        try
+        {
+            var payloadMessages = new List<object>();
+            if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
+                payloadMessages.Add(new { role = "system", content = request.SystemPrompt });
+            payloadMessages.AddRange(request.Messages.Select(static message => new
+            {
+                role = message.Role.ToLowerInvariant(),
+                content = message.Content
+            }));
+
+            var payload = new
+            {
+                model = request.Model,
+                messages = payloadMessages,
+                temperature = request.Temperature,
+                max_tokens = request.MaxTokens,
+                stream = true,
+                stream_options = new { include_usage = true }
+            };
+
+            using var httpRequest = CreateRequest(request, payload, "text/event-stream");
+            var client = httpClientFactory.CreateClient();
+            using var response = await client.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                return Result.Failure<AiProviderExecutionResult>(AiProviderErrorMapper.Map("OpenAI", response.StatusCode, errorBody));
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            using var reader = new StreamReader(stream);
+            var text = new StringBuilder();
+            var model = request.Model;
+            string? finishReason = null;
+            int? inputTokens = null;
+            int? outputTokens = null;
+            int? totalTokens = null;
+            while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
+            {
+                if (!line.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var data = line[5..].Trim();
+                if (data.Length == 0 || data == "[DONE]")
+                    continue;
+
+                using var document = JsonDocument.Parse(data);
+                var root = document.RootElement;
+                if (root.TryGetProperty("model", out var modelElement) && modelElement.ValueKind == JsonValueKind.String)
+                    model = modelElement.GetString() ?? model;
+                if (root.TryGetProperty("usage", out var usageElement) && usageElement.ValueKind == JsonValueKind.Object)
+                {
+                    inputTokens = AiJsonHelpers.TryGetInt(usageElement, "prompt_tokens");
+                    outputTokens = AiJsonHelpers.TryGetInt(usageElement, "completion_tokens");
+                    totalTokens = AiJsonHelpers.TryGetInt(usageElement, "total_tokens");
+                }
+                if (!root.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+                    continue;
+                var choice = choices[0];
+                if (choice.TryGetProperty("finish_reason", out var finishElement) && finishElement.ValueKind == JsonValueKind.String)
+                    finishReason = finishElement.GetString();
+                if (!choice.TryGetProperty("delta", out var deltaElement) || !deltaElement.TryGetProperty("content", out var contentElement))
+                    continue;
+                var delta = contentElement.ValueKind switch
+                {
+                    JsonValueKind.String => contentElement.GetString(),
+                    JsonValueKind.Array => AiJsonHelpers.ExtractTextFromParts(contentElement),
+                    _ => null
+                };
+                if (string.IsNullOrEmpty(delta))
+                    continue;
+                text.Append(delta);
+                await onDelta(delta, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (text.Length == 0)
+                return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiEmptyResponse", "OpenAI returned an empty response."));
+            return Result.Success(new AiProviderExecutionResult(model, text.ToString(), finishReason, inputTokens, outputTokens, totalTokens));
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiTimeout", "OpenAI did not respond in time."));
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "OpenAI streaming request failed for tenant {TenantId}", request.TenantId);
+            return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiRequestFailed", "Failed to execute the OpenAI streaming request."));
+        }
+    }
+
     public async Task<Result<AiProviderExecutionResult>> CompleteAsync(AiResolvedRequest request, CancellationToken cancellationToken = default)
     {
         try
@@ -135,11 +231,11 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
         }
     }
 
-    private static HttpRequestMessage CreateRequest(AiResolvedRequest request, object payload)
+    private static HttpRequestMessage CreateRequest(AiResolvedRequest request, object payload, string accept = "application/json")
     {
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{request.BaseUrl.TrimEnd('/')}/v1/chat/completions");
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.ApiKey);
-        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(accept));
         httpRequest.Content = new StringContent(JsonSerializer.Serialize(payload, SerializerOptions), Encoding.UTF8, "application/json");
         return httpRequest;
     }

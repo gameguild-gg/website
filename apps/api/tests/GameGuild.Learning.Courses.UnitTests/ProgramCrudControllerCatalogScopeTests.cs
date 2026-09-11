@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Http;
@@ -133,7 +134,7 @@ public sealed class ProgramCrudControllerCatalogScopeTests
     var actorAccessor = new Mock<IActorContextAccessor>();
     actorAccessor.Setup(a => a.ActorContext).Returns(actor);
 
-    var controller = new ProgramCrudController(_service.Object, actorAccessor.Object, _permissions.Object)
+    var controller = new ProgramCrudController(_service.Object, actorAccessor.Object, _permissions.Object, Mock.Of<ISender>())
     {
       ControllerContext = new ControllerContext
       {

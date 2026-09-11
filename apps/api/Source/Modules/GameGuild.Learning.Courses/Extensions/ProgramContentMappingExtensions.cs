@@ -24,6 +24,7 @@ public static class ProgramContentMappingExtensions
     return new ProgramContentDto
     {
       Id = content.Id,
+      Version = content.Version,
       ProgramId = content.ProgramId,
       ParentId = content.ParentId,
       Title = content.Title,

@@ -473,6 +473,67 @@ public sealed class AiCoverageCompletionTests
     }
 
     [Fact]
+    public async Task ProviderAdapters_ShouldStreamDeltasAndReturnCanonicalUsage()
+    {
+        var openAi = new OpenAiAdapter(
+            new SequenceHttpClientFactory(EventStreamResponse("""
+            data: {"model":"gpt-stream","choices":[{"delta":{"content":"open "},"finish_reason":null}]}
+
+            data: {"model":"gpt-stream","choices":[{"delta":{"content":"ai"},"finish_reason":"stop"}]}
+
+            data: {"model":"gpt-stream","choices":[],"usage":{"prompt_tokens":3,"completion_tokens":2,"total_tokens":5}}
+
+            data: [DONE]
+
+            """)),
+            NullLogger<OpenAiAdapter>.Instance);
+        var anthropic = new AnthropicAdapter(
+            new SequenceHttpClientFactory(EventStreamResponse("""
+            event: message_start
+            data: {"type":"message_start","message":{"model":"claude-stream","usage":{"input_tokens":4}}}
+
+            event: content_block_delta
+            data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"anthropic"}}
+
+            event: message_delta
+            data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":3}}
+
+            """)),
+            NullLogger<AnthropicAdapter>.Instance);
+        var google = new GoogleAiAdapter(
+            new SequenceHttpClientFactory(EventStreamResponse("""
+            data: {"candidates":[{"content":{"parts":[{"text":"goo"}]}}]}
+
+            data: {"candidates":[{"content":{"parts":[{"text":"gle"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":2,"candidatesTokenCount":2,"totalTokenCount":4}}
+
+            """)),
+            NullLogger<GoogleAiAdapter>.Instance);
+        var openDeltas = new List<string>();
+        var anthropicDeltas = new List<string>();
+        var googleDeltas = new List<string>();
+
+        var openResult = await openAi.CompleteStreamingAsync(
+            CreateResolvedRequest(baseUrl: "https://openai.test/"),
+            (delta, _) => { openDeltas.Add(delta); return ValueTask.CompletedTask; });
+        var anthropicResult = await anthropic.CompleteStreamingAsync(
+            CreateResolvedRequest(AiProvider.Anthropic, baseUrl: "https://anthropic.test/"),
+            (delta, _) => { anthropicDeltas.Add(delta); return ValueTask.CompletedTask; });
+        var googleResult = await google.CompleteStreamingAsync(
+            CreateResolvedRequest(AiProvider.Google, baseUrl: "https://google.test/"),
+            (delta, _) => { googleDeltas.Add(delta); return ValueTask.CompletedTask; });
+
+        openDeltas.Should().Equal("open ", "ai");
+        openResult.Value.Text.Should().Be("open ai");
+        openResult.Value.TotalTokens.Should().Be(5);
+        anthropicDeltas.Should().Equal("anthropic");
+        anthropicResult.Value.Model.Should().Be("claude-stream");
+        anthropicResult.Value.TotalTokens.Should().Be(7);
+        googleDeltas.Should().Equal("goo", "gle");
+        googleResult.Value.Text.Should().Be("google");
+        googleResult.Value.TotalTokens.Should().Be(4);
+    }
+
+    [Fact]
     public void AiOrchestratorPrivateHelpers_ShouldCoverModerationProviderModelAndTenantConfigBranches()
     {
         var orchestrator = CreateOrchestrator(new AiOptions
@@ -795,6 +856,12 @@ public sealed class AiCoverageCompletionTests
         => new(statusCode)
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+
+    private static HttpResponseMessage EventStreamResponse(string body)
+        => new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(body.Replace("\r\n", "\n", StringComparison.Ordinal), Encoding.UTF8, "text/event-stream")
         };
 
     private sealed class SequenceHttpClientFactory(params HttpResponseMessage[] responses) : IHttpClientFactory

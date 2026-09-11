@@ -29,6 +29,9 @@ const adminPassword = process.env.E2E_SYSTEM_ADMIN_PASSWORD ?? "Admin123!";
 const headless = !["0", "false", "no"].includes(
   (process.env.PROFESSOR_E2E_HEADLESS ?? "true").toLowerCase(),
 );
+const authoringOnly = ["1", "true", "yes"].includes(
+  (process.env.PROFESSOR_E2E_AUTHORING_ONLY ?? "false").toLowerCase(),
+);
 
 function unique() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -95,6 +98,15 @@ async function bootstrap() {
     body: JSON.stringify({ email: adminEmail, password: adminPassword }),
   });
   const tag = unique();
+  if (authoringOnly) {
+    return {
+      accessToken: signIn.accessToken,
+      studentEmail: null,
+      studentId: null,
+      studentPassword: null,
+      tag,
+    };
+  }
   const studentEmail = `professor-browser-student-${tag}@example.test`;
   const studentPassword = "Str0ng!Passw0rd123!";
   await apiRequest("/v1/auth/sign-up", {
@@ -228,7 +240,7 @@ async function captureResponsiveSchedule(page, label) {
 
 async function visit(page, courseRoute, suffix, expectedText) {
   const path =
-    "/dashboard/learning/courses/" + courseRoute + (suffix ? "/" + suffix : "");
+    "/workspace/learning/courses/" + courseRoute + (suffix ? "/" + suffix : "");
   await page.goto(webBaseUrl + path, { waitUntil: "domcontentloaded" });
   await waitForLocation(page, (url) => url.pathname === path, 180_000);
   await assertNoErrorSurface(page, suffix || "course root");
@@ -375,11 +387,11 @@ async function run() {
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await waitForLocation(
       page,
-      (url) => url.pathname.includes("/dashboard"),
+      (url) => url.pathname === "/" || url.pathname.includes("/workspace"),
       180_000,
     );
 
-    await page.goto(`${webBaseUrl}/dashboard/learning/courses/new`, {
+    await page.goto(`${webBaseUrl}/workspace/learning/courses/new`, {
       waitUntil: "domcontentloaded",
     });
     console.log("[professor-e2e] create course");
@@ -412,7 +424,7 @@ async function run() {
     await waitForLocation(
       page,
       (url) =>
-        url.pathname.includes("/dashboard/learning/courses/") &&
+        url.pathname.includes("/workspace/learning/courses/") &&
         !url.pathname.endsWith("/new"),
       60_000,
     );
@@ -493,7 +505,9 @@ async function run() {
     await waitForText(page, "Listing controls updated successfully");
 
     await visit(page, courseRoute, "listing/pricing", "Pricing");
-    const monetization = page.getByLabel("Enable monetization");
+    const monetization = page.getByRole("switch", {
+      name: "Enable monetization",
+    });
     if ((await monetization.getAttribute("data-state")) !== "checked")
       await monetization.click();
     await page.getByLabel("Price").fill("79");
@@ -753,7 +767,7 @@ async function run() {
     await moduleCard.getByRole("button", { name: /Add lesson/i }).click();
     await page.getByLabel("Title").fill("Define the playable promise");
     await page.getByRole("button", { name: "Add Lesson", exact: true }).click();
-    await waitForApiState(
+    const lessonState = await waitForApiState(
       () =>
         apiRequest(`/v1/courses/${courseId}/content`, {}, fixture.accessToken),
       (content) =>
@@ -764,6 +778,12 @@ async function run() {
               String(createdModule.id).toLowerCase(),
         ),
     );
+    const createdLesson = flattenCourseContent(lessonState).find(
+      (item) => item.title === "Define the playable promise",
+    );
+    if (!createdLesson?.id) {
+      throw new Error("The content API did not return the newly created lesson id.");
+    }
     await waitForText(page, "Define the playable promise");
     const lessonRow = page
       .getByText("Define the playable promise", { exact: true })
@@ -773,23 +793,75 @@ async function run() {
     });
     await waitForReactControl(page, editLessonButton);
     await editLessonButton.click();
+    console.log(`[professor-e2e] opening authoring at ${page.url()}`);
     await waitForLocation(
       page,
-      (url) => /\/content\/[0-9a-f-]{36}$/i.test(url.pathname),
+      (url) => /\/content\/[^/]+$/i.test(url.pathname),
       600_000,
     );
+    console.log(`[professor-e2e] authoring route ready at ${page.url()}`);
+    await waitForText(page, "Publish changes", 180_000);
+    console.log("[professor-e2e] authoring controls ready");
     await page
       .getByLabel("Description")
       .fill("Define the smallest experience that proves the product promise.");
-    await page
-      .getByLabel("Body")
-      .fill(
-        "# Playable promise\n\nDescribe the player, the outcome, and the evidence required.",
-      );
+    const authoringEditor = page.locator(".monaco-editor").first();
+    await authoringEditor.waitFor({ state: "visible", timeout: 180_000 });
+    console.log("[professor-e2e] Monaco editor ready");
+    await authoringEditor.click();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.insertText(
+      "# Playable promise\n\nDescribe the player, the outcome, and the evidence required.",
+    );
     await page.getByLabel(/Estimated minutes/).fill("35");
-    await page.getByRole("button", { name: "Save Changes" }).click();
-    await waitForText(page, "Saved successfully");
-    await page.getByRole("button", { name: "Cancel" }).click();
+    await waitForApiState(
+      () =>
+        apiRequest(
+          `/v1/courses/${courseId}/content/${createdLesson.id}/authoring`,
+          {},
+          fixture.accessToken,
+        ),
+      (savedDraft) =>
+        savedDraft?.payload?.body?.includes("Describe the player, the outcome") &&
+        savedDraft?.payload?.estimatedMinutes === 35,
+      180_000,
+    );
+    console.log("[professor-e2e] authoring autosave confirmed");
+    await page.getByRole("button", { name: "preview", exact: true }).click();
+    await waitForText(page, "Describe the player, the outcome", 60_000);
+    await page.getByRole("button", { name: "editor", exact: true }).click();
+    await page.getByRole("button", { name: /Publish changes/i }).click();
+    console.log("[professor-e2e] publishing authoring draft");
+    await waitForApiState(
+      () =>
+        apiRequest(`/v1/courses/${courseId}/content`, {}, fixture.accessToken),
+      (content) =>
+        flattenCourseContent(content).some(
+          (entry) =>
+            entry.title === "Define the playable promise" &&
+            entry.body?.includes("Describe the player, the outcome"),
+        ),
+    );
+    if (authoringOnly) {
+      httpFailures.assertNone("Lesson authoring journey");
+      if (browserErrors.length > 0) {
+        throw new Error(
+          `Browser errors detected during lesson authoring journey:\n${[
+            ...new Set(browserErrors),
+          ].join("\n")}`,
+        );
+      }
+      console.log(
+        `Lesson authoring browser E2E passed for ${courseSlug} (${courseId}).`,
+      );
+      return;
+    }
+    await page.getByRole("button", { name: "Curriculum", exact: true }).click();
+    await waitForLocation(
+      page,
+      (url) => url.pathname.endsWith("/content"),
+      180_000,
+    );
     await page.getByRole("button", { name: "Edit module" }).click();
     await page.getByLabel("Title").fill("Production Delivery");
     await page
@@ -830,7 +902,7 @@ async function run() {
     await visit(page, courseRoute, "assessments", "Assessments");
     await waitForText(page, "Final Project");
     await page
-      .getByRole("button", { name: "Add Assessment", exact: true })
+      .getByRole("button", { name: /^(?:Add|Create) Assessment$/ })
       .first()
       .click();
     await page.getByLabel("Title").fill("Vertical Slice Review");
@@ -1389,7 +1461,7 @@ async function run() {
       .fill(`Complete Professor Course ${fixture.tag}`);
     await page.getByRole("button", { name: "Permanently Delete" }).click();
     await waitForLocation(page, (url) =>
-      url.pathname.endsWith("/dashboard/learning/courses"),
+      url.pathname.endsWith("/workspace/learning/courses"),
     );
     deletedCourseId = courseId;
     courseId = null;
@@ -1421,9 +1493,23 @@ async function run() {
   } finally {
     if (learnerContext) await learnerContext.close();
     if (courseId) {
-      await deleteFixture(`/v1/courses/${courseId}`, fixture.accessToken);
+      await deleteFixture(`/v1/courses/${courseId}`, fixture.accessToken).catch(
+        (cleanupError) =>
+          console.warn(
+            `[professor-e2e] course cleanup failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
+          ),
+      );
     }
-    await deleteFixture(`/v1/users/${fixture.studentId}`, fixture.accessToken);
+    if (fixture.studentId) {
+      await deleteFixture(
+        `/v1/users/${fixture.studentId}`,
+        fixture.accessToken,
+      ).catch((cleanupError) =>
+        console.warn(
+          `[professor-e2e] temporary user cleanup failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
+        ),
+      );
+    }
     await browser.close();
   }
 }

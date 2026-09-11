@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
 using FluentValidation;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Learning.Assessments;
 using Microsoft.AspNetCore.Authorization;
@@ -241,7 +242,8 @@ public sealed class CodingAssignmentEndpointsTests
             contentMock.Object,
             programMock.Object,
             codingMock.Object,
-            authorizationMock.Object);
+            authorizationMock.Object,
+            Mock.Of<ISender>());
 
         var userId = Guid.NewGuid();
         var identity = new ClaimsIdentity(new[]

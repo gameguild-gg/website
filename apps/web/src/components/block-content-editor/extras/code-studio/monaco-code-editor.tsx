@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { editor } from "monaco-editor"
+import type { IDisposable, editor } from "monaco-editor"
 import type { Monaco, OnMount } from "@monaco-editor/react"
 import { useTheme } from "next-themes"
 import type { SupportedLanguage } from "./types"
@@ -21,6 +21,8 @@ interface MonacoCodeEditorProps {
   value: string
   language: SupportedLanguage
   onChange?: (value: string) => void
+  onCursorOffsetChange?: (offset: number) => void
+  ariaLabel?: string
   readonly?: boolean
   /** Deprecated — kept for back-compat; theme is resolved via next-themes. */
   theme?: "vs-light" | "vs-dark"
@@ -56,6 +58,8 @@ export function MonacoCodeEditor({
   value,
   language,
   onChange,
+  onCursorOffsetChange,
+  ariaLabel = "Code editor",
   readonly = false,
   options,
   height = "100%",
@@ -64,6 +68,7 @@ export function MonacoCodeEditor({
   instanceId,
 }: MonacoCodeEditorProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+  const cursorListenerRef = useRef<IDisposable | null>(null)
   const isUserTypingRef = useRef(false)
   const lastValueRef = useRef(value)
   const [linkConfirmDialog, setLinkConfirmDialog] = useState<{ open: boolean; url: string }>({
@@ -128,6 +133,14 @@ export function MonacoCodeEditor({
 
   const handleMount: OnMount = (ed) => {
     editorRef.current = ed
+    const reportCursor = () => {
+      const model = ed.getModel()
+      const position = ed.getPosition()
+      if (model && position) onCursorOffsetChange?.(model.getOffsetAt(position))
+    }
+    cursorListenerRef.current?.dispose()
+    cursorListenerRef.current = ed.onDidChangeCursorPosition(reportCursor)
+    reportCursor()
 
     // Ctrl/Cmd-click on URLs → confirmation dialog.
     ed.onMouseDown((e) => {
@@ -222,6 +235,8 @@ export function MonacoCodeEditor({
     }
   }
 
+  useEffect(() => () => cursorListenerRef.current?.dispose(), [])
+
   const handleChange = (next: string | undefined) => {
     isUserTypingRef.current = true
     if (onChange && !readonly) {
@@ -287,6 +302,7 @@ export function MonacoCodeEditor({
         beforeMount={handleBeforeMount}
         onMount={handleMount}
         extraOptions={{
+          ariaLabel,
           padding: { top: 8, bottom: 8 },
           suggest: { showKeywords: true, showSnippets: true },
           quickSuggestions: { other: true, comments: false, strings: false },

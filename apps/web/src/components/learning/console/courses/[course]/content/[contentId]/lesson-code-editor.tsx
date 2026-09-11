@@ -13,6 +13,7 @@ interface LessonCodeEditorProps {
   initialValue: string;
   language: "markdown" | "html";
   onChange: (value: string) => void;
+  onCursorOffsetChange?: (offset: number) => void;
   placeholder?: string;
 }
 
@@ -29,6 +30,7 @@ export function LessonCodeEditor({
   initialValue,
   language,
   onChange,
+  onCursorOffsetChange,
   placeholder,
 }: LessonCodeEditorProps) {
   const [value, setValue] = useState<string>(initialValue);
@@ -52,7 +54,9 @@ export function LessonCodeEditor({
           <MonacoCodeEditor
             value={value}
             language={language}
+            ariaLabel="Lesson body"
             onChange={handleChange}
+            onCursorOffsetChange={onCursorOffsetChange}
             height="100%"
           />
         </Suspense>

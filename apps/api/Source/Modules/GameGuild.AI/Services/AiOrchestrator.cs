@@ -39,6 +39,7 @@ internal sealed class AiOrchestrator(
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.InvalidMessageRole", "Only 'user' and 'assistant' roles are supported."));
 
         var resolvedResult = await ResolveRequestAsync(
+            requestContextAccessor.CurrentTenantId,
             request.Provider,
             request.Model,
             request.SystemPrompt,
@@ -51,7 +52,7 @@ internal sealed class AiOrchestrator(
         if (resolvedResult.IsFailure)
             return Result.Failure<AiCompletionResponse>(resolvedResult.Error);
 
-        return await ExecuteAsync(resolvedResult.Value, cancellationToken).ConfigureAwait(false);
+        return await ExecuteAsync(resolvedResult.Value, requestContextAccessor.CurrentUserId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<Result<AiCompletionResponse>> GenerateAsync(AiGenerateRequest request, CancellationToken cancellationToken = default)
@@ -67,6 +68,7 @@ internal sealed class AiOrchestrator(
         };
 
         var resolvedResult = await ResolveRequestAsync(
+            requestContextAccessor.CurrentTenantId,
             request.Provider,
             request.Model,
             request.SystemPrompt,
@@ -79,10 +81,98 @@ internal sealed class AiOrchestrator(
         if (resolvedResult.IsFailure)
             return Result.Failure<AiCompletionResponse>(resolvedResult.Error);
 
-        return await ExecuteAsync(resolvedResult.Value, cancellationToken).ConfigureAwait(false);
+        return await ExecuteAsync(resolvedResult.Value, requestContextAccessor.CurrentUserId, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<Result<AiResolvedModelDto>> DescribeGenerateAsync(
+        AiExecutionActor actor,
+        AiGenerateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateActor(actor);
+        ArgumentNullException.ThrowIfNull(request);
+        var messages = new[] { new AiChatMessage("user", string.IsNullOrWhiteSpace(request.Prompt) ? "preview" : request.Prompt.Trim()) };
+        var resolved = await ResolveRequestAsync(
+            actor.TenantId,
+            request.Provider,
+            request.Model,
+            request.SystemPrompt,
+            messages,
+            request.Temperature,
+            request.MaxTokens,
+            AiRequestKind.Generate,
+            cancellationToken).ConfigureAwait(false);
+        return resolved.IsFailure
+            ? Result.Failure<AiResolvedModelDto>(resolved.Error)
+            : Result.Success(new AiResolvedModelDto(
+                AiProviderParser.ToResponseValue(resolved.Value.Provider),
+                resolved.Value.Model,
+                resolved.Value.MaxTokens ?? 2048));
+    }
+
+    public async Task<Result<AiCompletionResponse>> GenerateForActorAsync(
+        AiExecutionActor actor,
+        AiGenerateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateActor(actor);
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+            return Result.Failure<AiCompletionResponse>(Error.Validation("AI.PromptRequired", "A prompt is required."));
+
+        var resolved = await ResolveRequestAsync(
+            actor.TenantId,
+            request.Provider,
+            request.Model,
+            request.SystemPrompt,
+            [new AiChatMessage("user", request.Prompt.Trim())],
+            request.Temperature,
+            request.MaxTokens,
+            AiRequestKind.Generate,
+            cancellationToken).ConfigureAwait(false);
+        return resolved.IsFailure
+            ? Result.Failure<AiCompletionResponse>(resolved.Error)
+            : await ExecuteAsync(resolved.Value, actor.UserId, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<Result<AiCompletionResponse>> GenerateForActorStreamingAsync(
+        AiExecutionActor actor,
+        AiGenerateRequest request,
+        Func<string, CancellationToken, ValueTask> onDelta,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateActor(actor);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(onDelta);
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+            return Result.Failure<AiCompletionResponse>(Error.Validation("AI.PromptRequired", "A prompt is required."));
+
+        var resolved = await ResolveRequestAsync(
+            actor.TenantId,
+            request.Provider,
+            request.Model,
+            request.SystemPrompt,
+            [new AiChatMessage("user", request.Prompt.Trim())],
+            request.Temperature,
+            request.MaxTokens,
+            AiRequestKind.Generate,
+            cancellationToken).ConfigureAwait(false);
+        return resolved.IsFailure
+            ? Result.Failure<AiCompletionResponse>(resolved.Error)
+            : await ExecuteAsync(resolved.Value, actor.UserId, cancellationToken, onDelta).ConfigureAwait(false);
+    }
+
+    private static void ValidateActor(AiExecutionActor actor)
+    {
+        ArgumentNullException.ThrowIfNull(actor);
+        if (actor.TenantId == Guid.Empty)
+            throw new ArgumentException("A tenant is required for an AI execution.", nameof(actor));
+        if (actor.UserId == Guid.Empty)
+            throw new ArgumentException("A user is required for an AI execution.", nameof(actor));
     }
 
     private async Task<Result<AiResolvedRequest>> ResolveRequestAsync(
+        Guid? tenantIdOverride,
         string? requestedProvider,
         string? requestedModel,
         string? systemPrompt,
@@ -95,10 +185,10 @@ internal sealed class AiOrchestrator(
         if (!_aiOptions.Enabled)
             return Result.Failure<AiResolvedRequest>(Error.Forbidden("AI.Disabled", "AI functionality is disabled for this environment."));
 
-        if (!requestContextAccessor.CurrentTenantId.HasValue)
+        if (!tenantIdOverride.HasValue)
             return Result.Failure<AiResolvedRequest>(Error.Forbidden("AI.TenantContextRequired", "AI requests require an active tenant context."));
 
-        var tenantId = requestContextAccessor.CurrentTenantId.Value;
+        var tenantId = tenantIdOverride.Value;
         var tenantSettings = await tenantSettingsRepository.GetByTenantIdAsync(tenantId, cancellationToken).ConfigureAwait(false);
         var integrationSettings = tenantSettings is null
             ? TenantIntegrationSettingsSerializer.Empty()
@@ -158,12 +248,16 @@ internal sealed class AiOrchestrator(
             tenantConfiguration.History));
     }
 
-    private async Task<Result<AiCompletionResponse>> ExecuteAsync(AiResolvedRequest resolvedRequest, CancellationToken cancellationToken)
+    private async Task<Result<AiCompletionResponse>> ExecuteAsync(
+        AiResolvedRequest resolvedRequest,
+        Guid? actorId,
+        CancellationToken cancellationToken,
+        Func<string, CancellationToken, ValueTask>? onDelta = null)
     {
         var inputModerationResult = ModerateInput(resolvedRequest);
         if (inputModerationResult.IsFailure)
         {
-            await RecordHistoryAsync(resolvedRequest, null, "ModerationBlocked", inputModerationResult.Error.Code, inputModerationResult.Error.Description, cancellationToken).ConfigureAwait(false);
+            await RecordHistoryAsync(resolvedRequest, actorId, null, "ModerationBlocked", inputModerationResult.Error.Code, inputModerationResult.Error.Description, cancellationToken).ConfigureAwait(false);
             return Result.Failure<AiCompletionResponse>(inputModerationResult.Error);
         }
 
@@ -173,17 +267,20 @@ internal sealed class AiOrchestrator(
 
         if (!_adapters.TryGetValue(resolvedRequest.Provider, out var adapter))
         {
-            await quotaEnforcer.DecrementUsageAsync(resolvedRequest.TenantId, ResourceUsageType.AiRequests, 1, requestContextAccessor.CurrentUserId, "AI.ProviderNotRegistered", cancellationToken).ConfigureAwait(false);
+            await quotaEnforcer.DecrementUsageAsync(resolvedRequest.TenantId, ResourceUsageType.AiRequests, 1, actorId, "AI.ProviderNotRegistered", cancellationToken).ConfigureAwait(false);
             return Result.Failure<AiCompletionResponse>(Error.Problem(
                 "AI.ProviderNotRegistered",
                 $"Provider '{AiProviderParser.ToResponseValue(resolvedRequest.Provider)}' is not registered."));
         }
 
-        var executionResult = await adapter.CompleteAsync(resolvedRequest, cancellationToken).ConfigureAwait(false);
+        var canStreamBeforeModeration = onDelta is not null && !resolvedRequest.Moderation.Enabled;
+        var executionResult = canStreamBeforeModeration
+            ? await adapter.CompleteStreamingAsync(resolvedRequest, onDelta!, cancellationToken).ConfigureAwait(false)
+            : await adapter.CompleteAsync(resolvedRequest, cancellationToken).ConfigureAwait(false);
         if (executionResult.IsFailure)
         {
-            await quotaEnforcer.DecrementUsageAsync(resolvedRequest.TenantId, ResourceUsageType.AiRequests, 1, requestContextAccessor.CurrentUserId, "AI.ProviderExecutionFailed", cancellationToken).ConfigureAwait(false);
-            await RecordHistoryAsync(resolvedRequest, null, "Failed", executionResult.Error.Code, executionResult.Error.Description, cancellationToken).ConfigureAwait(false);
+            await quotaEnforcer.DecrementUsageAsync(resolvedRequest.TenantId, ResourceUsageType.AiRequests, 1, actorId, "AI.ProviderExecutionFailed", cancellationToken).ConfigureAwait(false);
+            await RecordHistoryAsync(resolvedRequest, actorId, null, "Failed", executionResult.Error.Code, executionResult.Error.Description, cancellationToken).ConfigureAwait(false);
             return Result.Failure<AiCompletionResponse>(executionResult.Error);
         }
 
@@ -195,7 +292,7 @@ internal sealed class AiOrchestrator(
             var tokenQuotaResult = await ConsumeQuotaAsync(resolvedRequest.TenantId, ResourceUsageType.AiTokens, totalTokens, "AI token quota exceeded.", cancellationToken).ConfigureAwait(false);
             if (tokenQuotaResult.IsFailure)
             {
-                await RecordHistoryAsync(resolvedRequest, providerResult, "Failed", tokenQuotaResult.Error.Code, tokenQuotaResult.Error.Description, cancellationToken).ConfigureAwait(false);
+                await RecordHistoryAsync(resolvedRequest, actorId, providerResult, "Failed", tokenQuotaResult.Error.Code, tokenQuotaResult.Error.Description, cancellationToken).ConfigureAwait(false);
                 return Result.Failure<AiCompletionResponse>(tokenQuotaResult.Error);
             }
         }
@@ -203,9 +300,14 @@ internal sealed class AiOrchestrator(
         var outputModerationResult = ModerateOutput(resolvedRequest, providerResult);
         if (outputModerationResult.IsFailure)
         {
-            await RecordHistoryAsync(resolvedRequest, providerResult, "ModerationBlocked", outputModerationResult.Error.Code, outputModerationResult.Error.Description, cancellationToken).ConfigureAwait(false);
+            await RecordHistoryAsync(resolvedRequest, actorId, providerResult, "ModerationBlocked", outputModerationResult.Error.Code, outputModerationResult.Error.Description, cancellationToken).ConfigureAwait(false);
             return Result.Failure<AiCompletionResponse>(outputModerationResult.Error);
         }
+
+        // Tenant output moderation must complete before any text can leave the
+        // orchestrator. In that mode the approved response is emitted once.
+        if (onDelta is not null && !canStreamBeforeModeration)
+            await onDelta(providerResult.Text, cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation(
             "Completed AI request for tenant {TenantId} using provider {Provider} and model {Model}",
@@ -213,7 +315,7 @@ internal sealed class AiOrchestrator(
             AiProviderParser.ToResponseValue(resolvedRequest.Provider),
             providerResult.Model);
 
-        await RecordHistoryAsync(resolvedRequest, providerResult, "Completed", null, null, cancellationToken).ConfigureAwait(false);
+        await RecordHistoryAsync(resolvedRequest, actorId, providerResult, "Completed", null, null, cancellationToken).ConfigureAwait(false);
 
         return Result.Success(new AiCompletionResponse(
             AiProviderParser.ToResponseValue(resolvedRequest.Provider),
@@ -288,6 +390,7 @@ internal sealed class AiOrchestrator(
 
     private async Task RecordHistoryAsync(
         AiResolvedRequest resolvedRequest,
+        Guid? actorId,
         AiProviderExecutionResult? providerResult,
         string outcome,
         string? outcomeCode,
@@ -300,7 +403,7 @@ internal sealed class AiOrchestrator(
         var entry = new AiConversationLog
         {
             TenantId = resolvedRequest.TenantId,
-            UserId = requestContextAccessor.CurrentUserId,
+            UserId = actorId,
             RequestKind = resolvedRequest.RequestKind.ToString(),
             Provider = AiProviderParser.ToResponseValue(resolvedRequest.Provider),
             Model = providerResult?.Model ?? resolvedRequest.Model,

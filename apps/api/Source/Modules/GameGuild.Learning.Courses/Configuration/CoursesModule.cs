@@ -28,6 +28,10 @@ public static class CoursesModule
         services.AddScoped<IProgramContentScheduleGuard, NullProgramContentScheduleGuard>();
         services.AddScoped<IProgramContentLifecycleGuard, NullProgramContentLifecycleGuard>();
         services.AddScoped<IProgramContentService, ProgramContentService>();
+        services.AddScoped<IProgramContentAuthoringService, ProgramContentAuthoringService>();
+        services.AddSingleton<IAuthoringAiRunQueue, AuthoringAiRunQueue>();
+        services.AddScoped<IAuthoringAiService, AuthoringAiService>();
+        services.AddHostedService<AuthoringAiBackgroundService>();
         services.AddScoped<CourseContentAccessRuleEvaluator>();
         services.AddSingleton(new ScopedRuleEvaluatorRegistration(
             RuleTypes.CourseContentAccess,

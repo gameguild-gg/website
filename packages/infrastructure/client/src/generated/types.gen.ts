@@ -8435,6 +8435,116 @@ export interface LearningCoursesActivityGradeDto {
 
 export interface LearningCoursesActivitySettings {}
 
+export interface LearningCoursesAiAuthoringConversationDto {
+  id?: string;
+  authorId?: string;
+  contentId?: string;
+  lastMessageAt?: string;
+  messages?: Array<LearningCoursesAiAuthoringMessageDto> | null;
+}
+
+export interface LearningCoursesAiAuthoringMessageDto {
+  id?: string;
+  content?: string | null;
+  createdAt?: string;
+  role?: string | null;
+  runId?: string | null;
+}
+
+export interface LearningCoursesAiAuthoringRunDto {
+  id?: string;
+  baseDraftRevision?: number;
+  completedAt?: string | null;
+  contentId?: string;
+  conversationId?: string;
+  createdAt?: string;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  instruction?: string | null;
+  model?: string | null;
+  proposal?: LearningCoursesAiProposalDto;
+  proposalKind?: LearningCoursesAiProposalKind;
+  provider?: string | null;
+  startedAt?: string | null;
+  status?: LearningCoursesAiAuthoringRunStatus;
+  usage?: LearningCoursesAiCreditUsageDto;
+}
+
+export interface LearningCoursesAiAuthoringRunInput {
+  conversationId?: string | null;
+  draftRevision?: number;
+  idempotencyKey?: string | null;
+  instruction?: string | null;
+  proposalKind?: LearningCoursesAiProposalKind;
+  selection?: string | null;
+}
+
+export type LearningCoursesAiAuthoringRunStatus = 'Queued' | 'Reserved' | 'Running' | 'Completed' | 'Failed' | 'Cancelled';
+
+export interface LearningCoursesAiCreditUsageDto {
+  availableSoftCredits?: number;
+  currency?: string | null;
+  inputTokens?: number;
+  maximumEstimatedCost?: number;
+  outputTokens?: number;
+  releasedAmount?: number;
+  settledCost?: number;
+}
+
+export interface LearningCoursesAiEntitlementDto {
+  availableSoftCredits?: number;
+  currency?: string | null;
+  reservedSoftCredits?: number;
+  settledSoftCredits?: number;
+}
+
+export interface LearningCoursesAiProposalDto {
+  id?: string;
+  baseDraftRevision?: number;
+  kind?: LearningCoursesAiProposalKind;
+  originalContent?: string | null;
+  proposedAt?: string;
+  proposedContent?: string | null;
+  runId?: string;
+  status?: LearningCoursesAiProposalStatus;
+}
+
+export type LearningCoursesAiProposalKind = 'ReplaceDocument' | 'InsertAtCursor' | 'LexicalPatch' | 'QuizPatch' | 'MetadataPatch';
+
+export type LearningCoursesAiProposalStatus = 'Pending' | 'Applied' | 'Discarded';
+
+export interface LearningCoursesApplyAiProposalInput {
+  cursorOffset?: number | null;
+  draftRevision?: number;
+}
+
+export interface LearningCoursesAuthoringContentPayload {
+  activitySettings?: LearningCoursesActivitySettings;
+  body?: string | null;
+  description?: string | null;
+  estimatedMinutes?: number | null;
+  estimatedMinutesSource?: LearningCoursesEstimatedMinutesSource;
+  isRequired?: boolean;
+  jsonBody?: Record<string, unknown> | null;
+  lessonFormat?: LearningCoursesLessonContentFormat;
+  slug?: string | null;
+  title?: string | null;
+  type?: LearningCoursesProgramContentType;
+  visibility?: LearningCoursesVisibility;
+}
+
+export interface LearningCoursesAuthoringDraftDto {
+  id?: string;
+  basePublishedVersion?: number;
+  contentId?: string;
+  eTag?: string | null;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
+  payload?: LearningCoursesAuthoringContentPayload;
+  programId?: string;
+  revision?: number;
+}
+
 export interface LearningCoursesBundleFileMeta {
   content: string | null;
   encoding?: string | null;
@@ -8777,6 +8887,7 @@ export interface LearningCoursesProgramContentDto {
   title?: string | null;
   type?: LearningCoursesProgramContentType;
   updatedAt?: string | null;
+  version?: number;
   visibility?: LearningCoursesVisibility;
 }
 
@@ -8821,6 +8932,15 @@ export interface LearningCoursesProgramUserSummaryDto {
 }
 
 export type LearningCoursesProgressStatus = 'NotStarted' | 'InProgress' | 'Completed' | 'Submitted';
+
+export interface LearningCoursesPublishAuthoringDraftInput {
+  revision?: number;
+}
+
+export interface LearningCoursesPublishAuthoringResult {
+  draft?: LearningCoursesAuthoringDraftDto;
+  publishedContent?: LearningCoursesProgramContentDto;
+}
 
 export interface LearningCoursesRecordContentInteractionEventInput {
   durationSeconds?: number | null;
@@ -8870,6 +8990,11 @@ export interface LearningCoursesRevenueChartDto {
   date?: string;
   purchases?: number;
   revenue?: number;
+}
+
+export interface LearningCoursesSaveAuthoringDraftInput {
+  payload?: LearningCoursesAuthoringContentPayload;
+  revision?: number;
 }
 
 export interface LearningCoursesScheduleProgramDto {
@@ -14265,6 +14390,19 @@ export let LearningCohortsUpdateCohortScheduleInputSchema: z.ZodType<LearningCoh
 export let LearningCohortsUpdateCohortScheduleItemInputSchema: z.ZodType<LearningCohortsUpdateCohortScheduleItemInput>;
 export let LearningCoursesActivityGradeDtoSchema: z.ZodType<LearningCoursesActivityGradeDto>;
 export let LearningCoursesActivitySettingsSchema: z.ZodType<LearningCoursesActivitySettings>;
+export let LearningCoursesAiAuthoringConversationDtoSchema: z.ZodType<LearningCoursesAiAuthoringConversationDto>;
+export let LearningCoursesAiAuthoringMessageDtoSchema: z.ZodType<LearningCoursesAiAuthoringMessageDto>;
+export let LearningCoursesAiAuthoringRunDtoSchema: z.ZodType<LearningCoursesAiAuthoringRunDto>;
+export let LearningCoursesAiAuthoringRunInputSchema: z.ZodType<LearningCoursesAiAuthoringRunInput>;
+export let LearningCoursesAiAuthoringRunStatusSchema: z.ZodType<LearningCoursesAiAuthoringRunStatus>;
+export let LearningCoursesAiCreditUsageDtoSchema: z.ZodType<LearningCoursesAiCreditUsageDto>;
+export let LearningCoursesAiEntitlementDtoSchema: z.ZodType<LearningCoursesAiEntitlementDto>;
+export let LearningCoursesAiProposalDtoSchema: z.ZodType<LearningCoursesAiProposalDto>;
+export let LearningCoursesAiProposalKindSchema: z.ZodType<LearningCoursesAiProposalKind>;
+export let LearningCoursesAiProposalStatusSchema: z.ZodType<LearningCoursesAiProposalStatus>;
+export let LearningCoursesApplyAiProposalInputSchema: z.ZodType<LearningCoursesApplyAiProposalInput>;
+export let LearningCoursesAuthoringContentPayloadSchema: z.ZodType<LearningCoursesAuthoringContentPayload>;
+export let LearningCoursesAuthoringDraftDtoSchema: z.ZodType<LearningCoursesAuthoringDraftDto>;
 export let LearningCoursesBundleFileMetaSchema: z.ZodType<LearningCoursesBundleFileMeta>;
 export let LearningCoursesCircularDependencyCheckResultSchema: z.ZodType<LearningCoursesCircularDependencyCheckResult>;
 export let LearningCoursesCloneProgramDtoSchema: z.ZodType<LearningCoursesCloneProgramDto>;
@@ -14309,6 +14447,8 @@ export let LearningCoursesProgramDifficultySchema: z.ZodType<LearningCoursesProg
 export let LearningCoursesProgramDtoSchema: z.ZodType<LearningCoursesProgramDto>;
 export let LearningCoursesProgramUserSummaryDtoSchema: z.ZodType<LearningCoursesProgramUserSummaryDto>;
 export let LearningCoursesProgressStatusSchema: z.ZodType<LearningCoursesProgressStatus>;
+export let LearningCoursesPublishAuthoringDraftInputSchema: z.ZodType<LearningCoursesPublishAuthoringDraftInput>;
+export let LearningCoursesPublishAuthoringResultSchema: z.ZodType<LearningCoursesPublishAuthoringResult>;
 export let LearningCoursesRecordContentInteractionEventInputSchema: z.ZodType<LearningCoursesRecordContentInteractionEventInput>;
 export let LearningCoursesReflectionResponseResultDtoSchema: z.ZodType<LearningCoursesReflectionResponseResultDto>;
 export let LearningCoursesRejectProgramDtoSchema: z.ZodType<LearningCoursesRejectProgramDto>;
@@ -14317,6 +14457,7 @@ export let LearningCoursesReorderPrerequisitesInputSchema: z.ZodType<LearningCou
 export let LearningCoursesResolveCourseSupportTicketInputSchema: z.ZodType<LearningCoursesResolveCourseSupportTicketInput>;
 export let LearningCoursesRevenueAnalyticsDtoSchema: z.ZodType<LearningCoursesRevenueAnalyticsDto>;
 export let LearningCoursesRevenueChartDtoSchema: z.ZodType<LearningCoursesRevenueChartDto>;
+export let LearningCoursesSaveAuthoringDraftInputSchema: z.ZodType<LearningCoursesSaveAuthoringDraftInput>;
 export let LearningCoursesScheduleProgramDtoSchema: z.ZodType<LearningCoursesScheduleProgramDto>;
 export let LearningCoursesSearchContentDtoSchema: z.ZodType<LearningCoursesSearchContentDto>;
 export let LearningCoursesSendCourseStudentMessageInputSchema: z.ZodType<LearningCoursesSendCourseStudentMessageInput>;
@@ -24878,6 +25019,132 @@ LearningCoursesActivityGradeDtoSchema = z.object({
 /** Zod schema for LearningCoursesActivitySettings */
 LearningCoursesActivitySettingsSchema = z.object({});
 
+/** Zod schema for LearningCoursesAiAuthoringConversationDto */
+LearningCoursesAiAuthoringConversationDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  authorId: z.string().uuid().optional(),
+  contentId: z.string().uuid().optional(),
+  lastMessageAt: z.string().datetime().optional(),
+  messages: z
+    .array(z.lazy(() => LearningCoursesAiAuthoringMessageDtoSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for LearningCoursesAiAuthoringMessageDto */
+LearningCoursesAiAuthoringMessageDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  content: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  role: z.string().nullable().optional(),
+  runId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for LearningCoursesAiAuthoringRunDto */
+LearningCoursesAiAuthoringRunDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  baseDraftRevision: z.number().int().optional(),
+  completedAt: z.string().datetime().nullable().optional(),
+  contentId: z.string().uuid().optional(),
+  conversationId: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorCode: z.string().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  instruction: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
+  proposal: z.lazy(() => LearningCoursesAiProposalDtoSchema).optional(),
+  proposalKind: z.lazy(() => LearningCoursesAiProposalKindSchema).optional(),
+  provider: z.string().nullable().optional(),
+  startedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => LearningCoursesAiAuthoringRunStatusSchema).optional(),
+  usage: z.lazy(() => LearningCoursesAiCreditUsageDtoSchema).optional(),
+});
+
+/** Zod schema for LearningCoursesAiAuthoringRunInput */
+LearningCoursesAiAuthoringRunInputSchema = z.object({
+  conversationId: z.string().uuid().nullable().optional(),
+  draftRevision: z.number().int().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  instruction: z.string().nullable().optional(),
+  proposalKind: z.lazy(() => LearningCoursesAiProposalKindSchema).optional(),
+  selection: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningCoursesAiAuthoringRunStatus */
+LearningCoursesAiAuthoringRunStatusSchema = z.enum(['Queued', 'Reserved', 'Running', 'Completed', 'Failed', 'Cancelled']);
+
+/** Zod schema for LearningCoursesAiCreditUsageDto */
+LearningCoursesAiCreditUsageDtoSchema = z.object({
+  availableSoftCredits: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  inputTokens: z.number().int().optional(),
+  maximumEstimatedCost: z.number().int().optional(),
+  outputTokens: z.number().int().optional(),
+  releasedAmount: z.number().int().optional(),
+  settledCost: z.number().int().optional(),
+});
+
+/** Zod schema for LearningCoursesAiEntitlementDto */
+LearningCoursesAiEntitlementDtoSchema = z.object({
+  availableSoftCredits: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  reservedSoftCredits: z.number().int().optional(),
+  settledSoftCredits: z.number().int().optional(),
+});
+
+/** Zod schema for LearningCoursesAiProposalDto */
+LearningCoursesAiProposalDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  baseDraftRevision: z.number().int().optional(),
+  kind: z.lazy(() => LearningCoursesAiProposalKindSchema).optional(),
+  originalContent: z.string().nullable().optional(),
+  proposedAt: z.string().datetime().optional(),
+  proposedContent: z.string().nullable().optional(),
+  runId: z.string().uuid().optional(),
+  status: z.lazy(() => LearningCoursesAiProposalStatusSchema).optional(),
+});
+
+/** Zod schema for LearningCoursesAiProposalKind */
+LearningCoursesAiProposalKindSchema = z.enum(['ReplaceDocument', 'InsertAtCursor', 'LexicalPatch', 'QuizPatch', 'MetadataPatch']);
+
+/** Zod schema for LearningCoursesAiProposalStatus */
+LearningCoursesAiProposalStatusSchema = z.enum(['Pending', 'Applied', 'Discarded']);
+
+/** Zod schema for LearningCoursesApplyAiProposalInput */
+LearningCoursesApplyAiProposalInputSchema = z.object({
+  cursorOffset: z.number().int().nullable().optional(),
+  draftRevision: z.number().int().optional(),
+});
+
+/** Zod schema for LearningCoursesAuthoringContentPayload */
+LearningCoursesAuthoringContentPayloadSchema = z.object({
+  activitySettings: z.lazy(() => LearningCoursesActivitySettingsSchema).optional(),
+  body: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  estimatedMinutes: z.number().int().nullable().optional(),
+  estimatedMinutesSource: z.lazy(() => LearningCoursesEstimatedMinutesSourceSchema).optional(),
+  isRequired: z.boolean().optional(),
+  jsonBody: z.record(z.string(), z.unknown()).nullable().optional(),
+  lessonFormat: z.lazy(() => LearningCoursesLessonContentFormatSchema).optional(),
+  slug: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+  type: z.lazy(() => LearningCoursesProgramContentTypeSchema).optional(),
+  visibility: z.lazy(() => LearningCoursesVisibilitySchema).optional(),
+});
+
+/** Zod schema for LearningCoursesAuthoringDraftDto */
+LearningCoursesAuthoringDraftDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  basePublishedVersion: z.number().int().optional(),
+  contentId: z.string().uuid().optional(),
+  eTag: z.string().nullable().optional(),
+  lastEditedAt: z.string().datetime().optional(),
+  lastEditedBy: z.string().uuid().optional(),
+  payload: z.lazy(() => LearningCoursesAuthoringContentPayloadSchema).optional(),
+  programId: z.string().uuid().optional(),
+  revision: z.number().int().optional(),
+});
+
 /** Zod schema for LearningCoursesBundleFileMeta */
 LearningCoursesBundleFileMetaSchema = z.object({
   content: z.string().nullable(),
@@ -25288,6 +25555,7 @@ LearningCoursesProgramContentDtoSchema = z.object({
   title: z.string().nullable().optional(),
   type: z.lazy(() => LearningCoursesProgramContentTypeSchema).optional(),
   updatedAt: z.string().datetime().nullable().optional(),
+  version: z.number().int().optional(),
   visibility: z.lazy(() => LearningCoursesVisibilitySchema).optional(),
 });
 
@@ -25335,6 +25603,17 @@ LearningCoursesProgramUserSummaryDtoSchema = z.object({
 
 /** Zod schema for LearningCoursesProgressStatus */
 LearningCoursesProgressStatusSchema = z.enum(['NotStarted', 'InProgress', 'Completed', 'Submitted']);
+
+/** Zod schema for LearningCoursesPublishAuthoringDraftInput */
+LearningCoursesPublishAuthoringDraftInputSchema = z.object({
+  revision: z.number().int().optional(),
+});
+
+/** Zod schema for LearningCoursesPublishAuthoringResult */
+LearningCoursesPublishAuthoringResultSchema = z.object({
+  draft: z.lazy(() => LearningCoursesAuthoringDraftDtoSchema).optional(),
+  publishedContent: z.lazy(() => LearningCoursesProgramContentDtoSchema).optional(),
+});
 
 /** Zod schema for LearningCoursesRecordContentInteractionEventInput */
 LearningCoursesRecordContentInteractionEventInputSchema = z.object({
@@ -25395,6 +25674,12 @@ LearningCoursesRevenueChartDtoSchema = z.object({
   date: z.string().datetime().optional(),
   purchases: z.number().int().optional(),
   revenue: z.number().optional(),
+});
+
+/** Zod schema for LearningCoursesSaveAuthoringDraftInput */
+LearningCoursesSaveAuthoringDraftInputSchema = z.object({
+  payload: z.lazy(() => LearningCoursesAuthoringContentPayloadSchema).optional(),
+  revision: z.number().int().optional(),
 });
 
 /** Zod schema for LearningCoursesScheduleProgramDto */
@@ -31069,6 +31354,20 @@ export type LearningCohortsCourseCohortCalendar = LearningCohortsCourseCohortCal
 export { LearningCohortsCourseCohortCalendarDtoSchema as LearningCohortsCourseCohortCalendarSchema };
 export type LearningCoursesActivityGrade = LearningCoursesActivityGradeDto;
 export { LearningCoursesActivityGradeDtoSchema as LearningCoursesActivityGradeSchema };
+export type LearningCoursesAiAuthoringConversation = LearningCoursesAiAuthoringConversationDto;
+export { LearningCoursesAiAuthoringConversationDtoSchema as LearningCoursesAiAuthoringConversationSchema };
+export type LearningCoursesAiAuthoringMessage = LearningCoursesAiAuthoringMessageDto;
+export { LearningCoursesAiAuthoringMessageDtoSchema as LearningCoursesAiAuthoringMessageSchema };
+export type LearningCoursesAiAuthoringRun = LearningCoursesAiAuthoringRunDto;
+export { LearningCoursesAiAuthoringRunDtoSchema as LearningCoursesAiAuthoringRunSchema };
+export type LearningCoursesAiCreditUsage = LearningCoursesAiCreditUsageDto;
+export { LearningCoursesAiCreditUsageDtoSchema as LearningCoursesAiCreditUsageSchema };
+export type LearningCoursesAiEntitlement = LearningCoursesAiEntitlementDto;
+export { LearningCoursesAiEntitlementDtoSchema as LearningCoursesAiEntitlementSchema };
+export type LearningCoursesAiProposal = LearningCoursesAiProposalDto;
+export { LearningCoursesAiProposalDtoSchema as LearningCoursesAiProposalSchema };
+export type LearningCoursesAuthoringDraft = LearningCoursesAuthoringDraftDto;
+export { LearningCoursesAuthoringDraftDtoSchema as LearningCoursesAuthoringDraftSchema };
 export type LearningCoursesCloneProgram = LearningCoursesCloneProgramDto;
 export { LearningCoursesCloneProgramDtoSchema as LearningCoursesCloneProgramSchema };
 export type LearningCoursesCompletionRates = LearningCoursesCompletionRatesDto;

@@ -40,6 +40,14 @@ public sealed record AiGenerateRequest(
     int? MaxTokens);
 
 /// <summary>
+/// Server-derived billing actor for an AI execution. This value is created from the
+/// authenticated request context and is never accepted from a browser payload.
+/// </summary>
+public sealed record AiExecutionActor(Guid TenantId, Guid UserId);
+
+public sealed record AiResolvedModelDto(string Provider, string Model, int MaximumOutputTokens);
+
+/// <summary>
 ///     Normalized token usage information returned by a provider.
 /// </summary>
 public sealed record AiUsageDto(int? InputTokens, int? OutputTokens, int? TotalTokens);

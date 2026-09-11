@@ -93,7 +93,11 @@ public sealed class ProgramWriteServiceTests
         var contentService = new Mock<IProgramContentService>();
         contentService.Setup(service => service.GetContentByIdAsync(contentId))
             .ReturnsAsync(new ProgramContent { Id = contentId, ProgramId = programId, Type = ProgramContentType.Survey });
-        var controller = new ContentInteractionController(interactions.Object, contentService.Object, NullLogger<ContentInteractionController>.Instance);
+        var controller = new ContentInteractionController(
+            interactions.Object,
+            contentService.Object,
+            NullLogger<ContentInteractionController>.Instance,
+            Mock.Of<ISender>());
 
         var result = await controller.GetSurveyResults(contentId, programId);
 

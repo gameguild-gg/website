@@ -11650,6 +11650,144 @@ export const postCoursesContentEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetCoursesContentAuthoringInput {
+  programId: string;
+  contentId: string;
+}
+export type GetCoursesContentAuthoringOutput = Types.LearningCoursesAuthoringDraftDto;
+export const getCoursesContentAuthoringEndpoint = {
+  operationId: 'getCoursesContentAuthoring' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutCoursesContentAuthoringInput {
+  programId: string;
+  contentId: string;
+  body?: Types.LearningCoursesSaveAuthoringDraftInput;
+}
+export type PutCoursesContentAuthoringOutput = Types.LearningCoursesAuthoringDraftDto;
+export const putCoursesContentAuthoringEndpoint = {
+  operationId: 'putCoursesContentAuthoring' as const,
+  method: 'PUT' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesContentAuthoringAiConversationsInput {
+  programId: string;
+  contentId: string;
+}
+export type GetCoursesContentAuthoringAiConversationsOutput = Array<Types.LearningCoursesAiAuthoringConversationDto>;
+export const getCoursesContentAuthoringAiConversationsEndpoint = {
+  operationId: 'getCoursesContentAuthoringAiConversations' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/conversations' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesContentAuthoringAiEntitlementInput {
+  programId: string;
+  contentId: string;
+}
+export type GetCoursesContentAuthoringAiEntitlementOutput = Types.LearningCoursesAiEntitlementDto;
+export const getCoursesContentAuthoringAiEntitlementEndpoint = {
+  operationId: 'getCoursesContentAuthoringAiEntitlement' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/entitlement' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface DeleteCoursesContentAuthoringAiProposalsInput {
+  programId: string;
+  contentId: string;
+  proposalId: string;
+}
+export type DeleteCoursesContentAuthoringAiProposalsOutput = Types.LearningCoursesAiProposalDto;
+export const deleteCoursesContentAuthoringAiProposalsEndpoint = {
+  operationId: 'deleteCoursesContentAuthoringAiProposals' as const,
+  method: 'DELETE' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/proposals/{proposalId}' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostCoursesContentAuthoringAiProposalsApplyInput {
+  programId: string;
+  contentId: string;
+  proposalId: string;
+  body?: Types.LearningCoursesApplyAiProposalInput;
+}
+export type PostCoursesContentAuthoringAiProposalsApplyOutput = Types.LearningCoursesAuthoringDraftDto;
+export const postCoursesContentAuthoringAiProposalsApplyEndpoint = {
+  operationId: 'postCoursesContentAuthoringAiProposalsApply' as const,
+  method: 'POST' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/proposals/{proposalId}/apply' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostCoursesContentAuthoringAiRunsInput {
+  programId: string;
+  contentId: string;
+  body?: Types.LearningCoursesAiAuthoringRunInput;
+}
+export type PostCoursesContentAuthoringAiRunsOutput = Types.LearningCoursesAiAuthoringRunDto;
+export const postCoursesContentAuthoringAiRunsEndpoint = {
+  operationId: 'postCoursesContentAuthoringAiRuns' as const,
+  method: 'POST' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/runs' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesContentAuthoringAiRunsInput {
+  programId: string;
+  contentId: string;
+  runId: string;
+}
+export type GetCoursesContentAuthoringAiRunsOutput = Types.LearningCoursesAiAuthoringRunDto;
+export const getCoursesContentAuthoringAiRunsEndpoint = {
+  operationId: 'getCoursesContentAuthoringAiRuns' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/runs/{runId}' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesContentAuthoringAiRunsStreamInput {
+  programId: string;
+  contentId: string;
+  runId: string;
+}
+export type GetCoursesContentAuthoringAiRunsStreamOutput = void;
+export const getCoursesContentAuthoringAiRunsStreamEndpoint = {
+  operationId: 'getCoursesContentAuthoringAiRunsStream' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/ai/runs/{runId}/stream' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostCoursesContentAuthoringPublishInput {
+  programId: string;
+  contentId: string;
+  body?: Types.LearningCoursesPublishAuthoringDraftInput;
+}
+export type PostCoursesContentAuthoringPublishOutput = Types.LearningCoursesPublishAuthoringResult;
+export const postCoursesContentAuthoringPublishEndpoint = {
+  operationId: 'postCoursesContentAuthoringPublish' as const,
+  method: 'POST' as const,
+  path: '/v1/courses/{programId}/content/{contentId}/authoring/publish' as const,
+  tags: ['LearningCoursesProgramContentAuthoring'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetCoursesContentByIdInput {
   programId: string;
   id: string;
@@ -22001,6 +22139,16 @@ export const endpoints = {
   getCoursesActivityGradesStudent: getCoursesActivityGradesStudentEndpoint,
   getCoursesContent: getCoursesContentEndpoint,
   postCoursesContent: postCoursesContentEndpoint,
+  getCoursesContentAuthoring: getCoursesContentAuthoringEndpoint,
+  putCoursesContentAuthoring: putCoursesContentAuthoringEndpoint,
+  getCoursesContentAuthoringAiConversations: getCoursesContentAuthoringAiConversationsEndpoint,
+  getCoursesContentAuthoringAiEntitlement: getCoursesContentAuthoringAiEntitlementEndpoint,
+  deleteCoursesContentAuthoringAiProposals: deleteCoursesContentAuthoringAiProposalsEndpoint,
+  postCoursesContentAuthoringAiProposalsApply: postCoursesContentAuthoringAiProposalsApplyEndpoint,
+  postCoursesContentAuthoringAiRuns: postCoursesContentAuthoringAiRunsEndpoint,
+  getCoursesContentAuthoringAiRuns: getCoursesContentAuthoringAiRunsEndpoint,
+  getCoursesContentAuthoringAiRunsStream: getCoursesContentAuthoringAiRunsStreamEndpoint,
+  postCoursesContentAuthoringPublish: postCoursesContentAuthoringPublishEndpoint,
   getCoursesContentById: getCoursesContentByIdEndpoint,
   putCoursesContent: putCoursesContentEndpoint,
   deleteCoursesContent: deleteCoursesContentEndpoint,
