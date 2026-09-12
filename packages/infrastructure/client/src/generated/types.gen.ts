@@ -8773,6 +8773,10 @@ export interface LearningCoursesEngagementMetricsDto {
 
 export type LearningCoursesEnrollmentStatus = 'Open' | 'Active' | 'Paused' | 'Cancelled' | 'Expired' | 'Completed' | 'Closed' | 'InviteOnly' | 'Waitlist';
 
+export interface LearningCoursesEnrollProgramUserInput {
+  userReference?: string | null;
+}
+
 export type LearningCoursesEstimatedMinutesSource = 'Auto' | 'Manual';
 
 export interface LearningCoursesGraderSummaryDto {
@@ -9144,7 +9148,9 @@ export interface LearningCoursesUserProgressDto {
   enrollmentId?: string;
   lastAccessedAt?: string | null;
   startedAt?: string | null;
+  userEmail?: string | null;
   userId?: string;
+  userName?: string | null;
 }
 
 export type LearningCoursesVisibility = 'Public' | 'Internal' | 'Private' | 'Restricted';
@@ -14428,6 +14434,7 @@ export let LearningCoursesCreateProgramContentDtoSchema: z.ZodType<LearningCours
 export let LearningCoursesCreateProgramDtoSchema: z.ZodType<LearningCoursesCreateProgramDto>;
 export let LearningCoursesEngagementMetricsDtoSchema: z.ZodType<LearningCoursesEngagementMetricsDto>;
 export let LearningCoursesEnrollmentStatusSchema: z.ZodType<LearningCoursesEnrollmentStatus>;
+export let LearningCoursesEnrollProgramUserInputSchema: z.ZodType<LearningCoursesEnrollProgramUserInput>;
 export let LearningCoursesEstimatedMinutesSourceSchema: z.ZodType<LearningCoursesEstimatedMinutesSource>;
 export let LearningCoursesGraderSummaryDtoSchema: z.ZodType<LearningCoursesGraderSummaryDto>;
 export let LearningCoursesGradeStatisticsDtoSchema: z.ZodType<LearningCoursesGradeStatisticsDto>;
@@ -25421,6 +25428,11 @@ LearningCoursesEngagementMetricsDtoSchema = z.object({
 /** Zod schema for LearningCoursesEnrollmentStatus */
 LearningCoursesEnrollmentStatusSchema = z.enum(['Open', 'Active', 'Paused', 'Cancelled', 'Expired', 'Completed', 'Closed', 'InviteOnly', 'Waitlist']);
 
+/** Zod schema for LearningCoursesEnrollProgramUserInput */
+LearningCoursesEnrollProgramUserInputSchema = z.object({
+  userReference: z.string().nullable().optional(),
+});
+
 /** Zod schema for LearningCoursesEstimatedMinutesSource */
 LearningCoursesEstimatedMinutesSourceSchema = z.enum(['Auto', 'Manual']);
 
@@ -25858,7 +25870,9 @@ LearningCoursesUserProgressDtoSchema = z.object({
   enrollmentId: z.string().uuid().optional(),
   lastAccessedAt: z.string().datetime().nullable().optional(),
   startedAt: z.string().datetime().nullable().optional(),
+  userEmail: z.string().nullable().optional(),
   userId: z.string().uuid().optional(),
+  userName: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningCoursesVisibility */

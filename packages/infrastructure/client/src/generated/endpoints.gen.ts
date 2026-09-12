@@ -11414,6 +11414,19 @@ export const getCoursesUsersEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface PostCoursesUsersEnrollInput {
+  id: string;
+  body?: Types.LearningCoursesEnrollProgramUserInput;
+}
+export type PostCoursesUsersEnrollOutput = Types.LearningCoursesUserProgressDto;
+export const postCoursesUsersEnrollEndpoint = {
+  operationId: 'postCoursesUsersEnroll' as const,
+  method: 'POST' as const,
+  path: '/v1/courses/{id}/users:enroll' as const,
+  tags: ['LearningCoursesProgram'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface PostCoursesUsersInput {
   id: string;
   userId: string;
@@ -22121,6 +22134,7 @@ export const endpoints = {
   putCoursesPricing: putCoursesPricingEndpoint,
   getCoursesProducts: getCoursesProductsEndpoint,
   getCoursesUsers: getCoursesUsersEndpoint,
+  postCoursesUsersEnroll: postCoursesUsersEnrollEndpoint,
   postCoursesUsers: postCoursesUsersEndpoint,
   deleteCoursesUsers: deleteCoursesUsersEndpoint,
   postCoursesUsersReset: postCoursesUsersResetEndpoint,

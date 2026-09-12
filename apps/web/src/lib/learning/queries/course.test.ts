@@ -323,7 +323,7 @@ describe("course analytics query", () => {
     });
   });
 
-  it("loads canonical course enrollments and joins real user identity data", async () => {
+  it("loads canonical course enrollments with resource-scoped user identity", async () => {
     mocks.getCoursesUsers.mockResolvedValue({
       ok: true,
       data: [
@@ -331,6 +331,8 @@ describe("course analytics query", () => {
           enrollmentId: "enrollment-1",
           courseId: "course-1",
           userId: "user-1",
+          userName: "Ada Learner",
+          userEmail: "ada@example.com",
           completionPercentage: 42.4,
           startedAt: "2026-06-01T00:00:00.000Z",
           lastAccessedAt: "2026-06-10T00:00:00.000Z",
@@ -338,17 +340,12 @@ describe("course analytics query", () => {
         },
       ],
     });
-    mocks.getUsersForGetUsersByUserId.mockResolvedValue({
-      ok: true,
-      data: { id: "user-1", name: "Ada Learner", email: "ada@example.com" },
-    });
-
     const result = await getCourseStudents("course-1");
 
     expect(mocks.getCoursesUsers).toHaveBeenCalledWith("course-1", {
       take: 200,
     });
-    expect(mocks.getUsersForGetUsersByUserId).toHaveBeenCalledWith("user-1");
+    expect(mocks.getUsersForGetUsersByUserId).not.toHaveBeenCalled();
     expect(result).toEqual({
       students: [
         {

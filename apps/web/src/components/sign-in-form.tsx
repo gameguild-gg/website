@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, useEffect, useState } from "react"
+import { type FormEvent, useState, useSyncExternalStore } from "react"
 import { Link } from "@/i18n/navigation"
 import { useLocale } from "next-intl"
 import { useAuth } from "@game-guild/client/react"
@@ -23,6 +23,8 @@ import {
 import { Input } from "@game-guild/ui/components/input"
 import { PasswordInput } from "@/components/ui/password-input"
 
+const subscribeToHydration = () => () => undefined
+
 export function SignInForm({
   className,
   redirectTo = "/",
@@ -34,12 +36,12 @@ export function SignInForm({
 }) {
   const { signIn, isLoading, error, clearError } = useAuth()
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [isHydrated, setIsHydrated] = useState(false)
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false
+  )
   const locale = useLocale()
-
-  useEffect(() => {
-    setIsHydrated(true)
-  }, [])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()

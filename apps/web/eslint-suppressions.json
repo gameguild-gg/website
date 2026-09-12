@@ -59,11 +59,6 @@
       "count": 2
     }
   },
-  "src/app/[locale]/(dashboards)/workspace/learning/courses/[course]/overview/page.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/app/[locale]/(dashboards)/workspace/learning/courses/[course]/students/page.tsx": {
     "react-hooks/purity": {
       "count": 1

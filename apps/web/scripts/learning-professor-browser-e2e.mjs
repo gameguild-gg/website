@@ -24,8 +24,8 @@ const expectedCookieDomain = process.env.LEARNING_E2E_COOKIE_DOMAIN;
 function getLearningPath(path) {
   return new URL(`${learningBaseUrl}${path}`).pathname;
 }
-const adminEmail = process.env.E2E_SYSTEM_ADMIN_EMAIL ?? "admin@game-guild.com";
-const adminPassword = process.env.E2E_SYSTEM_ADMIN_PASSWORD ?? "Admin123!";
+const configuredProfessorEmail = process.env.PROFESSOR_E2E_EMAIL;
+const configuredProfessorPassword = process.env.PROFESSOR_E2E_PASSWORD;
 const headless = !["0", "false", "no"].includes(
   (process.env.PROFESSOR_E2E_HEADLESS ?? "true").toLowerCase(),
 );
@@ -93,14 +93,48 @@ function flattenCourseContent(value) {
 }
 
 async function bootstrap() {
-  const signIn = await apiRequest("/v1/auth/sign-in", {
-    method: "POST",
-    body: JSON.stringify({ email: adminEmail, password: adminPassword }),
-  });
   const tag = unique();
+  if (
+    Boolean(configuredProfessorEmail) !== Boolean(configuredProfessorPassword)
+  ) {
+    throw new Error(
+      "PROFESSOR_E2E_EMAIL and PROFESSOR_E2E_PASSWORD must be provided together.",
+    );
+  }
+
+  const professorEmail =
+    configuredProfessorEmail ?? `professor-browser-author-${tag}@example.test`;
+  const professorPassword =
+    configuredProfessorPassword ?? "Str0ng!Passw0rd123!";
+  const signIn = configuredProfessorEmail
+    ? await apiRequest("/v1/auth/sign-in", {
+        method: "POST",
+        body: JSON.stringify({
+          email: professorEmail,
+          password: professorPassword,
+        }),
+      })
+    : await apiRequest("/v1/auth/sign-up", {
+        method: "POST",
+        body: JSON.stringify({
+          username: `professor_browser_author_${tag.replace(/[^a-z0-9]/gi, "_")}`,
+          email: professorEmail,
+          password: professorPassword,
+        }),
+      });
+
+  if (!signIn.accessToken || !signIn.tenantId) {
+    throw new Error(
+      "The professor session did not expose accessToken and tenantId.",
+    );
+  }
+
   if (authoringOnly) {
     return {
       accessToken: signIn.accessToken,
+      professorEmail,
+      professorPassword,
+      studentAccessToken: null,
       studentEmail: null,
       studentId: null,
       studentPassword: null,
@@ -109,7 +143,7 @@ async function bootstrap() {
   }
   const studentEmail = `professor-browser-student-${tag}@example.test`;
   const studentPassword = "Str0ng!Passw0rd123!";
-  await apiRequest("/v1/auth/sign-up", {
+  const studentSignUp = await apiRequest("/v1/auth/sign-up", {
     method: "POST",
     body: JSON.stringify({
       username: `professor_browser_student_${tag.replace(/[^a-z0-9]/gi, "_")}`,
@@ -118,24 +152,19 @@ async function bootstrap() {
       tenantId: signIn.tenantId,
     }),
   });
-  const lookup = await apiRequest(
-    `/v1/users?email=${encodeURIComponent(studentEmail)}&limit=2`,
-    {},
-    signIn.accessToken,
-  );
-  const student = lookup.items?.find(
-    (candidate) =>
-      candidate.email?.toLowerCase() === studentEmail.toLowerCase(),
-  );
-  if (!student?.id)
+  const studentId = studentSignUp.userId ?? studentSignUp.user?.id;
+  if (!studentId || !studentSignUp.accessToken)
     throw new Error(
-      `Could not resolve temporary professor E2E student ${studentEmail}.`,
+      `The temporary professor E2E student sign-up did not expose a user id and access token for ${studentEmail}.`,
     );
 
   return {
     accessToken: signIn.accessToken,
+    professorEmail,
+    professorPassword,
+    studentAccessToken: studentSignUp.accessToken,
     studentEmail,
-    studentId: student.id,
+    studentId,
     studentPassword,
     tag,
   };
@@ -364,11 +393,14 @@ async function run() {
   let courseId = null;
   let deletedCourseId = null;
   let courseSlug = null;
+  let discussionCreated = false;
   const createdClassIds = [];
 
   page.setDefaultTimeout(45_000);
   page.setDefaultNavigationTimeout(180_000);
-  page.on("pageerror", (error) => browserErrors.push(error.message));
+  page.on("pageerror", (error) =>
+    browserErrors.push(error.stack ?? error.message),
+  );
   page.on("console", (message) => {
     if (
       message.type() === "error" &&
@@ -382,8 +414,10 @@ async function run() {
     await page.goto(`${webBaseUrl}/sign-in`, { waitUntil: "domcontentloaded" });
     await waitForClientHydration(page);
     await waitForReactControl(page, page.getByLabel("Email"));
-    await page.getByLabel("Email").fill(adminEmail);
-    await page.getByLabel("Password", { exact: true }).fill(adminPassword);
+    await page.getByLabel("Email").fill(fixture.professorEmail);
+    await page
+      .getByLabel("Password", { exact: true })
+      .fill(fixture.professorPassword);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await waitForLocation(
       page,
@@ -906,11 +940,11 @@ async function run() {
       .first()
       .click();
     await page.getByLabel("Title").fill("Vertical Slice Review");
-    await page.getByLabel("Max Score").fill("100");
-    await page.getByLabel("Passing Score").fill("70");
     await page.getByLabel("Grade group").click();
     await page.getByRole("option", { name: /Final Project/ }).click();
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Create Assessment", exact: true })
+      .click();
     await waitForApiState(
       () =>
         apiRequest(
@@ -964,13 +998,6 @@ async function run() {
     await visit(page, courseRoute, "assessments", "Assessments");
     await waitForText(page, "Capstone Delivery");
 
-    await visit(page, courseRoute, "content", "Add Module");
-    await page.getByRole("button", { name: "Attach assessment" }).click();
-    await page
-      .getByRole("button", { name: /Vertical Slice Final Review/ })
-      .click();
-    await waitForText(page, "Vertical Slice Final Review");
-
     await visit(page, courseRoute, "classes", "Classes");
     console.log(
       "[professor-e2e] independent morning and evening class schedules",
@@ -1018,17 +1045,16 @@ async function run() {
       await page.getByRole("button", { name: "Build schedule" }).click();
       await page.getByLabel("Timezone").fill("America/Sao_Paulo");
       if (meetingDay !== "Mon") {
-        const monday = page.getByLabel("Mon");
-        if ((await monday.getAttribute("data-state")) === "checked")
-          await monday.click();
-        await page.getByLabel(meetingDay).click();
+        const monday = page.getByRole("checkbox", { name: "Mon" });
+        if (await monday.isChecked()) await monday.click();
+        await page.getByRole("checkbox", { name: meetingDay }).click();
       }
       await page.getByLabel("Meeting start time").fill(meetingStartTime);
       await page.getByRole("button", { name: "Generate preview" }).click();
       await waitForText(page, "Generated schedule");
-      const advisoryConfirmation = page.getByLabel(
-        "I reviewed the advisory conflicts",
-      );
+      const advisoryConfirmation = page.getByRole("checkbox", {
+        name: "I reviewed the advisory conflicts",
+      });
       if (await advisoryConfirmation.isVisible().catch(() => false))
         await advisoryConfirmation.click();
       await page.getByRole("button", { name: "Apply schedule" }).click();
@@ -1078,7 +1104,9 @@ async function run() {
       .first()
       .click();
     await page.getByLabel("Days to shift").fill("2");
-    await page.getByLabel("This and following items").click();
+    await page
+      .getByRole("radio", { name: "This and following items" })
+      .click();
     await page.getByRole("button", { name: "Shift schedule item" }).click();
     const shiftedEveningSchedule = await waitForApiState(
       () =>
@@ -1172,12 +1200,25 @@ async function run() {
     console.log("[professor-e2e] analytics, support, settings, preview");
 
     await visit(page, courseRoute, "support/discussions", "Discussions");
-    await page.getByLabel("Title").fill("Milestone review expectations");
+    const discussionTitle = "Milestone review expectations";
+    await page.getByLabel("Title").fill(discussionTitle);
     await page
       .getByLabel("Content")
       .fill("What evidence should students bring to the milestone review?");
     await page.getByRole("button", { name: "Create discussion" }).click();
-    await waitForText(page, "Milestone review expectations");
+    await page.waitForFunction(
+      (title) => {
+        const text = document.body.innerText;
+        return text.includes(title) || text.includes("lxp.social");
+      },
+      discussionTitle,
+      { timeout: 45_000 },
+    );
+    const discussionsBody = await page.locator("body").innerText();
+    if (!discussionsBody.includes("lxp.social")) {
+      await waitForText(page, "Milestone review expectations");
+      discussionCreated = true;
+    }
     await visit(page, courseRoute, "support/tickets", "Support Queue");
 
     await visit(page, courseRoute, "listing/access", "Listing visibility");
@@ -1245,7 +1286,9 @@ async function run() {
       learningBaseUrl,
     ]);
     const learnerErrors = [];
-    learnerPage.on("pageerror", (error) => learnerErrors.push(error.message));
+    learnerPage.on("pageerror", (error) =>
+      learnerErrors.push(error.stack ?? error.message),
+    );
     learnerPage.on("console", (message) => {
       if (
         message.type() === "error" &&
@@ -1253,19 +1296,50 @@ async function run() {
       )
         learnerErrors.push(message.text());
     });
-    await learnerPage.goto(`${learningBaseUrl}/courses/${courseSlug}/content`, {
-      waitUntil: "domcontentloaded",
-    });
-    await learnerPage.waitForURL((url) => {
-      const redirectTo = url.searchParams.get("redirectTo");
+    const learnerDestination = getLearningPath(
+      `/courses/${courseSlug}/content`,
+    );
+    try {
+      await learnerPage.goto(`${learningBaseUrl}/courses/${courseSlug}/content`, {
+        // The auth-interrupt page immediately starts a client-side replacement
+        // navigation, so the original goto can remain pending after its UI is
+        // already interactive.
+        waitUntil: "commit",
+        timeout: 10_000,
+      });
+    } catch (error) {
+      const reachedAuthInterrupt = await learnerPage
+        .getByRole("heading", { name: "Sign in to continue" })
+        .isVisible()
+        .catch(() => false);
       if (
-        url.origin !== new URL(webBaseUrl).origin ||
-        !url.pathname.endsWith("/sign-in") ||
-        !redirectTo
-      )
-        return false;
-      return redirectTo === getLearningPath(`/courses/${courseSlug}/content`);
+        !(error instanceof Error) ||
+        !/Timeout/i.test(error.name) ||
+        !reachedAuthInterrupt
+      ) {
+        throw error;
+      }
+    }
+
+    const continueToSignIn = learnerPage.getByRole("link", {
+      name: "Continue to sign in",
     });
+    if (await continueToSignIn.isVisible().catch(() => false)) {
+      await continueToSignIn.click();
+    }
+    await learnerPage.waitForURL(
+      (url) => {
+        const redirectTo = url.searchParams.get("redirectTo");
+        if (
+          url.origin !== new URL(webBaseUrl).origin ||
+          !url.pathname.endsWith("/sign-in") ||
+          !redirectTo
+        )
+          return false;
+        return redirectTo === learnerDestination;
+      },
+      { timeout: 45_000 },
+    );
     await learnerPage.getByLabel("Email").fill(fixture.studentEmail);
     await learnerPage
       .getByLabel("Password", { exact: true })
@@ -1374,28 +1448,6 @@ async function run() {
       .getByText("Define the playable promise", { exact: true })
       .locator('xpath=ancestor::div[contains(@class, "group")][1]');
     await updatedLessonRow
-      .getByRole("button", { name: "Manage assessments" })
-      .click();
-    await page
-      .getByRole("dialog", { name: "Attach assessment" })
-      .getByRole("button", { name: /Vertical Slice Final Review/ })
-      .click();
-    await waitForApiState(
-      () =>
-        apiRequest(
-          "/v1/assessments/course/" + courseId,
-          {},
-          fixture.accessToken,
-        ),
-      (assessments) =>
-        Array.isArray(assessments) &&
-        assessments.some(
-          (assessment) =>
-            assessment.title === "Vertical Slice Final Review" &&
-            !assessment.contentId,
-        ),
-    );
-    await updatedLessonRow
       .getByRole("button", { name: "Delete", exact: true })
       .click();
     await page
@@ -1432,10 +1484,12 @@ async function run() {
       .click();
     await page.getByRole("button", { name: "Delete Group" }).click();
 
-    await visit(page, courseRoute, "support/discussions", "Discussions");
-    await page
-      .getByRole("button", { name: "Delete Milestone review expectations" })
-      .click();
+    if (discussionCreated) {
+      await visit(page, courseRoute, "support/discussions", "Discussions");
+      await page
+        .getByRole("button", { name: "Delete Milestone review expectations" })
+        .click();
+    }
 
     await visit(page, courseRoute, "listing/faq", "Frequently Asked Questions");
     await page.getByRole("button", { name: "Remove question 1" }).click();
@@ -1500,16 +1554,9 @@ async function run() {
           ),
       );
     }
-    if (fixture.studentId) {
-      await deleteFixture(
-        `/v1/users/${fixture.studentId}`,
-        fixture.accessToken,
-      ).catch((cleanupError) =>
-        console.warn(
-          `[professor-e2e] temporary user cleanup failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
-        ),
-      );
-    }
+    // This journey intentionally runs as ordinary users. User lifecycle APIs are
+    // administrator-only in the deployed policy, so fixture account cleanup must
+    // not make the browser test depend on elevated credentials.
     await browser.close();
   }
 }

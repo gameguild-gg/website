@@ -468,6 +468,30 @@ export class LearningCoursesProgramModule {
 
   /**
    */
+  async postCoursesUsersEnroll(id: string, body: Types.LearningCoursesEnrollProgramUserInput): Promise<Result<Types.LearningCoursesUserProgressDto, ApiError>> {
+    const url = `/v1/courses/${id}/users:enroll`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningCoursesEnrollProgramUserInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningCoursesUserProgressDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
   async postCoursesUsers(id: string, userId: string): Promise<Result<Types.LearningCoursesUserProgressDto, ApiError>> {
     const url = `/v1/courses/${id}/users/${userId}`;
 

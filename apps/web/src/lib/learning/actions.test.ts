@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   putCourses: vi.fn(),
   postCoursesPublish: vi.fn(),
   postCoursesRestore: vi.fn(),
+  postCoursesUsersEnroll: vi.fn(),
   postCoursesUsers: vi.fn(),
   deleteCoursesUsers: vi.fn(),
   postApiLearningEnrollments: vi.fn(),
@@ -67,6 +68,7 @@ vi.mock("@game-guild/client", () => ({
     LearningCoursesProgramModule: class {
       getCoursesForGetCoursesById = mocks.getCoursesForGetCoursesById;
       putCourses = mocks.putCourses;
+      postCoursesUsersEnroll = mocks.postCoursesUsersEnroll;
       postCoursesUsers = mocks.postCoursesUsers;
       deleteCoursesUsers = mocks.deleteCoursesUsers;
     },
@@ -314,9 +316,9 @@ describe("learning server actions", () => {
       ok: true,
       data: { id: "reply-1" },
     });
-    mocks.postCoursesUsers.mockResolvedValue({
+    mocks.postCoursesUsersEnroll.mockResolvedValue({
       ok: true,
-      data: { enrollmentId: "program-user-1" },
+      data: { enrollmentId: "program-user-1", userId: "user-1" },
     });
     mocks.deleteCoursesUsers.mockResolvedValue({ ok: true, data: undefined });
     mocks.postApiLearningEnrollments.mockResolvedValue({
@@ -571,10 +573,10 @@ describe("learning server actions", () => {
     });
 
     expect(result).toEqual({ success: true, data: { id: "program-user-1" } });
-    expect(mocks.postCoursesUsers).toHaveBeenCalledWith(
-      "course-slug",
-      "user-1",
-    );
+    expect(mocks.postCoursesUsersEnroll).toHaveBeenCalledWith("course-slug", {
+      userReference: "student@example.com",
+    });
+    expect(mocks.postCoursesUsers).not.toHaveBeenCalled();
     expect(mocks.postApiLearningEnrollments).toHaveBeenCalledWith({
       courseId: "course-slug",
       userId: "user-1",

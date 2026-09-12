@@ -738,31 +738,33 @@ export async function manualEnrollStudent(
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
-    const resolvedUser = await resolveEnrollmentUserId(userReference);
-    if (!resolvedUser.success) {
-      return resolvedUser;
-    }
-
     const { programs, enrollments } = createCourseModules();
-    const rosterResult = await programs.postCoursesUsers(
+    const rosterResult = await programs.postCoursesUsersEnroll(
       resolvedCourseId,
-      resolvedUser.data.userId,
+      { userReference },
     );
     if (!rosterResult.ok) {
       return { success: false, error: extractError(rosterResult.error) };
+    }
+    const enrolledUserId = rosterResult.data.userId;
+    if (!enrolledUserId) {
+      return {
+        success: false,
+        error: "Enrollment succeeded without identifying the enrolled student.",
+      };
     }
 
     if (cohortId) {
       const cohortResult = await enrollments.postApiLearningEnrollments({
         courseId: resolvedCourseId,
-        userId: resolvedUser.data.userId,
+        userId: enrolledUserId,
         cohortId,
       });
 
       if (!cohortResult.ok) {
         await programs.deleteCoursesUsers(
           resolvedCourseId,
-          resolvedUser.data.userId,
+          enrolledUserId,
         );
         return { success: false, error: extractError(cohortResult.error) };
       }

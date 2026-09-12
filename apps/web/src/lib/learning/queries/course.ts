@@ -496,44 +496,29 @@ export const getCourseStudents = cache(
     try {
       const resolvedCourseId = await resolveCourseId(courseId);
       const { programs } = createCourseModules();
-      const { users } = createCourseModules();
       const result = await programs.getCoursesUsers(resolvedCourseId, {
         take: 200,
       });
 
       if (!result.ok) return { students: [], total: 0 };
 
-      const students = await Promise.all(
-        result.data.map(async (dto, i) => {
-          const userId = dto.userId ?? `user-${i}`;
-          let identity: { name?: string | null; email?: string | null } | null =
-            null;
+      const students = result.data.map((dto, i) => {
+        const userId = dto.userId ?? `user-${i}`;
+        const name = dto.userName?.trim();
+        const email = dto.userEmail?.trim() ?? "";
 
-          if (dto.userId) {
-            try {
-              const userResult = await users.getUsersForGetUsersByUserId(dto.userId);
-              if (userResult.ok) identity = userResult.data;
-            } catch {
-              // The roster remains usable if an individual identity lookup fails.
-            }
-          }
-
-          return {
-            id: dto.enrollmentId ?? userId,
-            userId,
-            name:
-              identity?.name?.trim() ||
-              identity?.email?.split("@")[0] ||
-              `Student ${i + 1}`,
-            email: identity?.email ?? "",
-            enrolledAt: dto.startedAt ?? new Date().toISOString(),
-            progress: Math.round(dto.completionPercentage ?? 0),
-            completedAt: dto.completedAt ?? null,
-            lastActivity:
-              dto.lastAccessedAt ?? dto.startedAt ?? new Date().toISOString(),
-          };
-        }),
-      );
+        return {
+          id: dto.enrollmentId ?? userId,
+          userId,
+          name: name || email.split("@")[0] || `Student ${i + 1}`,
+          email,
+          enrolledAt: dto.startedAt ?? new Date().toISOString(),
+          progress: Math.round(dto.completionPercentage ?? 0),
+          completedAt: dto.completedAt ?? null,
+          lastActivity:
+            dto.lastAccessedAt ?? dto.startedAt ?? new Date().toISOString(),
+        };
+      });
 
       return { students, total: students.length };
     } catch {

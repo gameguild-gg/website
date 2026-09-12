@@ -104,10 +104,7 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
   // Build URL
   const url = buildUrl(transportConfig.baseUrl, requestConfig.path, requestConfig.params);
 
-  const multipartBody =
-    typeof FormData !== 'undefined' && requestConfig.body instanceof FormData
-      ? requestConfig.body
-      : null;
+  const multipartBody = typeof FormData !== 'undefined' && requestConfig.body instanceof FormData ? requestConfig.body : null;
   const isMultipartBody = multipartBody !== null;
 
   // Build headers
@@ -139,9 +136,7 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
 
   // Add body for non-GET requests
   if (requestConfig.body !== undefined && requestConfig.method !== 'GET' && requestConfig.method !== 'HEAD') {
-    options.body = multipartBody
-      ? multipartBody
-      : JSON.stringify(requestConfig.body);
+    options.body = multipartBody ? multipartBody : JSON.stringify(requestConfig.body);
   }
 
   // Add timeout

@@ -9,7 +9,7 @@ import {
   type StorefrontState,
 } from '@/lib/learning/course-launch';
 import { Badge } from '@game-guild/ui/components/badge';
-import { Button } from '@game-guild/ui/components/button';
+import { buttonVariants } from '@game-guild/ui/components/button-variants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@game-guild/ui/components/card';
 import { AlertCircle, BookOpen, Edit, Globe, ImageIcon, Images, Rocket, Shield, Users } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -200,9 +200,13 @@ export default async function ListingPage({
                   Course identity
                 </div>
                 <p className="text-sm text-muted-foreground">Title, slug, description, category, difficulty, and outcomes.</p>
-                <Button asChild variant="outline" className="mt-4 w-full justify-start">
-                  <Link href={buildDashboardCoursePath(courseRouteParam, 'listing/info')} locale={locale}>Open identity editor</Link>
-                </Button>
+                <Link
+                  href={buildDashboardCoursePath(courseRouteParam, 'listing/info')}
+                  locale={locale}
+                  className={buttonVariants({ variant: 'outline', className: 'mt-4 w-full justify-start' })}
+                >
+                  Open identity editor
+                </Link>
               </div>
               <div className="rounded-lg border p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
@@ -210,9 +214,13 @@ export default async function ListingPage({
                   Media
                 </div>
                 <p className="text-sm text-muted-foreground">Cover image and promo video used across catalog and landing pages.</p>
-                <Button asChild variant="outline" className="mt-4 w-full justify-start">
-                  <Link href={buildDashboardCoursePath(courseRouteParam, 'listing/media')} locale={locale}>Open media editor</Link>
-                </Button>
+                <Link
+                  href={buildDashboardCoursePath(courseRouteParam, 'listing/media')}
+                  locale={locale}
+                  className={buttonVariants({ variant: 'outline', className: 'mt-4 w-full justify-start' })}
+                >
+                  Open media editor
+                </Link>
               </div>
               <div className="rounded-lg border p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
@@ -220,9 +228,13 @@ export default async function ListingPage({
                   Project carousel
                 </div>
                 <p className="text-sm text-muted-foreground">Portfolio project slides shown on the public course landing page.</p>
-                <Button asChild variant="outline" className="mt-4 w-full justify-start">
-                  <Link href={buildDashboardCoursePath(courseRouteParam, 'listing/projects')} locale={locale}>Open project editor</Link>
-                </Button>
+                <Link
+                  href={buildDashboardCoursePath(courseRouteParam, 'listing/projects')}
+                  locale={locale}
+                  className={buttonVariants({ variant: 'outline', className: 'mt-4 w-full justify-start' })}
+                >
+                  Open project editor
+                </Link>
               </div>
               <div className="rounded-lg border p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
@@ -230,9 +242,13 @@ export default async function ListingPage({
                   Access and enrollment
                 </div>
                 <p className="text-sm text-muted-foreground">Visibility, enrollment status, seat cap, and enrollment deadline.</p>
-                <Button asChild variant="outline" className="mt-4 w-full justify-start">
-                  <Link href={buildDashboardCoursePath(courseRouteParam, 'listing/access')} locale={locale}>Open access controls</Link>
-                </Button>
+                <Link
+                  href={buildDashboardCoursePath(courseRouteParam, 'listing/access')}
+                  locale={locale}
+                  className={buttonVariants({ variant: 'outline', className: 'mt-4 w-full justify-start' })}
+                >
+                  Open access controls
+                </Link>
               </div>
             </div>
 

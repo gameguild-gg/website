@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
 using GameGuild.CQRS;
+using GameGuild.Identity.Users;
 using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +43,53 @@ public sealed class ProgramCrudControllerLearnerTests
     service.Verify(candidate => candidate.GetUserProgramsAsync(It.IsAny<Guid>()), Times.Never);
   }
 
-  private static ProgramCrudController CreateController(IProgramCrudService service, Guid? userId)
+  [Fact]
+  public async Task AddUserToProgramByReference_ResolvesTenantUserAndEnrollsThem()
+  {
+    var ownerId = Guid.NewGuid();
+    var courseId = Guid.NewGuid();
+    var studentId = Guid.NewGuid();
+    var enrollmentId = Guid.NewGuid();
+    var sender = new Mock<ISender>();
+    sender
+      .Setup(candidate => candidate.Send(
+        It.Is<GetUsersQuery>(query => query.Email == "student@example.com" && query.Limit == 5),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new PagedResult<UserDto>(
+        [new UserDto(studentId, "student@example.com", "Student", DateTime.UtcNow, null)],
+        1,
+        0,
+        5));
+    sender
+      .Setup(candidate => candidate.Send(
+        It.Is<AddUserToProgramEndpointCommand>(command =>
+          command.ProgramId == courseId && command.UserId == studentId),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new UserProgressDto(
+        enrollmentId,
+        courseId,
+        studentId,
+        0,
+        null,
+        null,
+        null,
+        []));
+    var controller = CreateController(new Mock<IProgramCrudService>().Object, ownerId, sender.Object);
+
+    var result = await controller.AddUserToProgramByReference(
+      courseId,
+      new EnrollProgramUserRequest("student@example.com"),
+      CancellationToken.None);
+
+    var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+    ok.Value.Should().BeOfType<UserProgressDto>()
+      .Which.UserId.Should().Be(studentId);
+  }
+
+  private static ProgramCrudController CreateController(
+    IProgramCrudService service,
+    Guid? userId,
+    ISender? sender = null)
   {
     var claims = userId.HasValue
       ? new[] { new Claim(ClaimTypes.NameIdentifier, userId.Value.ToString()) }
@@ -56,7 +103,11 @@ public sealed class ProgramCrudControllerLearnerTests
       Roles = new HashSet<string>(),
       Permissions = new HashSet<string>()
     });
-    return new ProgramCrudController(service, actorAccessor.Object, new Mock<GameGuild.Identity.Authorization.IPermissionQueryService>().Object, Mock.Of<ISender>())
+    return new ProgramCrudController(
+      service,
+      actorAccessor.Object,
+      new Mock<GameGuild.Identity.Authorization.IPermissionQueryService>().Object,
+      sender ?? Mock.Of<ISender>())
     {
       ControllerContext = new ControllerContext
       {

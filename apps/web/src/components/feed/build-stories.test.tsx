@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +14,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/feed/actions", () => mocks);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
-vi.mock("next/image", () => ({ default: (props: Record<string, unknown>) => <img {...props} /> }));
+vi.mock("next/image", () => ({
+  default: ({ alt = "", ...props }: Record<string, unknown>) =>
+    createElement("img", { ...props, alt: typeof alt === "string" ? alt : "" }),
+}));
 
 import { BuildStories, type SocialStoryPreview } from "./build-stories";
 

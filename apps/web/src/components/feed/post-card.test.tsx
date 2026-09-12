@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +16,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/feed/actions", () => mocks);
-vi.mock("next/image", () => ({ default: (props: Record<string, unknown>) => <img alt="" {...props} /> }));
+vi.mock("next/image", () => ({
+  default: ({ alt = "", ...props }: Record<string, unknown>) =>
+    createElement("img", { ...props, alt: typeof alt === "string" ? alt : "" }),
+}));
 vi.mock("@/i18n/navigation", () => ({ Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a> }));
 
 import { PostCard } from "./post-card";

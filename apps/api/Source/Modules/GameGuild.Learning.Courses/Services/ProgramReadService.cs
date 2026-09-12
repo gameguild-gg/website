@@ -113,14 +113,28 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
 
   public async Task<IEnumerable<UserProgressDto>> GetProgramUsersAsync(Guid programId, int skip = 0, int take = 50)
   {
-    var programUsers = await context.Set<ProgramUser>().Where(pu => pu.ProgramId == programId && pu.DeletedAt == null).Skip(skip).Take(take).ToListAsync();
+    var programUsers = await context.Set<ProgramUser>()
+      .Include(pu => pu.User)
+      .Where(pu => pu.ProgramId == programId && pu.DeletedAt == null && pu.IsActive)
+      .OrderBy(pu => pu.JoinedAt)
+      .Skip(skip)
+      .Take(take)
+      .ToListAsync()
+      .ConfigureAwait(false);
 
     var result = new List<UserProgressDto>();
 
     foreach (var pu in programUsers)
     {
       var progress = await GetUserProgressDtoAsync(programId, pu.UserId).ConfigureAwait(false);
-      if (progress != null) result.Add(progress);
+      if (progress != null)
+      {
+        result.Add(progress with
+        {
+          UserName = pu.User.Name,
+          UserEmail = pu.User.Email,
+        });
+      }
     }
 
     return result;

@@ -8,6 +8,7 @@ import type { Assessment } from '@/lib/learning/queries/assessments';
 
 const dndHarness = vi.hoisted(() => ({
   handlers: [] as Array<(event: { active: { id: string }; over: { id: string } | null }) => void>,
+  contextIds: [] as Array<string | undefined>,
 }));
 
 const routerMocks = vi.hoisted(() => ({
@@ -17,11 +18,14 @@ const routerMocks = vi.hoisted(() => ({
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({
     children,
+    id,
     onDragEnd,
   }: {
     children: ReactNode;
+    id?: string;
     onDragEnd?: (event: { active: { id: string }; over: { id: string } | null }) => void;
   }) => {
+    dndHarness.contextIds.push(id);
     if (onDragEnd) dndHarness.handlers.push(onDragEnd);
     return children;
   },
@@ -140,6 +144,7 @@ const assessments = [unassignedAssessment, groupAAssessment, groupBAssessment, f
 
 function renderList() {
   dndHarness.handlers.length = 0;
+  dndHarness.contextIds.length = 0;
   routerMocks.refresh.mockClear();
   return render(
     <AssessmentsList
@@ -155,6 +160,12 @@ describe('AssessmentsList DnD between grade groups', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(updateAssessment).mockResolvedValue({ success: true, data: null });
+  });
+
+  it('uses a deterministic context id for server and client rendering', () => {
+    renderList();
+
+    expect(dndHarness.contextIds).toEqual(['assessments-course-1']);
   });
 
   it('moves an unassigned assessment into Group A via drop', async () => {

@@ -15,7 +15,7 @@
  *   GET  /api/auth/callback/:provider — OAuth callback
  */
 
-import type { ResolvedAuthConfig, Session, JWTPayload, ProviderResult, CredentialsProviderConfig } from '../../runtime/auth/types.js';
+import type { ResolvedAuthConfig, Session, ProviderResult, CredentialsProviderConfig } from '../../runtime/auth/types.js';
 import { SessionStore, CsrfStore, resolveCookieOptions, type CookieSerializeOptions } from '../../runtime/auth/cookies.js';
 import { createJWTPayload, processSession, encodeSession, toSession } from '../../runtime/auth/session.js';
 import { createCSRFToken, validateCSRFToken } from '../../runtime/auth/csrf.js';
@@ -552,11 +552,7 @@ export function createHandlers(config: ResolvedAuthConfig) {
     /* v8 ignore stop */
   }
 
-  async function handleOAuthSignInRedirect(
-    request: Request,
-    providerId: string,
-    responseCookies: ResponseCookies,
-  ): Promise<Response> {
+  async function handleOAuthSignInRedirect(request: Request, providerId: string, responseCookies: ResponseCookies): Promise<Response> {
     const provider = config.providers.find((candidate) => candidate.id === providerId);
     if (!provider) throw new ProviderNotFoundError(providerId);
 

@@ -2,6 +2,7 @@ using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -288,6 +289,62 @@ public class ProgramCrudController(
     var progress = await sender.Send(new AddUserToProgramEndpointCommand(id, userId)).ConfigureAwait(false);
 
     if (progress == null) return NotFound();
+
+    return Ok(progress);
+  }
+
+  /// <summary>
+  /// Resolve a tenant-scoped user reference and add that user to a program.
+  /// This keeps user discovery behind the program's resource-level edit permission,
+  /// so course owners do not need tenant-wide user administration privileges.
+  /// </summary>
+  [HttpPost("{id}/users:enroll")]
+  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  public async Task<ActionResult<UserProgressDto>> AddUserToProgramByReference(
+      Guid id,
+      [FromBody] EnrollProgramUserRequest request,
+      CancellationToken cancellationToken)
+  {
+    var reference = request.UserReference?.Trim();
+    if (string.IsNullOrWhiteSpace(reference))
+    {
+      return BadRequest(new ProblemDetails
+      {
+        Title = "Student reference required",
+        Detail = "Provide a student email, name, or canonical user ID."
+      });
+    }
+
+    Guid userId;
+    if (!Guid.TryParse(reference, out userId))
+    {
+      var users = await sender.Send(
+        reference.Contains('@', StringComparison.Ordinal)
+          ? new GetUsersQuery(Email: reference, Limit: 5)
+          : new GetUsersQuery(SearchTerm: reference, Limit: 5),
+        cancellationToken).ConfigureAwait(false);
+      var normalizedReference = reference.ToLowerInvariant();
+      var user = users.Items.FirstOrDefault(candidate =>
+        string.Equals(candidate.Email, normalizedReference, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(candidate.Name, normalizedReference, StringComparison.OrdinalIgnoreCase));
+
+      if (user is null)
+      {
+        return NotFound(new ProblemDetails
+        {
+          Title = "Student not found",
+          Detail = "No active tenant member matched that student reference."
+        });
+      }
+
+      userId = user.Id;
+    }
+
+    var progress = await sender.Send(
+      new AddUserToProgramEndpointCommand(id, userId),
+      cancellationToken).ConfigureAwait(false);
+
+    if (progress is null) return NotFound();
 
     return Ok(progress);
   }

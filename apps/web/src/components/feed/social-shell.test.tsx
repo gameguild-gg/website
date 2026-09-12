@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -21,7 +22,10 @@ vi.mock("@/lib/feed/queries", () => ({
 }));
 vi.mock("@/i18n/navigation", () => ({ Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a> }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("next/image", () => ({ default: (props: Record<string, unknown>) => <img alt="" {...props} /> }));
+vi.mock("next/image", () => ({
+  default: ({ alt = "", ...props }: Record<string, unknown>) =>
+    createElement("img", { ...props, alt: typeof alt === "string" ? alt : "" }),
+}));
 
 import { SocialShell } from "./social-shell";
 

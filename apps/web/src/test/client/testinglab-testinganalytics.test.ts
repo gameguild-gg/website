@@ -8,12 +8,12 @@ describe("TestingLabTestingAnalyticsModule", () => {
     const request = vi
       .fn()
       .mockResolvedValue({ ok: true, data: { events: [] } });
-    const module = new TestingLabTestingAnalyticsModule({
+    const analyticsModule = new TestingLabTestingAnalyticsModule({
       request,
       getBaseUrl: () => "https://api.example.com",
     } as ApiClient);
 
-    await module.getTestingAnalytics({
+    await analyticsModule.getTestingAnalytics({
       fromDate: "2026-07-01T00:00:00.000Z",
       toDate: "2026-07-08T00:00:00.000Z",
       includeComparison: true,
@@ -35,12 +35,12 @@ describe("TestingLabTestingAnalyticsModule", () => {
     const request = vi
       .fn()
       .mockResolvedValue({ ok: true, data: "event,applications" });
-    const module = new TestingLabTestingAnalyticsModule({
+    const analyticsModule = new TestingLabTestingAnalyticsModule({
       request,
       getBaseUrl: () => "https://api.example.com",
     } as ApiClient);
 
-    await module.getTestingAnalyticsExport({
+    await analyticsModule.getTestingAnalyticsExport({
       fromDate: "2026-07-01T00:00:00.000Z",
       toDate: "2026-07-08T00:00:00.000Z",
     });

@@ -16,7 +16,7 @@ import {
   type StorefrontState,
 } from '@/lib/learning/course-launch';
 import { Badge } from '@game-guild/ui/components/badge';
-import { Button } from '@game-guild/ui/components/button';
+import { buttonVariants } from '@game-guild/ui/components/button-variants';
 import { Card, CardContent, CardHeader, CardTitle } from '@game-guild/ui/components/card';
 import { Progress } from '@game-guild/ui/components/progress';
 import {
@@ -138,7 +138,6 @@ export default async function Page({ params }: PageProps<'/[locale]/workspace/le
 
   const launchSummary = deriveCourseLaunchSummary(course, content);
   const modulesCount = launchSummary.structure.modules;
-  const lessonsCount = launchSummary.structure.lessons;
   const durationStr = formatDurationLabel(launchSummary.structure.totalDurationMinutes);
 
   // Readiness checklist items
@@ -413,30 +412,42 @@ export default async function Page({ params }: PageProps<'/[locale]/workspace/le
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={buildDashboardCoursePath(courseRouteParam, 'listing')} locale={locale} prefetch={false}>
+              <Link
+                href={buildDashboardCoursePath(courseRouteParam, 'listing')}
+                locale={locale}
+                prefetch={false}
+                className={buttonVariants({ variant: 'outline', className: 'w-full justify-start' })}
+              >
                   <Edit className="mr-2 size-4" />
                   Open Listing Controls
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={buildDashboardCoursePath(courseRouteParam, 'content')} locale={locale} prefetch={false}>
+              </Link>
+              <Link
+                href={buildDashboardCoursePath(courseRouteParam, 'content')}
+                locale={locale}
+                prefetch={false}
+                className={buttonVariants({ variant: 'outline', className: 'w-full justify-start' })}
+              >
                   <BookOpen className="mr-2 size-4" />
                   Manage Content
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={buildDashboardCoursePath(courseRouteParam, 'students')} locale={locale} prefetch={false}>
+              </Link>
+              <Link
+                href={buildDashboardCoursePath(courseRouteParam, 'students')}
+                locale={locale}
+                prefetch={false}
+                className={buttonVariants({ variant: 'outline', className: 'w-full justify-start' })}
+              >
                   <Users className="mr-2 size-4" />
                   Manage Students
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href={buildDashboardCoursePath(courseRouteParam, 'settings')} locale={locale} prefetch={false}>
+              </Link>
+              <Link
+                href={buildDashboardCoursePath(courseRouteParam, 'settings')}
+                locale={locale}
+                prefetch={false}
+                className={buttonVariants({ variant: 'outline', className: 'w-full justify-start' })}
+              >
                   <Settings className="mr-2 size-4" />
                   Course Settings
-                </Link>
-              </Button>
+              </Link>
             </CardContent>
           </Card>
 
