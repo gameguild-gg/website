@@ -643,6 +643,7 @@ public class EntityAndServiceCtorTests
         var svc = new JitElevationService(
             Mock.Of<IJitElevationRequestRepository>(),
             Mock.Of<IPermissionAuditService>(),
+            Mock.Of<ITenantSecurityVersionStore>(),
             NullLogger<JitElevationService>.Instance
         );
         svc.Should().NotBeNull();

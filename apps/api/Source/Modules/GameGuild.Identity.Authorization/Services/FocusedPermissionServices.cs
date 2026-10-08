@@ -409,7 +409,8 @@ public sealed class PermissionQueryService(
     ITenantPermissionRepository repository,
     ITenantMembershipChecker membershipChecker,
     ILogger<PermissionQueryService> logger,
-    IEnumerable<IAuthorizationRolePermissionProvider>? rolePermissionProviders = null
+    IEnumerable<IAuthorizationRolePermissionProvider>? rolePermissionProviders = null,
+    IJitElevationRequestRepository? jitElevationRepository = null
 ) : IPermissionQueryService
 {
     public async Task<bool> HasTenantPermissionAsync(
@@ -447,6 +448,27 @@ public sealed class PermissionQueryService(
                 return true;
         }
 
+        // Just-in-Time elevation grants: an approved elevation that is inside its
+        // time window temporarily grants the permission. Only tenant-scoped
+        // (resource-unscoped) elevations apply here, "admin:*" is never grantable
+        // through elevation, and explicit denies above already returned false, so
+        // DENY-WINS precedence is preserved.
+        if (jitElevationRepository is not null)
+        {
+            var elevations = await jitElevationRepository
+                .GetActiveByUserAsync(userId.Value, tenantId, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (elevations.Any(e =>
+                    e.ResourceId is null &&
+                    e.IsGrantInForce() &&
+                    IsDelegableRolePermission(e.Permission) &&
+                    string.Equals(e.Permission, permission, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -468,8 +490,9 @@ public sealed class PermissionQueryService(
     /// <remarks>
     ///     <b>Permission Evaluation Policy: DENY-WINS</b>
     ///     <para>
-    ///         Permissions are resolved from three layers. Explicit denies at any layer
-    ///         remove the permission from the effective set (deny takes precedence).
+    ///         Permissions are resolved from three layers plus Just-in-Time (JIT)
+    ///         elevation grants. Explicit denies at any layer remove the permission
+    ///         from the effective set (deny takes precedence).
     ///     </para>
     ///     <para>
     ///         <b>SECURITY: FAIL-CLOSED</b> - If no tenant context is provided, returns empty permissions.
@@ -478,10 +501,16 @@ public sealed class PermissionQueryService(
     ///     <para>
     ///         Evaluation order:
     ///         <list type="number">
-    ///             <item>Collect all ALLOW permissions from: Global defaults → Tenant defaults → Direct grants</item>
+    ///             <item>Collect all ALLOW permissions from: Global defaults → Tenant defaults → Direct grants → Roles → JIT elevations</item>
     ///             <item>Collect all DENY permissions from: Global denies → Tenant denies → Direct denies</item>
     ///             <item>Effective = ALLOW - DENY (deny always wins)</item>
     ///         </list>
+    ///     </para>
+    ///     <para>
+    ///         JIT elevations contribute their permission only while the elevation is
+    ///         approved and inside its time window (see
+    ///         <see cref="JitElevationRequest.IsGrantInForce"/>); resource-scoped
+    ///         elevations and "admin:*" are excluded.
     ///     </para>
     /// </remarks>
     public async Task<List<string>> GetEffectivePermissionsAsync(
@@ -536,6 +565,27 @@ public sealed class PermissionQueryService(
             var rolePermissions = await provider.GetPermissionsAsync(userId, tenantId.Value, cancellationToken).ConfigureAwait(false)
                                   ?? [];
             allowedPermissions.UnionWith(rolePermissions.Where(IsDelegableRolePermission));
+        }
+
+        // Layer 4: Just-in-Time elevation grants (tenant-scoped, resource-unscoped).
+        // An approved elevation inside its time window temporarily contributes its
+        // permission to the allow set. JIT grants remain subject to DENY-WINS below,
+        // and "admin:*" is never grantable through elevation.
+        if (jitElevationRepository is not null)
+        {
+            var elevations = await jitElevationRepository
+                .GetActiveByUserAsync(userId, tenantId, cancellationToken)
+                .ConfigureAwait(false);
+
+            foreach (var elevation in elevations)
+            {
+                if (elevation.ResourceId is null &&
+                    elevation.IsGrantInForce() &&
+                    IsDelegableRolePermission(elevation.Permission))
+                {
+                    allowedPermissions.Add(elevation.Permission);
+                }
+            }
         }
 
         // DENY-WINS: Subtract all denied permissions from allowed set
