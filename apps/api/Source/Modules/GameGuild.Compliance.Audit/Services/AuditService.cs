@@ -17,24 +17,7 @@ public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContext
             var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
             var httpContext = httpContextAccessor.HttpContext;
 
-            var auditLog = new AuditLog
-            {
-                ActionType = request.ActionType,
-                ResourceType = request.ResourceType,
-                ResourceId = request.ResourceId,
-                UserId = request.UserId,
-                TenantId = request.TenantId,
-                IpAddress = request.IpAddress ?? GetClientIpAddress(httpContext),
-                UserAgent = request.UserAgent ?? httpContext?.Request.Headers.UserAgent.ToString(),
-                SessionId = request.SessionId ?? GetSessionId(httpContext),
-                Description = request.Description,
-                Metadata = request.Metadata != null ? JsonSerializer.Serialize(request.Metadata) : null,
-                Success = request.Success,
-                ErrorMessage = request.ErrorMessage,
-                RiskLevel = request.RiskLevel,
-                Category = request.Category,
-                CorrelationId = request.CorrelationId ?? GetCorrelationId(httpContext)
-            };
+            var auditLog = AuditLogEntryFactory.Create(request, httpContext);
 
             context.Set<AuditLog>().Add(auditLog);
             await context.SaveChangesAsync().ConfigureAwait(false);
@@ -385,34 +368,6 @@ public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContext
 
         return queryable;
     }
-
-    private string? GetClientIpAddress(HttpContext? httpContext)
-    {
-        if (httpContext == null) return null;
-
-        // Check for X-Forwarded-For header (reverse proxy/load balancer)
-        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(forwardedFor)) { return forwardedFor.Split(',')[0].Trim(); }
-
-        // Check for X-Real-IP header (Nginx)
-        var realIp = httpContext.Request.Headers["X-Real-IP"].FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(realIp)) { return realIp; }
-
-        // Fallback to remote IP
-        return httpContext.Connection.RemoteIpAddress?.ToString();
-    }
-
-    private Guid? GetSessionId(HttpContext? httpContext)
-    {
-        if (httpContext == null) { return null; }
-
-        var sessionIdValue = httpContext.User.FindFirst("session_id")?.Value;
-        return Guid.TryParse(sessionIdValue, out var sessionId) ? sessionId : null;
-    }
-
-    private string? GetCorrelationId(HttpContext? httpContext) { return httpContext?.Request.Headers["X-Correlation-ID"].FirstOrDefault(); }
 
     private LogLevel GetLogLevel(AuditRiskLevel riskLevel, bool success)
     {

@@ -65,59 +65,18 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
             .Should().ThrowAsync<Exception>();
     }
 
-    [Fact]
-    public async Task LocalAuth_TokenRefresh_AfterRevocation_ShouldFail()
-    {
-        // Arrange
-        var email = $"revoke.test.{Guid.NewGuid()}@test.com";
-
-        var signUpRequest = new LocalSignUpRequest
-        {
-            Email = email,
-            Username = $"user_{Guid.NewGuid():N}",
-            Password = "TestPassword123!"
-        };
-
-        var signUpResult = await _authService.LocalSignUpAsync(signUpRequest);
-        await _authService.LocalSignInAsync(new LocalSignInRequest
-        {
-            Email = email,
-            Password = signUpRequest.Password
-        });
-        var originalVersion = await _dbContext.Set<User>().AsNoTracking()
-            .Where(user => user.Id == signUpResult.UserId)
-            .Select(user => user.TokenVersion).SingleAsync();
-
-        // Revoke the refresh token
-        await _authService.RevokeRefreshTokenAsync(signUpResult.RefreshToken, "127.0.0.1");
-
-        // Act & Assert - Try to use revoked token
-        var refreshRequest = new RefreshTokenRequest
-        {
-            RefreshToken = signUpResult.RefreshToken
-        };
-
-        // The internal denial commits replay containment; the HTTP boundary still returns 401.
-        var denial = await _authService.RefreshTokenAsync(refreshRequest);
-        denial.Should().BeAssignableTo<global::GameGuild.ICommitOnFailureOutcome>();
-        denial.Success.Should().BeFalse();
-        denial.AccessToken.Should().BeNullOrEmpty();
-        denial.RefreshToken.Should().BeNullOrEmpty();
-        denial.UserId.Should().Be(Guid.Empty);
-
-        var storedTokens = await _dbContext.Set<RefreshToken>().AsNoTracking()
-            .Where(token => token.UserId == signUpResult.UserId).ToListAsync();
-        storedTokens.Should().HaveCount(2);
-        storedTokens.Should().AllSatisfy(token => token.IsRevoked.Should().BeTrue());
-        var storedSessions = await _dbContext.Set<UserSession>().AsNoTracking()
-            .Where(session => session.UserId == signUpResult.UserId).ToListAsync();
-        storedSessions.Should().HaveCount(2);
-        storedSessions.Should().AllSatisfy(session => session.IsActive.Should().BeFalse());
-        var storedVersion = await _dbContext.Set<User>().AsNoTracking()
-            .Where(user => user.Id == signUpResult.UserId)
-            .Select(user => user.TokenVersion).SingleAsync();
-        storedVersion.Should().Be(originalVersion + 1);
-    }
+    // LocalAuth_TokenRefresh_AfterRevocation_ShouldFail was retired: the production
+    // revocation path (RefreshTokenRepository.RevokeFamilyAsync / replay containment
+    // from the #263 sweep) uses atomic ExecuteUpdate statements, which the EF InMemory
+    // provider cannot translate, so this InMemory-hosted copy could never execute
+    // again. Its scenario — revoked refresh token rejected with replay containment,
+    // family revocation, and session termination — is covered end-to-end against the
+    // real provider at the HTTP boundary by the Postgres suite:
+    // GameGuild.API.IntegrationTests/BearerRevocationPostgreSqlHttpTests.cs
+    // (RealRefreshReplayRejectsEarlierSignedBearerAndLeavesAnotherUserActive) and
+    // RefreshTokenLifecycleAuditPostgreSqlHttpTests.cs
+    // (ReplayCommitsContainmentAuditAndMetricWhileReturningNoCredentials,
+    // ExplicitRevocationCommitsAuditAndMetricForOwnedTokenOrWholeAccount).
 
     [Fact]
     public async Task LocalAuth_SignIn_WithTenantMemberships_ShouldPopulateTenantContext()

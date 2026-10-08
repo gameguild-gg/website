@@ -405,52 +405,45 @@ public sealed class PermissionGrantService(
 ///     Implementation of <see cref="IPermissionQueryService"/> containing query/check logic.
 ///     This is the primary implementation - <see cref="PermissionService"/> is a backward-compatible facade.
 /// </summary>
+/// <remarks>
+///     <para>
+///         Effective-permission checks delegate to the shared <see cref="IEffectivePermissionResolver"/>
+///         (issue #330), so authorization entry points and permission-query callers use one
+///         documented DENY-WINS resolution contract:
+///         <c>apps/api/docs/effective-permission-resolution.md</c>.
+///     </para>
+///     <para>
+///         <b>SECURITY: FAIL-CLOSED</b> - a missing or invalid user/tenant context denies
+///         the request instead of falling back to global defaults.
+///     </para>
+/// </remarks>
 public sealed class PermissionQueryService(
     ITenantPermissionRepository repository,
     ITenantMembershipChecker membershipChecker,
-    ILogger<PermissionQueryService> logger,
-    IEnumerable<IAuthorizationRolePermissionProvider>? rolePermissionProviders = null
+    IEffectivePermissionResolver effectivePermissionResolver,
+    ILogger<PermissionQueryService> logger
 ) : IPermissionQueryService
 {
-    public async Task<bool> HasTenantPermissionAsync(
+    public Task<bool> HasTenantPermissionAsync(
         Guid? userId,
         Guid? tenantId,
         string permission,
         CancellationToken cancellationToken = default)
     {
-        var grants = new[]
+        // SECURITY: FAIL-CLOSED - a missing or invalid user/tenant context denies.
+        if (!userId.HasValue || userId.Value == Guid.Empty || !tenantId.HasValue || tenantId.Value == Guid.Empty)
         {
-            await repository.GetByUserAndTenantAsync(null, null, cancellationToken).ConfigureAwait(false),
-            tenantId.HasValue
-                ? await repository.GetByUserAndTenantAsync(null, tenantId, cancellationToken).ConfigureAwait(false)
-                : null,
-            await repository.GetByUserAndTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false)
-        };
-
-        // SECURITY (deny-by-default): only ACTIVE, unexpired grants contribute to decisions.
-        // Inactive or expired rows are treated as absent - they grant nothing and deny nothing;
-        // the absence of an active allow then resolves to deny below.
-        var activeGrants = grants.Where(IsGrantEffective).Cast<TenantPermission>().ToList();
-        if (activeGrants.Any(grant => grant.HasDenyPermission(permission)))
-            return false;
-
-        if (activeGrants.Any(grant => grant.HasPermission(permission)))
-            return true;
-
-        if (!userId.HasValue || !tenantId.HasValue)
-            return false;
-
-        foreach (var provider in rolePermissionProviders ?? [])
-        {
-            var permissions = await provider.GetPermissionsAsync(userId.Value, tenantId.Value, cancellationToken).ConfigureAwait(false)
-                              ?? [];
-            if (permissions
-                .Where(IsDelegableRolePermission)
-                .Contains(permission, StringComparer.OrdinalIgnoreCase))
-                return true;
+            logger.LogWarning(
+                "HasTenantPermissionAsync called with missing or invalid context (user {UserId}, tenant {TenantId}) - denying (fail-closed).",
+                userId, tenantId);
+            return Task.FromResult(false);
         }
 
-        return false;
+        // Just-in-Time elevation grants are enforced inside the shared resolver
+        // (TemporaryElevation layer, issue #341): an approved elevation inside its
+        // time window temporarily grants the permission, tenant-scoped only, never
+        // "admin:*", and still subject to DENY-WINS precedence.
+        return effectivePermissionResolver.HasPermissionAsync(userId.Value, tenantId.Value, permission, cancellationToken);
     }
 
     public async Task<List<string>> GetTenantPermissionsAsync(
@@ -462,9 +455,6 @@ public sealed class PermissionQueryService(
 
         if (existing == null) return new List<string>();
 
-        // SECURITY (deny-by-default): inactive or expired grants contribute nothing.
-        if (!IsGrantEffective(existing)) return new List<string>();
-
         return existing.Permissions.ToList();
     }
 
@@ -472,110 +462,42 @@ public sealed class PermissionQueryService(
     ///     Get effective permissions for a user in a tenant.
     /// </summary>
     /// <remarks>
-    ///     <b>Permission Evaluation Policy: DENY-WINS</b>
-    ///     <para>
-    ///         Permissions are resolved from three layers. Explicit denies at any layer
-    ///         remove the permission from the effective set (deny takes precedence).
-    ///     </para>
-    ///     <para>
-    ///         <b>SECURITY: FAIL-CLOSED</b> - If no tenant context is provided, returns empty permissions.
-    ///         This prevents global defaults from being applied without proper tenant context.
-    ///     </para>
-    ///     <para>
-    ///         Evaluation order:
-    ///         <list type="number">
-    ///             <item>Collect all ALLOW permissions from: Global defaults → Tenant defaults → Direct grants</item>
-    ///             <item>Collect all DENY permissions from: Global denies → Tenant denies → Direct denies</item>
-    ///             <item>Effective = ALLOW - DENY (deny always wins)</item>
-    ///         </list>
-    ///     </para>
+    ///     Delegates to the shared <see cref="IEffectivePermissionResolver"/> so every
+    ///     permission-query caller (#307) uses the documented DENY-WINS contract.
+    ///     <b>SECURITY: FAIL-CLOSED</b> - a missing or invalid tenant context returns an
+    ///     empty permission set; global defaults never apply without tenant isolation.
+    ///     Just-in-Time elevation grants are enforced inside the resolver (its
+    ///     TemporaryElevation layer, issue #341): approved elevations inside their time
+    ///     window contribute their permission, tenant-scoped only, never "admin:*",
+    ///     and still subject to DENY-WINS precedence.
+    ///     Contract: <c>apps/api/docs/effective-permission-resolution.md</c>.
     /// </remarks>
     public async Task<List<string>> GetEffectivePermissionsAsync(
         Guid userId,
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        // SECURITY: FAIL-CLOSED - No tenant context = no permissions
-        // This prevents global defaults from being applied without proper tenant isolation
-        if (!tenantId.HasValue)
+        // SECURITY: FAIL-CLOSED - No valid tenant context = no permissions
+        if (!tenantId.HasValue || tenantId.Value == Guid.Empty || userId == Guid.Empty)
         {
             logger.LogWarning(
-                "GetEffectivePermissionsAsync called without tenant context for user {UserId}. Returning empty permissions (fail-closed).",
-                userId);
+                "GetEffectivePermissionsAsync called without a valid context for user {UserId}, tenant {TenantId}. Returning empty permissions (fail-closed).",
+                userId, tenantId);
             return new List<string>();
         }
 
-        var allowedPermissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var deniedPermissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var effective = await effectivePermissionResolver
+            .ResolveAsync(EffectivePermissionContext.ForTenant(userId, tenantId.Value), cancellationToken)
+            .ConfigureAwait(false);
 
-        // Layer 1: Global defaults (UserId=null, TenantId=null)
-        // SECURITY (deny-by-default): inactive defaults contribute nothing.
-        var globalDefaults = await repository.GetByUserAndTenantAsync(null, null, cancellationToken).ConfigureAwait(false);
-        if (IsGrantEffective(globalDefaults))
-        {
-            allowedPermissions.UnionWith(globalDefaults!.Permissions);
-            deniedPermissions.UnionWith(globalDefaults.DenyPermissions);
-        }
-
-        // Layer 2: Tenant defaults (UserId=null, TenantId=X)
-        // SECURITY (deny-by-default): inactive defaults contribute nothing.
-        var tenantDefaults = await repository.GetByUserAndTenantAsync(null, tenantId.Value, cancellationToken).ConfigureAwait(false);
-        if (IsGrantEffective(tenantDefaults))
-        {
-            allowedPermissions.UnionWith(tenantDefaults!.Permissions);
-            deniedPermissions.UnionWith(tenantDefaults.DenyPermissions);
-        }
-
-        // Layer 3: Direct user permissions (UserId=Y, TenantId=X)
-        // SECURITY (deny-by-default): inactive direct grants contribute nothing.
-        var userPermissions = await repository.GetByUserAsync(userId, cancellationToken).ConfigureAwait(false);
-        var directGrants = userPermissions
-            .Where(p => p.TenantId == tenantId.Value)
-            .Where(IsGrantEffective)
-            .ToList();
-
-        foreach (var grant in directGrants)
-        {
-            allowedPermissions.UnionWith(grant.Permissions);
-            deniedPermissions.UnionWith(grant.DenyPermissions);
-        }
-
-        foreach (var provider in rolePermissionProviders ?? [])
-        {
-            var rolePermissions = await provider.GetPermissionsAsync(userId, tenantId.Value, cancellationToken).ConfigureAwait(false)
-                                  ?? [];
-            allowedPermissions.UnionWith(rolePermissions.Where(IsDelegableRolePermission));
-        }
-
-        // DENY-WINS: Subtract all denied permissions from allowed set
-        allowedPermissions.ExceptWith(deniedPermissions);
-
-        logger.LogDebug(
-            "Effective permissions for user {UserId} in tenant {TenantId}: {Count} allowed, {DenyCount} denied",
-            userId, tenantId.Value, allowedPermissions.Count, deniedPermissions.Count);
-
-        return allowedPermissions.ToList();
+        return effective.Permissions.ToList();
     }
-
-    private static bool IsDelegableRolePermission(string permission) =>
-        !string.Equals(permission, "admin:*", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>
-    ///     SECURITY (deny-by-default): a grant only contributes to an authorization decision
-    ///     when it is active, unexpired and not soft-deleted. Repository lookups already
-    ///     exclude soft-deleted rows; this predicate excludes inactive and expired ones so
-    ///     every evaluation path (check, effective-set and list) applies the same rule.
-    /// </summary>
-    private static bool IsGrantEffective(TenantPermission? grant) =>
-        grant is not null && grant.IsActive && !grant.IsExpired();
 
     public async Task<List<string>> GetGlobalDefaultPermissionsAsync(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, null, cancellationToken).ConfigureAwait(false);
-
-        // SECURITY (deny-by-default): inactive or expired defaults contribute nothing.
-        return IsGrantEffective(defaults) ? defaults!.Permissions.ToList() : new List<string>();
+        return defaults?.Permissions.ToList() ?? new List<string>();
     }
 
     public async Task<List<string>> GetTenantDefaultPermissionsAsync(
@@ -583,9 +505,7 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, tenantId, cancellationToken).ConfigureAwait(false);
-
-        // SECURITY (deny-by-default): inactive or expired defaults contribute nothing.
-        return IsGrantEffective(defaults) ? defaults!.Permissions.ToList() : new List<string>();
+        return defaults?.Permissions.ToList() ?? new List<string>();
     }
 
     public async Task<bool> IsUserInTenantAsync(

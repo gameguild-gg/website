@@ -441,7 +441,6 @@ public static class SecurityServiceCollectionExtensions
         destination.FallbackPolicyName = source.FallbackPolicyName;
         destination.RequireAuthenticatedUser = source.RequireAuthenticatedUser;
         destination.SystemAccountId = source.SystemAccountId;
-        destination.GlobalDefaultPermissions = [.. source.GlobalDefaultPermissions];
         destination.Policies = source.Policies.ToDictionary(
             entry => entry.Key,
             entry => new ConfiguredAuthorizationPolicyOptions
