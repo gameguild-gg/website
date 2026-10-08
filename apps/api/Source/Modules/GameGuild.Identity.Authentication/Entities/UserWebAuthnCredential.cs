@@ -117,9 +117,98 @@ public class UserWebAuthnCredential
     public bool IsActive { get; set; } = true;
 
     /// <summary>
-    ///     When the credential was revoked/disabled (if applicable).
+    ///     When the credential was temporarily deactivated (if applicable).
+    ///     Deactivation is reversible via <see cref="Activate" /> and is distinct from
+    ///     the terminal <see cref="RevokedAt" /> revocation.
+    /// </summary>
+    public DateTime? DeactivatedAt { get; set; }
+
+    /// <summary>
+    ///     When the credential was revoked (if applicable). Revocation is terminal:
+    ///     a revoked credential can never be reactivated.
     /// </summary>
     public DateTime? RevokedAt { get; set; }
+
+    /// <summary>
+    ///     Whether this credential is currently deactivated (temporarily disabled).
+    /// </summary>
+    public bool IsDeactivated => !IsActive && DeactivatedAt.HasValue && !RevokedAt.HasValue;
+
+    /// <summary>
+    ///     Whether this credential has been revoked (terminal state).
+    /// </summary>
+    public bool IsRevoked => RevokedAt.HasValue;
+
+    /// <summary>
+    ///     Current lifecycle status. A revoked credential always reports
+    ///     <see cref="WebAuthnCredentialStatus.Revoked" /> regardless of any earlier deactivation.
+    /// </summary>
+    public WebAuthnCredentialStatus Status =>
+        IsRevoked ? WebAuthnCredentialStatus.Revoked
+        : !IsActive ? WebAuthnCredentialStatus.Deactivated
+        : WebAuthnCredentialStatus.Active;
+
+    /// <summary>
+    ///     Temporarily deactivates this credential so it can no longer be used for
+    ///     authentication ceremonies. Reversible via <see cref="Activate" />.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the credential is already deactivated or revoked.
+    /// </exception>
+    public void Deactivate()
+    {
+        if (IsRevoked)
+        {
+            throw new InvalidOperationException("A revoked credential cannot be deactivated; revocation is terminal.");
+        }
+
+        if (IsDeactivated)
+        {
+            throw new InvalidOperationException("The credential is already deactivated.");
+        }
+
+        DeactivatedAt = SystemClock.UtcNow;
+        IsActive = false;
+    }
+
+    /// <summary>
+    ///     Reverses a temporary deactivation, returning the credential to active use.
+    ///     Never reactivates a revoked credential: revocation is terminal.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the credential is revoked or not deactivated.
+    /// </exception>
+    public void Activate()
+    {
+        if (IsRevoked)
+        {
+            throw new InvalidOperationException("A revoked credential cannot be reactivated; revocation is terminal.");
+        }
+
+        if (IsActive)
+        {
+            throw new InvalidOperationException("The credential is already active.");
+        }
+
+        DeactivatedAt = null;
+        IsActive = true;
+    }
+
+    /// <summary>
+    ///     Revokes this credential permanently. Revocation is terminal and cannot be
+    ///     undone by deactivation, activation, or restore operations.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the credential is already revoked.</exception>
+    public void Revoke()
+    {
+        if (IsRevoked)
+        {
+            throw new InvalidOperationException("The credential is already revoked.");
+        }
+
+        RevokedAt = SystemClock.UtcNow;
+        IsActive = false;
+    }
 }
 
 /// <summary>
