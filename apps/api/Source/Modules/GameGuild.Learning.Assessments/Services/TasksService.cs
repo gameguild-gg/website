@@ -18,10 +18,10 @@ public class TasksService(
     IPermissionQueryService permissionQueryService,
     ILogger<TasksService> logger) : ITasksService
 {
-    // Managed-course permission names mirror AssessmentsController.CanManageCourseAsync exactly:
-    // Program.{courseId}.{Edit|Create|Delete} in the actor's tenant, plus program creators and system admins.
+    // Grading work is projected only for contextual reviewers:
+    // Program.{courseId}.Review in the actor's tenant, plus same-tenant creators and system admins.
     private static readonly Regex ProgramPermissionPattern = new(
-        @"^Program\.(?<courseId>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\.(Edit|Create|Delete)$",
+        @"^Program\.(?<courseId>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\.Review$",
         RegexOptions.Compiled);
 
     public async Task<TasksDto> GetTasksAsync(Guid actorUserId, Guid? tenantId, bool isSystemAdmin)
@@ -180,7 +180,8 @@ public class TasksService(
         }
         else if (tenantId.HasValue)
         {
-            foreach (var program in programs.Where(p => p.CreatorId == actorUserId))
+            foreach (var program in programs.Where(p =>
+                         p.TenantId == tenantId.Value && p.CreatorId == actorUserId))
             {
                 managed.TryAdd(program.Id, program.Title);
             }
