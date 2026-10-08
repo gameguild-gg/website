@@ -210,7 +210,8 @@ public static class StaticRolePermissions
         "roles:*",
         "settings:*",
         "billing:*",
-        "content:*"
+        "content:*",
+        "moderation:*"
     };
 
     /// <summary>
@@ -223,7 +224,8 @@ public static class StaticRolePermissions
         "members:*",
         "roles:*",
         "settings:*",
-        "content:*"
+        "content:*",
+        "moderation:*"
     };
 
     /// <summary>
@@ -234,7 +236,11 @@ public static class StaticRolePermissions
         "tenant:read",
         "members:read",
         "members:update",
-        "content:*"
+        "content:*",
+        ModerationPermission.Keys.Moderate,
+        ModerationPermission.Keys.Flag,
+        ModerationPermission.Keys.Ban,
+        ModerationPermission.Keys.Warn
     };
 
     /// <summary>

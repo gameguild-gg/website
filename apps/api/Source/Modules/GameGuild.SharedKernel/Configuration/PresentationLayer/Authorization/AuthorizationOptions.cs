@@ -27,19 +27,6 @@ public sealed class AuthorizationOptions : BaseOptions
     public Guid SystemAccountId { get; set; } = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     /// <summary>
-    ///     Global baseline permissions granted to every authenticated user, regardless of
-    ///     persisted grants. <b>Deny-by-default: the list is empty unless explicitly
-    ///     configured.</b> There are no implicit baseline permissions in code.
-    /// </summary>
-    /// <remarks>
-    ///     Persisted global defaults (the <c>UserId=null, TenantId=null</c>
-    ///     <c>TenantPermission</c> row, managed via the permissions API) remain the primary
-    ///     mechanism; this option exists only for operators who need a configuration-level
-    ///     baseline and accept the audit implications.
-    /// </remarks>
-    public string[] GlobalDefaultPermissions { get; set; } = [];
-
-    /// <summary>
     ///     Static ASP.NET Core policies configured by the host. Database-backed policies
     ///     remain the source of truth for names registered in the authorization module.
     /// </summary>
@@ -72,10 +59,6 @@ public sealed class AuthorizationOptions : BaseOptions
         
         if (SystemAccountId == Guid.Empty)
             throw new InvalidOperationException("SystemAccountId cannot be empty GUID.");
-
-        if (GlobalDefaultPermissions is null || GlobalDefaultPermissions.Any(string.IsNullOrWhiteSpace))
-            throw new InvalidOperationException(
-                "GlobalDefaultPermissions cannot be null or contain empty permission names.");
 
         ValidatePolicies();
         ValidateRoleHierarchy();
