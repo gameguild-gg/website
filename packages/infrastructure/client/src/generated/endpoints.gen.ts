@@ -454,6 +454,133 @@ export const putApiAuditRetentionSimulationConfigurationEndpoint = {
 } as const;
 
 /**
+ * Returns the security alert queue for the current tenant.
+ */
+export interface GetApiAuditSecurityEventsAlertsInput {
+  query?: {
+    status?: Types.ComplianceAuditSecurityAlertStatus;
+    severity?: Types.ComplianceAuditAuditRiskLevel;
+    kind?: Types.ComplianceAuditSecurityEventKind;
+    ruleId?: string;
+    subjectUserId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditSecurityEventsAlertsOutput = Array<Types.ComplianceAuditSecurityAlertOutput>;
+export const getApiAuditSecurityEventsAlertsEndpoint = {
+  operationId: 'getApiAuditSecurityEventsAlerts' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/alerts' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledges an open security alert. The acting administrator is derived from the request context.
+ */
+export interface PostApiAuditSecurityEventsAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.ComplianceAuditAcknowledgeSecurityAlertInput;
+}
+export type PostApiAuditSecurityEventsAlertsAcknowledgeOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postApiAuditSecurityEventsAlertsAcknowledgeEndpoint = {
+  operationId: 'postApiAuditSecurityEventsAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/alerts/{alertId}/acknowledge' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the durable delivery status of the security event pipeline for this instance.
+ */
+export type GetApiAuditSecurityEventsDeliveryStatusInput = void;
+export type GetApiAuditSecurityEventsDeliveryStatusOutput = Types.ComplianceAuditSecurityEventDeliveryStatusOutput;
+export const getApiAuditSecurityEventsDeliveryStatusEndpoint = {
+  operationId: 'getApiAuditSecurityEventsDeliveryStatus' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/delivery-status' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
+ * and are recorded in the execution history; use `DryRun` to preview deletions.
+ */
+export interface PostApiAuditSecurityEventsRetentionEnforceInput {
+  body?: Types.ComplianceAuditEnforceSecurityLogRetentionInput;
+}
+export type PostApiAuditSecurityEventsRetentionEnforceOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput;
+export const postApiAuditSecurityEventsRetentionEnforceEndpoint = {
+  operationId: 'postApiAuditSecurityEventsRetentionEnforce' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/retention/enforce' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the retention execution history for the current tenant.
+ */
+export interface GetApiAuditSecurityEventsRetentionExecutionsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditSecurityEventsRetentionExecutionsOutput = Array<Types.ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export const getApiAuditSecurityEventsRetentionExecutionsEndpoint = {
+  operationId: 'getApiAuditSecurityEventsRetentionExecutions' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/retention/executions' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security log retention policy for the current tenant, when configured.
+ */
+export type GetApiAuditSecurityEventsRetentionPolicyInput = void;
+export type GetApiAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const getApiAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'getApiAuditSecurityEventsRetentionPolicy' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates or updates the security log retention policy for the current tenant.
+ */
+export interface PutApiAuditSecurityEventsRetentionPolicyInput {
+  body?: Types.ComplianceAuditConfigureSecurityLogRetentionInput;
+}
+export type PutApiAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const putApiAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'putApiAuditSecurityEventsRetentionPolicy' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the complete security event taxonomy used by the security event pipeline.
+ */
+export type GetApiAuditSecurityEventsTaxonomyInput = void;
+export type GetApiAuditSecurityEventsTaxonomyOutput = Types.ComplianceAuditSecurityEventTaxonomyOutput;
+export const getApiAuditSecurityEventsTaxonomyEndpoint = {
+  operationId: 'getApiAuditSecurityEventsTaxonomy' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/taxonomy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get a certificate by ID
  */
 export interface GetApiCertificatesInput {
@@ -11610,6 +11737,133 @@ export const putAuditRetentionSimulationConfigurationEndpoint = {
   method: 'PUT' as const,
   path: '/v1/audit/retention-simulation/configuration' as const,
   tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security alert queue for the current tenant.
+ */
+export interface GetAuditSecurityEventsAlertsInput {
+  query?: {
+    status?: Types.ComplianceAuditSecurityAlertStatus;
+    severity?: Types.ComplianceAuditAuditRiskLevel;
+    kind?: Types.ComplianceAuditSecurityEventKind;
+    ruleId?: string;
+    subjectUserId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditSecurityEventsAlertsOutput = Array<Types.ComplianceAuditSecurityAlertOutput>;
+export const getAuditSecurityEventsAlertsEndpoint = {
+  operationId: 'getAuditSecurityEventsAlerts' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/alerts' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledges an open security alert. The acting administrator is derived from the request context.
+ */
+export interface PostAuditSecurityEventsAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.ComplianceAuditAcknowledgeSecurityAlertInput;
+}
+export type PostAuditSecurityEventsAlertsAcknowledgeOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postAuditSecurityEventsAlertsAcknowledgeEndpoint = {
+  operationId: 'postAuditSecurityEventsAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/alerts/{alertId}/acknowledge' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the durable delivery status of the security event pipeline for this instance.
+ */
+export type GetAuditSecurityEventsDeliveryStatusInput = void;
+export type GetAuditSecurityEventsDeliveryStatusOutput = Types.ComplianceAuditSecurityEventDeliveryStatusOutput;
+export const getAuditSecurityEventsDeliveryStatusEndpoint = {
+  operationId: 'getAuditSecurityEventsDeliveryStatus' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/delivery-status' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
+ * and are recorded in the execution history; use `DryRun` to preview deletions.
+ */
+export interface PostAuditSecurityEventsRetentionEnforceInput {
+  body?: Types.ComplianceAuditEnforceSecurityLogRetentionInput;
+}
+export type PostAuditSecurityEventsRetentionEnforceOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput;
+export const postAuditSecurityEventsRetentionEnforceEndpoint = {
+  operationId: 'postAuditSecurityEventsRetentionEnforce' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/retention/enforce' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the retention execution history for the current tenant.
+ */
+export interface GetAuditSecurityEventsRetentionExecutionsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditSecurityEventsRetentionExecutionsOutput = Array<Types.ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export const getAuditSecurityEventsRetentionExecutionsEndpoint = {
+  operationId: 'getAuditSecurityEventsRetentionExecutions' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/retention/executions' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security log retention policy for the current tenant, when configured.
+ */
+export type GetAuditSecurityEventsRetentionPolicyInput = void;
+export type GetAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const getAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'getAuditSecurityEventsRetentionPolicy' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates or updates the security log retention policy for the current tenant.
+ */
+export interface PutAuditSecurityEventsRetentionPolicyInput {
+  body?: Types.ComplianceAuditConfigureSecurityLogRetentionInput;
+}
+export type PutAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const putAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'putAuditSecurityEventsRetentionPolicy' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the complete security event taxonomy used by the security event pipeline.
+ */
+export type GetAuditSecurityEventsTaxonomyInput = void;
+export type GetAuditSecurityEventsTaxonomyOutput = Types.ComplianceAuditSecurityEventTaxonomyOutput;
+export const getAuditSecurityEventsTaxonomyEndpoint = {
+  operationId: 'getAuditSecurityEventsTaxonomy' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/taxonomy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
   requiresAuth: true,
 } as const;
 
@@ -24952,6 +25206,14 @@ export const endpoints = {
   getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdEndpoint,
   getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
+  getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
+  postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
+  getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
+  postApiAuditSecurityEventsRetentionEnforce: postApiAuditSecurityEventsRetentionEnforceEndpoint,
+  getApiAuditSecurityEventsRetentionExecutions: getApiAuditSecurityEventsRetentionExecutionsEndpoint,
+  getApiAuditSecurityEventsRetentionPolicy: getApiAuditSecurityEventsRetentionPolicyEndpoint,
+  putApiAuditSecurityEventsRetentionPolicy: putApiAuditSecurityEventsRetentionPolicyEndpoint,
+  getApiAuditSecurityEventsTaxonomy: getApiAuditSecurityEventsTaxonomyEndpoint,
   getApiCertificates: getApiCertificatesEndpoint,
   postApiCertificatesRevoke: postApiCertificatesRevokeEndpoint,
   getApiCertificatesCourse: getApiCertificatesCourseEndpoint,
@@ -25687,6 +25949,14 @@ export const endpoints = {
   getAuditRetentionSimulationForGetAuditRetentionSimulationById: getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoint,
   getAuditRetentionSimulationConfiguration: getAuditRetentionSimulationConfigurationEndpoint,
   putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
+  getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
+  postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
+  getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
+  postAuditSecurityEventsRetentionEnforce: postAuditSecurityEventsRetentionEnforceEndpoint,
+  getAuditSecurityEventsRetentionExecutions: getAuditSecurityEventsRetentionExecutionsEndpoint,
+  getAuditSecurityEventsRetentionPolicy: getAuditSecurityEventsRetentionPolicyEndpoint,
+  putAuditSecurityEventsRetentionPolicy: putAuditSecurityEventsRetentionPolicyEndpoint,
+  getAuditSecurityEventsTaxonomy: getAuditSecurityEventsTaxonomyEndpoint,
   getAuthApiKeys: getAuthApiKeysEndpoint,
   postAuthApiKeys: postAuthApiKeysEndpoint,
   postAuthApiKeysRevoke: postAuthApiKeysRevokeEndpoint,

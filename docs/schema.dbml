@@ -4072,6 +4072,81 @@ Table "ScheduledAuditExports" {
   }
 }
 
+Table "SecurityAlerts" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "RuleId" "character varying(100)" [not null]
+  "Kind" integer [not null]
+  "Severity" integer [not null]
+  "Title" "character varying(200)" [not null]
+  "Description" "character varying(1000)" [not null]
+  "SourceActionType" "character varying(100)" [not null]
+  "SourceAuditLogId" uuid
+  "SubjectUserId" uuid
+  "IpAddress" "character varying(45)"
+  "DeduplicationKey" "character varying(400)" [not null]
+  "Status" integer [not null]
+  "OccurrenceCount" integer [not null]
+  "FirstSeenAtUtc" timestamp [not null]
+  "LastSeenAtUtc" timestamp [not null]
+  "AcknowledgedByUserId" uuid
+  "AcknowledgedAtUtc" timestamp
+  "AcknowledgementNotes" "character varying(1000)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SecurityAlerts"]
+    DeduplicationKey [name: "IX_SecurityAlerts_DeduplicationKey"]
+    (Status, Severity, LastSeenAtUtc) [name: "IX_SecurityAlerts_Status_Severity_LastSeenAtUtc"]
+    (TenantId, Status, LastSeenAtUtc) [name: "IX_SecurityAlerts_TenantId_Status_LastSeenAtUtc"]
+  }
+}
+
+Table "SecurityLogRetentionExecutions" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "ExecutedAtUtc" timestamp [not null]
+  "TriggeredByUserId" uuid
+  "CutoffUtc" timestamp [not null]
+  "PolicyRetentionDays" integer [not null]
+  "LegalHoldActive" boolean [not null]
+  "DryRun" boolean [not null]
+  "DeletedCount" integer [not null]
+  "EvaluatedCount" integer [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SecurityLogRetentionExecutions"]
+    (TenantId, ExecutedAtUtc) [name: "IX_SecurityLogRetentionExecutions_TenantId_ExecutedAtUtc"]
+  }
+}
+
+Table "SecurityLogRetentionPolicies" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "Revision" integer [not null]
+  "RetentionDays" integer [not null]
+  "CategoryOverridesJson" text
+  "LegalHoldUntilUtc" timestamp
+  "UpdatedByUserId" uuid [not null]
+  "ConfiguredAtUtc" timestamp [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SecurityLogRetentionPolicies"]
+    TenantId [unique, name: "IX_SecurityLogRetentionPolicies_TenantId"]
+  }
+}
+
 Table "social_blog_ai_conversations" {
   "Id" uuid [not null]
   "BlogPostId" uuid [not null]
@@ -10545,6 +10620,10 @@ Ref "FK_UserPreferences_Users_UserId":"Users"."Id" <? "UserPreferences"."UserId"
 
 Ref "FK_UserProfiles_Users_UserId":"Users"."Id" <? "UserProfiles"."UserId" [delete: cascade]
 
+Ref "FK_refreshtoken_refreshtoken_ParentTokenId":"gameguild.authentication"."refreshtoken"."id" ?<? "gameguild.authentication"."refreshtoken"."ParentTokenId" [delete: restrict]
+
+Ref "FK_refreshtoken_usersession_SessionId":"gameguild.authentication"."usersession"."id" ?<? "gameguild.authentication"."refreshtoken"."SessionId" [delete: restrict]
+
 Ref "FK_AssessmentTestRunSubjects_AssessmentTestRuns_TestRunId":"AssessmentTestRuns"."Id" <? "AssessmentTestRunSubjects"."TestRunId" [delete: cascade]
 
 Ref "FK_InteractiveVideoAssessmentCues_Assessments_AssessmentId":"Assessments"."Id" <? "InteractiveVideoAssessmentCues"."AssessmentId" [delete: cascade]
@@ -11395,27 +11474,6 @@ Table "gameguild.authentication"."mfaattempt" {
   }
 }
 
-Table "gameguild.authentication"."refreshtoken" {
-  "id" uuid [not null]
-  "UserId" uuid [not null]
-  "Token" "character varying(500)" [not null]
-  "ExpiresAt" timestamp [not null]
-  "IsRevoked" boolean [not null]
-  "RevokedByIp" "character varying(45)"
-  "RevokedAt" timestamp
-  "ReplacedByToken" "character varying(500)"
-  "CreatedByIp" "character varying(45)" [not null]
-  "CreatedAt" timestamp [not null]
-  "UpdatedAt" timestamp [not null]
-
-  Indexes {
-    id [pk, name: "PK_refreshtoken"]
-    ExpiresAt [name: "ix_refreshtoken_expires_at"]
-    Token [unique, name: "ix_refreshtoken_token"]
-    UserId [name: "ix_refreshtoken_user_id"]
-  }
-}
-
 Table "gameguild.authentication"."role" {
   "id" uuid [not null]
   "name" "character varying(100)" [not null]
@@ -11531,6 +11589,7 @@ Table "gameguild.authentication"."user_mfa_configuration" {
   "preferred_method" text [not null]
   "qr_code_setup_data" "character varying(1000)"
   "is_setup_complete" boolean [not null]
+  "setup_expires_at" timestamp
   "created_at" timestamp [not null]
   "updated_at" timestamp [not null]
 
@@ -11588,6 +11647,31 @@ Table "gameguild.authentication"."user_role" {
     role_id [name: "idx_user_role_role_id"]
     user_id [name: "idx_user_role_user_id"]
     (user_id, role_id) [unique, name: "idx_user_role_user_id_role_id"]
+  }
+}
+
+Table "gameguild.authentication"."refreshtoken" {
+  "id" uuid [not null]
+  "UserId" uuid [not null]
+  "ParentTokenId" uuid
+  "SessionId" uuid
+  "Token" "character varying(500)" [not null]
+  "ExpiresAt" timestamp [not null]
+  "IsRevoked" boolean [not null]
+  "RevokedByIp" "character varying(45)"
+  "RevokedAt" timestamp
+  "ReplacedByToken" "character varying(500)"
+  "CreatedByIp" "character varying(45)" [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+
+  Indexes {
+    id [pk, name: "PK_refreshtoken"]
+    ExpiresAt [name: "ix_refreshtoken_expires_at"]
+    ParentTokenId [name: "ix_refreshtoken_parent_token_id"]
+    SessionId [name: "ix_refreshtoken_session_id"]
+    Token [unique, name: "ix_refreshtoken_token"]
+    UserId [name: "ix_refreshtoken_user_id"]
   }
 }
 
