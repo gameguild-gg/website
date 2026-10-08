@@ -14547,6 +14547,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(50)")
                         .HasDefaultValue("public-key");
 
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FriendlyName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
