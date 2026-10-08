@@ -34,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetPermissionTemplatesQuery, IEnumerable<PermissionTemplateDto>>, GetPermissionTemplatesQueryHandler>();
         services.AddScoped<ICommandHandler<ApplyPermissionTemplateCommand, ApplyPermissionTemplateResult>, ApplyPermissionTemplateCommandHandler>();
         services.AddScoped<IQueryHandler<GetPermissionCacheStatsQuery, PermissionCacheStatsDto>, GetPermissionCacheStatsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetPermissionCacheKeysQuery, PermissionCacheKeysDto>, GetPermissionCacheKeysQueryHandler>();
+        services.AddScoped<IQueryHandler<GetPermissionCacheKeyQuery, PermissionCacheKeyInfoDto?>, GetPermissionCacheKeyQueryHandler>();
         services.AddScoped<ICommandHandler<WarmPermissionCacheCommand, PermissionCacheWarmupResult>, WarmPermissionCacheCommandHandler>();
 
         // Register validators
