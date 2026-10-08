@@ -289,12 +289,14 @@ public class SessionManagementServiceTests
     [Fact]
     public async Task GetUserSessionsAsync_WithActiveOnly_ShouldReturnOnlyActiveSessions()
     {
-        // Arrange - the expiry-aware active query already excludes inactive and expired rows
+        // Arrange - the expiry-aware active query already excludes inactive and expired rows;
+        // the repository returns rows ordered by LastUsedAt descending, so the mocked list
+        // is arranged in that order (ordering is the repository's contract, not the service's).
         var userId = Guid.NewGuid();
         var activeSessions = new List<UserSession>
         {
-            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, ExpiresAt = DateTime.UtcNow.AddHours(1), LastUsedAt = DateTime.UtcNow.AddHours(-1) },
-            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, ExpiresAt = DateTime.UtcNow.AddHours(1), LastUsedAt = DateTime.UtcNow }
+            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, ExpiresAt = DateTime.UtcNow.AddHours(1), LastUsedAt = DateTime.UtcNow },
+            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, ExpiresAt = DateTime.UtcNow.AddHours(1), LastUsedAt = DateTime.UtcNow.AddHours(-1) }
         };
 
         _sessionRepositoryMock.Setup(x => x.GetActiveByUserIdAsync(userId, It.IsAny<CancellationToken>()))
