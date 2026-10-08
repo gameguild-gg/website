@@ -3,8 +3,8 @@
 This guide explains how to stop, diagnose, and recover the local environment
 started by `pnpm run dev`. Run all commands from the repository root.
 
-For the precompiled Learning environment, see
-[`dev-learning.md`](./dev-learning.md).
+For the faster dynamic application environment, see
+[`dev-fast.md`](./dev-fast.md).
 
 ## How the local environment works
 
@@ -14,14 +14,14 @@ For the precompiled Learning environment, see
 2. the host machine runs the API, web application, and generated-client
    watchers.
 
-| Component | Default execution | Local port |
-| --- | --- | --- |
-| Web | local Next.js process | `3000` |
-| API | local .NET process | `8080` |
-| PostgreSQL | Docker Compose | `5432` |
-| Redis | Docker Compose | `6379` |
-| Garage S3 | Docker Compose | `3900` |
-| Garage RPC, web, and admin | Docker Compose | `3901` through `3903` |
+| Component                  | Default execution     | Local port            |
+| -------------------------- | --------------------- | --------------------- |
+| Web                        | local Next.js process | `3000`                |
+| API                        | local .NET process    | `8080`                |
+| PostgreSQL                 | Docker Compose        | `5432`                |
+| Redis                      | Docker Compose        | `6379`                |
+| Garage S3                  | Docker Compose        | `3900`                |
+| Garage RPC, web, and admin | Docker Compose        | `3901` through `3903` |
 
 The Compose `api` and `web` containers belong to the `app` profile and are not
 started by the standard `pnpm run dev` command. Do not run `pnpm run dev` and
@@ -43,7 +43,10 @@ pnpm run dev:stop
 
 This command:
 
-- stops processes listening on ports `3000` and `8080`;
+- asks a registered `dev` or `dev:fast` orchestrator to stop its complete
+  process tree, including a build that has not opened its web port yet;
+- waits for graceful shutdown and then stops any orphaned listeners on ports
+  `3000` and `8080` as a fallback;
 - runs `docker compose down --remove-orphans`;
 - preserves local volumes and their data.
 
@@ -64,9 +67,9 @@ pnpm run dev
 `dev:repair` runs `dev:stop` and removes only regenerable artifacts:
 
 - `.turbo`;
-- `apps/web/.next`, `apps/web/.next-learning`, and `apps/web/.turbo`;
+- `apps/web/.next`, `apps/web/.next-fast`, and `apps/web/.turbo`;
 - `apps/web` `tsconfig*.tsbuildinfo` files;
-- `packages/infrastructure/client/dist` and its Turbo cache;
+- `packages/infrastructure/client/dist`, `dist-fast`, and its Turbo cache;
 - API `bin` and `obj` directories.
 
 It does not remove:
@@ -120,9 +123,9 @@ pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-`pnpm run clean` removes `node_modules`, `dist`, `coverage`, `build`, `.next`,
-and `.turbo` throughout the monorepo. It is more expensive than `dev:repair`
-and should not be part of the normal daily workflow.
+`pnpm run clean` removes `node_modules`, `dist`, `dist-fast`, `coverage`,
+`build`, `.next`, and `.turbo` throughout the monorepo. It is more expensive
+than `dev:repair` and should not be part of the normal daily workflow.
 
 ## Diagnostics
 
@@ -147,16 +150,17 @@ lsof -nP -iTCP:6379 -sTCP:LISTEN
 lsof -nP -iTCP:3900 -sTCP:LISTEN
 ```
 
-To stop only the local web and API listeners, run:
+To stop the host-side development environment without stopping Compose, run:
 
 ```bash
 pnpm run kill:ports
 ```
 
-The command checks each port independently, restricts the selection to TCP
-sockets in the `LISTEN` state, and does not invoke `kill` when no PID is found.
-It uses `SIGKILL` because it is intended to recover orphaned processes; prefer
-`Ctrl+C` for a normal shutdown.
+The command first requests a graceful shutdown from a registered or discovered
+`dev` or `dev:fast` orchestrator. It then checks each port independently,
+restricts the fallback selection to TCP sockets in the `LISTEN` state, and
+forces termination only when a process does not exit within the grace period.
+Prefer `Ctrl+C` in the original terminal for a normal shutdown.
 
 Do not automatically kill processes on the PostgreSQL, Redis, or Garage ports.
 First determine whether a port belongs to this project's containers or to a
@@ -182,17 +186,17 @@ docker network inspect web-development-public >/dev/null 2>&1 || \
 
 ## Quick symptom guide
 
-| Symptom | First action |
-| --- | --- |
-| `port 8080 is already in use` | `pnpm run dev:repair` |
-| Next.js reports an existing server on `3000` | `pnpm run dev:repair` |
-| orphaned-container warning, such as an old MailHog container | `pnpm run dev:stop` |
-| stale route types in `.next/types` | `pnpm run dev:repair` |
-| inconsistent generated client or `dist` | `pnpm run dev:repair` |
-| dependencies do not match the lockfile | `pnpm install --frozen-lockfile` |
-| corrupted dependency installation | `pnpm run clean`, reinstall, and start again |
-| disposable local schema is incompatible after inspecting logs | `pnpm run dev:reset:data` |
-| Compose cannot find its external network | create `web-development-public` |
+| Symptom                                                       | First action                                 |
+| ------------------------------------------------------------- | -------------------------------------------- |
+| `port 8080 is already in use`                                 | `pnpm run dev:repair`                        |
+| Next.js reports an existing server on `3000`                  | `pnpm run dev:repair`                        |
+| orphaned-container warning, such as an old MailHog container  | `pnpm run dev:stop`                          |
+| stale route types in `.next/types`                            | `pnpm run dev:repair`                        |
+| inconsistent generated client or `dist`                       | `pnpm run dev:repair`                        |
+| dependencies do not match the lockfile                        | `pnpm install --frozen-lockfile`             |
+| corrupted dependency installation                             | `pnpm run clean`, reinstall, and start again |
+| disposable local schema is incompatible after inspecting logs | `pnpm run dev:reset:data`                    |
+| Compose cannot find its external network                      | create `web-development-public`              |
 
 ## Commands to avoid
 

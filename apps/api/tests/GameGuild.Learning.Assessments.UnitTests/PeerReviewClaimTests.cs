@@ -267,29 +267,53 @@ public class PeerReviewClaimTests
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
+    private readonly Mock<ICourseEnrollmentAccessReader> _courseEnrollments = new();
     private readonly Mock<ILogger<PeerReviewsController>> _log = new();
 
     private PeerReviewsController CreateController(Guid? userId = null, Guid? tenantId = null, Guid? programTenantId = null)
     {
         var uid = userId ?? Guid.NewGuid();
+        var effectiveTenantId = tenantId ?? Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = uid.ToString(),
-            TenantId = tenantId ?? Guid.NewGuid(),
+            TenantId = effectiveTenantId,
             IsAuthenticated = true,
             Roles = new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                uid,
+                effectiveTenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                It.IsAny<Guid>(),
+                uid,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
         return new PeerReviewsController(
             _svc.Object,
             _assessments.Object,
             _rubrics.Object,
             _actor.Object,
-            _programs.Object,
-            _permissions.Object,
+            new CourseAccessEvaluator(
+                programReads.Object,
+                _courseEnrollments.Object,
+                _actor.Object,
+                _permissions.Object),
             _log.Object,
-            new AssessmentEndpointTestSender(peerReviewService: _svc.Object));
+            new AssessmentEndpointTestSender(peerReviewService: _svc.Object))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     private void SetupAssessment(Guid assessmentId, Guid courseId, Guid? programTenantId = null)
@@ -313,7 +337,7 @@ public class PeerReviewClaimTests
         });
         var controller = new PeerReviewsController(
             _svc.Object, _assessments.Object, _rubrics.Object, _actor.Object,
-            _programs.Object, _permissions.Object, _log.Object,
+            Mock.Of<ICourseAccessEvaluator>(), _log.Object,
             new AssessmentEndpointTestSender(peerReviewService: _svc.Object));
 
         var result = await controller.ClaimPeerReview(Guid.NewGuid());
