@@ -37,6 +37,9 @@ public static class AuthorizationModuleExtensions
         services.Configure<AuthorizationTokenOptions>(
             configuration.GetSection(AuthorizationTokenOptions.SectionName));
 
+        services.Configure<PolicyBundleSigningOptions>(
+            configuration.GetSection(PolicyBundleSigningOptions.SectionName));
+
         return services;
     }
 
@@ -338,6 +341,11 @@ public static class AuthorizationModuleExtensions
         services.AddScoped<IPermissionTemplateVersionRepository, PermissionTemplateVersionRepository>();
         services.AddScoped<IPermissionTemplateMigrationRepository, PermissionTemplateMigrationRepository>();
         services.AddScoped<IPolicyRegistryAuditLogRepository, PolicyRegistryAuditLogRepository>();
+
+        // Central policy registry: signed policy bundles (fail-closed verification)
+        services.AddScoped<IPolicyBundleSignatureService, PolicyBundleSignatureService>();
+        services.AddScoped<ISignedPolicyBundleStore, SignedPolicyBundleStore>();
+        services.AddScoped<IPolicyBundlePolicyMaterializer, PolicyBundlePolicyMaterializer>();
 
         return services;
     }
