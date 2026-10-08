@@ -261,6 +261,7 @@ public static class DataDependencyInjection
 
         // Facade that preserves the original IAuthenticationAnomalyDetectionService contract
         services.AddScoped<AuthenticationAnomalyDetectionService>();
+        services.AddScoped<IMagicLinkTokenStore, DatabaseMagicLinkTokenStore>();
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<IEmailCodeService, EmailCodeService>();
         services.AddScoped<IAuthenticationAnomalyDetectionService, AuthenticationAnomalyDetectionService>();

@@ -4,6 +4,7 @@ using GameGuild.Identity.Authentication;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Collections.Concurrent;
 using Xunit;
 
 namespace GameGuild.Identity.Authentication.UnitTests.Services;
@@ -12,6 +13,7 @@ public class EmailVerificationServiceTests
 {
     private readonly Mock<ILogger<EmailVerificationService>> _loggerMock;
     private readonly Mock<IPublisher> _publisherMock;
+    private readonly InMemoryMagicLinkTokenStore _magicLinkTokenStore;
     private readonly EmailVerificationService _service;
 
     public EmailVerificationServiceTests()
@@ -20,8 +22,13 @@ public class EmailVerificationServiceTests
         _publisherMock = new Mock<IPublisher>();
         _publisherMock.Setup(x => x.Publish(It.IsAny<EmailVerificationRequestedNotification>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+        _magicLinkTokenStore = new InMemoryMagicLinkTokenStore();
         var memoryCache = new MemoryCache(new MemoryCacheOptions());
-        _service = new EmailVerificationService(_loggerMock.Object, memoryCache, _publisherMock.Object);
+        _service = new EmailVerificationService(
+            _loggerMock.Object,
+            memoryCache,
+            _publisherMock.Object,
+            magicLinkTokenStore: _magicLinkTokenStore);
     }
 
     [Fact]
@@ -68,6 +75,50 @@ public class EmailVerificationServiceTests
 
         // Assert
         await act.Should().NotThrowAsync();
+    }
+
+    internal sealed class InMemoryMagicLinkTokenStore : IMagicLinkTokenStore
+    {
+        private readonly ConcurrentDictionary<string, (Guid UserId, string Email, DateTimeOffset ExpiresAt, DateTimeOffset? ConsumedAt)> _tokens = new();
+
+        public Task AddAsync(
+            string token,
+            Guid userId,
+            string email,
+            DateTimeOffset expiresAt,
+            CancellationToken cancellationToken = default)
+        {
+            _tokens[token] = (userId, email.ToLowerInvariant(), expiresAt, null);
+            return Task.CompletedTask;
+        }
+
+        public Task<TokenValidationResult> ConsumeAsync(
+            string token,
+            DateTimeOffset consumedAt,
+            CancellationToken cancellationToken = default)
+        {
+            while (_tokens.TryGetValue(token, out var entry))
+            {
+                if (entry.ExpiresAt <= consumedAt || entry.ConsumedAt is not null)
+                {
+                    return Task.FromResult(TokenValidationResult.Failed("Invalid or expired token"));
+                }
+
+                var consumed = (entry.UserId, entry.Email, entry.ExpiresAt, (DateTimeOffset?)consumedAt);
+                if (_tokens.TryUpdate(token, consumed, entry))
+                {
+                    return Task.FromResult(new TokenValidationResult(true, entry.UserId, entry.Email));
+                }
+            }
+
+            return Task.FromResult(TokenValidationResult.Failed("Invalid or expired token"));
+        }
+
+        public Task<bool> IsValidAsync(
+            string token,
+            DateTimeOffset now,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(_tokens.TryGetValue(token, out var entry) && entry.ExpiresAt > now && entry.ConsumedAt is null);
     }
 
     [Fact]
