@@ -12158,6 +12158,7 @@ Table "auth"."UserWebAuthnCredentials" {
   "RegisteredFromIp" "character varying(45)"
   "RegisteredUserAgent" "character varying(500)"
   "IsActive" boolean [not null]
+  "DeactivatedAt" timestamp
   "RevokedAt" timestamp
 
   Indexes {

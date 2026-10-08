@@ -7646,21 +7646,44 @@ export interface IdentityAuthenticationWebAuthnCredentialInfo {
   authenticatorType?: IdentityAuthenticationWebAuthnAuthenticatorType;
   backedUp?: boolean;
   createdAt?: string;
+  /** When the credential was temporarily deactivated, if applicable. */
+  deactivatedAt?: string | null;
   friendlyName?: string | null;
   isDefault?: boolean;
   isPasswordless?: boolean;
   lastUsedAt?: string | null;
+  /** When the credential was revoked (terminal), if applicable. */
+  revokedAt?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+}
+
+/** Lifecycle status of a WebAuthn credential. */
+export type IdentityAuthenticationWebAuthnCredentialStatus = 'Active' | 'Deactivated' | 'Revoked';
+
+/** Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+export interface IdentityAuthenticationWebAuthnCredentialTransitionResult {
+  /** Machine-readable failure reason (`CredentialNotFound`, `InvalidTransition`)
+or `null` on success. */
+  error?: string | null;
+  /** Human-readable explanation of the failure, or `null` on success. */
+  errorDescription?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+  /** Whether the requested transition was applied. */
+  success?: boolean;
 }
 
 /** Result of verifying a WebAuthn credential. */
 export interface IdentityAuthenticationWebAuthnCredentialVerifyResult {
   error?: string | null;
+  /** Whether the credential is temporarily deactivated (reversible, unlike revocation). */
+  isDeactivated?: boolean;
   isExpired?: boolean;
   isRevoked?: boolean;
   isValid?: boolean;
   lastUsedAt?: string | null;
   /** Signature counter for replay attack protection (increases with each use). */
   signatureCount?: number;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
   success?: boolean;
 }
 
@@ -19595,6 +19618,8 @@ export let IdentityAuthenticationWebAuthnAuthenticationOptionsResultSchema: z.Zo
 export let IdentityAuthenticationWebAuthnAuthenticationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticationResult>;
 export let IdentityAuthenticationWebAuthnAuthenticatorTypeSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticatorType>;
 export let IdentityAuthenticationWebAuthnCredentialInfoSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialInfo>;
+export let IdentityAuthenticationWebAuthnCredentialStatusSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialStatus>;
+export let IdentityAuthenticationWebAuthnCredentialTransitionResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialTransitionResult>;
 export let IdentityAuthenticationWebAuthnCredentialVerifyResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialVerifyResult>;
 export let IdentityAuthenticationWebAuthnRegistrationOptionsResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationOptionsResult>;
 export let IdentityAuthenticationWebAuthnRegistrationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationResult>;
@@ -28101,20 +28126,36 @@ IdentityAuthenticationWebAuthnCredentialInfoSchema = z.object({
   authenticatorType: z.lazy(() => IdentityAuthenticationWebAuthnAuthenticatorTypeSchema).optional(),
   backedUp: z.boolean().optional(),
   createdAt: z.string().datetime().optional(),
+  deactivatedAt: z.string().datetime().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isDefault: z.boolean().optional(),
   isPasswordless: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
+  revokedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialStatus. Lifecycle status of a WebAuthn credential. */
+IdentityAuthenticationWebAuthnCredentialStatusSchema = z.enum(['Active', 'Deactivated', 'Revoked']);
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialTransitionResult. Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+IdentityAuthenticationWebAuthnCredentialTransitionResultSchema = z.object({
+  error: z.string().nullable().optional(),
+  errorDescription: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationWebAuthnCredentialVerifyResult. Result of verifying a WebAuthn credential. */
 IdentityAuthenticationWebAuthnCredentialVerifyResultSchema = z.object({
   error: z.string().nullable().optional(),
+  isDeactivated: z.boolean().optional(),
   isExpired: z.boolean().optional(),
   isRevoked: z.boolean().optional(),
   isValid: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   signatureCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
   success: z.boolean().optional(),
 });
 

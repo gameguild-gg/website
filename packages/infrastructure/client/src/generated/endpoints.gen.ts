@@ -13002,7 +13002,9 @@ export const getAuthWebauthnCredentialsForGetAuthWebauthnCredentialsByCredential
 } as const;
 
 /**
- * Delete a WebAuthn credential.
+ * Delete a WebAuthn credential. Deletion performs a terminal revocation:
+ * the deleted credential can never be restored. Use
+ * `:deactivate` for a reversible transition.
  */
 export interface DeleteAuthWebauthnCredentialsInput {
   credentialId: string;
@@ -13043,6 +13045,38 @@ export const headAuthWebauthnCredentialsEndpoint = {
   operationId: 'headAuthWebauthnCredentials' as const,
   method: 'HEAD' as const,
   path: '/v1/auth/webauthn/credentials/{credentialId}' as const,
+  tags: ['AuthWebauthn'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverse a temporary deactivation of a WebAuthn credential, returning it to
+ * active use. Revoked credentials are terminal and are never reactivated.
+ */
+export interface PostAuthWebauthnCredentialsActivateInput {
+  credentialId: string;
+}
+export type PostAuthWebauthnCredentialsActivateOutput = void;
+export const postAuthWebauthnCredentialsActivateEndpoint = {
+  operationId: 'postAuthWebauthnCredentialsActivate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/webauthn/credentials/{credentialId}:activate' as const,
+  tags: ['AuthWebauthn'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Temporarily deactivate a WebAuthn credential. Deactivation is reversible via
+ * `:activate`; a revoked credential can never be deactivated or restored.
+ */
+export interface PostAuthWebauthnCredentialsDeactivateInput {
+  credentialId: string;
+}
+export type PostAuthWebauthnCredentialsDeactivateOutput = void;
+export const postAuthWebauthnCredentialsDeactivateEndpoint = {
+  operationId: 'postAuthWebauthnCredentialsDeactivate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/webauthn/credentials/{credentialId}:deactivate' as const,
   tags: ['AuthWebauthn'] as const,
   requiresAuth: true,
 } as const;
@@ -26030,6 +26064,8 @@ export const endpoints = {
   deleteAuthWebauthnCredentials: deleteAuthWebauthnCredentialsEndpoint,
   patchAuthWebauthnCredentials: patchAuthWebauthnCredentialsEndpoint,
   headAuthWebauthnCredentials: headAuthWebauthnCredentialsEndpoint,
+  postAuthWebauthnCredentialsActivate: postAuthWebauthnCredentialsActivateEndpoint,
+  postAuthWebauthnCredentialsDeactivate: postAuthWebauthnCredentialsDeactivateEndpoint,
   postAuthWebauthnCredentialsVerify: postAuthWebauthnCredentialsVerifyEndpoint,
   postAuthWebauthnRegistrationBegin: postAuthWebauthnRegistrationBeginEndpoint,
   postAuthWebauthnRegistrationComplete: postAuthWebauthnRegistrationCompleteEndpoint,
