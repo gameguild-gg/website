@@ -234,6 +234,22 @@ public static class Permissions
 
     /// <summary>Report assets for moderation</summary>
     public const string AssetsReport = AssetsPermission.Keys.Report;
+
+    // ========================
+    // MODERATION PERMISSIONS
+    // ========================
+
+    /// <summary>Moderate content (edit, hide, restore)</summary>
+    public const string ModerationModerate = ModerationPermission.Keys.Moderate;
+
+    /// <summary>Flag content for review</summary>
+    public const string ModerationFlag = ModerationPermission.Keys.Flag;
+
+    /// <summary>Ban members</summary>
+    public const string ModerationBan = ModerationPermission.Keys.Ban;
+
+    /// <summary>Warn members</summary>
+    public const string ModerationWarn = ModerationPermission.Keys.Warn;
 }
 
 /// <summary>

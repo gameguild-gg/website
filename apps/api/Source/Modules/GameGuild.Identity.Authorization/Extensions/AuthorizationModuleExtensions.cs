@@ -353,7 +353,7 @@ public static class AuthorizationModuleExtensions
     /// <summary>
     ///     Registers the unified 3-layer authorization architecture services.
     ///     Layer 1: Policy Gates (DENY-WINS) - Conditional, ABAC, Environment
-    ///     Layer 2: Permission Resolution (ALLOW-WINS) - RBAC, Global, Tenant, Direct
+    ///     Layer 2: Permission Resolution (DENY-WINS, deny-by-default) - RBAC, Global, Tenant, Direct, Resource
     ///     Layer 3: Permission Check (binary allow/deny)
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -374,55 +374,11 @@ public static class AuthorizationModuleExtensions
         // Layer 2: Permission resolvers
         services.AddScoped<IRbacPermissionResolver, RbacPermissionResolver>();
 
-        // Layer 2: Permission stores (interfaces defined in EffectivePermissionResolverService)
-        // These are adapters to existing stores
-        services.AddScoped<ITenantPermissionStore>(sp =>
-        {
-            // Adapt existing TenantPermissionRepository
-            var repo = sp.GetRequiredService<ITenantPermissionRepository>();
-            return new TenantPermissionStoreAdapter(repo);
-        });
-        services.AddScoped<IResourcePermissionStore>(sp =>
-        {
-            // Adapt existing ResourcePermissionService
-            var resourcePermissionService = sp.GetRequiredService<IResourcePermissionService>();
-            return new ResourcePermissionStoreAdapter(resourcePermissionService);
-        });
-
-        // Layer 2: Unified Permission Resolver (ALLOW-WINS)
+        // Layer 2: Unified effective-permission resolver (DENY-WINS, fail-closed).
+        // Single resolution contract for authorization entry points and permission-query
+        // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
 
         return services;
     }
-}
-
-/// <summary>
-///     Adapter to bridge ITenantPermissionRepository to ITenantPermissionStore.
-/// </summary>
-internal class TenantPermissionStoreAdapter(ITenantPermissionRepository repository) : ITenantPermissionStore
-{
-    public async Task<TenantPermission?> GetPermissionAsync(Guid tenantId, CancellationToken ct = default)
-        => await repository.GetByUserAndTenantAsync(null, tenantId, ct).ConfigureAwait(false);
-
-    public async Task<IReadOnlyList<TenantPermission>> GetAllPermissionsAsync(Guid tenantId, CancellationToken ct = default)
-        => await repository.GetByTenantAsync(tenantId, ct).ConfigureAwait(false);
-}
-
-/// <summary>
-///     Adapter to bridge IResourcePermissionService to IResourcePermissionStore.
-/// </summary>
-internal class ResourcePermissionStoreAdapter(IResourcePermissionService service) : IResourcePermissionStore
-{
-    public async Task<IReadOnlyList<ResourceUserPermission>> GetUserPermissionsAsync(
-        Guid userId,
-        Guid tenantId,
-        CancellationToken ct = default)
-        => await service.GetUserResourcesAsync(new CQRS.Models.TenantId(tenantId), userId, null, ct).ConfigureAwait(false);
-
-    public Task<IReadOnlyList<ResourceUserPermission>> GetResourcePermissionsAsync(
-        Guid resourceId,
-        CancellationToken ct = default)
-        // Note: IResourcePermissionService doesn't have a direct "by resource id" method
-        // This adapter returns empty - implementations should use GetResourceUsersAsync instead
-        => Task.FromResult<IReadOnlyList<ResourceUserPermission>>([]);
 }

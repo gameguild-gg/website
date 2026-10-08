@@ -596,6 +596,65 @@ public sealed class AssetsPermission : Permission
     public static readonly AssetsPermission Report = new(Keys.Report, "Report assets for moderation");
 }
 
+/// <summary>
+///     Strongly-typed permissions for moderation operations.
+///     Covers the cross-cutting moderation duties (moderate content, flag for
+///     review, ban members, warn members) that apply across content resources.
+/// </summary>
+/// <remarks>
+///     <para>
+///         Use <see cref="Keys"/> for attribute usage: [RequirePermission(ModerationPermission.Keys.Moderate)]
+///     </para>
+///     <para>
+///         Use the static readonly fields for runtime checks: actor.HasPermission(ModerationPermission.Moderate)
+///     </para>
+/// </remarks>
+public sealed class ModerationPermission : Permission
+{
+    private ModerationPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    /// <example>
+    ///     [RequirePermission(ModerationPermission.Keys.Moderate)]
+    ///     public IActionResult ReviewQueue() { }
+    /// </example>
+    public static class Keys
+    {
+        /// <summary>Moderate content (edit, hide, restore)</summary>
+        public const string Moderate = "moderation:moderate";
+
+        /// <summary>Flag content for review</summary>
+        public const string Flag = "moderation:flag";
+
+        /// <summary>Ban members</summary>
+        public const string Ban = "moderation:ban";
+
+        /// <summary>Warn members</summary>
+        public const string Warn = "moderation:warn";
+    }
+
+    /// <summary>Moderate content (edit, hide, restore)</summary>
+    public static readonly ModerationPermission Moderate = new(Keys.Moderate, "Moderate content (edit, hide, restore)");
+
+    /// <summary>Flag content for review</summary>
+    public static readonly ModerationPermission Flag = new(Keys.Flag, "Flag content for review");
+
+    /// <summary>Ban members</summary>
+    public static readonly ModerationPermission Ban = new(Keys.Ban, "Ban members");
+
+    /// <summary>Warn members</summary>
+    public static readonly ModerationPermission Warn = new(Keys.Warn, "Warn members");
+}
+
 /// <summary>Strongly-typed permission for platform-level wallet administration.</summary>
 public sealed class WalletsPermission : Permission
 {
