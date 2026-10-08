@@ -35,7 +35,12 @@ warning is logged. Invalid context never falls back to global defaults.
 4. **Global defaults** — the data row `UserId = null, TenantId = null`.
 5. **Tenant defaults** — the data row `UserId = null, TenantId = <current tenant>`.
 6. **Direct grants** — the data row `UserId = <current user>, TenantId = <current tenant>`.
-7. **Resource grants** — `ResourceUserPermission` rows for the current user and tenant.
+7. **Just-in-Time elevation grants** (issue #341) — approved `JitElevationRequest` rows for
+   the current user and tenant that are inside their time window
+   (`IsGrantInForce`). Only tenant-scoped (resource-unscoped) elevations contribute,
+   and `admin:*` is never grantable through elevation. JIT grants remain subject to
+   DENY-WINS and are attributed to `PermissionSource.TemporaryElevation`.
+8. **Resource grants** — `ResourceUserPermission` rows for the current user and tenant.
    They contribute **only** when the context carries the exact matching
    (`ResourceType`, `ResourceId`) pair.
 

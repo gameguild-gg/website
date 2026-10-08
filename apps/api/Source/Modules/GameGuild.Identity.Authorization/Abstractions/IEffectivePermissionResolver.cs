@@ -22,6 +22,7 @@ namespace GameGuild.Identity.Authorization;
 ///             <item>Global defaults (data-driven row UserId=null, TenantId=null)</item>
 ///             <item>Tenant defaults (UserId=null, TenantId=current tenant)</item>
 ///             <item>Direct user grants (UserId=current user, TenantId=current tenant)</item>
+///             <item>Just-in-Time elevation grants — approved, inside their time window, tenant-scoped only, never <c>admin:*</c> (issue #341)</item>
 ///             <item>Resource grants — only when the context carries a resource type and id that match the grant</item>
 ///         </list>
 ///     </para>

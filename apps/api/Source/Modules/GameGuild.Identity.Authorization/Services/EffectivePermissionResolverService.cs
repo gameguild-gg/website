@@ -27,7 +27,8 @@ public sealed class EffectivePermissionResolverService(
     IEnumerable<IAuthorizationRolePermissionProvider> rolePermissionProviders,
     IResourcePermissionService resourcePermissionService,
     IOptions<AuthorizationOptions> authorizationOptions,
-    ILogger<EffectivePermissionResolverService> logger
+    ILogger<EffectivePermissionResolverService> logger,
+    IJitElevationRequestRepository? jitElevationRepository = null
 ) : IEffectivePermissionResolver
 {
     private readonly AuthorizationOptions _authOptions = authorizationOptions.Value;
@@ -110,7 +111,28 @@ public sealed class EffectivePermissionResolverService(
         // Layer 6: Direct user grants (UserId=current user, TenantId=current tenant).
         await AddTenantPermissionLayerAsync(context.UserId, context.TenantId, PermissionSource.DirectGrant, allows, denies, sources, ct).ConfigureAwait(false);
 
-        // Layer 7: Resource grants — only when the context names this exact resource.
+        // Layer 7: Just-in-Time elevation grants (issue #341, tenant-scoped,
+        // resource-unscoped). An approved elevation inside its time window temporarily
+        // contributes its permission to the allow set. JIT grants remain subject to
+        // DENY-WINS below, and "admin:*" is never grantable through elevation.
+        if (jitElevationRepository is not null)
+        {
+            var elevations = await jitElevationRepository
+                .GetActiveByUserAsync(context.UserId, context.TenantId, ct)
+                .ConfigureAwait(false) ?? [];
+
+            foreach (var elevation in elevations)
+            {
+                if (elevation.ResourceId is null
+                    && elevation.IsGrantInForce()
+                    && IsDelegableRolePermission(elevation.Permission))
+                {
+                    AddAllow(elevation.Permission, PermissionSource.TemporaryElevation);
+                }
+            }
+        }
+
+        // Layer 8: Resource grants — only when the context names this exact resource.
         // Resource grants never contribute to tenant-wide results (context isolation).
         if (context.HasResource)
         {

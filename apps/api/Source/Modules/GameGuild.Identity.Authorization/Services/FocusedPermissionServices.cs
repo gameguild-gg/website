@@ -439,6 +439,10 @@ public sealed class PermissionQueryService(
             return Task.FromResult(false);
         }
 
+        // Just-in-Time elevation grants are enforced inside the shared resolver
+        // (TemporaryElevation layer, issue #341): an approved elevation inside its
+        // time window temporarily grants the permission, tenant-scoped only, never
+        // "admin:*", and still subject to DENY-WINS precedence.
         return effectivePermissionResolver.HasPermissionAsync(userId.Value, tenantId.Value, permission, cancellationToken);
     }
 
@@ -462,6 +466,10 @@ public sealed class PermissionQueryService(
     ///     permission-query caller (#307) uses the documented DENY-WINS contract.
     ///     <b>SECURITY: FAIL-CLOSED</b> - a missing or invalid tenant context returns an
     ///     empty permission set; global defaults never apply without tenant isolation.
+    ///     Just-in-Time elevation grants are enforced inside the resolver (its
+    ///     TemporaryElevation layer, issue #341): approved elevations inside their time
+    ///     window contribute their permission, tenant-scoped only, never "admin:*",
+    ///     and still subject to DENY-WINS precedence.
     ///     Contract: <c>apps/api/docs/effective-permission-resolution.md</c>.
     /// </remarks>
     public async Task<List<string>> GetEffectivePermissionsAsync(
