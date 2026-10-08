@@ -102,8 +102,10 @@ invalidated when permissions change:
 
 Focused tests: `apps/api/tests/GameGuild.Identity.Authorization.UnitTests/Services/EffectivePermissionResolverServiceTests.cs`
 (absent permissions, explicit grants/denies at each layer, cross-layer conflicts,
-inheritance, tenant/resource context isolation, inactive/expired/revoked grants,
-invalid/missing contexts, system-account wildcard protection, delegable-wildcard
-exclusion, determinism) and
+inheritance, JIT elevation grants, tenant/resource context isolation,
+inactive/expired/revoked grants, invalid/missing contexts, system-account wildcard
+protection, delegable-wildcard exclusion, determinism),
 `apps/api/tests/GameGuild.Identity.Authorization.UnitTests/Services/PermissionQueryServiceTests.cs`
-(fail-closed delegation of the query surface).
+(fail-closed delegation of the query surface), and
+`apps/api/tests/GameGuild.Identity.Authorization.UnitTests/JitElevationEnforcementTests.cs`
+(JIT enforcement end-to-end through the query surface and the resolver).

@@ -22,11 +22,12 @@ public class EffectivePermissionResolverServiceTests
     private readonly Mock<IRbacPermissionResolver> _rbacResolver = new();
     private readonly Mock<IAuthorizationRolePermissionProvider> _roleProvider = new();
     private readonly Mock<IResourcePermissionService> _resourceService = new();
+    private readonly Mock<IJitElevationRequestRepository> _jitRepository = new();
 
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _tenantId = Guid.NewGuid();
 
-    private EffectivePermissionResolverService CreateSut(Guid? systemAccountId = null)
+    private EffectivePermissionResolverService CreateSut(Guid? systemAccountId = null, bool withJitElevations = false)
     {
         var options = Options.Create(new GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions
         {
@@ -39,7 +40,8 @@ public class EffectivePermissionResolverServiceTests
             [_roleProvider.Object],
             _resourceService.Object,
             options,
-            NullLogger<EffectivePermissionResolverService>.Instance);
+            NullLogger<EffectivePermissionResolverService>.Instance,
+            withJitElevations ? _jitRepository.Object : null);
     }
 
     private void SetupNoData()
@@ -253,6 +255,113 @@ public class EffectivePermissionResolverServiceTests
 
         result.Permissions.Should().Contain("shared:role:perm");
         result.Sources["shared:role:perm"].Should().Be(PermissionSource.Role);
+    }
+
+    // ── Just-in-Time elevation grants (#341, TemporaryElevation layer) ─────
+
+    private JitElevationRequest Elevation(
+        string permission,
+        ElevationRequestStatus status = ElevationRequestStatus.Active,
+        Guid? resourceId = null,
+        DateTime? startsAt = null,
+        int durationMinutes = 30)
+    {
+        var start = startsAt ?? SystemClock.UtcNow.AddMinutes(-1);
+        return new JitElevationRequest
+        {
+            RequesterId = _userId,
+            Permission = permission,
+            ResourceId = resourceId,
+            StartsAt = start,
+            ExpiresAt = start.AddMinutes(durationMinutes),
+            Status = status
+        };
+    }
+
+    [Fact]
+    public async Task ResolveAsync_InForceJitElevation_ContributesWithTemporaryElevationSource()
+    {
+        SetupNoData();
+        _jitRepository
+            .Setup(r => r.GetActiveByUserAsync(_userId, _tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Elevation("billing:export")]);
+
+        var result = await CreateSut(withJitElevations: true)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().Contain("billing:export");
+        result.Sources["billing:export"].Should().Be(PermissionSource.TemporaryElevation);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ExpiredJitElevation_DoesNotContribute()
+    {
+        SetupNoData();
+        _jitRepository
+            .Setup(r => r.GetActiveByUserAsync(_userId, _tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Elevation("billing:export", startsAt: SystemClock.UtcNow.AddHours(-2), durationMinutes: 30)]);
+
+        var result = await CreateSut(withJitElevations: true)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("billing:export");
+    }
+
+    [Fact]
+    public async Task ResolveAsync_RevokedJitElevation_DoesNotContribute()
+    {
+        SetupNoData();
+        _jitRepository
+            .Setup(r => r.GetActiveByUserAsync(_userId, _tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Elevation("billing:export", status: ElevationRequestStatus.Revoked)]);
+
+        var result = await CreateSut(withJitElevations: true)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("billing:export");
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ResourceScopedJitElevation_DoesNotContributeToTenantResolution()
+    {
+        SetupNoData();
+        _jitRepository
+            .Setup(r => r.GetActiveByUserAsync(_userId, _tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Elevation("billing:export", resourceId: Guid.NewGuid())]);
+
+        var result = await CreateSut(withJitElevations: true)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("billing:export");
+    }
+
+    [Fact]
+    public async Task ResolveAsync_JitElevationWildcard_NotGrantable()
+    {
+        SetupNoData();
+        _jitRepository
+            .Setup(r => r.GetActiveByUserAsync(_userId, _tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Elevation("admin:*")]);
+
+        var result = await CreateSut(withJitElevations: true)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("admin:*");
+    }
+
+    [Fact]
+    public async Task ResolveAsync_DirectDeny_OverridesJitElevation()
+    {
+        SetupNoData();
+        SetupTenantRow(_userId, _tenantId, [], ["billing:export"]);
+        _jitRepository
+            .Setup(r => r.GetActiveByUserAsync(_userId, _tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Elevation("billing:export")]);
+
+        var result = await CreateSut(withJitElevations: true)
+            .ResolveAsync(EffectivePermissionContext.ForTenant(_userId, _tenantId));
+
+        result.Permissions.Should().NotContain("billing:export");
     }
 
     // ── Grant validity: inactive / expired / revoked ───────────────────────
