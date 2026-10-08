@@ -9,7 +9,12 @@ namespace GameGuild.Compliance.Audit;
 
 public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContextAccessor httpContextAccessor, ILogger<AuditService> logger) : IAuditService
 {
-    public async Task LogAsync(CreateAuditLogRequest request)
+    public Task LogAsync(CreateAuditLogRequest request)
+    {
+        return TryLogAsync(request);
+    }
+
+    public async Task<bool> TryLogAsync(CreateAuditLogRequest request)
     {
         try
         {
@@ -34,11 +39,16 @@ public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContext
                 request.UserId,
                 request.Success ? "Success" : "Failed"
             );
+
+            return true;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to create audit log for action {ActionType}", request.ActionType);
-            // Don't throw - audit logging should not break business operations
+            // Don't throw - audit logging should not break business operations, but the
+            // observable false return lets callers that must not swallow audit delivery
+            // failures surface them.
+            return false;
         }
     }
 
