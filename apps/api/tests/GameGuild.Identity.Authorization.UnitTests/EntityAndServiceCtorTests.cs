@@ -537,9 +537,10 @@ public class EntityAndServiceCtorTests
     public void EffectivePermissionResolverService_CanConstruct()
     {
         var svc = new EffectivePermissionResolverService(
+            Mock.Of<ITenantPermissionRepository>(),
             Mock.Of<IRbacPermissionResolver>(),
-            Mock.Of<ITenantPermissionStore>(),
-            Mock.Of<IResourcePermissionStore>(),
+            [Mock.Of<IAuthorizationRolePermissionProvider>()],
+            Mock.Of<IResourcePermissionService>(),
             Options.Create(new GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions()),
             NullLogger<EffectivePermissionResolverService>.Instance
         );

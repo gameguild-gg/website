@@ -334,12 +334,35 @@ public class JitElevationPermissionEvaluationTests
 
     public JitElevationPermissionEvaluationTests()
     {
-        _sut = new PermissionQueryService(
-            _repoMock.Object,
-            _membershipMock.Object,
-            NullLogger<PermissionQueryService>.Instance,
-            rolePermissionProviders: null,
-            jitElevationRepository: _jitMock.Object);
+        // The query surface delegates to the shared IEffectivePermissionResolver
+        // (issue #330), so JIT enforcement is exercised end-to-end through the real
+        // resolver wired to the same mocked data stores.
+        _sut = CreateSut(_repoMock.Object, _membershipMock.Object, _jitMock.Object);
+    }
+
+    private static PermissionQueryService CreateSut(
+        ITenantPermissionRepository repository,
+        ITenantMembershipChecker membershipChecker,
+        IJitElevationRequestRepository? jitElevationRepository)
+    {
+        var rbacMock = new Mock<IRbacPermissionResolver>();
+        rbacMock
+            .Setup(r => r.ResolvePermissionsAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RbacResolutionResult(new HashSet<string>(), new HashSet<string>(), []));
+        var resolver = new EffectivePermissionResolverService(
+            repository,
+            rbacMock.Object,
+            [],
+            Mock.Of<IResourcePermissionService>(),
+            Microsoft.Extensions.Options.Options.Create(
+                new GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions()),
+            NullLogger<EffectivePermissionResolverService>.Instance,
+            jitElevationRepository);
+        return new PermissionQueryService(
+            repository,
+            membershipChecker,
+            resolver,
+            NullLogger<PermissionQueryService>.Instance);
     }
 
     private void SetupNoBaseGrants(Guid userId)
@@ -428,10 +451,13 @@ public class JitElevationPermissionEvaluationTests
         var tenantId = Guid.NewGuid();
         SetupNoBaseGrants(userId);
         _repoMock
-            .Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<TenantPermission>
+            .Setup(r => r.GetByUserAndTenantAsync(userId, tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission
             {
-                new() { UserId = userId, TenantId = tenantId, Permissions = [], DenyPermissions = ["billing:export"] }
+                UserId = userId,
+                TenantId = tenantId,
+                Permissions = [],
+                DenyPermissions = ["billing:export"]
             });
         _jitMock
             .Setup(j => j.GetActiveByUserAsync(userId, tenantId, It.IsAny<CancellationToken>()))
@@ -484,15 +510,15 @@ public class JitElevationPermissionEvaluationTests
             .Setup(r => r.GetByUserAndTenantAsync(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TenantPermission?)null);
         _repoMock
-            .Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<TenantPermission>
+            .Setup(r => r.GetByUserAndTenantAsync(userId, tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission
             {
-                new() { UserId = userId, TenantId = tenantId, Permissions = ["user-perm"], DenyPermissions = [] }
+                UserId = userId,
+                TenantId = tenantId,
+                Permissions = ["user-perm"],
+                DenyPermissions = []
             });
-        var sut = new PermissionQueryService(
-            _repoMock.Object,
-            _membershipMock.Object,
-            NullLogger<PermissionQueryService>.Instance);
+        var sut = CreateSut(_repoMock.Object, _membershipMock.Object, jitElevationRepository: null);
 
         var result = await sut.GetEffectivePermissionsAsync(userId, tenantId);
 
