@@ -35,7 +35,9 @@ internal sealed class AuditPermissionEvaluationLogSink(IAuditService auditServic
                 : $"Permission evaluation denied '{string.Join("', '", permissions)}' on {record.ResourceType} '{record.ResourceId ?? "-"}'.",
             Metadata = new
             {
-                record.Outcome,
+                // Serialize as the outcome name; enums would serialize as numbers
+                // and make the durable audit metadata harder to query.
+                Outcome = record.Outcome.ToString(),
                 record.Operation,
                 record.Source,
                 record.Reason,

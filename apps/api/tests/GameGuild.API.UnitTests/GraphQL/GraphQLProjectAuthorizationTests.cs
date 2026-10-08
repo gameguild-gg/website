@@ -55,7 +55,7 @@ public sealed class GraphQLProjectAuthorizationTests
                 record.TenantId == Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85") &&
                 record.ResourceType == "Project" &&
                 record.ResourceId == "b659b7bf-6281-42e6-a7ef-23d296cff5dd" &&
-                record.RequiredPermissions.SequenceEqual([PermissionType.Read.ToString()]) &&
+                record.RequiredPermissions.SequenceEqual(new[] { PermissionType.Read.ToString() }) &&
                 record.Outcome == PermissionEvaluationOutcome.Deny &&
                 record.Source == "graphql" &&
                 record.Operation == "guarded" &&
@@ -84,11 +84,11 @@ public sealed class GraphQLProjectAuthorizationTests
                 record.TenantId == Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85") &&
                 record.ResourceType == "Project" &&
                 record.ResourceId == projectId.ToString("D") &&
-                record.RequiredPermissions.SequenceEqual([PermissionType.Read.ToString()]) &&
+                record.RequiredPermissions.SequenceEqual(new[] { PermissionType.Read.ToString() }) &&
                 record.Outcome == PermissionEvaluationOutcome.Allow &&
                 record.Source == "graphql" &&
                 record.Operation == "guarded" &&
-                record.Reason is null);
+                record.Reason == null);
         counters.ResolverCount.Should().Be(1);
     }
 
@@ -130,6 +130,7 @@ public sealed class GraphQLProjectAuthorizationTests
             new GraphQLProjectAuthorizationFake(),
             counters,
             evaluationLog);
+        using var client = app.GetTestClient();
 
         using var request = CreateRequest(
             "{ masked(projectId: \"b659b7bf-6281-42e6-a7ef-23d296cff5dd\") }");
@@ -405,8 +406,14 @@ public sealed class GraphQLProjectAuthorizationTests
         builder.Services.AddSingleton<IProjectAuthorizationService>(authorization);
         builder.Services.AddSingleton(counters);
         builder.Services.AddSingleton<IActorContextAccessor>(new GraphQLTestActorContextAccessor());
-        builder.Services.AddSingleton<IPermissionEvaluationLogService>(
-            evaluationLog ?? new GraphQLPermissionEvaluationLogFake());
+        // Route through the real log service so captured records get the same
+        // stamping and sink fan-out behavior as production; the fake only acts
+        // as the capture sink.
+        if (evaluationLog is not null)
+        {
+            builder.Services.AddSingleton<IPermissionEvaluationLogSink>(evaluationLog);
+        }
+        builder.Services.AddSingleton<IPermissionEvaluationLogService, PermissionEvaluationLogService>();
         builder.Services.AddGraphQLServer()
             .AddAuthorization()
             .AddDirectiveType<ProjectAuthorizationDirectiveType>()
@@ -436,7 +443,7 @@ public sealed class GraphQLProjectAuthorizationTests
         public void ClearActorContext() => _actorContext = GameGuild.Identity.Context.Actors.ActorContext.Anonymous;
     }
 
-    private sealed class GraphQLPermissionEvaluationLogFake : IPermissionEvaluationLogService
+    private sealed class GraphQLPermissionEvaluationLogFake : IPermissionEvaluationLogSink
     {
         private readonly ConcurrentQueue<PermissionEvaluationRecord> _records = new();
 
@@ -444,22 +451,22 @@ public sealed class GraphQLProjectAuthorizationTests
 
         public IReadOnlyCollection<PermissionEvaluationRecord> Records => _records.ToArray();
 
-        public Task<PermissionEvaluationLogResult> RecordAsync(
+        public Task<bool> TryRecordAsync(
             PermissionEvaluationRecord record,
             CancellationToken cancellationToken = default)
         {
             if (ErrorToThrow is { } exception)
             {
-                return Task.FromException<PermissionEvaluationLogResult>(exception);
+                return Task.FromException<bool>(exception);
             }
 
             if (cancellationToken.IsCancellationRequested)
             {
-                return Task.FromCanceled<PermissionEvaluationLogResult>(cancellationToken);
+                return Task.FromCanceled<bool>(cancellationToken);
             }
 
             _records.Enqueue(record);
-            return Task.FromResult(new PermissionEvaluationLogResult(true, 1, 0));
+            return Task.FromResult(true);
         }
     }
 
