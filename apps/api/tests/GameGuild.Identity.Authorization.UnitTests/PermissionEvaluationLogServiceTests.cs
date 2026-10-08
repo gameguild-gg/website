@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GameGuild.Identity.Authorization.UnitTests;
 
@@ -37,7 +38,7 @@ public sealed class PermissionEvaluationLogServiceTests
                     record.TenantId == Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85") &&
                     record.ResourceType == "Project" &&
                     record.ResourceId == "b659b7bf-6281-42e6-a7ef-23d296cff5dd" &&
-                    record.RequiredPermissions.SequenceEqual(["Read", "Edit"]) &&
+                    record.RequiredPermissions.SequenceEqual(new[] { "Read", "Edit" }) &&
                     record.Outcome == PermissionEvaluationOutcome.Allow &&
                     record.Source == "graphql" &&
                     record.Operation == "guarded" &&
