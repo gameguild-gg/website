@@ -150,10 +150,11 @@ public static class CachingServiceExtensions
             }
         });
 
-        services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+        services.TryAddSingleton<IConnectionMultiplexer>(sp =>
         {
             var configuration = ConfigurationOptions.Parse(redisConnectionString);
             configuration.AbortOnConnectFail = false;
+            ApplyRedisTopology(configuration, sp.GetRequiredService<IOptions<AuthorizationCacheOptions>>().Value);
             return ConnectionMultiplexer.Connect(configuration);
         });
         services.TryAddSingleton<ICacheInvalidationPublisher, RedisPermissionCacheInvalidationPublisher>();
@@ -161,5 +162,62 @@ public static class CachingServiceExtensions
             RedisPermissionCacheInvalidationSubscriber>());
 
         return services;
+    }
+
+    /// <summary>
+    ///     Applies the configured Redis topology and failover pass-through settings to a parsed
+    ///     <see cref="ConfigurationOptions"/>. Values left unset (<c>null</c>) do not override the
+    ///     connection string or client defaults.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <b>Wired:</b> <see cref="AuthorizationCacheOptions.RedisServiceName"/> (Sentinel
+    ///         master set name — list the Sentinel endpoints themselves in the connection string),
+    ///         <see cref="AuthorizationCacheOptions.RedisProxy"/> (<c>None</c>/<c>Twemproxy</c>/
+    ///         <c>Envoyproxy</c>), <see cref="AuthorizationCacheOptions.RedisConnectTimeoutMilliseconds"/>,
+    ///         and <see cref="AuthorizationCacheOptions.RedisConnectRetry"/> (failover retries; the
+    ///         multiplexer is always built with <c>AbortOnConnectFail = false</c>).
+    ///     </para>
+    ///     <para>
+    ///         <b>Cluster:</b> no dedicated option exists because StackExchange.Redis follows
+    ///         MOVED/ASK redirects automatically — list the cluster endpoints comma-separated in
+    ///         the connection string.
+    ///     </para>
+    ///     <para>
+    ///         <b>Deferred:</b> TLS client-certificate selection and per-endpoint Sentinel
+    ///         credentials are not exposed here; configure them through the connection string.
+    ///     </para>
+    /// </remarks>
+    public static void ApplyRedisTopology(ConfigurationOptions configuration, AuthorizationCacheOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (!string.IsNullOrWhiteSpace(options.RedisServiceName))
+        {
+            configuration.ServiceName = options.RedisServiceName.Trim();
+        }
+
+        if (options.RedisProxy is not null)
+        {
+            if (!Enum.TryParse<Proxy>(options.RedisProxy.Trim(), ignoreCase: true, out var proxy) ||
+                !Enum.IsDefined(proxy))
+            {
+                throw new InvalidOperationException(
+                    $"RedisProxy '{options.RedisProxy}' is not supported. Use None, Twemproxy, or Envoyproxy.");
+            }
+
+            configuration.Proxy = proxy;
+        }
+
+        if (options.RedisConnectTimeoutMilliseconds is > 0)
+        {
+            configuration.ConnectTimeout = options.RedisConnectTimeoutMilliseconds.Value;
+        }
+
+        if (options.RedisConnectRetry is >= 0)
+        {
+            configuration.ConnectRetry = options.RedisConnectRetry.Value;
+        }
     }
 }
