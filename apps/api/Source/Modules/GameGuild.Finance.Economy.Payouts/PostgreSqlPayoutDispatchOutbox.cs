@@ -76,23 +76,39 @@ public sealed class PostgreSqlPayoutDispatchOutboxProcessor : IPayoutDispatchOut
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workerId);
-        if (workerId.Trim().Length > 200) throw new ArgumentOutOfRangeException(nameof(workerId));
+        if (workerId.Trim().Length > 200)
+        {
+            throw new ArgumentOutOfRangeException(nameof(workerId));
+        }
+
         var lease = await ClaimAsync(workerId.Trim(), now, cancellationToken);
-        if (lease is null) return null;
+        if (lease is null)
+        {
+            return null;
+        }
 
         PayoutDispatchCommand command;
         try
         {
             if (!string.Equals(Hash(lease.Payload), lease.PayloadHash, StringComparison.Ordinal))
+            {
                 throw new PayoutEvidenceException("The durable payout dispatch payload hash is invalid.");
+            }
+
             command = JsonSerializer.Deserialize<PayoutDispatchCommand>(lease.Payload, JsonOptions)
                 ?? throw new PayoutEvidenceException("The durable payout dispatch payload is invalid.");
             if (lease.OperationId != command.OperationId)
+            {
                 throw new PayoutEvidenceException(
-                    "The durable payout dispatch payload is not bound to its outbox operation.");
+                "The durable payout dispatch payload is not bound to its outbox operation.");
+            }
+
             var receipt = await _provider.DispatchAsync(command, cancellationToken);
             if (!_evidence.Verify(receipt))
+            {
                 throw new PayoutEvidenceException("The payout provider dispatch receipt is invalid.");
+            }
+
             ValidateBinding(command, receipt);
 
             return await PostgreSqlTransactionExecutor.ExecuteAsync(
@@ -101,13 +117,18 @@ public sealed class PostgreSqlPayoutDispatchOutboxProcessor : IPayoutDispatchOut
             var currentOutbox = await _db.Set<PayoutDispatchOutboxRow>()
                 .SingleAsync(row => row.Id == lease.Id, cancellationToken);
             if (currentOutbox.CompletedAt.HasValue)
-                return new PayoutDispatchOutboxResult(
+                {
+                    return new PayoutDispatchOutboxResult(
                     command.OperationId, receipt.Outcome, false, currentOutbox.AttemptCount);
-            if (!string.Equals(currentOutbox.LeaseOwner, workerId.Trim(), StringComparison.Ordinal) ||
-                !currentOutbox.LeaseExpiresAt.HasValue || currentOutbox.LeaseExpiresAt.Value < now)
-                throw new PayoutStaleCommandException("The payout dispatch outbox lease is stale.");
+                }
 
-            var operation = _operations.Get(command.OperationId);
+                if (!string.Equals(currentOutbox.LeaseOwner, workerId.Trim(), StringComparison.Ordinal) ||
+                !currentOutbox.LeaseExpiresAt.HasValue || currentOutbox.LeaseExpiresAt.Value < now)
+                {
+                    throw new PayoutStaleCommandException("The payout dispatch outbox lease is stale.");
+                }
+
+                var operation = _operations.Get(command.OperationId);
             if (operation.State == PayoutOperationState.Dispatching)
             {
                 var changed = receipt.Outcome == PayoutProviderOutcome.Ambiguous
@@ -157,8 +178,11 @@ public sealed class PostgreSqlPayoutDispatchOutboxProcessor : IPayoutDispatchOut
                 """)
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
-            return null;
-        row.LeaseOwner = workerId;
+            {
+                return null;
+            }
+
+            row.LeaseOwner = workerId;
         row.LeaseExpiresAt = now.AddMinutes(2);
         row.AttemptCount = checked(row.AttemptCount + 1);
         await _db.SaveChangesAsync(cancellationToken);
@@ -188,8 +212,10 @@ public sealed class PostgreSqlPayoutDispatchOutboxProcessor : IPayoutDispatchOut
             !string.Equals(receipt.ProviderAccountId, command.ProviderAccountId, StringComparison.Ordinal) ||
             !string.Equals(receipt.DestinationHash, command.DestinationHash, StringComparison.Ordinal) ||
             receipt.ObservedAt < command.RequestedAt)
+        {
             throw new PayoutProviderBindingException(
-                "The payout dispatch receipt is not bound to the durable outbox command.");
+            "The payout dispatch receipt is not bound to the durable outbox command.");
+        }
     }
 
     private static string Hash(string value) => Convert.ToHexStringLower(

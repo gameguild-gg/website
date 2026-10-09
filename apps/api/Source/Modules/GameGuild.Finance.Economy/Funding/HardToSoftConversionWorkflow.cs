@@ -54,7 +54,9 @@ public sealed class PostgreSqlHardToSoftConversionWorkflow(
         var key = new IdempotencyKey(request.IdempotencyKey);
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             throw new UnauthorizedAccessException("Economy conversion requires an authenticated user and tenant context.");
+        }
 
         var requestedAt = DateTimeOffset.UtcNow;
         var policy = await policyResolver.ResolveAsync(
@@ -76,7 +78,9 @@ public sealed class PostgreSqlHardToSoftConversionWorkflow(
             .SingleOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (walletId is null)
+        {
             throw new EconomySelfServiceCommandRejectedException("The authenticated user has no active Economy wallet.");
+        }
 
         var principalPostingId = DeterministicGuid("hard-to-soft:principal", key.Value);
         var feePostingId = feeHardCoinUnits == 0
@@ -136,7 +140,9 @@ public sealed class PostgreSqlHardToSoftConversionWorkflow(
         }
 
         if (context is not DbContext dbContext || !dbContext.Database.IsRelational())
+        {
             return await IssueAndPostAsync().ConfigureAwait(false);
+        }
 
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
                 dbContext, IsolationLevel.Serializable, _ => IssueAndPostAsync(), cancellationToken)
@@ -146,13 +152,17 @@ public sealed class PostgreSqlHardToSoftConversionWorkflow(
     internal static IReadOnlyList<Guid> ParseRootIds(string sourceRoots)
     {
         if (string.IsNullOrWhiteSpace(sourceRoots))
+        {
             throw new EconomySelfServiceCommandRejectedException("The risk decision does not authorize any source roots.");
+        }
 
         try
         {
             using var document = JsonDocument.Parse(sourceRoots);
             if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
                 throw new EconomySelfServiceCommandRejectedException("The risk decision source roots are malformed.");
+            }
 
             var roots = document.RootElement
                 .EnumerateArray()
@@ -160,7 +170,9 @@ public sealed class PostgreSqlHardToSoftConversionWorkflow(
                 .Select(value => Guid.TryParse(value, out var root) ? root : Guid.Empty)
                 .ToArray();
             if (roots.Length == 0 || roots.Any(root => root == Guid.Empty) || roots.Distinct().Count() != roots.Length)
+            {
                 throw new EconomySelfServiceCommandRejectedException("The risk decision source roots are malformed.");
+            }
 
             return roots.OrderBy(root => root).ToArray();
         }

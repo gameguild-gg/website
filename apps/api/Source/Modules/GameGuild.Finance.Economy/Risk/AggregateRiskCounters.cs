@@ -23,7 +23,11 @@ public readonly record struct RiskLimitKey
 {
     public RiskLimitKey(RiskLimitDimension dimension, string subjectHash)
     {
-        if (!Enum.IsDefined(dimension)) throw new ArgumentOutOfRangeException(nameof(dimension));
+        if (!Enum.IsDefined(dimension))
+        {
+            throw new ArgumentOutOfRangeException(nameof(dimension));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(subjectHash);
         Dimension = dimension;
         SubjectHash = subjectHash.Trim();
@@ -39,7 +43,11 @@ public sealed record AggregateRiskLimit
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(counterVersion);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxUnits);
-        if (window <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window));
+        if (window <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(window));
+        }
+
         Key = key;
         CounterVersion = counterVersion;
         MaxUnits = maxUnits;
@@ -76,7 +84,10 @@ public sealed class AggregateRiskCounterStore
     {
         get
         {
-            lock (_gate) return [.. _reservations.Values];
+            lock (_gate)
+            {
+                return [.. _reservations.Values];
+            }
         }
     }
 
@@ -87,13 +98,27 @@ public sealed class AggregateRiskCounterStore
         IReadOnlyCollection<AggregateRiskLimit> limits,
         DateTimeOffset reservedAt)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Reservation ID cannot be empty.", nameof(id));
-        if (!Enum.IsDefined(operation)) throw new ArgumentOutOfRangeException(nameof(operation));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Reservation ID cannot be empty.", nameof(id));
+        }
+
+        if (!Enum.IsDefined(operation))
+        {
+            throw new ArgumentOutOfRangeException(nameof(operation));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount.Units);
         ArgumentNullException.ThrowIfNull(limits);
-        if (limits.Count == 0) throw new ArgumentException("At least one aggregate risk limit is required.", nameof(limits));
+        if (limits.Count == 0)
+        {
+            throw new ArgumentException("At least one aggregate risk limit is required.", nameof(limits));
+        }
+
         if (limits.Select(limit => limit.Key).Distinct().Count() != limits.Count)
+        {
             throw new ArgumentException("Aggregate risk limit dimensions must be unique per subject.", nameof(limits));
+        }
 
         var ordered = limits.OrderBy(limit => limit.Key.Dimension)
             .ThenBy(limit => limit.Key.SubjectHash, StringComparer.Ordinal)
@@ -104,7 +129,11 @@ public sealed class AggregateRiskCounterStore
         {
             if (_reservations.TryGetValue(id, out var existing))
             {
-                if (existing.InputFingerprint == fingerprint) return existing;
+                if (existing.InputFingerprint == fingerprint)
+                {
+                    return existing;
+                }
+
                 throw new RiskDecisionReuseException("A counter reservation ID cannot be reused with different inputs.");
             }
 
@@ -112,7 +141,9 @@ public sealed class AggregateRiskCounterStore
             {
                 if (_counterVersions.TryGetValue(limit.Key, out var currentVersion) &&
                     limit.CounterVersion < currentVersion)
+                {
                     throw new StaleRiskCounterException("The aggregate risk counter version is stale.");
+                }
 
                 var allocated = _reservations.Values
                     .Where(reservation => reservation.Operation == operation &&
@@ -122,8 +153,10 @@ public sealed class AggregateRiskCounterStore
                     .Where(allocation => allocation.Key == limit.Key)
                     .Sum(allocation => allocation.Units);
                 if (amount.Units > limit.MaxUnits - allocated)
+                {
                     throw new AggregateRiskLimitExceededException(
                         $"The {limit.Key.Dimension} aggregate risk limit was exceeded.");
+                }
             }
 
             var allocations = ordered.Select(limit => new AggregateRiskCounterAllocation(
@@ -132,8 +165,11 @@ public sealed class AggregateRiskCounterStore
                 id, fingerprint, operation, amount, allocations, reservedAt);
             _reservations.Add(id, reservation);
             foreach (var limit in ordered)
+            {
                 _counterVersions[limit.Key] = Math.Max(
                     _counterVersions.GetValueOrDefault(limit.Key), limit.CounterVersion);
+            }
+
             return reservation;
         }
     }

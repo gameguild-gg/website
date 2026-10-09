@@ -68,9 +68,12 @@ public sealed class DurableDeferredAdRewardService : IDurableDeferredAdRewardSer
                 cancellationToken)
             ?? throw new AdRewardReplayException("Deferred ad reward session was not found.");
         if (session.UserId != request.ActorId)
-            throw new AdRewardRiskBindingException(
+            {
+                throw new AdRewardRiskBindingException(
                 "The actor context does not own the deferred ad reward session.");
-        var pending = await _db.Set<AdRewardPendingClaimRow>()
+            }
+
+            var pending = await _db.Set<AdRewardPendingClaimRow>()
             .SingleOrDefaultAsync(row => row.SessionId == request.SessionId, cancellationToken)
             ?? throw new AdRewardReplayException("Deferred ad reward claim was not found.");
         var completion = await _db.Set<AdRewardCompletionRow>()
@@ -80,15 +83,21 @@ public sealed class DurableDeferredAdRewardService : IDurableDeferredAdRewardSer
         {
             if (pending.ConfirmationIdempotencyKeyHash != idempotencyHash ||
                 pending.ConfirmationRequestHash != requestHash)
-                throw new AdRewardIdempotencyConflictException(
+                {
+                    throw new AdRewardIdempotencyConflictException(
                     "The deferred confirmation idempotency key is bound to different inputs.");
-            return Map(completion, true);
+                }
+
+                return Map(completion, true);
         }
         if (session.State != DurableAdRewardSessionState.Verified ||
             pending.ProviderReportId is null || pending.ConfirmedAt is null)
-            throw new AdRewardReplayException(
+            {
+                throw new AdRewardReplayException(
                 "Deferred ad reward claim has no verified provider report.");
-        var report = await _db.Set<AdProviderReportRow>()
+            }
+
+            var report = await _db.Set<AdProviderReportRow>()
             .AsNoTracking()
             .SingleAsync(row => row.Id == pending.ProviderReportId.Value, cancellationToken);
         var policy = await _policies.GetVersionAsync(
@@ -96,10 +105,12 @@ public sealed class DurableDeferredAdRewardService : IDurableDeferredAdRewardSer
         if (policy.Policy.IssuanceMode != AdRewardIssuanceMode.DeferredReport ||
             request.ConfirmedAt > report.PeriodEnd + policy.Policy.ReportStaleAfter ||
             !policy.ProviderCertified)
-            throw new AdRewardDependencyUnavailableException(
+            {
+                throw new AdRewardDependencyUnavailableException(
                 "The verified provider report or bound deferred policy is stale or unavailable.");
+            }
 
-        var accumulator = await _db.Set<AdRewardAccumulatorRow>()
+            var accumulator = await _db.Set<AdRewardAccumulatorRow>()
             .SingleOrDefaultAsync(
                 row => row.TenantId == session.TenantId && row.WalletId == session.WalletId &&
                        row.Network == session.Network,
@@ -163,10 +174,12 @@ public sealed class DurableDeferredAdRewardService : IDurableDeferredAdRewardSer
             request.ConfirmedAt,
             receipt.ReceiptHash));
         if (posting.PostingId != postingId)
-            throw new RegisteredPostingRejectedException(
+            {
+                throw new RegisteredPostingRejectedException(
                 "The deferred ad reward writer returned an unexpected posting identity.");
+            }
 
-        RecordBudgetConsumption(session, quote.RewardSoftUnits, request.ConfirmedAt);
+            RecordBudgetConsumption(session, quote.RewardSoftUnits, request.ConfirmedAt);
         RecordAttribution(session, quote, report.BatchId, request.ConfirmedAt);
         UpdateCompletion(
             completion, session, request, quote, postingId, outputLotId, receipt,
@@ -203,12 +216,17 @@ public sealed class DurableDeferredAdRewardService : IDurableDeferredAdRewardSer
             var used = existing.Where(row => row.Scope == scope && row.SubjectHash == subject)
                 .Sum(row => row.SoftUnits);
             if (softUnits > maximum - used)
+            {
                 throw new AdRewardBudgetExceededException($"Ad reward {scope} cap was exceeded.");
+            }
         }
         var usedLossBudget = existing.Where(row => row.Scope == AdRewardCapScope.Global)
             .Sum(row => row.LossBudgetUsdNanos);
         if (lossBudget > policy.Budget.FundedLossBudgetUsdNanos - usedLossBudget)
+        {
             throw new AdRewardBudgetExceededException("Ad reward funded loss budget was exceeded.");
+        }
+
         foreach (var (scope, subject, _) in scopes)
         {
             _db.Set<AdRewardCapConsumptionRow>().Add(new AdRewardCapConsumptionRow
@@ -332,8 +350,11 @@ public sealed class DurableDeferredAdRewardService : IDurableDeferredAdRewardSer
         ArgumentNullException.ThrowIfNull(request);
         if (request.TenantId == Guid.Empty || request.ActorId == Guid.Empty ||
             request.SessionId == Guid.Empty || request.RiskDecisionId == Guid.Empty)
+        {
             throw new ArgumentException(
-                "Tenant, actor, session and risk decision IDs are required.", nameof(request));
+            "Tenant, actor, session and risk decision IDs are required.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.SubjectReference);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.JurisdictionCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.OperationFingerprint);

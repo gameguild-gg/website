@@ -63,14 +63,17 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
 
   public async Task<IEnumerable<Program>> SearchProgramsAsync(string searchTerm, int skip = 0, int take = 50)
   {
-    if (string.IsNullOrWhiteSpace(searchTerm)) return await GetProgramsAsync(skip, take).ConfigureAwait(false);
+    if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return await GetProgramsAsync(skip, take).ConfigureAwait(false);
+        }
 
-    return await context.Set<Program>().Where(p => p.DeletedAt == null && (p.Title.Contains(searchTerm) || (p.Description != null && p.Description.Contains(searchTerm)))).OrderByDescending(p => p.CreatedAt).Skip(skip).Take(take).ToListAsync();
+        return await context.Set<Program>().Where(p => p.DeletedAt == null && (p.Title.Contains(searchTerm) || (p.Description != null && p.Description.Contains(searchTerm)))).OrderByDescending(p => p.CreatedAt).Skip(skip).Take(take).ToListAsync();
   }
 
   public async Task<IEnumerable<Program>> GetProgramsByCreatorAsync(Guid creatorId, int skip = 0, int take = 50)
   {
-    return await context.Set<Program>().Where(p => p.DeletedAt == null).OrderByDescending(p => p.CreatedAt).Skip(skip).Take(take).ToListAsync();
+    return await context.Set<Program>().Where(p => p.CreatorId == creatorId && p.DeletedAt == null).OrderByDescending(p => p.CreatedAt).Skip(skip).Take(take).ToListAsync();
   }
 
   public async Task<IEnumerable<Program>> GetFeaturedProgramsAsync(int count = 10)
@@ -152,9 +155,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var programUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null);
 
-    if (programUser == null) return null;
+    if (programUser == null)
+        {
+            return null;
+        }
 
-    var interactions = await context.Set<ContentInteraction>()
+        var interactions = await context.Set<ContentInteraction>()
       .Include(ci => ci.Content)
       .Where(ci => ci.ProgramUserId == programUser.Id && ci.DeletedAt == null)
       .ToListAsync()
@@ -186,9 +192,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var programUser = await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.UserId == userId).FirstOrDefaultAsync();
 
-    if (programUser == null) return [];
+    if (programUser == null)
+        {
+            return [];
+        }
 
-    return await context.Set<ContentInteraction>().Include(ci => ci.Content).Where(ci => ci.DeletedAt == null && ci.ProgramUserId == programUser.Id).OrderBy(ci => ci.Content.SortOrder).ToListAsync();
+        return await context.Set<ContentInteraction>().Include(ci => ci.Content).Where(ci => ci.DeletedAt == null && ci.ProgramUserId == programUser.Id).OrderBy(ci => ci.Content.SortOrder).ToListAsync();
   }
 
   // ── Analytics & Statistics ──────────────────────────────────────────
@@ -197,11 +206,17 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var query = context.Set<Program>().Where(p => p.DeletedAt == null);
 
-    if (status.HasValue) query = query.Where(p => p.Status == status.Value);
+    if (status.HasValue)
+        {
+            query = query.Where(p => p.Status == status.Value);
+        }
 
-    if (visibility.HasValue) query = query.Where(p => p.Visibility == visibility.Value);
+        if (visibility.HasValue)
+        {
+            query = query.Where(p => p.Visibility == visibility.Value);
+        }
 
-    return await query.CountAsync().ConfigureAwait(false);
+        return await query.CountAsync().ConfigureAwait(false);
   }
 
   public async Task<int> GetUserCountForProgramAsync(Guid programId) { return await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.IsActive).CountAsync(); }
@@ -235,9 +250,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var programUsers = await context.Set<ProgramUser>()
+        var programUsers = await context.Set<ProgramUser>()
       .Where(pu => pu.ProgramId == id && pu.DeletedAt == null)
       .Select(pu => new
       {
@@ -302,9 +320,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var programUsers = await context.Set<ProgramUser>()
+        var programUsers = await context.Set<ProgramUser>()
       .Where(pu => pu.ProgramId == id && pu.DeletedAt == null)
       .Select(pu => new { pu.UserId, pu.CompletedAt })
       .ToListAsync()
@@ -350,9 +371,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var enrolledUserIds = await context.Set<ProgramUser>()
+        var enrolledUserIds = await context.Set<ProgramUser>()
       .Where(pu => pu.ProgramId == id && pu.DeletedAt == null && pu.IsActive)
       .Select(pu => pu.UserId)
       .ToListAsync()
@@ -422,9 +446,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    return new RevenueAnalyticsDto(
+        return new RevenueAnalyticsDto(
       id,
       0,
       0,
@@ -442,9 +469,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
   {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    return ProgramPricingMetadata.Read(program);
+        return ProgramPricingMetadata.Read(program);
   }
 
   public async Task<IEnumerable<Guid>> GetLinkedProductsAsync(Guid programId)
@@ -454,9 +484,12 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
       .AnyAsync(p => p.Id == programId)
       .ConfigureAwait(false);
 
-    if (!programExists) return [];
+    if (!programExists)
+        {
+            return [];
+        }
 
-    return await context.Set<ProductProgram>()
+        return await context.Set<ProductProgram>()
       .Where(pp => pp.DeletedAt == null && pp.ProgramId == programId)
       .OrderBy(pp => pp.SortOrder)
       .Select(pp => pp.ProductId)

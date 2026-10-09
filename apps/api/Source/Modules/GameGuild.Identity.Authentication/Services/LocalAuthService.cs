@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.CQRS;
 using GameGuild.Email;
@@ -48,6 +50,11 @@ public class LocalAuthService(
             deviceFingerprint = request.DeviceFingerprint;
         }
 
+        // Digest of the candidate password for breached-password (credential-stuffing)
+        // threat-intelligence matching. Only the digest travels on the attempt context;
+        // it is never persisted or logged.
+        var candidatePasswordSha256Hex = ComputePasswordSha256Hex(request.Password);
+
 #pragma warning disable IDE0059 // Unnecessary assignment - Initial null IS used in failure path at RecordFailedAttempt
         Guid? userId = null;
 #pragma warning restore IDE0059
@@ -74,18 +81,18 @@ public class LocalAuthService(
                 {
                     authenticationSucceeded = true;
                     userId = user.Id;
-                    logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", user.Email, userId);
+                    logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", LogRedaction.MaskEmail(user.Email), userId);
                 }
                 else
                 {
                     failureReason = "InvalidCredentials";
-                    logger.LogWarning("Invalid password for user {Email}", request.Email);
+                    logger.LogWarning("Invalid password for user {Email}", LogRedaction.MaskEmail(request.Email));
                 }
             }
             else
             {
                 failureReason = "InvalidCredentials";
-                logger.LogWarning("User not found: {Email}", request.Email);
+                logger.LogWarning("User not found: {Email}", LogRedaction.MaskEmail(request.Email));
             }
 
             // Apply user enumeration protection timing
@@ -103,7 +110,8 @@ public class LocalAuthService(
                     logger.LogError(exception, "Could not record failed authentication attempt for user {UserId}", userId);
                 }
 
-                var failedAttemptContext = CreateAttemptContext(request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint);
+                var failedAttemptContext = CreateAttemptContext(
+                    request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint, candidatePasswordSha256Hex);
                 var failedAttemptAnalysis = await AnalyzeAttemptForAuditAsync(failedAttemptContext).ConfigureAwait(false);
                 if (failedAttemptAnalysis is { IsAnomalous: true })
                 {
@@ -123,7 +131,8 @@ public class LocalAuthService(
             var authenticatedUserId = userId ?? throw new InvalidOperationException("A successful authentication must have a user ID.");
 
             // Analyze login attempt for anomalies
-            var attemptContext = CreateAttemptContext(request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint);
+            var attemptContext = CreateAttemptContext(
+                request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint, candidatePasswordSha256Hex);
 
             var anomalyResult = await anomalyDetectionService.AnalyzeLoginAttemptAsync(attemptContext).ConfigureAwait(false);
             var behavioralAnalysis = await AnalyzeBehavioralPatternsForAuditAsync(authenticatedUserId, attemptContext).ConfigureAwait(false);
@@ -251,7 +260,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during authentication for {Email}", request.Email);
+            logger.LogError(ex, "Unexpected error during authentication for {Email}", LogRedaction.MaskEmail(request.Email));
 
             await authAttemptService.RecordFailedAttemptAsync(request.Email, userId, ipAddress, userAgent, "SystemError", stopwatch.Elapsed).ConfigureAwait(false);
 
@@ -265,17 +274,24 @@ public class LocalAuthService(
         string ipAddress,
         string? userAgent,
         Guid? tenantId,
-        string? deviceFingerprint) => new()
-        {
-            UserId = userId,
-            Identifier = identifier.ToLowerInvariant(),
-            AuthenticationMethod = "Password",
-            IpAddress = ipAddress,
-            UserAgent = userAgent ?? "Unknown",
-            DeviceFingerprint = deviceFingerprint,
-            TenantId = tenantId,
-            AttemptedAt = SystemClock.UtcNow
-        };
+        string? deviceFingerprint,
+        string? passwordSha256Hex = null) => new()
+    {
+        UserId = userId,
+        Identifier = identifier.ToLowerInvariant(),
+        AuthenticationMethod = "Password",
+        IpAddress = ipAddress,
+        UserAgent = userAgent ?? "Unknown",
+        DeviceFingerprint = deviceFingerprint,
+        PasswordSha256Hex = passwordSha256Hex,
+        TenantId = tenantId,
+        AttemptedAt = SystemClock.UtcNow
+    };
+
+    private static string? ComputePasswordSha256Hex(string? password)
+        => string.IsNullOrEmpty(password)
+            ? null
+            : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password)));
 
     private async Task<AuthenticationAnomalyResult?> AnalyzeAttemptForAuditAsync(AuthenticationAttemptContext attemptContext)
     {
@@ -423,7 +439,7 @@ public class LocalAuthService(
             if (emailExists)
             {
                 await enumerationProtection.AddTimingProtectionDelayAsync(true, SystemClock.UtcNow).ConfigureAwait(false);
-                logger.LogWarning("Sign-up attempt with existing email: {Email}", request.Email);
+                logger.LogWarning("Sign-up attempt with existing email: {Email}", LogRedaction.MaskEmail(request.Email));
 
                 throw new InvalidOperationException("User already exists");
             }
@@ -451,7 +467,7 @@ public class LocalAuthService(
             await userRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             var userId = newUser.Id;
 
-            logger.LogInformation("Created new user with ID: {UserId} and Email: {Email}", userId, newUser.Email);
+            logger.LogInformation("Created new user with ID: {UserId} and Email: {Email}", userId, LogRedaction.MaskEmail(newUser.Email));
 
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, userId, cancellationToken).ConfigureAwait(false);
 
@@ -488,7 +504,7 @@ public class LocalAuthService(
 
             // Record successful registration
             await authAttemptService.RecordSuccessfulAttemptAsync(request.Email, userId, ipAddress ?? "unknown", userAgent, stopwatch.Elapsed, "Registration").ConfigureAwait(false);
-            logger.LogInformation("User {Email} successfully signed up", request.Email);
+            logger.LogInformation("User {Email} successfully signed up", LogRedaction.MaskEmail(request.Email));
 
             var accessTokenExpirationMinutes = jwtOptions?.Value.AccessTokenExpirationMinutes
                                                ?? int.Parse(configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60", CultureInfo.InvariantCulture);
@@ -512,7 +528,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error during user registration for {Email}", request.Email);
+            logger.LogError(ex, "Error during user registration for {Email}", LogRedaction.MaskEmail(request.Email));
 
             throw;
         }
@@ -748,7 +764,9 @@ public class LocalAuthService(
     private static TenantAccessContext RequireActiveTenantAccess(TenantAccessContext tenantAccessContext)
     {
         if (tenantAccessContext.TenantId.HasValue)
+        {
             return tenantAccessContext;
+        }
 
         throw new AccessDeniedException("Authenticated user has no active tenant membership.");
     }

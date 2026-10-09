@@ -246,11 +246,15 @@ public class Program : EntityBase {
     /// </summary>
     public bool CanUserEnroll(Guid userId) {
         if (!IsEnrollmentOpen)
+        {
             return false;
+        }
 
         // Check if user is already enrolled
         if (ProgramUsers?.Any(pu => pu.UserId == userId && pu.IsActive == true) == true)
+        {
             return false;
+        }
 
         return true;
     }
@@ -269,7 +273,9 @@ public class Program : EntityBase {
         var dict = GetMetadataDict();
 
         if (!dict.TryGetValue(key, out var value) || value is null)
+        {
             return null;
+        }
 
         // Dictionary<string, object> values produced by System.Text.Json are JsonElement
         // instances. Null JSON values are handled by the guard above.
@@ -298,7 +304,9 @@ public class Program : EntityBase {
     /// </summary>
     private Dictionary<string, object> GetMetadataDict() {
         if (string.IsNullOrWhiteSpace(Metadata))
+        {
             return new Dictionary<string, object>();
+        }
 
         try {
             return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(Metadata)

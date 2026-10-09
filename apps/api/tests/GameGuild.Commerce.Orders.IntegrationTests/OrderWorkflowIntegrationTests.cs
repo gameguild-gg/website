@@ -308,7 +308,9 @@ internal sealed class OrdersTestAuthHandler(
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (Request.Headers.Authorization.Count == 0)
+        {
             return Task.FromResult(AuthenticateResult.NoResult());
+        }
 
         var claims = new[]
         {

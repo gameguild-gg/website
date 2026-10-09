@@ -67,7 +67,10 @@ public class WebAuthnCredentialRepository(IApplicationDbContext context) : IWebA
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (credential == null) return false;
+        if (credential == null)
+        {
+            return false;
+        }
 
         Credentials.Remove(credential);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -91,10 +94,37 @@ public class WebAuthnCredentialRepository(IApplicationDbContext context) : IWebA
     public async Task<bool> RevokeAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (credential == null) return false;
+        if (credential == null)
+        {
+            return false;
+        }
 
-        credential.IsActive = false;
-        credential.RevokedAt = SystemClock.UtcNow;
+        // Revocation is terminal but idempotent for already-revoked credentials.
+        if (!credential.IsRevoked)
+        {
+            credential.Revoke();
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (credential == null || credential.Status != WebAuthnCredentialStatus.Active) return false;
+
+        credential.Deactivate();
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task<bool> ReactivateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (credential == null || credential.Status != WebAuthnCredentialStatus.Deactivated) return false;
+
+        credential.Activate();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }

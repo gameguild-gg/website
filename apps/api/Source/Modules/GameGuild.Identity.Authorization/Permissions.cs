@@ -89,6 +89,15 @@ public static class Permissions
     /// <summary>Admin access to content</summary>
     public const string ContentAdmin = ContentPermission.Keys.Admin;
 
+    /// <summary>Edit existing editorial content</summary>
+    public const string ContentEdit = ContentPermission.Keys.Edit;
+
+    /// <summary>Create and maintain content drafts</summary>
+    public const string ContentDraft = ContentPermission.Keys.Draft;
+
+    /// <summary>Schedule and cancel scheduled content publication</summary>
+    public const string ContentSchedule = ContentPermission.Keys.Schedule;
+
     // ========================
     // PROJECT PERMISSIONS
     // ========================
@@ -133,6 +142,19 @@ public static class Permissions
 
     /// <summary>Manage product pricing</summary>
     public const string ProductsPricingManage = ProductsPermission.Keys.PricingManage;
+
+    // ========================
+    // MONETIZATION PERMISSIONS (issue #346)
+    // ========================
+
+    /// <summary>Enable revenue generation, set pricing, manage monetization settings</summary>
+    public const string MonetizationMonetize = MonetizationPermission.Keys.Monetize;
+
+    /// <summary>Access revenue reports, financial dashboards, performance metrics</summary>
+    public const string MonetizationViewAnalytics = MonetizationPermission.Keys.ViewAnalytics;
+
+    /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
+    public const string MonetizationConfigure = MonetizationPermission.Keys.Configure;
 
     // ========================
     // PROMO CODES PERMISSIONS
@@ -234,6 +256,22 @@ public static class Permissions
 
     /// <summary>Report assets for moderation</summary>
     public const string AssetsReport = AssetsPermission.Keys.Report;
+
+    // ========================
+    // MODERATION PERMISSIONS
+    // ========================
+
+    /// <summary>Moderate content (edit, hide, restore)</summary>
+    public const string ModerationModerate = ModerationPermission.Keys.Moderate;
+
+    /// <summary>Flag content for review</summary>
+    public const string ModerationFlag = ModerationPermission.Keys.Flag;
+
+    /// <summary>Ban members</summary>
+    public const string ModerationBan = ModerationPermission.Keys.Ban;
+
+    /// <summary>Warn members</summary>
+    public const string ModerationWarn = ModerationPermission.Keys.Warn;
 }
 
 /// <summary>

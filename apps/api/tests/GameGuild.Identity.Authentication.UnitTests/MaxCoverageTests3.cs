@@ -997,7 +997,7 @@ public sealed class SendEmailVerificationHandlerCoverageTests
             .Returns(Task.CompletedTask);
 
         var result = await _sut.Handle(cmd, CancellationToken.None);
-        result.Message.Should().Be("Verification email sent successfully");
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
     }
 
     [Fact]
@@ -1014,7 +1014,7 @@ public sealed class SendEmailVerificationHandlerCoverageTests
             .Returns(Task.CompletedTask);
 
         var result = await _sut.Handle(cmd, CancellationToken.None);
-        result.Message.Should().Be("Verification email sent successfully");
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
     }
 }
 
@@ -1023,19 +1023,18 @@ public sealed class SendEmailVerificationHandlerCoverageTests
 // ════════════════════════════════════════════════════════════════════════════
 public sealed class EmailVerificationServiceCoverageTests
 {
-    private readonly MemoryCache _cache;
     private readonly Mock<IUserRepository> _userRepo = new();
     private readonly Mock<IPublisher> _publisher = new();
     private readonly EmailVerificationService _sut;
 
     public EmailVerificationServiceCoverageTests()
     {
-        _cache = new MemoryCache(new MemoryCacheOptions());
+        MemoryCache cache = new MemoryCache(new MemoryCacheOptions());
         _publisher.Setup(p => p.Publish(It.IsAny<EmailVerificationRequestedNotification>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _sut = new EmailVerificationService(
             Mock.Of<ILogger<EmailVerificationService>>(),
-            _cache,
+            cache,
             _publisher.Object,
             _userRepo.Object);
     }

@@ -34,12 +34,16 @@ public sealed class UserResourceMetadataController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass ownership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // User can only access their own resources
         return actor.SubjectIdAsGuid.Value == userId;
     }
@@ -58,8 +62,10 @@ public sealed class UserResourceMetadataController(
     public async Task<IActionResult> GetUserMetadata(Guid userId, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await metadataRepository.GetByUserAsync(userId, ct).ConfigureAwait(false));
     }
 
@@ -79,11 +85,16 @@ public sealed class UserResourceMetadataController(
     public async Task<IActionResult> GetUserMetadataByKey(Guid userId, string key, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         var metadata = await metadataRepository.GetByUserKeyAsync(userId, key, ct).ConfigureAwait(false);
 
-        if (metadata == null) return NotFound($"Metadata not found for user {userId} and key: {key}");
+        if (metadata == null)
+        {
+            return NotFound($"Metadata not found for user {userId} and key: {key}");
+        }
 
         return Ok(metadata);
     }
@@ -105,8 +116,10 @@ public sealed class UserResourceMetadataController(
     public async Task<IActionResult> SetUserMetadata(Guid userId, string key, [FromBody] SetResourceMetadataRequest body, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var metadata = await sender.Send(new SetUserResourceMetadataCommand(userId, key, body), ct)

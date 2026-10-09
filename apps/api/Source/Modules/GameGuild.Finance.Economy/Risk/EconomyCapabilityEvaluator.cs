@@ -141,7 +141,9 @@ public sealed class EconomyCapabilityAuthorizationService(
         ArgumentNullException.ThrowIfNull(context);
         var evaluation = await evaluator.EvaluateAsync(context, cancellationToken);
         if (!evaluation.IsReady || evaluation.Receipt is null)
+        {
             throw new EconomyCapabilityAuthorizationException(evaluation.State, evaluation.Diagnostics);
+        }
 
         var receipt = evaluation.Receipt;
         await store.ConsumeAsync(
@@ -201,13 +203,17 @@ public sealed class EconomyCapabilityReadinessInspector : IEconomyCapabilityRead
         var snapshot = await _store.ReadSnapshotAsync(context, cancellationToken);
         var denial = EconomyCapabilityEvaluator.EvaluateDenial(snapshot, context.EvaluatedAt);
         if (denial is not null)
+        {
             return denial;
+        }
 
         if (snapshot.RiskDecisionId == Guid.Empty || snapshot.RiskDecisionId != context.RiskDecisionId)
+        {
             return new EconomyCapabilityEvaluationResult(
                 EconomyCapabilityReadinessStatus.ReviewRequired,
                 ["The readiness snapshot does not reference the requested durable risk decision."],
                 null);
+        }
 
         return new EconomyCapabilityEvaluationResult(EconomyCapabilityReadinessStatus.Ready, [], null);
     }
@@ -237,11 +243,15 @@ public sealed class EconomyCapabilityEvaluator : IEconomyCapabilityEvaluator
         var snapshot = await _store.ReadSnapshotAsync(context, cancellationToken);
         var denial = EvaluateDenial(snapshot, context.EvaluatedAt);
         if (denial is not null)
+        {
             return denial;
+        }
 
         if (snapshot.RiskDecisionId == Guid.Empty || snapshot.RiskDecisionId != context.RiskDecisionId)
+        {
             throw new InvalidOperationException(
                 "A ready Economy capability snapshot must reference a durable risk decision.");
+        }
 
         var receiptId = Guid.NewGuid();
         var expiresAt = new[]
@@ -295,31 +305,69 @@ public sealed class EconomyCapabilityEvaluator : IEconomyCapabilityEvaluator
         DateTimeOffset now)
     {
         if (snapshot.KillSwitchActive)
+        {
             return Denied(EconomyCapabilityReadinessStatus.KillSwitchActive, "A kill switch is active.");
+        }
+
         if (!snapshot.HasActivePolicy)
+        {
             return Denied(EconomyCapabilityReadinessStatus.Disabled, "No active signed capability policy exists.");
+        }
+
         if (!snapshot.PolicySignatureValid || snapshot.PolicyExpiresAt <= now)
+        {
             return Denied(EconomyCapabilityReadinessStatus.InvalidPolicy, "The active capability policy is invalid or expired.");
+        }
+
         if (!snapshot.JurisdictionAllowed)
+        {
             return Denied(EconomyCapabilityReadinessStatus.JurisdictionBlocked, "The jurisdiction is not explicitly allowed.");
+        }
+
         if (!snapshot.ComplianceAvailable)
+        {
             return Denied(EconomyCapabilityReadinessStatus.ComplianceUnavailable, "Compliance evidence is unavailable.");
+        }
+
         if (snapshot.ComplianceExpiresAt <= now)
+        {
             return Denied(EconomyCapabilityReadinessStatus.ComplianceStale, "Compliance evidence is stale.");
+        }
+
         if (snapshot.ManualReviewRequired)
+        {
             return Denied(EconomyCapabilityReadinessStatus.ReviewRequired, "A manual review is required.");
+        }
+
         if (!snapshot.LedgerHealthy)
+        {
             return Denied(EconomyCapabilityReadinessStatus.LedgerUnhealthy, "The journal integrity state is unhealthy.");
+        }
+
         if (!snapshot.ProjectionMatches)
+        {
             return Denied(EconomyCapabilityReadinessStatus.ProjectionMismatch, "The active projection does not match the journal.");
+        }
+
         if (!snapshot.ReserveSufficient || snapshot.ReserveExpiresAt <= now)
+        {
             return Denied(EconomyCapabilityReadinessStatus.ReserveInsufficient, "The reserve snapshot is insufficient or stale.");
+        }
+
         if (!snapshot.CustodyReconciled)
+        {
             return Denied(EconomyCapabilityReadinessStatus.CustodyUnreconciled, "Custody observations are not reconciled.");
+        }
+
         if (!snapshot.AnchorValid || snapshot.AnchorExpiresAt <= now)
+        {
             return Denied(EconomyCapabilityReadinessStatus.AnchorInvalid, "The external journal anchor is invalid or stale.");
+        }
+
         if (!snapshot.ProviderReady)
+        {
             return Denied(EconomyCapabilityReadinessStatus.ProviderNotReady, "The required provider is not ready.");
+        }
 
         return null;
     }

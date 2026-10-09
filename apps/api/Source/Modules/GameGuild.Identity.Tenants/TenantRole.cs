@@ -144,9 +144,15 @@ public sealed class TenantRole
     public override bool Equals(object? obj)
     {
         if (obj is TenantRole other)
+        {
             return Value.Equals(other.Value, StringComparison.OrdinalIgnoreCase);
+        }
+
         if (obj is string str)
+        {
             return Value.Equals(str, StringComparison.OrdinalIgnoreCase);
+        }
+
         return false;
     }
 
@@ -154,8 +160,16 @@ public sealed class TenantRole
 
     public static bool operator ==(TenantRole? left, TenantRole? right)
     {
-        if (left is null && right is null) return true;
-        if (left is null || right is null) return false;
+        if (left is null && right is null)
+        {
+            return true;
+        }
+
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
         return left.Value.Equals(right.Value, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -163,8 +177,16 @@ public sealed class TenantRole
 
     public static bool operator ==(TenantRole? left, string? right)
     {
-        if (left is null && right is null) return true;
-        if (left is null || right is null) return false;
+        if (left is null && right is null)
+        {
+            return true;
+        }
+
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
         return left.Value.Equals(right, StringComparison.OrdinalIgnoreCase);
     }
 

@@ -13,16 +13,22 @@ public sealed class DefaultPolicyMerger : IPolicyMerger
     public PolicyDefinition Merge(PolicyDefinition basePolicy, PolicyDefinition? tenantOverride)
     {
         if (tenantOverride is null)
+        {
             return basePolicy;
+        }
 
         // Tenant override takes precedence, with fallback to base
         var resourceType = tenantOverride.ResourceType;
         if (resourceType is null)
+        {
             resourceType = basePolicy.ResourceType;
+        }
 
         var minimumAccessLevel = tenantOverride.MinimumAccessLevel;
         if (minimumAccessLevel is null)
+        {
             minimumAccessLevel = basePolicy.MinimumAccessLevel;
+        }
 
         return new PolicyDefinition
         {
@@ -56,9 +62,15 @@ public sealed class DefaultPolicyMerger : IPolicyMerger
         IReadOnlyList<PolicyRule>? tenantRules)
     {
         if (baseRules is null or { Count: 0 })
+        {
             return tenantRules;
+        }
+
         if (tenantRules is null or { Count: 0 })
+        {
             return baseRules;
+        }
+
         return baseRules.Concat(tenantRules).ToList();
     }
 
@@ -142,9 +154,15 @@ public sealed class DefaultPolicyMerger : IPolicyMerger
         IReadOnlyList<T> overrideList)
     {
         if (overrideList.Count == 0)
+        {
             return baseList;
+        }
+
         if (baseList.Count == 0)
+        {
             return overrideList;
+        }
+
         return baseList.Concat(overrideList).Distinct().ToList();
     }
 
@@ -154,7 +172,9 @@ public sealed class DefaultPolicyMerger : IPolicyMerger
     private static IReadOnlyList<RuleDefinition> ConvertToRuleDefinitions(IReadOnlyList<PolicyRule>? policyRules)
     {
         if (policyRules is null or { Count: 0 })
+        {
             return Array.Empty<RuleDefinition>();
+        }
 
         var ruleDefinitions = new List<RuleDefinition>(policyRules.Count);
 
@@ -181,7 +201,9 @@ public sealed class DefaultPolicyMerger : IPolicyMerger
     private static Dictionary<string, JsonElement>? ConvertParams(IReadOnlyDictionary<string, object>? sourceParams)
     {
         if (sourceParams is null or { Count: 0 })
+        {
             return null;
+        }
 
         var result = new Dictionary<string, JsonElement>(sourceParams.Count);
 

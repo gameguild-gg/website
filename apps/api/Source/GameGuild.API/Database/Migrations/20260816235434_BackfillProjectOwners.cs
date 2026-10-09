@@ -37,7 +37,8 @@ namespace GameGuild.API.Database.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            // The backfill does not record which collaborator rows or roles it
+            // changed, so rollback cannot distinguish them from existing owners.
         }
     }
 }

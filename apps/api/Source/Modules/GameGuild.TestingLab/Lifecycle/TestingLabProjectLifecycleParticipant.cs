@@ -39,7 +39,10 @@ public sealed class TestingLabProjectLifecycleParticipant(IApplicationDbContext 
                 link.DeletedAt == null)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (projectLinks.Count == 0) return;
+        if (projectLinks.Count == 0)
+        {
+            return;
+        }
 
         var sessionIds = projectLinks.Select(link => link.SessionId).Distinct().ToArray();
         var remainingCounts = await context.Set<SessionProject>()
@@ -81,7 +84,10 @@ public sealed class TestingLabProjectLifecycleParticipant(IApplicationDbContext 
             .Where(link => link.ProjectId == projectId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (projectLinks.Count == 0) return;
+        if (projectLinks.Count == 0)
+        {
+            return;
+        }
 
         var sessionIds = projectLinks.Select(link => link.SessionId).Distinct().ToArray();
         var remainingCounts = await context.Set<SessionProject>()

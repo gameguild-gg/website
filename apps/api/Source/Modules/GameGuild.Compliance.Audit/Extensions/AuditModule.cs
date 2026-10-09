@@ -37,6 +37,10 @@ public static class AuditModule
         IServiceCollection services,
         Action<AuditSigningOptions>? configureSigningOptions)
     {
+        // Fail fast when the pre-built retention policy templates are internally inconsistent
+        // or cannot produce a valid configuration request.
+        AuditRetentionPolicyTemplates.ValidateCatalog();
+
         services.AddOptions<AuditExportWebhookOptions>()
             .Configure<IConfiguration>((options, configuration) =>
             {
@@ -47,6 +51,19 @@ public static class AuditModule
                 options.RetryDelayMilliseconds = configuredOptions.RetryDelayMilliseconds;
                 options.TimeoutSeconds = configuredOptions.TimeoutSeconds;
             });
+        services.AddOptions<AuditScheduledExportOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                var section = configuration.GetSection(AuditScheduledExportOptions.ConfigurationSection);
+                if (int.TryParse(section[AuditScheduledExportOptions.StaleClaimThresholdMinutesKey], out var staleMinutes))
+                {
+                    options.StaleClaimThreshold = TimeSpan.FromMinutes(staleMinutes);
+                }
+            })
+            .Validate(
+                options => options.StaleClaimThreshold > TimeSpan.Zero,
+                $"{AuditScheduledExportOptions.ConfigurationSection}:{AuditScheduledExportOptions.StaleClaimThresholdMinutesKey} " +
+                "must be a positive number of minutes; a zero or negative threshold would mark every in-progress claim stale.");
         services.AddHttpClient<IAuditExportWebhookNotifier, AuditExportWebhookNotifier>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
@@ -56,14 +73,47 @@ public static class AuditModule
             services.Configure(configureSigningOptions);
         }
 
+        services.AddOptions<SecurityEventPipelineOptions>()
+            .Configure<IConfiguration>((pipelineOptions, configuration) =>
+            {
+                var bound = SecurityEventPipelineOptionsConfiguration.BindFrom(configuration);
+                pipelineOptions.DatabaseWriteAttempts = bound.DatabaseWriteAttempts;
+                pipelineOptions.RetryDelayMilliseconds = bound.RetryDelayMilliseconds;
+                pipelineOptions.SpoolingEnabled = bound.SpoolingEnabled;
+                pipelineOptions.SpoolDirectoryPath = bound.SpoolDirectoryPath;
+                pipelineOptions.DrainInterval = bound.DrainInterval;
+                pipelineOptions.FailedAuthenticationAlertThreshold = bound.FailedAuthenticationAlertThreshold;
+                pipelineOptions.FailedAuthenticationWindowMinutes = bound.FailedAuthenticationWindowMinutes;
+                pipelineOptions.RetentionEnforcementInterval = bound.RetentionEnforcementInterval;
+                pipelineOptions.DefaultRetentionDays = bound.DefaultRetentionDays;
+                pipelineOptions.RetentionBatchSize = bound.RetentionBatchSize;
+            });
+
         // Register audit services
         services.AddScoped<IAuditService, AuditService>();
         services.TryAddSingleton(TimeProvider.System);
+
+        // Durable security event pipeline: taxonomy-driven capture, alerting, and retention enforcement.
+        services.AddSingleton<ISecurityEventSpool>(provider =>
+        {
+            var pipelineOptions = provider.GetRequiredService<IOptions<SecurityEventPipelineOptions>>().Value;
+            return new SecurityEventFileSpool(pipelineOptions);
+        });
+        services.AddSingleton<ISecurityEventPipelineStatusTracker, SecurityEventPipelineStatusTracker>();
+        services.AddScoped<ISecurityAlertRuleEvaluator, SecurityAlertRuleEvaluator>();
+        services.AddScoped<ISecurityEventLogger, SecurityEventLogger>();
+        services.AddHostedService<SecurityEventSpoolDrainerBackgroundService>();
+        services.AddScoped<ISecurityEventQueryService, SecurityEventQueryService>();
+        services.AddScoped<ISecurityLogRetentionRepository, SecurityLogRetentionRepository>();
+        services.AddScoped<ISecurityLogRetentionService, SecurityLogRetentionService>();
+        services.AddHostedService<SecurityLogRetentionBackgroundService>();
+
         services.AddSingleton<AuditRetentionSimulationEngine>();
         services.AddScoped<IAuditRetentionSimulationRepository, AuditRetentionSimulationRepository>();
         services.AddScoped<IAuditRetentionSimulationService, AuditRetentionSimulationService>();
         services.AddScoped<IAuditDataAccessRecorder, AuditDataAccessRecorder>();
         services.AddScoped<IAuthenticationAuditEventSink, CentralAuthenticationAuditEventSink>();
+        services.AddScoped<IApiKeyAuditEventSink, CentralApiKeyAuditEventSink>();
         services.AddScoped<IAuditActionTypeSearchService, AuditActionTypeSearchService>();
         services.AddSingleton<IAuditExportProgressTracker, DistributedAuditExportProgressTracker>();
         services.AddScoped<IAuditExportCronSchedule, AuditExportCronSchedule>();

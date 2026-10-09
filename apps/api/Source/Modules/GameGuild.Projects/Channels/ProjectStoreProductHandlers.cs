@@ -26,31 +26,51 @@ public sealed class ProjectStoreProductHandlers(
         var actor = actorContextAccessor.ActorContext;
         var actorId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || actorId == null || actor.TenantId == null)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Unauthorized("ProjectStoreProduct.Unauthenticated", "An authenticated tenant actor is required."));
+        }
 
         await using var lockHandle = await _lifecycleLock.AcquireAsync(request.ProjectId, cancellationToken).ConfigureAwait(false);
         if (!await authorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.NotFound("ProjectStoreProduct.ProjectNotFound", "Project not found."));
+        }
 
         var availability = await availabilityService
             .GetAsync(request.ProjectId, ProjectChannel.Store, actor.TenantId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!availability.IsAvailable)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Validation("ProjectStoreProduct.ProjectUnavailable", availability.Reason));
+        }
 
         var product = await context.Set<Product>()
             .FirstOrDefaultAsync(candidate => candidate.Id == request.ProductId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (product == null)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.NotFound("ProjectStoreProduct.ProductNotFound", "Product not found."));
+        }
+
         if (product.TenantId != actor.TenantId)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Forbidden("ProjectStoreProduct.ProductTenantMismatch", "Product is outside the current tenant."));
+        }
+
         if (product.CreatorId != actorId && !actor.HasAnyPermission(ProductsPermission.Keys.Update, ProductsPermission.Keys.Manage))
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Forbidden("ProjectStoreProduct.ProductForbidden", "Product ownership or update permission is required."));
+        }
+
         if (!product.IsPublished)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Validation("ProjectStoreProduct.ProductUnpublished", "Only published products can be linked."));
+        }
+
         if (product.IsBundle)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Validation("ProjectStoreProduct.BundleUnsupported", "Bundle products cannot be linked directly to projects."));
+        }
 
         var duplicate = await context.Set<ProjectStoreProduct>()
             .AnyAsync(link =>
@@ -60,7 +80,9 @@ public sealed class ProjectStoreProductHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (duplicate)
+        {
             return Result.Failure<ProjectStoreProductProjection>(Error.Conflict("ProjectStoreProduct.LinkExists", "An active project-product link already exists."));
+        }
 
         var link = new ProjectStoreProduct
         {
@@ -81,9 +103,14 @@ public sealed class ProjectStoreProductHandlers(
         var actor = actorContextAccessor.ActorContext;
         var actorId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || actorId == null || actor.TenantId == null)
+        {
             return Result.Failure<bool>(Error.Unauthorized("ProjectStoreProduct.Unauthenticated", "An authenticated tenant actor is required."));
+        }
+
         if (!await authorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<bool>(Error.NotFound("ProjectStoreProduct.ProjectNotFound", "Project not found."));
+        }
 
         var product = await context.Set<Product>()
             .IgnoreQueryFilters()
@@ -91,11 +118,19 @@ public sealed class ProjectStoreProductHandlers(
             .FirstOrDefaultAsync(candidate => candidate.Id == request.ProductId, cancellationToken)
             .ConfigureAwait(false);
         if (product == null || product.TenantId != actor.TenantId)
+        {
             return Result.Failure<bool>(Error.NotFound("ProjectStoreProduct.ProductNotFound", "Product not found in the current tenant."));
+        }
+
         if (product.CreatorId != actorId && !actor.HasAnyPermission(ProductsPermission.Keys.Update, ProductsPermission.Keys.Manage))
+        {
             return Result.Failure<bool>(Error.Forbidden("ProjectStoreProduct.ProductForbidden", "Product ownership or update permission is required."));
+        }
+
         if (product.IsBundle)
+        {
             return Result.Failure<bool>(Error.Validation("ProjectStoreProduct.BundleUnsupported", "Bundle products cannot be linked directly to projects."));
+        }
 
         var link = await context.Set<ProjectStoreProduct>()
             .FirstOrDefaultAsync(candidate =>
@@ -106,7 +141,9 @@ public sealed class ProjectStoreProductHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (link == null)
+        {
             return Result.Failure<bool>(Error.NotFound("ProjectStoreProduct.LinkNotFound", "Active project-product link not found."));
+        }
 
         link.DeletedAt = SystemClock.UtcNow;
         link.Touch();
@@ -125,15 +162,20 @@ public sealed class ProjectStoreProductHandlers(
                 Error.Unauthorized("ProjectStoreProduct.Unauthenticated", "An active authenticated tenant actor is required."));
         }
         if (!await authorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<IReadOnlyList<ProjectStoreProductProjection>>(
-                Error.NotFound("ProjectStoreProduct.ProjectNotFound", "Project not found."));
+            Error.NotFound("ProjectStoreProduct.ProjectNotFound", "Project not found."));
+        }
 
         var availability = await availabilityService
             .GetAsync(request.ProjectId, ProjectChannel.Store, actor.TenantId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!availability.IsAvailable)
+        {
             return Result.Failure<IReadOnlyList<ProjectStoreProductProjection>>(
-                Error.Validation("ProjectStoreProduct.ProjectUnavailable", availability.Reason));
+            Error.Validation("ProjectStoreProduct.ProjectUnavailable", availability.Reason));
+        }
+
         var tenantId = actor.TenantId.Value;
         var validLinks = context.Set<ProjectStoreProduct>()
             .AsNoTracking()
@@ -177,7 +219,9 @@ public sealed class ProjectStoreProductHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (product == null)
+        {
             return Result.Failure<IReadOnlyList<ProjectStoreProductProjection>>(Error.NotFound("ProjectStoreProduct.ProductNotFound", "Published product not found."));
+        }
 
         var links = await context.Set<ProjectStoreProduct>()
             .AsNoTracking()

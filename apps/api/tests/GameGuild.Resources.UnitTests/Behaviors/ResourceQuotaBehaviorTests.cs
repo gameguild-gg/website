@@ -312,6 +312,39 @@ public class ResourceQuotaBehaviorTests
             .Should().BeNull();
     }
 
+    [Fact]
+    public void TryExtractUserId_ReturnsId_ForValueTypeResponse()
+    {
+        var expectedId = Guid.NewGuid();
+
+        InvokeTryExtractUserId<TestQuotaCommand, ValueResponseWithId>(new ValueResponseWithId(expectedId))
+            .Should().Be(expectedId);
+    }
+
+    [Fact]
+    public void TryExtractUserId_PreservesAnEmptyGuid_InDefaultValueTypeResponse()
+    {
+        InvokeTryExtractUserId<TestQuotaCommand, ValueResponseWithId>(default(ValueResponseWithId))
+            .Should().Be(Guid.Empty);
+    }
+
+    [Fact]
+    public void TryExtractUserId_ReturnsNull_ForEmptyNullableValueTypeResponse()
+    {
+        InvokeTryExtractUserId<TestQuotaCommand, ValueResponseWithId?>(null).Should().BeNull();
+    }
+
+    [Fact]
+    public void TryExtractUserId_ReturnsId_ForPopulatedNullableValueTypeResponse()
+    {
+        var expectedId = Guid.NewGuid();
+
+        InvokeTryExtractUserId<TestQuotaCommand, ValueResponseWithId?>(new ValueResponseWithId(expectedId))
+            .Should().Be(expectedId);
+    }
+
+    private readonly record struct ValueResponseWithId(Guid Id);
+
     private static Guid? InvokeTryExtractUserId<TRequest, TResponse>(object? response)
         where TRequest : IRequestBase
     {

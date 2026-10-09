@@ -63,3 +63,9 @@ export async function synchronizeEmceptionRuntimePeers(repoRoot) {
   }
   return changed;
 }
+
+/** Preserve the established version-returning helper for existing release callers. */
+export async function synchronizeEmceptionPeerVersions(repoRoot) {
+  await synchronizeEmceptionRuntimePeers(repoRoot);
+  return readEmceptionReleaseVersion(repoRoot);
+}

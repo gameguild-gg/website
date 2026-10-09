@@ -98,7 +98,10 @@ public class AuthAttemptService(
 
     public string GetClientIpAddress(HttpContext? httpContext)
     {
-        if (httpContext == null) return "Unknown";
+        if (httpContext == null)
+        {
+            return "Unknown";
+        }
 
         // ForwardedHeadersMiddleware updates RemoteIpAddress only for configured trusted proxies.
         // Never consume forwarding headers directly: clients can forge them.

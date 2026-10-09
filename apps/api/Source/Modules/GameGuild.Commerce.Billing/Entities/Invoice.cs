@@ -31,7 +31,9 @@ public class Invoice : EntityBase
     public Invoice(Guid tenantId, Guid subscriptionId, decimal amount, string currency = "USD")
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("TenantId is required for financial entities", nameof(tenantId));
+        }
 
         TenantId = tenantId;
         SubscriptionId = subscriptionId;
@@ -187,9 +189,14 @@ public class Invoice : EntityBase
     {
         EnsureMutable();
         if (discountAmount < 0)
+        {
             throw new ArgumentException("Discount amount cannot be negative", nameof(discountAmount));
+        }
+
         if (discountAmount > Subtotal)
+        {
             throw new ArgumentException("Discount cannot exceed subtotal", nameof(discountAmount));
+        }
 
         DiscountAmount = discountAmount;
         RecalculateTotal();
@@ -204,7 +211,9 @@ public class Invoice : EntityBase
     {
         EnsureMutable();
         if (taxAmount < 0)
+        {
             throw new ArgumentException("Tax amount cannot be negative", nameof(taxAmount));
+        }
 
         TaxAmount = taxAmount;
         RecalculateTotal();
@@ -219,7 +228,9 @@ public class Invoice : EntityBase
     {
         EnsureMutable();
         if (Total <= 0)
+        {
             throw new InvalidOperationException("Cannot issue an invoice with zero or negative total");
+        }
 
         Status = InvoiceStatus.Open;
         IssuedAt = SystemClock.UtcNow;
@@ -234,15 +245,26 @@ public class Invoice : EntityBase
     public void RecordPayment(Guid paymentId, decimal amount, DateTime paymentDate)
     {
         if (Status == InvoiceStatus.Draft)
+        {
             throw new InvalidOperationException("Cannot record payment on a draft invoice");
+        }
+
         if (Status == InvoiceStatus.Paid)
+        {
             throw new InvalidOperationException("Invoice is already paid");
+        }
+
         if (Status == InvoiceStatus.Void)
+        {
             throw new InvalidOperationException("Cannot record payment on a voided invoice");
+        }
+
         if (PaymentId.HasValue)
         {
             if (PaymentId.Value != paymentId)
+            {
                 throw new InvalidOperationException($"Invoice already has payment {PaymentId}. Single payment per invoice enforced.");
+            }
         }
 
         PaymentId = paymentId;
@@ -263,9 +285,14 @@ public class Invoice : EntityBase
     public void Void(string reason)
     {
         if (Status == InvoiceStatus.Paid)
+        {
             throw new InvalidOperationException("Cannot void a paid invoice");
+        }
+
         if (Status == InvoiceStatus.Void)
+        {
             return; // Idempotent
+        }
 
         Status = InvoiceStatus.Void;
         VoidedAt = SystemClock.UtcNow;
@@ -279,7 +306,9 @@ public class Invoice : EntityBase
     public void MarkUncollectible()
     {
         if (Status != InvoiceStatus.Open && Status != InvoiceStatus.PastDue)
+        {
             throw new InvalidOperationException("Can only mark open or past due invoices as uncollectible");
+        }
 
         Status = InvoiceStatus.Uncollectible;
         Touch();
@@ -291,7 +320,9 @@ public class Invoice : EntityBase
     public void MarkPastDue()
     {
         if (Status != InvoiceStatus.Open)
+        {
             throw new InvalidOperationException("Can only mark open invoices as past due");
+        }
 
         Status = InvoiceStatus.PastDue;
         Touch();
@@ -309,7 +340,9 @@ public class Invoice : EntityBase
     private void EnsureMutable()
     {
         if (IsImmutable)
+        {
             throw new InvalidOperationException($"Invoice {InvoiceNumber} is immutable (status: {Status}). Amounts cannot be changed after issuance.");
+        }
     }
 
     private void RecalculateTotal()

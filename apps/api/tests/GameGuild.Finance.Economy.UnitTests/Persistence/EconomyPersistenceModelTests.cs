@@ -567,21 +567,44 @@ public sealed class EconomyPersistenceModelTests
         var valueType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
 
         if (valueType == typeof(string))
+        {
             return $"value-{propertyName}";
+        }
+
         if (valueType == typeof(Guid))
+        {
             return Guid.Parse("b66a0a03-8e43-4c28-b1d0-13b0c9c0d2ab");
+        }
+
         if (valueType == typeof(DateTimeOffset))
+        {
             return new DateTimeOffset(2026, 7, 30, 12, 0, 0, TimeSpan.Zero);
+        }
+
         if (valueType == typeof(bool))
+        {
             return true;
+        }
+
         if (valueType == typeof(short))
+        {
             return (short)7;
+        }
+
         if (valueType == typeof(int))
+        {
             return 11;
+        }
+
         if (valueType == typeof(long))
+        {
             return 13L;
+        }
+
         if (valueType.IsEnum)
+        {
             return Enum.GetValues(valueType).GetValue(Math.Min(1, Enum.GetValues(valueType).Length - 1))!;
+        }
 
         throw new NotSupportedException($"No persistence round-trip value is defined for {propertyType}.");
     }
@@ -591,7 +614,9 @@ public sealed class EconomyPersistenceModelTests
         for (var current = type.BaseType; current is not null; current = current.BaseType)
         {
             if (current.IsGenericType && current.GetGenericTypeDefinition().Name.StartsWith("EntityBase", StringComparison.Ordinal))
+            {
                 return true;
+            }
         }
 
         return false;

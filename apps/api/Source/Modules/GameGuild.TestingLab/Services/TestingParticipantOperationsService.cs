@@ -35,16 +35,25 @@ public class TestingParticipantOperationsService(
         var tenantId = TenantId;
         var requestExists = await context.Set<TestingRequest>().AsNoTracking().AnyAsync(request =>
             request.Id == testingRequestId && request.TenantId == tenantId && request.DeletedAt == null);
-        if (!requestExists) throw new KeyNotFoundException("Testing request not found.");
+        if (!requestExists)
+        {
+            throw new KeyNotFoundException("Testing request not found.");
+        }
+
         if (!await context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
                 member.UserId == userId && member.TenantId == tenantId && member.IsActive && member.DeletedAt == null))
+        {
             throw new InvalidOperationException("The participant must be an active member of the selected tenant.");
+        }
 
         var existingParticipant = await context.Set<TestingParticipant>()
             .FirstOrDefaultAsync(tp => tp.TestingRequestId == testingRequestId && tp.UserId == userId &&
                                        tp.TenantId == tenantId && tp.DeletedAt == null);
 
-        if (existingParticipant != null) return existingParticipant;
+        if (existingParticipant != null)
+        {
+            return existingParticipant;
+        }
 
         var participant = new TestingParticipant
         {
@@ -70,7 +79,10 @@ public class TestingParticipantOperationsService(
             .FirstOrDefaultAsync(tp => tp.TestingRequestId == testingRequestId && tp.UserId == userId &&
                                        tp.TenantId == tenantId && tp.DeletedAt == null);
 
-        if (participant == null) return false;
+        if (participant == null)
+        {
+            return false;
+        }
 
         context.Set<TestingParticipant>().Remove(participant);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -108,17 +120,29 @@ public class TestingParticipantOperationsService(
         var session = await context.Set<TestingSession>()
             .FirstOrDefaultAsync(candidate => candidate.Id == sessionId && candidate.TenantId == tenantId && candidate.DeletedAt == null)
             .ConfigureAwait(false);
-        if (session == null) throw new KeyNotFoundException("Testing session not found.");
+        if (session == null)
+        {
+            throw new KeyNotFoundException("Testing session not found.");
+        }
 
         var existingRegistration = await context.Set<SessionRegistration>()
             .FirstOrDefaultAsync(sr => sr.SessionId == sessionId && sr.UserId == userId &&
                                        sr.TenantId == tenantId && sr.DeletedAt == null);
 
-        if (existingRegistration != null) return existingRegistration;
+        if (existingRegistration != null)
+        {
+            return existingRegistration;
+        }
+
         if (session.Status != SessionStatus.Scheduled)
+        {
             throw new InvalidOperationException("Only scheduled sessions accept registrations.");
+        }
+
         if (registrationType == RegistrationType.Tester && session.RegisteredTesterCount >= session.MaxTesters)
+        {
             throw new InvalidOperationException("The testing session is at capacity. Join its waitlist instead.");
+        }
 
         var registration = new SessionRegistration
         {
@@ -132,14 +156,21 @@ public class TestingParticipantOperationsService(
 
         context.Set<SessionRegistration>().Add(registration);
         if (registrationType == RegistrationType.Tester)
+        {
             session.RegisteredTesterCount++;
+        }
         else if (registrationType == RegistrationType.ProjectMember)
+        {
             session.RegisteredProjectMemberCount++;
+        }
 
         var waiting = await context.Set<SessionWaitlist>().FirstOrDefaultAsync(entry =>
             entry.SessionId == sessionId && entry.UserId == userId && entry.TenantId == tenantId && entry.DeletedAt == null)
             .ConfigureAwait(false);
-        if (waiting != null) context.Set<SessionWaitlist>().Remove(waiting);
+        if (waiting != null)
+        {
+            context.Set<SessionWaitlist>().Remove(waiting);
+        }
 
         await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -157,7 +188,10 @@ public class TestingParticipantOperationsService(
             .FirstOrDefaultAsync(sr => sr.SessionId == sessionId && sr.UserId == userId &&
                                        sr.TenantId == tenantId && sr.DeletedAt == null);
 
-        if (registration == null) return false;
+        if (registration == null)
+        {
+            return false;
+        }
 
         var session = await context.Set<TestingSession>()
             .FirstOrDefaultAsync(candidate => candidate.Id == sessionId && candidate.TenantId == tenantId && candidate.DeletedAt == null)
@@ -166,14 +200,21 @@ public class TestingParticipantOperationsService(
         if (session != null)
         {
             if (registration.RegistrationType == RegistrationType.Tester)
+            {
                 session.RegisteredTesterCount = Math.Max(0, session.RegisteredTesterCount - 1);
+            }
             else if (registration.RegistrationType == RegistrationType.ProjectMember)
+            {
                 session.RegisteredProjectMemberCount = Math.Max(0, session.RegisteredProjectMemberCount - 1);
+            }
         }
 
         context.Set<SessionRegistration>().Remove(registration);
         if (session != null && registration.RegistrationType == RegistrationType.Tester)
+        {
             await PromoteOldestWaitlistedTesterAsync(session, tenantId).ConfigureAwait(false);
+        }
+
         await context.SaveChangesAsync().ConfigureAwait(false);
 
         return true;
@@ -201,17 +242,26 @@ public class TestingParticipantOperationsService(
         var sessionExists = await context.Set<TestingSession>().AsNoTracking().AnyAsync(session =>
             session.Id == sessionId && session.TenantId == tenantId && session.DeletedAt == null &&
             session.Status == SessionStatus.Scheduled).ConfigureAwait(false);
-        if (!sessionExists) throw new KeyNotFoundException("Testing session not found or not open for registration.");
+        if (!sessionExists)
+        {
+            throw new KeyNotFoundException("Testing session not found or not open for registration.");
+        }
+
         if (await context.Set<SessionRegistration>().AnyAsync(registration =>
                 registration.SessionId == sessionId && registration.UserId == userId &&
                 registration.TenantId == tenantId && registration.DeletedAt == null).ConfigureAwait(false))
+        {
             throw new InvalidOperationException("The user is already registered for this session.");
+        }
 
         var existingWaitlist = await context.Set<SessionWaitlist>()
             .FirstOrDefaultAsync(sw => sw.SessionId == sessionId && sw.UserId == userId &&
                                        sw.TenantId == tenantId && sw.DeletedAt == null);
 
-        if (existingWaitlist != null) return existingWaitlist;
+        if (existingWaitlist != null)
+        {
+            return existingWaitlist;
+        }
 
         var maxPosition = await context.Set<SessionWaitlist>()
             .Where(sw => sw.SessionId == sessionId && sw.TenantId == tenantId && sw.DeletedAt == null)
@@ -245,7 +295,10 @@ public class TestingParticipantOperationsService(
             .FirstOrDefaultAsync(sw => sw.SessionId == sessionId && sw.UserId == userId &&
                                        sw.TenantId == tenantId && sw.DeletedAt == null);
 
-        if (waitlistEntry == null) return false;
+        if (waitlistEntry == null)
+        {
+            return false;
+        }
 
         var removedPosition = waitlistEntry.Position;
 
@@ -256,7 +309,10 @@ public class TestingParticipantOperationsService(
                          sw.Position > removedPosition)
             .ToListAsync();
 
-        foreach (var entry in remainingEntries) entry.Position--;
+        foreach (var entry in remainingEntries)
+        {
+            entry.Position--;
+        }
 
         await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -360,9 +416,14 @@ public class TestingParticipantOperationsService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.SubjectIdAsGuid != userId && !actor.IsTenantAdmin)
+        {
             throw new UnauthorizedAccessException("Users may only manage their own Testing Lab participation.");
+        }
+
         if (!await TestingLabActorAccess.IsActiveTenantActorAsync(context, actor, CancellationToken.None).ConfigureAwait(false))
+        {
             throw new UnauthorizedAccessException("An active tenant membership is required for Testing Lab participation.");
+        }
     }
 
     private async Task PromoteOldestWaitlistedTesterAsync(TestingSession session, Guid tenantId)
@@ -374,7 +435,10 @@ public class TestingParticipantOperationsService(
             .ThenBy(entry => entry.CreatedAt)
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
-        if (next == null || session.RegisteredTesterCount >= session.MaxTesters) return;
+        if (next == null || session.RegisteredTesterCount >= session.MaxTesters)
+        {
+            return;
+        }
 
         context.Set<SessionWaitlist>().Remove(next);
         context.Set<SessionRegistration>().Add(new SessionRegistration
@@ -391,7 +455,10 @@ public class TestingParticipantOperationsService(
                             entry.DeletedAt == null && entry.Position > next.Position)
             .ToListAsync()
             .ConfigureAwait(false);
-        foreach (var entry in remaining) entry.Position--;
+        foreach (var entry in remaining)
+        {
+            entry.Position--;
+        }
     }
 
     private static StudentAttendanceReportRow BuildAttendanceRow(

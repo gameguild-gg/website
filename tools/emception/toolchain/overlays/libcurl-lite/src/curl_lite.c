@@ -10,10 +10,15 @@
  */
 
 #include "curl/curl.h"
+#include <limits.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(_WIN32)
+#include <strings.h>
+#endif
 
 /* ------------------------------------------------------------------ */
 /*  Internal handle struct                                             */
@@ -483,9 +488,19 @@ CURLcode curl_easy_perform(CURL *handle)
             /* Deliver header to callback */
             if (h->header_cb)
             {
-                char hbuf[4096];
-                int n = snprintf(hbuf, sizeof(hbuf), "%s\r\n", line);
-                h->header_cb(hbuf, 1, (size_t)n, h->header_data);
+                /* fgets stores at most sizeof(line) - 1 payload bytes.
+                 * Reserve two more bytes for CRLF; the callback receives a
+                 * byte span and does not require a terminating NUL. */
+                char hbuf[sizeof(line) + 1];
+                memcpy(hbuf, line, len);
+                hbuf[len] = '\r';
+                hbuf[len + 1] = '\n';
+                size_t header_length = len + 2;
+                if (h->header_cb(hbuf, 1, header_length, h->header_data) != header_length)
+                {
+                    fclose(rf);
+                    return CURLE_WRITE_ERROR;
+                }
             }
             /* Extract content-type */
             if (strncasecmp(line, "content-type:", 13) == 0)
@@ -643,13 +658,16 @@ const char *curl_easy_strerror(CURLcode code)
 char *curl_easy_escape(CURL *handle, const char *string, int length)
 {
     (void)handle;
-    if (!string)
+    if (!string || length < 0)
         return NULL;
     size_t slen = length > 0 ? (size_t)length : strlen(string);
-    /* Worst case: every byte becomes %XX (3x) */
+    /* Worst case: every byte becomes %XX (3x), plus the terminator. */
+    if (slen > (SIZE_MAX - 1) / 3)
+        return NULL;
     char *out = (char *)malloc(slen * 3 + 1);
     if (!out)
         return NULL;
+    static const char hex[] = "0123456789ABCDEF";
     char *p = out;
     for (size_t i = 0; i < slen; i++)
     {
@@ -661,7 +679,9 @@ char *curl_easy_escape(CURL *handle, const char *string, int length)
         }
         else
         {
-            p += sprintf(p, "%%%02X", c);
+            *p++ = '%';
+            *p++ = hex[c >> 4];
+            *p++ = hex[c & 0x0F];
         }
     }
     *p = '\0';
@@ -682,9 +702,11 @@ static int hex_digit(char c)
 char *curl_easy_unescape(CURL *handle, const char *url, int inlength, int *outlength)
 {
     (void)handle;
-    if (!url)
+    if (!url || inlength < 0)
         return NULL;
     size_t slen = inlength > 0 ? (size_t)inlength : strlen(url);
+    if (slen == SIZE_MAX)
+        return NULL;
     char *out = (char *)malloc(slen + 1);
     if (!out)
         return NULL;
@@ -706,7 +728,14 @@ char *curl_easy_unescape(CURL *handle, const char *url, int inlength, int *outle
     }
     out[j] = '\0';
     if (outlength)
+    {
+        if (j > INT_MAX)
+        {
+            free(out);
+            return NULL;
+        }
         *outlength = (int)j;
+    }
     return out;
 }
 

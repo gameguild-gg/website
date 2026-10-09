@@ -52,9 +52,15 @@ public class MfaAttemptRepository(IApplicationDbContext context) : IMfaAttemptRe
     {
         var query = MfaAttempts.Where(m => m.Method == method);
 
-        if (fromDate.HasValue) query = query.Where(m => m.CreatedAt >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(m => m.CreatedAt <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt <= toDate.Value);
+        }
 
         return await query.OrderByDescending(m => m.CreatedAt).ToListAsync(cancellationToken);
     }
@@ -73,7 +79,10 @@ public class MfaAttemptRepository(IApplicationDbContext context) : IMfaAttemptRe
     {
         var attempt = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (attempt == null) return false;
+        if (attempt == null)
+        {
+            return false;
+        }
 
         MfaAttempts.Remove(attempt);
         var changes = await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

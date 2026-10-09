@@ -39,21 +39,38 @@ public sealed record EconomyProtectedRiskPolicy(
             var requiredReviewApprovals = root.GetProperty("riskReviewRequiredApprovals").GetInt32();
             var complianceHoldSeconds = root.GetProperty("complianceHoldSeconds").GetInt32();
             if (decisionLifetimeSeconds is < 30 or > 300)
+            {
                 throw Invalid("Risk decision lifetime must be between 30 and 300 seconds.");
+            }
+
             if (requiredReviewApprovals is < 1 or > 2)
+            {
                 throw Invalid("Risk review approvals must be one or two.");
+            }
+
             if (complianceHoldSeconds is < 60 or > 2_592_000)
+            {
                 throw Invalid("Compliance hold duration must be between one minute and 30 days.");
+            }
 
             var limitsElement = root.GetProperty("riskLimits");
             if (limitsElement.ValueKind != JsonValueKind.Array || limitsElement.GetArrayLength() == 0)
+            {
                 throw Invalid("At least one explicit aggregate risk limit is required.");
+            }
+
             var limits = limitsElement.EnumerateArray().Select(ParseLimit).ToArray();
             if (limits.Select(limit => (limit.Dimension, limit.Subject)).Distinct().Count() != limits.Length)
+            {
                 throw Invalid("Aggregate risk limit dimensions and subjects must be unique.");
+            }
+
             var counterVersions = limits.Select(limit => limit.CounterVersion).Distinct().ToArray();
             if (counterVersions.Length != 1)
+            {
                 throw Invalid("All aggregate risk limits must use one counter version.");
+            }
+
             return new EconomyProtectedRiskPolicy(
                 TimeSpan.FromSeconds(decisionLifetimeSeconds),
                 requiredReviewApprovals,
@@ -61,12 +78,9 @@ public sealed record EconomyProtectedRiskPolicy(
                 counterVersions[0],
                 Array.AsReadOnly(limits));
         }
-        catch (EconomyProtectedRiskPolicyException)
-        {
-            throw;
-        }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or
-                                           FormatException or OverflowException or KeyNotFoundException)
+        catch (Exception exception) when (exception is not EconomyProtectedRiskPolicyException &&
+                                           exception is (JsonException or InvalidOperationException or
+                                               FormatException or OverflowException or KeyNotFoundException))
         {
             throw Invalid("The signed protected-operation risk policy is invalid.", exception);
         }
@@ -80,12 +94,18 @@ public sealed record EconomyProtectedRiskPolicy(
             !Enum.IsDefined(dimension) ||
             !Enum.TryParse<EconomyRiskLimitSubject>(subjectText, ignoreCase: false, out var subject) ||
             !Enum.IsDefined(subject))
+        {
             throw Invalid("Aggregate risk limit dimension or subject is invalid.");
+        }
+
         var counterVersion = element.GetProperty("counterVersion").GetInt64();
         var maximumUnits = element.GetProperty("maximumUnits").GetInt64();
         var windowSeconds = element.GetProperty("windowSeconds").GetInt64();
         if (counterVersion <= 0 || maximumUnits <= 0 || windowSeconds is < 60 or > 31_536_000)
+        {
             throw Invalid("Aggregate risk limit values are outside their safe ranges.");
+        }
+
         return new EconomyProtectedRiskLimitRule(
             dimension,
             subject,

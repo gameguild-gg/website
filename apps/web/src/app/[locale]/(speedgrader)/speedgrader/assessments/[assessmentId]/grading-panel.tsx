@@ -132,7 +132,7 @@ function GradingPanelSession({
     } catch { return null; }
   });
   const rubricComplete = rubricValues?.every((value) => value !== null);
-  const rubricTotal = rubricComplete ? rubricValues!.reduce<number>((sum, value) => sum + value!, 0) : 0;
+  const rubricTotal = rubricComplete ? rubricValues.reduce<number>((sum, value) => sum + value, 0) : 0;
 
   const itemRows = orderedItemIds.map((itemId) => {
     const maxUnits = submission?.execution.itemMaxScores[itemId] ?? 0;
@@ -191,7 +191,7 @@ function GradingPanelSession({
         overrideReason: overrideReason.trim() || null,
         ...(frozenRubric ? {
           rubricScores: Object.fromEntries(frozenRubric.criteria.map((criterion) => [
-            criterion.id, pointsToScoreUnits(criterionScores[criterion.id]!),
+            criterion.id, pointsToScoreUnits(criterionScores[criterion.id] ?? ''),
           ])),
         } : {}),
       },

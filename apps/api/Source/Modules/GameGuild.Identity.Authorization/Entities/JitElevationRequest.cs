@@ -53,11 +53,36 @@ public class JitElevationRequest
     /// </summary>
     public bool IsActive()
     {
-        if (Status != ElevationRequestStatus.Active) return false;
+        if (Status != ElevationRequestStatus.Active)
+        {
+            return false;
+        }
 
         var now = SystemClock.UtcNow;
         var startTime = StartsAt ?? CreatedAt;
 
+        return now >= startTime && now < ExpiresAt;
+    }
+
+    /// <summary>
+    ///     Check if the elevation currently confers its permission (enforcement window).
+    ///     An elevation is in force when it is <see cref="ElevationRequestStatus.Active"/>,
+    ///     or <see cref="ElevationRequestStatus.Approved"/> with a start time that has
+    ///     already arrived (lazy window entry — approval grants the window, no separate
+    ///     activation step is required), and the current time is within [start, expiry).
+    ///     This is the predicate used by permission evaluation to honor JIT grants.
+    /// </summary>
+    public bool IsGrantInForce()
+    {
+        var now = SystemClock.UtcNow;
+
+        var statusInForce = Status == ElevationRequestStatus.Active
+            || (Status == ElevationRequestStatus.Approved
+                && StartsAt.HasValue
+                && StartsAt.Value <= now);
+        if (!statusInForce) return false;
+
+        var startTime = StartsAt ?? CreatedAt;
         return now >= startTime && now < ExpiresAt;
     }
 
@@ -69,10 +94,19 @@ public class JitElevationRequest
     /// <summary>
     ///     Approve the elevation request
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the request is not pending, or when the reviewer is the requester
+    ///     (self-approval is prohibited — elevation requires approval by a different user).
+    /// </exception>
     public void Approve(Guid reviewerId, string? comments = null)
     {
         if (Status != ElevationRequestStatus.Pending)
+        {
             throw new InvalidOperationException("Only pending requests can be approved");
+        }
+
+        if (reviewerId == RequesterId)
+            throw new InvalidOperationException("Self-approval of elevation requests is not allowed");
 
         Status = ElevationRequestStatus.Approved;
         ReviewerId = reviewerId;
@@ -99,7 +133,9 @@ public class JitElevationRequest
     public void Deny(Guid reviewerId, string comments)
     {
         if (Status != ElevationRequestStatus.Pending)
+        {
             throw new InvalidOperationException("Only pending requests can be denied");
+        }
 
         Status = ElevationRequestStatus.Denied;
         ReviewerId = reviewerId;
@@ -114,7 +150,9 @@ public class JitElevationRequest
     public void Activate()
     {
         if (Status != ElevationRequestStatus.Approved)
+        {
             throw new InvalidOperationException("Only approved requests can be activated");
+        }
 
         Status = ElevationRequestStatus.Active;
         ActivatedAt = SystemClock.UtcNow;
@@ -127,7 +165,9 @@ public class JitElevationRequest
     public void Revoke(Guid revokedBy, string reason)
     {
         if (Status != ElevationRequestStatus.Active && Status != ElevationRequestStatus.Approved)
+        {
             throw new InvalidOperationException("Only active or approved requests can be revoked");
+        }
 
         Status = ElevationRequestStatus.Revoked;
         RevokedBy = revokedBy;
@@ -141,7 +181,7 @@ public class JitElevationRequest
     /// </summary>
     public void MarkExpired()
     {
-        if (Status == ElevationRequestStatus.Active)
+        if (Status == ElevationRequestStatus.Active || Status == ElevationRequestStatus.Approved)
         {
             Status = ElevationRequestStatus.Expired;
             UpdatedAt = SystemClock.UtcNow;
@@ -153,7 +193,10 @@ public class JitElevationRequest
     /// </summary>
     public int GetRemainingMinutes()
     {
-        if (!IsActive()) return 0;
+        if (!IsActive())
+        {
+            return 0;
+        }
 
         var remaining = ExpiresAt - SystemClock.UtcNow;
         return (int)Math.Max(0, remaining.TotalMinutes);

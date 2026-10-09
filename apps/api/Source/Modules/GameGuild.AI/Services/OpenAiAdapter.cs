@@ -26,7 +26,10 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
         {
             var payloadMessages = new List<object>();
             if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
+            {
                 payloadMessages.Add(new { role = "system", content = request.SystemPrompt });
+            }
+
             payloadMessages.AddRange(request.Messages.Select(static message => new
             {
                 role = message.Role.ToLowerInvariant(),
@@ -63,15 +66,23 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
             while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
             {
                 if (!line.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
+                }
+
                 var data = line[5..].Trim();
                 if (data.Length == 0 || data == "[DONE]")
+                {
                     continue;
+                }
 
                 using var document = JsonDocument.Parse(data);
                 var root = document.RootElement;
                 if (root.TryGetProperty("model", out var modelElement) && modelElement.ValueKind == JsonValueKind.String)
+                {
                     model = modelElement.GetString() ?? model;
+                }
+
                 if (root.TryGetProperty("usage", out var usageElement) && usageElement.ValueKind == JsonValueKind.Object)
                 {
                     inputTokens = AiJsonHelpers.TryGetInt(usageElement, "prompt_tokens");
@@ -79,12 +90,21 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
                     totalTokens = AiJsonHelpers.TryGetInt(usageElement, "total_tokens");
                 }
                 if (!root.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+                {
                     continue;
+                }
+
                 var choice = choices[0];
                 if (choice.TryGetProperty("finish_reason", out var finishElement) && finishElement.ValueKind == JsonValueKind.String)
+                {
                     finishReason = finishElement.GetString();
+                }
+
                 if (!choice.TryGetProperty("delta", out var deltaElement) || !deltaElement.TryGetProperty("content", out var contentElement))
+                {
                     continue;
+                }
+
                 var delta = contentElement.ValueKind switch
                 {
                     JsonValueKind.String => contentElement.GetString(),
@@ -92,13 +112,19 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
                     _ => null
                 };
                 if (string.IsNullOrEmpty(delta))
+                {
                     continue;
+                }
+
                 text.Append(delta);
                 await onDelta(delta, cancellationToken).ConfigureAwait(false);
             }
 
             if (text.Length == 0)
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiEmptyResponse", "OpenAI returned an empty response."));
+            }
+
             return Result.Success(new AiProviderExecutionResult(model, text.ToString(), finishReason, inputTokens, outputTokens, totalTokens));
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -172,10 +198,14 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
             }
 
             if (lastStatusCode.HasValue && IsTransient(lastStatusCode.Value) && string.IsNullOrWhiteSpace(responseBody))
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiRetryFailed", "OpenAI did not return a successful response after retrying transient failures."));
+            }
 
             if (string.IsNullOrWhiteSpace(responseBody))
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiEmptyResponse", "OpenAI returned an empty HTTP response."));
+            }
 
             using var document = JsonDocument.Parse(responseBody);
             var root = document.RootElement;
@@ -202,7 +232,9 @@ internal sealed class OpenAiAdapter(IHttpClientFactory httpClientFactory, ILogge
                 : null;
 
             if (string.IsNullOrWhiteSpace(text))
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.OpenAiEmptyResponse", "OpenAI returned an empty response."));
+            }
 
             var finishReason = choice.TryGetProperty("finish_reason", out var finishReasonElement)
                 ? finishReasonElement.GetString()

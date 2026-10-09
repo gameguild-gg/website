@@ -1874,21 +1874,20 @@ public sealed class AuthorizationCoverageCompletionTests
         localization.DateFormat.Should().Be("yyyy-MM-dd");
         localization.NumberFormat.Should().Be("N2");
 
-        var tenantRepository = new Mock<ITenantPermissionRepository>();
-        tenantRepository.Setup(r => r.GetByUserAndTenantAsync(null, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TenantPermission { Permissions = ["read"] });
-        tenantRepository.Setup(r => r.GetByTenantAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new TenantPermission { Permissions = ["read"] }]);
-        var adapterType = typeof(AuthorizationModule).Assembly.GetType("GameGuild.Identity.Authorization.TenantPermissionStoreAdapter")!;
-        var tenantAdapter = Activator.CreateInstance(adapterType, tenantRepository.Object)!;
-        (await (Task<TenantPermission?>)adapterType.GetMethod("GetPermissionAsync")!.Invoke(tenantAdapter, [Guid.NewGuid(), CancellationToken.None])!)
-            .Should().NotBeNull();
-
-        var resourceService = new Mock<IResourcePermissionService>();
-        var resourceAdapterType = typeof(AuthorizationModule).Assembly.GetType("GameGuild.Identity.Authorization.ResourcePermissionStoreAdapter")!;
-        var resourceAdapter = Activator.CreateInstance(resourceAdapterType, resourceService.Object)!;
-        (await (Task<IReadOnlyList<ResourceUserPermission>>)resourceAdapterType.GetMethod("GetResourcePermissionsAsync")!.Invoke(resourceAdapter, [Guid.NewGuid(), CancellationToken.None])!)
-            .Should().BeEmpty();
+        var resolverRepository = new Mock<ITenantPermissionRepository>();
+        resolverRepository.Setup(r => r.GetByUserAndTenantAsync(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TenantPermission?)null);
+        var rbacMock = new Mock<IRbacPermissionResolver>();
+        rbacMock.Setup(r => r.ResolvePermissionsAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RbacResolutionResult(new HashSet<string>(), new HashSet<string>(), []));
+        var effectiveResolver = new EffectivePermissionResolverService(
+            resolverRepository.Object,
+            rbacMock.Object,
+            [Mock.Of<IAuthorizationRolePermissionProvider>()],
+            Mock.Of<IResourcePermissionService>(),
+            Options.Create(new GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions()),
+            NullLogger<EffectivePermissionResolverService>.Instance);
+        (await effectiveResolver.ResolveAsync(Guid.NewGuid(), null)).Permissions.Should().BeEmpty();
 
         var resolver = new DefaultTenantResolver();
         var resolvedTenant = await ((IAuthorizationTenantResolver)resolver).ResolveTenantIdAsync(new DefaultHttpContext());
@@ -2650,7 +2649,7 @@ public sealed class AuthorizationCoverageCompletionTests
             $"acl:{aclTenantId}:{aclUserId}:Document:doc-1:tv1:uv1:gv1",
             $"acl:{aclTenantId}:subject:Document:doc-1:tv1:uv1:gv1"
         ];
-        InvokePrivate<object>(aclWithoutMetrics, "InvalidatePrincipalResourceCache", AclPrincipalType.User, aclUserId, aclTenantId, "Document", "doc-1");
+        InvokePrivate<object>(aclWithoutMetrics, "InvalidatePrincipalResourceCache", aclTenantId, "Document", "doc-1");
         aclNullMetricKeys[aclTenantId.ToString()] = [$"acl:{aclTenantId}:{aclUserId}:Document:doc-1:tv1:uv1:gv1"];
         InvokePrivate<object>(aclWithoutMetrics, "InvalidateUserResourceCache", aclUserId, aclTenantId, "Document", "doc-1");
 

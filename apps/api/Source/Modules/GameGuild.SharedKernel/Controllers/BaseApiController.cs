@@ -25,7 +25,9 @@ public abstract class BaseApiController : ControllerBase
     protected ActionResult<T> ToActionResult<T>(Result<T> result)
     {
         if (result.IsSuccess)
+        {
             return Ok(result.Value);
+        }
 
         return ToProblemResult(result.Error);
     }
@@ -39,7 +41,9 @@ public abstract class BaseApiController : ControllerBase
         if (result.IsSuccess)
         {
             if (routeName is not null)
+            {
                 return CreatedAtRoute(routeName, routeValues, result.Value);
+            }
 
             return StatusCode(StatusCodes.Status201Created, result.Value);
         }
@@ -54,7 +58,9 @@ public abstract class BaseApiController : ControllerBase
     protected IActionResult ToActionResult(Result result)
     {
         if (result.IsSuccess)
+        {
             return NoContent();
+        }
 
         return ToProblemActionResult(result.Error);
     }

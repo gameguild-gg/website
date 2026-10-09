@@ -25,7 +25,9 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
     private ActionResult<OrderDto> ToOrderActionResult(Result<OrderOperationResult> result)
     {
         if (result.IsFailure)
+        {
             return BadRequest(CreateProblemDetails(result.Error.Description));
+        }
 
         return Ok(MapToDto(result.Value.Order));
     }
@@ -36,7 +38,9 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
     private IActionResult ToResultActionResult(Result result)
     {
         if (result.IsFailure)
+        {
             return BadRequest(CreateProblemDetails(result.Error.Description));
+        }
 
         return NoContent();
     }
@@ -72,7 +76,9 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
         var result = await sender.Send<Result<OrderOperationResult>>(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return BadRequest(CreateProblemDetails(result.Error.Description));
+        }
 
         var dto = MapToDto(result.Value.Order);
 
@@ -102,7 +108,9 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
         var result = await sender.Send<Result<Order>>(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return BadRequest(CreateProblemDetails(result.Error.Description));
+        }
 
         return Ok(MapToDto(result.Value));
     }
@@ -174,11 +182,15 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
         var order = await sender.Send<Order?>(new GetOrderQuery(orderId), cancellationToken).ConfigureAwait(false);
 
         if (order == null)
+        {
             return NotFound();
+        }
 
         var actor = actorContextAccessor.ActorContext;
         if (order.UserId != actor.SubjectIdAsGuid && !actor.HasPermission(OrdersPermission.Keys.ReadAll))
+        {
             return NotFound();
+        }
 
         return Ok(MapToDto(order));
     }
@@ -198,7 +210,9 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } actorId || actorId == Guid.Empty)
+        {
             return Forbid();
+        }
 
         if (!string.Equals(owner, "me", StringComparison.OrdinalIgnoreCase) &&
             actor.HasPermission(OrdersPermission.Keys.ReadAll))
@@ -277,7 +291,9 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
         var result = await sender.Send<Result<OrderOperationResult>>(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return BadRequest(CreateProblemDetails(result.Error.Description));
+        }
 
         var value = result.Value;
         var order = MapToDto(value.Order);
@@ -315,7 +331,11 @@ public class OrdersController(ISender sender, IActorContextAccessor actorContext
     {
         var result = await sender.Send<Result<OrderPaymentIntentPreparation>>(
             new PrepareOrderPaymentIntentCommand(orderId), cancellationToken).ConfigureAwait(false);
-        if (result.IsFailure) return BadRequest(CreateProblemDetails(result.Error.Description));
+        if (result.IsFailure)
+        {
+            return BadRequest(CreateProblemDetails(result.Error.Description));
+        }
+
         return Ok(result.Value);
     }
 

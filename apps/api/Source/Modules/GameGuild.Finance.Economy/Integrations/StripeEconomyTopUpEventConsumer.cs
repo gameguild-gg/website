@@ -25,7 +25,10 @@ public sealed class StripeEconomyTopUpEventConsumer(
         ArgumentNullException.ThrowIfNull(verifiedEvent);
         var status = MapStatus(verifiedEvent.EventType);
         if (!status.HasValue)
+        {
             return false;
+        }
+
         Validate(verifiedEvent);
         var identity = new EconomyTopUpProviderIdentity(
             "stripe",
@@ -36,7 +39,10 @@ public sealed class StripeEconomyTopUpEventConsumer(
             "capture");
         var context = await topUps.FindAsync(identity, cancellationToken).ConfigureAwait(false);
         if (context is null)
+        {
             return false;
+        }
+
         EnsureAuthoritativePayment(verifiedEvent, context);
 
         if (status != EconomyTopUpProviderStatus.Posted)
@@ -47,7 +53,9 @@ public sealed class StripeEconomyTopUpEventConsumer(
             return true;
         }
         if (context.TopUp.Status is EconomyTopUpProviderStatus.Posted or EconomyTopUpProviderStatus.Cancelled)
+        {
             return true;
+        }
 
         var evidence = $"stripe-event:{verifiedEvent.EventId}:sha256:{verifiedEvent.PayloadSha256}";
         var observation = fundingAdapter.CreateObservation(
@@ -137,8 +145,10 @@ public sealed class StripeEconomyTopUpEventConsumer(
             !string.Equals(verifiedEvent.ProviderObjectType, "payment_intent", StringComparison.Ordinal) ||
             verifiedEvent.PayloadSha256.Length != 64 ||
             !verifiedEvent.PayloadSha256.All(Uri.IsHexDigit))
+        {
             throw new InvalidWebhookPayloadException(
                 "Stripe top-up event identity or evidence is incomplete.");
+        }
     }
 
     internal static void EnsureAuthoritativePayment(
@@ -148,8 +158,10 @@ public sealed class StripeEconomyTopUpEventConsumer(
         if (!verifiedEvent.Amount.HasValue || verifiedEvent.Amount.Value != context.Payment.Amount ||
             !string.Equals(verifiedEvent.Currency, context.Payment.Currency, StringComparison.OrdinalIgnoreCase) ||
             verifiedEvent.TenantId.HasValue && verifiedEvent.TenantId.Value != context.TopUp.TenantId)
+        {
             throw new InvalidWebhookPayloadException(
                 "Stripe top-up event does not match the authoritative payment.");
+        }
     }
 
     private static EconomyTopUpProviderEvent ProviderEvent(

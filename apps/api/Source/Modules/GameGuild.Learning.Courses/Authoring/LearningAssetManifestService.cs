@@ -33,7 +33,10 @@ public sealed class LearningAssetManifestService(IApplicationDbContext db)
         CancellationToken cancellationToken = default)
     {
         var assetIds = ExtractAssetIds(JsonSerializer.Serialize(payload));
-        if (assetIds.Count == 0 && !publishing) return;
+        if (assetIds.Count == 0 && !publishing)
+        {
+            return;
+        }
 
         var referenceQuery = db.Set<AssetReference>()
             .Include(reference => reference.Content)
@@ -50,29 +53,45 @@ public sealed class LearningAssetManifestService(IApplicationDbContext db)
             .ConfigureAwait(false);
         var referencedAssets = references.Where(reference => assetIds.Contains(reference.Id)).ToArray();
         if (referencedAssets.Length != assetIds.Count)
+        {
             throw new ValidationException("One or more assets are not available in this lesson.");
+        }
 
         foreach (var reference in referencedAssets)
         {
             if (reference.TenantId != content.TenantId ||
                 reference.ParentResourceId != content.Id ||
                 !string.Equals(reference.ParentResourceType, nameof(ProgramContent), StringComparison.OrdinalIgnoreCase))
+            {
                 throw new ValidationException("One or more assets are not available in this lesson.");
+            }
 
-            if (!publishing) continue;
+            if (!publishing)
+            {
+                continue;
+            }
+
             if (reference.Content.VirusScanStatus != VirusScanStatus.Clean ||
                 reference.Content.ModerationStatus is not (ModerationStatus.Approved or ModerationStatus.ApprovedWithWarning))
+            {
                 throw new ValidationException("Every lesson asset must finish security review before publishing.");
+            }
         }
 
-        if (!publishing) return;
+        if (!publishing)
+        {
+            return;
+        }
 
         foreach (var reference in references)
         {
             var intendedPolicy = assetIds.Contains(reference.Id)
                 ? AssetAccessPolicy.Inherited
                 : AssetAccessPolicy.Private;
-            if (reference.AccessPolicy == intendedPolicy) continue;
+            if (reference.AccessPolicy == intendedPolicy)
+            {
+                continue;
+            }
 
             reference.AccessPolicy = intendedPolicy;
             reference.Touch();
@@ -98,7 +117,10 @@ public sealed class LearningAssetManifestService(IApplicationDbContext db)
                 .AsNoTracking()
                 .AnyAsync(cancellationToken)
                 .ConfigureAwait(false);
-            if (referencedByPublishedContent) return true;
+            if (referencedByPublishedContent)
+            {
+                return true;
+            }
 
             return await db.Set<ProgramContentDraft>()
                 .FromSqlInterpolated($$"""
@@ -119,7 +141,10 @@ public sealed class LearningAssetManifestService(IApplicationDbContext db)
             .Select(content => new { content.Body, content.JsonBody })
             .AnyAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (publishedPayloads) return true;
+        if (publishedPayloads)
+        {
+            return true;
+        }
 
         return await db.Set<ProgramContentDraft>()
             .AsNoTracking()
@@ -132,7 +157,10 @@ public sealed class LearningAssetManifestService(IApplicationDbContext db)
         var ids = new HashSet<Guid>();
         foreach (Match match in AssetUriPattern.Matches(payload))
         {
-            if (Guid.TryParse(match.Groups["id"].Value, out var id)) ids.Add(id);
+            if (Guid.TryParse(match.Groups["id"].Value, out var id))
+            {
+                ids.Add(id);
+            }
         }
         return ids;
     }

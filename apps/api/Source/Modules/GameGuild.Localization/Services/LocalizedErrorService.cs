@@ -105,7 +105,7 @@ public class LocalizedErrorService : ILocalizedErrorService
             catch (FormatException ex)
             {
                 _logger.LogWarning(ex, "Failed to format error message {ErrorKey} with {ArgCount} arguments", 
-                    errorKey, args.Length);
+                    LogRedaction.Sanitize(errorKey), args.Length);
                 return message;
             }
         }
@@ -158,7 +158,7 @@ public class LocalizedErrorService : ILocalizedErrorService
                 return message;
             }
 
-            _logger.LogWarning("Missing translation for key {Key} in culture {Culture}", key, culture.Name);
+            _logger.LogWarning("Missing translation for key {Key} in culture {Culture}", LogRedaction.Sanitize(key), culture.Name);
             return key; // Return the key itself as fallback
         })!;
     }
@@ -188,7 +188,7 @@ public class LocalizedErrorService : ILocalizedErrorService
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Database lookup failed for error key {Key} in culture {Culture}, using fallback", 
-                key, culture.Name);
+                LogRedaction.Sanitize(key), culture.Name);
             return null;
         }
     }

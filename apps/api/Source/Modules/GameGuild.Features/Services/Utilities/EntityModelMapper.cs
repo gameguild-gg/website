@@ -105,9 +105,15 @@ public static class EntityModelMapper
         target.RolloutPercentage = request.RolloutPercentage ?? 100;
         target.Priority = request.Priority;
 
-        if (request.CustomValue != null) target.CustomValue = request.CustomValue;
+        if (request.CustomValue != null)
+        {
+            target.CustomValue = request.CustomValue;
+        }
 
-        if (request.Metadata != null && request.Metadata.Count > 0) target.Metadata = JsonSerializer.Serialize(request.Metadata);
+        if (request.Metadata != null && request.Metadata.Count > 0)
+        {
+            target.Metadata = JsonSerializer.Serialize(request.Metadata);
+        }
     }
 
     /// <summary>

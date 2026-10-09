@@ -18,7 +18,9 @@ public sealed class GetResourceUsageByTypeQueryHandler(IUsageRecordRepository us
         var totalCount = await usageRecordRepository.GetTotalRecordCountAsync(null, cancellationToken).ConfigureAwait(false);
 
         if (totalCount == 0)
+        {
             return new Dictionary<Guid, int>();
+        }
 
         // For cross-tenant aggregation, query the repository for all records in date range
         // This uses the IApplicationDbContext indirectly through the repository

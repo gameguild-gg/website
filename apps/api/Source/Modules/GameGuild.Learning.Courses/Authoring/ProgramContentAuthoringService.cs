@@ -115,14 +115,18 @@ public sealed class ProgramContentAuthoringService(
             // The draft is shared per lesson. Two first-time editors may race on the
             // unique ContentId constraint; the winner's draft is the canonical one.
             if (db is DbContext context)
+            {
                 context.Entry(draft).State = EntityState.Detached;
+            }
 
             var winner = await db.Set<ProgramContentDraft>()
                 .AsNoTracking()
                 .SingleOrDefaultAsync(candidate => candidate.ContentId == contentId, cancellationToken)
                 .ConfigureAwait(false);
             if (winner is null)
+            {
                 throw;
+            }
 
             EnsureProgram(winner.ProgramId, programId);
             return ToDto(winner);
@@ -143,8 +147,11 @@ public sealed class ProgramContentAuthoringService(
         var draft = await FindDraft(programId, contentId, cancellationToken).ConfigureAwait(false);
         var content = await FindContent(programId, contentId, cancellationToken).ConfigureAwait(false);
         if (assetManifestService is not null)
+        {
             await assetManifestService.ValidateAndReconcileAsync(content, normalizedPayload, false, cancellationToken)
                 .ConfigureAwait(false);
+        }
+
         draft.Update(expectedRevision, JsonSerializer.Serialize(normalizedPayload, JsonOptions), actorId, DateTimeOffset.UtcNow);
         try
         {
@@ -174,17 +181,24 @@ public sealed class ProgramContentAuthoringService(
         await using var transaction = await BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
         var draft = await FindDraft(programId, contentId, cancellationToken).ConfigureAwait(false);
         if (draft.Revision != expectedRevision)
+        {
             throw new AuthoringRevisionConflictException(expectedRevision, draft.Revision);
+        }
 
         var content = await FindContent(programId, contentId, cancellationToken).ConfigureAwait(false);
         if (draft.BasePublishedVersion != content.Version)
+        {
             throw new AuthoringPublishedVersionConflictException(draft.BasePublishedVersion, content.Version);
+        }
 
         var basePublishedVersion = draft.BasePublishedVersion;
         var payload = Deserialize(draft.PayloadJson).Normalize();
         if (assetManifestService is not null)
+        {
             await assetManifestService.ValidateAndReconcileAsync(content, payload, true, cancellationToken)
                 .ConfigureAwait(false);
+        }
+
         ApplyPayload(content, payload);
         foreach (var participant in _publicationParticipants.Where(candidate => candidate.CanHandle(content)))
         {
@@ -207,7 +221,9 @@ public sealed class ProgramContentAuthoringService(
             }
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             if (transaction is not null)
+            {
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -218,9 +234,14 @@ public sealed class ProgramContentAuthoringService(
                 .SingleOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
             if (currentDraft is null)
+            {
                 throw new KeyNotFoundException("Authoring draft was not found.");
+            }
+
             if (currentDraft.Revision != expectedRevision)
+            {
                 throw new AuthoringRevisionConflictException(expectedRevision, currentDraft.Revision);
+            }
 
             var currentPublishedVersion = await db.Set<ProgramContent>()
                 .AsNoTracking()
@@ -231,9 +252,11 @@ public sealed class ProgramContentAuthoringService(
                 ?? throw new KeyNotFoundException("Course content was not found.");
             if (currentPublishedVersion != basePublishedVersion ||
                 currentDraft.BasePublishedVersion != currentPublishedVersion)
+            {
                 throw new AuthoringPublishedVersionConflictException(
                     basePublishedVersion,
                     currentPublishedVersion);
+            }
 
             throw;
         }
@@ -246,7 +269,9 @@ public sealed class ProgramContentAuthoringService(
         if (db is not DbContext dbContext ||
             !dbContext.Database.IsRelational() ||
             dbContext.Database.CurrentTransaction is not null)
+        {
             return null;
+        }
 
         return await db.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -300,7 +325,10 @@ public sealed class ProgramContentAuthoringService(
         content.EstimatedMinutesSource = payload.EstimatedMinutesSource;
         content.Visibility = payload.Visibility;
         if (payload.ActivitySettings is not null)
+        {
             content.SetActivitySettings(payload.ActivitySettings);
+        }
+
         content.NormalizeLearningContract();
         content.Touch();
     }
@@ -308,13 +336,17 @@ public sealed class ProgramContentAuthoringService(
     private static void ValidateActor(Guid actorId)
     {
         if (actorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("An authenticated author is required.");
+        }
     }
 
     private static void EnsureProgram(Guid actual, Guid expected)
     {
         if (actual != expected)
+        {
             throw new KeyNotFoundException("Course content was not found in this course.");
+        }
     }
 }
 

@@ -62,7 +62,7 @@ public sealed class DistributedCacheRateLimiter(
                 }
                 else
                 {
-                    logger.LogWarning("Ignoring malformed token-bucket state for key {Key}", key);
+                    logger.LogWarning("Ignoring malformed token-bucket state for key {Key}", LogRedaction.Sanitize(key));
                 }
             }
 
@@ -100,7 +100,7 @@ public sealed class DistributedCacheRateLimiter(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Distributed cache token-bucket error for key {Key}. Allowing request (fail-open for availability).", key);
+            logger.LogError(ex, "Distributed cache token-bucket error for key {Key}. Allowing request (fail-open for availability).", LogRedaction.Sanitize(key));
             return new RateLimitDecision(true, TimeSpan.Zero);
         }
     }
@@ -237,7 +237,7 @@ public sealed class DistributedCacheRateLimiter(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Distributed cache rate-limit penalty update failed for key {Key}; keeping the base rate limit only (fail-open for availability).", key);
+            logger.LogError(ex, "Distributed cache rate-limit penalty update failed for key {Key}; keeping the base rate limit only (fail-open for availability).", LogRedaction.Sanitize(key));
             return null;
         }
     }
@@ -248,7 +248,7 @@ public sealed class DistributedCacheRateLimiter(
         var count = await GetCountAsync(cacheKey, cancellationToken).ConfigureAwait(false);
         if (count >= maxRequests)
         {
-            logger.LogWarning("Rate limit exceeded for key {Key}: {CurrentCount}/{MaxRequests} in {Window}", key, count, maxRequests, window);
+            logger.LogWarning("Rate limit exceeded for key {Key}: {CurrentCount}/{MaxRequests} in {Window}", LogRedaction.Sanitize(key), count, maxRequests, window);
             return false;
         }
 
@@ -273,7 +273,7 @@ public sealed class DistributedCacheRateLimiter(
     public Task ResetAsync(string key, CancellationToken cancellationToken = default)
     {
         var wildcardKey = $"{KeyPrefix}{key}:";
-        logger.LogInformation("Distributed cache limiter reset requested for {KeyPrefix}; specific rolling-window keys expire automatically.", wildcardKey);
+        logger.LogInformation("Distributed cache limiter reset requested for {KeyPrefix}; specific rolling-window keys expire automatically.", LogRedaction.Sanitize(wildcardKey));
         return Task.CompletedTask;
     }
 

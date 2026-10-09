@@ -3,6 +3,8 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Service for handling email verification operations.
 ///     Manages verification token generation, validation, and email sending coordination.
+///     Cache keys contain token digests; concurrent consumers share an atomic one-time claim.
+///     These guarantees apply to the configured in-process cache, not a distributed token store.
 /// </summary>
 public interface IEmailVerificationService
 {

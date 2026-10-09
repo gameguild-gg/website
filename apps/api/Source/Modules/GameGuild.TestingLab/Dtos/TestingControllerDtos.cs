@@ -79,21 +79,80 @@ public class UpdateTestingLocationDto
 
     public void UpdateTestingLocation(TestingLocation location)
     {
-        if (!string.IsNullOrEmpty(Name)) location.Name = Name;
-        if (Description != null) location.Description = Description;
-        if (Address != null) location.Address = Address;
-        if (City != null) location.City = City;
-        if (State != null) location.State = State;
-        if (PostalCode != null) location.PostalCode = PostalCode;
-        if (Country != null) location.Country = Country;
-        if (MaxTestersCapacity.HasValue) location.MaxTestersCapacity = MaxTestersCapacity.Value;
-        if (MaxProjectsCapacity.HasValue) location.MaxProjectsCapacity = MaxProjectsCapacity.Value;
-        if (EquipmentAvailable != null) location.EquipmentAvailable = EquipmentAvailable;
-        if (IsVirtual.HasValue) location.IsVirtual = IsVirtual.Value;
-        if (VirtualUrl != null) location.VirtualUrl = VirtualUrl;
-        if (ContactEmail != null) location.ContactEmail = ContactEmail;
-        if (ContactPhone != null) location.ContactPhone = ContactPhone;
-        if (Status.HasValue) location.Status = Status.Value;
+        if (!string.IsNullOrEmpty(Name))
+        {
+            location.Name = Name;
+        }
+
+        if (Description != null)
+        {
+            location.Description = Description;
+        }
+
+        if (Address != null)
+        {
+            location.Address = Address;
+        }
+
+        if (City != null)
+        {
+            location.City = City;
+        }
+
+        if (State != null)
+        {
+            location.State = State;
+        }
+
+        if (PostalCode != null)
+        {
+            location.PostalCode = PostalCode;
+        }
+
+        if (Country != null)
+        {
+            location.Country = Country;
+        }
+
+        if (MaxTestersCapacity.HasValue)
+        {
+            location.MaxTestersCapacity = MaxTestersCapacity.Value;
+        }
+
+        if (MaxProjectsCapacity.HasValue)
+        {
+            location.MaxProjectsCapacity = MaxProjectsCapacity.Value;
+        }
+
+        if (EquipmentAvailable != null)
+        {
+            location.EquipmentAvailable = EquipmentAvailable;
+        }
+
+        if (IsVirtual.HasValue)
+        {
+            location.IsVirtual = IsVirtual.Value;
+        }
+
+        if (VirtualUrl != null)
+        {
+            location.VirtualUrl = VirtualUrl;
+        }
+
+        if (ContactEmail != null)
+        {
+            location.ContactEmail = ContactEmail;
+        }
+
+        if (ContactPhone != null)
+        {
+            location.ContactPhone = ContactPhone;
+        }
+
+        if (Status.HasValue)
+        {
+            location.Status = Status.Value;
+        }
     }
 }
 

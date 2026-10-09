@@ -17,16 +17,14 @@ export function PreviewText({ node }: PreviewTextProps) {
     const styleString = node.style
     const styleRules = styleString.split(";").filter((rule: string) => rule.trim())
 
-    styleRules.forEach(
-      (rule: string) => {
-        const [property, value] = rule.split(":").map((s: string) => s.trim())
-        if (property && value) {
-          // Convert CSS property names to camelCase for React
-          const camelCaseProperty = property.replace(/-([a-z])/g, (_match: string, letter: string) => letter.toUpperCase())
-          inlineStyles[camelCaseProperty] = value
-        }
-      },
-    )
+    styleRules.forEach((rule: string) => {
+      const [property, value] = rule.split(":").map((s: string) => s.trim())
+      if (property && value) {
+        // Convert CSS property names to camelCase for React
+        const camelCaseProperty = property.replace(/-([a-z])/g, (_match: string, letter: string) => letter.toUpperCase())
+        ;(inlineStyles as Record<string, string>)[camelCaseProperty] = value
+      }
+    })
   }
 
   // Apply text formatting

@@ -16,9 +16,20 @@ public sealed class AssetFolderAuthorizationService(
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (reference.FolderId == null) return true;
-        if (reference.ParentResourceId == null || string.IsNullOrWhiteSpace(reference.ParentResourceType)) return false;
-        if (reference.TenantId.HasValue && reference.TenantId != tenantId) return false;
+        if (reference.FolderId == null)
+        {
+            return true;
+        }
+
+        if (reference.ParentResourceId == null || string.IsNullOrWhiteSpace(reference.ParentResourceType))
+        {
+            return false;
+        }
+
+        if (reference.TenantId.HasValue && reference.TenantId != tenantId)
+        {
+            return false;
+        }
 
         return await CanReadChainAsync(
             reference.FolderId.Value,
@@ -54,16 +65,29 @@ public sealed class AssetFolderAuthorizationService(
         var visited = new HashSet<Guid>();
         while (folderId.HasValue)
         {
-            if (!visited.Add(folderId.Value)) return false;
+            if (!visited.Add(folderId.Value))
+            {
+                return false;
+            }
+
             var folder = await context.Set<AssetFolder>().AsNoTracking()
                 .SingleOrDefaultAsync(candidate => candidate.Id == folderId && candidate.DeletedAt == null,
                     cancellationToken).ConfigureAwait(false);
             if (folder == null || !folder.BelongsTo(parentResourceType, parentResourceId))
+            {
                 return false;
+            }
+
             if (tenantId.HasValue && folder.TenantId != tenantId)
+            {
                 return false;
+            }
+
             if (!await SatisfiesRestrictionAsync(folder, userId, cancellationToken).ConfigureAwait(false))
+            {
                 return false;
+            }
+
             folderId = folder.ParentFolderId;
         }
 
@@ -75,7 +99,10 @@ public sealed class AssetFolderAuthorizationService(
         Guid userId,
         CancellationToken cancellationToken)
     {
-        if (folder.RestrictionMode == AssetFolderRestrictionMode.None) return Task.FromResult(true);
+        if (folder.RestrictionMode == AssetFolderRestrictionMode.None)
+        {
+            return Task.FromResult(true);
+        }
 
         var resolver = restrictionResolvers.FirstOrDefault(candidate =>
             candidate.Supports(folder.RestrictionMode, folder.ParentResourceType));

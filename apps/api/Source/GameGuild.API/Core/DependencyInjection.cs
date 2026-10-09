@@ -70,10 +70,14 @@ public static class DependencyInjection
 
             // Skip if doesn't match pattern or already loaded
             if (!fileName.StartsWith(searchPattern.TrimEnd('.'), StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
 
             if (loadedAssemblyNames.Contains(fileName))
+            {
                 continue;
+            }
 
             try
             {

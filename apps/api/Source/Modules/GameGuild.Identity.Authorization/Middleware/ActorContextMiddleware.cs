@@ -71,10 +71,10 @@ public sealed class ActorContextMiddleware
             _logger.LogError(ex,
                 "SECURITY: Permission fetch failed for user {SubjectId} in tenant {TenantId}. " +
                 "Request denied with fail-closed policy. RequestId: {RequestId}, Path: {Path}",
-                ex.SubjectId,
-                ex.TenantId,
+                LogRedaction.RedactId(ex.SubjectId, "uid"),
+                LogRedaction.RedactId(ex.TenantId, "tid"),
                 context.TraceIdentifier,
-                context.Request.Path);
+                LogRedaction.Sanitize(context.Request.Path.Value));
 
             // Return 500 to indicate server error (don't leak security details to client)
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;

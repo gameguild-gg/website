@@ -23,11 +23,18 @@ public sealed class PostgreSqlAdRewardOperationalQueryReader : IAdRewardOperatio
     {
         ValidateQuery(tenantId, network, limit);
         if (state is not null && !Enum.IsDefined(state.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(state));
+        }
+
         var position = DecodeCursor(cursor, "Ad reward session");
         var query = _db.Set<AdRewardSessionRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
-        if (state is not null) query = query.Where(row => row.State == state.Value);
+        if (state is not null)
+        {
+            query = query.Where(row => row.State == state.Value);
+        }
+
         if (network is not null)
         {
             var normalized = network.Trim();
@@ -59,7 +66,11 @@ public sealed class PostgreSqlAdRewardOperationalQueryReader : IAdRewardOperatio
         var session = await _db.Set<AdRewardSessionRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.Id == sessionId && row.TenantId == tenantId,
                 cancellationToken);
-        if (session is null) return null;
+        if (session is null)
+        {
+            return null;
+        }
+
         var milestones = await _db.Set<AdRewardPlaybackMilestoneRow>().AsNoTracking()
             .Where(row => row.SessionId == sessionId)
             .OrderBy(row => row.Sequence)
@@ -96,8 +107,15 @@ public sealed class PostgreSqlAdRewardOperationalQueryReader : IAdRewardOperatio
         var position = DecodeCursor(cursor, "Ad reward pending claim");
         var query = _db.Set<AdRewardPendingClaimRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
-        if (confirmed is true) query = query.Where(row => row.ConfirmedAt != null);
-        else if (confirmed is false) query = query.Where(row => row.ConfirmedAt == null);
+        if (confirmed is true)
+        {
+            query = query.Where(row => row.ConfirmedAt != null);
+        }
+        else if (confirmed is false)
+        {
+            query = query.Where(row => row.ConfirmedAt == null);
+        }
+
         if (position is not null)
         {
             var at = position.Value.At;
@@ -161,26 +179,45 @@ public sealed class PostgreSqlAdRewardOperationalQueryReader : IAdRewardOperatio
 
     internal static (DateTimeOffset At, Guid Id)? DecodeCursor(string? cursor, string label)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var ticks) || !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException($"{label} cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 
     private static void ValidateQuery(Guid tenantId, string? network, int limit)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         if (network is not null && string.IsNullOrWhiteSpace(network))
+        {
             throw new ArgumentException("Network cannot be blank.", nameof(network));
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
     }
 
     private static void ValidateTenantAndId(Guid tenantId, Guid sessionId)
     {
         if (tenantId == Guid.Empty || sessionId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant and session IDs are required.");
+        }
     }
 }

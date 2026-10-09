@@ -90,15 +90,23 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
         ValidateReservationAuthorization(request);
         var replay = operations.FindReplay(request.Run.TenantId, request.Run.IdempotencyKey.Value, request.Run.RequestHash);
         if (replay is not null)
+        {
             return replay;
+        }
+
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             dbContext, IsolationLevel.Serializable, async transactionToken =>
         {
             replay = operations.FindReplay(request.Run.TenantId, request.Run.IdempotencyKey.Value, request.Run.RequestHash);
             if (replay is not null)
+            {
                 return replay;
+            }
+
             if (operations.FindPeriod(request.Run.TenantId, request.Run.PeriodStart) is not null)
+            {
                 throw new AdminWithdrawalOverlapException("A withdrawal run already owns this monthly period.");
+            }
 
             operations.Add(request.Run);
             var fragments = reservations.Reserve(new FifoFragmentReservationRequest(
@@ -110,7 +118,9 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
                 PersistedFragmentReservationPurpose.AdminWithdrawal,
                 request.Run.CreatedAt));
             if (fragments.Sum(fragment => fragment.Amount.Units) != request.Run.Amount.Units)
+            {
                 throw new AdminWithdrawalEligibilityException("Administrative withdrawal FIFO reservations do not match the requested amount.");
+            }
 
             var sourceRoots = fragments.Select(fragment => fragment.RootSourceStampId)
                 .Distinct().OrderBy(root => root.Value).ToArray();
@@ -136,8 +146,10 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
                     receipt,
                     operationToken).ConfigureAwait(false);
                 if (authority.TenantId != request.Run.TenantId || authority.ActorId != request.Run.RequestedBy)
+                {
                     throw new AdminWithdrawalEligibilityException(
-                        "The registered posting authority does not match the Treasury withdrawal actor and tenant.");
+                    "The registered posting authority does not match the Treasury withdrawal actor and tenant.");
+                }
 
                 postings.Post(new RegisteredPostingRequest(
                     authority,
@@ -187,11 +199,19 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
                 run.Version == checked(request.ExpectedVersion + 1) &&
                 run.ApprovedBy.HasValue &&
                 run.ApprovedBy.Value == request.ApprovedBy)
+            {
                 return run;
+            }
+
             if (run.State != AdminWithdrawalRunState.PendingApproval || run.Version != request.ExpectedVersion)
+            {
                 throw new AdminWithdrawalStaleCommandException("The withdrawal approval command is stale.");
+            }
+
             if (run.RequestedBy == request.ApprovedBy)
+            {
                 throw new AdminWithdrawalApprovalException("The withdrawal requester cannot approve the same run.");
+            }
 
             var approved = run with
             {
@@ -218,13 +238,21 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
             var run = operations.Get(request.TenantId, request.RunId);
             if (run.State == AdminWithdrawalRunState.Dispatching &&
                 run.Version == checked(request.ExpectedVersion + 1))
+            {
                 return run;
+            }
+
             if (run.State != AdminWithdrawalRunState.Approved || run.Version != request.ExpectedVersion ||
                 run.FencingToken != request.FencingToken || run.ExecutionEpoch != request.ExecutionEpoch ||
                 !run.ApprovedBy.HasValue)
+            {
                 throw new AdminWithdrawalStaleCommandException("Admin withdrawal dispatch command is stale, unapproved, or fenced.");
+            }
+
             if (run.ApprovedBy.Value == run.RequestedBy)
+            {
                 throw new AdminWithdrawalStaleCommandException("Admin withdrawal dispatch command is stale, unapproved, or fenced.");
+            }
 
             var intent = new EconomyProtectedOperationIntent(
                 EconomyValueMovementCapability.AdminWithdrawalExecution,
@@ -271,8 +299,11 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
                     PersistedFragmentReservationStatus.Dispatching,
                     request.OccurredAt);
                 if (transitioned <= 0)
+                {
                     throw new AdminWithdrawalStaleCommandException(
-                        "Administrative withdrawal fragments are no longer reserved for dispatch.");
+                    "Administrative withdrawal fragments are no longer reserved for dispatch.");
+                }
+
                 var command = new AdminWithdrawalDispatchCommand(
                     run.Id,
                     run.TenantId,
@@ -318,9 +349,14 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
         var eventHash = ProviderEventHash(request.ProviderEvent);
         var replayRunId = operations.FindProviderEvent(request.ProviderEvent.TenantId, request.ProviderEvent.EventId, eventHash);
         if (replayRunId.HasValue)
+        {
             return operations.Get(request.ProviderEvent.TenantId, replayRunId.Value);
+        }
+
         if (!providerEvidence.Verify(request.ProviderEvent))
+        {
             throw new AdminWithdrawalEvidenceException("Provider withdrawal event signature is invalid.");
+        }
 
         var authorityRun = operations.Get(request.ProviderEvent.TenantId, request.ProviderEvent.RunId);
         ValidateTerminalEvent(authorityRun, request.ProviderEvent);
@@ -352,14 +388,19 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
                 request.ProviderEvent.ObservedAt.AddMinutes(5)),
             cancellationToken).ConfigureAwait(false);
         if (authority.TenantId != authorityRun.TenantId || authority.ActorId != authorityRun.RequestedBy)
+        {
             throw new AdminWithdrawalEvidenceException(
-                "Provider evidence posting authority is not bound to the withdrawal actor and tenant.");
+            "Provider evidence posting authority is not bound to the withdrawal actor and tenant.");
+        }
+
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             dbContext, IsolationLevel.ReadCommitted, async _ =>
         {
             replayRunId = operations.FindProviderEvent(request.ProviderEvent.TenantId, request.ProviderEvent.EventId, eventHash);
             if (replayRunId.HasValue)
+            {
                 return operations.Get(request.ProviderEvent.TenantId, replayRunId.Value);
+            }
 
             var run = operations.Get(request.ProviderEvent.TenantId, request.ProviderEvent.RunId);
             ValidateTerminalEvent(run, request.ProviderEvent);
@@ -385,7 +426,9 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
                 succeeded ? PersistedFragmentReservationStatus.Consumed : PersistedFragmentReservationStatus.Released,
                 request.ProviderEvent.ObservedAt);
             if (changedReservations <= 0)
+            {
                 throw new AdminWithdrawalStaleCommandException("Administrative withdrawal fragments are no longer reserved.");
+            }
 
             operations.RecordProviderEvent(run.TenantId, request.ProviderEvent.EventId, eventHash, terminal, run.Version);
             audit.Append(run.TenantId, run.Id, succeeded ? "succeeded" : "failed", null, eventHash, request.ProviderEvent.ObservedAt);
@@ -432,15 +475,30 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
     {
         ArgumentNullException.ThrowIfNull(run);
         if (run.Id == Guid.Empty || run.TenantId == Guid.Empty || run.RequestedBy == Guid.Empty || run.PlatformFeeWalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("Run, tenant, requester, and platform fee wallet identities are required.", nameof(run));
+        }
+
         if (run.PeriodStart.Day != 1)
+        {
             throw new ArgumentException("Withdrawal period must start on the first day of a month.", nameof(run));
+        }
+
         if (run.State != AdminWithdrawalRunState.PendingApproval || run.Version != 1 || run.ApprovedBy.HasValue)
+        {
             throw new InvalidOperationException("Only a new, unapproved withdrawal run can reserve platform treasury value.");
+        }
+
         if (run.Amount.Currency != CurrencyCode.HardCoin || run.Amount.Units <= 0)
+        {
             throw new AdminWithdrawalEligibilityException("Administrative withdrawals require a positive hard-coin amount.");
+        }
+
         if (run.FencingToken <= 0 || run.ExecutionEpoch <= 0 || run.ReserveAuthorizationEpoch <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(run), "Administrative withdrawal control versions must be positive.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(run.RequestHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(run.SourceAssetKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(run.DestinationHash);
@@ -451,8 +509,11 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
         ArgumentException.ThrowIfNullOrWhiteSpace(request.JurisdictionCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReauthenticationEvidenceHash);
         if (request.ReauthenticationEvidenceHash.Trim().Length != 64)
+        {
             throw new ArgumentException(
-                "Treasury reauthentication evidence hashes must contain 64 characters.", nameof(request));
+            "Treasury reauthentication evidence hashes must contain 64 characters.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ProviderHash);
     }
 
@@ -479,35 +540,53 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
             !string.Equals(receipt.ProviderHash, request.ProviderHash.Trim(), StringComparison.Ordinal) ||
             !string.Equals(receipt.DestinationHash, run.DestinationHash, StringComparison.Ordinal) ||
             !receipt.SourceRootHashes.SequenceEqual(rootHashes, StringComparer.Ordinal))
+        {
             throw new AdminWithdrawalEligibilityException(
-                "The Treasury capability receipt does not match the durable withdrawal snapshot.");
+            "The Treasury capability receipt does not match the durable withdrawal snapshot.");
+        }
     }
 
     private static void ValidateApprovalRequest(DurableAdminWithdrawalApprovalRequest request)
     {
         if (request.TenantId == Guid.Empty || request.RunId == Guid.Empty || request.ApprovedBy == Guid.Empty)
+        {
             throw new ArgumentException("Withdrawal tenant, run, and approver identities are required.", nameof(request));
+        }
+
         if (request.ExpectedVersion <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request), "The withdrawal version must be positive.");
+        }
     }
 
     private static void ValidateDispatchRequest(DurableAdminWithdrawalDispatchRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.TenantId == Guid.Empty || request.RunId == Guid.Empty || request.DispatchedBy == Guid.Empty)
+        {
             throw new ArgumentException(
-                "Withdrawal tenant, run, and dispatcher IDs are required.", nameof(request));
+            "Withdrawal tenant, run, and dispatcher IDs are required.", nameof(request));
+        }
+
         if (request.ExpectedVersion <= 0 || request.FencingToken <= 0 || request.ExecutionEpoch <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request), "Administrative withdrawal control versions must be positive.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.JurisdictionCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReauthenticationEvidenceHash);
         if (request.ReauthenticationEvidenceHash.Trim().Length != 64)
+        {
             throw new ArgumentException(
-                "Treasury reauthentication evidence hashes must contain 64 characters.", nameof(request));
+            "Treasury reauthentication evidence hashes must contain 64 characters.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ProviderHash);
         ArgumentNullException.ThrowIfNull(request.SourceRoots);
         if (request.SourceRoots.Count == 0 || request.SourceRoots.Distinct().Count() != request.SourceRoots.Count)
+        {
             throw new ArgumentException("Dispatch requires distinct source roots.", nameof(request));
+        }
     }
 
     private static void ValidateDispatchAuthorization(
@@ -532,15 +611,20 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
             !string.Equals(receipt.ProviderHash, request.ProviderHash.Trim(), StringComparison.Ordinal) ||
             !string.Equals(receipt.DestinationHash, run.DestinationHash, StringComparison.Ordinal) ||
             !receipt.SourceRootHashes.SequenceEqual(rootHashes, StringComparer.Ordinal))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "The dispatch capability receipt is not bound to the durable withdrawal snapshot.");
+            "The dispatch capability receipt is not bound to the durable withdrawal snapshot.");
+        }
     }
 
     private static void ValidateProviderEventShape(AdminWithdrawalProviderEvent providerEvent)
     {
         ArgumentNullException.ThrowIfNull(providerEvent);
         if (providerEvent.TenantId == Guid.Empty || providerEvent.RunId == Guid.Empty)
+        {
             throw new ArgumentException("Provider withdrawal events require tenant and run IDs.", nameof(providerEvent));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.EventId);
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.ProviderTransferId);
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.SourceAssetKey);
@@ -548,7 +632,9 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.EvidenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.Signature);
         if (providerEvent.Outcome is not (AdminWithdrawalProviderOutcome.Succeeded or AdminWithdrawalProviderOutcome.Failed))
+        {
             throw new AdminWithdrawalEvidenceException("Only a terminal provider event can complete an administrative withdrawal.");
+        }
     }
 
     private static void ValidateTerminalEvent(
@@ -556,7 +642,10 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
         AdminWithdrawalProviderEvent providerEvent)
     {
         if (run.State is not (AdminWithdrawalRunState.Dispatching or AdminWithdrawalRunState.Ambiguous))
+        {
             throw new AdminWithdrawalStaleCommandException("Provider terminal evidence is out of order.");
+        }
+
         if (providerEvent.TenantId != run.TenantId ||
             providerEvent.FencingToken != run.FencingToken || providerEvent.ExecutionEpoch != run.ExecutionEpoch ||
             providerEvent.Amount != run.Amount ||
@@ -564,9 +653,14 @@ public sealed class PostgreSqlDurableAdminWithdrawalWorkflow(
             !string.Equals(providerEvent.DestinationHash, run.DestinationHash, StringComparison.Ordinal) ||
             (!string.IsNullOrWhiteSpace(run.ProviderTransferId) &&
              !string.Equals(providerEvent.ProviderTransferId, run.ProviderTransferId, StringComparison.Ordinal)))
+        {
             throw new AdminWithdrawalEvidenceException("Provider withdrawal event is not bound to the fenced run.");
+        }
+
         if (providerEvent.ObservedAt < run.CreatedAt)
+        {
             throw new AdminWithdrawalEvidenceException("Provider withdrawal event predates the run.");
+        }
     }
 
     private static string ProviderEventHash(AdminWithdrawalProviderEvent providerEvent)

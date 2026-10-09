@@ -82,9 +82,15 @@ public static class DashboardCapabilityResolver
         ActorContext actor,
         IReadOnlyCollection<TestingLabUserPermission> testingLabPermissions)
     {
-        if (!actor.IsAuthenticated) return new HashSet<string>();
+        if (!actor.IsAuthenticated)
+        {
+            return new HashSet<string>();
+        }
+
         if (actor.IsTenantAdmin)
+        {
             return new HashSet<string>(DashboardCapabilities.All, StringComparer.Ordinal);
+        }
 
         var capabilities = new HashSet<string>(StringComparer.Ordinal);
 
@@ -103,13 +109,19 @@ public static class DashboardCapabilityResolver
         }
 
         if (actor.HasAnyPermission("support:read", "support:update", "tickets:read", "tickets:update"))
+        {
             capabilities.Add(DashboardCapabilities.CommunityManageSupport);
+        }
 
         if (actor.HasPermission(TeamPermission.Keys.Admin))
+        {
             capabilities.Add(DashboardCapabilities.CommunityManageTeams);
+        }
 
         if (actor.HasPermission(ProjectPermission.Keys.Admin))
+        {
             capabilities.Add(DashboardCapabilities.CommunityManageProjects);
+        }
 
         if (actor.HasPermission(WalletsPermission.Keys.Admin))
         {
@@ -133,13 +145,17 @@ public static class DashboardCapabilityResolver
         AddIfAny(actor, capabilities, DashboardCapabilities.EconomyManageLegacyMigration, EconomyPermission.Keys.ManageLegacyMigration);
 
         if (actor.HasAnyPermission("roles:read", "roles:create", "roles:update", "roles:delete", "roles:assign"))
+        {
             capabilities.Add(DashboardCapabilities.PlatformManageRoles);
+        }
 
         if (actor.Permissions.Any(permission =>
                 permission.StartsWith("courses:", StringComparison.Ordinal) ||
                 permission.StartsWith("tutorials:", StringComparison.Ordinal) ||
                 permission.StartsWith("resources:", StringComparison.Ordinal)))
+        {
             capabilities.Add(DashboardCapabilities.LearningManage);
+        }
 
         AddIfAny(actor, capabilities, DashboardCapabilities.LaunchPadManageEvents,
             "launchpad:events:create", "launchpad:events:update", "launchpad:events:delete", "launchpad:events:manage");
@@ -165,30 +181,44 @@ public static class DashboardCapabilityResolver
         {
             if (Matches(permission, TestingLabResourceTypes.Event,
                     TestingLabActions.Create, TestingLabActions.Edit, TestingLabActions.Delete, TestingLabActions.Manage))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabManageEvents);
+            }
 
             if (Matches(permission, TestingLabResourceTypes.Application,
                     TestingLabActions.Read, TestingLabActions.Edit, TestingLabActions.Approve, TestingLabActions.Manage))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabReviewApplications);
+            }
 
             if (Matches(permission, TestingLabResourceTypes.Participant,
                     TestingLabActions.Manage, TestingLabActions.Edit))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabManageParticipants);
+            }
 
             if (Matches(permission, TestingLabResourceTypes.Feedback,
                     TestingLabActions.Moderate, TestingLabActions.Edit, TestingLabActions.Delete))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabManageFeedback);
+            }
 
             if (Matches(permission, TestingLabResourceTypes.Analytics, TestingLabActions.Read))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabViewAnalytics);
+            }
 
             if (Matches(permission, TestingLabResourceTypes.Location,
                     TestingLabActions.Create, TestingLabActions.Edit, TestingLabActions.Delete))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabManageSettings);
+            }
 
             if (Matches(permission, TestingLabResourceTypes.Settings,
                     TestingLabActions.Read, TestingLabActions.Edit, TestingLabActions.Manage))
+            {
                 capabilities.Add(DashboardCapabilities.TestingLabManageSettings);
+            }
         }
     }
 
@@ -198,7 +228,10 @@ public static class DashboardCapabilityResolver
         string capability,
         params string[] permissions)
     {
-        if (actor.HasAnyPermission(permissions)) capabilities.Add(capability);
+        if (actor.HasAnyPermission(permissions))
+        {
+            capabilities.Add(capability);
+        }
     }
 
     private static bool Matches(

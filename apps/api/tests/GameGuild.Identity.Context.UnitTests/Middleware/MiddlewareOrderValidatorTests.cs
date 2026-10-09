@@ -276,9 +276,14 @@ public class MiddlewareOrderValidatorTests
         {
             var name = components[i].Target?.GetType().Name ?? string.Empty;
             if (tenantIndex < 0 && name.Contains(tenantName, StringComparison.OrdinalIgnoreCase))
+            {
                 tenantIndex = i;
+            }
+
             if (authIndex < 0 && name.Contains(authName, StringComparison.OrdinalIgnoreCase))
+            {
                 authIndex = i;
+            }
         }
 
         return (tenantIndex, authIndex);

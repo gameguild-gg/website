@@ -388,10 +388,14 @@ public class User : EntityBase, IUser
     public void ValidatePurge()
     {
         if (!IsDeleted)
+        {
             throw new InvalidOperationException("User must be soft-deleted before purging.");
+        }
 
         if (TenantMemberships.Any(m => m.IsActive))
+        {
             throw new InvalidOperationException("User has active tenant memberships. Remove memberships before purging.");
+        }
     }
 
     /// <summary>
@@ -417,13 +421,19 @@ public class User : EntityBase, IUser
     public UserAuthenticationResult ValidateForAuthentication(int tokenVersion)
     {
         if (!IsActive)
+        {
             return UserAuthenticationResult.Fail(UserAuthenticationFailure.Inactive);
+        }
 
         if (IsSuspended)
+        {
             return UserAuthenticationResult.Fail(UserAuthenticationFailure.Suspended);
+        }
 
         if (TokenVersion != tokenVersion)
+        {
             return UserAuthenticationResult.Fail(UserAuthenticationFailure.TokenRevoked);
+        }
 
         return UserAuthenticationResult.Success();
     }
@@ -438,19 +448,29 @@ public class User : EntityBase, IUser
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(Email))
+        {
             errors.Add("Email is required.");
+        }
 
         if (!Email.Contains('@'))
+        {
             errors.Add("Email format is invalid.");
+        }
 
         if (string.IsNullOrWhiteSpace(Name))
+        {
             errors.Add("Name is required.");
+        }
 
         if (Name.Length < 2)
+        {
             errors.Add("Name must be at least 2 characters.");
+        }
 
         if (errors.Count > 0)
+        {
             return UserRegistrationResult.Failure(errors);
+        }
 
         return UserRegistrationResult.Success();
     }
@@ -463,13 +483,19 @@ public class User : EntityBase, IUser
     public UserTenantJoinResult ValidateForTenantJoin(Guid tenantId)
     {
         if (!IsActive)
+        {
             return UserTenantJoinResult.Failure("User account is inactive.");
+        }
 
         if (IsSuspended)
+        {
             return UserTenantJoinResult.Failure("User account is suspended.");
+        }
 
         if (IsMemberOfTenant(tenantId))
+        {
             return UserTenantJoinResult.Failure("User is already a member of this tenant.");
+        }
 
         return UserTenantJoinResult.Success();
     }

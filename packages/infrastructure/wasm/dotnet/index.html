@@ -200,6 +200,14 @@ class Program
 
     <script type="module" src="/managed/main.js"></script>
     <script>
+        function setOutput(el, text, className) {
+            el.textContent = '';
+            const span = document.createElement('span');
+            span.className = className;
+            span.textContent = text;
+            el.appendChild(span);
+        }
+
         function switchTab(tab) {
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -217,24 +225,24 @@ class Program
             
             try {
                 btn.disabled = true;
-                output.innerHTML = 'Compiling and running...';
-                
+                output.textContent = 'Compiling and running...';
+
                 // Wait for C# runtime to be ready
                 while (!window.CSharpCompiler) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
-                
+
                 const result = window.CSharpCompiler.compileAndRun(code);
-                
+
                 if (result.startsWith('COMPILATION_ERROR')) {
-                    output.innerHTML = `<span class="error">${result}</span>`;
+                    setOutput(output, result, 'error');
                 } else if (result.startsWith('RUNTIME_ERROR')) {
-                    output.innerHTML = `<span class="error">${result}</span>`;
+                    setOutput(output, result, 'error');
                 } else {
-                    output.innerHTML = `<span class="success">${result || '(no output)'}</span>`;
+                    setOutput(output, result || '(no output)', 'success');
                 }
             } catch (error) {
-                output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                setOutput(output, `Error: ${error.message}`, 'error');
             } finally {
                 btn.disabled = false;
             }
@@ -249,33 +257,33 @@ class Program
             
             try {
                 btn.disabled = true;
-                output.innerHTML = 'Compiling and running...';
-                
+                output.textContent = 'Compiling and running...';
+
                 // Wait for C# runtime to be ready
                 while (!window.CSharpCompiler) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
-                
+
                 // Build files JSON
                 const files = {
                     'Models/Person.cs': file1,
                     'Services/Calculator.cs': file2
                 };
                 const filesJson = JSON.stringify(files);
-                
+
                 const result = window.CSharpCompiler.compileAndRunMultiple(mainCode, filesJson);
-                
+
                 if (result.startsWith('COMPILATION_ERROR')) {
-                    output.innerHTML = `<span class="error">${result}</span>`;
+                    setOutput(output, result, 'error');
                 } else if (result.startsWith('RUNTIME_ERROR')) {
-                    output.innerHTML = `<span class="error">${result}</span>`;
+                    setOutput(output, result, 'error');
                 } else if (result.startsWith('ERROR:')) {
-                    output.innerHTML = `<span class="error">${result}</span>`;
+                    setOutput(output, result, 'error');
                 } else {
-                    output.innerHTML = `<span class="success">${result || '(no output)'}</span>`;
+                    setOutput(output, result || '(no output)', 'success');
                 }
             } catch (error) {
-                output.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                setOutput(output, `Error: ${error.message}`, 'error');
             } finally {
                 btn.disabled = false;
             }
@@ -285,8 +293,8 @@ class Program
         window.addEventListener('load', () => {
             setTimeout(() => {
                 if (window.CSharpCompiler) {
-                    document.getElementById('output').innerHTML = '<span class="success">✓ C# Compiler ready! Click "Run Code" to execute.</span>';
-                    document.getElementById('multiOutput').innerHTML = '<span class="success">✓ C# Compiler ready! Click "Run Multiple Files" to execute.</span>';
+                    setOutput(document.getElementById('output'), '✓ C# Compiler ready! Click "Run Code" to execute.', 'success');
+                    setOutput(document.getElementById('multiOutput'), '✓ C# Compiler ready! Click "Run Multiple Files" to execute.', 'success');
                 }
             }, 2000);
         });

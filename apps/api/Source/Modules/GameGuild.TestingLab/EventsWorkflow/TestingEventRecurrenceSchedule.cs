@@ -9,7 +9,10 @@ internal static class TestingEventRecurrenceSchedule
         TestingEventRecurrenceRequest? recurrence,
         string timeZoneId = "UTC")
     {
-        if (recurrence == null) return [startsAt];
+        if (recurrence == null)
+        {
+            return [startsAt];
+        }
 
         var timeZone = ResolveTimeZone(timeZoneId);
         var startsAtUtc = AsUtc(startsAt);
@@ -41,7 +44,9 @@ internal static class TestingEventRecurrenceSchedule
             occurrences.Count == MaxOccurrences &&
             recurrence.EndsAt.HasValue &&
             AsUtc(recurrence.EndsAt.Value) > occurrences[^1])
+        {
             throw new ArgumentException($"A recurrence cannot create more than {MaxOccurrences} events.", nameof(recurrence));
+        }
 
         return occurrences;
     }
@@ -55,10 +60,16 @@ internal static class TestingEventRecurrenceSchedule
         for (var index = 0; occurrences.Count < MaxOccurrences; index++)
         {
             var candidate = ToUtc(localOccurrenceAt(index), timeZone);
-            if (recurrence.EndsAt != null && candidate > AsUtc(recurrence.EndsAt.Value)) break;
+            if (recurrence.EndsAt != null && candidate > AsUtc(recurrence.EndsAt.Value))
+            {
+                break;
+            }
 
             occurrences.Add(candidate);
-            if (recurrence.OccurrenceCount != null && occurrences.Count == recurrence.OccurrenceCount.Value) break;
+            if (recurrence.OccurrenceCount != null && occurrences.Count == recurrence.OccurrenceCount.Value)
+            {
+                break;
+            }
         }
     }
 
@@ -85,7 +96,10 @@ internal static class TestingEventRecurrenceSchedule
                 localStartsAt.Second,
                 DateTimeKind.Unspecified);
             var candidate = ToUtc(localCandidate, timeZone);
-            if (recurrence.EndsAt != null && candidate > AsUtc(recurrence.EndsAt.Value)) break;
+            if (recurrence.EndsAt != null && candidate > AsUtc(recurrence.EndsAt.Value))
+            {
+                break;
+            }
 
             var weeksSinceStart = (day - localStartsAt.Date).Days / 7;
             if (localCandidate >= localStartsAt &&
@@ -93,7 +107,10 @@ internal static class TestingEventRecurrenceSchedule
                 daysOfWeek.Contains(localCandidate.DayOfWeek))
             {
                 occurrences.Add(candidate);
-                if (recurrence.OccurrenceCount != null && occurrences.Count == recurrence.OccurrenceCount.Value) break;
+                if (recurrence.OccurrenceCount != null && occurrences.Count == recurrence.OccurrenceCount.Value)
+                {
+                    break;
+                }
             }
 
             day = day.AddDays(1);
@@ -116,7 +133,10 @@ internal static class TestingEventRecurrenceSchedule
     {
         var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
         if (timeZone.IsInvalidTime(unspecified))
+        {
             throw new ArgumentException("The recurrence falls on a time that does not exist in the selected time zone.");
+        }
+
         return TimeZoneInfo.ConvertTimeToUtc(unspecified, timeZone);
     }
 
@@ -130,18 +150,38 @@ internal static class TestingEventRecurrenceSchedule
     private static void Validate(DateTime startsAt, TestingEventRecurrenceRequest recurrence)
     {
         if (!Enum.IsDefined(recurrence.Frequency))
+        {
             throw new ArgumentOutOfRangeException(nameof(recurrence), "A supported recurrence frequency is required.");
+        }
+
         if (recurrence.Interval is < 1 or > 52)
+        {
             throw new ArgumentOutOfRangeException(nameof(recurrence), "Recurrence interval must be between 1 and 52.");
+        }
+
         if (recurrence.OccurrenceCount is <= 0 or > MaxOccurrences)
+        {
             throw new ArgumentOutOfRangeException(nameof(recurrence), $"Occurrence count must be between 1 and {MaxOccurrences}.");
+        }
+
         if (recurrence.OccurrenceCount == null && recurrence.EndsAt == null)
+        {
             throw new ArgumentException("A recurring event requires an end date or occurrence count.", nameof(recurrence));
+        }
+
         if (recurrence.EndsAt != null && AsUtc(recurrence.EndsAt.Value) < startsAt)
+        {
             throw new ArgumentException("Recurrence end must not precede the event start.", nameof(recurrence));
+        }
+
         if (recurrence.DaysOfWeek != null && recurrence.DaysOfWeek.Any(day => !Enum.IsDefined(day)))
+        {
             throw new ArgumentOutOfRangeException(nameof(recurrence), "Every recurrence day must be valid.");
+        }
+
         if (recurrence.Frequency == TestingEventRecurrenceFrequency.Weekly && recurrence.DaysOfWeek is { Count: 0 })
+        {
             throw new ArgumentException("A weekly recurrence requires at least one day of the week.", nameof(recurrence));
+        }
     }
 }

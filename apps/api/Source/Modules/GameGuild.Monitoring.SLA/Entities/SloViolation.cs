@@ -92,7 +92,10 @@ public class SloViolation : EntityBase
     /// </summary>
     public void Resolve()
     {
-        if (EndedAt.HasValue) return; // Already resolved
+        if (EndedAt.HasValue)
+        {
+            return; // Already resolved
+        }
 
         EndedAt = DateTimeOffset.UtcNow;
     }
@@ -121,13 +124,22 @@ public class SloViolation : EntityBase
         var difference = targetPercentage - actualPercentage;
 
         // More than 5% below target
-        if (difference >= 5.0) return ViolationSeverity.Critical;
+        if (difference >= 5.0)
+        {
+            return ViolationSeverity.Critical;
+        }
 
         // 2-5% below target
-        if (difference >= 2.0) return ViolationSeverity.High;
+        if (difference >= 2.0)
+        {
+            return ViolationSeverity.High;
+        }
 
         // 0.5-2% below target
-        if (difference >= 0.5) return ViolationSeverity.Medium;
+        if (difference >= 0.5)
+        {
+            return ViolationSeverity.Medium;
+        }
 
         // Less than 0.5% below target
         return ViolationSeverity.Low;

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -134,9 +135,8 @@ public sealed class PaymentProviderSecurityExpansionTests
             "capture");
         context.Set<Payment>().Add(payment);
         await context.SaveChangesAsync();
-        IPaymentRepository repository = new PaymentRepository(
-            context,
-            NullLogger<PaymentRepository>.Instance);
+        var logger = new CapturingPaymentLogger();
+        IPaymentRepository repository = new PaymentRepository(context, logger);
 
         var found = await repository.GetByProviderMappingAsync(
             "stripe",
@@ -147,6 +147,9 @@ public sealed class PaymentProviderSecurityExpansionTests
             "capture");
 
         found.Should().BeSameAs(payment);
+        logger.Entries.Should().ContainSingle().Which.Should()
+            .NotContain("acct_merchant")
+            .And.Contain(LogRedaction.RedactId("acct_merchant", "provider"));
         (await repository.GetByProviderMappingAsync("paypal", "live", "acct_merchant", "pi_scoped", "payment_intent", "capture"))
             .Should().BeNull();
         (await repository.GetByProviderMappingAsync("stripe", "test", "acct_merchant", "pi_scoped", "payment_intent", "capture"))
@@ -159,6 +162,35 @@ public sealed class PaymentProviderSecurityExpansionTests
             .Should().BeNull();
         (await repository.GetByProviderMappingAsync("stripe", "live", "acct_merchant", "pi_scoped", "payment_intent", "refund"))
             .Should().BeNull();
+    }
+
+    private sealed class CapturingPaymentLogger : ILogger<PaymentRepository>
+    {
+        public List<string> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.None)
+            {
+                return;
+            }
+            Entries.Add(formatter(state, exception));
+        }
+    }
+
+    [Fact]
+    public void CapturingPaymentLogger_RespectsDisabledLogLevel()
+    {
+        var capturingLogger = new CapturingPaymentLogger();
+        ILogger logger = capturingLogger;
+        logger.IsEnabled(LogLevel.None).Should().BeFalse();
+        logger.Log(LogLevel.None, default, "disabled", null, static (state, _) => state);
+        logger.Log(LogLevel.Debug, default, "enabled", null, static (state, _) => state);
+        capturingLogger.Entries.Should().ContainSingle().Which.Should().Be("enabled");
     }
 
     [Theory]

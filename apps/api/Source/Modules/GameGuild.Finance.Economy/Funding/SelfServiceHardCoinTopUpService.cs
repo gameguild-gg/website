@@ -298,8 +298,11 @@ public sealed class SelfServiceHardCoinTopUpService(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
                 "An Economy top-up requires an authenticated tenant actor.");
+        }
+
         return (tenantId, actorId);
     }
 
@@ -323,8 +326,11 @@ public sealed class SelfServiceHardCoinTopUpService(
             prepared.UsdMinorUnits != policy.UsdMinorUnits || prepared.JurisdictionCode != policy.JurisdictionCode ||
             prepared.PolicyVersion != policy.PolicyVersion || prepared.PolicyHash != policy.PolicyHash ||
             prepared.Provider != policy.Provider || prepared.IdempotencyKey != key)
+        {
             throw new EconomyTopUpReplayConflictException(
                 "The top-up idempotency key is already bound to another request.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(prepared.RequestHash);
     }
 
@@ -343,11 +349,16 @@ public sealed class SelfServiceHardCoinTopUpService(
             string.IsNullOrWhiteSpace(result.PublishableKey) ||
             result.Status is not (EconomyTopUpProviderStatus.RequiresAction or
                 EconomyTopUpProviderStatus.Processing))
+        {
             throw new EconomySelfServiceCommandRejectedException(
                 "The top-up provider returned an invalid payment intent binding.");
+        }
+
         if (prepared.ProviderObjectId is not null &&
             !string.Equals(prepared.ProviderObjectId, result.ProviderObjectId, StringComparison.Ordinal))
+        {
             throw new EconomySelfServiceCommandRejectedException(
                 "The top-up provider object cannot be rebound.");
+        }
     }
 }

@@ -77,7 +77,11 @@ public sealed class ImmutableOutboxMessage
 {
     public ImmutableOutboxMessage(Guid id, string type, string payload, DateTimeOffset occurredAt)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Outbox message ID cannot be empty.", nameof(id));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Outbox message ID cannot be empty.", nameof(id));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(type);
         ArgumentException.ThrowIfNullOrWhiteSpace(payload);
         Id = id;

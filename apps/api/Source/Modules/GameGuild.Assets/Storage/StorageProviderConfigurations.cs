@@ -71,11 +71,19 @@ public class S3CompatibleConfiguration : StorageProviderConfiguration
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(AccessKeyId))
+        {
             errors.Add("AccessKeyId is required");
+        }
+
         if (string.IsNullOrWhiteSpace(SecretAccessKey))
+        {
             errors.Add("SecretAccessKey is required");
+        }
+
         if (string.IsNullOrWhiteSpace(Region))
+        {
             errors.Add("Region is required");
+        }
 
         return new ValidationResult(errors.Count == 0, errors);
     }
@@ -115,10 +123,14 @@ public class GoogleCloudStorageConfiguration : StorageProviderConfiguration
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(ProjectId))
+        {
             errors.Add("ProjectId is required");
-        
+        }
+
         if (!UseApplicationDefaultCredentials && string.IsNullOrWhiteSpace(CredentialsJson))
+        {
             errors.Add("CredentialsJson is required when not using Application Default Credentials");
+        }
 
         return new ValidationResult(errors.Count == 0, errors);
     }
@@ -177,14 +189,21 @@ public class AzureBlobStorageConfiguration : StorageProviderConfiguration
         if (UseManagedIdentity)
         {
             if (string.IsNullOrWhiteSpace(AccountName) && string.IsNullOrWhiteSpace(BlobServiceUri))
+            {
                 errors.Add("AccountName or BlobServiceUri is required when using Managed Identity");
+            }
         }
         else
         {
             if (string.IsNullOrWhiteSpace(AccountName))
+            {
                 errors.Add("AccountName is required");
+            }
+
             if (string.IsNullOrWhiteSpace(AccountKey))
+            {
                 errors.Add("AccountKey is required");
+            }
         }
 
         return new ValidationResult(errors.Count == 0, errors);
@@ -237,11 +256,19 @@ public class CloudflareR2Configuration : StorageProviderConfiguration
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(AccountId))
+        {
             errors.Add("AccountId is required");
+        }
+
         if (string.IsNullOrWhiteSpace(AccessKeyId))
+        {
             errors.Add("AccessKeyId is required");
+        }
+
         if (string.IsNullOrWhiteSpace(SecretAccessKey))
+        {
             errors.Add("SecretAccessKey is required");
+        }
 
         return new ValidationResult(errors.Count == 0, errors);
     }
@@ -279,11 +306,19 @@ public class BackblazeB2Configuration : StorageProviderConfiguration
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(ApplicationKeyId))
+        {
             errors.Add("ApplicationKeyId is required");
+        }
+
         if (string.IsNullOrWhiteSpace(ApplicationKey))
+        {
             errors.Add("ApplicationKey is required");
+        }
+
         if (string.IsNullOrWhiteSpace(Endpoint))
+        {
             errors.Add("Endpoint is required");
+        }
 
         return new ValidationResult(errors.Count == 0, errors);
     }
@@ -311,7 +346,9 @@ public class LocalFileSystemConfiguration : StorageProviderConfiguration
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(BasePath))
+        {
             errors.Add("BasePath is required");
+        }
 
         return new ValidationResult(errors.Count == 0, errors);
     }

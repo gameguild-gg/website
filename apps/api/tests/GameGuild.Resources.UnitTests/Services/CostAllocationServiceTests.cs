@@ -12,7 +12,6 @@ public class CostAllocationServiceTests
     private readonly Mock<IUsageRecordRepository> _usageRepositoryMock;
     private readonly Mock<IResourceQuotaRepository> _quotaRepositoryMock;
     private readonly Mock<IOptions<ResourcesOptions>> _optionsMock;
-    private readonly Mock<ILogger<CostAllocationService>> _loggerMock;
     private readonly CostAllocationService _service;
 
     public CostAllocationServiceTests()
@@ -21,7 +20,7 @@ public class CostAllocationServiceTests
         _usageRepositoryMock = new Mock<IUsageRecordRepository>();
         _quotaRepositoryMock = new Mock<IResourceQuotaRepository>();
         _optionsMock = new Mock<IOptions<ResourcesOptions>>();
-        _loggerMock = new Mock<ILogger<CostAllocationService>>();
+        Mock<ILogger<CostAllocationService>> loggerMock = new Mock<ILogger<CostAllocationService>>();
 
         var options = new ResourcesOptions
         {
@@ -42,7 +41,7 @@ public class CostAllocationServiceTests
             _usageRepositoryMock.Object,
             _quotaRepositoryMock.Object,
             _optionsMock.Object,
-            _loggerMock.Object
+            loggerMock.Object
         );
     }
 

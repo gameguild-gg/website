@@ -47,7 +47,7 @@ describe('GitHubProvider', () => {
       const provider = GitHubProvider({ clientId: 'id', clientSecret: 'secret' });
       const url = await provider.getAuthorizeUrl('http://localhost:8080', 'http://localhost:3000/callback');
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/^http:\/\/localhost:8080\/v1\/auth\/github:authorize\?redirectUri=/), { method: 'GET' });
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/^http:\/\/localhost:8080\/v1\/auth\/github:authorize\?redirectUri=/), { method: 'GET', redirect: 'error' });
       expect(url).toBe('https://github.com/login?state=abc');
     });
 
@@ -67,7 +67,7 @@ describe('GitHubProvider', () => {
 
       await provider.getAuthorizeUrl('http://ignored-api:8080');
 
-      expect(mockFetch).toHaveBeenCalledWith('http://configured-api:8080/custom/github/auth?', { method: 'GET' });
+      expect(mockFetch).toHaveBeenCalledWith('http://configured-api:8080/custom/github/auth?', { method: 'GET', redirect: 'error' });
     });
 
     it('preserves structured backend error details', async () => {

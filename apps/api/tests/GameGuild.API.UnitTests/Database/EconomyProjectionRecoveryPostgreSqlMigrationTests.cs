@@ -264,7 +264,9 @@ public sealed class EconomyProjectionRecoveryPostgreSqlMigrationTests
         public DockerFactAttribute()
         {
             if (string.Equals(Environment.GetEnvironmentVariable("SKIP_DOCKER_TESTS"), "1", StringComparison.Ordinal))
+            {
                 Skip = "Docker tests disabled by SKIP_DOCKER_TESTS=1.";
+            }
         }
     }
 }

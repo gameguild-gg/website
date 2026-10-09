@@ -91,9 +91,21 @@ public sealed class MarketplaceControlPlaneTests
     {
         await using var context = await MarketplacePolicyContext.CreateAsync();
         var row = ValidPolicy();
-        if (invalid == "hash") row.PayloadHash = "wrong";
-        if (invalid == "approval") row.ApprovedBy = row.ProposedBy;
-        if (invalid == "wallet") row.PlatformFeeWalletId = Guid.Empty;
+        if (invalid == "hash")
+        {
+            row.PayloadHash = "wrong";
+        }
+
+        if (invalid == "approval")
+        {
+            row.ApprovedBy = row.ProposedBy;
+        }
+
+        if (invalid == "wallet")
+        {
+            row.PlatformFeeWalletId = Guid.Empty;
+        }
+
         context.Add(row);
         await context.SaveChangesAsync();
         var reader = new PostgreSqlDurableMarketplacePolicyReader(
@@ -197,13 +209,41 @@ public sealed class MarketplaceControlPlaneTests
         await using var context = await CommerceSnapshotContext.CreateAsync();
         var seeded = SeedCommerceOrder(context);
         var entry = context.Entry(seeded.Line);
-        if (invalid == "tenant") entry.Property(nameof(OrderLineItem.TenantId)).CurrentValue = Guid.NewGuid();
-        if (invalid == "tenant-null") entry.Property(nameof(OrderLineItem.TenantId)).CurrentValue = null;
-        if (invalid == "quantity") entry.Property(nameof(OrderLineItem.Quantity)).CurrentValue = 0;
-        if (invalid == "pricing") entry.Property(nameof(OrderLineItem.ProductPricingVersionId)).CurrentValue = Guid.Empty;
-        if (invalid == "version") entry.Property(nameof(OrderLineItem.PriceVersionSnapshot)).CurrentValue = 0;
-        if (invalid == "price") entry.Property(nameof(OrderLineItem.UnitPriceSnapshot)).CurrentValue = -1m;
-        if (invalid == "currency") entry.Property(nameof(OrderLineItem.CurrencySnapshot)).CurrentValue = " ";
+        if (invalid == "tenant")
+        {
+            entry.Property(nameof(OrderLineItem.TenantId)).CurrentValue = Guid.NewGuid();
+        }
+
+        if (invalid == "tenant-null")
+        {
+            entry.Property(nameof(OrderLineItem.TenantId)).CurrentValue = null;
+        }
+
+        if (invalid == "quantity")
+        {
+            entry.Property(nameof(OrderLineItem.Quantity)).CurrentValue = 0;
+        }
+
+        if (invalid == "pricing")
+        {
+            entry.Property(nameof(OrderLineItem.ProductPricingVersionId)).CurrentValue = Guid.Empty;
+        }
+
+        if (invalid == "version")
+        {
+            entry.Property(nameof(OrderLineItem.PriceVersionSnapshot)).CurrentValue = 0;
+        }
+
+        if (invalid == "price")
+        {
+            entry.Property(nameof(OrderLineItem.UnitPriceSnapshot)).CurrentValue = -1m;
+        }
+
+        if (invalid == "currency")
+        {
+            entry.Property(nameof(OrderLineItem.CurrencySnapshot)).CurrentValue = " ";
+        }
+
         await context.SaveChangesAsync();
         var reader = new EfAuthoritativeMarketplaceOrderReader(context);
 
@@ -220,10 +260,26 @@ public sealed class MarketplaceControlPlaneTests
     {
         await using var context = await CommerceSnapshotContext.CreateAsync();
         var seeded = SeedCommerceOrder(context);
-        if (invalid == "missing") context.Remove(seeded.Product);
-        if (invalid == "creator-null") seeded.Product.CreatorId = null;
-        if (invalid == "creator-empty") seeded.Product.CreatorId = Guid.Empty;
-        if (invalid == "self") seeded.Product.CreatorId = seeded.BuyerId;
+        if (invalid == "missing")
+        {
+            context.Remove(seeded.Product);
+        }
+
+        if (invalid == "creator-null")
+        {
+            seeded.Product.CreatorId = null;
+        }
+
+        if (invalid == "creator-empty")
+        {
+            seeded.Product.CreatorId = Guid.Empty;
+        }
+
+        if (invalid == "self")
+        {
+            seeded.Product.CreatorId = seeded.BuyerId;
+        }
+
         await context.SaveChangesAsync();
         var reader = new EfAuthoritativeMarketplaceOrderReader(context);
 

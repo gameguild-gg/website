@@ -28,13 +28,19 @@ public sealed class TenantAiController(
         var actor = actorContextAccessor.ActorContext;
 
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
+        }
 
         if (actor.IsSystemAdmin)
+        {
             return true;
+        }
 
         if (actor.TenantId.HasValue && actor.TenantId.Value == tenantId)
+        {
             return true;
+        }
 
         return await tenantMembershipChecker
             .IsUserMemberOfTenantAsync(actor.SubjectIdAsGuid.Value, tenantId, cancellationToken)
@@ -55,7 +61,9 @@ public sealed class TenantAiController(
         CancellationToken cancellationToken = default)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
 
         var normalizedTake = Math.Clamp(take, 1, 100);
         var entries = await historyReader.GetRecentAsync(tenantId, normalizedTake, cancellationToken).ConfigureAwait(false);
@@ -74,7 +82,9 @@ public sealed class TenantAiController(
         CancellationToken cancellationToken = default)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
 
         var entries = await historyReader
             .GetRecentAsync(tenantId, Math.Clamp(take, 1, 1000), cancellationToken)
@@ -98,7 +108,9 @@ public sealed class TenantAiController(
         CancellationToken cancellationToken = default)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
 
         return Ok(await BuildQuotaStatusAsync(tenantId, cancellationToken).ConfigureAwait(false));
     }

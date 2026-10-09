@@ -216,13 +216,21 @@ public sealed class DatabaseStartupConfigurationTests
     {
         var settings = new Dictionary<string, string?>();
         if (runtimeConnection is not null)
+        {
             settings["ConnectionStrings:DefaultConnection"] = runtimeConnection;
+        }
+
         if (migrationConnection is not null)
+        {
             settings["ConnectionStrings:MigrationConnection"] = migrationConnection;
+        }
+
         if (values is not null)
         {
             foreach (var (key, value) in values)
+            {
                 settings[key] = value;
+            }
         }
 
         return new ConfigurationBuilder().AddInMemoryCollection(settings).Build();

@@ -25,7 +25,9 @@ public sealed class PostgreSqlRegisteredPostingCapabilityResolver : IRegisteredP
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(capabilityName);
         if (!Enum.IsDefined(templateKind))
+        {
             throw new ArgumentOutOfRangeException(nameof(templateKind));
+        }
 
         var normalizedName = capabilityName.Trim();
         var row = await _db.Set<EconomyRegisteredCapabilityRow>()
@@ -37,8 +39,10 @@ public sealed class PostgreSqlRegisteredPostingCapabilityResolver : IRegisteredP
                 cancellationToken);
 
         if (row is null)
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 $"Registered economy capability '{normalizedName}' is unavailable.");
+        }
 
         int[] allowedTemplateKinds;
         try
@@ -53,8 +57,10 @@ public sealed class PostgreSqlRegisteredPostingCapabilityResolver : IRegisteredP
         }
 
         if (!allowedTemplateKinds.Contains((int)templateKind))
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 $"Registered economy capability '{normalizedName}' does not authorize template '{templateKind}'.");
+        }
 
         return new RegisteredPostingCapability(row.Id, row.Name, templateKind);
     }
@@ -68,8 +74,10 @@ public sealed class PostgreSqlRegisteredPostingCapabilityResolver : IRegisteredP
         ArgumentNullException.ThrowIfNull(receipt);
         if (receipt.RiskDecisionId == Guid.Empty ||
             string.IsNullOrWhiteSpace(receipt.OperationFingerprint))
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 "The capability receipt has no durable risk-decision binding.");
+        }
 
         var capability = await ResolveAsync(capabilityName, templateKind, cancellationToken);
         var riskDecision = await _db.Set<EconomyRiskDecisionRow>()
@@ -84,8 +92,10 @@ public sealed class PostgreSqlRegisteredPostingCapabilityResolver : IRegisteredP
                             decision.ExpiresAt > receipt.IssuedAt,
                 cancellationToken);
         if (riskDecision is null || riskDecision.CounterVersion <= 0)
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 "The capability receipt is not bound to an active registered-posting risk decision.");
+        }
 
         return new RegisteredPostingAuthority(
             capability.Id,
