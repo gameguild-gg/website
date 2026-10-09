@@ -39,6 +39,8 @@ Policy names already owned by the database-backed policy registry cannot be over
 
 Existing database-backed policies continue to support resource permissions, tenant overrides, ABAC rules, time-window and IP rules, compiled-policy caching, and authorization auditing. The static options are an additional host configuration path; they do not replace those services or define external OAuth/SAML providers. Static policies may reference an authentication scheme after that provider has been registered.
 
+External **authorization decisions** (distinct from external authentication providers) integrate through the `Authorization:ExternalDecision` section: an OAuth2 client-credentials decision endpoint consulted by the effective-permission resolver after every local layer, veto-only (an external deny overrides a local allow; an external allow never overrides a local deny and never grants on its own) and disabled by default. See `apps/api/docs/effective-permission-resolution.md` for the full contract, fail modes and the deferred SAML authorization-assertion integration.
+
 ## Migration
 
 Existing deployments need no configuration change. Keep current named policies in the database. Add a policy to this section only when it is intended to be a host-owned static policy; move policy names only after checking controller attributes and the database seed. Register external authentication providers separately, then use their registered scheme names in `AuthenticationSchemes`.
