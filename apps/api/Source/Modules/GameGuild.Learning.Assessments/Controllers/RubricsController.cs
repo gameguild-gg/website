@@ -133,7 +133,6 @@ public class RubricsController : BaseApiController
         await _courseAccessEvaluator
             .HasCapabilityAsync(courseId, CourseCapability.StaffReview, HttpContext.RequestAborted)
             .ConfigureAwait(false);
-            .ConfigureAwait(false);
 
     private Task<bool> CanManageCourseAsync(Guid courseId) =>
         _courseAccessEvaluator.HasCapabilityAsync(
