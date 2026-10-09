@@ -398,7 +398,7 @@ export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInpu
     take?: number;
   };
 }
-export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesOutput = Array<Types.ComplianceAuditAuditRetentionSimulationSummary>;
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
 export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint = {
   operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies' as const,
   method: 'GET' as const,
@@ -466,7 +466,7 @@ export const putApiAuditRetentionPoliciesConfigurationEndpoint = {
  * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
  */
 export type GetApiAuditRetentionPoliciesTemplatesInput = void;
-export type GetApiAuditRetentionPoliciesTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export type GetApiAuditRetentionPoliciesTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
 export const getApiAuditRetentionPoliciesTemplatesEndpoint = {
   operationId: 'getApiAuditRetentionPoliciesTemplates' as const,
   method: 'GET' as const,
@@ -549,7 +549,7 @@ export const putApiAuditRetentionSimulationConfigurationEndpoint = {
  * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
  */
 export type GetApiAuditRetentionSimulationTemplatesInput = void;
-export type GetApiAuditRetentionSimulationTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export type GetApiAuditRetentionSimulationTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
 export const getApiAuditRetentionSimulationTemplatesEndpoint = {
   operationId: 'getApiAuditRetentionSimulationTemplates' as const,
   method: 'GET' as const,
@@ -572,7 +572,7 @@ export interface GetApiAuditSecurityEventsAlertsInput {
     take?: number;
   };
 }
-export type GetApiAuditSecurityEventsAlertsOutput = Array<Types.ComplianceAuditSecurityAlertOutput>;
+export type GetApiAuditSecurityEventsAlertsOutput = Types.ComplianceAuditSecurityAlertOutput[];
 export const getApiAuditSecurityEventsAlertsEndpoint = {
   operationId: 'getApiAuditSecurityEventsAlerts' as const,
   method: 'GET' as const,
@@ -635,7 +635,7 @@ export interface GetApiAuditSecurityEventsRetentionExecutionsInput {
     take?: number;
   };
 }
-export type GetApiAuditSecurityEventsRetentionExecutionsOutput = Array<Types.ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export type GetApiAuditSecurityEventsRetentionExecutionsOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput[];
 export const getApiAuditSecurityEventsRetentionExecutionsEndpoint = {
   operationId: 'getApiAuditSecurityEventsRetentionExecutions' as const,
   method: 'GET' as const,
@@ -12216,7 +12216,7 @@ export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesInput {
     take?: number;
   };
 }
-export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesOutput = Array<Types.ComplianceAuditAuditRetentionSimulationSummary>;
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
 export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint = {
   operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPolicies' as const,
   method: 'GET' as const,
@@ -12284,7 +12284,7 @@ export const putAuditRetentionPoliciesConfigurationEndpoint = {
  * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
  */
 export type GetAuditRetentionPoliciesTemplatesInput = void;
-export type GetAuditRetentionPoliciesTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export type GetAuditRetentionPoliciesTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
 export const getAuditRetentionPoliciesTemplatesEndpoint = {
   operationId: 'getAuditRetentionPoliciesTemplates' as const,
   method: 'GET' as const,
@@ -12367,7 +12367,7 @@ export const putAuditRetentionSimulationConfigurationEndpoint = {
  * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
  */
 export type GetAuditRetentionSimulationTemplatesInput = void;
-export type GetAuditRetentionSimulationTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export type GetAuditRetentionSimulationTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
 export const getAuditRetentionSimulationTemplatesEndpoint = {
   operationId: 'getAuditRetentionSimulationTemplates' as const,
   method: 'GET' as const,
@@ -12390,7 +12390,7 @@ export interface GetAuditSecurityEventsAlertsInput {
     take?: number;
   };
 }
-export type GetAuditSecurityEventsAlertsOutput = Array<Types.ComplianceAuditSecurityAlertOutput>;
+export type GetAuditSecurityEventsAlertsOutput = Types.ComplianceAuditSecurityAlertOutput[];
 export const getAuditSecurityEventsAlertsEndpoint = {
   operationId: 'getAuditSecurityEventsAlerts' as const,
   method: 'GET' as const,
@@ -12453,7 +12453,7 @@ export interface GetAuditSecurityEventsRetentionExecutionsInput {
     take?: number;
   };
 }
-export type GetAuditSecurityEventsRetentionExecutionsOutput = Array<Types.ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export type GetAuditSecurityEventsRetentionExecutionsOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput[];
 export const getAuditSecurityEventsRetentionExecutionsEndpoint = {
   operationId: 'getAuditSecurityEventsRetentionExecutions' as const,
   method: 'GET' as const,
