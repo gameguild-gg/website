@@ -5539,6 +5539,26 @@ export const postAdminEconomyTreasuryWithdrawalsReconcileEndpoint = {
 } as const;
 
 /**
+ * Builds the permission effectiveness compliance report (overall and per
+ * permission / evaluation surface / operation allow-deny rates) for a time range.
+ */
+export interface GetAuthorizationComplianceReportInput {
+  query?: {
+    tenantId?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetAuthorizationComplianceReportOutput = Types.IdentityAuthorizationPermissionComplianceReport;
+export const getAuthorizationComplianceReportEndpoint = {
+  operationId: 'getAuthorizationComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/compliance/report' as const,
+  tags: ['AccessControlPermissionCompliance'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific permission on a resource.
  */
 export interface GetAuthorizationResourcesHasPermissionInput {
@@ -5716,6 +5736,72 @@ export const putAuthorizationResourcesUsersPermissionsEndpoint = {
   method: 'PUT' as const,
   path: '/api/v1/authorization/resources/users/permissions' as const,
   tags: ['AccessControlResourcePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Restores a soft-deleted tenant permission row inside the retention window.
+ */
+export interface PostAuthorizationRestorationsDeletedInput {
+  permissionId: string;
+}
+export type PostAuthorizationRestorationsDeletedOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsDeletedEndpoint = {
+  operationId: 'postAuthorizationRestorationsDeleted' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/deleted/{permissionId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverses a Grant/Revoke/Deny audit-log entry inside the retention window.
+ */
+export interface PostAuthorizationRestorationsUndoInput {
+  auditLogId: string;
+}
+export type PostAuthorizationRestorationsUndoOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsUndoEndpoint = {
+  operationId: 'postAuthorizationRestorationsUndo' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/undo/{auditLogId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Exports the permission state (roles, tenant defaults, user grants) of a tenant
+ * as a synchronization document. Omit tenantId for the global
+ * scope (system admins only).
+ */
+export interface GetAuthorizationSyncExportInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAuthorizationSyncExportOutput = Types.IdentityAuthorizationExternalPermissionSyncDocument;
+export const getAuthorizationSyncExportEndpoint = {
+  operationId: 'getAuthorizationSyncExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/sync/export' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Imports (or dry-runs) an external permission synchronization document. Invalid
+ * documents are rejected in full with their validation errors; nothing is
+ * partially applied.
+ */
+export interface PostAuthorizationSyncImportInput {
+  body?: Types.IdentityAuthorizationImportPermissionSyncInput;
+}
+export type PostAuthorizationSyncImportOutput = Types.IdentityAuthorizationPermissionSyncImportResult;
+export const postAuthorizationSyncImportEndpoint = {
+  operationId: 'postAuthorizationSyncImport' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/sync/import' as const,
+  tags: ['AccessControlPermissionSync'] as const,
   requiresAuth: true,
 } as const;
 
@@ -13383,7 +13469,7 @@ export const getContentResourcesBySlugEndpoint = {
 
 /**
  * Create or resume a content interaction
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsInput {
   query?: {
@@ -13402,7 +13488,7 @@ export const postCourseInteractionsEndpoint = {
 
 /**
  * Mark content as completed
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsCompleteInput {
   interactionId: string;
@@ -13422,7 +13508,7 @@ export const postCourseInteractionsCompleteEndpoint = {
 
 /**
  * Update progress for a content interaction
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsProgressInput {
   interactionId: string;
@@ -13442,7 +13528,7 @@ export const putCourseInteractionsProgressEndpoint = {
 
 /**
  * Submit content interaction (makes it immutable)
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsSubmitInput {
   interactionId: string;
@@ -13462,7 +13548,7 @@ export const postCourseInteractionsSubmitEndpoint = {
 
 /**
  * Update time spent on content
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsTimeSpentInput {
   interactionId: string;
@@ -13545,7 +13631,7 @@ export const getCourseInteractionsContentSurveyResultsVisibleEndpoint = {
 
 /**
  * Get all interactions for a user in a program
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserInput {
   programUserId: string;
@@ -13564,7 +13650,7 @@ export const getCourseInteractionsUserEndpoint = {
 
 /**
  * Get interaction for specific user and content
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserContentInput {
   programUserId: string;
@@ -13618,6 +13704,18 @@ export const postCoursesEndpoint = {
   method: 'POST' as const,
   path: '/v1/courses' as const,
   tags: ['LearningCoursesProgram'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesAccessCapabilitiesInput {
+  courseId: string;
+}
+export type GetCoursesAccessCapabilitiesOutput = Types.LearningCoursesCourseAccessCapabilities;
+export const getCoursesAccessCapabilitiesEndpoint = {
+  operationId: 'getCoursesAccessCapabilities' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{courseId}/access/capabilities' as const,
+  tags: ['LearningCoursesAccess'] as const,
   requiresAuth: true,
 } as const;
 
@@ -25607,6 +25705,7 @@ export const endpoints = {
   getAdminEconomyTreasuryWithdrawalsAudit: getAdminEconomyTreasuryWithdrawalsAuditEndpoint,
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
+  getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -25618,6 +25717,10 @@ export const endpoints = {
   postAuthorizationResourcesShare: postAuthorizationResourcesShareEndpoint,
   deleteAuthorizationResourcesUsersAccess: deleteAuthorizationResourcesUsersAccessEndpoint,
   putAuthorizationResourcesUsersPermissions: putAuthorizationResourcesUsersPermissionsEndpoint,
+  postAuthorizationRestorationsDeleted: postAuthorizationRestorationsDeletedEndpoint,
+  postAuthorizationRestorationsUndo: postAuthorizationRestorationsUndoEndpoint,
+  getAuthorizationSyncExport: getAuthorizationSyncExportEndpoint,
+  postAuthorizationSyncImport: postAuthorizationSyncImportEndpoint,
   getAuthorizationTenantsHasPermission: getAuthorizationTenantsHasPermissionEndpoint,
   getAuthorizationTenantsPermissions: getAuthorizationTenantsPermissionsEndpoint,
   postAuthorizationTenantsDefaults: postAuthorizationTenantsDefaultsEndpoint,
@@ -26097,6 +26200,7 @@ export const endpoints = {
   getCourseInteractionsUserContent: getCourseInteractionsUserContentEndpoint,
   getCoursesForGetCourses: getCoursesForGetCoursesEndpoint,
   postCourses: postCoursesEndpoint,
+  getCoursesAccessCapabilities: getCoursesAccessCapabilitiesEndpoint,
   getCoursesCohortsSchedule: getCoursesCohortsScheduleEndpoint,
   putCoursesCohortsSchedule: putCoursesCohortsScheduleEndpoint,
   getCoursesCohortsScheduleAvailableContent: getCoursesCohortsScheduleAvailableContentEndpoint,
