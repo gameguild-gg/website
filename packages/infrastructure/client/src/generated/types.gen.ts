@@ -7374,7 +7374,7 @@ the provider, shown to the user before they continue (issue #250). */
 export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
   provider: string | null;
   /** Scope tokens that will appear on the authorization request. */
-  requestedScopes: Array<string> | null;
+  requestedScopes: string[] | null;
 }
 
 /** Response for GitHub sign-in initiation */
@@ -7645,7 +7645,7 @@ Revoking every remaining scope is allowed and leaves the link in place with an
 empty grant list; removing the whole provider remains the unlink endpoint's job. */
 export interface IdentityAuthenticationRevokeExternalLoginScopesInput {
   /** Scope tokens to revoke. Each must be a valid scope token (non-empty, no whitespace). */
-  scopes: Array<string>;
+  scopes: string[];
 }
 
 /** Post-revocation snapshot of the link's grant state. */
@@ -7654,7 +7654,7 @@ export interface IdentityAuthenticationRevokeExternalLoginScopesOutput {
   consentedAt?: string | null;
   consentVersion?: number;
   /** Scope grants remaining after the revocation. */
-  grantedScopes: Array<string> | null;
+  grantedScopes: string[] | null;
   provider: string | null;
 }
 
