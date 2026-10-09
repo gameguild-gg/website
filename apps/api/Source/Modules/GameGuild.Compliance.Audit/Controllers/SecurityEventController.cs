@@ -83,7 +83,6 @@ public sealed class SecurityEventController(
             return Conflict(new ValidationProblemDetails(exception.Errors.ToDictionary(pair => pair.Key, pair => pair.Value))
                 { Status = StatusCodes.Status409Conflict });
         }
-        }
     }
 
     /// <summary>
