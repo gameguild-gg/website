@@ -19,4 +19,7 @@ public class Web3SignInRequest
     public string ChainId { get; set; } = "1";
 
     public Guid? TenantId { get; set; }
+
+    /// <summary>When true, issues a persistent ("remember me") refresh token using the persistent lifetime.</summary>
+    public bool? RememberMe { get; set; }
 }

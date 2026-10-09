@@ -31,7 +31,7 @@ public sealed class LocalSignInHandler(
         var httpContext = httpContextAccessor.HttpContext;
         var ipAddress = GetClientIpAddress(httpContext);
 
-        var signInRequest = new LocalSignInRequest { Email = command.Email, Password = command.Password, TenantId = command.TenantId, DeviceFingerprint = command.DeviceFingerprint };
+        var signInRequest = new LocalSignInRequest { Email = command.Email, Password = command.Password, TenantId = command.TenantId, DeviceFingerprint = command.DeviceFingerprint, RememberMe = command.RememberMe };
 
         var domainResult = await authService.LocalSignInAsync(signInRequest, cancellationToken).ConfigureAwait(false);
 

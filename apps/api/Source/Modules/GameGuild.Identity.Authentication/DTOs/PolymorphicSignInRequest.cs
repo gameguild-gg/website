@@ -8,4 +8,7 @@ public sealed class PolymorphicSignInRequest
     public string Password { get; init; } = string.Empty;
     public Guid? TenantId { get; init; }
     public string? DeviceFingerprint { get; init; }
+
+    /// <summary>When true, issues a persistent ("remember me") refresh token using the persistent lifetime.</summary>
+    public bool? RememberMe { get; init; }
 }

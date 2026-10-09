@@ -39,6 +39,13 @@ public sealed class JwtOptions : BaseOptions
     public int RefreshTokenExpirationDays { get; set; } = 30;
 
     /// <summary>
+    ///     Refresh token expiration time in days for persistent ("remember me") sessions.
+    ///     Used when a sign-in request opts into a durable session.
+    ///     Default: 30 days.
+    /// </summary>
+    public int PersistentRefreshTokenExpirationDays { get; set; } = 30;
+
+    /// <summary>
     ///     Renew the refresh-token lifetime on rotation, within the session's absolute limit.
     ///     When false, rotation preserves the predecessor's expiration deadline.
     /// </summary>
@@ -100,6 +107,8 @@ public sealed class JwtOptions : BaseOptions
         if (AccessTokenExpirationMinutes <= 0) { errors.Add("JWT AccessTokenExpirationMinutes must be greater than 0"); }
 
         if (RefreshTokenExpirationDays <= 0) { errors.Add("JWT RefreshTokenExpirationDays must be greater than 0"); }
+
+        if (PersistentRefreshTokenExpirationDays <= 0) { errors.Add("JWT PersistentRefreshTokenExpirationDays must be greater than 0"); }
 
         if (!Enum.IsDefined(RefreshTokenReplayContainmentScope)) { errors.Add("JWT RefreshTokenReplayContainmentScope must be Family or Account"); }
 

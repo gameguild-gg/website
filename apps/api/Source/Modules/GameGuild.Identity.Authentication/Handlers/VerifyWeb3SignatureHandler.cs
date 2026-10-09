@@ -17,7 +17,8 @@ public sealed class VerifyWeb3SignatureHandler(IAuthService authService) : IComm
             Nonce = command.Nonce,
             ChainId = command.ChainId,
             TenantId = command.TenantId,
-            DeviceFingerprint = command.DeviceFingerprint
+            DeviceFingerprint = command.DeviceFingerprint,
+            RememberMe = command.RememberMe
         };
 
         return await authService.VerifyWeb3SignatureAsync(verifyRequest, cancellationToken).ConfigureAwait(false);

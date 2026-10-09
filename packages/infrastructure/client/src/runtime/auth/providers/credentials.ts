@@ -73,6 +73,9 @@ export function CredentialsProvider(options: CredentialsProviderOptions = {}): C
         const email = credentials.email as string;
         const password = credentials.password as string;
         const tenantId = credentials.tenantId as string | undefined;
+        // "Remember me" opt-in from the sign-in form: drives the backend's persistent
+        // refresh-token lifetime and this client's cookie storage policy.
+        const rememberMe = credentials.rememberMe === true;
 
         if (!email || !password) {
           throw new CredentialsSignInError('Email and password are required');
@@ -80,6 +83,7 @@ export function CredentialsProvider(options: CredentialsProviderOptions = {}): C
 
         const body: Record<string, unknown> = { email, password };
         if (tenantId) body.tenantId = tenantId;
+        if (rememberMe) body.rememberMe = true;
 
         let response: Response;
         try {
@@ -145,6 +149,7 @@ export function CredentialsProvider(options: CredentialsProviderOptions = {}): C
           sessionId: data.sessionId as string | undefined,
           tenantId: data.tenantId as string | undefined,
           availableTenants: data.availableTenants as Array<{ id: string; name: string }> | undefined,
+          rememberMe,
         };
 
         return result;

@@ -20,4 +20,7 @@ public class VerifyWeb3SignatureCommand : ICommand<SignInResponse>
     public Guid? TenantId { get; set; }
 
     public string? DeviceFingerprint { get; set; }
+
+    /// <summary>When true, issues a persistent ("remember me") refresh token using the persistent lifetime.</summary>
+    public bool? RememberMe { get; set; }
 }

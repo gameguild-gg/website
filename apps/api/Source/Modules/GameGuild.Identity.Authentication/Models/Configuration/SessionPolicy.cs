@@ -16,6 +16,13 @@ public abstract class SessionPolicy
     public int RefreshTokenExpirationDays { get; set; } = 30;
 
     /// <summary>
+    ///     Refresh token expiration in days for persistent ("remember me") sessions.
+    ///     Mirrors <c>Jwt:PersistentRefreshTokenExpirationDays</c> for tenant-scoped
+    ///     session policy consumers.
+    /// </summary>
+    public int PersistentRefreshTokenExpirationDays { get; set; } = 30;
+
+    /// <summary>
     ///     Whether to allow multiple concurrent sessions.
     /// </summary>
     public bool AllowMultipleSessions { get; set; } = true;

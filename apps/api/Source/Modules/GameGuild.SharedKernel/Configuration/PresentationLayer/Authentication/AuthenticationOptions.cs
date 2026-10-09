@@ -92,6 +92,11 @@ public sealed class AuthenticationOptions : BaseOptions
     /// </summary>
     public int RefreshTokenExpirationDays { get; set; } = 30;
 
+    /// <summary>
+    ///     Lifetime for refresh tokens issued to persistent ("remember me") sessions, in days.
+    /// </summary>
+    public int PersistentRefreshTokenExpirationDays { get; set; } = 30;
+
     public override void Validate()
     {
         base.Validate();
@@ -166,6 +171,11 @@ public sealed class AuthenticationOptions : BaseOptions
             if (RefreshTokenExpirationDays <= 0)
             {
                 throw new InvalidOperationException("Refresh token expiration must be greater than zero.");
+            }
+
+            if (PersistentRefreshTokenExpirationDays <= 0)
+            {
+                throw new InvalidOperationException("Persistent refresh token expiration must be greater than zero.");
             }
         }
     }

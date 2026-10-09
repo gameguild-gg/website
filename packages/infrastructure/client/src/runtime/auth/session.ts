@@ -54,6 +54,7 @@ export function createJWTPayload(result: ProviderResult, config: ResolvedAuthCon
     sessionId: result.sessionId,
     tenantId: result.tenantId,
     availableTenants: result.availableTenants,
+    rememberMe: result.rememberMe,
     iat: Math.floor(now / 1000),
     exp: Math.floor(now / 1000) + config.maxAge,
   };
