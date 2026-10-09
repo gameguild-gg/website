@@ -2170,6 +2170,10 @@ export const getApiLiveEndpoint = {
   requiresAuth: false,
 } as const;
 
+/**
+ * Product revenue/subscription metrics are business-intelligence data:
+ * access requires the monetization analytics permission (issue #346, ViewAnalytics).
+ */
 export interface GetApiMetricsProductInput {
   query?: {
     startUtc?: string;
@@ -2186,6 +2190,10 @@ export const getApiMetricsProductEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Exports of revenue/subscription metrics are business-intelligence data:
+ * access requires the monetization analytics permission (issue #346, ViewAnalytics).
+ */
 export interface GetApiMetricsProductExportInput {
   query?: {
     startUtc?: string;
