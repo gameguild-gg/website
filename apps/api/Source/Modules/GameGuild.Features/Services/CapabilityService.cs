@@ -246,7 +246,9 @@ public class CapabilityService : ICapabilityService
         DateTimeOffset? expiresAt = null,
         CancellationToken cancellationToken = default)
     {
-        userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
+        // The acting administrator always comes from the resolved actor context
+        // (AGENTS.md invariant 8), never from the caller-supplied parameter.
+        var actingUserId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
         var existing = await _context.Set<TenantCapability>()
             .FirstOrDefaultAsync(tc => tc.TenantId == tenantId && tc.CapabilityKey == capability, cancellationToken).ConfigureAwait(false);
 
@@ -258,7 +260,7 @@ public class CapabilityService : ICapabilityService
             existing.IsEnabled = isEnabled;
             existing.Source = source;
             existing.ExpiresAt = expiresAt;
-            existing.ModifiedByUserId = userId;
+            existing.ModifiedByUserId = actingUserId;
             existing.ModificationReason = reason;
             existing.Priority = source.StartsWith("override:", StringComparison.OrdinalIgnoreCase) ? 1000 : 0;
         }
@@ -271,7 +273,7 @@ public class CapabilityService : ICapabilityService
                 IsEnabled = isEnabled,
                 Source = source,
                 ExpiresAt = expiresAt,
-                ModifiedByUserId = userId,
+                ModifiedByUserId = actingUserId,
                 ModificationReason = reason,
                 Priority = source.StartsWith("override:", StringComparison.OrdinalIgnoreCase) ? 1000 : 0
             };
@@ -287,7 +289,7 @@ public class CapabilityService : ICapabilityService
             NewValue = isEnabled,
             OldSource = oldSource,
             NewSource = source,
-            ChangedByUserId = userId,
+            ChangedByUserId = actingUserId,
             ChangeReason = reason,
             ChangeType = oldValue == null ? CapabilityChangeType.Granted :
                          (isEnabled && !oldValue.Value) ? CapabilityChangeType.Restored :

@@ -57,7 +57,10 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetCapabilities(Guid tenantId, CancellationToken ct)
     {
-        if (ValidateTenantAccess(tenantId, false) is { } failure) return failure;
+        if (ValidateTenantAccess(tenantId, false) is { } failure)
+        {
+            return failure;
+        }
         var capabilities = await _capabilityService.GetTenantCapabilitiesAsync(tenantId, ct).ConfigureAwait(false);
         return Ok(capabilities);
     }
@@ -130,7 +133,10 @@ public sealed class CapabilitiesController : BaseApiController
         [FromQuery] string? reason,
         CancellationToken ct)
     {
-        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
+        if (ValidateTenantAccess(tenantId, true) is { } failure)
+        {
+            return failure;
+        }
         var userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
 
         await _sender.Send(
