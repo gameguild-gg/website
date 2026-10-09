@@ -176,6 +176,13 @@ public record EffectivePermissions
     public bool ContextValid { get; init; } = true;
 
     /// <summary>
+    ///     True when the evaluation-layer denial throttle (enumeration protection,
+    ///     issue #358) short-circuited this resolution: the result is fail-closed
+    ///     (empty) for a throttled user+tenant pair even though the context was valid.
+    /// </summary>
+    public bool Throttled { get; init; }
+
+    /// <summary>
     ///     When the permissions were resolved.
     /// </summary>
     public DateTime ResolvedAt { get; init; } = SystemClock.UtcNow;
@@ -243,7 +250,14 @@ public enum PermissionSource
     ///     Grant scoped to a specific resource (only contributes when the resolution
     ///     context matches the resource type and id).
     /// </summary>
-    ResourceGrant = 7
+    ResourceGrant = 7,
+
+    /// <summary>
+    ///     Contribution from a registered <see cref="IPermissionEvaluationExtension"/>
+    ///     plugin (issue #358). Extension allows are subject to DENY-WINS like every
+    ///     other layer.
+    /// </summary>
+    Extension = 8
 }
 
 /// <summary>

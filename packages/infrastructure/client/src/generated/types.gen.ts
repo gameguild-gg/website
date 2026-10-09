@@ -8030,6 +8030,59 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
 /** Status of JIT elevation request */
 export type IdentityAuthorizationElevationRequestStatus = 'None' | 'Pending' | 'Approved' | 'Denied' | 'Active' | 'Expired' | 'Revoked';
 
+/** Permission entry in the sync contract (one TenantPermission row). */
+export interface IdentityAuthorizationExternalPermissionEntry {
+  /** Denied permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Whether the entry is active. */
+  isActive?: boolean;
+  /** Allowed permissions. */
+  permissions?: Array<string> | null;
+  /** Subject user (null = tenant defaults). */
+  userId?: string | null;
+}
+
+/** Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+export interface IdentityAuthorizationExternalPermissionSyncDocument {
+  /** When the document was produced. */
+  exportedAtUtc?: string;
+  /** Permission entries (tenant defaults and user grants) to synchronize. */
+  permissions?: Array<IdentityAuthorizationExternalPermissionEntry> | null;
+  /** Role definitions to synchronize. */
+  roles?: Array<IdentityAuthorizationExternalRoleDefinition> | null;
+  /** Contract version; the only supported value is `1.0`. */
+  schemaVersion?: string | null;
+  /** Tenant scope of the document (null = global, system-admin only). */
+  tenantId?: string | null;
+}
+
+/** Role definition in the sync contract. */
+export interface IdentityAuthorizationExternalRoleDefinition {
+  /** Additional parent role names (multi-parent inheritance, issue #358). */
+  additionalParentRoleNames?: Array<string> | null;
+  /** Inherited permissions the role opts out of (selective blocking, issue #358). */
+  blockedInheritedPermissions?: Array<string> | null;
+  /** Directly assigned deny permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Display name. */
+  displayName?: string | null;
+  /** Whether the role is active. */
+  isActive?: boolean;
+  /** Unique role name within the tenant scope. */
+  name?: string | null;
+  /** Primary parent role name (optional). */
+  parentRoleName?: string | null;
+  /** Directly assigned allow permissions. */
+  permissions?: Array<string> | null;
+  /** Conflict-resolution priority. */
+  priority?: number;
+}
+
 /** Response containing pending invitations for the current user. */
 export interface IdentityAuthorizationGetPendingResourceInvitationsOutput {
   invitations: Array<IdentityAuthorizationResourceInvitationDto> | null;
@@ -8103,6 +8156,15 @@ export interface IdentityAuthorizationHasPermissionOutput {
 /** Impact severity level */
 export type IdentityAuthorizationImpactSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Request body for the permission sync import endpoint. */
+export interface IdentityAuthorizationImportPermissionSyncInput {
+  document?: IdentityAuthorizationExternalPermissionSyncDocument;
+  /** Validate and report without applying. */
+  dryRun?: boolean;
+  /** Optional target tenant (null/empty = global scope, system admins only). */
+  tenantId?: string | null;
+}
+
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
   errorMessage?: string | null;
@@ -8161,6 +8223,54 @@ export interface IdentityAuthorizationPermissionAnomaly {
   userId?: string;
 }
 
+/** Allow/deny rates for one reporting dimension value. */
+export interface IdentityAuthorizationPermissionComplianceBreakdown {
+  /** Allow outcomes. */
+  allow?: number;
+  /** Allow share for this value (0-1). */
+  allowRate?: number;
+  /** Deny outcomes. */
+  deny?: number;
+  /** Deny share for this value (0-1). */
+  denyRate?: number;
+  /** Error outcomes. */
+  error?: number;
+  /** The dimension value (permission, source surface or operation). */
+  key?: string | null;
+  /** Evaluations for this value. */
+  total?: number;
+}
+
+/** Compliance report over recorded permission evaluations. */
+export interface IdentityAuthorizationPermissionComplianceReport {
+  /** Evaluations with outcome Allow. */
+  allowCount?: number;
+  /** Share of evaluations that allowed (0-1). Denominator excludes nothing. */
+  allowRate?: number;
+  /** Effectiveness breakdown per triggering operation (when recorded). */
+  byOperation?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluated permission. */
+  byPermission?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluation surface (the layer that reported the evaluation, e.g. `graphql`). */
+  bySource?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Evaluations with outcome Deny. */
+  denyCount?: number;
+  /** Share of evaluations that denied (0-1). */
+  denyRate?: number;
+  /** Evaluations with outcome Error (failed closed). */
+  errorCount?: number;
+  /** Share of evaluations that errored and failed closed (0-1). */
+  errorRate?: number;
+  /** Inclusive range start. */
+  fromUtc?: string;
+  /** Tenant scope of the report (null = global report). */
+  tenantId?: string | null;
+  /** Recorded evaluations in range. */
+  totalEvaluations?: number;
+  /** Inclusive range end. */
+  toUtc?: string;
+}
+
 /** Permission delegation allows users to delegate their permissions to other users */
 export interface IdentityAuthorizationPermissionDelegation {
   id?: string;
@@ -8179,6 +8289,42 @@ export interface IdentityAuthorizationPermissionDelegation {
   updatedAt?: string | null;
   usageCount?: number;
   usageLimit?: number | null;
+}
+
+/** Result of a permission restoration attempt. */
+export interface IdentityAuthorizationPermissionRestorationResult {
+  /** Human-readable outcome description. */
+  message?: string | null;
+  /** The affected TenantPermission id (when known). */
+  restoredPermissionId?: string | null;
+  /** Whether the restoration was applied. */
+  succeeded?: boolean;
+  /** Tenant scope of the restoration (from the restored/undone record, never from the caller). */
+  tenantId?: string | null;
+}
+
+/** One planned change of a synchronization import. */
+export interface IdentityAuthorizationPermissionSyncChange {
+  /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
+  kind?: string | null;
+  /** The permissions or role fields involved. */
+  payload?: Record<string, string> | null;
+  /** Human-readable target description (role name or user id). */
+  target?: string | null;
+}
+
+/** Result of a synchronization import (or dry-run preview). */
+export interface IdentityAuthorizationPermissionSyncImportResult {
+  /** True when the plan was actually applied (false for dry-runs and invalid documents). */
+  applied?: boolean;
+  /** The planned changes (the full plan when valid). */
+  changes?: Array<IdentityAuthorizationPermissionSyncChange> | null;
+  /** True when this was a dry-run. */
+  dryRun?: boolean;
+  /** False when validation failed — nothing was applied (fail-closed). */
+  isValid?: boolean;
+  /** Validation problems (empty when valid). */
+  validationErrors?: Array<string> | null;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -19714,6 +19860,9 @@ export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<Ide
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
 export let IdentityAuthorizationElevationRequestStatusSchema: z.ZodType<IdentityAuthorizationElevationRequestStatus>;
+export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
+export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
+export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
@@ -19721,11 +19870,17 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
+export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
+export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
+export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<IdentityAuthorizationPermissionComplianceReport>;
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
+export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
+export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -28536,6 +28691,46 @@ IdentityAuthorizationEffectivePermissionsOutputSchema = z.object({
 /** Zod schema for IdentityAuthorizationElevationRequestStatus. Status of JIT elevation request */
 IdentityAuthorizationElevationRequestStatusSchema = z.enum(['None', 'Pending', 'Approved', 'Denied', 'Active', 'Expired', 'Revoked']);
 
+/** Zod schema for IdentityAuthorizationExternalPermissionEntry. Permission entry in the sync contract (one TenantPermission row). */
+IdentityAuthorizationExternalPermissionEntrySchema = z.object({
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionSyncDocument. Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+IdentityAuthorizationExternalPermissionSyncDocumentSchema = z.object({
+  exportedAtUtc: z.string().datetime().optional(),
+  permissions: z
+    .array(z.lazy(() => IdentityAuthorizationExternalPermissionEntrySchema))
+    .nullable()
+    .optional(),
+  roles: z
+    .array(z.lazy(() => IdentityAuthorizationExternalRoleDefinitionSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalRoleDefinition. Role definition in the sync contract. */
+IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
+  additionalParentRoleNames: z.array(z.string()).nullable().optional(),
+  blockedInheritedPermissions: z.array(z.string()).nullable().optional(),
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  parentRoleName: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  priority: z.number().int().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationGetPendingResourceInvitationsOutput. Response containing pending invitations for the current user. */
 IdentityAuthorizationGetPendingResourceInvitationsOutputSchema = z.object({
   invitations: z.array(z.lazy(() => IdentityAuthorizationResourceInvitationDtoSchema)).nullable(),
@@ -28587,6 +28782,13 @@ IdentityAuthorizationHasPermissionOutputSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationImpactSeverity. Impact severity level */
 IdentityAuthorizationImpactSeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthorizationImportPermissionSyncInput. Request body for the permission sync import endpoint. */
+IdentityAuthorizationImportPermissionSyncInputSchema = z.object({
+  document: z.lazy(() => IdentityAuthorizationExternalPermissionSyncDocumentSchema).optional(),
+  dryRun: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
@@ -28655,6 +28857,43 @@ IdentityAuthorizationPermissionAnomalySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionComplianceBreakdown. Allow/deny rates for one reporting dimension value. */
+IdentityAuthorizationPermissionComplianceBreakdownSchema = z.object({
+  allow: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  deny: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  error: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionComplianceReport. Compliance report over recorded permission evaluations. */
+IdentityAuthorizationPermissionComplianceReportSchema = z.object({
+  allowCount: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  byOperation: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  byPermission: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  bySource: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  denyCount: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  errorCount: z.number().int().optional(),
+  errorRate: z.number().optional(),
+  fromUtc: z.string().datetime().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalEvaluations: z.number().int().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionDelegation. Permission delegation allows users to delegate their permissions to other users */
 IdentityAuthorizationPermissionDelegationSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28673,6 +28912,33 @@ IdentityAuthorizationPermissionDelegationSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
   usageCount: z.number().int().optional(),
   usageLimit: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionRestorationResult. Result of a permission restoration attempt. */
+IdentityAuthorizationPermissionRestorationResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  restoredPermissionId: z.string().uuid().nullable().optional(),
+  succeeded: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
+IdentityAuthorizationPermissionSyncChangeSchema = z.object({
+  kind: z.string().nullable().optional(),
+  payload: z.record(z.string(), z.string()).nullable().optional(),
+  target: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncImportResult. Result of a synchronization import (or dry-run preview). */
+IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
+  applied: z.boolean().optional(),
+  changes: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionSyncChangeSchema))
+    .nullable()
+    .optional(),
+  dryRun: z.boolean().optional(),
+  isValid: z.boolean().optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
