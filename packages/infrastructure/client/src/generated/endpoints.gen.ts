@@ -12208,6 +12208,23 @@ export const postAuthApiKeysRevokeEndpoint = {
 } as const;
 
 /**
+ * Rotate an API key: issues a replacement key and starts the old key's
+ * overlap (grace) window, after which the old key is revoked.
+ */
+export interface PostAuthApiKeysRotateInput {
+  keyId: string;
+  body?: Types.IdentityAuthenticationRotateApiKeyInput;
+}
+export type PostAuthApiKeysRotateOutput = Types.IdentityAuthenticationRotateApiKeyOutput;
+export const postAuthApiKeysRotateEndpoint = {
+  operationId: 'postAuthApiKeysRotate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/api-keys/{keyId}:rotate' as const,
+  tags: ['AuthApiKeys'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Initiate Discord OAuth sign-in
  *
  * Initiates the Discord OAuth authorization-code sign-in flow and returns the authorization URL with the CSRF state parameter. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-authorize.
@@ -26321,6 +26338,7 @@ export const endpoints = {
   getAuthApiKeys: getAuthApiKeysEndpoint,
   postAuthApiKeys: postAuthApiKeysEndpoint,
   postAuthApiKeysRevoke: postAuthApiKeysRevokeEndpoint,
+  postAuthApiKeysRotate: postAuthApiKeysRotateEndpoint,
   postAuthDiscordSignInAuthorize: postAuthDiscordSignInAuthorizeEndpoint,
   postAuthDiscordSignInCallback: postAuthDiscordSignInCallbackEndpoint,
   postAuthEmailSendVerification: postAuthEmailSendVerificationEndpoint,
