@@ -599,14 +599,14 @@ public sealed class ApiKeyRotationAuthenticationTests
         // Within the grace window the old key still authenticates.
         oldKey.BeginRotationGrace(SystemClock.UtcNow.AddHours(1));
         await dbContext.SaveChangesAsync();
-        var withinGrace = await AuthenticateAsync(dbContext, oldPlaintext).ConfigureAwait(false);
+        var withinGrace = await AuthenticateAsync(dbContext, oldPlaintext);
         withinGrace.Succeeded.Should().BeTrue();
 
         // Grace expires: authentication fails closed and the revocation is recorded lazily.
         oldKey.BeginRotationGrace(SystemClock.UtcNow.AddMinutes(-1));
         await dbContext.SaveChangesAsync();
 
-        var afterGrace = await AuthenticateAsync(dbContext, oldPlaintext).ConfigureAwait(false);
+        var afterGrace = await AuthenticateAsync(dbContext, oldPlaintext);
         afterGrace.Succeeded.Should().BeFalse();
 
         var reloaded = await dbContext.ApiKeys.SingleAsync(k => k.Id == oldKey.Id);
