@@ -85,11 +85,14 @@ public sealed class SessionManagementService(
 
     public async Task<List<UserSession>> GetUserSessionsAsync(Guid userId, bool activeOnly = true, CancellationToken cancellationToken = default)
     {
-        var sessions = await sessionRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (!activeOnly)
+        {
+            return await sessionRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        }
 
-        if (activeOnly) { sessions = sessions.Where(s => s.IsActive).ToList(); }
-
-        return sessions.OrderByDescending(s => s.LastUsedAt).ToList();
+        // Active listings must be expiry-aware: a row whose ExpiresAt has passed is no longer a
+        // valid session even when the IsActive flag has not been lazily cleared yet.
+        return await sessionRepository.GetActiveByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<bool> ValidateSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
