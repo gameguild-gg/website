@@ -46,6 +46,10 @@ async function backendRequest<T>(
   tenantId: string,
   body?: unknown,
 ): Promise<{ data: T } | { error: string; status: number }> {
+  // SSRF (Codacy rule-node-ssrf) — false positive: the target origin is pinned
+  // to the env-configured API base by assertSafeServiceUrl, and the only
+  // request-derived data is encodeURIComponent'd path segments that cannot
+  // escape the path (origin/protocol/credentials re-checked by the guard).
   const response = await fetch(assertSafeServiceUrl(`${apiBaseUrl}${path}`, apiBaseUrl), {
     redirect: "error",
     method,

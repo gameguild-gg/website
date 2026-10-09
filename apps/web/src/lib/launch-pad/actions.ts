@@ -19,6 +19,9 @@ async function launchPadApiRequest<T>(path: string, init: RequestInit): Promise<
   const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   const token = await getToken();
   const tenantId = (await auth().catch(() => null))?.tenantId;
+  // SSRF (Codacy rule-node-ssrf) — false positive: the target origin is pinned
+  // to the env-configured API base by assertSafeServiceUrl; request data only
+  // becomes encoded path segments and can never select another origin.
   const response = await fetch(assertSafeServiceUrl(`${apiUrl}${path}`, apiUrl), {
     ...init,
     redirect: 'error',
