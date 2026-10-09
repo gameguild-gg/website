@@ -30,18 +30,17 @@ const staticRoutes = [
   '/legal/academic-honesty',
 ];
 
-export async function generateSitemaps() {
-  return [{ id: 0 }];
-}
-
+// NOTE: This must stay a single sitemap (no `generateSitemaps`). With `generateSitemaps`
+// Next.js serves the sitemap at `/sitemap/<id>.xml` and `/sitemap.xml` 404s — which is
+// what robots.ts advertises. sitemap.test.ts guards this coupling.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const [projects, catalog, blogIndex] = await Promise.all([
     getPublishedProjects().catch(() => []),
-    getPublicCourseCatalog(),
+    getPublicCourseCatalog().catch(() => null),
     getBlogIndex().catch(() => null),
   ]);
-  const courseRoutes = catalog.success
+  const courseRoutes = catalog?.success
     ? catalog.data
         .map((course) => (typeof course.slug === 'string' && course.slug.length > 0 ? course.slug : null))
         .filter((slug): slug is string => Boolean(slug))

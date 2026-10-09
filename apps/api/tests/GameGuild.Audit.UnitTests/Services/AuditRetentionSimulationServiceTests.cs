@@ -31,7 +31,9 @@ public sealed class AuditRetentionSimulationServiceTests
     {
         SetActor(role, authenticated, tenant);
         var service = Service();
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetConfigurationAsync(default));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetConfigurationAsync(false, default));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetConfigurationAsync(true, default));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetPolicyTemplatesAsync(default));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ConfigureAsync(AuditRetentionSimulationEngineTests.Configuration(), default));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.RunAsync(AuditRetentionSimulationEngineTests.Request(), default));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetRunAsync(Guid.NewGuid(), default));
