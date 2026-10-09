@@ -207,4 +207,13 @@ public interface ITenantPermissionRepository
 
     Task<List<TenantPermission>> GetExpiredPermissionsAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Loads a soft-deleted TenantPermission by id, bypassing the soft-delete query
+    ///     filter (issue #358 permission restoration). Returns null when the id is
+    ///     unknown or the row is live (not deleted).
+    /// </summary>
+    Task<TenantPermission?> GetDeletedByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
 }

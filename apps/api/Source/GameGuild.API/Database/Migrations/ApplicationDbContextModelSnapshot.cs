@@ -15197,6 +15197,14 @@ namespace GameGuild.API.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.PrimitiveCollection<Guid[]>("AdditionalParentRoleIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.PrimitiveCollection<string[]>("BlockedInheritedPermissions")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -15488,6 +15496,70 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("PermissionDelegation");
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionEvaluationLogEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EvaluatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Operation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.PrimitiveCollection<string[]>("RequiredPermissions")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("ResourceId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluatedAtUtc")
+                        .HasDatabaseName("IX_PermissionEvaluationLogs_Time");
+
+                    b.HasIndex("Outcome")
+                        .HasDatabaseName("IX_PermissionEvaluationLogs_Outcome");
+
+                    b.HasIndex("TenantId", "EvaluatedAtUtc")
+                        .HasDatabaseName("IX_PermissionEvaluationLogs_Tenant_Time");
+
+                    b.HasIndex(new[] { "Outcome" }, "IX_PermissionEvaluationLogs_Outcome");
+
+                    b.HasIndex(new[] { "TenantId", "EvaluatedAtUtc" }, "IX_PermissionEvaluationLogs_Tenant_Time");
+
+                    b.HasIndex(new[] { "EvaluatedAtUtc" }, "IX_PermissionEvaluationLogs_Time");
+
+                    b.ToTable("PermissionEvaluationLogs");
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionTemplate", b =>

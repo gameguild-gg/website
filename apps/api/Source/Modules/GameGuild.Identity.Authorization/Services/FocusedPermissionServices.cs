@@ -23,7 +23,8 @@ public sealed class PermissionGrantService(
     IPermissionAuditService auditService,
     ITenantSecurityVersionStore securityVersionStore,
     IActorContextAccessor actorContextAccessor,
-    ILogger<PermissionGrantService> logger
+    ILogger<PermissionGrantService> logger,
+    IEnumerable<IPermissionChangeNotifier>? changeNotifiers = null
 ) : IPermissionGrantService
 {
     private ActorContext Actor => actorContextAccessor.ActorContext;
@@ -95,6 +96,14 @@ public sealed class PermissionGrantService(
             reason: reason,
             cancellationToken: cancellationToken);
 
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Granted,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
+
         return result;
     }
 
@@ -137,6 +146,14 @@ public sealed class PermissionGrantService(
             newValue: existing.Permissions.Length == 0 ? null : string.Join(",", existing.Permissions),
             reason: "Permissions revoked",
             cancellationToken: cancellationToken);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Revoked,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
 
         return true;
     }
@@ -187,6 +204,14 @@ public sealed class PermissionGrantService(
             newValue: string.Join(",", permissions),
             reason: "Global default permissions updated",
             cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Updated,
+            null,
+            null,
+            "GlobalDefault",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
     }
 
     public async Task SetTenantDefaultPermissionsAsync(
@@ -235,6 +260,14 @@ public sealed class PermissionGrantService(
             newValue: string.Join(",", permissions),
             reason: "Tenant default permissions updated",
             cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Updated,
+            null,
+            tenantId,
+            "TenantDefault",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<TenantPermission> DenyTenantPermissionAsync(
@@ -274,6 +307,14 @@ public sealed class PermissionGrantService(
                 reason: reason,
                 cancellationToken: cancellationToken);
 
+            await NotifyChangeAsync(
+                PermissionChangeEventType.Denied,
+                userId,
+                tenantId,
+                "Tenant",
+                permissions,
+                cancellationToken).ConfigureAwait(false);
+
             return existing;
         }
 
@@ -305,6 +346,14 @@ public sealed class PermissionGrantService(
             newValue: string.Join(",", result.DenyPermissions),
             reason: reason,
             cancellationToken: cancellationToken);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Denied,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
 
         return result;
     }
@@ -344,7 +393,62 @@ public sealed class PermissionGrantService(
             reason: "Deny permissions removed",
             cancellationToken: cancellationToken);
 
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Revoked,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
+
         return true;
+    }
+
+    /// <summary>
+    ///     Fans a permission change out to every registered <see cref="IPermissionChangeNotifier"/>
+    ///     (issue #358 webhooks). Notification failures never affect the mutation: they are
+    ///    logged by the notifiers themselves.
+    /// </summary>
+    private async Task NotifyChangeAsync(
+        PermissionChangeEventType eventType,
+        Guid? userId,
+        Guid? tenantId,
+        string? permissionType,
+        string[] permissions,
+        CancellationToken cancellationToken)
+    {
+        if (changeNotifiers is null)
+        {
+            return;
+        }
+
+        var change = new PermissionChangeEvent(
+            eventType,
+            tenantId,
+            userId,
+            permissionType,
+            permissions,
+            Actor.SubjectIdAsGuid ?? Guid.Empty);
+
+        foreach (var notifier in changeNotifiers)
+        {
+            try
+            {
+                await notifier.NotifyAsync(change, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Permission change notifier {NotifierType} failed for {EventType}; the permission change is unaffected.",
+                    notifier.GetType().Name,
+                    change.EventTypeName);
+            }
+        }
     }
 
     private async Task InvalidateTenantCacheAsync(Guid? tenantId, CancellationToken cancellationToken)
