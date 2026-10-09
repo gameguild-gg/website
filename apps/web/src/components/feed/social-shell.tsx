@@ -67,18 +67,28 @@ export async function SocialFeed({
     user?.name?.trim() || user?.email?.split("@")[0] || "GameGuild member";
   const currentUserId = user?.id ?? null;
 
-  let primary;
+  const emptyFeed = { items: [], nextCursor: null };
+  // Captured, not awaited: a rejection must not kill the parallel batch below.
   let primaryError = false;
-  try {
-    primary = await loadSocialFeed({ scope, tag });
-  } catch {
-    primary = { items: [], nextCursor: null };
+  const primaryPromise = loadSocialFeed({ scope, tag }).catch(() => {
     primaryError = true;
-  }
+    return emptyFeed;
+  });
 
-  const [stories, currentProfile, suggestedProfiles, trendingTags, community] =
+  const [primary, storiesTrack, currentProfile, suggestedProfiles, trendingTags, community] =
     await Promise.all([
-      optional(loadStories(), []),
+      primaryPromise,
+      optional(
+        loadStories().then(async (stories) => {
+          const authorProfiles = await Promise.all(
+            [...new Set(stories.map((story) => story.authorId))].map((id) =>
+              optional(loadSocialProfile(id), null),
+            ),
+          );
+          return { stories, authorProfiles };
+        }),
+        { stories: [], authorProfiles: [] },
+      ),
       currentUserId
         ? optional(loadSocialProfile(currentUserId), null)
         : Promise.resolve(null),
@@ -87,21 +97,17 @@ export async function SocialFeed({
         : Promise.resolve([]),
       optional(loadTrendingTags(6), []),
       scope === "community"
-        ? Promise.resolve(primary)
-        : optional(loadSocialFeed({ scope: "community", take: 8 }), {
-            items: [],
-            nextCursor: null,
-          }),
+        ? primaryPromise
+        : optional(loadSocialFeed({ scope: "community", take: 8 }), emptyFeed),
     ]);
 
+  const { stories, authorProfiles } = storiesTrack;
   const storyAuthorIds = [...new Set(stories.map((story) => story.authorId))];
   const storyProfiles = new Map<string, SocialProfile>();
-  await Promise.all(
-    storyAuthorIds.map(async (authorId) => {
-      const profile = await optional(loadSocialProfile(authorId), null);
-      if (profile) storyProfiles.set(authorId, profile);
-    }),
-  );
+  storyAuthorIds.forEach((authorId, index) => {
+    const profile = authorProfiles[index];
+    if (profile) storyProfiles.set(authorId, profile);
+  });
   const storyPreviews: SocialStoryPreview[] = stories.map((story) => {
     const profile = storyProfiles.get(story.authorId);
     const ownStory = story.authorId === currentUserId;
