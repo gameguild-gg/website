@@ -95,6 +95,13 @@ public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAu
             // Validate key
             if (!apiKey.IsValid())
             {
+                // Lazily finalize rotation: once the overlap window closes, record the
+                // revocation so the lifecycle stays observable without a background job.
+                if (apiKey.FinalizeRotationRevocation())
+                {
+                    await _dbContext.SaveChangesAsync(Context.RequestAborted).ConfigureAwait(false);
+                }
+
                 Logger.LogWarning("Inactive or expired API key used: {KeyId}", apiKey.Id);
                 return await FailAsync("API key is inactive or expired", "InactiveOrExpiredApiKey", apiKey.UserId, apiKey.TenantId).ConfigureAwait(false);
             }

@@ -73,6 +73,35 @@ export class AuthApiKeysModule {
 
     return result as Result<void, ApiError>;
   }
+
+  /**
+   * Rotate an API key: issues a replacement key and starts the old key's
+   * overlap (grace) window, after which the old key is revoked.
+   */
+  async postAuthApiKeysRotate(
+    keyId: string,
+    body: Types.IdentityAuthenticationRotateApiKeyInput,
+  ): Promise<Result<Types.IdentityAuthenticationRotateApiKeyOutput, ApiError>> {
+    const url = `/v1/auth/api-keys/${keyId}:rotate`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRotateApiKeyInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationRotateApiKeyOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
 }
 
 export function createAuthApiKeysModule(client: ApiClient): AuthApiKeysModule {

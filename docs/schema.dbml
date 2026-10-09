@@ -11451,6 +11451,8 @@ Table "gameguild.authentication"."api_keys" {
   "ip_whitelist" "character varying(100)"
   "revoked_at" timestamp
   "revocation_reason" "character varying(200)"
+  "replaces_key_id" uuid
+  "rotation_grace_ends_at" timestamp
   "version" integer [not null]
   "created_at" timestamp [not null]
   "updated_at" timestamp [not null]
@@ -11462,8 +11464,34 @@ Table "gameguild.authentication"."api_keys" {
     expires_at [name: "ix_api_keys_expires_at"]
     is_active [name: "ix_api_keys_is_active"]
     key_hash [unique, name: "ix_api_keys_key_hash"]
+    replaces_key_id [name: "ix_api_keys_replaces_key_id"]
     tenant_id [name: "ix_api_keys_tenant_id"]
     user_id [name: "ix_api_keys_user_id"]
+  }
+}
+
+Table "gameguild.authentication"."authentication_flow_states" {
+  "flow_id" uuid [not null]
+  "user_id" uuid
+  "current_step" integer [not null]
+  "required_steps" text [not null]
+  "completed_steps" text [not null]
+  "is_complete" boolean [not null]
+  "risk_score" doubleprecision
+  "initiated_at" timestamp [not null]
+  "expires_at" timestamp [not null]
+  "ip_address" "character varying(64)"
+  "device_fingerprint" "character varying(128)"
+  "step_data" text
+  "abandoned_at" timestamp
+  "completed_at" timestamp
+  "created_at" timestamp [not null]
+  "updated_at" timestamp [not null]
+
+  Indexes {
+    flow_id [pk, name: "PK_authentication_flow_states"]
+    expires_at [name: "ix_authentication_flow_states_expires_at"]
+    user_id [name: "ix_authentication_flow_states_user_id"]
   }
 }
 

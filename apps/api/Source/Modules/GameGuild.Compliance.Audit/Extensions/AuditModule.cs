@@ -100,6 +100,7 @@ public static class AuditModule
         services.AddScoped<IAuditRetentionSimulationService, AuditRetentionSimulationService>();
         services.AddScoped<IAuditDataAccessRecorder, AuditDataAccessRecorder>();
         services.AddScoped<IAuthenticationAuditEventSink, CentralAuthenticationAuditEventSink>();
+        services.AddScoped<IApiKeyAuditEventSink, CentralApiKeyAuditEventSink>();
         services.AddScoped<IAuditActionTypeSearchService, AuditActionTypeSearchService>();
         services.AddSingleton<IAuditExportProgressTracker, DistributedAuditExportProgressTracker>();
         services.AddScoped<IAuditExportCronSchedule, AuditExportCronSchedule>();
