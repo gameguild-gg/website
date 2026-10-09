@@ -60,12 +60,16 @@ public sealed class UserRoleSoftDeleteAuditTests
         change.GetProperty("EntityType").GetString().Should().Be("UserRole");
         change.GetProperty("Operation").GetString().Should().Be("Modified");
         change.GetProperty("TargetUserId").GetGuid().Should().Be(targetUserId);
-        change.GetProperty("BeforeState").GetString().Should().NotContain("DeletedAt");
-        change.GetProperty("AfterState").GetString().Should().Contain("DeletedAt");
+
+        // Before: DeletedAt is null (assignment live); After: DeletedAt is stamped.
+        var before = JsonDocument.Parse(change.GetProperty("BeforeState").GetString()!).RootElement;
+        var after = JsonDocument.Parse(change.GetProperty("AfterState").GetString()!).RootElement;
+        before.GetProperty("DeletedAt").ValueKind.Should().Be(JsonValueKind.Null);
+        after.GetProperty("DeletedAt").ValueKind.Should().Be(JsonValueKind.String);
     }
 
     [Fact]
-    public async Task Reassigning_ASoftDeletedRoleAssignment_IsAuditedAsAGrant()
+    public async Task Reassigning_ASoftDeletedRoleAssignment_RestoresRowAndAuditsChange()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
