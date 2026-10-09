@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Commerce.Payments;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -102,6 +103,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPatch("v{version:apiVersion}/subscription-plans/{planId:guid}/details")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Partially update subscription plan details")]
     [EndpointDescription("Updates specific fields of a subscription plan's details.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -122,6 +124,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPatch("v{version:apiVersion}/subscription-plans/{planId:guid}/pricing")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Update subscription plan pricing")]
     [EndpointDescription("Updates the pricing for a subscription plan.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -142,6 +145,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPatch("v{version:apiVersion}/subscription-plans/{planId:guid}/limits")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Update subscription plan limits")]
     [EndpointDescription("Updates the limits for a subscription plan.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -162,6 +166,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPatch("v{version:apiVersion}/subscription-plans/{planId:guid}/features")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Update subscription plan features")]
     [EndpointDescription("Updates the features for a subscription plan.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -185,6 +190,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:activate")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Activate subscription plan")]
     [EndpointDescription("Activates a subscription plan by ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -203,6 +209,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:deactivate")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Deactivate subscription plan")]
     [EndpointDescription("Deactivates a subscription plan by ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -221,6 +228,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:archive")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Archive subscription plan")]
     [EndpointDescription("Archives a subscription plan, making it unavailable for new subscriptions while preserving existing subscriptions.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -240,6 +248,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>Created plan ID</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:clone")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Clone subscription plan")]
     [EndpointDescription("Creates a copy of an existing subscription plan with a new name and slug.")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -260,6 +269,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:featured")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Set subscription plan featured status")]
     [EndpointDescription("Sets whether a subscription plan is featured or not.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -280,6 +290,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:external-id")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Set subscription plan external ID")]
     [EndpointDescription("Sets the external system ID for subscription plan integration.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
