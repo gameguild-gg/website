@@ -363,7 +363,7 @@ public sealed class RotateApiKeyHandler : ICommandHandler<RotateApiKeyCommand, R
 
         var (newKey, plaintext) = ApiKey.Create(
             oldKey.UserId,
-            oldKey.TenantId,
+            oldKey.TenantId ?? Guid.Empty,
             request.Name ?? oldKey.Name,
             scopes,
             request.ExpiresAt ?? oldKey.ExpiresAt,

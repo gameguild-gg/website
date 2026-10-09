@@ -5,6 +5,8 @@ using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Configuration.PresentationLayer.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -184,7 +186,8 @@ public sealed class ApiKeyScopeEnforcementTests
 
         var unknown = await provider.GetPolicyAsync("not-a-scope-policy");
         unknown.Should().NotBeNull("the database-backed provider answers unknown names with a fail-closed policy");
-        unknown!.Requirements.Should().Contain(r => r is DenyAnonymousAuthorizationRequirement);
+        unknown!.Requirements.Should().Contain(r => r is AssertionRequirement,
+            "unknown policy names must resolve to a deny-all policy");
 
         var defaultPolicy = await provider.GetDefaultPolicyAsync();
         defaultPolicy.Should().NotBeNull();
@@ -207,6 +210,13 @@ public sealed class ApiKeyScopeEnforcementTests
         var handler = new ApiKeyScopeHandler();
         await handler.HandleAsync(allowed);
         await handler.HandleAsync(denied);
+        // Mimic the built-in pass-through handler so self-handling requirements
+        // (RequireAuthenticatedUser's DenyAnonymousAuthorizationRequirement) are evaluated too.
+        foreach (var requirement in policy.Requirements.OfType<IAuthorizationHandler>())
+        {
+            await requirement.HandleAsync(allowed);
+            await requirement.HandleAsync(denied);
+        }
 
         allowed.HasSucceeded.Should().BeTrue();
         denied.HasFailed.Should().BeTrue();
@@ -216,7 +226,7 @@ public sealed class ApiKeyScopeEnforcementTests
     {
         var services = new ServiceCollection();
         var policyStore = new Mock<IPolicyDefinitionStore>();
-        policyStore.Setup(store => store.GetPolicyAsync(It.IsAny<string>(), It.IsAny<string?>>(), It.IsAny<CancellationToken>()))
+        policyStore.Setup(store => store.GetPolicyAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((PolicyDefinition?)null);
         services.AddSingleton(policyStore.Object);
         var versionStore = new Mock<ITenantSecurityVersionStore>();
