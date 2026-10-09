@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -110,8 +111,23 @@ public class SuspiciousLoginAlertPublisherTests
         await act.Should().NotThrowAsync();
     }
 
+    [Fact]
+    public async Task RecordAsync_SwallowsMissingProducerRegistration()
+    {
+        // Hosts without the durable transport must degrade to a logged no-op, not break sign-in.
+        var sut = new SuspiciousLoginAlertPublisher(
+            new NullProducerScopeFactory(),
+            BuildConfiguration(enabled: true, minimumRiskLevel: "High"),
+            NullLogger<SuspiciousLoginAlertPublisher>.Instance);
+
+        var act = () => sut.RecordAsync(Guid.NewGuid(), null, SecurityAlertKinds.BruteForceDetected, RiskLevel.High, 60);
+
+        await act.Should().NotThrowAsync();
+    }
+
     private SuspiciousLoginAlertPublisher BuildSut(bool enabled = true, string minimumRiskLevel = "High") =>
-        new(_producer.Object, BuildConfiguration(enabled, minimumRiskLevel), NullLogger<SuspiciousLoginAlertPublisher>.Instance);
+        new(new ProducerScopeFactory(_producer.Object), BuildConfiguration(enabled, minimumRiskLevel),
+            NullLogger<SuspiciousLoginAlertPublisher>.Instance);
 
     private static IConfiguration BuildConfiguration(bool enabled, string minimumRiskLevel) =>
         new ConfigurationBuilder()
@@ -127,5 +143,48 @@ public class SuspiciousLoginAlertPublisherTests
         var recorded = new List<IDurableIntegrationEvent>();
         _producer.Verify(producer => producer.RecordAsync(Capture.In(recorded), It.IsAny<CancellationToken>()), Times.Once);
         return recorded.Single();
+    }
+
+    /// <summary>
+    ///     The publisher records through an independent scope so the alert outbox entry commits
+    ///     outside the (rolled-back) sign-in transaction; this fake supplies that scope.
+    /// </summary>
+    private sealed class ProducerScopeFactory(IDurableEventProducer producer) : IServiceScopeFactory
+    {
+        public IServiceScope CreateScope() => new ProducerScope(producer);
+
+        private sealed class ProducerScope(IDurableEventProducer producer) : IServiceScope
+        {
+            public IServiceProvider ServiceProvider { get; } = new ProducerProvider(producer);
+
+            public void Dispose()
+            {
+            }
+
+            private sealed class ProducerProvider(IDurableEventProducer producer) : IServiceProvider
+            {
+                public object? GetService(Type serviceType) =>
+                    serviceType == typeof(IDurableEventProducer) ? producer : null;
+            }
+        }
+    }
+
+    private sealed class NullProducerScopeFactory : IServiceScopeFactory
+    {
+        public IServiceScope CreateScope() => new EmptyScope();
+
+        private sealed class EmptyScope : IServiceScope
+        {
+            public IServiceProvider ServiceProvider { get; } = new NullProvider();
+
+            public void Dispose()
+            {
+            }
+
+            private sealed class NullProvider : IServiceProvider
+            {
+                public object? GetService(Type serviceType) => null;
+            }
+        }
     }
 }

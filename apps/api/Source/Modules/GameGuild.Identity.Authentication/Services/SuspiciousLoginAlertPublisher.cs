@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
@@ -8,8 +9,18 @@ namespace GameGuild.Identity.Authentication;
 ///     notification bridge, gated by <c>Authentication:SecurityNotifications</c>.
 ///     Gated by <c>Enabled</c> (default on) and <c>MinimumRiskLevel</c> (default High).
 /// </summary>
+/// <remarks>
+///     <para>
+///         Suspicious sign-ins must alert the owner even when the sign-in command itself fails:
+///         a step-up challenge returns a failure outcome and a denied attempt throws, and the
+///         use-case pipeline rolls back the request transaction in both cases. Recording therefore
+///         runs in an independent service scope with its own database context, mirroring the
+///         independent-scope persistence used for refresh-token rejection audits, so the alert
+///         outbox entry commits independently of the sign-in transaction.
+///     </para>
+/// </remarks>
 public sealed class SuspiciousLoginAlertPublisher(
-    IDurableEventProducer events,
+    IServiceScopeFactory scopeFactory,
     IConfiguration configuration,
     ILogger<SuspiciousLoginAlertPublisher> logger) : ISuspiciousLoginAlertPublisher
 {
@@ -41,6 +52,8 @@ public sealed class SuspiciousLoginAlertPublisher(
 
         try
         {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var events = scope.ServiceProvider.GetRequiredService<IDurableEventProducer>();
             await events.RecordAsync(new SuspiciousLoginDetectedV1(
                 userId,
                 alertKind,
@@ -56,9 +69,9 @@ public sealed class SuspiciousLoginAlertPublisher(
         }
         catch (Exception exception)
         {
-            // Security alert recording is defense-in-depth: an outbox failure must never
-            // break authentication. The durable transport retries recorded events, and the
-            // analysis itself is already persisted, audited, and forwarded to the SIEM.
+            // Security alert recording is defense-in-depth: a failure here must never break
+            // authentication. The durable transport retries recorded events, and the analysis
+            // itself is already persisted, audited, and forwarded to the SIEM.
             logger.LogError(exception,
                 "Could not record the suspicious-login alert event for user {UserId} ({AlertKind})",
                 userId, alertKind);
