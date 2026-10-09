@@ -387,23 +387,32 @@ public static class ClientCertificateAuthenticationExtensions
     {
         ArgumentNullException.ThrowIfNull(settings);
 
+        // Parse the allowlist eagerly so an unparseable CA entry fails closed at
+        // registration time instead of surfacing as a deferred options failure on
+        // the first authentication attempt.
+        var trustedCertificateAuthorities = new X509Certificate2Collection();
+        foreach (var pem in settings.TrustedCaCertificates)
+        {
+            X509Certificate2 certificate;
+            try
+            {
+                certificate = X509Certificate2.CreateFromPem(pem);
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    "Client certificate authentication trusted CA entries must be valid PEM certificates.", exception);
+            }
+
+            trustedCertificateAuthorities.Add(certificate);
+        }
+
         return builder.AddClientCertificateAuthentication(settings.SchemeName, options =>
         {
             options.CheckCertificateRevocation = settings.CheckCertificateRevocation;
-            foreach (var pem in settings.TrustedCaCertificates)
+            foreach (var certificateAuthority in trustedCertificateAuthorities)
             {
-                X509Certificate2 certificate;
-                try
-                {
-                    certificate = X509Certificate2.CreateFromPem(pem);
-                }
-                catch (Exception exception)
-                {
-                    throw new InvalidOperationException(
-                        "Client certificate authentication trusted CA entries must be valid PEM certificates.", exception);
-                }
-
-                options.TrustedCertificateAuthorities.Add(certificate);
+                options.TrustedCertificateAuthorities.Add(certificateAuthority);
             }
 
             configure?.Invoke(options);

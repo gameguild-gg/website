@@ -228,10 +228,13 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
         request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
             new OidCollection { new(TlsClientAuthenticationOid) }, true));
 
+        // Issued leaves must stay inside the issuer's validity window: deriving the
+        // bounds from UtcNow here races the CA creation instant by a second and
+        // makes Create() throw when the leaf outlives its issuer.
         using var issued = request.Create(
             certificateAuthority,
-            DateTimeOffset.UtcNow.AddDays(-1),
-            DateTimeOffset.UtcNow.AddDays(30),
+            certificateAuthority.NotBefore,
+            certificateAuthority.NotAfter,
             RandomNumberGenerator.GetBytes(16));
         return ImportPersistable(issued);
     }

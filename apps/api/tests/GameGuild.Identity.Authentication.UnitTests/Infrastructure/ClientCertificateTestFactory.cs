@@ -42,10 +42,11 @@ public static class ClientCertificateTestFactory
         request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
             new OidCollection { new(ClientAuthenticationOid) }, true));
 
+        // Derive validity from the issuer so the issued leaf can never outlive it.
         using var issued = request.Create(
             certificateAuthority,
-            NotBefore,
-            NotAfter,
+            certificateAuthority.NotBefore,
+            certificateAuthority.NotAfter,
             RandomNumberGenerator.GetBytes(16));
         return ImportPersistable(issued);
     }
