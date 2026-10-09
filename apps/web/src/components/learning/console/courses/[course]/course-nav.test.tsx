@@ -1,8 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CourseNav } from "./course-nav";
+import { CourseNav as CourseNavComponent } from "./course-nav";
+import type { CourseAccessCapabilities } from "@/lib/learning/queries/course";
 
 const refreshMock = vi.fn();
 const actionMocks = vi.hoisted(() => ({
@@ -51,6 +52,28 @@ const enabledFeatures = {
   hasAssessments: true,
   hasDiscussions: true,
 };
+
+const ownerAccess: CourseAccessCapabilities = {
+  courseId: "course-1",
+  courseExists: true,
+  isTenantMember: true,
+  isOwner: true,
+  hasActiveEnrollment: false,
+  canLearn: false,
+  canEdit: true,
+  canPublish: true,
+  canReviewAsStaff: true,
+  canAccessWorkspace: true,
+};
+
+function CourseNav({
+  access = ownerAccess,
+  ...props
+}: Omit<ComponentProps<typeof CourseNavComponent>, "access"> & {
+  access?: CourseAccessCapabilities;
+}) {
+  return <CourseNavComponent {...props} access={access} />;
+}
 
 describe("CourseNav", () => {
   const writeTextMock = vi.fn();
@@ -462,5 +485,35 @@ describe("CourseNav", () => {
       </CourseNav>,
     );
     expect(await screen.findByText("Published")).toBeInTheDocument();
+  });
+
+  it("gives a review-only collaborator grading navigation without authoring controls", () => {
+    render(
+      <CourseNav
+        courseTitle="Review course"
+        courseDescription="Review only."
+        courseStatus="published"
+        courseSlug="review-course"
+        courseRouteParam="review-course"
+        locale="en-US"
+        features={enabledFeatures}
+        access={{
+          ...ownerAccess,
+          isOwner: false,
+          canEdit: false,
+          canPublish: false,
+          canReviewAsStaff: true,
+        }}
+      >
+        <div>Review workspace</div>
+      </CourseNav>,
+    );
+
+    expect(screen.getAllByText("Assessments")).not.toHaveLength(0);
+    expect(screen.getAllByText("Students")).not.toHaveLength(0);
+    expect(screen.queryByText("Content")).not.toBeInTheDocument();
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /publish/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /preview/i })).not.toBeInTheDocument();
   });
 });

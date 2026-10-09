@@ -170,5 +170,43 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.HasIndex(history => new { history.TenantId, history.ExecutedAt });
             entity.HasIndex(history => new { history.ScheduledExportId, history.ExecutedAt });
         });
+
+        modelBuilder.Entity<SecurityAlert>(entity =>
+        {
+            entity.ToTable("SecurityAlerts");
+            entity.HasKey(alert => alert.Id);
+            entity.Property(alert => alert.TenantId);
+            entity.Property(alert => alert.RuleId).HasMaxLength(100).IsRequired();
+            entity.Property(alert => alert.Kind).HasConversion<int>();
+            entity.Property(alert => alert.Severity).HasConversion<int>();
+            entity.Property(alert => alert.Title).HasMaxLength(200).IsRequired();
+            entity.Property(alert => alert.Description).HasMaxLength(1000).IsRequired();
+            entity.Property(alert => alert.SourceActionType).HasMaxLength(100).IsRequired();
+            entity.Property(alert => alert.IpAddress).HasMaxLength(45);
+            entity.Property(alert => alert.DeduplicationKey).HasMaxLength(400).IsRequired();
+            entity.Property(alert => alert.Status).HasConversion<int>();
+            entity.Property(alert => alert.AcknowledgementNotes).HasMaxLength(1000);
+            entity.HasIndex(alert => alert.DeduplicationKey);
+            entity.HasIndex(alert => new { alert.Status, alert.Severity, alert.LastSeenAtUtc });
+            entity.HasIndex(alert => new { alert.TenantId, alert.Status, alert.LastSeenAtUtc });
+        });
+
+        modelBuilder.Entity<SecurityLogRetentionPolicy>(entity =>
+        {
+            entity.ToTable("SecurityLogRetentionPolicies");
+            entity.HasKey(policy => policy.Id);
+            entity.Property(policy => policy.TenantId).IsRequired();
+            entity.Property(policy => policy.Revision).IsConcurrencyToken();
+            entity.Property(policy => policy.CategoryOverridesJson).HasColumnType("text");
+            entity.HasIndex(policy => policy.TenantId).IsUnique();
+        });
+
+        modelBuilder.Entity<SecurityLogRetentionExecution>(entity =>
+        {
+            entity.ToTable("SecurityLogRetentionExecutions");
+            entity.HasKey(execution => execution.Id);
+            entity.Property(execution => execution.TenantId).IsRequired();
+            entity.HasIndex(execution => new { execution.TenantId, execution.ExecutedAtUtc });
+        });
     }
 }

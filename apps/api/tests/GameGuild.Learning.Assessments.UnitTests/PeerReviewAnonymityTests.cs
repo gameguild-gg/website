@@ -307,20 +307,32 @@ public class PeerReviewAnonymityTests
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
+    private readonly Mock<ICourseEnrollmentAccessReader> _courseEnrollments = new();
     private readonly Mock<Microsoft.Extensions.Logging.ILogger<PeerReviewsController>> _log = new();
 
     private PeerReviewsController CreateController(
         TestPeerReviewAnonymityDbContext db, Guid userId, Guid? programCreatorId = null)
     {
+        var tenantId = Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = userId.ToString(),
-            TenantId = Guid.NewGuid(),
+            TenantId = tenantId,
             IsAuthenticated = true,
             Roles = new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                userId,
+                tenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                It.IsAny<Guid>(),
+                userId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _assessments.Setup(s => s.GetAssessmentByIdAsync(It.IsAny<Guid>()))
             .Returns(async (Guid id) => await db.Set<Assessment>()
                 .FirstOrDefaultAsync(a => a.Id == id && a.DeletedAt == null));
@@ -328,7 +340,10 @@ public class PeerReviewAnonymityTests
             .Returns(async (Guid id) => await db.Set<AssessmentSubmission>()
                 .FirstOrDefaultAsync(s => s.Id == id && s.DeletedAt == null));
         _programs.Setup(p => p.GetProgramByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync((Guid id) => new Program { Id = id, CreatorId = programCreatorId ?? Guid.NewGuid(), TenantId = null });
+            .ReturnsAsync((Guid id) => new Program { Id = id, CreatorId = programCreatorId ?? Guid.NewGuid(), TenantId = tenantId });
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
         var peerReviewService = new PeerReviewAssignmentService(
             db,
             NullLogger<PeerReviewAssignmentService>.Instance);
@@ -337,10 +352,19 @@ public class PeerReviewAnonymityTests
             _assessments.Object,
             new RubricService(db, NullLogger<RubricService>.Instance),
             _actor.Object,
-            _programs.Object,
-            _permissions.Object,
+            new CourseAccessEvaluator(
+                programReads.Object,
+                _courseEnrollments.Object,
+                _actor.Object,
+                _permissions.Object),
             _log.Object,
-            new AssessmentEndpointTestSender(peerReviewService: peerReviewService));
+            new AssessmentEndpointTestSender(peerReviewService: peerReviewService))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     /// <summary>Builds a rubric-scores JSON payload keyed by criterion id (same shape the web client sends).</summary>
