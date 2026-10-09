@@ -13542,6 +13542,88 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("authenticationattempt", "gameguild.authentication");
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.AuthenticationFlowStateRecord", b =>
+                {
+                    b.Property<Guid>("FlowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("flow_id");
+
+                    b.Property<DateTime?>("AbandonedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("abandoned_at");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<string>("CompletedStepsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("completed_steps");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("CurrentStep")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_step");
+
+                    b.Property<string>("DeviceFingerprint")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("device_fingerprint");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTime>("InitiatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("initiated_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<bool>("IsComplete")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_complete");
+
+                    b.Property<string>("RequiredStepsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("required_steps");
+
+                    b.Property<double?>("RiskScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("risk_score");
+
+                    b.Property<string>("StepDataJson")
+                        .HasColumnType("text")
+                        .HasColumnName("step_data");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("FlowId");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_authentication_flow_states_expires_at");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_authentication_flow_states_user_id");
+
+                    b.ToTable("authentication_flow_states", "gameguild.authentication");
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.BlockchainCertificateAnchor", b =>
                 {
                     b.Property<Guid>("Id")

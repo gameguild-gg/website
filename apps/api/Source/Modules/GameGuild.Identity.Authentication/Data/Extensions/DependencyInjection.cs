@@ -88,6 +88,8 @@ public static class DataDependencyInjection
             ?? throw new InvalidOperationException("The session store must support bounded retention cleanup."));
         services.AddScoped<IUserMfaConfigurationRepository, UserMfaConfigurationRepository>();
         services.AddScoped<IAuthenticationAttemptRepository, AuthenticationAttemptRepository>();
+        services.AddScoped<IAuthenticationFlowStateRepository, AuthenticationFlowStateRepository>();
+        services.AddScoped<IAuthenticationOrchestrationService, AuthenticationOrchestrationService>();
         services.AddScoped<ITrustedDeviceRepository, TrustedDeviceRepository>();
         services.AddScoped<IMfaAttemptRepository, MfaAttemptRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
