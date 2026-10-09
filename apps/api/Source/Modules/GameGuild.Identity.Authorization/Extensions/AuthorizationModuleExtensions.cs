@@ -408,6 +408,11 @@ public static class AuthorizationModuleExtensions
         // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
 
+        // Read-only graph visualization and impact analysis over the same
+        // RBAC/defaults data as the effective resolver (issue #334).
+        services.AddScoped<IPermissionGraphService, PermissionGraphService>();
+        services.AddScoped<IPermissionImpactAnalysisService, PermissionImpactAnalysisService>();
+
         // Layer 2: Centralized DAC permission resolution (issue #339). Single entry
         // point for the 3-layer DAC model (tenant / content-type / resource) that
         // delegates every decision to the canonical effective-permission resolver.

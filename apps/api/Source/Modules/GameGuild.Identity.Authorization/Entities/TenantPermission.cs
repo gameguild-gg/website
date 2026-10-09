@@ -5,19 +5,20 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Identity.Authorization;
 
 /// <summary>
-///     Tenant-wide permissions - Core permission entity for user access control
+///     Tenant-wide permissions - Core permission entity for user access control.
+///     Inherits the shared permission-grant contract from <see cref="PermissionBase"/> (#352):
+///     subject, grant metadata, activation, expiration, validation, audit and tenant-isolation
+///     behaviors are defined once on the base and inherited by every permission entity.
+///     The string-based allow/deny payload is bridged to <see cref="PermissionType"/> through
+///     the fail-closed <see cref="PermissionBase.GetGrantedPermissionTypes"/> mapping layer
+///     (no destructive schema change).
 /// </summary>
 [Table("TenantPermissions")]
 [Index(nameof(TenantId), Name = "IX_TenantPermissions_TenantId")]
 [Index(nameof(UserId), Name = "IX_TenantPermissions_UserId")]
 [Index(nameof(ExpiresAt), Name = "IX_TenantPermissions_ExpiresAt")]
-public class TenantPermission : EntityBase
+public class TenantPermission : PermissionBase
 {
-    /// <summary>
-    ///     User ID (null for tenant defaults)
-    /// </summary>
-    public Guid? UserId { get; set; }
-
     /// <summary>
     ///     Tenant ID (null for global defaults)
     /// </summary>
@@ -37,24 +38,9 @@ public class TenantPermission : EntityBase
     public string[] DenyPermissions { get; set; } = Array.Empty<string>();
 
     /// <summary>
-    ///     When this permission expires (null = never)
-    /// </summary>
-    public DateTime? ExpiresAt { get; set; }
-
-    /// <summary>
-    ///     Whether this permission is currently active
-    /// </summary>
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>
     ///     Who granted this permission
     /// </summary>
     public Guid? GrantedBy { get; set; }
-
-    /// <summary>
-    ///     When the permission was granted
-    /// </summary>
-    public DateTime GrantedAt { get; set; } = SystemClock.UtcNow;
 
     /// <summary>
     ///     Reason for granting (audit trail)
@@ -69,12 +55,20 @@ public class TenantPermission : EntityBase
     public Dictionary<string, object>? Metadata { get; set; }
 
     /// <summary>
-    ///     Check if this permission has expired
+    ///     Unified audit view: who granted this permission.
     /// </summary>
-    public bool IsExpired()
-    {
-        return ExpiresAt.HasValue && ExpiresAt.Value < SystemClock.UtcNow;
-    }
+    public override Guid? CreatedBy => GrantedBy;
+
+    /// <summary>
+    ///     Unified audit view: tenant scope of this permission grant.
+    /// </summary>
+    public override Guid? PermissionTenantId => TenantId;
+
+    /// <summary>
+    ///     Fail-closed mapping of the stored permission strings to defined permission types.
+    ///     Strings that do not map to a defined <see cref="PermissionType"/> are dropped.
+    /// </summary>
+    public override IReadOnlyList<PermissionType> GetGrantedPermissionTypes() { return ParsePermissionTypes(Permissions).ToList(); }
 
     /// <summary>
     ///     Check if a specific permission is granted
@@ -154,15 +148,6 @@ public class TenantPermission : EntityBase
         DenyPermissions = DenyPermissions
             .Where(p => !permissions.Contains(p, StringComparer.OrdinalIgnoreCase))
             .ToArray();
-    }
-
-    /// <summary>
-    ///     Mark permission as expired
-    /// </summary>
-    public void Expire()
-    {
-        ExpiresAt = SystemClock.UtcNow;
-        IsActive = false;
     }
 }
 

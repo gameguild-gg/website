@@ -5671,6 +5671,58 @@ export const getAuthorizationComplianceReportEndpoint = {
 } as const;
 
 /**
+ * Builds the permission graph of the caller's tenant: users, dynamic roles, and
+ * permission keys connected by assignment, inheritance, grant, and deny edges,
+ * with a data-quality summary (cycles, unregistered keys, orphaned roles).
+ */
+export interface GetAuthorizationPermissionGraphInput {
+  query?: {
+    includeUsers?: boolean;
+    format?: Types.IdentityAuthorizationGraphExportFormat;
+  };
+}
+export type GetAuthorizationPermissionGraphOutput = Types.IdentityAuthorizationModelsPermissionGraph;
+export const getAuthorizationPermissionGraphEndpoint = {
+  operationId: 'getAuthorizationPermissionGraph' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Simulates deleting a dynamic role and reports which users would lose permissions.
+ */
+export interface GetAuthorizationPermissionGraphRolesDeletionImpactInput {
+  roleId: string;
+}
+export type GetAuthorizationPermissionGraphRolesDeletionImpactOutput = Types.IdentityAuthorizationModelsRoleDeletionImpact;
+export const getAuthorizationPermissionGraphRolesDeletionImpactEndpoint = {
+  operationId: 'getAuthorizationPermissionGraphRolesDeletionImpact' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph/roles/{roleId}/deletion-impact' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Simulates removing a permission key from a dynamic role and reports which users
+ * would lose or retain the key.
+ */
+export interface GetAuthorizationPermissionGraphRolesPermissionRemovalImpactInput {
+  roleId: string;
+  permissionKey: string;
+}
+export type GetAuthorizationPermissionGraphRolesPermissionRemovalImpactOutput = Types.IdentityAuthorizationModelsPermissionRemovalImpact;
+export const getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint = {
+  operationId: 'getAuthorizationPermissionGraphRolesPermissionRemovalImpact' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph/roles/{roleId}/permission-removal-impact/{permissionKey}' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific permission on a resource.
  */
 export interface GetAuthorizationResourcesHasPermissionInput {
@@ -26228,6 +26280,9 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  getAuthorizationPermissionGraph: getAuthorizationPermissionGraphEndpoint,
+  getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
+  getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
