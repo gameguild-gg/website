@@ -26,6 +26,7 @@ public static class NotificationsModule
         services.AddOptions<EmailDispatcherOptions>()
             .BindConfiguration("Notifications:EmailDispatcher");
         services.AddScoped<IEmailRendererRegistry, EmailRendererRegistry>();
+        services.AddScoped<IEmailRenderer, SecurityEmailRenderer>();
         services.AddScoped<IRecipientEmailResolver, RecipientEmailResolver>();
         services.AddScoped<EmailDispatcherService>();
         services.AddHostedService<EmailDispatcherBackgroundService>();

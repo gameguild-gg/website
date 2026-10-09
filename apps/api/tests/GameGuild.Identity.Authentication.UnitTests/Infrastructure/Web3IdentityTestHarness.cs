@@ -17,6 +17,7 @@ internal sealed class Web3IdentityTestHarness
 
     public Web3IdentityTestHarness()
     {
+        PersistedAuthenticationSessions.Configure(Sessions);
         Links.Setup(value => value.GetByProviderKeyAsync("web3", It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ExternalLogin { Id = Guid.NewGuid(), UserId = User.Id, Provider = "web3" });
         Users.Setup(value => value.GetByIdAsync(User.Id, It.IsAny<CancellationToken>())).ReturnsAsync(User);

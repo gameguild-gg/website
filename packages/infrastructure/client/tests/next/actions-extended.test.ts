@@ -90,7 +90,8 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
   })),
 }));
 
-vi.mock('../../src/integrations/next/handlers.js', () => ({
+vi.mock('../../src/integrations/next/handlers.js', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../src/integrations/next/handlers.js')>(),
   parseCookieHeader: vi.fn((header: string) => {
     const map = new Map<string, string>();
     for (const pair of header.split(';')) {
@@ -246,7 +247,10 @@ describe('createAuthFunction — extended', () => {
     );
 
     expect(await response.json()).toEqual({ authenticated: false });
-    expect(response.headers.get('set-cookie')).toContain('__me.session-token=; Path=/; Max-Age=0');
+    const expiredCookie = response.headers.getSetCookie().find((cookie) => cookie.startsWith('__me.session-token=;'));
+    expect(expiredCookie).toBeDefined();
+    expect(expiredCookie).toContain('Path=/');
+    expect(expiredCookie).toContain('Max-Age=0');
   });
 });
 

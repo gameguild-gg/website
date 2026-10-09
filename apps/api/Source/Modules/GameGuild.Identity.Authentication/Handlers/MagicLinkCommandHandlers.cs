@@ -67,46 +67,58 @@ public sealed class RequestMagicLinkCommandHandler(
         => configuration.GetValue<bool>("Authentication:MagicLink:ExposeDevelopmentToken");
 }
 
-public sealed class ConsumeMagicLinkCommandHandler(
-    IUserRepository userRepository,
-    IEmailVerificationService emailVerificationService,
-    IJwtTokenService jwtTokenService,
-    IConfiguration configuration,
-    ILogger<ConsumeMagicLinkCommandHandler> logger,
-    IOptions<JwtOptions>? jwtOptions = null) : ICommandHandler<ConsumeMagicLinkCommand, SignInResponse>
+public sealed class ConsumeMagicLinkCommandHandler : ICommandHandler<ConsumeMagicLinkCommand, SignInResponse>
 {
+    private readonly IUserRepository userRepository;
+    private readonly IEmailVerificationService emailVerificationService;
+    private readonly ILogger<ConsumeMagicLinkCommandHandler> logger;
+    private readonly IAuthenticatedSessionIssuer? sessionIssuer;
+
+    public ConsumeMagicLinkCommandHandler(IUserRepository userRepository, IEmailVerificationService emailVerificationService,
+        IJwtTokenService jwtTokenService, IConfiguration configuration, ILogger<ConsumeMagicLinkCommandHandler> logger)
+        : this(userRepository, emailVerificationService, jwtTokenService, configuration, logger, null, null) { }
+
+    public ConsumeMagicLinkCommandHandler(IUserRepository userRepository, IEmailVerificationService emailVerificationService,
+        IJwtTokenService jwtTokenService, IConfiguration configuration, ILogger<ConsumeMagicLinkCommandHandler> logger,
+        IOptions<JwtOptions>? jwtOptions)
+        : this(userRepository, emailVerificationService, jwtTokenService, configuration, logger, jwtOptions, null) { }
+
+    public ConsumeMagicLinkCommandHandler(
+        IUserRepository userRepository,
+        IEmailVerificationService emailVerificationService,
+        IJwtTokenService jwtTokenService,
+        IConfiguration configuration,
+        ILogger<ConsumeMagicLinkCommandHandler> logger,
+        IOptions<JwtOptions>? jwtOptions,
+        IAuthenticatedSessionIssuer? sessionIssuer)
+    {
+        this.userRepository = userRepository;
+        this.emailVerificationService = emailVerificationService;
+        this.logger = logger;
+        this.sessionIssuer = sessionIssuer;
+    }
+
     public async Task<SignInResponse> Handle(ConsumeMagicLinkCommand request, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var validation = await emailVerificationService.VerifyMagicLinkTokenAsync(request.Token).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         if (!validation.Success || validation.UserId is not { } userId)
         {
-            throw new UnauthorizedAccessException(validation.FailureReason ?? "Invalid or expired magic-link token");
+            throw new AuthenticationRequiredException("Invalid or expired magic-link token");
         }
 
         var user = await userRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        if (user is null)
+        cancellationToken.ThrowIfCancellationRequested();
+        if (user is null || user.IsDeleted || !user.ValidateForAuthentication(user.TokenVersion).IsSuccess)
         {
-            throw new UnauthorizedAccessException("Invalid or expired magic-link token");
+            throw new AuthenticationRequiredException("Invalid or expired magic-link token");
         }
 
-        var accessTokenMinutes = jwtOptions?.Value.AccessTokenExpirationMinutes
-                                 ?? ParsePositiveInt(configuration["Jwt:AccessTokenExpirationMinutes"], 60);
-        var refreshTokenDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                               ?? ParsePositiveInt(
-                                   configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"],
-                                   30);
-        var now = SystemClock.UtcNow;
-
-        var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
-            user.Id,
-            user.Email,
-            [],
+        var issuer = sessionIssuer ?? throw new InvalidOperationException("Authenticated session issuer is not configured.");
+        var response = await issuer.IssueAsync(
+            user,
             request.TenantId,
-            user.TokenVersion,
-            cancellationToken).ConfigureAwait(false);
-
-        var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
-            user.Id,
             new DeviceInfo
             {
                 Fingerprint = request.DeviceFingerprint ?? $"magic-link:{Guid.NewGuid():N}",
@@ -116,24 +128,9 @@ public sealed class ConsumeMagicLinkCommandHandler(
                 DeviceType = "Web"
             },
             cancellationToken).ConfigureAwait(false);
-
+        response.Message = "Magic-link sign-in successful";
         logger.LogInformation("User {UserId} signed in with magic-link authentication", user.Id);
-
-        return new SignInResponse
-        {
-            Success = true,
-            Message = "Magic-link sign-in successful",
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            ExpiresAt = now.AddDays(refreshTokenDays),
-            ExpiresIn = accessTokenMinutes * 60,
-            AccessTokenExpiresAt = now.AddMinutes(accessTokenMinutes),
-            RefreshTokenExpiresAt = now.AddDays(refreshTokenDays),
-            UserId = user.Id,
-            Email = user.Email,
-            TenantId = request.TenantId,
-            SessionId = Guid.NewGuid()
-        };
+        return response;
     }
 
     private static int ParsePositiveInt(string? value, int fallback)

@@ -12,8 +12,10 @@ public sealed class RevokeAllUserTokensHandler(
     IUserRepository userRepository,
     IRefreshTokenRepository refreshTokenRepository,
     ISessionManagementService sessionService,
-    IVersionedUserTokenRevocationService tokenRevocationService) : ICommandHandler<RevokeAllUserTokensCommand, int>
+    IVersionedUserTokenRevocationService tokenRevocationService,
+    IRefreshTokenLifecycleRecorder lifecycleRecorder) : ICommandHandler<RevokeAllUserTokensCommand, int>
 {
+    private readonly IRefreshTokenLifecycleRecorder _lifecycleRecorder = lifecycleRecorder ?? throw new ArgumentNullException(nameof(lifecycleRecorder));
     public async Task<int> Handle(RevokeAllUserTokensCommand command, CancellationToken cancellationToken)
     {
         var actor = actorContextAccessor.ActorContext;
@@ -24,6 +26,7 @@ public sealed class RevokeAllUserTokensHandler(
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+        RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.AllRevoked);
         var user = await userRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
         if (user is null)
         {
@@ -38,6 +41,8 @@ public sealed class RevokeAllUserTokensHandler(
         user.IncrementTokenVersion();
         await userRepository.UpdateAsync(user, cancellationToken).ConfigureAwait(false);
         await userRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _lifecycleRecorder.RecordMutationAsync(new RefreshTokenLifecycleEvent(RefreshTokenLifecycleOperation.AllRevoked,
+            userId, TenantId: actor.TenantId), cancellationToken).ConfigureAwait(false);
 
         // Cover legacy access tokens without version/session claims as well. A store failure must not return success.
         await tokenRevocationService.RevokeAllUserTokensAsync(

@@ -728,6 +728,16 @@ public class AssessmentSubmission : EntityBase
         GradeCore(score, passingScore, null, feedback, allowRegrade: true);
     }
 
+    internal void SetRuntimeRubricScores(string scores)
+    {
+        if (Status != SubmissionStatus.Graded)
+        {
+            throw new InvalidOperationException("Runtime rubric scores require a finalized grade.");
+        }
+        RubricScoresPayload = scores;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
     public void Grade(ScoreValue score, ScoreValue passingScore, ScoreValue maxScore, Guid? gradedBy, string? feedback, string? rubricScores)
     {
         Grade(score, passingScore, maxScore, gradedBy, feedback);

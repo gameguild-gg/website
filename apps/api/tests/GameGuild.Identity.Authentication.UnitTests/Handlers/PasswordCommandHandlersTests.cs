@@ -264,13 +264,18 @@ public sealed class PasswordCommandHandlersTests
             .ReturnsAsync("access-token");
         jwtTokenService.Setup(s => s.GenerateRefreshTokenAsync(userId, It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("refresh-token");
+        var sessionIssuer = new Mock<IAuthenticatedSessionIssuer>();
+        sessionIssuer.Setup(s => s.IssueAsync(user, null, It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SignInResponse { Success = true, UserId = userId, Email = user.Email,
+                AccessToken = "access-token", RefreshToken = "refresh-token", ExpiresIn = 900, SessionId = Guid.NewGuid() });
 
         var handler = new ConsumeMagicLinkCommandHandler(
             userRepository.Object,
             emailService.Object,
             jwtTokenService.Object,
             configuration,
-            NullLogger<ConsumeMagicLinkCommandHandler>.Instance);
+            NullLogger<ConsumeMagicLinkCommandHandler>.Instance,
+            jwtOptions: null, sessionIssuer: sessionIssuer.Object);
 
         var result = await handler.Handle(new ConsumeMagicLinkCommand { Token = "magic-token" }, CancellationToken.None);
 
@@ -279,6 +284,9 @@ public sealed class PasswordCommandHandlersTests
         result.RefreshToken.Should().Be("refresh-token");
         result.ExpiresIn.Should().Be(900);
         result.UserId.Should().Be(userId);
+        result.SessionId.Should().NotBeEmpty();
+        sessionIssuer.Verify(s => s.IssueAsync(user, null,
+            It.Is<DeviceInfo>(device => device.DeviceName == "Magic Link" && device.DeviceType == "Web"), CancellationToken.None), Times.Once);
     }
 
     [Fact]

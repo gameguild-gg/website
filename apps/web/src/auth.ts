@@ -108,6 +108,14 @@ async function readCurrentSession() {
     }
   }
 
+  if (!session) {
+    try {
+      sessionStore.delete((name, value, options) => cookieStore.set(name, value, options));
+    } catch {
+      // Read-only Server Components still return an anonymous authentication state.
+    }
+  }
+
   return { session, token };
 }
 

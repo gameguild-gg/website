@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
+using GameGuild.Identity.Authentication.UnitTests.Infrastructure;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +33,7 @@ public class OAuthAuthServiceTests
 
     public OAuthAuthServiceTests()
     {
+        PersistedAuthenticationSessions.Configure(_sessionManagementServiceMock);
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -962,6 +964,9 @@ public class OAuthAuthServiceTests
         userRepo.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var refreshTokenHasher = new Mock<IRefreshTokenHasher>();
+        refreshTokenHasher.Setup(value => value.HashToken(It.IsAny<string>())).Returns("synthetic-local-refresh-hash");
+        var sessions = new Mock<ISessionManagementService>();
+        PersistedAuthenticationSessions.Configure(sessions);
         var authAttempt = new Mock<IAuthAttemptService>();
         authAttempt.Setup(x => x.GetClientIpAddress(It.IsAny<HttpContext>())).Returns("127.0.0.1");
         var anomaly = new Mock<IAuthenticationAnomalyDetectionService>();
@@ -1002,7 +1007,7 @@ public class OAuthAuthServiceTests
             httpCtx.Object,
             NullLogger<LocalAuthService>.Instance,
             sender.Object,
-            Mock.Of<ISessionManagementService>());
+            sessions.Object);
 
         await sut.LocalSignUpAsync(new LocalSignUpRequest
         {

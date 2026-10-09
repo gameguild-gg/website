@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => {
     getMySubmissions: vi.fn(),
     getToken: vi.fn(),
     submitAssessment: vi.fn(),
+    startRuntimeSubmission: vi.fn(),
+    submitRuntimeSubmission: vi.fn(),
     computeScore: vi.fn(),
     useRouterPush: vi.fn(),
   };
@@ -42,6 +44,10 @@ vi.mock('@game-guild/client', async (importOriginal) => {
 });
 vi.mock('@/lib/coding-assignment/client', () => ({ getCodingAssignmentPublic: mocks.getCodingAssignmentPublic }));
 vi.mock('@/lib/learner/activity-actions', () => ({ submitAssessment: mocks.submitAssessment }));
+vi.mock('@/lib/learning/grading-runtime-actions', () => ({
+  startIndividualRuntimeSubmission: mocks.startRuntimeSubmission,
+  submitRuntimeSubmission: mocks.submitRuntimeSubmission,
+}));
 vi.mock('@/lib/emception/scoring', () => ({ computeScore: mocks.computeScore }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/workspace/learning',
@@ -108,6 +114,15 @@ function makeReadyAccess() {
   };
 }
 
+function useOfficialDefinition(definition: ReturnType<typeof makeAssignment>) {
+  mocks.startRuntimeSubmission.mockResolvedValue({ success: true, data: {
+    submissionId: 'official-submission-1',
+    execution: { delivery: { itemOrder: ['code'], items: { code: {
+      adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: { definition },
+    } } } },
+  } });
+}
+
 function makeContext(assessment: ReturnType<typeof makeAssessment>) {
   return {
     enrollmentId: 'enrollment-1', cohort: null, calendar: [], assessmentGroups: [],
@@ -146,6 +161,8 @@ describe('coding activity page', () => {
     mocks.getToken.mockResolvedValue('token-1');
     mocks.getMySubmissions.mockResolvedValue({ ok: true, data: [] });
     mocks.getMyProjects.mockResolvedValue([]);
+    mocks.getCodingAssignmentPublic.mockResolvedValue(makeAssignment());
+    useOfficialDefinition(makeAssignment());
     mocks.computeScore.mockReturnValue({ score: 0, passed: false, feedback: '' });
     mocks.createWorkspace.mockImplementation((language: string, files: unknown) => ({
       id: language,
@@ -172,6 +189,7 @@ describe('coding activity page', () => {
       <CodingActivityClient
         assessmentId="assessment-1"
         enrollmentId="enrollment-1"
+        courseId="course-1"
         slug="test-course"
         assignment={makeAssignment()}
       />,
@@ -194,6 +212,7 @@ describe('coding activity page', () => {
 
     expect(mocks.getCodingAssignmentPublic).toHaveBeenCalledWith('course-1', 'content-1');
     const editor = await screen.findByTestId('mock-assessment-editor');
+    expect(mocks.startRuntimeSubmission).toHaveBeenCalledWith('assessment-1', 'enrollment-1', expect.any(String));
     const props = JSON.parse(editor.dataset.props ?? '{}');
     expect(props.mode).toBe('learner');
     expect(props.workspaceStorageKey).toBe('gameguild.emception.workspace.user-1:assessment-1.cpp.v2');
@@ -207,33 +226,34 @@ describe('coding activity page', () => {
     const delta = [{ path: 'main.cpp', content: 'int main(){}' }];
     const session = stubAssessmentEditor(delta);
     mocks.getCodingAssignmentPublic.mockResolvedValue(makeAssignment());
-    mocks.submitAssessment.mockResolvedValue({ success: true });
+    mocks.submitRuntimeSubmission.mockResolvedValue({ success: true, data: {} });
 
     render(await LearnerActivityPage(pageParams()));
 
     await screen.findByTestId('mock-assessment-editor');
     fireEvent.click(screen.getByRole('button', { name: /^Submit$/ }));
-    await waitFor(() => expect(mocks.submitAssessment).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.submitRuntimeSubmission).toHaveBeenCalledTimes(1));
     expect(session.run).not.toHaveBeenCalled();
     expect(session.getSubmissionDelta).toHaveBeenCalledTimes(1);
-    const [, formData] = mocks.submitAssessment.mock.calls[0] as [unknown, FormData];
-    expect(formData.get('assessmentId')).toBe('assessment-1');
-    expect(formData.get('enrollmentId')).toBe('enrollment-1');
-    expect(formData.get('modality')).toBe('Code');
-    expect(JSON.parse(formData.get('response') as string)).toEqual({
-      'main.cpp': { content: 'int main(){}', encoding: 'text' },
-    });
+    expect(mocks.submitRuntimeSubmission).toHaveBeenCalledWith('official-submission-1', {
+      schemaVersion: 1, contentType: 'coding-assignment', payloadSchema: 'code-files/v1',
+      payload: { files: { 'main.cpp': { content: 'int main(){}', encoding: 'text' } } },
+    }, expect.any(String));
+    expect(mocks.submitAssessment).not.toHaveBeenCalled();
+    expect(mocks.useRouterPush).toHaveBeenCalledWith('/learn/courses/test-course/activities');
   });
 
   it('passes only public files to the workspace template even if a malformed learner response contains private data', async () => {
-    mocks.getCodingAssignmentPublic.mockResolvedValue(makeAssignment({
+    const malformedDelivery = makeAssignment({
       Data: {
         Files: {
           'main.cpp': { Content: 'public', Encoding: 'text', Visibility: 'Public', Modifiable: true },
           'private-fixture.cpp': { Content: 'secret', Encoding: 'text', Visibility: 'Private', Modifiable: false },
         },
       },
-    }));
+    });
+    mocks.getCodingAssignmentPublic.mockResolvedValue(malformedDelivery);
+    useOfficialDefinition(malformedDelivery);
 
     render(await LearnerActivityPage(pageParams()));
 
@@ -245,7 +265,7 @@ describe('coding activity page', () => {
 
   it('renders the public estimate from an assessment run result', async () => {
     mocks.computeScore.mockReturnValue({ score: 100, passed: true, feedback: '' });
-    mocks.getCodingAssignmentPublic.mockResolvedValue(makeAssignment({
+    const publicTests = makeAssignment({
       Tests: {
         Public: [
           { kind: 'standard', Name: 't1', Weight: 2, Stdout: 'x' },
@@ -253,7 +273,9 @@ describe('coding activity page', () => {
         ],
         Private: [],
       },
-    }));
+    });
+    mocks.getCodingAssignmentPublic.mockResolvedValue(publicTests);
+    useOfficialDefinition(publicTests);
 
     render(await LearnerActivityPage(pageParams()));
     await screen.findByTestId('mock-assessment-editor');
@@ -270,6 +292,20 @@ describe('coding activity page', () => {
     const banner = await screen.findByTestId('public-test-estimate-banner');
     expect(banner).toHaveTextContent('2/2 passed');
     expect(banner).toHaveTextContent('estimated score: 100/100');
+  });
+
+  it('uses the frozen official delivery even when current authoring has changed', async () => {
+    mocks.getCodingAssignmentPublic.mockResolvedValue(makeAssignment({
+      Data: { Files: { 'main.cpp': { Content: 'new mutable authoring', Encoding: 'text', Visibility: 'Public' } } },
+    }));
+    useOfficialDefinition(makeAssignment());
+
+    render(await LearnerActivityPage(pageParams()));
+
+    const editor = await screen.findByTestId('mock-assessment-editor');
+    const props = JSON.parse(editor.dataset.props ?? '{}');
+    expect(props.workspaceConfig.files).toEqual({ 'main.cpp': { encoding: 'text', content: '// starter' } });
+    expect(JSON.stringify(props.workspaceConfig.files)).not.toContain('new mutable authoring');
   });
 
   it('falls back to the ordinary learner form when there is no valid coding assignment', async () => {

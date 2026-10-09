@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
+import { forbidden, notFound } from 'next/navigation';
 import { redirect } from '@/i18n/navigation';
-import { getAssessment } from '@/lib/learning';
+import { getAssessment, getCourseAccessCapabilities } from '@/lib/learning';
 
 /** Redirects the former grading page to the runtime-backed SpeedGrader. */
 export default async function GradeSubmissionPage({
@@ -14,8 +14,12 @@ export default async function GradeSubmissionPage({
   }>;
 }): Promise<void> {
   const { locale, course, assessmentSlug, submissionId } = await params;
-  const assessment = await getAssessment(course, assessmentSlug);
+  const [assessment, access] = await Promise.all([
+    getAssessment(course, assessmentSlug),
+    getCourseAccessCapabilities(course),
+  ]);
   if (!assessment) notFound();
+  if (!access.canReviewAsStaff) forbidden();
 
   redirect({
     href: `/speedgrader/assessments/${assessment.id}?course=${encodeURIComponent(course)}&submission=${encodeURIComponent(submissionId)}`,

@@ -21,7 +21,8 @@ public interface IEmailRenderer
 
     /// <summary>
     /// Renders the email for the given notification. Returning null means "nothing to send";
-    /// the dispatcher marks the row as Sent and logs the skip.
+    /// ordinary notifications are marked as Sent for that skip. Security notifications instead fail
+    /// and retry because their delivery requires both a rendered message and provider acceptance.
     /// </summary>
     Task<EmailMessage?> RenderAsync(Notification notification, CancellationToken cancellationToken = default);
 }

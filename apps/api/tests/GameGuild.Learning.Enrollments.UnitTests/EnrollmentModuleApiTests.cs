@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.CQRS;
+using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,82 @@ using Moq;
 using Xunit;
 
 namespace GameGuild.Learning.Enrollments.UnitTests;
+
+public sealed class CourseEnrollmentAccessReaderTests
+{
+    private readonly Mock<IProgramEnrollmentService> _programEnrollments = new();
+    private readonly Mock<IEnrollmentService> _enrollments = new();
+
+    [Fact]
+    public async Task HasActiveEnrollmentAsync_AcceptsCanonicalProgramEnrollment()
+    {
+        var courseId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        _programEnrollments
+            .Setup(service => service.IsUserEnrolledAsync(userId, courseId))
+            .ReturnsAsync(true);
+
+        var result = await CreateReader().HasActiveEnrollmentAsync(courseId, userId);
+
+        result.Should().BeTrue();
+        _enrollments.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task HasActiveEnrollmentAsync_FallsBackToLearningEnrollment()
+    {
+        var courseId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        _programEnrollments
+            .Setup(service => service.IsUserEnrolledAsync(userId, courseId))
+            .ReturnsAsync(false);
+        _enrollments
+            .Setup(service => service.GetUserEnrollmentsAsync(
+                userId,
+                EnrollmentStatus.Active,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new EnrollmentDto(
+                    Guid.NewGuid(),
+                    courseId,
+                    userId,
+                    null,
+                    EnrollmentStatus.Active,
+                    DateTime.UtcNow,
+                    null,
+                    null,
+                    0,
+                    null)
+            ]);
+
+        var result = await CreateReader().HasActiveEnrollmentAsync(courseId, userId);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HasActiveEnrollmentAsync_DeniesWhenNeitherSourceIsActive()
+    {
+        var courseId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        _programEnrollments
+            .Setup(service => service.IsUserEnrolledAsync(userId, courseId))
+            .ReturnsAsync(false);
+        _enrollments
+            .Setup(service => service.GetUserEnrollmentsAsync(
+                userId,
+                EnrollmentStatus.Active,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var result = await CreateReader().HasActiveEnrollmentAsync(courseId, userId);
+
+        result.Should().BeFalse();
+    }
+
+    private CourseEnrollmentAccessReader CreateReader() =>
+        new(_programEnrollments.Object, _enrollments.Object);
+}
 
 public sealed class EnrollmentRepositoryTests
 {

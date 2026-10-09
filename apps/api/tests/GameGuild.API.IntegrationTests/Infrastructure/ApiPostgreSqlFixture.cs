@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using GameGuild.API.Database;
+using GameGuild.API.Core.Security;
 using GameGuild.TestSupport.Finance.Economy;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -31,6 +32,8 @@ public sealed class ApiPostgreSqlFixture : IAsyncLifetime
 
     public WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
+    public WebApplicationFactory<Program> RealAuthenticationFactory { get; private set; } = null!;
+
     public string ConnectionString => _container.ConnectionString;
 
     public HttpClient CreateAuthenticatedClient(Guid userId, Guid tenantId, bool isSystemAdmin = false)
@@ -54,12 +57,18 @@ public sealed class ApiPostgreSqlFixture : IAsyncLifetime
     {
         _container = await EconomyPostgreSqlTestDatabase.CreateAsync("api_integration");
         await ApplyMigrationsAsync(_container.ConnectionString);
-        Factory = new ApiPostgreSqlWebApplicationFactory(_container.ConnectionString);
+        Factory = new ApiPostgreSqlWebApplicationFactory(
+            _container.ConnectionString,
+            useSyntheticAuthentication: true);
+        RealAuthenticationFactory = new ApiPostgreSqlWebApplicationFactory(
+            _container.ConnectionString,
+            useSyntheticAuthentication: false);
     }
 
     public async Task DisposeAsync()
     {
         Factory?.Dispose();
+        RealAuthenticationFactory?.Dispose();
         if (_container is not null)
         {
             await _container.DisposeAsync();
@@ -79,7 +88,9 @@ public sealed class ApiPostgreSqlFixture : IAsyncLifetime
         await dbContext.Database.MigrateAsync();
     }
 
-    private sealed class ApiPostgreSqlWebApplicationFactory(string connectionString)
+    private sealed class ApiPostgreSqlWebApplicationFactory(
+        string connectionString,
+        bool useSyntheticAuthentication)
         : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -96,6 +107,7 @@ public sealed class ApiPostgreSqlFixture : IAsyncLifetime
                     ["Database:FailStartupOnMigrationFailure"] = "true",
                     ["Database:GrantRuntimeRoleAfterMigrations"] = "false",
                     ["Database:RunStartupInitialization"] = "false",
+                    ["Authentication:RefreshTokenCleanup:Enabled"] = "false",
                     ["POSTGRES_HOST"] = connection.Host,
                     ["POSTGRES_PORT"] = connection.Port.ToString(),
                     ["POSTGRES_DB"] = connection.Database,
@@ -112,20 +124,25 @@ public sealed class ApiPostgreSqlFixture : IAsyncLifetime
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
 
-                services.AddDbContext<ApplicationDbContext>(options =>
+                services.AddDbContext<ApplicationDbContext>((provider, options) =>
                 {
+                    options.AddInterceptors(provider.GetRequiredService<RefreshTokenLifecycleMetricBuffer>());
                     options.UseNpgsql(connectionString, npgsql =>
                         npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
                 });
                 services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
-                services.AddAuthentication(options =>
-                    {
-                        options.DefaultAuthenticateScheme = ApiPostgreSqlTestAuthHandler.SchemeName;
-                        options.DefaultChallengeScheme = ApiPostgreSqlTestAuthHandler.SchemeName;
-                    })
-                    .AddScheme<AuthenticationSchemeOptions, ApiPostgreSqlTestAuthHandler>(
-                        ApiPostgreSqlTestAuthHandler.SchemeName,
-                        _ => { });
+                if (useSyntheticAuthentication)
+                {
+                    services.AddAuthentication(options =>
+                        {
+                            options.DefaultAuthenticateScheme = ApiPostgreSqlTestAuthHandler.SchemeName;
+                            options.DefaultChallengeScheme = ApiPostgreSqlTestAuthHandler.SchemeName;
+                        })
+                        .AddScheme<AuthenticationSchemeOptions, ApiPostgreSqlTestAuthHandler>(
+                            ApiPostgreSqlTestAuthHandler.SchemeName,
+                            _ => { });
+                }
+
                 services.AddHttpLogging(_ => { });
             });
         }

@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:learning": "node scripts/dev-learning.mjs",
+    "dev:fast": "node scripts/dev-fast.mjs",
     "dev:api": "dotenv -e .env -v DOTNET_USE_POLLING_FILE_WATCHER=true -- dotnet watch --project apps/api/Source/GameGuild.API/GameGuild.API.csproj run --urls http://localhost:8080",
     "dev:compose": "docker compose -f compose.yaml --profile app up -d --build",
     "dev:compose:down": "docker compose -f compose.yaml down --remove-orphans",
@@ -17,8 +17,8 @@
     "dev:compose:restart": "docker compose -f compose.yaml restart",
     "dev:compose:stop": "docker compose -f compose.yaml stop",
     "dev:web": "corepack pnpm --filter @game-guild/client build && corepack pnpm --filter @game-guild/web run dev",
-    "kill:ports": "for port in 8080 3000; do lsof -tiTCP:$port -sTCP:LISTEN | xargs -r kill -9; done",
-    "dev:stop": "pnpm run kill:ports && pnpm run dev:compose:down",
+    "kill:ports": "node scripts/dev-stop.mjs --skip-compose",
+    "dev:stop": "node scripts/dev-stop.mjs",
     "dev:repair": "pnpm run dev:stop && pnpm run clean:generated",
     "dev:reset:data": "pnpm run kill:ports && docker compose -f compose.yaml down --remove-orphans --volumes && pnpm run clean:generated",
     "dev:emception": "pnpm --dir demos/emception-ide-react run dev",
@@ -61,8 +61,8 @@
     "ci:web:build": "pnpm --filter @game-guild/web build",
     "ci:playwright:smoke": "pnpm --filter @game-guild/web test:browser:public",
     "ci:playwright:learning-student": "pnpm --filter @game-guild/web test:browser:learning-student",
-    "clean:generated": "rimraf --glob ./.turbo ./apps/web/.next ./apps/web/.next-learning ./apps/web/.turbo \"./apps/web/*.tsbuildinfo\" ./packages/infrastructure/client/dist ./packages/infrastructure/client/.turbo \"./apps/api/**/bin\" \"./apps/api/**/obj\"",
-    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next ./**/.turbo"
+    "clean:generated": "rimraf --glob ./.turbo ./apps/web/.next ./apps/web/.next-fast ./apps/web/.turbo \"./apps/web/*.tsbuildinfo\" ./packages/infrastructure/client/dist ./packages/infrastructure/client/dist-fast ./packages/infrastructure/client/.turbo \"./apps/api/**/bin\" \"./apps/api/**/obj\"",
+    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/dist-fast ./**/coverage ./**/build ./**/.next ./**/.turbo"
   },
   "packageManager": "pnpm@10.0.0",
   "engines": {
@@ -72,6 +72,7 @@
   "pnpm": {
     "overrides": {
       "@babel/plugin-transform-modules-systemjs": "7.29.7",
+      "@modelcontextprotocol/sdk@<1.31.0": "1.31.0",
       "@tootallnate/once": "2.0.1",
       "@excalidraw/excalidraw>nanoid": "3.3.18",
       "@excalidraw/mermaid-to-excalidraw>mermaid": "11.16.1",
@@ -81,12 +82,14 @@
       "hono": "4.13.11",
       "lodash-es": "4.18.0",
       "syncpack>minimatch": "9.0.7",
+      "handlebars": "4.7.10",
       "icu-minify": "4.9.2",
       "ip-address": "10.7.2",
-      "next": "16.3.6",
+      "next": "16.3.8",
       "postcss": "8.5.23",
       "qs": "6.16.0",
-      "sharp": "0.35.4",
+      "sharp": "0.35.5",
+      "shell-quote@<1.11.0": "1.11.0",
       "toml": "4.2.0",
       "prismjs": "1.30.0",
       "react": "19.2.8",

@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Commerce.Payments;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>Created subscription plan</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Create a new subscription plan")]
     [EndpointDescription("Creates a new subscription plan with the provided information.")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -203,6 +205,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("v{version:apiVersion}/subscription-plans/{planId:guid}")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Delete subscription plan")]
     [EndpointDescription("Deletes a subscription plan by ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -221,6 +224,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("v{version:apiVersion}/subscription-plans/{planId:guid}")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Full update subscription plan")]
     [EndpointDescription("Performs a full replacement of subscription plan data. All fields will be updated.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

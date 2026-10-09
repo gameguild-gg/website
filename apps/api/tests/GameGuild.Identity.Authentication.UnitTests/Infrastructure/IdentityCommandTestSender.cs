@@ -94,6 +94,8 @@ internal sealed class IdentityCommandTestSender : ISender
             CompleteWebAuthnAuthenticationCommand command when _webAuthnHandler is not null => await _webAuthnHandler.Handle(command, cancellationToken),
             VerifyWebAuthnCredentialCommand command when _webAuthnHandler is not null => await _webAuthnHandler.Handle(command, cancellationToken),
             DeleteWebAuthnCredentialCommand command when _webAuthnHandler is not null => await _webAuthnHandler.Handle(command, cancellationToken),
+            DeactivateWebAuthnCredentialCommand command when _webAuthnHandler is not null => await _webAuthnHandler.Handle(command, cancellationToken),
+            ActivateWebAuthnCredentialCommand command when _webAuthnHandler is not null => await _webAuthnHandler.Handle(command, cancellationToken),
             UpdateWebAuthnCredentialNameCommand command when _webAuthnHandler is not null => await _webAuthnHandler.Handle(command, cancellationToken),
             _ => throw new InvalidOperationException($"No test handler is configured for {request.GetType().Name}.")
         };

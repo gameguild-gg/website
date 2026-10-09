@@ -5,6 +5,7 @@ using GameGuild.CQRS;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -25,8 +26,11 @@ public static class DataDependencyInjection
         // Register core authentication services
         RegisterAuthenticationServices(services, configuration);
 
+        // Config-gated certificate blockchain anchoring (safe default: disabled no-op)
+        services.AddBlockchainCertificateAnchoring(configuration);
+
         // Register security services
-        RegisterSecurityServices(services);
+        RegisterSecurityServices(services, configuration);
 
         // Register utility services
         RegisterUtilityServices(services);
@@ -70,6 +74,19 @@ public static class DataDependencyInjection
         services.AddSingleton(mfaOptions);
         services.AddSingleton(sessionOptions);
 
+        var apiKeyLifecycleOptions = OptionBuilderUtilities.CreateAndBind(
+            configuration,
+            ApiKeyLifecycleOptions.SectionName,
+            static () => new ApiKeyLifecycleOptions());
+        var apiKeyLifecycleValidation = apiKeyLifecycleOptions.Validate();
+        if (!apiKeyLifecycleValidation.IsValid)
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ApiKeyLifecycleOptions.SectionName} configuration: {string.Join("; ", apiKeyLifecycleValidation.Errors)}");
+        }
+
+        services.AddSingleton(apiKeyLifecycleOptions);
+
         // Configure JWT options from configuration
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
@@ -80,8 +97,16 @@ public static class DataDependencyInjection
             provider.GetRequiredService<IRefreshTokenRepository>() as IRefreshTokenLineageRepository
             ?? throw new InvalidOperationException("The refresh-token store must support persisted session and parent lineage."));
         services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+        services.AddScoped<IRefreshTokenCleanupRepository>(provider =>
+            provider.GetRequiredService<IRefreshTokenRepository>() as IRefreshTokenCleanupRepository
+            ?? throw new InvalidOperationException("The refresh-token store must support bounded retention cleanup."));
+        services.AddScoped<IUserSessionCleanupRepository>(provider =>
+            provider.GetRequiredService<IUserSessionRepository>() as IUserSessionCleanupRepository
+            ?? throw new InvalidOperationException("The session store must support bounded retention cleanup."));
         services.AddScoped<IUserMfaConfigurationRepository, UserMfaConfigurationRepository>();
         services.AddScoped<IAuthenticationAttemptRepository, AuthenticationAttemptRepository>();
+        services.AddScoped<IAuthenticationFlowStateRepository, AuthenticationFlowStateRepository>();
+        services.AddScoped<IAuthenticationOrchestrationService, AuthenticationOrchestrationService>();
         services.AddScoped<ITrustedDeviceRepository, TrustedDeviceRepository>();
         services.AddScoped<IMfaAttemptRepository, MfaAttemptRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
@@ -100,6 +125,7 @@ public static class DataDependencyInjection
         services.AddScoped<IAuthService, AuthService>();
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IAuthenticatedSessionIssuer, AuthenticatedSessionIssuer>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IOAuthService, OAuthService>();
         // Google ID token verifier — cryptographic signature + iss/aud/exp via Google.Apis.Auth.
@@ -179,12 +205,15 @@ public static class DataDependencyInjection
     /// <summary>
     ///     Register security-focused services
     /// </summary>
-    private static void RegisterSecurityServices(IServiceCollection services)
+    private static void RegisterSecurityServices(IServiceCollection services, IConfiguration configuration)
     {
         // Anomaly-detection sub-services
         services.AddScoped<IThreatDetectionService, ThreatDetectionService>();
         services.AddScoped<IBehavioralAnalysisService, BehavioralAnalysisService>();
         services.AddScoped<ILoginAttemptAnalysisService, LoginAttemptAnalysisService>();
+
+        // Credential-stuffing threat intelligence (safe default: local operator-supplied feed)
+        RegisterThreatIntelligence(services, configuration);
 
         // Facade that preserves the original IAuthenticationAnomalyDetectionService contract
         services.AddScoped<AuthenticationAnomalyDetectionService>();
@@ -199,6 +228,65 @@ public static class DataDependencyInjection
 
         // Note: These services have interface mismatches and need interface updates
         // to match GameGuild implementation signatures before registering with interfaces
+    }
+
+    /// <summary>
+    ///     Registers the credential-stuffing threat-intelligence provider selected by
+    ///     <c>ThreatIntelligence:Provider</c>. The safe default is <c>LocalFile</c> (an
+    ///     operator-supplied local feed, zero external calls); <c>None</c> registers the
+    ///     disabled no-op. Unknown providers fail startup so misconfiguration is loud.
+    /// </summary>
+    private static void RegisterThreatIntelligence(IServiceCollection services, IConfiguration configuration)
+    {
+        var threatIntelligenceOptions = OptionBuilderUtilities.CreateAndBind(
+            configuration,
+            ThreatIntelligenceOptions.SectionName,
+            static () => new ThreatIntelligenceOptions());
+        ValidateThreatIntelligenceOptions(threatIntelligenceOptions);
+        services.AddSingleton(threatIntelligenceOptions);
+
+        if (string.Equals(threatIntelligenceOptions.Provider, ThreatIntelligenceOptions.NoneProvider, StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IThreatIntelligenceProvider>(NullThreatIntelligenceProvider.Instance);
+            return;
+        }
+
+        services.AddSingleton<IThreatIntelligenceProvider>(static provider =>
+            new LocalFileThreatIntelligenceProvider(
+                provider.GetRequiredService<ThreatIntelligenceOptions>(),
+                provider.GetRequiredService<TimeProvider>(),
+                provider.GetRequiredService<ILogger<LocalFileThreatIntelligenceProvider>>(),
+                provider.GetService<IServiceScopeFactory>()));
+    }
+
+    private static void ValidateThreatIntelligenceOptions(ThreatIntelligenceOptions options)
+    {
+        var isKnownProvider = string.Equals(options.Provider, ThreatIntelligenceOptions.LocalFileProvider, StringComparison.OrdinalIgnoreCase)
+                              || string.Equals(options.Provider, ThreatIntelligenceOptions.NoneProvider, StringComparison.OrdinalIgnoreCase);
+        if (!isKnownProvider)
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: unknown provider '{options.Provider}'. "
+                + $"Supported providers are '{ThreatIntelligenceOptions.LocalFileProvider}' (default) and '{ThreatIntelligenceOptions.NoneProvider}'.");
+        }
+
+        if (options.MaliciousIpRiskScore is < 0 or > 100 || options.BreachedPasswordRiskScore is < 0 or > 100)
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: risk scores must be between 0 and 100.");
+        }
+
+        if (string.IsNullOrWhiteSpace(options.LocalFile.FilePath))
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: LocalFile:FilePath must not be empty.");
+        }
+
+        if (options.LocalFile.ReloadInterval < TimeSpan.FromSeconds(1))
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: LocalFile:ReloadInterval must be at least one second.");
+        }
     }
 
     /// <summary>

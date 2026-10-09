@@ -27,6 +27,51 @@ public sealed class SesEmailSenderTests
         client.Verify(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task SendWithReceipt_WhenDisabled_DoesNotCreateProviderClientOrClaimAcceptance()
+    {
+        var factory = new RecordingClientFactory();
+        var sender = CreateSender(new EmailDeliveryOptions { Enabled = false }, factory);
+        var receipt = await sender.SendWithReceiptAsync(CreateMessage());
+        receipt.Accepted.Should().BeFalse();
+        receipt.ProviderMessageId.Should().BeNull();
+        factory.RequestedRegions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SharedSender_WhenSesAcceptsWithoutMessageId_ReportsExplicitAcceptance()
+    {
+        var options = Options.Create(CreateEnabledOptions());
+        options.Value.Provider = "Ses";
+        var client = new Mock<IAmazonSimpleEmailServiceV2>();
+        client.Setup(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse());
+        var ses = new SesEmailSender(options, NullLogger<SesEmailSender>.Instance, _ => client.Object);
+        var sender = new EmailSender(options, NullLogger<EmailSender>.Instance, ses);
+
+        var receipt = await sender.SendWithReceiptAsync(CreateMessage());
+
+        receipt.Accepted.Should().BeTrue();
+        receipt.ProviderMessageId.Should().BeNull();
+        client.Verify(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SharedSender_WhenSesProviderSkipsDelivery_DoesNotFabricateAcceptance()
+    {
+        var options = Options.Create(CreateEnabledOptions());
+        options.Value.Provider = "Ses";
+        var factory = new RecordingClientFactory();
+        var ses = CreateSender(new EmailDeliveryOptions { Enabled = false }, factory);
+        var sender = new EmailSender(options, NullLogger<EmailSender>.Instance, ses);
+
+        var receipt = await sender.SendWithReceiptAsync(CreateMessage());
+
+        receipt.Accepted.Should().BeFalse();
+        receipt.ProviderMessageId.Should().BeNull();
+        factory.RequestedRegions.Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData("recipient")]
     [InlineData("name")]

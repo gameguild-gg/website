@@ -56,6 +56,9 @@ vi.mock("@game-guild/client", () => ({
     write(value: string, set: (name: string, value: string, options: object) => void) {
       set("gameguild.session-token", value, { httpOnly: true, path: "/" });
     }
+    delete(set: (name: string, value: string, options: object) => void) {
+      set("gameguild.session-token", "", { httpOnly: true, path: "/", maxAge: 0 });
+    }
   },
 }));
 
@@ -142,5 +145,25 @@ describe("request-bound authentication readers", () => {
     expect(state.cookieSet).toHaveBeenCalledExactlyOnceWith(
       "gameguild.session-token", "rotated-encrypted-session", { httpOnly: true, path: "/" },
     );
+  });
+
+  it("a writable request removes an invalidated session cookie once", async () => {
+    state.processSession.mockResolvedValue({ session: null, token: null, updated: false });
+    const authModule = await import("./auth");
+    expect(await authModule.auth()).toBeNull();
+    expect(await authModule.getToken()).toBeNull();
+    expect(state.cookieSet).toHaveBeenCalledExactlyOnceWith(
+      "gameguild.session-token", "", { httpOnly: true, path: "/", maxAge: 0 },
+    );
+  });
+
+  it("an invalidated session stays anonymous in a read-only RSC store", async () => {
+    state.processSession.mockResolvedValue({ session: null, token: null, updated: false });
+    state.cookieSet.mockImplementation(() => { throw new Error("RSC cookies are read-only"); });
+    const authModule = await import("./auth");
+    expect(await authModule.auth()).toBeNull();
+    expect(await authModule.getRequestAuthContext()).toEqual({ session: null, token: null, tenantId: null });
+    expect(state.cookieSet).toHaveBeenCalledTimes(1);
+    expect(state.processSession).toHaveBeenCalledTimes(1);
   });
 });

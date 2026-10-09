@@ -13,7 +13,8 @@ public sealed record InstructorReviewResolutionV1(
     int SchemaVersion,
     IReadOnlyList<InstructorItemResolutionV1> Items,
     string? Feedback = null,
-    string? OverrideReason = null);
+    string? OverrideReason = null,
+    IReadOnlyDictionary<Guid, ScoreValue>? RubricScores = null);
 
 public sealed record GradingExecutionOutcome(
     Guid ExecutionId,
@@ -51,7 +52,10 @@ public sealed record AssessmentExecutionViewV1(
     GradeResultV1? LearnerVisibleResult,
     bool RequiresInstructorReview,
     bool Released,
-    IReadOnlyList<GradeRoundViewV1> History);
+    IReadOnlyList<GradeRoundViewV1> History,
+    System.Text.Json.JsonElement? InstructorVisibleContent = null,
+    System.Text.Json.JsonElement? InstructorVisibleRubric = null,
+    IReadOnlyDictionary<Guid, ScoreValue>? InstructorVisibleRubricScores = null);
 
 public sealed record AssessmentTestRunViewV1(
     Guid TestRunId,

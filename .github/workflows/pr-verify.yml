@@ -100,7 +100,8 @@ jobs:
     needs: classify
     if: needs.classify.outputs.api == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Full host regression takes about 30 minutes before additional affected module suites.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:

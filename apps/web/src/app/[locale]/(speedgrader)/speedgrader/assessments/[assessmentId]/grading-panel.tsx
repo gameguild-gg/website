@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   LearningAssessmentsGradingQueueAssessment,
   LearningAssessmentsGradingQueueItem,
@@ -43,7 +43,11 @@ interface ItemResolutionState {
   feedback: string;
 }
 
-export function GradingPanel({
+export function GradingPanel(props: GradingPanelProps): React.JSX.Element {
+  return <GradingPanelSession key={props.item.submissionId} {...props} />;
+}
+
+function GradingPanelSession({
   item,
   assessment,
 }: GradingPanelProps): React.JSX.Element {
@@ -54,30 +58,12 @@ export function GradingPanel({
     Record<string, ItemResolutionState>
   >({});
   const [overallFeedback, setOverallFeedback] = useState('');
+  const [criterionScores, setCriterionScores] = useState<Record<string, string>>({});
   const [overrideReason, setOverrideReason] = useState('');
   const [regradeReason, setRegradeReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setSubmission(null);
-    getRuntimeSubmission(item.submissionId ?? '').then((result) => {
-      if (cancelled) return;
-      setLoading(false);
-      if (!result.success) {
-        setError(result.error);
-        return;
-      }
-      setSubmission(result.data);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [item.submissionId]);
 
   const orderedItemIds = useMemo(() => {
     if (!submission) return [];
@@ -88,15 +74,15 @@ export function GradingPanel({
     return [...ordered, ...known];
   }, [submission]);
 
-  useEffect(() => {
-    if (!submission) return;
+  const acceptRuntimeSubmission = useCallback((nextSubmission: AssessmentSubmissionRuntimeViewV1) => {
+    setSubmission(nextSubmission);
     const resultByItem = new Map(
-      (submission.execution.instructorVisibleResult?.items ?? []).map(
+      (nextSubmission.execution.instructorVisibleResult?.items ?? []).map(
         (result) => [result.itemId, result],
       ),
     );
     const next = Object.fromEntries(
-      Object.entries(submission.execution.itemMaxScores).map(
+      Object.entries(nextSubmission.execution.itemMaxScores).map(
         ([itemId]) => {
           const result = resultByItem.get(itemId);
           return [
@@ -114,13 +100,44 @@ export function GradingPanel({
     );
     setResolutions(next);
     setOverallFeedback(
-      submission.execution.instructorVisibleResult?.feedback ?? '',
+      nextSubmission.execution.instructorVisibleResult?.feedback ?? '',
     );
-  }, [submission]);
+    setCriterionScores(Object.fromEntries(Object.entries(
+      nextSubmission.execution.instructorVisibleRubricScores ?? {},
+    ).map(([id, units]) => [id, String(scoreUnitsToPoints(units))])));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getRuntimeSubmission(item.submissionId ?? '').then((result) => {
+      if (cancelled) return;
+      setLoading(false);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      acceptRuntimeSubmission(result.data);
+    });
+    return () => { cancelled = true; };
+  }, [item.submissionId, acceptRuntimeSubmission]);
+
+  const frozenRubric = submission?.execution.instructorVisibleRubric;
+  const rubricValues = frozenRubric?.criteria.map((criterion) => {
+    try {
+      const raw = criterionScores[criterion.id] ?? '';
+      if (!raw.trim()) return null;
+      const units = pointsToScoreUnits(raw);
+      return units <= criterion.points ? units : null;
+    } catch { return null; }
+  });
+  const rubricComplete = rubricValues?.every((value) => value !== null);
+  const rubricTotal = rubricComplete ? rubricValues!.reduce<number>((sum, value) => sum + value!, 0) : 0;
 
   const itemRows = orderedItemIds.map((itemId) => {
     const maxUnits = submission?.execution.itemMaxScores[itemId] ?? 0;
-    const raw = resolutions[itemId]?.points ?? '';
+    const raw = itemId === 'code' && frozenRubric
+      ? rubricComplete ? String(scoreUnitsToPoints(rubricTotal)) : ''
+      : resolutions[itemId]?.points ?? '';
     let scoreUnits: ReturnType<typeof pointsToScoreUnits> | null = null;
     try {
       if (raw.trim()) scoreUnits = pointsToScoreUnits(raw);
@@ -171,6 +188,11 @@ export function GradingPanel({
         })),
         feedback: overallFeedback.trim() || null,
         overrideReason: overrideReason.trim() || null,
+        ...(frozenRubric ? {
+          rubricScores: Object.fromEntries(frozenRubric.criteria.map((criterion) => [
+            criterion.id, pointsToScoreUnits(criterionScores[criterion.id]!),
+          ])),
+        } : {}),
       },
       createIdempotencyKey(),
     );
@@ -179,7 +201,7 @@ export function GradingPanel({
       setError(result.error);
       return;
     }
-    setSubmission(result.data);
+    acceptRuntimeSubmission(result.data);
     router.refresh();
   }
 
@@ -202,7 +224,7 @@ export function GradingPanel({
       return;
     }
     const refreshed = await getRuntimeSubmission(submission.submissionId);
-    if (refreshed.success) setSubmission(refreshed.data);
+    if (refreshed.success) acceptRuntimeSubmission(refreshed.data);
     router.refresh();
   }
 
@@ -220,7 +242,7 @@ export function GradingPanel({
       setError(result.error);
       return;
     }
-    setSubmission(result.data);
+    acceptRuntimeSubmission(result.data);
     setRegradeReason('');
     router.refresh();
   }
@@ -259,6 +281,26 @@ export function GradingPanel({
 
       {!loading && submission && (
         <>
+          {frozenRubric && (
+            <section data-testid="rubric-grid" className="space-y-3" aria-label="Frozen scoring rubric">
+              <h2 className="text-sm font-semibold">{frozenRubric.title}</h2>
+              {frozenRubric.criteria.map((criterion) => (
+                <div key={criterion.id} data-testid={`criterion-row-${criterion.id}`} className="space-y-2 rounded-md border p-3">
+                  <label htmlFor={`criterion-${criterion.id}`} className="text-sm font-medium">{criterion.description}</label>
+                  <div className="flex items-center gap-2">
+                    <Input id={`criterion-${criterion.id}`} data-testid={`criterion-points-${criterion.id}`}
+                      type="number" min={0} max={scoreUnitsToPoints(criterion.points)} step="0.01"
+                      value={criterionScores[criterion.id] ?? ''}
+                      disabled={!submission.execution.requiresInstructorReview || submitting}
+                      onChange={(event) => setCriterionScores((current) => ({ ...current, [criterion.id]: event.target.value }))}
+                      className="w-28" />
+                    <span>/ {scoreUnitsToPoints(criterion.points)}</span>
+                  </div>
+                </div>
+              ))}
+              <p data-testid="rubric-total">Total: {scoreUnitsToPoints(rubricTotal)}</p>
+            </section>
+          )}
           <section className="space-y-3" aria-label="Item scores">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">Item scores</h2>
@@ -284,7 +326,8 @@ export function GradingPanel({
                     max={row.maxPoints}
                     step="0.01"
                     value={row.raw}
-                    disabled={!submission.execution.requiresInstructorReview || submitting}
+                    disabled={!submission.execution.requiresInstructorReview || submitting ||
+                      (row.itemId === 'code' && Boolean(frozenRubric))}
                     onChange={(event) =>
                       setResolutions((current) => ({
                         ...current,
@@ -355,7 +398,7 @@ export function GradingPanel({
             {submission.execution.requiresInstructorReview && (
               <Button
                 type="button"
-                data-testid="resolve-instructor-review"
+                data-testid={frozenRubric ? 'submit-grade' : 'resolve-instructor-review'}
                 onClick={() => void submitReview()}
                 disabled={!canResolve}
               >

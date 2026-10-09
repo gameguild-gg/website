@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["browser.ts", "../packages/browser/src/emscripten/raw-imports.d.ts"],
+  "files": [],
+  "references": []
+}

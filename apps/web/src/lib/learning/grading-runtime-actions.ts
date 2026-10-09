@@ -33,6 +33,7 @@ async function runtimeRequest<T>(
   method: 'GET' | 'POST' | 'PUT',
   path: string,
   body?: unknown,
+  timeout?: number,
 ): Promise<GradingRuntimeActionResult<T>> {
   try {
     const result = await getRuntimeClient().request<T>({
@@ -40,6 +41,7 @@ async function runtimeRequest<T>(
       path,
       body,
       requiresAuth: true,
+      ...(timeout === undefined ? {} : { timeout }),
     });
     if (!result.ok) {
       const error = result.error as ApiErrorShape;
@@ -69,6 +71,16 @@ export async function startContentRuntimeSubmission(
   );
 }
 
+export async function startIndividualRuntimeSubmission(
+  assessmentId: string,
+  enrollmentId: string,
+  idempotencyKey: string,
+): Promise<GradingRuntimeActionResult<AssessmentSubmissionRuntimeViewV1>> {
+  return runtimeRequest('POST',
+    `/v1.0/assessments/${encodeURIComponent(assessmentId)}/runtime-submissions/individual`,
+    { enrollmentId, idempotencyKey });
+}
+
 export async function getRuntimeSubmission(
   submissionId: string,
 ): Promise<GradingRuntimeActionResult<AssessmentSubmissionRuntimeViewV1>> {
@@ -92,6 +104,9 @@ export async function submitRuntimeSubmission(
       idempotencyKey,
       expectedDraftVersion: expectedDraftVersion ?? null,
     },
+    // Code compilation runs in the trusted worker (300s deadline + 5s slot wait).
+    // Keep the transport alive long enough to receive its durable receipt.
+    response.contentType === 'coding-assignment' ? 330_000 : undefined,
   );
 }
 
@@ -161,6 +176,7 @@ export async function submitAssessmentTestRun(
     'POST',
     `/v1.0/assessments/test-runs/${encodeURIComponent(testRunId)}/submit`,
     { response, idempotencyKey, expectedDraftVersion: null },
+    response.contentType === 'coding-assignment' ? 330_000 : undefined,
   );
 }
 

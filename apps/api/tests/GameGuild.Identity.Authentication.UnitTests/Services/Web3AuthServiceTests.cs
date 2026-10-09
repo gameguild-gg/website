@@ -67,6 +67,54 @@ public class Web3AuthServiceTests
             NullLogger<Web3AuthService>.Instance);
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("owner")]
+    [InlineData("session")]
+    [InlineData("hash")]
+    [InlineData("expired")]
+    [InlineData("inactive")]
+    [InlineData("longer")]
+    [InlineData("terminated")]
+    public async Task InvalidPersistedSessionCannotReturnWalletCredentials(string invalid)
+    {
+        _identity.Sessions.Setup(value => value.CreateSessionAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, Guid owner, string _, string _, string hash, DateTime expires,
+                string? _, CancellationToken _) => invalid == "null" ? null! : new UserSession
+            {
+                Id = invalid == "session" ? Guid.NewGuid() : id,
+                UserId = invalid == "owner" ? Guid.NewGuid() : owner,
+                RefreshToken = invalid == "hash" ? "unrelated-hash" : hash,
+                IsActive = invalid != "inactive",
+                ExpiresAt = invalid == "expired" ? SystemClock.UtcNow.AddMinutes(-1)
+                    : invalid == "longer" ? expires.AddMinutes(1) : expires,
+                TerminatedAt = invalid == "terminated" ? SystemClock.UtcNow : null
+            });
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.VerifyWeb3SignatureAsync(
+            new Web3VerificationRequest { WalletAddress = "0xsynthetic", Signature = "synthetic-signature", Challenge = "synthetic-challenge" }));
+        _authAttemptServiceMock.Verify(value => value.RecordSuccessfulAttemptAsync(
+            It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string?>(),
+            It.IsAny<TimeSpan>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task WalletCredentialsReportTheShorterPersistedSessionDeadline()
+    {
+        var deadline = SystemClock.UtcNow.AddMinutes(5);
+        _identity.Sessions.Setup(value => value.CreateSessionAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, Guid owner, string _, string _, string hash, DateTime _,
+                string? _, CancellationToken _) => new UserSession
+            { Id = id, UserId = owner, RefreshToken = hash, IsActive = true, ExpiresAt = deadline });
+        var result = await _sut.VerifyWeb3SignatureAsync(new Web3VerificationRequest
+            { WalletAddress = "0xsynthetic", Signature = "synthetic-signature", Challenge = "synthetic-challenge" });
+        Assert.Equal(deadline, result.RefreshTokenExpiresAt);
+        Assert.Equal(deadline, result.ExpiresAt);
+    }
+
     [Fact]
     public async Task VerifyWeb3SignatureAsync_ShouldReturnAccessTokenLifetime_InExpiresIn()
     {

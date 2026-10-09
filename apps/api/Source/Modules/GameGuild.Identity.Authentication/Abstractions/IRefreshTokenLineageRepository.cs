@@ -9,4 +9,10 @@ public interface IRefreshTokenLineageRepository
     /// <summary>Records the exact predecessor after its one-time rotation claim succeeded.</summary>
     Task RecordRotationAsync(Guid userId, Guid parentTokenId, string replacementTokenHash, Guid sessionId,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Terminates the persisted owned family and revokes its credentials. Null means
+    /// no family can be proven; the caller must retain account containment.
+    /// </summary>
+    Task<Guid?> RevokeFamilyAsync(Guid userId, Guid tokenId, string? revokedByIp, CancellationToken cancellationToken);
 }

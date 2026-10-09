@@ -186,7 +186,18 @@ public sealed class GradingExecutionOrchestrator(
                 throw new ArgumentOutOfRangeException(nameof(resolution), $"Instructor score for {itemId} is outside its maximum.");
         }
 
+        Code.CodeRubricSnapshot.ValidateResolution(snapshot, resolution);
         var previous = await PreviousStageResultAsync(round.Id, stage.Sequence, cancellationToken).ConfigureAwait(false);
+        // Code's trusted worker emits redacted feedback on its single persisted item.
+        // An omitted optional instructor comment must not erase that feedback.
+        var previousCodeFeedback = snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType
+            ? previous?.Items.SingleOrDefault(item => item.ItemId == Code.CodeAssessmentContracts.ItemId &&
+                item.ReviewMethod == ReviewMethod.AutomatedReview &&
+                item.HandlerKey == Code.CodeAssessmentContracts.HandlerKey &&
+                item.HandlerVersion == Code.CodeAssessmentContracts.Version)?.Feedback
+            : null;
+        string? ResolveFeedback(string? supplied) => previousCodeFeedback is not null && string.IsNullOrWhiteSpace(supplied)
+            ? previousCodeFeedback : supplied;
         var changedAutomatedScore = previous is not null && previous.Items.Any(previousItem =>
             previousItem.Score.HasValue && resolutions[previousItem.ItemId].Score != previousItem.Score.Value);
         if (changedAutomatedScore &&
@@ -206,6 +217,7 @@ public sealed class GradingExecutionOrchestrator(
             resolution.Items,
             resolution.Feedback,
             resolution.OverrideReason,
+            resolution.RubricScores,
             previousResult = previous,
         };
         var evidenceCanonical = Serialize(evidencePayload);
@@ -227,7 +239,7 @@ public sealed class GradingExecutionOrchestrator(
             ReviewMethod.InstructorReview,
             stage.HandlerKey,
             stage.HandlerVersion,
-            resolutions[item.ItemId].Feedback)).ToArray();
+            ResolveFeedback(resolutions[item.ItemId].Feedback))).ToArray();
         var result = new GradeResultV1(
             GradingContractVersions.GradeResult,
             "final",
@@ -235,7 +247,7 @@ public sealed class GradingExecutionOrchestrator(
             ScoreValue.Sum(itemResults.Select(item => item.MaxScore)),
             itemResults,
             [evidenceKey],
-            resolution.Feedback);
+            ResolveFeedback(resolution.Feedback));
         GradingContractValidator.Validate(result);
         PersistStageResult(execution, stage, result);
         stage.Complete(SystemClock.UtcNow);

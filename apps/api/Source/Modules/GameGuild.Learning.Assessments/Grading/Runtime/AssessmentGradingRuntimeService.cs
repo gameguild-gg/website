@@ -631,6 +631,15 @@ public sealed class AssessmentGradingRuntimeService(
             if (!TryGetSubmissionTiming(snapshot.AuthoringSource.Policy, owned.Submission.StartedAt, submittedAt, out var isLate))
                 throw new InvalidOperationException("Assessment is not accepting submissions at this time.");
             orchestrator.ValidateResponse(owned.Execution, revision, command.Response);
+            if (snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType)
+            {
+                // This compatibility projection is derived only after the revision-bound
+                // decoder accepts the response; scores and private overrides are rejected.
+                owned.Submission.SetPayload(new SubmitAssessmentRequest
+                {
+                    CodePayload = command.Response.Payload.GetProperty("files").GetRawText(),
+                }, SubmissionModality.Code);
+            }
             owned.Submission.Submit(isLate, submittedAt, actorId);
             if (snapshot.AuthoringSource.Policy.Completion.Mode == ContentCompletionMode.OnSubmit)
             {
@@ -681,8 +690,15 @@ public sealed class AssessmentGradingRuntimeService(
             cancellationToken).ConfigureAwait(false);
         if (replay is null)
         {
+            var revision = await RequireRevisionAsync(owned.Execution.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
+            var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
+            var rubricScores = Code.CodeRubricSnapshot.ValidateResolution(snapshot, resolution);
             await orchestrator.ResolveInstructorReviewAsync(owned.Execution.Id, actorId, resolution, cancellationToken)
                 .ConfigureAwait(false);
+            if (rubricScores is not null)
+            {
+                owned.Submission.SetRuntimeRubricScores(rubricScores);
+            }
             AddReceipt(
                 RequireTenant(owned.Submission.TenantId),
                 submissionId,
@@ -893,6 +909,27 @@ public sealed class AssessmentGradingRuntimeService(
                 released ? releasedAt : null));
         }
 
+        IReadOnlyDictionary<Guid, ScoreValue>? instructorRubricScores = null;
+        if (instructorView && snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType &&
+            execution.ActiveGradeRoundId.HasValue)
+        {
+            var evidenceBytes = await (
+                from stage in context.Set<ReviewStage>().AsNoTracking()
+                join evidence in context.Set<ReviewEvidence>().AsNoTracking() on stage.Id equals evidence.ReviewStageId
+                where stage.GradeRoundId == execution.ActiveGradeRoundId.Value &&
+                    stage.ReviewMethod == ReviewMethod.InstructorReview &&
+                    stage.Status == PersistedReviewStageStatus.Completed &&
+                    evidence.EvidenceType == "instructor-review-evidence"
+                select evidence.CanonicalJson).SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            if (evidenceBytes is not null)
+            {
+                using var evidence = JsonDocument.Parse(evidenceBytes);
+                if (evidence.RootElement.TryGetProperty("rubricScores", out var scores) && scores.ValueKind == JsonValueKind.Object)
+                {
+                    instructorRubricScores = scores.Deserialize<Dictionary<Guid, ScoreValue>>(GradingJson.Options);
+                }
+            }
+        }
         return new AssessmentExecutionViewV1(
             execution.Id,
             execution.DefinitionRevisionId,
@@ -908,7 +945,13 @@ public sealed class AssessmentGradingRuntimeService(
             learnerResult,
             requiresInstructor,
             learnerResult is not null,
-            visibleHistory);
+            visibleHistory,
+            instructorView && snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType
+                ? snapshot.ItemProjections[Code.CodeAssessmentContracts.ItemId].GetProperty("definition").Clone() : null,
+            instructorView && snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType &&
+                snapshot.ItemProjections[Code.CodeAssessmentContracts.ItemId].TryGetProperty("rubric", out var frozenRubric)
+                ? frozenRubric.Clone() : null,
+            instructorRubricScores);
     }
 
     private static ScoreValue ReadProjectionMaxScore(JsonElement projection)
@@ -1038,6 +1081,14 @@ public sealed class AssessmentGradingRuntimeService(
                 cancellationToken)
             .ConfigureAwait(false);
         if (enrollmentExists) return;
+        var canonicalEnrollmentExists = await ProgramEnrollmentAssessmentMembership.ActiveForCourse(context, courseId)
+            .AnyAsync(value => value.Id == enrollmentId && value.UserId == userId, cancellationToken)
+            .ConfigureAwait(false);
+        if (canonicalEnrollmentExists)
+        {
+            return;
+        }
+
         var programUserExists = await context.Set<ProgramUser>()
             .AsNoTracking()
             .AnyAsync(value => value.Id == enrollmentId && value.ProgramId == courseId && value.UserId == userId,
@@ -1060,6 +1111,16 @@ public sealed class AssessmentGradingRuntimeService(
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (enrollmentId.HasValue) return enrollmentId.Value;
+        var canonicalEnrollmentId = await ProgramEnrollmentAssessmentMembership.ActiveForCourse(context, courseId)
+            .Where(value => value.UserId == userId)
+            .Select(value => (Guid?)value.Id)
+            .SingleOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (canonicalEnrollmentId.HasValue)
+        {
+            return canonicalEnrollmentId.Value;
+        }
+
         var programUserId = await context.Set<ProgramUser>()
             .AsNoTracking()
             .Where(value => value.ProgramId == courseId && value.UserId == userId)

@@ -105,6 +105,12 @@ public interface IAssessmentService
     /// </summary>
     Task<IEnumerable<InteractiveVideoAssessmentCue>> GetInteractiveVideoCuesForContentAsync(Guid assessmentId, Guid contentId);
 
+    /// <summary>Resolves an active canonical course enrollment without exposing another course or tenant.</summary>
+    Task<Guid?> GetProgramEnrollmentUserIdAsync(Guid courseId, Guid enrollmentId, CancellationToken cancellationToken);
+
+    /// <summary>Gets the actor's active canonical course enrollment for content-based submission routes.</summary>
+    Task<Guid?> GetProgramEnrollmentIdAsync(Guid courseId, Guid userId, CancellationToken cancellationToken);
+
     // ===== SUBMISSION MANAGEMENT =====
 
     /// <summary>

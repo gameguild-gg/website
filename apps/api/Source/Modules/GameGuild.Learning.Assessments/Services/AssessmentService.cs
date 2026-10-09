@@ -881,6 +881,18 @@ public class AssessmentService : IAssessmentService
 
     private sealed record AssessmentScoreFact(Guid AssessmentId, PercentValue Percent, bool Passed);
 
+    public Task<Guid?> GetProgramEnrollmentUserIdAsync(Guid courseId, Guid enrollmentId, CancellationToken cancellationToken) =>
+        ProgramEnrollmentAssessmentMembership.ActiveForCourse(_context, courseId)
+            .Where(value => value.Id == enrollmentId)
+            .Select(value => (Guid?)value.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public Task<Guid?> GetProgramEnrollmentIdAsync(Guid courseId, Guid userId, CancellationToken cancellationToken) =>
+        ProgramEnrollmentAssessmentMembership.ActiveForCourse(_context, courseId)
+            .Where(value => value.UserId == userId)
+            .Select(value => (Guid?)value.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+
     // ===== SUBMISSION MANAGEMENT =====
 
     public async Task<Result<AssessmentSubmission>> StartSubmissionAsync(Guid assessmentId, Guid enrollmentId, Guid userId)

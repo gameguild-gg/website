@@ -279,17 +279,18 @@ public sealed class LessonInteractionTrackingTests
     }
 
     [Fact]
-    public void RecordEndpoint_ShouldRequireReadPermissionForSelfTracking()
+    public void RecordEndpoint_ShouldRequireLearnCapabilityForSelfTracking()
     {
         var method = typeof(LessonInteractionEventsController).GetMethod(
             nameof(LessonInteractionEventsController.Record));
 
         var permission = method!.GetCustomAttributes(
-                typeof(RequireResourcePermissionAttribute<PermissionType, Program>),
+                typeof(RequireCourseCapabilityAttribute),
                 inherit: true)
-            .Cast<RequireResourcePermissionAttribute<PermissionType, Program>>()
+            .Cast<RequireCourseCapabilityAttribute>()
             .Single();
-        permission.RequiredPermission.Should().Be(PermissionType.Read);
+        permission.Capability.Should().Be(CourseCapability.Learn);
+        permission.RouteParameterName.Should().Be("programId");
     }
 
     [Fact]
@@ -930,7 +931,7 @@ public sealed class LessonInteractionTrackingTests
         var service = new ContentInteractionService(
             context,
             new TestRequestContextAccessor(Guid.NewGuid(), tenantId),
-            CreatePermissions(PermissionType.Review));
+            CreateCourseAccess(canReviewAsStaff: true));
 
         var results = await service.GetSurveyResponsesAsync(survey.ProgramId, survey.Id);
 
@@ -946,7 +947,7 @@ public sealed class LessonInteractionTrackingTests
         var survey = new ProgramContent { Id = Guid.NewGuid(), ProgramId = Guid.NewGuid(), Title = "Survey", Type = ProgramContentType.Survey };
         context.Add(survey);
         await context.SaveChangesAsync();
-        var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), Guid.NewGuid()), CreateManagerPermissions());
+        var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), Guid.NewGuid()), CreateCourseAccess(canReviewAsStaff: true));
 
         Func<Task> action = () => service.GetSurveyResponsesAsync(Guid.NewGuid(), survey.Id);
 
@@ -960,7 +961,7 @@ public sealed class LessonInteractionTrackingTests
         var survey = new ProgramContent { Id = Guid.NewGuid(), ProgramId = Guid.NewGuid(), Title = "Survey", Type = ProgramContentType.Survey };
         context.Add(survey);
         await context.SaveChangesAsync();
-        var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), Guid.NewGuid()), new Mock<IPermissionQueryService>().Object);
+        var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), Guid.NewGuid()), CreateCourseAccess(canReviewAsStaff: false));
 
         Func<Task> action = () => service.GetSurveyResponsesAsync(survey.ProgramId, survey.Id);
 
@@ -981,7 +982,7 @@ public sealed class LessonInteractionTrackingTests
         var service = new ContentInteractionService(
             context,
             new TestRequestContextAccessor(managerId, Guid.NewGuid()),
-            CreatePermissions(grantedPermission));
+            CreateCourseAccess(canReviewAsStaff: grantedPermission == PermissionType.Review));
 
         Func<Task> action = () => service.GetSurveyResponsesAsync(survey.ProgramId, survey.Id);
 
@@ -1048,23 +1049,22 @@ public sealed class LessonInteractionTrackingTests
             ProgramUserId = Guid.NewGuid(),
         };
 
-    private static IPermissionQueryService CreateManagerPermissions()
+    private static ICourseAccessEvaluator CreateCourseAccess(bool canReviewAsStaff)
     {
-        var permissions = new Mock<IPermissionQueryService>();
-        permissions.Setup(service => service.HasTenantPermissionAsync(
-                It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        return permissions.Object;
-    }
-
-    private static IPermissionQueryService CreatePermissions(PermissionType grantedPermission)
-    {
-        var permissions = new Mock<IPermissionQueryService>();
-        permissions.Setup(service => service.HasTenantPermissionAsync(
-                It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid? _, Guid? _, string permission, CancellationToken _) =>
-                permission.EndsWith($".{grantedPermission}", StringComparison.Ordinal));
-        return permissions.Object;
+        var access = new Mock<ICourseAccessEvaluator>();
+        access.Setup(service => service.GetCapabilitiesAsync(
+                It.IsAny<Program>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Program program, CancellationToken _) => new CourseAccessCapabilities(
+                program.Id,
+                true,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                canReviewAsStaff));
+        return access.Object;
     }
 
     private sealed class TestRequestContextAccessor(Guid? currentUserId, Guid? currentTenantId = null) : IRequestContextAccessor

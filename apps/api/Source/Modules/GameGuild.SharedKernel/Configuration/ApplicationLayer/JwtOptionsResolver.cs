@@ -15,6 +15,8 @@ public static class JwtOptionsResolver
             SecretKey = FirstConfigured(configuration, "Jwt:Secret", "Jwt:SecretKey", "JwtSettings:SecretKey", "Authentication:JwtSecretKey") ?? string.Empty,
             AccessTokenExpirationMinutes = GetInt(configuration, new JwtOptions().AccessTokenExpirationMinutes, "Jwt:AccessTokenExpirationMinutes", "JwtSettings:AccessTokenExpirationMinutes"),
             RefreshTokenExpirationDays = GetInt(configuration, new JwtOptions().RefreshTokenExpirationDays, "Jwt:RefreshTokenExpirationDays", "JwtSettings:RefreshTokenExpirationDays"),
+            RefreshTokenSlidingExpiration = GetBool(configuration, new JwtOptions().RefreshTokenSlidingExpiration, "Jwt:RefreshTokenSlidingExpiration", "JwtSettings:RefreshTokenSlidingExpiration"),
+            RefreshTokenReplayContainmentScope = ResolveReplayScope(configuration),
             ClockSkewSeconds = GetInt(configuration, new JwtOptions().ClockSkewSeconds, "Jwt:ClockSkewSeconds", "JwtSettings:ClockSkewSeconds"),
             ValidateIssuer = GetBool(configuration, new JwtOptions().ValidateIssuer, "Jwt:ValidateIssuer", "JwtSettings:ValidateIssuer"),
             ValidateAudience = GetBool(configuration, new JwtOptions().ValidateAudience, "Jwt:ValidateAudience", "JwtSettings:ValidateAudience"),
@@ -43,6 +45,19 @@ public static class JwtOptionsResolver
         }
 
         return null;
+    }
+
+    /// <summary>Resolve the server policy consistently for typed and legacy consumers.</summary>
+    public static RefreshTokenReplayScope ResolveReplayScope(IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        var value = FirstConfigured(configuration, "Jwt:RefreshTokenReplayContainmentScope", "JwtSettings:RefreshTokenReplayContainmentScope");
+        if (value is null) { return RefreshTokenReplayScope.Family; }
+        if (!Enum.TryParse<RefreshTokenReplayScope>(value, ignoreCase: true, out var scope) || !Enum.IsDefined(scope))
+        {
+            throw new InvalidOperationException("JWT RefreshTokenReplayContainmentScope must be Family or Account");
+        }
+        return scope;
     }
 
     private static int GetInt(IConfiguration configuration, int defaultValue, params string[] keys)

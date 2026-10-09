@@ -75,7 +75,8 @@ vi.mock('../../src/runtime/auth/session.js', () => ({
   })),
 }));
 
-vi.mock('../../src/integrations/next/handlers.js', () => ({
+vi.mock('../../src/integrations/next/handlers.js', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../src/integrations/next/handlers.js')>(),
   parseCookieHeader: vi.fn((header: string) => {
     const map = new Map<string, string>();
     for (const pair of header.split(';')) {

@@ -9,6 +9,7 @@ using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Runtime;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,8 @@ public class ControllerAndModuleTests
     private readonly Mock<IAssessmentService> _svc = new();
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
+    private readonly Mock<IProgramReadService> _programReads = new();
+    private readonly Mock<IProgramEnrollmentService> _programEnrollments = new();
     private readonly Mock<IEnrollmentService> _enrollments = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
     private readonly Mock<IGradingQueueService> _gradingQueue = new();
@@ -37,27 +40,43 @@ public class ControllerAndModuleTests
     private AssessmentsController CreateController(Guid? userId = null, bool isSystemAdmin = false, Guid? tenantId = null)
     {
         var uid = userId ?? Guid.NewGuid();
+        var effectiveTenantId = tenantId ?? Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = uid.ToString(),
-            TenantId = tenantId ?? Guid.NewGuid(),
+            TenantId = effectiveTenantId,
             IsAuthenticated = true,
             Roles = isSystemAdmin ? new HashSet<string> { "SystemAdmin" } : new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                uid,
+                effectiveTenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
+        var courseAccess = new CourseAccessEvaluator(
+            _programReads.Object,
+            new CourseEnrollmentAccessReader(_programEnrollments.Object, _enrollments.Object),
+            _actor.Object,
+            _permissions.Object);
         _endpointSender = new AssessmentEndpointTestSender(assessmentService: _svc.Object);
         return new AssessmentsController(
             _svc.Object,
             _actor.Object,
             _programs.Object,
              _enrollments.Object,
-             _permissions.Object,
+             courseAccess,
              _gradingQueue.Object,
              _authoring.Object,
             _log.Object,
             _endpointSender,
-             _runtime.Object);
+             _runtime.Object)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
     }
 
     [Fact] public void Ctor_Creates() => CreateController().Should().NotBeNull();
@@ -66,8 +85,11 @@ public class ControllerAndModuleTests
     public async Task GetAssessment_Found_ReturnsOk()
     {
         var id = Guid.NewGuid();
+        var courseId = Guid.NewGuid();
         _svc.Setup(s => s.GetAssessmentByIdAsync(id))
-            .ReturnsAsync(Assessment.Create(Guid.NewGuid(), "T", AssessmentType.Quiz, Score(100)));
+            .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100)));
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         var r = await CreateController(isSystemAdmin: true).GetAssessment(id);
         r.Result.Should().BeOfType<OkObjectResult>();
     }
@@ -131,8 +153,11 @@ public class ControllerAndModuleTests
     public async Task DeleteAssessment_Success_Returns204()
     {
         var assessmentId = Guid.NewGuid();
+        var courseId = Guid.NewGuid();
         _svc.Setup(s => s.GetAssessmentByIdAsync(assessmentId))
-            .ReturnsAsync(Assessment.Create(Guid.NewGuid(), "T", AssessmentType.Assignment, Score(100)));
+            .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Assignment, Score(100)));
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         _svc.Setup(s => s.DeleteAssessmentAsync(assessmentId)).ReturnsAsync(Result.Success());
         var r = await CreateController(isSystemAdmin: true).DeleteAssessment(assessmentId);
         r.Should().BeOfType<NoContentResult>();
@@ -147,6 +172,13 @@ public class ControllerAndModuleTests
         _svc.Setup(s => s.GetAssessmentByIdAsync(aId)).ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100)));
         _enrollments.Setup(s => s.GetAsync(eId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new EnrollmentDto(eId, courseId, userId, null, GameGuild.Learning.Enrollments.EnrollmentStatus.Active, DateTime.UtcNow, null, null, 0, null));
+        _enrollments.Setup(s => s.GetUserEnrollmentsAsync(
+                userId,
+                GameGuild.Learning.Enrollments.EnrollmentStatus.Active,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new EnrollmentDto(eId, courseId, userId, null, GameGuild.Learning.Enrollments.EnrollmentStatus.Active, DateTime.UtcNow, null, null, 0, null)]);
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         _svc.Setup(s => s.CanAttemptAsync(aId, eId)).ReturnsAsync(Result.Success(true));
         _svc.Setup(s => s.GetAttemptCountAsync(aId, eId)).ReturnsAsync(2);
         var r = await CreateController(userId).CanAttempt(aId, eId);
@@ -158,12 +190,18 @@ public class ControllerAndModuleTests
     {
         var userId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
+        var enrollmentId = Guid.NewGuid();
         var assessment = Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100));
         _svc.Setup(s => s.GetSubmissionByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), userId, 1));
+            .ReturnsAsync(AssessmentSubmission.Start(assessment.Id, enrollmentId, userId, 1));
         _svc.Setup(s => s.GetAssessmentByIdAsync(assessment.Id)).ReturnsAsync(assessment);
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
+        _enrollments.Setup(service => service.GetUserEnrollmentsAsync(
+                userId,
+                GameGuild.Learning.Enrollments.EnrollmentStatus.Active,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new EnrollmentDto(enrollmentId, courseId, userId, null, GameGuild.Learning.Enrollments.EnrollmentStatus.Active, DateTime.UtcNow, null, null, 0, null)]);
         var r = await CreateController(userId).GetSubmission(Guid.NewGuid());
         r.Result.Should().BeOfType<OkObjectResult>()
             .Which.Value.Should().BeOfType<LearnerAssessmentSubmissionDto>();
@@ -277,7 +315,7 @@ public class ControllerAndModuleTests
     [InlineData(PermissionType.Create)]
     [InlineData(PermissionType.Edit)]
     [InlineData(PermissionType.Delete)]
-    public async Task GetSubmission_WithManagementPermission_ReturnsManagerPayload(PermissionType permission)
+    public async Task GetSubmission_WithNonReviewPermission_ReturnsForbidden(PermissionType permission)
     {
         var actorId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
@@ -295,23 +333,23 @@ public class ControllerAndModuleTests
 
         var result = await CreateController(actorId).GetSubmission(submission.Id);
 
-        result.Result.Should().BeOfType<OkObjectResult>()
-            .Which.Value.Should().BeOfType<AssessmentSubmissionDto>();
+        result.Result.Should().BeOfType<ForbidResult>();
     }
 
     [Fact]
     public async Task GetSubmission_WhenActorIsProgramCreatorWithoutReview_ReturnsManagerPayload()
     {
         var actorId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         var assessment = Assessment.Create(courseId, "T", AssessmentType.Assignment, Score(100));
         var submission = AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), Guid.NewGuid(), 1);
         _svc.Setup(service => service.GetSubmissionByIdAsync(submission.Id)).ReturnsAsync(submission);
         _svc.Setup(service => service.GetAssessmentByIdAsync(assessment.Id)).ReturnsAsync(assessment);
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
-            .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = actorId });
 
-        var result = await CreateController(actorId).GetSubmission(submission.Id);
+        var result = await CreateController(actorId, tenantId: tenantId).GetSubmission(submission.Id);
 
         result.Result.Should().BeOfType<OkObjectResult>()
             .Which.Value.Should().BeOfType<AssessmentSubmissionDto>();
@@ -353,7 +391,7 @@ public class ControllerAndModuleTests
     [InlineData(PermissionType.Create)]
     [InlineData(PermissionType.Edit)]
     [InlineData(PermissionType.Delete)]
-    public async Task GetAssessmentSubmissions_WithManagementPermission_ReturnsOk(PermissionType permission)
+    public async Task GetAssessmentSubmissions_WithNonReviewPermission_ReturnsForbidden(PermissionType permission)
     {
         var actorId = Guid.NewGuid();
         var assessmentId = Guid.NewGuid();
@@ -371,22 +409,23 @@ public class ControllerAndModuleTests
 
         var result = await CreateController(actorId).GetAssessmentSubmissions(assessmentId);
 
-        result.Result.Should().BeOfType<OkObjectResult>();
-        _svc.Verify(service => service.GetAssessmentSubmissionsAsync(assessmentId), Times.Once);
+        result.Result.Should().BeOfType<ForbidResult>();
+        _svc.Verify(service => service.GetAssessmentSubmissionsAsync(assessmentId), Times.Never);
     }
 
     [Fact]
     public async Task GetAssessmentSubmissions_WhenActorIsProgramCreatorWithoutReview_ReturnsOk()
     {
         var actorId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var assessmentId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         _svc.Setup(service => service.GetAssessmentByIdAsync(assessmentId))
             .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100)));
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
-            .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = actorId });
 
-        var result = await CreateController(actorId).GetAssessmentSubmissions(assessmentId);
+        var result = await CreateController(actorId, tenantId: tenantId).GetAssessmentSubmissions(assessmentId);
 
         result.Result.Should().BeOfType<OkObjectResult>();
         _svc.Verify(service => service.GetAssessmentSubmissionsAsync(assessmentId), Times.Once);
@@ -613,14 +652,15 @@ public class ControllerAndModuleTests
     public async Task CreateAssessment_WhenActorIsPersistedProgramCreator_ReturnsCreated()
     {
         var actorId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         var request = new CreateAssessmentRequest(courseId, "T", null, AssessmentType.Assignment, Score(100), TimeLimitMinutes: 60);
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
-            .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = actorId });
         _svc.Setup(service => service.CreateAssessmentAsync(request))
             .ReturnsAsync(Result.Success(Assessment.Create(courseId, "T", AssessmentType.Assignment, Score(100))));
 
-        var result = await CreateController(actorId).CreateAssessment(request);
+        var result = await CreateController(actorId, tenantId: tenantId).CreateAssessment(request);
 
         result.Result.Should().BeOfType<CreatedAtActionResult>();
     }
@@ -634,7 +674,7 @@ public class ControllerAndModuleTests
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         _permissions.Setup(service => service.HasTenantPermissionAsync(
-                actorId, It.IsAny<Guid?>(), $"{nameof(Program)}.{courseId}.{PermissionType.Create}"))
+                actorId, It.IsAny<Guid?>(), $"{nameof(Program)}.{courseId}.{PermissionType.Edit}"))
             .ReturnsAsync(true);
         _svc.Setup(service => service.CreateAssessmentAsync(request))
             .ReturnsAsync(Result.Success(Assessment.Create(courseId, "T", AssessmentType.Assignment, Score(100))));
@@ -747,6 +787,8 @@ public class ControllerAndModuleTests
             .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Assignment, Score(100)));
         _svc.Setup(s => s.UpdateAssessmentAsync(id, req))
             .ReturnsAsync(Result.Success(Assessment.Create(courseId, "U", AssessmentType.Quiz, Score(100))));
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         var r = await CreateController(isSystemAdmin: true).UpdateAssessment(id, req);
         r.Result.Should().BeOfType<OkObjectResult>();
     }
@@ -755,13 +797,60 @@ public class ControllerAndModuleTests
     public async Task SubmitAssessment_WithoutBody_ForCurrentLearner_ReturnsOk()
     {
         var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var courseId = Guid.NewGuid();
+        var assessmentId = Guid.NewGuid();
+        var enrollmentId = Guid.NewGuid();
         var submissionId = Guid.NewGuid();
+        var submission = AssessmentSubmission.Start(assessmentId, enrollmentId, userId, 1);
         _svc.Setup(s => s.GetSubmissionByIdAsync(submissionId))
-            .ReturnsAsync(AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), userId, 1));
+            .ReturnsAsync(submission);
+        _svc.Setup(s => s.GetAssessmentByIdAsync(assessmentId))
+            .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100)));
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = Guid.NewGuid() });
+        _enrollments.Setup(service => service.GetUserEnrollmentsAsync(
+                userId,
+                GameGuild.Learning.Enrollments.EnrollmentStatus.Active,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new EnrollmentDto(
+                enrollmentId,
+                courseId,
+                userId,
+                tenantId,
+                GameGuild.Learning.Enrollments.EnrollmentStatus.Active,
+                DateTime.UtcNow,
+                null,
+                null,
+                0,
+                null)]);
         _svc.Setup(s => s.SubmitAsync(submissionId, null))
-            .ReturnsAsync(Result.Success(AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), userId, 1)));
-        var r = await CreateController(userId).SubmitAssessment(submissionId);
+            .ReturnsAsync(Result.Success(submission));
+        var r = await CreateController(userId, tenantId: tenantId).SubmitAssessment(submissionId);
         r.Result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task SubmitAssessment_WhenEnrollmentIsNotActive_ReturnsForbidden()
+    {
+        var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var courseId = Guid.NewGuid();
+        var assessmentId = Guid.NewGuid();
+        var submissionId = Guid.NewGuid();
+        _svc.Setup(service => service.GetSubmissionByIdAsync(submissionId))
+            .ReturnsAsync(AssessmentSubmission.Start(assessmentId, Guid.NewGuid(), userId, 1));
+        _svc.Setup(service => service.GetAssessmentByIdAsync(assessmentId))
+            .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100)));
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = Guid.NewGuid() });
+
+        var result = await CreateController(userId, tenantId: tenantId).SubmitAssessment(submissionId);
+
+        result.Result.Should().BeOfType<ForbidResult>();
+        _svc.Verify(
+            service => service.SubmitAsync(It.IsAny<Guid>(), It.IsAny<SubmitAssessmentRequest?>()),
+            Times.Never);
     }
 
     [Fact]
@@ -778,7 +867,7 @@ public class ControllerAndModuleTests
     }
 
     [Fact]
-    public async Task StartSubmission_WithProgramUserMembership_Returns201()
+    public async Task StartSubmission_WithProgramUserButNoActiveEnrollment_ReturnsForbidden()
     {
         var assessmentId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
@@ -786,6 +875,8 @@ public class ControllerAndModuleTests
         var userId = Guid.NewGuid();
         _svc.Setup(service => service.GetAssessmentByIdAsync(assessmentId))
             .ReturnsAsync(Assessment.Create(courseId, "T", AssessmentType.Quiz, Score(100)));
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         _enrollments.Setup(service => service.GetAsync(programUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((EnrollmentDto?)null);
         _programs.Setup(service => service.GetUserProgressDtoAsync(courseId, userId))
@@ -795,7 +886,10 @@ public class ControllerAndModuleTests
 
         var result = await CreateController(userId).StartSubmission(assessmentId, new StartSubmissionRequest(programUserId));
 
-        result.Result.Should().BeOfType<CreatedAtActionResult>();
+        result.Result.Should().BeOfType<ForbidResult>();
+        _svc.Verify(
+            service => service.StartSubmissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>()),
+            Times.Never);
     }
 
     [Fact]
@@ -809,6 +903,13 @@ public class ControllerAndModuleTests
         _svc.Setup(s => s.GetAssessmentByIdAsync(aId)).ReturnsAsync(assessment);
         _enrollments.Setup(s => s.GetAsync(enrollmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new EnrollmentDto(enrollmentId, courseId, userId, null, GameGuild.Learning.Enrollments.EnrollmentStatus.Active, DateTime.UtcNow, null, null, 0, null));
+        _enrollments.Setup(s => s.GetUserEnrollmentsAsync(
+                userId,
+                GameGuild.Learning.Enrollments.EnrollmentStatus.Active,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new EnrollmentDto(enrollmentId, courseId, userId, null, GameGuild.Learning.Enrollments.EnrollmentStatus.Active, DateTime.UtcNow, null, null, 0, null)]);
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
         _svc.Setup(s => s.StartSubmissionAsync(aId, enrollmentId, userId))
             .ReturnsAsync(Result.Success(AssessmentSubmission.Start(aId, enrollmentId, userId, 1)));
         var r = await CreateController(userId).StartSubmission(aId, new StartSubmissionRequest(enrollmentId));

@@ -167,6 +167,10 @@ public sealed class EmailDispatcherService(
         var message = await renderer.RenderAsync(notification, cancellationToken).ConfigureAwait(false);
         if (message is null)
         {
+            if (notification.Type == NotificationType.Security)
+            {
+                throw new InvalidOperationException("A security email requires a rendered message.");
+            }
             notification.MarkDeliverySent();
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             logger.LogInformation("Email renderer returned no message; marked sent. NotificationId: {NotificationId}, Type: {Type}",
@@ -174,8 +178,25 @@ public sealed class EmailDispatcherService(
             return;
         }
 
-        // 7. Send (a disabled sender logs and returns null — treated as success) and finalize.
-        var providerMessageId = await emailSender.SendAsync(message with { ToEmail = toEmail }, cancellationToken).ConfigureAwait(false);
+        // Security alerts need explicit acceptance; a nullable message ID cannot distinguish a skip from acceptance.
+        string? providerMessageId;
+        if (notification.Type == NotificationType.Security)
+        {
+            if (emailSender is not IConfirmedEmailSender confirmedSender)
+            {
+                throw new InvalidOperationException("The security email sender does not expose provider acceptance.");
+            }
+            var receipt = await confirmedSender.SendWithReceiptAsync(message with { ToEmail = toEmail }, cancellationToken).ConfigureAwait(false);
+            if (!receipt.Accepted)
+            {
+                throw new InvalidOperationException("The security email was not accepted for delivery.");
+            }
+            providerMessageId = receipt.ProviderMessageId;
+        }
+        else
+        {
+            providerMessageId = await emailSender.SendAsync(message with { ToEmail = toEmail }, cancellationToken).ConfigureAwait(false);
+        }
         notification.MarkDeliverySent(providerMessageId);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         logger.LogInformation("Email delivered. NotificationId: {NotificationId}, Type: {Type}, Recipient: {RecipientEmail}",

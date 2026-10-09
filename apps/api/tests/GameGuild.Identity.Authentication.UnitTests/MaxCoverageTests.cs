@@ -1195,6 +1195,10 @@ public class WebAuthnControllerCovTests
         var credentialId = Guid.NewGuid();
         var userRepository = new Mock<IUserRepository>();
         var jwtTokenService = new Mock<IJwtTokenService>();
+        var sessionIssuer = new Mock<IAuthenticatedSessionIssuer>();
+        sessionIssuer.Setup(s => s.IssueAsync(It.Is<User>(user => user.Id == userId), null, It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SignInResponse { Success = true, UserId = userId, Email = "passkey@test.com",
+                AccessToken = "access-token", RefreshToken = "refresh-token", ExpiresIn = 900, SessionId = Guid.NewGuid() });
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -1204,7 +1208,7 @@ public class WebAuthnControllerCovTests
             .Build();
         var controller = new WebAuthnController(
             _webAuthnService.Object,
-            new CommandHandlerSender(_webAuthnService.Object, jwtTokenService.Object, userRepository.Object, configuration));
+            new CommandHandlerSender(_webAuthnService.Object, jwtTokenService.Object, userRepository.Object, configuration, sessionIssuer.Object));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         _webAuthnService.Setup(s => s.CompleteAuthenticationAsync(
@@ -1244,6 +1248,10 @@ public class WebAuthnControllerCovTests
         payload.RefreshToken.Should().Be("refresh-token");
         payload.Email.Should().Be("passkey@test.com");
         payload.ExpiresIn.Should().Be(900);
+        payload.CredentialId.Should().Be(credentialId);
+        payload.IsPasswordless.Should().BeTrue();
+        sessionIssuer.Verify(s => s.IssueAsync(It.Is<User>(user => user.Id == userId), null,
+            It.Is<DeviceInfo>(device => device.Fingerprint == $"webauthn:{credentialId:N}"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

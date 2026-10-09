@@ -102,16 +102,6 @@
       "count": 1
     }
   },
-  "src/app/[locale]/(speedgrader)/speedgrader/assessments/[assessmentId]/grading-panel.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "src/app/[locale]/(speedgrader)/speedgrader/assessments/[assessmentId]/submission-viewer.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "src/app/[locale]/learn/courses/[slug]/activities/[activityId]/page.tsx": {
     "react/no-unescaped-entities": {
       "count": 1

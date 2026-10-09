@@ -293,4 +293,71 @@ describe('runtime GradingPanel', () => {
     await waitFor(() => expect(actions.regrade).toHaveBeenCalledTimes(1));
     expect(actions.regrade.mock.calls[0][1]).toBe('Corrected answer key');
   });
+
+  it('resolves the frozen Code rubric with bounded criterion scores and their exact total', async () => {
+    const user = userEvent.setup();
+    const value = runtimeSubmission();
+    value.execution.delivery.itemOrder = ['code'];
+    value.execution.delivery.items = { code: { adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: {} } };
+    value.execution.itemMaxScores = { code: 10000 };
+    value.execution.instructorVisibleResult = null;
+    value.execution.instructorVisibleRubric = { id: 'frozen-rubric', title: 'Frozen rubric', criteria: [
+      { id: 'correctness', description: 'Correctness', points: 6000, order: 0 },
+      { id: 'quality', description: 'Quality', points: 4000, order: 1 },
+    ] };
+    actions.get.mockResolvedValue({ success: true, data: value });
+    actions.resolve.mockResolvedValue({ success: true, data: value });
+    render(<GradingPanel item={individualItem} assessment={{ ...assessment, maxScore: 10000 }} />);
+
+    const submit = await screen.findByTestId('submit-grade');
+    expect(submit).toBeDisabled();
+    expect(screen.getByTestId('item-score-code')).toBeDisabled();
+    await user.type(screen.getByTestId('criterion-points-correctness'), '61');
+    await user.type(screen.getByTestId('criterion-points-quality'), '35');
+    expect(submit).toBeDisabled();
+    await user.clear(screen.getByTestId('criterion-points-correctness'));
+    await user.type(screen.getByTestId('criterion-points-correctness'), '55');
+    expect(screen.getByTestId('rubric-total')).toHaveTextContent('Total: 90');
+    await user.click(submit);
+    await waitFor(() => expect(actions.resolve).toHaveBeenCalledOnce());
+    expect(actions.resolve.mock.calls[0][1]).toEqual(expect.objectContaining({
+      items: [{ itemId: 'code', score: 9000, feedback: null }],
+      rubricScores: { correctness: 5500, quality: 3500 },
+    }));
+  });
+
+  it('removes the previous submission scores while the next submission loads', async () => {
+    const first = runtimeSubmission();
+    actions.get.mockResolvedValueOnce({ success: true, data: first });
+    const view = render(<GradingPanel item={individualItem} assessment={assessment} />);
+    await screen.findByTestId('item-score-q1');
+    const pending = Promise.withResolvers<{ success: true; data: AssessmentSubmissionRuntimeViewV1 }>();
+    actions.get.mockReturnValueOnce(pending.promise);
+
+    view.rerender(<GradingPanel item={{ ...individualItem, submissionId: 'submission-2' }} assessment={assessment} />);
+    expect(screen.queryByTestId('item-score-q1')).not.toBeInTheDocument();
+    await waitFor(() => expect(actions.get).toHaveBeenLastCalledWith('submission-2'));
+    pending.resolve({ success: true, data: runtimeSubmission({ submissionId: 'submission-2' }) });
+    await screen.findByTestId('item-score-q1');
+    expect(actions.resolve).not.toHaveBeenCalled();
+  });
+
+  it('restores the criterion scores recorded for the active finalized Code round', async () => {
+    const value = finalSubmission();
+    value.execution.delivery.itemOrder = ['code'];
+    value.execution.delivery.items = { code: { adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: {} } };
+    value.execution.itemMaxScores = { code: 10000 };
+    value.execution.instructorVisibleRubric = { id: 'frozen-rubric', title: 'Frozen rubric', criteria: [
+      { id: 'correctness', description: 'Correctness', points: 6000, order: 0 },
+      { id: 'quality', description: 'Quality', points: 4000, order: 1 },
+    ] };
+    value.execution.instructorVisibleRubricScores = { correctness: 5500, quality: 3500 };
+    actions.get.mockResolvedValue({ success: true, data: value });
+    render(<GradingPanel item={individualItem} assessment={{ ...assessment, maxScore: 10000 }} />);
+    await waitFor(() => expect(screen.getByTestId('criterion-points-correctness')).toHaveValue(55));
+    expect(screen.getByTestId('criterion-points-quality')).toHaveValue(35);
+    expect(screen.getByTestId('rubric-total')).toHaveTextContent('Total: 90');
+    expect(screen.getByTestId('item-score-code')).toHaveValue(90);
+    expect(actions.resolve).not.toHaveBeenCalled();
+  });
 });

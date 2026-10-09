@@ -108,13 +108,15 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Cache immutable Toolchain downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: toolchain-download-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tools/emception/.cache/toolchain/downloads
           key: emception-downloads-linux-${{ hashFiles('tools/emception/toolchain/toolchain.lock.json') }}
 
       - name: Cache verified Toolchain builds
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: toolchain-build-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             tools/emception/.cache/toolchain/sources
@@ -123,8 +125,9 @@ jobs:
             tools/emception/artifacts/toolchain/tools
             tools/emception/artifacts/toolchain/sysroot
             tools/emception/artifacts/toolchain/receipts
-          key: emception-builds-linux-${{ hashFiles('tools/emception/toolchain/toolchain.lock.json', 'tools/emception/toolchain/overlays/**', 'tools/emception/scripts/toolchain/**', 'tools/emception/scripts/build-*.ts', 'tools/emception/scripts/setup-emsdk.ts', 'tools/emception/scripts/populate-sysroot.ts') }}
+          key: emception-builds-linux-v2-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.npmrc', 'tools/emception/package.json', 'tools/emception/toolchain/**', 'tools/emception/scripts/*', 'tools/emception/scripts/toolchain/**', '.github/workflows/emception.yml') }}
           restore-keys: |
+            emception-builds-linux-v2-
             emception-builds-linux-
 
       - name: Install native Toolchain dependencies
@@ -152,13 +155,33 @@ jobs:
       - name: Build and validate Toolchain receipts
         shell: bash
         env:
-          HEAVY_REBUILD: ${{ needs.detect-emception-changes.outputs.heavy }}
+          VERIFIED_BUILD_CACHE_HIT: ${{ steps.toolchain-build-cache.outputs.cache-hit }}
         run: |
-          if [[ "$HEAVY_REBUILD" == "true" ]]; then
-            pnpm --dir tools/emception toolchain build all --force
-          else
+          if [[ "$VERIFIED_BUILD_CACHE_HIT" == "true" ]]; then
             pnpm --dir tools/emception toolchain build all
+          else
+            pnpm --dir tools/emception toolchain build all --force
           fi
+
+      - name: Save verified Toolchain downloads
+        if: success() && steps.toolchain-download-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tools/emception/.cache/toolchain/downloads
+          key: ${{ steps.toolchain-download-cache.outputs.cache-primary-key }}
+
+      - name: Save verified Toolchain builds
+        if: success() && steps.toolchain-build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            tools/emception/.cache/toolchain/sources
+            tools/emception/.cache/toolchain/builds
+            tools/emception/.cache/toolchain/emsdk
+            tools/emception/artifacts/toolchain/tools
+            tools/emception/artifacts/toolchain/sysroot
+            tools/emception/artifacts/toolchain/receipts
+          key: ${{ steps.toolchain-build-cache.outputs.cache-primary-key }}
 
       - name: Build all Emception packages
         run: pnpm run build:emception
@@ -247,6 +270,7 @@ jobs:
           path: |
             tools/emception/playwright-report
             tools/emception/test-results
+            apps/web/test-results/coding-cycle
           if-no-files-found: ignore
           retention-days: 7
 

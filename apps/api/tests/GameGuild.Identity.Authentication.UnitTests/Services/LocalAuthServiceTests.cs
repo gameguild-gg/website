@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
+using GameGuild.Identity.Authentication.UnitTests.Infrastructure;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Http;
@@ -37,6 +38,7 @@ public class LocalAuthServiceTests
 
     public LocalAuthServiceTests()
     {
+        PersistedAuthenticationSessions.Configure(_sessionManagementServiceMock);
         var configData = new Dictionary<string, string?>
         {
             { "Jwt:RefreshTokenExpiryInDays", "7" }
@@ -743,6 +745,37 @@ public class LocalAuthServiceTests
 
     // ── RefreshTokenAsync ─────────────────────────────────────
 
+    [Theory]
+    [InlineData("Family", false)]
+    [InlineData("Account", true)]
+    public async Task RefreshReplayUsesTheSelectedServerScope(string policy, bool accountScope)
+    {
+        _configuration["Jwt:RefreshTokenReplayContainmentScope"] = policy;
+        var owner = User.Create("synthetic-scope@example.test", "Synthetic policy owner");
+        var version = owner.TokenVersion;
+        var sessionId = Guid.NewGuid();
+        var root = new RefreshToken { Id = Guid.NewGuid(), UserId = owner.Id, SessionId = sessionId,
+            Token = "hashed", IsRevoked = true, ExpiresAt = SystemClock.UtcNow.AddDays(1) };
+        _refreshTokenHasherMock.Setup(value => value.HashToken(It.IsAny<string>())).Returns("hashed");
+        _refreshTokenRepoMock.Setup(value => value.GetByTokenAsync("hashed", It.IsAny<CancellationToken>())).ReturnsAsync(root);
+        _tokenLineageRepoMock.Setup(value => value.RevokeFamilyAsync(owner.Id, root.Id, "127.0.0.1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid?)sessionId);
+        _sessionManagementServiceMock.Setup(value => value.TerminateSessionAsync(sessionId,
+            SessionTerminationReason.SecurityViolation, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _userRepoMock.Setup(value => value.GetByIdAsync(owner.Id, It.IsAny<CancellationToken>())).ReturnsAsync(owner);
+
+        AssertCommittedRefreshDenial(await _sut.RefreshTokenAsync(new RefreshTokenRequest { RefreshToken = "synthetic" }));
+        _tokenLineageRepoMock.Verify(value => value.RevokeFamilyAsync(owner.Id, root.Id, "127.0.0.1", It.IsAny<CancellationToken>()),
+            accountScope ? Times.Never() : Times.Once());
+        _sessionManagementServiceMock.Verify(value => value.TerminateSessionAsync(sessionId,
+            SessionTerminationReason.SecurityViolation, It.IsAny<CancellationToken>()), accountScope ? Times.Never() : Times.Once());
+        _refreshTokenRepoMock.Verify(value => value.RevokeAllForUserAsync(owner.Id, "127.0.0.1", It.IsAny<CancellationToken>()),
+            accountScope ? Times.Once() : Times.Never());
+        _sessionManagementServiceMock.Verify(value => value.TerminateAllUserSessionsAsync(owner.Id,
+            SessionTerminationReason.SecurityViolation, null, It.IsAny<CancellationToken>()), accountScope ? Times.Once() : Times.Never());
+        Assert.Equal(version + (accountScope ? 1 : 0), owner.TokenVersion);
+    }
+
     [Fact]
     public async Task RefreshTokenAsync_EmptyToken_ThrowsUnauthorizedAccessException()
     {
@@ -1069,6 +1102,9 @@ public class LocalAuthServiceTests
                 It.IsAny<CancellationToken>()))
             .Callback(() => operationOrder.Add("claim-rotation"))
             .ReturnsAsync(false);
+        _tokenLineageRepoMock.Setup(x => x.RevokeFamilyAsync(user.Id, storedToken.Id, "127.0.0.1", It.IsAny<CancellationToken>()))
+            .Callback(() => operationOrder.Add("resolve-legacy-family"))
+            .ReturnsAsync((Guid?)null);
         _refreshTokenRepoMock.Setup(x => x.RevokeAllForUserAsync(user.Id, "127.0.0.1", It.IsAny<CancellationToken>()))
             .Callback(() => operationOrder.Add("revoke-refresh-tokens"))
             .Returns(Task.CompletedTask);
@@ -1097,9 +1133,11 @@ public class LocalAuthServiceTests
         operationOrder.Should().Equal(
             "persist-session",
             "claim-rotation",
+            "resolve-legacy-family",
             "revoke-refresh-tokens",
             "terminate-sessions",
             "save-token-version");
+        _tokenLineageRepoMock.Verify(x => x.RevokeFamilyAsync(user.Id, storedToken.Id, "127.0.0.1", It.IsAny<CancellationToken>()), Times.Once);
         _tokenLineageRepoMock.VerifyNoOtherCalls();
     }
 

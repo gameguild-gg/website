@@ -39,6 +39,15 @@ public sealed class JwtOptions : BaseOptions
     public int RefreshTokenExpirationDays { get; set; } = 30;
 
     /// <summary>
+    ///     Renew the refresh-token lifetime on rotation, within the session's absolute limit.
+    ///     When false, rotation preserves the predecessor's expiration deadline.
+    /// </summary>
+    public bool RefreshTokenSlidingExpiration { get; set; } = true;
+
+    /// <summary>Automatic replay containment; explicit revoke-all remains independent.</summary>
+    public RefreshTokenReplayScope RefreshTokenReplayContainmentScope { get; set; } = RefreshTokenReplayScope.Family;
+
+    /// <summary>
     ///     Clock skew tolerance for token expiration validation in seconds.
     ///     Default: 0 seconds (no tolerance).
     /// </summary>
@@ -91,6 +100,8 @@ public sealed class JwtOptions : BaseOptions
         if (AccessTokenExpirationMinutes <= 0) { errors.Add("JWT AccessTokenExpirationMinutes must be greater than 0"); }
 
         if (RefreshTokenExpirationDays <= 0) { errors.Add("JWT RefreshTokenExpirationDays must be greater than 0"); }
+
+        if (!Enum.IsDefined(RefreshTokenReplayContainmentScope)) { errors.Add("JWT RefreshTokenReplayContainmentScope must be Family or Account"); }
 
         if (ClockSkewSeconds < 0) { errors.Add("JWT ClockSkewSeconds cannot be negative"); }
 

@@ -195,6 +195,43 @@ public sealed class AuditRetentionSimulationPostgreSqlHttpTests(ApiPostgreSqlFix
     }
 
     [Fact]
+    public async Task PolicyTemplatesAndInheritedBaselineAreServedUnderPolicyRoutes()
+    {
+        var tenant = Guid.NewGuid();
+        using var admin = fixture.CreateAuthenticatedClient(Guid.NewGuid(), tenant, isSystemAdmin: true);
+
+        var templates = await admin.GetFromJsonAsync<List<AuditRetentionPolicyTemplate>>("/api/audit/retention-policies/templates");
+        Assert.NotNull(templates);
+        Assert.Contains(templates, template => template.IsBaseline && template.BaseTemplateId is null);
+        Assert.All(templates.Where(template => !template.IsBaseline),
+            template => Assert.Equal("gameguild-platform-baseline", template.BaseTemplateId));
+        Assert.All(templates, template =>
+        {
+            Assert.NotEmpty(template.SensitivityRules);
+            Assert.NotEmpty(template.Obligations);
+            Assert.Equal(4, template.TierPrices.Count);
+        });
+
+        // No explicit tenant configuration: plain GET stays 404, inherited GET serves the baseline.
+        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync("/api/audit/retention-policies/configuration")).StatusCode);
+        var inherited = await admin.GetFromJsonAsync<AuditRetentionConfigurationResponse>(
+            "/api/audit/retention-policies/configuration?includeInherited=true");
+        Assert.NotNull(inherited);
+        Assert.Equal(tenant, inherited.TenantId);
+        Assert.Equal(0, inherited.Revision);
+        Assert.Equal("gameguild-platform-baseline", inherited.InheritedFromTemplateId);
+        Assert.Equal("USD", inherited.Configuration.Currency);
+
+        // Templates and inheritance are tenant-admin only.
+        using var anonymous = fixture.Factory.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/audit/retention-policies/templates")).StatusCode);
+        using var user = fixture.CreateAuthenticatedClient(Guid.NewGuid(), Guid.NewGuid());
+        Assert.Equal(HttpStatusCode.Forbidden, (await user.GetAsync("/api/audit/retention-policies/templates")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await user.GetAsync("/api/audit/retention-policies/configuration?includeInherited=true")).StatusCode);
+    }
+
+    [Fact]
     public async Task OpenApiDocumentsSimulationRoutesAndTypedInputs()
     {
         using var developmentFactory = fixture.Factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
@@ -214,9 +251,18 @@ public sealed class AuditRetentionSimulationPostgreSqlHttpTests(ApiPostgreSqlFix
         Assert.True(paths.TryGetProperty(Route + "/configuration", out var configuration));
         Assert.True(configuration.TryGetProperty("put", out _));
         Assert.True(paths.TryGetProperty("/api/audit/retention-simulation", out _));
+        Assert.True(paths.TryGetProperty("/api/audit/retention-policies", out _));
+        Assert.True(paths.TryGetProperty("/api/audit/retention-policies/configuration", out var policyConfiguration));
+        Assert.True(policyConfiguration.TryGetProperty("put", out _));
+        Assert.True(policyConfiguration.TryGetProperty("get", out var policyGet));
+        Assert.Contains(policyGet.GetProperty("parameters").EnumerateArray(),
+            parameter => parameter.GetProperty("name").GetString() == "includeInherited");
+        Assert.True(paths.TryGetProperty("/api/audit/retention-policies/templates", out var templatesPath));
+        Assert.True(templatesPath.TryGetProperty("get", out _));
         var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
         Assert.True(schemas.TryGetProperty("Compliance_Audit_" + nameof(AuditRetentionSimulationReport), out _));
         Assert.Equal("string", schemas.GetProperty("Compliance_Audit_" + nameof(AuditStorageTier)).GetProperty("type").GetString());
+        Assert.True(schemas.TryGetProperty("Compliance_Audit_" + nameof(AuditRetentionPolicyTemplate), out _));
         var capturePath = Environment.GetEnvironmentVariable("GAMEGUILD_RETENTION_OPENAPI_CAPTURE");
         if (!string.IsNullOrEmpty(capturePath))
         {

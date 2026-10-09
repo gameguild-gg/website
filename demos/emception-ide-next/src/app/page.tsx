@@ -13,7 +13,7 @@ function HomeInner() {
   const workspaceConfig = wsId && PRESETS[wsId] ? PRESETS[wsId] : undefined;
   return (
     <main className="h-screen w-screen bg-[#1e1e2e] text-[#cdd6f4] flex flex-col overflow-hidden">
-      <Ide title="Emception (Next.js)" workspaceConfig={workspaceConfig} />
+      <Ide title="Emception (Next.js)" manifestUrl="/cdn/manifest.json" workspaceConfig={workspaceConfig} />
     </main>
   );
 }
