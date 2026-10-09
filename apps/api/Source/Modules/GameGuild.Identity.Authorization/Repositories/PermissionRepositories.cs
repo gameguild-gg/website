@@ -104,6 +104,19 @@ public class TenantPermissionRepository(IApplicationDbContext context) : ITenant
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async Task<TenantPermission?> GetDeletedByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await TenantPermissions
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<List<TenantPermission>> GetExpiringBeforeAsync(
         DateTime cutoff,
         CancellationToken cancellationToken = default
