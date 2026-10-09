@@ -3195,6 +3195,11 @@ export interface CommerceSubscriptionsSubscriptionUsageDto {
   usersCount?: number;
 }
 
+/** Data model for Compliance Audit Acknowledge Security Alert Request. */
+export interface ComplianceAuditAcknowledgeSecurityAlertInput {
+  notes?: string | null;
+}
+
 /** Data model for Compliance Audit Audit Access Age Bucket. */
 export interface ComplianceAuditAuditAccessAgeBucket {
   ageDays?: number;
@@ -3821,6 +3826,17 @@ export interface ComplianceAuditConfigureAuditRetentionInput {
   tierPrices: Array<ComplianceAuditAuditStorageTierPrice>;
 }
 
+/** Configures the retention policy applied to a tenant's security audit log. */
+export interface ComplianceAuditConfigureSecurityLogRetentionInput {
+  /** Per-category overrides. Keys are `AuditCategory` names; values are days (30..3650). */
+  categoryOverrides?: Record<string, number> | null;
+  /** Revision the caller observed; rejected on mismatch to avoid lost updates. */
+  expectedRevision?: number;
+  /** When set to a future instant, retention enforcement is suspended until then. */
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+}
+
 /** Data model for Compliance Audit Create Compliance Package Request. */
 export interface ComplianceAuditCreateCompliancePackageInput {
   documentIds: Array<string>;
@@ -3858,6 +3874,12 @@ export interface ComplianceAuditDailyActivityTrend {
   permissionEvents?: number;
   securityViolations?: number;
   totalEvents?: number;
+}
+
+/** Data model for Compliance Audit Enforce Security Log Retention Request. */
+export interface ComplianceAuditEnforceSecurityLogRetentionInput {
+  /** When true, the pass only reports what would be deleted; no rows are removed. */
+  dryRun?: boolean;
 }
 
 /** OpenAPI schema for Compliance Audit Export Format. */
@@ -3937,6 +3959,31 @@ export interface ComplianceAuditScheduledAuditExportOutput {
   updatedAt?: string;
 }
 
+/** Data model for Compliance Audit Security Alert Response. */
+export interface ComplianceAuditSecurityAlertOutput {
+  id?: string;
+  acknowledgedAtUtc?: string | null;
+  acknowledgedByUserId?: string | null;
+  acknowledgementNotes?: string | null;
+  description?: string | null;
+  firstSeenAtUtc?: string;
+  ipAddress?: string | null;
+  kind?: ComplianceAuditSecurityEventKind;
+  lastSeenAtUtc?: string;
+  occurrenceCount?: number;
+  ruleId?: string | null;
+  severity?: ComplianceAuditAuditRiskLevel;
+  sourceActionType?: string | null;
+  sourceAuditLogId?: string | null;
+  status?: ComplianceAuditSecurityAlertStatus;
+  subjectUserId?: string | null;
+  tenantId?: string | null;
+  title?: string | null;
+}
+
+/** Status of a security alert raised by the security event pipeline. */
+export type ComplianceAuditSecurityAlertStatus = 'Open' | 'Acknowledged' | 'Resolved';
+
 /** Security audit dashboard with aggregated statistics. */
 export interface ComplianceAuditSecurityAuditDashboard {
   crossTenantAttempts?: number;
@@ -3963,6 +4010,75 @@ export interface ComplianceAuditSecurityAuditDashboard {
 
 /** Source type for security audit entries. */
 export type ComplianceAuditSecurityAuditSourceType = 'Authentication' | 'Permission' | 'General' | 'All';
+
+/** Durable delivery status of the security event pipeline for the current instance. */
+export interface ComplianceAuditSecurityEventDeliveryStatusOutput {
+  databaseWriteAttemptsBeforeSpool?: number;
+  lastDrainAttemptedAtUtc?: string | null;
+  lastDrainError?: string | null;
+  lastDrainSucceededAtUtc?: string | null;
+  oldestSpooledEventUtc?: string | null;
+  spooledEventCount?: number;
+  spoolingEnabled?: boolean;
+}
+
+/** Kinds of security-relevant events recognized by the security event pipeline.
+Every kind maps to a default severity, an escalation policy for failed outcomes,
+and a stable description used by the taxonomy endpoint. */
+export type ComplianceAuditSecurityEventKind =
+  | 'Authentication'
+  | 'Authorization'
+  | 'SessionManagement'
+  | 'AccountLifecycle'
+  | 'ThreatDetection'
+  | 'DataProtection'
+  | 'TenantIsolation'
+  | 'ConfigurationChange'
+  | 'DataMovement'
+  | 'Other';
+
+/** One entry of the published security event taxonomy. */
+export interface ComplianceAuditSecurityEventTaxonomyEntry {
+  actionType?: string | null;
+  defaultSeverity?: ComplianceAuditAuditRiskLevel;
+  description?: string | null;
+  escalateOnFailure?: boolean;
+  kind?: ComplianceAuditSecurityEventKind;
+}
+
+/** Response of `GET /api/audit/security-events/taxonomy`: the complete security event taxonomy. */
+export interface ComplianceAuditSecurityEventTaxonomyOutput {
+  entries: Array<ComplianceAuditSecurityEventTaxonomyEntry>;
+  kinds?: Array<string> | null;
+  totalEntries?: number;
+}
+
+/** Data model for Compliance Audit Security Log Retention Execution Response. */
+export interface ComplianceAuditSecurityLogRetentionExecutionOutput {
+  id?: string;
+  cutoffUtc?: string;
+  deletedCount?: number;
+  dryRun?: boolean;
+  evaluatedCount?: number;
+  executedAtUtc?: string;
+  legalHoldActive?: boolean;
+  policyRetentionDays?: number;
+  tenantId?: string;
+  triggeredByUserId?: string | null;
+}
+
+/** Data model for Compliance Audit Security Log Retention Policy Response. */
+export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
+  id?: string;
+  categoryOverrides?: Record<string, number> | null;
+  configuredAtUtc?: string;
+  legalHoldActive?: boolean;
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+  revision?: number;
+  tenantId?: string;
+  updatedByUserId?: string;
+}
 
 /** Data model for Compliance Audit Top Ip Activity. */
 export interface ComplianceAuditTopIpActivity {
@@ -7530,21 +7646,44 @@ export interface IdentityAuthenticationWebAuthnCredentialInfo {
   authenticatorType?: IdentityAuthenticationWebAuthnAuthenticatorType;
   backedUp?: boolean;
   createdAt?: string;
+  /** When the credential was temporarily deactivated, if applicable. */
+  deactivatedAt?: string | null;
   friendlyName?: string | null;
   isDefault?: boolean;
   isPasswordless?: boolean;
   lastUsedAt?: string | null;
+  /** When the credential was revoked (terminal), if applicable. */
+  revokedAt?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+}
+
+/** Lifecycle status of a WebAuthn credential. */
+export type IdentityAuthenticationWebAuthnCredentialStatus = 'Active' | 'Deactivated' | 'Revoked';
+
+/** Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+export interface IdentityAuthenticationWebAuthnCredentialTransitionResult {
+  /** Machine-readable failure reason (`CredentialNotFound`, `InvalidTransition`)
+or `null` on success. */
+  error?: string | null;
+  /** Human-readable explanation of the failure, or `null` on success. */
+  errorDescription?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+  /** Whether the requested transition was applied. */
+  success?: boolean;
 }
 
 /** Result of verifying a WebAuthn credential. */
 export interface IdentityAuthenticationWebAuthnCredentialVerifyResult {
   error?: string | null;
+  /** Whether the credential is temporarily deactivated (reversible, unlike revocation). */
+  isDeactivated?: boolean;
   isExpired?: boolean;
   isRevoked?: boolean;
   isValid?: boolean;
   lastUsedAt?: string | null;
   /** Signature counter for replay attack protection (increases with each use). */
   signatureCount?: number;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
   success?: boolean;
 }
 
@@ -12137,6 +12276,20 @@ export interface LearningCoursesContentSummaryDto {
   contentType?: string | null;
   estimatedMinutes?: number | null;
   title?: string | null;
+}
+
+/** Data model for Learning Courses Course Access Capabilities. */
+export interface LearningCoursesCourseAccessCapabilities {
+  canAccessWorkspace?: boolean;
+  canEdit?: boolean;
+  canLearn?: boolean;
+  canPublish?: boolean;
+  canReviewAsStaff?: boolean;
+  courseExists?: boolean;
+  courseId?: string;
+  hasActiveEnrollment?: boolean;
+  isOwner?: boolean;
+  isTenantMember?: boolean;
 }
 
 /** Data model for Learning Courses Course Support Ticket Message Request. */
@@ -19030,6 +19183,7 @@ export let CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInputSchem
 export let CommerceSubscriptionsSubscriptionStatusSchema: z.ZodType<CommerceSubscriptionsSubscriptionStatus>;
 export let CommerceSubscriptionsSubscriptionUpgradeResultSchema: z.ZodType<CommerceSubscriptionsSubscriptionUpgradeResult>;
 export let CommerceSubscriptionsSubscriptionUsageDtoSchema: z.ZodType<CommerceSubscriptionsSubscriptionUsageDto>;
+export let ComplianceAuditAcknowledgeSecurityAlertInputSchema: z.ZodType<ComplianceAuditAcknowledgeSecurityAlertInput>;
 export let ComplianceAuditAuditAccessAgeBucketSchema: z.ZodType<ComplianceAuditAuditAccessAgeBucket>;
 export let ComplianceAuditAuditActionTypeDescriptorSchema: z.ZodType<ComplianceAuditAuditActionTypeDescriptor>;
 export let ComplianceAuditAuditActionTypeFrequencySchema: z.ZodType<ComplianceAuditAuditActionTypeFrequency>;
@@ -19100,9 +19254,11 @@ export let ComplianceAuditCompliancePackageSummarySchema: z.ZodType<ComplianceAu
 export let ComplianceAuditCompliancePackageValidationReportSchema: z.ZodType<ComplianceAuditCompliancePackageValidationReport>;
 export let ComplianceAuditComplianceScopeExclusionSchema: z.ZodType<ComplianceAuditComplianceScopeExclusion>;
 export let ComplianceAuditConfigureAuditRetentionInputSchema: z.ZodType<ComplianceAuditConfigureAuditRetentionInput>;
+export let ComplianceAuditConfigureSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditConfigureSecurityLogRetentionInput>;
 export let ComplianceAuditCreateCompliancePackageInputSchema: z.ZodType<ComplianceAuditCreateCompliancePackageInput>;
 export let ComplianceAuditCreateScheduledAuditExportInputSchema: z.ZodType<ComplianceAuditCreateScheduledAuditExportInput>;
 export let ComplianceAuditDailyActivityTrendSchema: z.ZodType<ComplianceAuditDailyActivityTrend>;
+export let ComplianceAuditEnforceSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditEnforceSecurityLogRetentionInput>;
 export let ComplianceAuditExportFormatSchema: z.ZodType<ComplianceAuditExportFormat>;
 export let ComplianceAuditExportStatusSchema: z.ZodType<ComplianceAuditExportStatus>;
 export let ComplianceAuditFailureReasonCountSchema: z.ZodType<ComplianceAuditFailureReasonCount>;
@@ -19111,8 +19267,16 @@ export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAudit
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
 export let ComplianceAuditScheduledAuditExportOutputSchema: z.ZodType<ComplianceAuditScheduledAuditExportOutput>;
+export let ComplianceAuditSecurityAlertOutputSchema: z.ZodType<ComplianceAuditSecurityAlertOutput>;
+export let ComplianceAuditSecurityAlertStatusSchema: z.ZodType<ComplianceAuditSecurityAlertStatus>;
 export let ComplianceAuditSecurityAuditDashboardSchema: z.ZodType<ComplianceAuditSecurityAuditDashboard>;
 export let ComplianceAuditSecurityAuditSourceTypeSchema: z.ZodType<ComplianceAuditSecurityAuditSourceType>;
+export let ComplianceAuditSecurityEventDeliveryStatusOutputSchema: z.ZodType<ComplianceAuditSecurityEventDeliveryStatusOutput>;
+export let ComplianceAuditSecurityEventKindSchema: z.ZodType<ComplianceAuditSecurityEventKind>;
+export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyEntry>;
+export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
+export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
 export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditEntry>;
@@ -19468,6 +19632,8 @@ export let IdentityAuthenticationWebAuthnAuthenticationOptionsResultSchema: z.Zo
 export let IdentityAuthenticationWebAuthnAuthenticationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticationResult>;
 export let IdentityAuthenticationWebAuthnAuthenticatorTypeSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticatorType>;
 export let IdentityAuthenticationWebAuthnCredentialInfoSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialInfo>;
+export let IdentityAuthenticationWebAuthnCredentialStatusSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialStatus>;
+export let IdentityAuthenticationWebAuthnCredentialTransitionResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialTransitionResult>;
 export let IdentityAuthenticationWebAuthnCredentialVerifyResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialVerifyResult>;
 export let IdentityAuthenticationWebAuthnRegistrationOptionsResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationOptionsResult>;
 export let IdentityAuthenticationWebAuthnRegistrationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationResult>;
@@ -19846,6 +20012,7 @@ export let LearningCoursesContentInteractionSummaryDtoSchema: z.ZodType<Learning
 export let LearningCoursesContentProgressDtoSchema: z.ZodType<LearningCoursesContentProgressDto>;
 export let LearningCoursesContentStatsDtoSchema: z.ZodType<LearningCoursesContentStatsDto>;
 export let LearningCoursesContentSummaryDtoSchema: z.ZodType<LearningCoursesContentSummaryDto>;
+export let LearningCoursesCourseAccessCapabilitiesSchema: z.ZodType<LearningCoursesCourseAccessCapabilities>;
 export let LearningCoursesCourseSupportTicketMessageInputSchema: z.ZodType<LearningCoursesCourseSupportTicketMessageInput>;
 export let LearningCoursesCreateActivityGradeDtoSchema: z.ZodType<LearningCoursesCreateActivityGradeDto>;
 export let LearningCoursesCreateCourseSupportTicketInputSchema: z.ZodType<LearningCoursesCreateCourseSupportTicketInput>;
@@ -23439,6 +23606,11 @@ CommerceSubscriptionsSubscriptionUsageDtoSchema = z.object({
   usersCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAcknowledgeSecurityAlertInput. Data model for Compliance Audit Acknowledge Security Alert Request. */
+ComplianceAuditAcknowledgeSecurityAlertInputSchema = z.object({
+  notes: z.string().max(1000).nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditAccessAgeBucket. Data model for Compliance Audit Audit Access Age Bucket. */
 ComplianceAuditAuditAccessAgeBucketSchema = z.object({
   ageDays: z.number().int().optional(),
@@ -24150,6 +24322,14 @@ ComplianceAuditConfigureAuditRetentionInputSchema = z.object({
     .max(4),
 });
 
+/** Zod schema for ComplianceAuditConfigureSecurityLogRetentionInput. Configures the retention policy applied to a tenant's security audit log. */
+ComplianceAuditConfigureSecurityLogRetentionInputSchema = z.object({
+  categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  expectedRevision: z.number().int().min(0).max(2147483647).optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().min(30).max(3650).optional(),
+});
+
 /** Zod schema for ComplianceAuditCreateCompliancePackageInput. Data model for Compliance Audit Create Compliance Package Request. */
 ComplianceAuditCreateCompliancePackageInputSchema = z.object({
   documentIds: z.array(z.string().uuid()).max(100),
@@ -24183,6 +24363,11 @@ ComplianceAuditDailyActivityTrendSchema = z.object({
   permissionEvents: z.number().int().optional(),
   securityViolations: z.number().int().optional(),
   totalEvents: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditEnforceSecurityLogRetentionInput. Data model for Compliance Audit Enforce Security Log Retention Request. */
+ComplianceAuditEnforceSecurityLogRetentionInputSchema = z.object({
+  dryRun: z.boolean().optional(),
 });
 
 /** Zod schema for ComplianceAuditExportFormat. OpenAPI schema for Compliance Audit Export Format. */
@@ -24268,6 +24453,31 @@ ComplianceAuditScheduledAuditExportOutputSchema = z.object({
   updatedAt: z.string().datetime().optional(),
 });
 
+/** Zod schema for ComplianceAuditSecurityAlertOutput. Data model for Compliance Audit Security Alert Response. */
+ComplianceAuditSecurityAlertOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  firstSeenAtUtc: z.string().datetime().optional(),
+  ipAddress: z.string().nullable().optional(),
+  kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
+  lastSeenAtUtc: z.string().datetime().optional(),
+  occurrenceCount: z.number().int().optional(),
+  ruleId: z.string().nullable().optional(),
+  severity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  sourceActionType: z.string().nullable().optional(),
+  sourceAuditLogId: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => ComplianceAuditSecurityAlertStatusSchema).optional(),
+  subjectUserId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityAlertStatus. Status of a security alert raised by the security event pipeline. */
+ComplianceAuditSecurityAlertStatusSchema = z.enum(['Open', 'Acknowledged', 'Resolved']);
+
 /** Zod schema for ComplianceAuditSecurityAuditDashboard. Security audit dashboard with aggregated statistics. */
 ComplianceAuditSecurityAuditDashboardSchema = z.object({
   crossTenantAttempts: z.number().int().optional(),
@@ -24306,6 +24516,76 @@ ComplianceAuditSecurityAuditDashboardSchema = z.object({
 
 /** Zod schema for ComplianceAuditSecurityAuditSourceType. Source type for security audit entries. */
 ComplianceAuditSecurityAuditSourceTypeSchema = z.enum(['Authentication', 'Permission', 'General', 'All']);
+
+/** Zod schema for ComplianceAuditSecurityEventDeliveryStatusOutput. Durable delivery status of the security event pipeline for the current instance. */
+ComplianceAuditSecurityEventDeliveryStatusOutputSchema = z.object({
+  databaseWriteAttemptsBeforeSpool: z.number().int().optional(),
+  lastDrainAttemptedAtUtc: z.string().datetime().nullable().optional(),
+  lastDrainError: z.string().nullable().optional(),
+  lastDrainSucceededAtUtc: z.string().datetime().nullable().optional(),
+  oldestSpooledEventUtc: z.string().datetime().nullable().optional(),
+  spooledEventCount: z.number().int().optional(),
+  spoolingEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityEventKind. Kinds of security-relevant events recognized by the security event pipeline.
+Every kind maps to a default severity, an escalation policy for failed outcomes,
+and a stable description used by the taxonomy endpoint. */
+ComplianceAuditSecurityEventKindSchema = z.enum([
+  'Authentication',
+  'Authorization',
+  'SessionManagement',
+  'AccountLifecycle',
+  'ThreatDetection',
+  'DataProtection',
+  'TenantIsolation',
+  'ConfigurationChange',
+  'DataMovement',
+  'Other',
+]);
+
+/** Zod schema for ComplianceAuditSecurityEventTaxonomyEntry. One entry of the published security event taxonomy. */
+ComplianceAuditSecurityEventTaxonomyEntrySchema = z.object({
+  actionType: z.string().nullable().optional(),
+  defaultSeverity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  description: z.string().nullable().optional(),
+  escalateOnFailure: z.boolean().optional(),
+  kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityEventTaxonomyOutput. Response of `GET /api/audit/security-events/taxonomy`: the complete security event taxonomy. */
+ComplianceAuditSecurityEventTaxonomyOutputSchema = z.object({
+  entries: z.array(z.lazy(() => ComplianceAuditSecurityEventTaxonomyEntrySchema)),
+  kinds: z.array(z.string()).nullable().optional(),
+  totalEntries: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogRetentionExecutionOutput. Data model for Compliance Audit Security Log Retention Execution Response. */
+ComplianceAuditSecurityLogRetentionExecutionOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  cutoffUtc: z.string().datetime().optional(),
+  deletedCount: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  evaluatedCount: z.number().int().optional(),
+  executedAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  policyRetentionDays: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  triggeredByUserId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogRetentionPolicyOutput. Data model for Compliance Audit Security Log Retention Policy Response. */
+ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  configuredAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().optional(),
+  revision: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  updatedByUserId: z.string().uuid().optional(),
+});
 
 /** Zod schema for ComplianceAuditTopIpActivity. Data model for Compliance Audit Top Ip Activity. */
 ComplianceAuditTopIpActivitySchema = z.object({
@@ -27861,20 +28141,36 @@ IdentityAuthenticationWebAuthnCredentialInfoSchema = z.object({
   authenticatorType: z.lazy(() => IdentityAuthenticationWebAuthnAuthenticatorTypeSchema).optional(),
   backedUp: z.boolean().optional(),
   createdAt: z.string().datetime().optional(),
+  deactivatedAt: z.string().datetime().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isDefault: z.boolean().optional(),
   isPasswordless: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
+  revokedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialStatus. Lifecycle status of a WebAuthn credential. */
+IdentityAuthenticationWebAuthnCredentialStatusSchema = z.enum(['Active', 'Deactivated', 'Revoked']);
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialTransitionResult. Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+IdentityAuthenticationWebAuthnCredentialTransitionResultSchema = z.object({
+  error: z.string().nullable().optional(),
+  errorDescription: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationWebAuthnCredentialVerifyResult. Result of verifying a WebAuthn credential. */
 IdentityAuthenticationWebAuthnCredentialVerifyResultSchema = z.object({
   error: z.string().nullable().optional(),
+  isDeactivated: z.boolean().optional(),
   isExpired: z.boolean().optional(),
   isRevoked: z.boolean().optional(),
   isValid: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   signatureCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
   success: z.boolean().optional(),
 });
 
@@ -32066,6 +32362,20 @@ LearningCoursesContentSummaryDtoSchema = z.object({
   contentType: z.string().nullable().optional(),
   estimatedMinutes: z.number().int().nullable().optional(),
   title: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningCoursesCourseAccessCapabilities. Data model for Learning Courses Course Access Capabilities. */
+LearningCoursesCourseAccessCapabilitiesSchema = z.object({
+  canAccessWorkspace: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  canLearn: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
+  canReviewAsStaff: z.boolean().optional(),
+  courseExists: z.boolean().optional(),
+  courseId: z.string().uuid().optional(),
+  hasActiveEnrollment: z.boolean().optional(),
+  isOwner: z.boolean().optional(),
+  isTenantMember: z.boolean().optional(),
 });
 
 /** Zod schema for LearningCoursesCourseSupportTicketMessageInput. Data model for Learning Courses Course Support Ticket Message Request. */

@@ -311,6 +311,7 @@ public static class EnrollmentsDependencyInjection
     {
         services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
         services.AddScoped<IEnrollmentService, EnrollmentService>();
+        services.AddScoped<GameGuild.Learning.Courses.ICourseEnrollmentAccessReader, CourseEnrollmentAccessReader>();
         services.AddScoped<ICommandHandler<EnrollUserCommand, EnrollmentDto>, EnrollUserCommandHandler>();
         services.AddScoped<IRequestHandler<EnrollUserCommand, EnrollmentDto>>(sp => sp.GetRequiredService<ICommandHandler<EnrollUserCommand, EnrollmentDto>>());
         services.AddScoped<ICommandHandler<UpdateEnrollmentProgressCommand, EnrollmentDto?>, UpdateEnrollmentProgressCommandHandler>();

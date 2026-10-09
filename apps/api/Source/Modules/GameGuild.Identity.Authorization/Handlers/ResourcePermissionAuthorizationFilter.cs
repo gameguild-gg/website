@@ -40,7 +40,13 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
         var permissionQueryService = context.HttpContext.RequestServices.GetService<IPermissionQueryService>();
         if (actorContextAccessor == null || permissionQueryService == null)
         {
-            _logger.LogWarning("IActorContextAccessor or IPermissionQueryService not available - skipping authorization check");
+            // SECURITY (deny-by-default / fail-safe defaults): missing authorization
+            // dependencies are a host misconfiguration, not a bypass route. The request is
+            // denied instead of skipped so that no surface can execute without the
+            // permission-evaluation pipeline being present.
+            _logger.LogError(
+                "IActorContextAccessor or IPermissionQueryService not available - denying request (fail-closed)");
+            context.Result = new Microsoft.AspNetCore.Mvc.ForbidResult();
             return;
         }
 

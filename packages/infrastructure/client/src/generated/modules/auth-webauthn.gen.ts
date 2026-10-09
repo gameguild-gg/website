@@ -129,7 +129,9 @@ export class AuthWebauthnModule {
   }
 
   /**
-   * Delete a WebAuthn credential.
+   * Delete a WebAuthn credential. Deletion performs a terminal revocation:
+   * the deleted credential can never be restored. Use
+   * `:deactivate` for a reversible transition.
    */
   async deleteAuthWebauthnCredentials(credentialId: string): Promise<Result<void, ApiError>> {
     const url = `/v1/auth/webauthn/credentials/${credentialId}`;
@@ -170,6 +172,38 @@ export class AuthWebauthnModule {
 
     const result = await this.client.request({
       method: 'HEAD',
+      path: url,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Reverse a temporary deactivation of a WebAuthn credential, returning it to
+   * active use. Revoked credentials are terminal and are never reactivated.
+   */
+  async postAuthWebauthnCredentialsActivate(credentialId: string): Promise<Result<void, ApiError>> {
+    const url = `/v1/auth/webauthn/credentials/${credentialId}:activate`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Temporarily deactivate a WebAuthn credential. Deactivation is reversible via
+   * `:activate`; a revoked credential can never be deactivated or restored.
+   */
+  async postAuthWebauthnCredentialsDeactivate(credentialId: string): Promise<Result<void, ApiError>> {
+    const url = `/v1/auth/webauthn/credentials/${credentialId}:deactivate`;
+
+    const result = await this.client.request({
+      method: 'POST',
       path: url,
       requiresAuth: true,
     });

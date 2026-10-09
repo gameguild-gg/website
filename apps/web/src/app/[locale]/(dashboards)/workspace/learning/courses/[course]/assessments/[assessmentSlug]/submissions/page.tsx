@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { getAssessment, getAssessmentSubmissions } from '@/lib/learning';
+import { getAssessment, getAssessmentSubmissions, getCourseAccessCapabilities } from '@/lib/learning';
+import { forbidden } from 'next/navigation';
 import { SubmissionsList } from '@/components/learning/console/courses/[course]/assessments/[assessmentId]/submissions/submissions-list';
 
 /**
@@ -18,7 +19,11 @@ export default async function AssessmentSubmissionsPage({
 }): Promise<React.JSX.Element> {
   const { course, assessmentSlug } = await params;
 
-  const assessment = await getAssessment(course, assessmentSlug);
+  const [assessment, access] = await Promise.all([
+    getAssessment(course, assessmentSlug),
+    getCourseAccessCapabilities(course),
+  ]);
+  if (!access.canReviewAsStaff) forbidden();
   const submissions = assessment
     ? await getAssessmentSubmissions(assessment.id)
     : [];

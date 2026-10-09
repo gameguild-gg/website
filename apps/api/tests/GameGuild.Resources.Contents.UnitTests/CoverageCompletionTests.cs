@@ -559,7 +559,18 @@ public class VersioningControllerCoverageCompletionTests
         var diff = new ContentVersionDiff(draft.Id, approved.Id, 1, 3, true, false, true, false, "Title", null, "Body");
         var notFound = Error.NotFound("ContentVersioning.NotFound", "missing");
         var invalid = Error.Validation("ContentVersioning.Invalid", "invalid");
-        var controller = new VersioningController(service.Object, new CommandHandlerSender(service.Object));
+        // The editorial workflow endpoints are permission-gated, so this coverage actor
+        // holds the granular editorial keys (content:edit / content:draft / content:schedule).
+        var actorAccessor = new Mock<IActorContextAccessor>();
+        actorAccessor.Setup(current => current.ActorContext).Returns(new ActorContext
+        {
+            ActorKind = ActorKind.User,
+            SubjectId = userId.ToString(),
+            IsAuthenticated = true,
+            Roles = new HashSet<string>(),
+            Permissions = new HashSet<string>(["content:edit", "content:draft", "content:schedule"])
+        });
+        var controller = new VersioningController(service.Object, new CommandHandlerSender(service.Object), actorAccessor.Object);
 
         service.Setup(mock => mock.CreateDraftAsync(entityId, "Page", "Draft", userId, "S", "B", "M", "N", It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success(draft));
         service.Setup(mock => mock.UpdateDraftAsync(draft.Id, "Updated", null, null, null, null, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success(draft));

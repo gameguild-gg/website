@@ -1,7 +1,7 @@
 # Permission Evaluation Policy
 
 **Date**: January 12, 2026  
-**Version**: 1.1  
+**Version**: 1.2 (deny-by-default contract)  
 **Status**: ✅ DOCUMENTED
 
 This document defines the official permission evaluation policy for the GameGuild authorization system, including conflict resolution rules, layer precedence, and the rationale behind design decisions.
@@ -400,6 +400,23 @@ Result: 403 Forbidden (RequireTimeWindow rule failed)
 
 ## Security Considerations
 
+### Deny-by-Default Model (Issue #327)
+
+The platform authorization contract is **deny-by-default**: every decision denies unless an
+explicit, currently-effective grant (or a documented system role) allows it. All effective
+permission decisions flow through the shared `IEffectivePermissionResolver`
+(`EffectivePermissionResolverService`, contract: `apps/api/docs/effective-permission-resolution.md`),
+which combines every layer with DENY-WINS precedence — permissions that no layer grants are
+denied. The following invariants hold across the permission-evaluation code paths:
+
+| Invariant | Enforcement |
+|-----------|-------------|
+| Decisions default to deny | `EffectivePermissionResolverService` returns an empty set unless a layer explicitly grants; `PermissionQueryService` delegates every check/effective query to it and returns `false`/empty on missing or invalid user/tenant context (fail-closed); unknown permission-to-access-level mappings in `AuthorizationBehavior` throw (deny) instead of defaulting |
+| Only effective grants count | A `TenantPermission` row contributes (allow, deny, or listing) only when `IsActive == true`, `ExpiresAt` is null/future, and the row is not soft-deleted (`DeletedAt == null`, filtered by repository predicates). Inactive or expired rows are treated as absent in every resolver layer (global defaults, tenant defaults, direct grants — `EffectivePermissionResolverService.AddTenantPermissionLayerAsync`) and in every `PermissionQueryService` listing (`IsGrantEffective`); expired direct resource grants are skipped by the resolver, and revoked resource rows are excluded at the query level by `ResourcePermissionService` |
+| No implicit baseline permissions | `EffectivePermissionResolverService` grants no hardcoded permissions. Global baseline permissions exist only as the persisted, audited `UserId=null, TenantId=null` `TenantPermission` row managed via the permissions API — no code-level or configuration-level default grant exists |
+| Fail-safe on missing infrastructure | `ResourcePermissionAuthorizationFilter` denies (403) when `IActorContextAccessor`/`IPermissionQueryService` are missing from DI, instead of skipping checks; `ActorContextMiddleware` and the permission handler deny on evaluation errors |
+| Denied attempts are observable | Permission denials flow through the authorization middleware result handler and auditing permission service into `PermissionAuditLog` and the SIEM event path (see `AuditingAuthorizationPermissionService`, `SiemIntegrationService`) |
+
 ### Why Different Policies for Different Layers?
 
 | Layer | Policy | Rationale |
@@ -437,6 +454,8 @@ See: `Authorization/Middleware/RequestContextLoggingMiddleware.cs`
 | What happens when DAC permissions conflict? | **Allow-wins** (additive merge) |
 | Can I explicitly deny a DAC permission? | Not currently; revoke the grant instead |
 | Are expired permissions considered? | No; excluded before evaluation |
+| Are inactive permissions considered? | No; `IsActive == false` rows are excluded from every check, list and default layer (deny-by-default) |
+| Are there implicit baseline permissions? | No; no code-level or configuration-level default grant exists. Global defaults are the persisted, audited `UserId=null, TenantId=null` row (see `effective-permission-resolution.md`) |
 
 ---
 

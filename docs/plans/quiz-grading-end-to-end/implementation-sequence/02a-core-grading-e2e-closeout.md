@@ -1,6 +1,7 @@
 # Fechamento da Parte 2. E2E principal de grading
 
-Status: concluído; gate de grading aprovado e Parte 3 liberada.
+Status: concluído; gate de grading aprovado e Parte 3 de acesso contextual
+liberada.
 
 ## Objetivo
 
@@ -30,7 +31,7 @@ A auditoria posterior encontrou três pendências de encerramento:
 ## Limites deste fechamento
 
 - não implementar `SelfReview`, `PeerReview` canônico ou `AIReview`; isso
-  continua pertencendo à Parte 3;
+  continua pertencendo à Parte 4;
 - não reescrever `InstructorReview`, `AutomatedReview`, submissions, release ou
   gradebook que já passam nos testes;
 - não editar, excluir ou recriar migrations, designers ou tabelas históricas;
@@ -225,7 +226,8 @@ aprovados, o `CLOSE-04` está concluído e a Parte 3 pode começar.
   submissions irmãs;
 - criação limpa, upgrade real populado e ausência de drift estão comprovados;
 - migrations e armazenamento históricos foram preservados;
-- o gate da Parte 2 está aprovado e `SEQ-12` pode começar sem exceção implícita.
+- o gate da Parte 2 está aprovado e `ACCESS-01` pode começar sem exceção
+  implícita; `SEQ-12` continua bloqueado até `ACCESS-05`.
 
 ## Acompanhamento
 

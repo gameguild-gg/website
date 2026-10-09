@@ -56,6 +56,7 @@ vi.mock("@game-guild/client", () => ({
 
 import {
   canEditCourse,
+  getCourseAccessCapabilities,
   getCourse,
   getCourseAnalytics,
   getCourseContent,
@@ -66,7 +67,8 @@ import {
 describe("course analytics query", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    mocks.createServerClient.mockReturnValue({});
+    mocks.createServerClient.mockReturnValue({ request: mocks.clientRequest });
+    mocks.clientRequest.mockReset();
     mocks.clientRequest.mockReset();
     mocks.getCoursesForGetCoursesById.mockReset();
     mocks.getCoursesSlug.mockReset();
@@ -367,75 +369,69 @@ describe("course analytics query", () => {
 
 describe("course edit permission (canEditCourse)", () => {
   const courseId = "48691da8-245e-4d9e-b729-83c9023ba065";
+  const allowedAccess = {
+    courseId,
+    courseExists: true,
+    isTenantMember: true,
+    isOwner: false,
+    hasActiveEnrollment: false,
+    canLearn: false,
+    canEdit: true,
+    canPublish: false,
+    canReviewAsStaff: false,
+    canAccessWorkspace: true,
+  };
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    mocks.createServerClient.mockReturnValue({});
+    mocks.createServerClient.mockReturnValue({ request: mocks.clientRequest });
+    mocks.clientRequest.mockReset();
     mocks.getToken.mockResolvedValue("access-token");
     mocks.auth.mockReset();
-    mocks.getAuthorizationResourcesHasPermission.mockReset();
     mocks.getCoursesForGetCoursesById.mockReset();
     mocks.getCoursesSlug.mockReset();
     mocks.getUsersForGetUsersByUserId.mockReset();
     mocks.auth.mockResolvedValue({ user: { id: "user-1" }, tenantId: "tenant-1" });
   });
 
-  it("grants edit when the DAC resolves Program.{id}.Edit", async () => {
-    mocks.getAuthorizationResourcesHasPermission.mockResolvedValue({
+  it("uses the canonical API capability projection", async () => {
+    mocks.clientRequest.mockResolvedValue({ ok: true, data: allowedAccess });
+
+    await expect(canEditCourse(courseId)).resolves.toBe(true);
+    await expect(getCourseAccessCapabilities(courseId)).resolves.toEqual(allowedAccess);
+
+    expect(mocks.clientRequest).toHaveBeenCalledWith({
+      method: "GET",
+      path: `/v1/courses/${courseId}/access/capabilities`,
+      requiresAuth: true,
+      cache: "no-store",
+    });
+  });
+
+  it("accepts ownership only when the API projects edit capability", async () => {
+    mocks.clientRequest.mockResolvedValue({
       ok: true,
-      data: { hasPermission: true },
+      data: { ...allowedAccess, isOwner: true },
     });
 
     await expect(canEditCourse(courseId)).resolves.toBe(true);
-
-    expect(mocks.getAuthorizationResourcesHasPermission).toHaveBeenCalledWith(
-      "Program",
-      courseId,
-      { tenantId: "tenant-1", permission: "Edit" },
-    );
+    expect(mocks.getCoursesForGetCoursesById).not.toHaveBeenCalled();
   });
 
-  it("grants edit to the instructor (course owner) even when the DAC denies", async () => {
-    mocks.getAuthorizationResourcesHasPermission.mockResolvedValue({
-      ok: true,
-      data: { hasPermission: false },
-    });
-    mocks.getCoursesForGetCoursesById.mockResolvedValue({
+  it("does not promote review-only access to edit", async () => {
+    mocks.clientRequest.mockResolvedValue({
       ok: true,
       data: {
-        id: courseId,
-        title: "Instructor Course",
-        slug: "instructor-course",
-        creatorId: "user-1",
-        status: "Published",
-        visibility: "Public",
-      },
-    });
-
-    await expect(canEditCourse(courseId)).resolves.toBe(true);
-  });
-
-  it("denies edit when the DAC denies and the viewer is not the creator", async () => {
-    mocks.getAuthorizationResourcesHasPermission.mockResolvedValue({
-      ok: true,
-      data: { hasPermission: false },
-    });
-    mocks.getCoursesForGetCoursesById.mockResolvedValue({
-      ok: true,
-      data: {
-        id: courseId,
-        title: "Someone Elses Course",
-        slug: "someone-elses-course",
-        creatorId: "user-2",
-        status: "Published",
-        visibility: "Public",
+        ...allowedAccess,
+        canEdit: false,
+        canReviewAsStaff: true,
       },
     });
 
     await expect(canEditCourse(courseId)).resolves.toBe(false);
   });
 
-  it("still grants edit to the instructor without tenant context", async () => {
+  it("fails closed without tenant context even when local course data names the actor as creator", async () => {
     mocks.auth.mockResolvedValue({ user: { id: "user-1" } });
     mocks.getCoursesForGetCoursesById.mockResolvedValue({
       ok: true,
@@ -449,25 +445,15 @@ describe("course edit permission (canEditCourse)", () => {
       },
     });
 
-    await expect(canEditCourse(courseId)).resolves.toBe(true);
-    expect(mocks.getAuthorizationResourcesHasPermission).not.toHaveBeenCalled();
+    await expect(canEditCourse(courseId)).resolves.toBe(false);
+    expect(mocks.clientRequest).not.toHaveBeenCalled();
+    expect(mocks.getCoursesForGetCoursesById).not.toHaveBeenCalled();
   });
 
-  it("denies edit when the DAC endpoint fails and the viewer is not the creator", async () => {
-    mocks.getAuthorizationResourcesHasPermission.mockResolvedValue({
+  it("fails closed when the capability endpoint rejects the request", async () => {
+    mocks.clientRequest.mockResolvedValue({
       ok: false,
       error: { status: 500 },
-    });
-    mocks.getCoursesForGetCoursesById.mockResolvedValue({
-      ok: true,
-      data: {
-        id: courseId,
-        title: "Someone Elses Course",
-        slug: "someone-elses-course",
-        creatorId: "user-2",
-        status: "Published",
-        visibility: "Public",
-      },
     });
 
     await expect(canEditCourse(courseId)).resolves.toBe(false);
@@ -478,36 +464,26 @@ describe("course edit permission (canEditCourse)", () => {
 
     await expect(canEditCourse(courseId)).resolves.toBe(false);
 
-    expect(mocks.getAuthorizationResourcesHasPermission).not.toHaveBeenCalled();
+    expect(mocks.clientRequest).not.toHaveBeenCalled();
     expect(mocks.getCoursesForGetCoursesById).not.toHaveBeenCalled();
   });
 
-  it("grants edit to SystemAdmin without DAC or creator lookups", async () => {
+  it("does not duplicate the SystemAdmin policy in the web client", async () => {
     mocks.auth.mockResolvedValue({
       user: { id: "user-1", roles: ["SystemAdmin"] },
       tenantId: "tenant-1",
     });
+    mocks.clientRequest.mockResolvedValue({ ok: true, data: allowedAccess });
 
     await expect(canEditCourse(courseId)).resolves.toBe(true);
 
-    expect(mocks.getAuthorizationResourcesHasPermission).not.toHaveBeenCalled();
+    expect(mocks.clientRequest).toHaveBeenCalledTimes(1);
     expect(mocks.getCoursesForGetCoursesById).not.toHaveBeenCalled();
   });
 
-  it("matches the instructor even when the GUID casing differs", async () => {
-    mocks.auth.mockResolvedValue({ user: { id: "USER-1" } });
-    mocks.getCoursesForGetCoursesById.mockResolvedValue({
-      ok: true,
-      data: {
-        id: courseId,
-        title: "Instructor Course",
-        slug: "instructor-course",
-        creatorId: "user-1",
-        status: "Published",
-        visibility: "Public",
-      },
-    });
+  it("fails closed on transport errors", async () => {
+    mocks.clientRequest.mockRejectedValue(new Error("capability service unavailable"));
 
-    await expect(canEditCourse(courseId)).resolves.toBe(true);
+    await expect(canEditCourse(courseId)).resolves.toBe(false);
   });
 });
