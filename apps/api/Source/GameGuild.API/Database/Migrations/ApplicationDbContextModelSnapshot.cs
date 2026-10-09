@@ -13696,6 +13696,10 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("ReplacesKeyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaces_key_id");
+
                     b.Property<string>("RevocationReason")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -13704,6 +13708,10 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
+
+                    b.Property<DateTime?>("RotationGraceEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rotation_grace_ends_at");
 
                     b.Property<string>("Scopes")
                         .IsRequired()
@@ -13745,6 +13753,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("KeyHash")
                         .IsUnique()
                         .HasDatabaseName("ix_api_keys_key_hash");
+
+                    b.HasIndex("ReplacesKeyId")
+                        .HasDatabaseName("ix_api_keys_replaces_key_id");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_api_keys_tenant_id");
