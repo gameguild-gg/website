@@ -3978,10 +3978,8 @@ Table "ResourceUserPermission" {
   "ResourceType" "character varying(256)" [not null]
   "ResourceId" "character varying(256)" [not null]
   "Permissions" "text[]" [not null]
-  "GrantedAt" timestamp [not null]
   "GrantedByUserId" uuid [not null]
   "GrantedByUserName" "character varying(256)"
-  "ExpiresAt" timestamp
   "RevokedAt" timestamp
   "RevokedByUserId" uuid
   "RevokedByUserName" "character varying(256)"
@@ -3992,6 +3990,8 @@ Table "ResourceUserPermission" {
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
   "DeletedAt" timestamp
+  "ExpiresAt" timestamp
+  "GrantedAt" timestamp [not null]
 
   Indexes {
     Id [pk, name: "PK_ResourceUserPermission"]
@@ -4764,20 +4764,20 @@ Table "tenant_capabilities" {
 
 Table "TenantPermissions" {
   "Id" uuid [not null]
-  "UserId" uuid
   "TenantId" uuid
   "Permissions" "text[]" [not null]
   "DenyPermissions" "text[]" [not null]
-  "ExpiresAt" timestamp
-  "IsActive" boolean [not null]
   "GrantedBy" uuid
-  "GrantedAt" timestamp [not null]
   "Reason" "character varying(500)"
   "Metadata" jsonb
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
   "DeletedAt" timestamp
+  "UserId" uuid
+  "ExpiresAt" timestamp
+  "IsActive" boolean [not null]
+  "GrantedAt" timestamp [not null]
 
   Indexes {
     Id [pk, name: "PK_TenantPermissions"]
@@ -11393,12 +11393,12 @@ Table "gameguild.authentication"."contenttypepermission" {
   "DeletedAt" timestamp
   "TenantId" uuid
   "UserId" uuid
-  "Permissions" "character varying(500)" [not null]
   "ExpiresAt" timestamp
   "IsActive" boolean [not null]
+  "GrantedAt" timestamp [not null]
+  "Permissions" "character varying(500)" [not null]
   "Notes" text
   "GrantedBy" uuid
-  "GrantedAt" timestamp [not null]
 
   Indexes {
     id [pk, name: "PK_contenttypepermission"]
@@ -11420,6 +11420,33 @@ Table "gameguild.authentication"."externallogin" {
     id [pk, name: "PK_externallogin"]
     (Provider, ProviderKey) [unique, name: "ix_externallogin_provider_provider_key"]
     UserId [name: "ix_externallogin_user_id"]
+  }
+}
+
+Table "gameguild.authentication"."genericresourcepermission" {
+  "id" uuid [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+  "UserId" uuid
+  "ExpiresAt" timestamp
+  "IsActive" boolean [not null]
+  "GrantedAt" timestamp [not null]
+  "Permissions" "character varying(500)" [not null]
+  "Notes" text
+  "GrantedBy" uuid
+  "ResourceId" uuid [not null]
+  "ResourceType" "character varying(256)" [not null]
+  "ResourceTitle" "character varying(512)"
+
+  Indexes {
+    id [pk, name: "PK_genericresourcepermission"]
+    ResourceType [name: "ix_genericresourcepermission_resource_type"]
+    TenantId [name: "ix_genericresourcepermission_tenant_id"]
+    (TenantId, ResourceType, ResourceId) [name: "ix_genericresourcepermission_tenant_resource"]
+    UserId [name: "ix_genericresourcepermission_user_id"]
   }
 }
 

@@ -453,7 +453,8 @@ public sealed class PermissionQueryService(
     {
         var existing = await repository.GetByUserAndTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
 
-        if (existing == null) return new List<string>();
+        // SECURITY: FAIL-CLOSED - inactive or expired grants convey no permissions (#357).
+        if (existing == null || !existing.IsEffective()) return new List<string>();
 
         return existing.Permissions.ToList();
     }
@@ -497,7 +498,9 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, null, cancellationToken).ConfigureAwait(false);
-        return defaults?.Permissions.ToList() ?? new List<string>();
+
+        // SECURITY: FAIL-CLOSED - inactive or expired defaults convey no permissions (#357).
+        return defaults is not null && defaults.IsEffective() ? defaults.Permissions.ToList() : new List<string>();
     }
 
     public async Task<List<string>> GetTenantDefaultPermissionsAsync(
@@ -505,7 +508,9 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, tenantId, cancellationToken).ConfigureAwait(false);
-        return defaults?.Permissions.ToList() ?? new List<string>();
+
+        // SECURITY: FAIL-CLOSED - inactive or expired defaults convey no permissions (#357).
+        return defaults is not null && defaults.IsEffective() ? defaults.Permissions.ToList() : new List<string>();
     }
 
     public async Task<bool> IsUserInTenantAsync(
