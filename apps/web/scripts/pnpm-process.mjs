@@ -1,12 +1,19 @@
+/**
+ * @file Windows pnpm process resolver. Package-manager shims need a shell, so
+ * this module resolves their JavaScript entry point and executes it with Node
+ * directly, keeping every caller argument a literal argument.
+ */
+
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-// Windows package-manager shims need a shell. Execute their JavaScript entry
-// point with Node instead, keeping every caller argument a literal argument.
 /**
- * @param {string[]} args
- * @param {{platform?: NodeJS.Platform, nodePath?: string, env?: NodeJS.ProcessEnv, fileExists?: (candidate: string) => boolean}} [options]
- * @returns {{command: string, args: string[]}}
+ * Resolve the command and argument vector that spawn a pnpm process without a
+ * shell on the current platform.
+ *
+ * @param {string[]} args - Literal pnpm arguments forwarded by the caller.
+ * @param {{platform?: NodeJS.Platform, nodePath?: string, env?: NodeJS.ProcessEnv, fileExists?: (candidate: string) => boolean}} [options] - Injectable environment for testing.
+ * @returns {{command: string, args: string[]}} The spawn target for pnpm.
  */
 export function resolvePnpmProcess(
   args,
