@@ -79,10 +79,48 @@ public sealed class ResourcePermissionAuthorizationFilterTests
         filterContext.Result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task OnAuthorizationAsync_MissingRequiredServices_DeniesInsteadOfSkipping()
+    {
+        // Deny-by-default / fail-safe defaults: a host that forgot to register the
+        // authorization dependencies must not silently bypass permission checks.
+        var httpContext = new DefaultHttpContext();
+        httpContext.RequestServices = new ServiceCollection().BuildServiceProvider();
+        httpContext.SetEndpoint(new Endpoint(
+            _ => Task.CompletedTask,
+            new EndpointMetadataCollection(),
+            "protected-action"));
+
+        var actionDescriptor = new ControllerActionDescriptor
+        {
+            ControllerTypeInfo = typeof(ProtectedController).GetTypeInfo(),
+            MethodInfo = typeof(ProtectedController).GetMethod(nameof(ProtectedController.Dashboard))!
+        };
+        var actionContext = new ActionContext(
+            httpContext,
+            new RouteData(),
+            actionDescriptor,
+            new ModelStateDictionary());
+        var filterContext = new AuthorizationFilterContext(actionContext, []);
+        var filter = new ResourcePermissionAuthorizationFilter(
+            NullLogger<ResourcePermissionAuthorizationFilter>.Instance);
+
+        await filter.OnAuthorizationAsync(filterContext);
+
+        filterContext.Result.Should().BeOfType<ForbidResult>();
+    }
+
     private sealed class AnonymousController
     {
         [AllowAnonymous]
         public void SignIn()
+        {
+        }
+    }
+
+    private sealed class ProtectedController
+    {
+        public void Dashboard()
         {
         }
     }
