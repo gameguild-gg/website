@@ -26,6 +26,13 @@ public class DelegatedAdminService(
         CancellationToken cancellationToken = default
     )
     {
+        // Unknown scope ids must not be reported as a successful revocation.
+        var existing = await _repository.GetByIdAsync(scopeId, cancellationToken).ConfigureAwait(false);
+        if (existing == null)
+        {
+            return false;
+        }
+
         await _repository.DeleteAsync(scopeId, cancellationToken).ConfigureAwait(false);
         return true;
     }
@@ -52,6 +59,9 @@ public class DelegatedAdminService(
         var managedUsers = new List<Guid>();
         foreach (var scope in scopes)
         {
+            // Only currently-valid scopes (active and inside their validity window)
+            // delegate administrative authority over managed users.
+            if (!scope.IsValid()) continue;
             if (string.IsNullOrEmpty(scope.AllowedUserIds)) continue;
             try
             {
@@ -78,6 +88,9 @@ public class DelegatedAdminService(
         var resourceTypes = new List<string>();
         foreach (var scope in scopes)
         {
+            // Only currently-valid scopes (active and inside their validity window)
+            // delegate administrative authority over managed resource types.
+            if (!scope.IsValid()) continue;
             if (string.IsNullOrEmpty(scope.AllowedResourceTypes)) continue;
             try
             {
