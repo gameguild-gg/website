@@ -48,6 +48,8 @@ public enum PermissionOperationType
     Restore = 9,
     /// <summary>Permissions were changed by an external-system synchronization import (issue #358).</summary>
     SyncImport = 10,
+    /// <summary>A permission grant expired and was deactivated automatically (issue #331).</summary>
+    Expire = 11,
 
     /// <summary>
     ///     A permission evaluation/decision (as opposed to a permission mutation).
@@ -55,7 +57,7 @@ public enum PermissionOperationType
     ///     sensitive permission-gated operations (e.g. monetization) leave a durable
     ///     decision trail (issue #346).
     /// </summary>
-    Check = 11
+    Check = 12
 }
 
 /// <summary>
