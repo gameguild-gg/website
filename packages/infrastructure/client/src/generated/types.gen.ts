@@ -3431,10 +3431,13 @@ export interface ComplianceAuditAuditRetentionComplianceViolation {
   source?: string | null;
 }
 
-/** Data model for Compliance Audit Audit Retention Configuration Response. */
+/** The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 export interface ComplianceAuditAuditRetentionConfigurationOutput {
   id?: string;
   configuration?: ComplianceAuditConfigureAuditRetentionInput;
+  inheritedFromTemplateId?: string | null;
   revision?: number;
   tenantId?: string;
   updatedAtUtc?: string;
@@ -3486,6 +3489,45 @@ export interface ComplianceAuditAuditRetentionObligation {
   minimumRetentionDays?: number;
   name: string;
   source: string;
+}
+
+/** Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+export interface ComplianceAuditAuditRetentionPolicySensitivityRule {
+  /** Optional maximum retention, in days, after which data at this classification may be purged. */
+  maximumRetentionDays: number | null;
+  /** Minimum retention, in days, enforced for data at this classification. */
+  minimumRetentionDays: number;
+  /** Why this classification receives this retention period. */
+  rationale: string | null;
+  sensitivity: ComplianceAuditSensitivityLevel;
+}
+
+/** Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+export interface ComplianceAuditAuditRetentionPolicyTemplate {
+  /** Stable template identifier referenced by GameGuild.Compliance.Audit.AuditRetentionPolicyTemplate.BaseTemplateId. */
+  id: string | null;
+  baselineScenario: ComplianceAuditAuditRetentionScenario;
+  /** Template this one inherits obligations and sensitivity floors from; null for the baseline. */
+  baseTemplateId: string | null;
+  /** What the template presets and why. */
+  description: string | null;
+  /** Human-readable template name. */
+  displayName: string | null;
+  /** Regulatory framework or policy family this template targets. */
+  framework: string | null;
+  /** True only for the platform baseline every other template inherits from. */
+  isBaseline: boolean;
+  /** Retention obligations with the administrator-provided regulatory source for each. */
+  obligations: Array<ComplianceAuditAuditRetentionObligation> | null;
+  /** Publication timestamp of this template revision (UTC). */
+  publishedAtUtc: string;
+  /** Sensitivity classification floors; retention grows with classification. */
+  sensitivityRules: Array<ComplianceAuditAuditRetentionPolicySensitivityRule> | null;
+  /** Storage tier price assumptions preset by the template. */
+  tierPrices: Array<ComplianceAuditAuditStorageTierPrice> | null;
 }
 
 /** Data model for Compliance Audit Audit Retention Recommendation. */
@@ -4079,6 +4121,9 @@ export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
   tenantId?: string;
   updatedByUserId?: string;
 }
+
+/** Defines sensitivity levels for data access auditing */
+export type ComplianceAuditSensitivityLevel = 'Public' | 'Internal' | 'Confidential' | 'Restricted' | 'HighlyRestricted';
 
 /** Data model for Compliance Audit Top Ip Activity. */
 export interface ComplianceAuditTopIpActivity {
@@ -19364,6 +19409,8 @@ export let ComplianceAuditAuditRetentionGrowthModelSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditRetentionHistoricalEvidenceSchema: z.ZodType<ComplianceAuditAuditRetentionHistoricalEvidence>;
 export let ComplianceAuditAuditRetentionMonthForecastSchema: z.ZodType<ComplianceAuditAuditRetentionMonthForecast>;
 export let ComplianceAuditAuditRetentionObligationSchema: z.ZodType<ComplianceAuditAuditRetentionObligation>;
+export let ComplianceAuditAuditRetentionPolicySensitivityRuleSchema: z.ZodType<ComplianceAuditAuditRetentionPolicySensitivityRule>;
+export let ComplianceAuditAuditRetentionPolicyTemplateSchema: z.ZodType<ComplianceAuditAuditRetentionPolicyTemplate>;
 export let ComplianceAuditAuditRetentionRecommendationSchema: z.ZodType<ComplianceAuditAuditRetentionRecommendation>;
 export let ComplianceAuditAuditRetentionRiskSchema: z.ZodType<ComplianceAuditAuditRetentionRisk>;
 export let ComplianceAuditAuditRetentionScenarioSchema: z.ZodType<ComplianceAuditAuditRetentionScenario>;
@@ -19423,6 +19470,7 @@ export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<Compliance
 export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
 export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
 export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
+export let ComplianceAuditSensitivityLevelSchema: z.ZodType<ComplianceAuditSensitivityLevel>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
 export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditEntry>;
@@ -24026,10 +24074,13 @@ ComplianceAuditAuditRetentionComplianceViolationSchema = z.object({
   source: z.string().nullable().optional(),
 });
 
-/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. Data model for Compliance Audit Audit Retention Configuration Response. */
+/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 ComplianceAuditAuditRetentionConfigurationOutputSchema = z.object({
   id: z.string().uuid().optional(),
   configuration: z.lazy(() => ComplianceAuditConfigureAuditRetentionInputSchema).optional(),
+  inheritedFromTemplateId: z.string().nullable().optional(),
   revision: z.number().int().optional(),
   tenantId: z.string().uuid().optional(),
   updatedAtUtc: z.string().datetime().optional(),
@@ -24093,6 +24144,32 @@ ComplianceAuditAuditRetentionObligationSchema = z.object({
   minimumRetentionDays: z.number().int().min(1).max(36500).optional(),
   name: z.string().min(1).max(100),
   source: z.string().min(1).max(1000),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicySensitivityRule. Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+ComplianceAuditAuditRetentionPolicySensitivityRuleSchema = z.object({
+  maximumRetentionDays: z.number().int().nullable(),
+  minimumRetentionDays: z.number().int(),
+  rationale: z.string().nullable(),
+  sensitivity: z.lazy(() => ComplianceAuditSensitivityLevelSchema),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicyTemplate. Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+ComplianceAuditAuditRetentionPolicyTemplateSchema = z.object({
+  id: z.string().nullable(),
+  baselineScenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema),
+  baseTemplateId: z.string().nullable(),
+  description: z.string().nullable(),
+  displayName: z.string().nullable(),
+  framework: z.string().nullable(),
+  isBaseline: z.boolean(),
+  obligations: z.array(z.lazy(() => ComplianceAuditAuditRetentionObligationSchema)).nullable(),
+  publishedAtUtc: z.string().datetime(),
+  sensitivityRules: z.array(z.lazy(() => ComplianceAuditAuditRetentionPolicySensitivityRuleSchema)).nullable(),
+  tierPrices: z.array(z.lazy(() => ComplianceAuditAuditStorageTierPriceSchema)).nullable(),
 });
 
 /** Zod schema for ComplianceAuditAuditRetentionRecommendation. Data model for Compliance Audit Audit Retention Recommendation. */
@@ -24741,6 +24818,9 @@ ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
   tenantId: z.string().uuid().optional(),
   updatedByUserId: z.string().uuid().optional(),
 });
+
+/** Zod schema for ComplianceAuditSensitivityLevel. Defines sensitivity levels for data access auditing */
+ComplianceAuditSensitivityLevelSchema = z.enum(['Public', 'Internal', 'Confidential', 'Restricted', 'HighlyRestricted']);
 
 /** Zod schema for ComplianceAuditTopIpActivity. Data model for Compliance Audit Top Ip Activity. */
 ComplianceAuditTopIpActivitySchema = z.object({

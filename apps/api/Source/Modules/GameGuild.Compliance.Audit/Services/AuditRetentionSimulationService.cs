@@ -10,7 +10,8 @@ public interface IAuditRetentionDataSource
 
 public interface IAuditRetentionSimulationService
 {
-    Task<AuditRetentionConfigurationResponse?> GetConfigurationAsync(CancellationToken cancellationToken);
+    Task<AuditRetentionConfigurationResponse?> GetConfigurationAsync(bool includeInherited, CancellationToken cancellationToken);
+    Task<IReadOnlyList<AuditRetentionPolicyTemplate>> GetPolicyTemplatesAsync(CancellationToken cancellationToken);
     Task<AuditRetentionConfigurationResponse> ConfigureAsync(ConfigureAuditRetentionRequest request, CancellationToken cancellationToken);
     Task<AuditRetentionSimulationResponse?> RunAsync(RunAuditRetentionSimulationRequest request, CancellationToken cancellationToken);
     Task<AuditRetentionSimulationResponse?> GetRunAsync(Guid id, CancellationToken cancellationToken);
@@ -27,11 +28,23 @@ public sealed class AuditRetentionSimulationService(
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task<AuditRetentionConfigurationResponse?> GetConfigurationAsync(CancellationToken cancellationToken)
+    public async Task<AuditRetentionConfigurationResponse?> GetConfigurationAsync(bool includeInherited, CancellationToken cancellationToken)
     {
         var (tenant, _) = await RequireAdministratorAsync().ConfigureAwait(false);
         var configuration = await repository.GetConfigurationAsync(tenant, cancellationToken).ConfigureAwait(false);
-        return configuration is null ? null : MapConfiguration(configuration);
+        if (configuration is not null) { return MapConfiguration(configuration); }
+        return includeInherited
+            ? new AuditRetentionConfigurationResponse(
+                Guid.Empty, tenant, 0, Guid.Empty, AuditRetentionPolicyTemplates.Baseline.PublishedAtUtc,
+                AuditRetentionPolicyTemplates.Baseline.ToConfigurationRequest(),
+                AuditRetentionPolicyTemplates.Baseline.Id)
+            : null;
+    }
+
+    public async Task<IReadOnlyList<AuditRetentionPolicyTemplate>> GetPolicyTemplatesAsync(CancellationToken cancellationToken)
+    {
+        await RequireAdministratorAsync().ConfigureAwait(false);
+        return AuditRetentionPolicyTemplates.All;
     }
 
     public async Task<AuditRetentionConfigurationResponse> ConfigureAsync(ConfigureAuditRetentionRequest request, CancellationToken cancellationToken)
