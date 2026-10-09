@@ -14335,6 +14335,16 @@ namespace GameGuild.API.Database.Migrations
                         .HasDefaultValue(0L)
                         .HasColumnName("authentication_count");
 
+                    b.Property<string>("CertificateSpkiSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("certificate_spki_sha256");
+
+                    b.Property<string>("CertificateThumbprint")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("certificate_thumbprint");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -14428,6 +14438,14 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CertificateSpkiSha256")
+                        .IsUnique()
+                        .HasDatabaseName("idx_service_accounts_certificate_spki_sha256");
+
+                    b.HasIndex("CertificateThumbprint")
+                        .IsUnique()
+                        .HasDatabaseName("idx_service_accounts_certificate_thumbprint");
 
                     b.HasIndex("ClientId")
                         .IsUnique()

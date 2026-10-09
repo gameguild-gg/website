@@ -191,6 +191,12 @@ public static class SecurityServiceCollectionExtensions
             });
         }
 
+        if (options.EnableClientCertificateAuthentication)
+        {
+            var certificateSettings = options.ClientCertificate!;
+            authenticationBuilder.AddClientCertificateAuthentication(certificateSettings);
+        }
+
         if (options.EnableCookieAuthentication)
         {
             var cookieSettings = options.Cookie!;

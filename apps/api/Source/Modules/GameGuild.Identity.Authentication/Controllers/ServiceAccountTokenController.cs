@@ -24,6 +24,8 @@ public class ServiceAccountTokenController(
     /// </summary>
     /// <remarks>
     ///     This endpoint implements the OAuth2 client_credentials flow for machine-to-machine authentication.
+    ///     Authentication uses the <c>client_secret</c> form field, or an X.509 client certificate
+    ///     negotiated over TLS in lieu of the secret when one is bound to the service account.
     ///     The returned access token can be used to authenticate API requests.
     /// </remarks>
     /// <param name="request">The client credentials request.</param>
@@ -47,12 +49,36 @@ public class ServiceAccountTokenController(
             });
         }
 
-        if (string.IsNullOrEmpty(request.ClientId) || string.IsNullOrEmpty(request.ClientSecret))
+        // RFC 6749 §2.3: a client uses exactly one authentication method per request.
+        // A TLS-negotiated client certificate may replace the client secret when bound
+        // to the service account; presenting both is rejected.
+        var clientCertificate = HttpContext.Connection.ClientCertificate;
+        var usesCertificate = clientCertificate is not null;
+
+        if (string.IsNullOrEmpty(request.ClientId))
         {
             return BadRequest(new OAuth2ErrorResponse
             {
                 Error = "invalid_request",
-                ErrorDescription = "client_id and client_secret are required"
+                ErrorDescription = "client_id is required"
+            });
+        }
+
+        if (usesCertificate && !string.IsNullOrEmpty(request.ClientSecret))
+        {
+            return BadRequest(new OAuth2ErrorResponse
+            {
+                Error = "invalid_request",
+                ErrorDescription = "Use either client_secret or a client certificate, not both"
+            });
+        }
+
+        if (!usesCertificate && string.IsNullOrEmpty(request.ClientSecret))
+        {
+            return BadRequest(new OAuth2ErrorResponse
+            {
+                Error = "invalid_request",
+                ErrorDescription = "client_secret or a client certificate is required"
             });
         }
 
@@ -60,7 +86,8 @@ public class ServiceAccountTokenController(
         var result = await sender.Send(new IssueServiceAccountTokenCommand(
             request.ClientId,
             request.ClientSecret,
-            ipAddress), cancellationToken).ConfigureAwait(false);
+            ipAddress,
+            clientCertificate), cancellationToken).ConfigureAwait(false);
 
         if (result.Account == null)
         {

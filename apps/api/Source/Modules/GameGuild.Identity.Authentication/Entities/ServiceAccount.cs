@@ -127,6 +127,20 @@ public class ServiceAccount
     public string? AllowedIpAddresses { get; set; }
 
     /// <summary>
+    ///     SHA-1 thumbprint (uppercase hex, no separators) of the X.509 client certificate
+    ///     bound to this service account. Null when the account authenticates by secret only.
+    /// </summary>
+    [MaxLength(40)]
+    public string? CertificateThumbprint { get; set; }
+
+    /// <summary>
+    ///     SHA-256 hex hash of the bound certificate's Subject Public Key Info (key pin).
+    ///     Null when only the full-certificate thumbprint is bound.
+    /// </summary>
+    [MaxLength(64)]
+    public string? CertificateSpkiSha256 { get; set; }
+
+    /// <summary>
     ///     Gets whether the service account can authenticate.
     /// </summary>
     public bool CanAuthenticate
@@ -205,6 +219,27 @@ public class ServiceAccount
         ClientSecretHash = newSecretHash;
         SecretRotatedAt = SystemClock.UtcNow;
         SecretRotationCount++;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
+    /// <summary>
+    ///     Binds an X.509 client certificate (thumbprint and optional SPKI key pin) to this
+    ///     service account, allowing certificate authentication in lieu of the client secret.
+    /// </summary>
+    public void BindCertificate(string thumbprint, string? spkiSha256 = null)
+    {
+        CertificateThumbprint = thumbprint;
+        CertificateSpkiSha256 = spkiSha256;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
+    /// <summary>
+    ///     Removes the bound X.509 client certificate; the account authenticates by secret only afterwards.
+    /// </summary>
+    public void UnbindCertificate()
+    {
+        CertificateThumbprint = null;
+        CertificateSpkiSha256 = null;
         UpdatedAt = SystemClock.UtcNow;
     }
 }

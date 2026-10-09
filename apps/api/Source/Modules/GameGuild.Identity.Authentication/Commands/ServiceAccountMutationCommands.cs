@@ -25,7 +25,8 @@ public sealed record UpdateServiceAccountScopesCommand(Guid ServiceAccountId, st
 public sealed record IssueServiceAccountTokenCommand(
     string ClientId,
     string ClientSecret,
-    string? IpAddress) : ICommand<ServiceAccountTokenCommandResult>;
+    string? IpAddress,
+    System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate = null) : ICommand<ServiceAccountTokenCommandResult>;
 public sealed record ServiceAccountTokenCommandResult(
     ServiceAccount? Account,
     string? AccessToken,
@@ -118,11 +119,19 @@ public sealed class ServiceAccountMutationCommandHandler(
         IssueServiceAccountTokenCommand command,
         CancellationToken cancellationToken)
     {
-        var account = await serviceAccountService.AuthenticateAsync(
-            command.ClientId,
-            command.ClientSecret,
-            command.IpAddress,
-            cancellationToken).ConfigureAwait(false);
+        // A negotiated client certificate authenticates in lieu of the client secret
+        // when bound to the service account; otherwise the secret path applies.
+        var account = command.ClientCertificate is null
+            ? await serviceAccountService.AuthenticateAsync(
+                command.ClientId,
+                command.ClientSecret,
+                command.IpAddress,
+                cancellationToken).ConfigureAwait(false)
+            : await serviceAccountService.AuthenticateWithCertificateAsync(
+                command.ClientId,
+                command.ClientCertificate,
+                command.IpAddress,
+                cancellationToken).ConfigureAwait(false);
         if (account is null)
             return new(null, null, null);
 

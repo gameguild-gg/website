@@ -35,6 +35,20 @@ public sealed class AuthenticationOptions : BaseOptions
     public BasicAuthenticationSettings? Basic { get; set; } = new();
 
     /// <summary>
+    ///     Registers an opt-in X.509 client-certificate (mTLS) authentication scheme
+    ///     alongside JWT bearer authentication. Client certificates must chain to the
+    ///     configured CA allowlist and be bound to a service account; validated
+    ///     certificates authenticate as <c>ActorKind.Service</c>.
+    /// </summary>
+    public bool EnableClientCertificateAuthentication { get; set; }
+
+    /// <summary>
+    ///     Settings for the optional client-certificate scheme. The CA allowlist is
+    ///     required when the scheme is enabled (fail closed when unconfigured).
+    /// </summary>
+    public ClientCertificateAuthenticationSettings? ClientCertificate { get; set; } = new();
+
+    /// <summary>
     ///     Registers an opt-in cookie authentication scheme alongside the default JWT bearer scheme.
     /// </summary>
     public bool EnableCookieAuthentication { get; set; }
@@ -111,6 +125,12 @@ public sealed class AuthenticationOptions : BaseOptions
             throw new InvalidOperationException("Basic authentication cannot be enabled when authentication is disabled.");
         }
 
+        if (EnableClientCertificateAuthentication && !EnableAuthentication)
+        {
+            throw new InvalidOperationException(
+                "Client certificate authentication cannot be enabled when authentication is disabled.");
+        }
+
         if (EnableCookieAuthentication)
         {
             (Cookie ?? throw new InvalidOperationException("Cookie authentication settings are required when the cookie scheme is enabled."))
@@ -121,6 +141,21 @@ public sealed class AuthenticationOptions : BaseOptions
         {
             (Basic ?? throw new InvalidOperationException("Basic authentication settings are required when the Basic scheme is enabled."))
                 .Validate();
+        }
+
+        if (EnableClientCertificateAuthentication)
+        {
+            var clientCertificate = ClientCertificate
+                ?? throw new InvalidOperationException(
+                    "Client certificate authentication settings are required when the client certificate scheme is enabled.");
+            clientCertificate.Validate();
+
+            if (clientCertificate.TrustedCaCertificates.Length == 0)
+            {
+                // Fail closed: without a CA allowlist any PKI-trusted certificate would authenticate.
+                throw new InvalidOperationException(
+                    "Client certificate authentication requires at least one trusted CA certificate; the CA allowlist is unconfigured.");
+            }
         }
 
         (PasswordPolicy ?? throw new InvalidOperationException("Authentication password policy settings are required."))
