@@ -17,6 +17,19 @@ public sealed class DatabaseAccessControlListService(
         string resourceId,
         CancellationToken cancellationToken = default)
     {
+        var evaluation = await EvaluateAccessTimeBoundAsync(subject, tenantId, resourceType, resourceId, cancellationToken)
+            .ConfigureAwait(false);
+        return evaluation.AccessLevel;
+    }
+
+    /// <inheritdoc />
+    public async Task<TimeBoundAccessEvaluation> EvaluateAccessTimeBoundAsync(
+        AclSubject subject,
+        Guid tenantId,
+        string resourceType,
+        string resourceId,
+        CancellationToken cancellationToken = default)
+    {
         // Get all principals for this subject (user, roles, groups, anonymous)
         var principals = subject.GetPrincipals().ToList();
 
@@ -25,13 +38,13 @@ public sealed class DatabaseAccessControlListService(
             tenantId, resourceType, resourceId, principals, cancellationToken).ConfigureAwait(false);
 
         if (entries.Count == 0)
-            return AccessLevel.None;
+            return new TimeBoundAccessEvaluation(AccessLevel.None, EarliestEffectiveExpirationUtc: null);
 
         // Filter to only effective (active and not expired) entries
         var effectiveEntries = entries.Where(e => e.IsEffective).ToList();
 
         if (effectiveEntries.Count == 0)
-            return AccessLevel.None;
+            return new TimeBoundAccessEvaluation(AccessLevel.None, EarliestEffectiveExpirationUtc: null);
 
         // DENY-FIRST ALGORITHM:
         // 1. Find the highest deny level - if any deny matches, that's the ceiling
@@ -41,29 +54,39 @@ public sealed class DatabaseAccessControlListService(
         var denyEntries = effectiveEntries.Where(e => e.IsDenied).ToList();
         var allowEntries = effectiveEntries.Where(e => !e.IsDenied).ToList();
 
+        // The earliest effective expiration bounds how long any cached copy of this decision may be
+        // served: time-based expiry advances no security version, so the cached wrapper must clamp
+        // its TTL instead. Expired entries were already filtered out above and cannot extend it.
+        DateTime? earliestExpiration = effectiveEntries
+            .Select(e => e.ExpiresAt)
+            .Where(t => t.HasValue)
+            .Min();
+
         // If there are any deny entries, the highest deny level blocks access at that level and above
         if (denyEntries.Count > 0)
         {
             var highestDeny = denyEntries.Max(e => e.AccessLevel);
-            
+
             // If denied at None level (explicit block), no access at all
             if (highestDeny == AccessLevel.None)
-                return AccessLevel.None;
+                return new TimeBoundAccessEvaluation(AccessLevel.None, earliestExpiration);
 
             // Find highest allowed level that's below the deny threshold
             if (allowEntries.Count == 0)
-                return AccessLevel.None;
+                return new TimeBoundAccessEvaluation(AccessLevel.None, earliestExpiration);
 
             var highestAllow = allowEntries.Max(e => e.AccessLevel);
-            
+
             // Return the lower of: highest allow vs one level below highest deny
-            return (AccessLevel)Math.Min((int)highestAllow, (int)highestDeny - 1);
+            var effective = (AccessLevel)Math.Min((int)highestAllow, (int)highestDeny - 1);
+            return new TimeBoundAccessEvaluation(effective, earliestExpiration);
         }
 
         // No denies - return highest allowed level
-        return allowEntries.Count > 0 
-            ? allowEntries.Max(e => e.AccessLevel) 
+        var level = allowEntries.Count > 0
+            ? allowEntries.Max(e => e.AccessLevel)
             : AccessLevel.None;
+        return new TimeBoundAccessEvaluation(level, earliestExpiration);
     }
 
     /// <inheritdoc />
