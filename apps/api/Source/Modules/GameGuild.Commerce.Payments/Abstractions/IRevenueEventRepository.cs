@@ -22,4 +22,26 @@ public interface IRevenueEventRepository
 
     /// <summary>Save changes to database</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Get revenue events in an inclusive period, optionally tenant-scoped.</summary>
+    Task<List<RevenueEvent>> GetInPeriodAsync(
+        DateTime startUtc,
+        DateTime endUtc,
+        Guid? tenantId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Group revenue event totals in an inclusive period by the requested dimension.</summary>
+    Task<List<RevenueEventGroupTotal>> GetGroupedTotalsAsync(
+        DateTime startUtc,
+        DateTime endUtc,
+        Guid? tenantId,
+        RevenueEventTotalGrouping grouping,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Get per-day net revenue totals in an inclusive period.</summary>
+    Task<List<RevenueDailyTotal>> GetDailyTotalsAsync(
+        DateTime startUtc,
+        DateTime endUtc,
+        Guid? tenantId,
+        CancellationToken cancellationToken = default);
 }
