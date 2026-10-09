@@ -63,6 +63,7 @@ public sealed class SecurityEventController(
     [ProducesResponseType(typeof(SecurityAlertResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<SecurityAlertResponse>> AcknowledgeAlert(
         Guid alertId,
         [FromBody] AcknowledgeSecurityAlertRequest? request,
@@ -76,6 +77,12 @@ public sealed class SecurityEventController(
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+        catch (SecurityAlertTransitionException exception)
+        {
+            return Conflict(new ValidationProblemDetails(exception.Errors.ToDictionary(pair => pair.Key, pair => pair.Value))
+                { Status = StatusCodes.Status409Conflict });
+        }
         }
     }
 
