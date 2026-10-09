@@ -90,6 +90,8 @@ public sealed class AuthFacadeApiRegistrationTests(AuthFacadeApiFactory factory)
 
 public sealed class AuthFacadeApiFactory : WebApplicationFactory<Program>
 {
+    public AuthFacadeApiFactory() => TestDataProtectionEnvironment.EnsureConfigured();
+
     public IReadOnlyList<ServiceDescriptor> Registrations { get; private set; } = [];
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
