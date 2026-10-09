@@ -797,7 +797,10 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
 
     private static void SeedDefaultTenant(ApplicationDbContext dbContext)
     {
-        if (dbContext.Set<Tenant>().Any(tenant => tenant.IsDefault)) return;
+        if (dbContext.Set<Tenant>().Any(tenant => tenant.IsDefault))
+        {
+            return;
+        }
 
         dbContext.Set<Tenant>().Add(new Tenant
         {
