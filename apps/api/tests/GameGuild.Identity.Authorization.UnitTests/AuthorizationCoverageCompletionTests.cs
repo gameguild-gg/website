@@ -2423,7 +2423,7 @@ public sealed class AuthorizationCoverageCompletionTests
                 1L,
                 0L)
             .Should().Contain("anon:nr:ng");
-        InvokePrivate<object>(cachedAcl, "CacheAccessLevel", $"acl:{cacheTenantId}:{Guid.NewGuid()}:Document:doc-1:tv1:uv1:gv1", cacheTenantId.ToString(), AccessLevel.Read, false);
+        InvokePrivate<object>(cachedAcl, "CacheAccessLevel", $"acl:{cacheTenantId}:{Guid.NewGuid()}:8:Document:5:doc-1:tv1:uv1:gv1", cacheTenantId.ToString(), new CachedAclDecision(AccessLevel.Read, EffectiveUntilUtc: null), false);
         cachedAcl.InvalidateTenant(cacheTenantId.ToString());
     }
 
