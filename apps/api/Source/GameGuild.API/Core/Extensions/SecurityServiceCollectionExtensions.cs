@@ -294,6 +294,14 @@ public static class SecurityServiceCollectionExtensions
         // ===== Presentation Layer (handlers, tenant context, policy provider) =====
         services.AddAuthorizationPresentation();
 
+        // ===== API-key scope enforcement =====
+        // Dynamic "apikey-scope:{scope}" policies constrain API-key-authenticated requests to the
+        // scopes declared by their key (fail-closed on missing scope claims); all other policy
+        // names delegate unchanged to the database-backed provider registered above.
+        services.AddSingleton<IAuthorizationPolicyProvider>(sp => new ApiKeyScopePolicyProvider(
+            sp.GetRequiredService<DbAuthorizationPolicyProvider>()));
+        services.AddScoped<IAuthorizationHandler, ApiKeyScopeHandler>();
+
         // ===== Rule-Based Authorization (DB-driven, tenant-configurable policies) =====
         services.AddRuleBasedAuthorization();
 
