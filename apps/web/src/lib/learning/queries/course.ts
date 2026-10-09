@@ -2,7 +2,6 @@ import { auth, getToken } from "@/auth";
 import { readContentGradingDefinition } from "@game-guild/grading";
 import {
   createServerClient,
-  hasRole,
   GeneratedApi,
   type ContentStatus,
   type ContentVisibility,
@@ -49,6 +48,19 @@ export type {
   LearningCoursesProgramContent,
   LearningCoursesProgramContentType,
 };
+
+export interface CourseAccessCapabilities {
+  courseId: string;
+  courseExists: boolean;
+  isTenantMember: boolean;
+  isOwner: boolean;
+  hasActiveEnrollment: boolean;
+  canLearn: boolean;
+  canEdit: boolean;
+  canPublish: boolean;
+  canReviewAsStaff: boolean;
+  canAccessWorkspace: boolean;
+}
 
 function getApiClient(tenantId?: string) {
   const apiUrl =
@@ -260,71 +272,68 @@ export const resolveCourseId = cache(
   },
 );
 
+function deniedCourseAccess(courseId: string): CourseAccessCapabilities {
+  return {
+    courseId,
+    courseExists: false,
+    isTenantMember: false,
+    isOwner: false,
+    hasActiveEnrollment: false,
+    canLearn: false,
+    canEdit: false,
+    canPublish: false,
+    canReviewAsStaff: false,
+    canAccessWorkspace: false,
+  };
+}
+
 /**
- * True when the current viewer manages the course (course creator).
- * GUIDs are compared case-insensitively: the API and the auth session
- * may emit the same id with different casing.
+ * Canonical server-side projection of the current actor's contextual course
+ * access. The API remains authoritative; callers must fail closed when this
+ * projection cannot be loaded.
+ */
+export const getCourseAccessCapabilities = cache(
+  async (courseIdentifier: string): Promise<CourseAccessCapabilities> => {
+    const courseId = await resolveCourseId(courseIdentifier);
+    const denied = deniedCourseAccess(courseId);
+
+    try {
+      const session = await auth();
+      if (!session?.user?.id || !session.tenantId || !isGuid(courseId)) {
+        return denied;
+      }
+
+      const result = await getApiClient(session.tenantId).request<CourseAccessCapabilities>({
+        method: "GET",
+        path: `/v1/courses/${courseId}/access/capabilities`,
+        requiresAuth: true,
+        cache: "no-store",
+      });
+
+      return result.ok ? result.data : denied;
+    } catch {
+      return denied;
+    }
+  },
+);
+
+/**
+ * Compatibility alias for authoring consumers. Course ownership and explicit
+ * edit grants are resolved by the canonical API projection.
  */
 export async function canManageCourse(
   courseIdentifier: string,
 ): Promise<boolean> {
-  try {
-    const [course, session] = await Promise.all([
-      getCourse(courseIdentifier),
-      auth(),
-    ]);
-
-    return Boolean(
-      course?.creatorId &&
-        session?.user?.id &&
-        course.creatorId.toLowerCase() === session.user.id.toLowerCase(),
-    );
-  } catch {
-    return false;
-  }
+  return (await getCourseAccessCapabilities(courseIdentifier)).canEdit;
 }
 
 /**
- * True when the current viewer may edit the course: the instructor/course
- * owner (creator), a SystemAdmin, or a viewer holding the
- * `Program.{courseId}.Edit` permission in the 3-layer DAC (platform role →
- * tenant grants → ProgramPermissions).
- *
- * Mirrors the write-side gates exactly: AuthorizationBehavior and
- * ProgramContentController both short-circuit for SystemAdmin before the
- * DAC resolution, and treat the creator as manager; the has-permission
- * endpoint only resolves the DAC layers, so the role and creator checks
- * must run alongside it.
+ * True when the API grants the current viewer contextual edit access.
  */
 export async function canEditCourse(
   courseIdentifier: string,
 ): Promise<boolean> {
-  try {
-    const [session, courseId] = await Promise.all([
-      auth(),
-      resolveCourseId(courseIdentifier),
-    ]);
-
-    if (!session?.user?.id) return false;
-
-    if (hasRole(session, "SystemAdmin")) return true;
-
-    if (session.tenantId) {
-      const accessControl = new GeneratedApi.AccessControlResourcePermissionsModule(
-        getApiClient(session.tenantId),
-      );
-      const result = await accessControl.getAuthorizationResourcesHasPermission(
-        "Program",
-        courseId,
-        { tenantId: session.tenantId, permission: "Edit" },
-      );
-      if (result.ok && result.data.hasPermission) return true;
-    }
-
-    return canManageCourse(courseIdentifier);
-  } catch {
-    return false;
-  }
+  return (await getCourseAccessCapabilities(courseIdentifier)).canEdit;
 }
 
 /**

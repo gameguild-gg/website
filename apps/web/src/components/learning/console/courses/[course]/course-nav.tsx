@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useLearningBase } from "@/lib/learning/use-learning-base";
+import type { CourseAccessCapabilities } from "@/lib/learning/queries/course";
 
 interface CourseNavProps {
   courseTitle: string;
@@ -48,6 +49,7 @@ interface CourseNavProps {
   courseRouteParam: string;
   locale: string;
   features: CourseFeatures;
+  access: CourseAccessCapabilities;
   children: ReactNode;
 }
 
@@ -75,7 +77,10 @@ function getStatusBadge(status: string) {
   }
 }
 
-function buildNavItems(features: CourseFeatures): NavItem[] {
+function buildNavItems(
+  features: CourseFeatures,
+  access: CourseAccessCapabilities,
+): NavItem[] {
   return [
     {
       title: "Overview",
@@ -83,35 +88,61 @@ function buildNavItems(features: CourseFeatures): NavItem[] {
       segment: "overview",
       enabled: true,
     },
-    { title: "Listing", icon: Info, segment: "listing", enabled: true },
-    { title: "Content", icon: BookOpen, segment: "content", enabled: true },
+    {
+      title: "Listing",
+      icon: Info,
+      segment: "listing",
+      enabled: access.canEdit || access.canPublish,
+    },
+    {
+      title: "Content",
+      icon: BookOpen,
+      segment: "content",
+      enabled: access.canEdit,
+    },
     {
       title: "Classes",
       icon: CalendarDays,
       segment: "classes",
-      enabled: features.hasClasses,
+      enabled: access.canEdit && features.hasClasses,
     },
     {
       title: "Assessments",
       icon: GraduationCap,
       segment: "assessments",
-      enabled: features.hasAssessments,
+      enabled:
+        features.hasAssessments && (access.canEdit || access.canReviewAsStaff),
     },
     {
       title: "Certificates",
       icon: Award,
       segment: "certificates",
-      enabled: features.hasCertificate,
+      enabled: access.canEdit && features.hasCertificate,
     },
-    { title: "Groups", icon: UsersRound, segment: "groups", enabled: true },
-    { title: "Students", icon: Users, segment: "students", enabled: true },
+    {
+      title: "Groups",
+      icon: UsersRound,
+      segment: "groups",
+      enabled: access.canEdit,
+    },
+    {
+      title: "Students",
+      icon: Users,
+      segment: "students",
+      enabled: access.canReviewAsStaff,
+    },
     {
       title: "Support",
       icon: MessageSquare,
       segment: "support",
-      enabled: true,
+      enabled: access.canEdit,
     },
-    { title: "Settings", icon: Settings, segment: "settings", enabled: true },
+    {
+      title: "Settings",
+      icon: Settings,
+      segment: "settings",
+      enabled: access.canEdit,
+    },
   ].filter((item) => item.enabled);
 }
 
@@ -123,6 +154,7 @@ export function CourseNav({
   courseRouteParam,
   locale,
   features,
+  access,
   children,
 }: CourseNavProps) {
   const learningBase = useLearningBase();
@@ -138,7 +170,7 @@ export function CourseNav({
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const navItems = buildNavItems(features);
+  const navItems = buildNavItems(features, access);
 
   useEffect(() => {
     setStatus(courseStatus);
@@ -224,26 +256,30 @@ export function CourseNav({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <Link
-            href={previewHref}
-            locale={locale}
-            prefetch={false}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            <Eye className="mr-2 size-4" />
-            Preview
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            disabled={!publicCourseHref}
-            onClick={copyPublicCourseUrl}
-          >
-            <Share2 className="mr-2 size-4" />
-            {shareLabel}
-          </Button>
-          {status === "published" ? (
+          {access.canEdit && (
+            <Link
+              href={previewHref}
+              locale={locale}
+              prefetch={false}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              <Eye className="mr-2 size-4" />
+              Preview
+            </Link>
+          )}
+          {access.canPublish && (
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              disabled={!publicCourseHref}
+              onClick={copyPublicCourseUrl}
+            >
+              <Share2 className="mr-2 size-4" />
+              {shareLabel}
+            </Button>
+          )}
+          {access.canPublish && (status === "published" ? (
             <Button
               variant="outline"
               size="sm"
@@ -288,16 +324,18 @@ export function CourseNav({
               )}
               Publish
             </Button>
+          ))}
+          {access.canEdit && (
+            <Link
+              href={buildDashboardCoursePath(courseRouteParam, "settings")}
+              locale={locale}
+              prefetch={false}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              <Settings className="mr-2 size-4" />
+              Settings
+            </Link>
           )}
-          <Link
-            href={buildDashboardCoursePath(courseRouteParam, "settings")}
-            locale={locale}
-            prefetch={false}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-          >
-            <Settings className="mr-2 size-4" />
-            Settings
-          </Link>
         </div>
       </div>
 

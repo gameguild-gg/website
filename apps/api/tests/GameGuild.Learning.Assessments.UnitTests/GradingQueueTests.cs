@@ -200,11 +200,12 @@ public class GradingQueueTests
         TestGradingQueueDbContext db, Guid instructorId, Guid? actorId = null)
     {
         var userId = actorId ?? instructorId;
+        var tenantId = Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = userId.ToString(),
-            TenantId = Guid.NewGuid(),
+            TenantId = tenantId,
             IsAuthenticated = true,
             Roles = new HashSet<string>(),
             Permissions = new HashSet<string>()
@@ -213,20 +214,39 @@ public class GradingQueueTests
             .Returns(async (Guid id) => await db.Set<Assessment>()
                 .FirstOrDefaultAsync(a => a.Id == id && a.DeletedAt == null));
         _programs.Setup(p => p.GetProgramByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync((Guid id) => new Program { Id = id, CreatorId = instructorId, TenantId = null });
+            .ReturnsAsync((Guid id) => new Program { Id = id, CreatorId = instructorId, TenantId = tenantId });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                userId,
+                tenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
+        var courseAccess = new CourseAccessEvaluator(
+            programReads.Object,
+            Mock.Of<ICourseEnrollmentAccessReader>(),
+            _actor.Object,
+            _permissions.Object);
         return new AssessmentsController(
             _assessments.Object,
             _actor.Object,
             _programs.Object,
             _enrollments.Object,
-            _permissions.Object,
+            courseAccess,
             new GradingQueueService(
                 db,
                  new RubricService(db, NullLogger<RubricService>.Instance),
                  NullLogger<GradingQueueService>.Instance),
              Mock.Of<IAssessmentAuthoringService>(),
              _log.Object,
-             new AssessmentEndpointTestSender(assessmentService: _assessments.Object));
+             new AssessmentEndpointTestSender(assessmentService: _assessments.Object))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     // ===== FIXTURE =====

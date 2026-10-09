@@ -106,7 +106,7 @@ public class ProgramContentController(
 
   /// <summary> Create new program content (resource-level Create permission required on parent Program) </summary>
   [HttpPost]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Create, "programId")]
+  [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult<ProgramContentDto>> CreateContent(Guid programId, [FromBody] CreateProgramContentDto createDto)
   {
     if (createDto.ProgramId != programId) return BadRequest("Program ID in URL must match Program ID in request body");
@@ -128,7 +128,7 @@ public class ProgramContentController(
 
   /// <summary> Update program content (resource-level Edit permission required on parent Program) </summary>
   [HttpPut("{id}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult<ProgramContentDto>> UpdateContent(Guid programId, Guid id, [FromBody] UpdateProgramContentDto updateDto)
   {
     if (updateDto.Id != id) return BadRequest("Content ID in URL must match Content ID in request body");
@@ -156,7 +156,7 @@ public class ProgramContentController(
 
   /// <summary> Delete program content (resource-level Delete permission required on parent Program) </summary>
   [HttpDelete("{id}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Delete, "programId")]
+  [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult> DeleteContent(Guid programId, Guid id)
   {
     var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
@@ -191,7 +191,7 @@ public class ProgramContentController(
 
   /// <summary> Reorder content within a program (resource-level Edit permission required on parent Program) </summary>
   [HttpPost("reorder")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult> ReorderContent(Guid programId, [FromBody] ReorderContentDto reorderDto)
   {
     // Convert the simple list to (Id, SortOrder) tuples
@@ -205,7 +205,7 @@ public class ProgramContentController(
 
   /// <summary> Move content to a new parent/position (resource-level Edit permission required on parent Program) </summary>
   [HttpPost("{id}/move")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult> MoveContent(Guid programId, Guid id, [FromBody] MoveContentDto moveDto)
   {
     if (moveDto.ContentId != id) return BadRequest("Content ID in URL must match Content ID in request body");

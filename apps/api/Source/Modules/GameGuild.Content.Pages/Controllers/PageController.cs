@@ -21,6 +21,15 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     /// </summary>
     private static readonly string[] ContentManagePermissions = ["content:read", "content:write", "content:admin"];
 
+    /// <summary>
+    ///     Editorial permission keys (from GameGuild.Identity.Authorization's ContentPermission
+    ///     catalog) required to edit existing pages and sections. The granular <c>content:edit</c>
+    ///     key enables least-privilege editorial grants; <c>content:write</c>/<c>content:admin</c>
+    ///     keep broader content managers working. System admins and <c>admin:*</c> holders bypass
+    ///     via <see cref="ActorContext"/>.
+    /// </summary>
+    private static readonly string[] EditorialEditPermissions = ["content:edit", "content:write", "content:admin"];
+
     /// <summary>List pages with optional filtering.</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PageDto>>> GetPages(
@@ -74,6 +83,9 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     private bool CanViewUnpublished =>
         actorContextAccessor.ActorContext.HasAnyPermission(ContentManagePermissions);
 
+    private bool CanEditContent =>
+        actorContextAccessor.ActorContext.HasAnyPermission(EditorialEditPermissions);
+
     /// <summary>
     ///     Public sitemap feed of published pages — slug + last-modified — for
     ///     SEO crawlers and the marketing site's <c>sitemap.xml</c>.
@@ -107,8 +119,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
 
     /// <summary>Update an existing page.</summary>
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(PageDto), 200)]
+    [ProducesResponseType(403)]
     public async Task<ActionResult<PageDto>> UpdatePage(Guid id, [FromBody] UpdatePageDto dto)
     {
+        if (!CanEditContent) return Forbid();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var page = await sender.Send(new UpdatePageCommand(id, dto)).ConfigureAwait(false);
         if (page is null) return NotFound();
@@ -175,8 +190,11 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
 
     /// <summary>Update a section.</summary>
     [HttpPut("{pageId:guid}/sections/{sectionId:guid}")]
+    [ProducesResponseType(typeof(PageSectionDto), 200)]
+    [ProducesResponseType(403)]
     public async Task<ActionResult<PageSectionDto>> UpdateSection(Guid pageId, Guid sectionId, [FromBody] UpdatePageSectionDto dto)
     {
+        if (!CanEditContent) return Forbid();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var section = await sender.Send(new UpdatePageSectionCommand(pageId, sectionId, dto)).ConfigureAwait(false);
         if (section is null) return NotFound();

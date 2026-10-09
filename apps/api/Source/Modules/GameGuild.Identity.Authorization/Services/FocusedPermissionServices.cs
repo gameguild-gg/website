@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Identity.Authorization;
 
@@ -16,13 +18,20 @@ namespace GameGuild.Identity.Authorization;
 ///         <b>Security - Authorization Guards:</b> Global default operations (tenantId=null) require
 ///         system-level ManageGlobalDefaults permission. This is defense-in-depth beyond command handler checks.
 ///     </para>
+///     <para>
+///         <b>Temporal grants (issue #331):</b> When <c>Authorization:PermissionExpiration:ApplyDefaultsOnGrant</c>
+///         is enabled and the caller supplies no explicit expiration, grants issued without an expiry receive the
+///         configured default period (per-permission-type override or global default).
+///     </para>
 /// </remarks>
 public sealed class PermissionGrantService(
     ITenantPermissionRepository repository,
     IPermissionAuditService auditService,
     ITenantSecurityVersionStore securityVersionStore,
     IActorContextAccessor actorContextAccessor,
-    ILogger<PermissionGrantService> logger
+    ILogger<PermissionGrantService> logger,
+    IEnumerable<IPermissionChangeNotifier>? changeNotifiers = null,
+    IOptions<PermissionExpirationOptions>? expirationOptions = null
 ) : IPermissionGrantService
 {
     private ActorContext Actor => actorContextAccessor.ActorContext;
@@ -44,6 +53,17 @@ public sealed class PermissionGrantService(
             string.Join(", ", permissions),
             userId,
             tenantId);
+
+        // Temporal grants (issue #331): apply the configured default expiration when the
+        // caller did not supply one. Opt-in so existing permanent grants keep their semantics.
+        if (expiresAt is null && expirationOptions?.Value is { ApplyDefaultsOnGrant: true } options)
+        {
+            var defaultPeriod = options.ResolveDefaultExpiration(permissions);
+            if (defaultPeriod is not null)
+            {
+                expiresAt = SystemClock.UtcNow + defaultPeriod.Value;
+            }
+        }
 
         var performedBy = Actor.SubjectIdAsGuid ?? Guid.Empty;
         var existing = await repository.GetByUserAndTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
@@ -94,6 +114,14 @@ public sealed class PermissionGrantService(
             reason: reason,
             cancellationToken: cancellationToken);
 
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Granted,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
+
         return result;
     }
 
@@ -136,6 +164,14 @@ public sealed class PermissionGrantService(
             newValue: existing.Permissions.Length == 0 ? null : string.Join(",", existing.Permissions),
             reason: "Permissions revoked",
             cancellationToken: cancellationToken);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Revoked,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
 
         return true;
     }
@@ -186,6 +222,14 @@ public sealed class PermissionGrantService(
             newValue: string.Join(",", permissions),
             reason: "Global default permissions updated",
             cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Updated,
+            null,
+            null,
+            "GlobalDefault",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
     }
 
     public async Task SetTenantDefaultPermissionsAsync(
@@ -234,6 +278,14 @@ public sealed class PermissionGrantService(
             newValue: string.Join(",", permissions),
             reason: "Tenant default permissions updated",
             cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Updated,
+            null,
+            tenantId,
+            "TenantDefault",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<TenantPermission> DenyTenantPermissionAsync(
@@ -273,6 +325,14 @@ public sealed class PermissionGrantService(
                 reason: reason,
                 cancellationToken: cancellationToken);
 
+            await NotifyChangeAsync(
+                PermissionChangeEventType.Denied,
+                userId,
+                tenantId,
+                "Tenant",
+                permissions,
+                cancellationToken).ConfigureAwait(false);
+
             return existing;
         }
 
@@ -304,6 +364,14 @@ public sealed class PermissionGrantService(
             newValue: string.Join(",", result.DenyPermissions),
             reason: reason,
             cancellationToken: cancellationToken);
+
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Denied,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
 
         return result;
     }
@@ -343,7 +411,62 @@ public sealed class PermissionGrantService(
             reason: "Deny permissions removed",
             cancellationToken: cancellationToken);
 
+        await NotifyChangeAsync(
+            PermissionChangeEventType.Revoked,
+            userId,
+            tenantId,
+            "Tenant",
+            permissions,
+            cancellationToken).ConfigureAwait(false);
+
         return true;
+    }
+
+    /// <summary>
+    ///     Fans a permission change out to every registered <see cref="IPermissionChangeNotifier"/>
+    ///     (issue #358 webhooks). Notification failures never affect the mutation: they are
+    ///    logged by the notifiers themselves.
+    /// </summary>
+    private async Task NotifyChangeAsync(
+        PermissionChangeEventType eventType,
+        Guid? userId,
+        Guid? tenantId,
+        string? permissionType,
+        string[] permissions,
+        CancellationToken cancellationToken)
+    {
+        if (changeNotifiers is null)
+        {
+            return;
+        }
+
+        var change = new PermissionChangeEvent(
+            eventType,
+            tenantId,
+            userId,
+            permissionType,
+            permissions,
+            Actor.SubjectIdAsGuid ?? Guid.Empty);
+
+        foreach (var notifier in changeNotifiers)
+        {
+            try
+            {
+                await notifier.NotifyAsync(change, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Permission change notifier {NotifierType} failed for {EventType}; the permission change is unaffected.",
+                    notifier.GetType().Name,
+                    change.EventTypeName);
+            }
+        }
     }
 
     private async Task InvalidateTenantCacheAsync(Guid? tenantId, CancellationToken cancellationToken)
@@ -453,7 +576,10 @@ public sealed class PermissionQueryService(
     {
         var existing = await repository.GetByUserAndTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
 
-        if (existing == null) return new List<string>();
+        // SECURITY (deny-by-default, #327): inactive or expired grants contribute nothing;
+        // the row is treated as absent. Mirrors EffectivePermissionResolverService's
+        // layer rule so list results can never widen an authorization decision.
+        if (!IsGrantEffective(existing)) return new List<string>();
 
         return existing.Permissions.ToList();
     }
@@ -497,7 +623,9 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, null, cancellationToken).ConfigureAwait(false);
-        return defaults?.Permissions.ToList() ?? new List<string>();
+
+        // SECURITY (deny-by-default, #327): inactive or expired defaults contribute nothing.
+        return IsGrantEffective(defaults) ? defaults.Permissions.ToList() : new List<string>();
     }
 
     public async Task<List<string>> GetTenantDefaultPermissionsAsync(
@@ -505,7 +633,9 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, tenantId, cancellationToken).ConfigureAwait(false);
-        return defaults?.Permissions.ToList() ?? new List<string>();
+
+        // SECURITY (deny-by-default, #327): inactive or expired defaults contribute nothing.
+        return IsGrantEffective(defaults) ? defaults.Permissions.ToList() : new List<string>();
     }
 
     public async Task<bool> IsUserInTenantAsync(
@@ -517,6 +647,17 @@ public sealed class PermissionQueryService(
         // Having permissions in a tenant is NOT the same as being a member
         return await membershipChecker.IsUserMemberOfTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///     SECURITY (deny-by-default, #327): a grant contributes to an authorization
+    ///     decision or a permission listing only when it is active, unexpired and not
+    ///     soft-deleted. Repository lookups already exclude soft-deleted rows; this
+    ///     predicate excludes inactive and expired ones so every query surface applies
+    ///     the same rule as <see cref="EffectivePermissionResolverService"/>'s layer
+    ///     evaluation.
+    /// </summary>
+    private static bool IsGrantEffective([NotNullWhen(true)] TenantPermission? grant) =>
+        grant is not null && grant.IsActive && !grant.IsExpired();
 }
 
 /// <summary>
