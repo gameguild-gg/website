@@ -456,7 +456,7 @@ public sealed class AssessmentGradingPostgreSqlHttpTests(ApiPostgreSqlFixture fi
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             UserId = user.Id,
-            Role = user.Id == instructorId ? "Instructor" : "Member",
+            Role = "Member",
             IsActive = true,
         });
         var course = new CourseProgram

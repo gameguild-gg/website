@@ -49,6 +49,7 @@
     "generate:watch": "tsx scripts/generate.ts --watch",
     "generate:diff": "tsx scripts/diff.ts",
     "build": "tsup",
+    "build:fast": "tsup --out-dir dist-fast",
     "build:watch": "tsup --watch",
     "dev": "tsup --watch",
     "test": "vitest run",

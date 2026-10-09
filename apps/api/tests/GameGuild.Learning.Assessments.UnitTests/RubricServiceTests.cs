@@ -319,28 +319,46 @@ public class RubricServiceTests
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
+    private readonly Mock<ICourseEnrollmentAccessReader> _courseEnrollments = new();
     private readonly Mock<ILogger<RubricsController>> _log = new();
 
-    private RubricsController CreateController(Guid? userId = null)
+    private RubricsController CreateController(Guid? userId = null, Guid? tenantId = null)
     {
         var uid = userId ?? Guid.NewGuid();
+        var effectiveTenantId = tenantId ?? Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = uid.ToString(),
-            TenantId = Guid.NewGuid(),
+            TenantId = effectiveTenantId,
             IsAuthenticated = true,
             Roles = new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                uid,
+                effectiveTenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
         return new RubricsController(
             _rubrics.Object,
             _assessments.Object,
-            _actor.Object,
-            _programs.Object,
-            _permissions.Object,
+            new CourseAccessEvaluator(
+                programReads.Object,
+                _courseEnrollments.Object,
+                _actor.Object,
+                _permissions.Object),
             _log.Object,
-            new AssessmentEndpointTestSender(rubricService: _rubrics.Object));
+            new AssessmentEndpointTestSender(rubricService: _rubrics.Object))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     [Fact]
@@ -362,16 +380,17 @@ public class RubricServiceTests
     public async Task Put_WhenRubricLocked_ReturnsConflict()
     {
         var actorId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         var assessmentId = Guid.NewGuid();
         var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, Score(100));
         _assessments.Setup(s => s.GetAssessmentByIdAsync(assessmentId)).ReturnsAsync(assessment);
         _programs.Setup(s => s.GetProgramByIdAsync(courseId))
-            .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = actorId });
         _rubrics.Setup(s => s.SaveAsync(assessmentId, It.IsAny<SaveRubricRequest>()))
             .ReturnsAsync(Result.Failure<RubricDto>(Error.Conflict("Rubric.Locked", "Rubric locked after grading started")));
 
-        var result = await CreateController(actorId).PutRubric(assessmentId, StandardRubric());
+        var result = await CreateController(actorId, tenantId).PutRubric(assessmentId, StandardRubric());
 
         result.Result.Should().BeOfType<ConflictObjectResult>();
     }
@@ -380,16 +399,17 @@ public class RubricServiceTests
     public async Task ControllerGetRubric_WhenNoRubric_ReturnsNotFound()
     {
         var actorId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         var assessmentId = Guid.NewGuid();
         _assessments.Setup(s => s.GetAssessmentByIdAsync(assessmentId))
             .ReturnsAsync(Assessment.Create(courseId, "Essay", AssessmentType.Assignment, Score(100)));
         _programs.Setup(s => s.GetProgramByIdAsync(courseId))
-            .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = actorId });
         _rubrics.Setup(s => s.GetAsync(assessmentId))
             .ReturnsAsync(Result.Failure<RubricDto>(Error.NotFound("Rubric", "No rubric is assigned to this assessment.")));
 
-        var result = await CreateController(actorId).GetRubric(assessmentId);
+        var result = await CreateController(actorId, tenantId).GetRubric(assessmentId);
 
         result.Result.Should().BeOfType<NotFoundObjectResult>();
     }

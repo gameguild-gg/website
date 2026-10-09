@@ -276,6 +276,10 @@ public static class AuthorizationModuleExtensions
         
         // Policy evaluation debugging service
         services.AddScoped<IPolicyEvaluationLogger, PolicyEvaluationLogger>();
+
+        // Permission evaluation logging (user, tenant, resource, outcome) for allow and
+        // deny decisions; durable sinks are contributed by the host.
+        services.TryAddScoped<IPermissionEvaluationLogService, PermissionEvaluationLogService>();
         
         // Repositories
         services.AddScoped<ITenantPermissionRepository, TenantPermissionRepository>();

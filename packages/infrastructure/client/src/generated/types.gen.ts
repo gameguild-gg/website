@@ -12278,6 +12278,20 @@ export interface LearningCoursesContentSummaryDto {
   title?: string | null;
 }
 
+/** Data model for Learning Courses Course Access Capabilities. */
+export interface LearningCoursesCourseAccessCapabilities {
+  canAccessWorkspace?: boolean;
+  canEdit?: boolean;
+  canLearn?: boolean;
+  canPublish?: boolean;
+  canReviewAsStaff?: boolean;
+  courseExists?: boolean;
+  courseId?: string;
+  hasActiveEnrollment?: boolean;
+  isOwner?: boolean;
+  isTenantMember?: boolean;
+}
+
 /** Data model for Learning Courses Course Support Ticket Message Request. */
 export interface LearningCoursesCourseSupportTicketMessageInput {
   isInternal?: boolean;
@@ -19998,6 +20012,7 @@ export let LearningCoursesContentInteractionSummaryDtoSchema: z.ZodType<Learning
 export let LearningCoursesContentProgressDtoSchema: z.ZodType<LearningCoursesContentProgressDto>;
 export let LearningCoursesContentStatsDtoSchema: z.ZodType<LearningCoursesContentStatsDto>;
 export let LearningCoursesContentSummaryDtoSchema: z.ZodType<LearningCoursesContentSummaryDto>;
+export let LearningCoursesCourseAccessCapabilitiesSchema: z.ZodType<LearningCoursesCourseAccessCapabilities>;
 export let LearningCoursesCourseSupportTicketMessageInputSchema: z.ZodType<LearningCoursesCourseSupportTicketMessageInput>;
 export let LearningCoursesCreateActivityGradeDtoSchema: z.ZodType<LearningCoursesCreateActivityGradeDto>;
 export let LearningCoursesCreateCourseSupportTicketInputSchema: z.ZodType<LearningCoursesCreateCourseSupportTicketInput>;
@@ -32347,6 +32362,20 @@ LearningCoursesContentSummaryDtoSchema = z.object({
   contentType: z.string().nullable().optional(),
   estimatedMinutes: z.number().int().nullable().optional(),
   title: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningCoursesCourseAccessCapabilities. Data model for Learning Courses Course Access Capabilities. */
+LearningCoursesCourseAccessCapabilitiesSchema = z.object({
+  canAccessWorkspace: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  canLearn: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
+  canReviewAsStaff: z.boolean().optional(),
+  courseExists: z.boolean().optional(),
+  courseId: z.string().uuid().optional(),
+  hasActiveEnrollment: z.boolean().optional(),
+  isOwner: z.boolean().optional(),
+  isTenantMember: z.boolean().optional(),
 });
 
 /** Zod schema for LearningCoursesCourseSupportTicketMessageInput. Data model for Learning Courses Course Support Ticket Message Request. */

@@ -125,6 +125,7 @@ public sealed class ProgramCrudControllerLearnerTests
       service,
       actorAccessor.Object,
       new Mock<GameGuild.Identity.Authorization.IPermissionQueryService>().Object,
+      Mock.Of<ICourseAccessEvaluator>(),
       sender ?? Mock.Of<ISender>())
     {
       ControllerContext = new ControllerContext
