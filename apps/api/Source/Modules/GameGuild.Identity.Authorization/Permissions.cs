@@ -144,6 +144,19 @@ public static class Permissions
     public const string ProductsPricingManage = ProductsPermission.Keys.PricingManage;
 
     // ========================
+    // MONETIZATION PERMISSIONS (issue #346)
+    // ========================
+
+    /// <summary>Enable revenue generation, set pricing, manage monetization settings</summary>
+    public const string MonetizationMonetize = MonetizationPermission.Keys.Monetize;
+
+    /// <summary>Access revenue reports, financial dashboards, performance metrics</summary>
+    public const string MonetizationViewAnalytics = MonetizationPermission.Keys.ViewAnalytics;
+
+    /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
+    public const string MonetizationConfigure = MonetizationPermission.Keys.Configure;
+
+    // ========================
     // PROMO CODES PERMISSIONS
     // ========================
 

@@ -43,10 +43,21 @@ public enum PermissionOperationType
     ElevateJIT = 6,
     Review = 7,
     Deny = 8,
+
     /// <summary>A previously removed permission state was restored (issue #358).</summary>
     Restore = 9,
     /// <summary>Permissions were changed by an external-system synchronization import (issue #358).</summary>
-    SyncImport = 10
+    SyncImport = 10,
+    /// <summary>A permission grant expired and was deactivated automatically (issue #331).</summary>
+    Expire = 11,
+
+    /// <summary>
+    ///     A permission evaluation/decision (as opposed to a permission mutation).
+    ///     Recorded when an endpoint-level permission attribute is checked, so that
+    ///     sensitive permission-gated operations (e.g. monetization) leave a durable
+    ///     decision trail (issue #346).
+    /// </summary>
+    Check = 12
 }
 
 /// <summary>
