@@ -76,11 +76,11 @@ public sealed class PermissionCacheBatchInvalidationTests
         userVersions.Setup(store => store.GetVersionAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         var hybridCache = new Mock<IHybridPermissionCache>();
-        hybridCache.Setup(cache => cache.GetValueAsync<AccessLevel>(
+        hybridCache.Setup(cache => cache.GetValueAsync<CachedAclDecision>(
                 It.IsAny<string>(), "acl", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CacheResult<AccessLevel>.Miss());
+            .ReturnsAsync(CacheResult<CachedAclDecision>.Miss());
         hybridCache.Setup(cache => cache.SetValueAsync(
-                It.IsAny<string>(), It.IsAny<AccessLevel>(), "acl", It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<CachedAclDecision>(), "acl", It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         hybridCache.Setup(cache => cache.RemoveAsync(
                 It.IsAny<string>(), "acl", It.IsAny<CancellationToken>()))
@@ -174,9 +174,11 @@ public sealed class PermissionCacheBatchInvalidationTests
             publisher.Object,
             tracker);
 
-        var documentOne = $"acl:{tenantId}:{userId}:Document:doc-1:tv0:uv0:gv0";
-        var documentTwo = $"acl:subj:{tenantId}:{userId}:{roleId}:ng:Document:doc-2:tv0:uv0:gv0";
-        var otherResource = $"acl:subj:{tenantId}:{userId}:{roleId}:ng:Project:project-1:tv0:uv0:gv0";
+        var documentOne = AclCacheKeys.BuildUserCacheKey(userId, tenantId, "Document", "doc-1", 0, 0, 0);
+        var documentTwo = AclCacheKeys.BuildSubjectCacheKey(
+            AclSubject.ForUser(userId, roleIds: [roleId]), tenantId, "Document", "doc-2", 0, 0, 0);
+        var otherResource = AclCacheKeys.BuildSubjectCacheKey(
+            AclSubject.ForUser(userId, roleIds: [roleId]), tenantId, "Project", "project-1", 0, 0, 0);
         await cache.SetValueAsync(documentOne, AccessLevel.Write, "acl");
         await cache.SetValueAsync(documentTwo, AccessLevel.Read, "acl");
         await cache.SetValueAsync(otherResource, AccessLevel.Read, "acl");
@@ -222,7 +224,8 @@ public sealed class PermissionCacheBatchInvalidationTests
             Options.Create(new AuthorizationCacheOptions()),
             NullLogger<CacheInvalidationService>.Instance,
             keyTracker: tracker);
-        var key = $"acl:subj:{tenantId}:anon:{roleId}:ng:Document:doc-3:tv0:uv0:gv0";
+        var key = AclCacheKeys.BuildSubjectCacheKey(
+            AclSubject.Anonymous with { RoleIds = [roleId] }, tenantId, "Document", "doc-3", 0, 0, 0);
         await cache.SetValueAsync(key, AccessLevel.Read, "acl");
 
         invalidation.HandleInvalidationEvent(new CacheInvalidationEvent
@@ -258,7 +261,8 @@ public sealed class PermissionCacheBatchInvalidationTests
             Options.Create(new AuthorizationCacheOptions()),
             NullLogger<CacheInvalidationService>.Instance,
             keyTracker: tracker);
-        var key = $"acl:subj:{tenantId}:anon:ng:{groupId}:Document:doc-group:tv0:uv0:gv0";
+        var key = AclCacheKeys.BuildSubjectCacheKey(
+            AclSubject.Anonymous with { GroupIds = [groupId] }, tenantId, "Document", "doc-group", 0, 0, 0);
         await cache.SetValueAsync(key, AccessLevel.Read, "acl");
 
         invalidation.HandleInvalidationEvent(new CacheInvalidationEvent
@@ -291,12 +295,12 @@ public sealed class PermissionCacheBatchInvalidationTests
         userVersionStore.Setup(store => store.GetVersionAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(0);
         var observedKeys = new List<string>();
         var hybridCache = new Mock<IHybridPermissionCache>();
-        hybridCache.Setup(cache => cache.GetValueAsync<AccessLevel>(
+        hybridCache.Setup(cache => cache.GetValueAsync<CachedAclDecision>(
                 It.IsAny<string>(), "acl", It.IsAny<CancellationToken>()))
             .Callback<string, string, CancellationToken>((key, _, _) => observedKeys.Add(key))
-            .ReturnsAsync(CacheResult<AccessLevel>.Miss());
+            .ReturnsAsync(CacheResult<CachedAclDecision>.Miss());
         hybridCache.Setup(cache => cache.SetValueAsync(
-                It.IsAny<string>(), It.IsAny<AccessLevel>(), "acl", It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<CachedAclDecision>(), "acl", It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         var inner = new Mock<IAccessControlListService>();
         inner.SetupSequence(service => service.GetAccessLevelAsync(

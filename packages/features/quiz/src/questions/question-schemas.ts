@@ -5,6 +5,7 @@ import {
   QuizEntryType,
   type QuizEntry,
 } from "./question-types";
+import type { QuizLearnerEntry } from "../contracts/contracts";
 import { MAX_QUIZ_POINTS_UNITS, parseQuizPoints } from "./quiz-points";
 
 const finiteNumber = z.number().finite();
@@ -278,6 +279,152 @@ const rawQuizEntrySchema = z.discriminatedUnion("type", [
   highlightEntrySchema,
 ]);
 
+const quizLearnerFeedbackSchema = z.object({
+  general: z.string().optional(),
+}).strict();
+
+const quizLearnerAttachmentsSchema = z.object({
+  learnerVisible: z.array(quizAttachmentSchema),
+}).strict();
+
+const learnerEntryBaseShape = {
+  stem: z.string(),
+  points: entryBaseShape.points,
+  feedback: quizLearnerFeedbackSchema.optional(),
+  settings: quizSettingsSchema,
+  attachments: quizLearnerAttachmentsSchema.optional(),
+};
+
+const fillBlankTextLearnerInputSchema = z.object({
+  type: z.literal(FillBlankInputType.Text),
+}).strict();
+
+const fillBlankNumberLearnerInputSchema = z.object({
+  type: z.literal(FillBlankInputType.Number),
+  requiredPrecision: nonNegativeInteger.optional(),
+  unit: z.string().optional(),
+  requireUnit: z.boolean().optional(),
+  allowNegative: z.boolean().optional(),
+}).strict();
+
+const fillBlankLearnerInputSchema = z.discriminatedUnion("type", [
+  fillBlankTextLearnerInputSchema,
+  fillBlankNumberLearnerInputSchema,
+  fillBlankDropdownInputSchema,
+  fillBlankWordBankInputSchema,
+]);
+
+const fillBlankLearnerFieldSchema = z.object({
+  id: z.string(),
+  position: nonNegativeInteger,
+  input: fillBlankLearnerInputSchema,
+}).strict();
+
+const matchingLearnerPairSchema = z.object({
+  id: z.string(),
+  left: z.string(),
+}).strict();
+
+const orderingLearnerItemSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+}).strict();
+
+const categorizationLearnerItemSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+}).strict();
+
+const formulaLearnerPromptSchema = z.object({
+  variables: z.record(z.string(), finiteNumber),
+  expectedResult: finiteNumber,
+  decimalPlaces: nonNegativeInteger.optional(),
+}).strict();
+
+const rawQuizLearnerEntrySchema = z.discriminatedUnion("type", [
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.SingleChoice),
+    options: z.array(choiceOptionSchema),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.MultipleChoice),
+    options: z.array(choiceOptionSchema),
+    selectionLimit: z.number().int().positive().optional(),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.TrueFalse),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.FillInTheBlank),
+    blanks: z.array(fillBlankLearnerFieldSchema),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.ShortAnswer),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Essay),
+    minWordCount: nonNegativeInteger.optional(),
+    maxWordCount: nonNegativeInteger.optional(),
+    showWordCount: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Matching),
+    pairs: z.array(matchingLearnerPairSchema),
+    rightOptions: z.array(z.string()),
+    allowPartialCredit: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Ordering),
+    items: z.array(orderingLearnerItemSchema),
+    allowPartialCredit: z.boolean().optional(),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Categorization),
+    categories: z.array(categorySchema),
+    items: z.array(categorizationLearnerItemSchema),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Rating),
+    scale: ratingScaleSchema,
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Numeric),
+    variables: z.array(formulaVariableSchema),
+    formula: z.string(),
+    decimalPlaces: nonNegativeInteger,
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Formula),
+    variables: z.array(formulaVariableSchema),
+    decimalPlaces: nonNegativeInteger,
+    prompt: formulaLearnerPromptSchema.optional(),
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Hotspot),
+    imageAssetUri: assetUriSchema.nullable(),
+    imageWidth: finiteNumber,
+    imageHeight: finiteNumber,
+  }).strict(),
+  z.object({
+    ...learnerEntryBaseShape,
+    type: z.literal(QuizEntryType.Highlight),
+    plainText: z.string(),
+  }).strict(),
+]);
+
 type ParsedQuizEntry = z.infer<typeof rawQuizEntrySchema>;
 const _quizEntryTypeCheck: QuizEntry = null as unknown as ParsedQuizEntry;
 const _parsedQuizEntryTypeCheck: ParsedQuizEntry = null as unknown as QuizEntry;
@@ -285,6 +432,8 @@ void _quizEntryTypeCheck;
 void _parsedQuizEntryTypeCheck;
 
 export const quizEntrySchema: z.ZodType<QuizEntry> = rawQuizEntrySchema;
+export const quizLearnerEntrySchema: z.ZodType<QuizLearnerEntry> =
+  rawQuizLearnerEntrySchema;
 
 export type QuizEntryParseResult =
   | { success: true; data: QuizEntry }
@@ -300,4 +449,22 @@ export function parseQuizEntry(value: unknown): QuizEntry {
 
 export function isQuizEntry(value: unknown): value is QuizEntry {
   return safeParseQuizEntry(value).success;
+}
+
+export type QuizLearnerEntryParseResult =
+  | { success: true; data: QuizLearnerEntry }
+  | { success: false; error: z.ZodError };
+
+export function safeParseQuizLearnerEntry(
+  value: unknown,
+): QuizLearnerEntryParseResult {
+  return quizLearnerEntrySchema.safeParse(value) as QuizLearnerEntryParseResult;
+}
+
+export function parseQuizLearnerEntry(value: unknown): QuizLearnerEntry {
+  return quizLearnerEntrySchema.parse(value) as QuizLearnerEntry;
+}
+
+export function isQuizLearnerEntry(value: unknown): value is QuizLearnerEntry {
+  return safeParseQuizLearnerEntry(value).success;
 }

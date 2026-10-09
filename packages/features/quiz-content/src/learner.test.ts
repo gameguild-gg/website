@@ -3,6 +3,7 @@ import { QuizEntryType, createTrueFalseEntry } from "@game-guild/quiz";
 import { QUIZ_BLOCK_TYPE, QUIZ_CONTENT_SCHEMA_VERSION } from "./constants";
 import {
   isQuizRuntimeContentDocument,
+  parseQuizLearnerContentDocument,
   prepareQuizContentForRuntime,
   toQuizLearnerContentDocument,
 } from "./learner";
@@ -106,6 +107,41 @@ describe("quiz learner content", () => {
 
     expect(isQuizRuntimeContentDocument(runtime)).toBe(true);
     expect(isQuizRuntimeContentDocument(runtime.document)).toBe(false);
-    expect(isQuizRuntimeContentDocument({ mode: "server-graded", document: { order: [] } })).toBe(false);
+    expect(
+      isQuizRuntimeContentDocument({
+        mode: "server-graded",
+        document: { order: [] },
+      }),
+    ).toBe(false);
+  });
+
+  it("parses the redacted learner document for every supported question type", () => {
+    const learner = toQuizLearnerContentDocument(
+      createAllQuestionTypesDocument(),
+    );
+    const parsed = parseQuizLearnerContentDocument(learner);
+
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.document).toEqual(learner);
+  });
+
+  it("rejects answer keys at the learner document boundary", () => {
+    const learner = toQuizLearnerContentDocument(
+      createAllQuestionTypesDocument(),
+    );
+    const [firstId] = learner.order.find(
+      ([id]) => learner.blocks[id]?.type === QuizEntryType.TrueFalse,
+    )!;
+    const leaked = structuredClone(learner) as unknown as {
+      blocks: Record<string, Record<string, unknown>>;
+    };
+    leaked.blocks[firstId]!.correctAnswer = true;
+
+    expect(parseQuizLearnerContentDocument(leaked).issues).toEqual([
+      expect.objectContaining({
+        code: "invalid-quiz-entry",
+        path: `blocks.${firstId}`,
+      }),
+    ]);
   });
 });

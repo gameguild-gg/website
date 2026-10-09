@@ -13,6 +13,7 @@ import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
 import { Input } from '@game-guild/ui/components/input';
 import { Textarea } from '@game-guild/ui/components/textarea';
+import { CheckCircle2, EyeOff, Send } from 'lucide-react';
 import {
   getRuntimeSubmission,
   regradeRuntimeSubmission,
@@ -387,13 +388,6 @@ function GradingPanelSession({
             </div>
           )}
 
-          {finalResult && (
-            <div className="rounded-md border bg-muted/40 p-3 text-sm">
-              Final result: {scoreUnitsToPoints(finalResult.score ?? 0)} /{' '}
-              {scoreUnitsToPoints(finalResult.maxScore)}
-            </div>
-          )}
-
           <div className="flex flex-wrap gap-2">
             {submission.execution.requiresInstructorReview && (
               <Button
@@ -405,18 +399,54 @@ function GradingPanelSession({
                 Finalize review
               </Button>
             )}
-            {canRelease && (
-              <Button
-                type="button"
-                variant="outline"
-                data-testid="release-result"
-                onClick={() => void releaseResult()}
-                disabled={submitting}
-              >
-                Release result
-              </Button>
-            )}
           </div>
+
+          {finalResult && (
+            <section
+              data-testid="result-release-status"
+              aria-live="polite"
+              className={
+                submission.execution.released
+                  ? 'space-y-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-4'
+                  : 'space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-4'
+              }
+            >
+              <div className="flex items-start gap-3">
+                {submission.execution.released ? (
+                  <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+                ) : (
+                  <EyeOff className="mt-0.5 size-5 shrink-0 text-amber-600" />
+                )}
+                <div className="min-w-0 space-y-1">
+                  <h2 className="text-sm font-semibold">
+                    {submission.execution.released
+                      ? 'Released to learner'
+                      : 'Ready to release'}
+                  </h2>
+                  <p className="text-sm">
+                    Final result: {scoreUnitsToPoints(finalResult.score ?? 0)} /{' '}
+                    {scoreUnitsToPoints(finalResult.maxScore)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {submission.execution.released
+                      ? 'The learner can now see the score and released feedback.'
+                      : 'Grading is complete, but the learner cannot see the score or feedback until this result is released.'}
+                  </p>
+                </div>
+              </div>
+              {canRelease && (
+                <Button
+                  type="button"
+                  data-testid="release-result"
+                  onClick={() => void releaseResult()}
+                  disabled={submitting}
+                >
+                  <Send className="size-4" />
+                  Release to learner
+                </Button>
+              )}
+            </section>
+          )}
 
           {finalResult && (
             <div className="space-y-2 border-t pt-4">

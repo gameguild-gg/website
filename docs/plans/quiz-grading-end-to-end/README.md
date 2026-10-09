@@ -7,13 +7,19 @@ proposta e aprovação explícitas.
 
 Data: 2026-08-21.
 
-Atualizado: 2026-10-08.
+Atualizado: 2026-10-09.
 
 ## Objetivo
 
 Este diretório é a fonte canônica do plano para fechar o fluxo de grading de
 quiz, desde a autoria pelo professor até a publicação do resultado ao aluno e
 sua participação no gradebook.
+
+O plano auxiliar
+[`09-quiz-grading-scenario-runner.md`](./09-quiz-grading-scenario-runner.md)
+define a preparação reproduzível de cenários para teste humano e Playwright.
+Seu MVP está implementado e reduz o custo de validar os novos estados de
+review, sem alterar o runtime ou o modelo relacional.
 
 O documento anterior
 [`quiz-assessment-end-to-end-grading-flow.md`](../quiz-assessment-end-to-end-grading-flow.md)

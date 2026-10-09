@@ -7,6 +7,7 @@ import { ActivityComponent } from "./activity-component";
 
 const mocks = vi.hoisted(() => ({
   submitActivity: vi.fn(),
+  getRuntimeSubmission: vi.fn(),
   startContentRuntimeSubmission: vi.fn(),
   submitRuntimeSubmission: vi.fn(),
 }));
@@ -16,6 +17,7 @@ vi.mock("@/lib/courses/server-actions", () => ({
 }));
 
 vi.mock("@/lib/learning/grading-runtime-actions", () => ({
+  getRuntimeSubmission: mocks.getRuntimeSubmission,
   startContentRuntimeSubmission: mocks.startContentRuntimeSubmission,
   submitRuntimeSubmission: mocks.submitRuntimeSubmission,
 }));
@@ -23,15 +25,21 @@ vi.mock("@/lib/learning/grading-runtime-actions", () => ({
 vi.mock("@game-guild/quiz-surface/player", () => ({
   QuizPlayer: ({
     entry,
+    answer,
+    disabled,
     onAnswerChange,
     submissionResult,
   }: {
     entry: { stem: string };
+    answer: unknown;
+    disabled?: boolean;
     onAnswerChange: (answer: { type: "TRUE_FALSE"; value: boolean }) => void;
     submissionResult?: { feedback?: string };
   }) => (
     <div>
       <span data-testid="server-player">{entry.stem}</span>
+      <span data-testid="server-answer">{JSON.stringify(answer)}</span>
+      <span data-testid="server-disabled">{String(disabled)}</span>
       <button
         type="button"
         onClick={() => onAnswerChange({ type: "TRUE_FALSE", value: true })}
@@ -94,6 +102,7 @@ describe("ActivityComponent quiz integration", () => {
   beforeEach(() => {
     mocks.submitActivity.mockReset();
     mocks.submitActivity.mockResolvedValue({ success: true });
+    mocks.getRuntimeSubmission.mockReset();
     mocks.startContentRuntimeSubmission.mockReset();
     mocks.submitRuntimeSubmission.mockReset();
   });
@@ -261,5 +270,132 @@ describe("ActivityComponent quiz integration", () => {
     expect(mocks.submitActivity).not.toHaveBeenCalled();
     expect(onComplete).not.toHaveBeenCalled();
     expect(screen.getByText("Submitted for instructor review.")).toBeInTheDocument();
+  });
+
+  it("restores a released submission and its correction after reload", async () => {
+    const onComplete = vi.fn();
+    const serverItem = {
+      ...quizItem,
+      content: {
+        mode: "server-graded" as const,
+        document: {
+          schemaVersion: 1 as const,
+          order: [["question-1", "quiz"]] as const,
+          blocks: {
+            "question-1": {
+              type: "TRUE_FALSE" as const,
+              stem: "The answer key was redacted",
+              points: "00000002.0000",
+              settings: { allowRetry: false },
+            },
+          },
+        },
+      },
+    };
+    const releasedSubmission = {
+      submissionId: "submission-1",
+      assessmentId: "assessment-1",
+      definitionRevisionId: "revision-1",
+      enrollmentId: "enrollment-1",
+      courseGroupId: null,
+      attemptNumber: 1,
+      status: "graded",
+      draftVersion: 0,
+      version: 3,
+      startedAt: "2026-09-15T10:00:00Z",
+      submittedAt: "2026-09-15T10:05:00Z",
+      submittedByUserId: "user-1",
+      contentCompleted: false,
+      execution: {
+        executionId: "execution-1",
+        definitionRevisionId: "revision-1",
+        context: "official-submission",
+        executionSnapshotHash: "snapshot-hash",
+        deliveryHash: "delivery-hash",
+        delivery: {
+          schemaVersion: 1,
+          definitionRevisionId: "revision-1",
+          executionSnapshotHash: "snapshot-hash",
+          itemOrder: ["question-1"],
+          items: {
+            "question-1": {
+              adapterKey: "quiz-assessment-type",
+              adapterVersion: "1",
+              learnerPayload: {
+                itemId: "question-1",
+                entry: {
+                  type: "TRUE_FALSE",
+                  stem: "Server-owned challenge",
+                  points: "00000002.0000",
+                  settings: { allowRetry: false },
+                },
+              },
+            },
+          },
+        },
+        itemMaxScores: { "question-1": 200 },
+        submittedResponse: {
+          schemaVersion: 1,
+          contentType: "quiz",
+          payloadSchema: "quiz-answer/v1",
+          payload: {
+            answers: {
+              "question-1": { type: "TRUE_FALSE", value: true },
+            },
+          },
+        },
+        status: "completed",
+        activeRoundId: "round-1",
+        instructorVisibleResult: null,
+        learnerVisibleResult: {
+          schemaVersion: 1,
+          state: "final",
+          score: 150,
+          maxScore: 200,
+          passed: false,
+          feedback: "Reviewed by the instructor.",
+          items: [
+            {
+              itemId: "question-1",
+              state: "graded",
+              score: 150,
+              maxScore: 200,
+              feedback: "Partially correct after review.",
+            },
+          ],
+        },
+        requiresInstructorReview: false,
+        released: true,
+        history: [],
+      },
+    };
+    mocks.getRuntimeSubmission.mockResolvedValue({
+      success: true,
+      data: releasedSubmission,
+    });
+
+    render(
+      <ActivityComponent
+        item={serverItem}
+        courseId="course-1"
+        existingSubmissionId="submission-1"
+        onComplete={onComplete}
+      />,
+    );
+
+    expect(await screen.findByTestId("server-player")).toHaveTextContent(
+      "Server-owned challenge",
+    );
+    expect(mocks.getRuntimeSubmission).toHaveBeenCalledWith("submission-1");
+    expect(screen.getByTestId("server-answer")).toHaveTextContent(
+      '"value":true',
+    );
+    expect(screen.getByTestId("server-disabled")).toHaveTextContent("true");
+    expect(
+      screen.getByText("Partially correct after review."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Start Activity" }),
+    ).not.toBeInTheDocument();
   });
 });

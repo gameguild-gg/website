@@ -116,4 +116,3 @@ The feed is a single JSON document with two optional arrays:
 - `breachedPasswordSha256`: **full** SHA-256 hex digests of known-breached passwords (for example from a licensed corpus export). Only full digests are supported — never plaintext passwords and never k-anonymized prefixes. Comparison is case-insensitive. The submitted password's digest is computed in memory for comparison only; it is never persisted or logged.
 
 Behavior when the feed is missing, unreadable, or unparseable: checks fail open (no match), the last successfully loaded feed keeps being served while retries fail, and one security event per outage is emitted through `Authentication.ThreatIntelligenceFeedUnavailable`. A feed outage never blocks or slows a decision to lock out users: this signal is defense-in-depth.
-
