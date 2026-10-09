@@ -178,6 +178,15 @@ public sealed class ContentPermission : Permission
 
         /// <summary>Admin access to content</summary>
         public const string Admin = "content:admin";
+
+        /// <summary>Edit existing editorial content (editorial permission)</summary>
+        public const string Edit = "content:edit";
+
+        /// <summary>Create and maintain content drafts (editorial permission)</summary>
+        public const string Draft = "content:draft";
+
+        /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
+        public const string Schedule = "content:schedule";
     }
 
     /// <summary>Read content</summary>
@@ -188,6 +197,15 @@ public sealed class ContentPermission : Permission
 
     /// <summary>Admin access to content</summary>
     public static readonly ContentPermission Admin = new(Keys.Admin, "Admin access to content");
+
+    /// <summary>Edit existing editorial content (editorial permission)</summary>
+    public static readonly ContentPermission Edit = new(Keys.Edit, "Edit existing editorial content");
+
+    /// <summary>Create and maintain content drafts (editorial permission)</summary>
+    public static readonly ContentPermission Draft = new(Keys.Draft, "Create and maintain content drafts");
+
+    /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
+    public static readonly ContentPermission Schedule = new(Keys.Schedule, "Schedule and cancel scheduled publication");
 }
 
 /// <summary>
