@@ -42,7 +42,7 @@ public sealed class AuditRetentionSimulationController(IAuditRetentionSimulation
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<ActionResult<AuditRetentionConfigurationResponse>> GetConfiguration(
         [FromQuery(Name = "includeInherited")] bool includeInherited = false,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken = default) =>
         Execute(async () => await service.GetConfigurationAsync(includeInherited, cancellationToken).ConfigureAwait(false));
 
     [HttpPut("configuration")]
