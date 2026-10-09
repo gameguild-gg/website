@@ -81,10 +81,11 @@ monetization:*            (family wildcard — validates against the registry)
   `[RequiresPermission]` attribute, granted **and** denied) records a
   `PermissionAuditLog` entry with the new `PermissionOperationType.Check` operation type,
   including permission key, controller action, tenant and actor.
-- `AuditService.LogAsync` no longer swallows persistence failures silently: the write is
-  retried once, and a permanent failure escalates to a **critical structured-log entry that
-  carries the full audit payload**, so the record survives in the durable logging pipeline
-  for reconciliation. Business operations still never break because of the audit layer.
+- `AuditService` no longer swallows persistence failures silently: `TryLogAsync` retries
+  the write once, and a permanent failure escalates to a **critical structured-log entry
+  that carries the full audit payload**, so the record survives in the durable logging
+  pipeline for reconciliation (and returns `false` so observant callers can react).
+  Business operations still never break because of the audit layer.
 
 ## Best practices
 
