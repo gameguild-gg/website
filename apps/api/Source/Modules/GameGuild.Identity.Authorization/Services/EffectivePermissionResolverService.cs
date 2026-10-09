@@ -72,8 +72,7 @@ public sealed class EffectivePermissionResolverService(
         if (denialThrottle is not null && denialThrottle.IsThrottled(context.UserId, context.TenantId))
         {
             logger.LogWarning(
-                "Effective permission resolution for user {UserId} in tenant {TenantId} short-circuited by the evaluation denial throttle (fail-closed).",
-                context.UserId,
+                "Effective permission resolution in tenant {TenantId} short-circuited by the evaluation denial throttle (fail-closed).",
                 context.TenantId);
             return new EffectivePermissions
             {
@@ -230,9 +229,8 @@ public sealed class EffectivePermissionResolverService(
                 // A broken plugin must not break (or open) the decision path: skip it.
                 logger.LogError(
                     exception,
-                    "Permission evaluation extension {ExtensionName} threw during evaluation for user {UserId} in tenant {TenantId} - its contributions are skipped.",
+                    "Permission evaluation extension {ExtensionName} threw during evaluation in tenant {TenantId} - its contributions are skipped.",
                     extension.Name,
-                    context.UserId,
                     context.TenantId);
             }
 
