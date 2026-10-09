@@ -3,6 +3,7 @@ using FluentAssertions;
 using GameGuild.Identity.Authentication.UnitTests.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Xunit;
 
 namespace GameGuild.Identity.Authentication.UnitTests.Services;
 

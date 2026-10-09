@@ -8,6 +8,7 @@ using GameGuild;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -36,13 +37,13 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     [Fact]
     public async Task BoundTrustedClientCertificate_AuthenticatesAsServiceActor()
     {
-        using var host = await _fixture.StartHostAsync();
+        await using var host = await _fixture.StartHostAsync();
         using var client = host.CreateClient(_fixture.BoundClientCertificate);
 
         using var response = await client.GetAsync("/cert-whoami");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(host.BoundAccountId.ToString(), payload.GetProperty("sub").GetString());
         Assert.Equal("svc-kestrel-bound", payload.GetProperty("clientId").GetString());
         Assert.Equal("Service", payload.GetProperty("actorKind").GetString());
@@ -51,13 +52,13 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
         Assert.Equal("Service", payload.GetProperty("resolvedActorKind").GetString());
         Assert.Equal(
             ["read:jobs", "write:reports"],
-            payload.GetProperty("scopes").EnumerateArray().Select(scope => scope.GetString()).OrderBy(scope => scope).ToArray());
+            payload.GetProperty("scopes").EnumerateArray().Select(scope => scope.GetString()!).OrderBy(scope => scope).ToArray());
     }
 
     [Fact]
     public async Task RequestWithoutClientCertificate_IsNotAuthenticated()
     {
-        using var host = await _fixture.StartHostAsync();
+        await using var host = await _fixture.StartHostAsync();
         using var client = host.CreateClient(clientCertificate: null);
 
         using var response = await client.GetAsync("/cert-whoami");
@@ -68,7 +69,7 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     [Fact]
     public async Task ClientCertificateFromUntrustedAuthority_IsRejected()
     {
-        using var host = await _fixture.StartHostAsync();
+        await using var host = await _fixture.StartHostAsync();
         using var client = host.CreateClient(_fixture.RogueClientCertificate);
 
         using var response = await client.GetAsync("/cert-whoami");
@@ -79,7 +80,7 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     [Fact]
     public async Task TrustedClientCertificateWithoutBinding_IsRejected()
     {
-        using var host = await _fixture.StartHostAsync();
+        await using var host = await _fixture.StartHostAsync();
         using var client = host.CreateClient(_fixture.UnboundClientCertificate);
 
         using var response = await client.GetAsync("/cert-whoami");
@@ -227,12 +228,8 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
         request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
             new OidCollection { new(TlsClientAuthenticationOid) }, true));
 
-        using var authorityKey = certificateAuthority.GetRSAPrivateKey();
         using var issued = request.Create(
-            new X500DistinguishedName(certificateAuthority.SubjectName.Name),
-            authorityKey!,
-            HashAlgorithmName.SHA256,
-            RSASignaturePadding.Pkcs1,
+            certificateAuthority,
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30),
             RandomNumberGenerator.GetBytes(16));
@@ -252,7 +249,7 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
     private static X509Certificate2 ImportPersistable(X509Certificate2 certificate)
     {
         var pfx = certificate.Export(X509ContentType.Pfx);
-        return new X509Certificate2(pfx, (string?)null, X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
+        return X509CertificateLoader.LoadPkcs12(pfx, null, X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
     }
 }
 

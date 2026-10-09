@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using AuthenticationOptions = GameGuild.Configuration.PresentationLayer.Authentication.AuthenticationOptions;
 using Xunit;
 
 namespace GameGuild.API.UnitTests.Core.Extensions;
@@ -20,7 +21,7 @@ public sealed class ClientCertificateAuthenticationSchemeRegistrationTests : IDi
         var request = new CertificateRequest("CN=Registration Test Root", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
         using var ephemeral = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
-        _certificateAuthority = new X509Certificate2(ephemeral.Export(X509ContentType.Pfx));
+        _certificateAuthority = X509CertificateLoader.LoadPkcs12(ephemeral.Export(X509ContentType.Pfx), null);
     }
 
     public void Dispose()
@@ -113,6 +114,12 @@ public sealed class ClientCertificateAuthenticationSchemeRegistrationTests : IDi
         JwtIssuer = "GameGuild",
         JwtAudience = "GameGuild.Users",
         EnableClientCertificateAuthentication = true,
-        ClientCertificate = settingsFactory(_certificateAuthority.Export(X509ContentType.CertPem))
+        ClientCertificate = settingsFactory(ExportCertificatePem(_certificateAuthority))
     };
+
+    private static string ExportCertificatePem(X509Certificate2 certificate)
+    {
+        var der = certificate.Export(X509ContentType.Cert);
+        return new string(PemEncoding.Write("CERTIFICATE", der));
+    }
 }

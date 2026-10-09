@@ -42,12 +42,8 @@ public static class ClientCertificateTestFactory
         request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(
             new OidCollection { new(ClientAuthenticationOid) }, true));
 
-        using var authorityKey = certificateAuthority.GetRSAPrivateKey();
         using var issued = request.Create(
-            new X500DistinguishedName(certificateAuthority.SubjectName.Name),
-            authorityKey!,
-            HashAlgorithmName.SHA256,
-            RSASignaturePadding.Pkcs1,
+            certificateAuthority,
             NotBefore,
             NotAfter,
             RandomNumberGenerator.GetBytes(16));
@@ -75,6 +71,6 @@ public static class ClientCertificateTestFactory
     private static X509Certificate2 ImportPersistable(X509Certificate2 certificate)
     {
         var pfx = certificate.Export(X509ContentType.Pfx);
-        return new X509Certificate2(pfx, (string?)null, X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
+        return X509CertificateLoader.LoadPkcs12(pfx, null, X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
     }
 }
