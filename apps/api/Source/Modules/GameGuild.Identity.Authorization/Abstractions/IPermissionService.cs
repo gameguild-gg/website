@@ -207,4 +207,22 @@ public interface ITenantPermissionRepository
 
     Task<List<TenantPermission>> GetExpiredPermissionsAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets active, non-deleted grants whose <c>ExpiresAt</c> falls within the open
+    ///     interval (now, <paramref name="cutoff"/>], ordered by expiration instant.
+    ///     Uses the <c>IX_TenantPermissions_ExpiresAt</c> index.
+    /// </summary>
+    Task<List<TenantPermission>> GetExpiringBeforeAsync(
+        DateTime cutoff,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets non-deleted grants by ID, restricted to a single tenant so bulk
+    ///     expiration mutations can never cross tenant boundaries.
+    /// </summary>
+    Task<List<TenantPermission>> GetByIdsInTenantAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default);
 }

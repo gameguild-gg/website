@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Identity.Authorization;
 
@@ -17,13 +18,19 @@ namespace GameGuild.Identity.Authorization;
 ///         <b>Security - Authorization Guards:</b> Global default operations (tenantId=null) require
 ///         system-level ManageGlobalDefaults permission. This is defense-in-depth beyond command handler checks.
 ///     </para>
+///     <para>
+///         <b>Temporal grants (issue #331):</b> When <c>Authorization:PermissionExpiration:ApplyDefaultsOnGrant</c>
+///         is enabled and the caller supplies no explicit expiration, grants issued without an expiry receive the
+///         configured default period (per-permission-type override or global default).
+///     </para>
 /// </remarks>
 public sealed class PermissionGrantService(
     ITenantPermissionRepository repository,
     IPermissionAuditService auditService,
     ITenantSecurityVersionStore securityVersionStore,
     IActorContextAccessor actorContextAccessor,
-    ILogger<PermissionGrantService> logger
+    ILogger<PermissionGrantService> logger,
+    IOptions<PermissionExpirationOptions>? expirationOptions = null
 ) : IPermissionGrantService
 {
     private ActorContext Actor => actorContextAccessor.ActorContext;
@@ -45,6 +52,17 @@ public sealed class PermissionGrantService(
             string.Join(", ", permissions),
             userId,
             tenantId);
+
+        // Temporal grants (issue #331): apply the configured default expiration when the
+        // caller did not supply one. Opt-in so existing permanent grants keep their semantics.
+        if (expiresAt is null && expirationOptions?.Value is { ApplyDefaultsOnGrant: true } options)
+        {
+            var defaultPeriod = options.ResolveDefaultExpiration(permissions);
+            if (defaultPeriod is not null)
+            {
+                expiresAt = SystemClock.UtcNow + defaultPeriod.Value;
+            }
+        }
 
         var performedBy = Actor.SubjectIdAsGuid ?? Guid.Empty;
         var existing = await repository.GetByUserAndTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
