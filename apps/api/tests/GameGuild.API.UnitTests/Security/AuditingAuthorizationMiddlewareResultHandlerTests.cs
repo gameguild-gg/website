@@ -38,6 +38,7 @@ public sealed class AuditingAuthorizationMiddlewareResultHandlerTests
         services.AddSingleton(new Mock<IAuditService>().Object);
         services.AddSingleton(new Mock<ISiemIntegrationService>().Object);
         services.AddScoped<IPermissionQueryService>(_ => new Mock<IPermissionQueryService>().Object);
+        services.AddScoped(_ => new Mock<IRbacPermissionResolver>().Object);
         services.AddScoped<IAuthorizationPermissionService, AuthorizationPermissionServiceAdapter>();
         services.SetupAuthorization(configuration, AuthorizationOptionsBuilder.Build(configuration));
 

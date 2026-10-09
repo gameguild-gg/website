@@ -3432,6 +3432,7 @@ Table "PermissionEvaluationLogs" {
   "Id" uuid [not null]
   "TenantId" uuid
   "UserId" uuid
+  "Roles" "text[]" [not null]
   "ResourceType" "character varying(200)" [not null]
   "ResourceId" "character varying(200)"
   "RequiredPermissions" "text[]" [not null]

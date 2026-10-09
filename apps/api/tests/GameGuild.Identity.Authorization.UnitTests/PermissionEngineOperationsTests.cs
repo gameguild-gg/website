@@ -955,6 +955,7 @@ public class PermissionComplianceReportTests
         var record = new PermissionEvaluationRecord(
             Guid.NewGuid(),
             Guid.NewGuid(),
+            ["Contributor", "Admin (inherited)"],
             "Project",
             "res-1",
             new[] { "projects:read" },
@@ -968,6 +969,7 @@ public class PermissionComplianceReportTests
 
         entry.TenantId.Should().Be(record.TenantId);
         entry.UserId.Should().Be(record.UserId);
+        entry.Roles.Should().Equal("Contributor", "Admin (inherited)");
         entry.Outcome.Should().Be(PermissionEvaluationOutcome.Deny);
         entry.RequiredPermissions.Should().Equal("projects:read");
 
@@ -987,7 +989,7 @@ public class PermissionComplianceReportTests
             NullLogger<PermissionEvaluationLogEntryRepository>.Instance);
 
         var persisted = await sink.TryRecordAsync(new PermissionEvaluationRecord(
-            null, null, "Project", null, new[] { "projects:read" }, PermissionEvaluationOutcome.Allow, "test"));
+            null, null, [], "Project", null, new[] { "projects:read" }, PermissionEvaluationOutcome.Allow, "test"));
 
         persisted.Should().BeFalse("sink failures must never change the authorization decision");
     }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
 using FluentAssertions;
 using GameGuild.API.Core.Security;
 using GameGuild.Compliance.Audit;
@@ -154,17 +155,117 @@ public sealed class AuditingAuthorizationPermissionServiceTests
         auditService.Verify(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()), Times.Never);
     }
 
+    [Fact]
+    public async Task HasPermissionAsync_RecordsResolverRoleAttributionOnDeniedDecisions()
+    {
+        var queryService = new Mock<IPermissionQueryService>();
+        queryService.Setup(service => service.HasTenantPermissionAsync(UserId, TenantId, "teams.read", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        var auditService = new Mock<IAuditService>();
+        CreateAuditLogRequest? captured = null;
+        auditService.Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
+            .Callback<CreateAuditLogRequest>(request => captured = request)
+            .Returns(Task.CompletedTask);
+        auditService.Setup(service => service.GetAuditLogCountAsync(It.IsAny<AuditLogQuery>())).ReturnsAsync(0);
+        var service = CreateService(queryService.Object, auditService.Object, rbacResolver: CreateRbacResolverReturningContributions());
+
+        await service.HasPermissionAsync(UserId, TenantId, "teams.read");
+
+        captured.Should().NotBeNull();
+        ExtractMetadataRoles(captured!)
+            .Should().Equal("Member", "Admin (inherited)", "resolver role attribution is logged on denials with inherited roles marked");
+    }
+
+    [Fact]
+    public async Task HasPermissionAsync_RecordsResolverRoleAttributionOnGrantedDecisions()
+    {
+        var queryService = new Mock<IPermissionQueryService>();
+        queryService.Setup(service => service.HasTenantPermissionAsync(UserId, TenantId, "teams.read", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var auditService = new Mock<IAuditService>();
+        CreateAuditLogRequest? captured = null;
+        auditService.Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
+            .Callback<CreateAuditLogRequest>(request => captured = request)
+            .Returns(Task.CompletedTask);
+        var service = CreateService(queryService.Object, auditService.Object, rbacResolver: CreateRbacResolverReturningContributions());
+
+        await service.HasPermissionAsync(UserId, TenantId, "teams.read");
+
+        captured.Should().NotBeNull();
+        ExtractMetadataRoles(captured!)
+            .Should().Equal("Member", "Admin (inherited)");
+    }
+
+    [Fact]
+    public async Task HasAllPermissionsAsync_RecordsTheRoleAttributionOnEveryLoggedPermission()
+    {
+        var queryService = new Mock<IPermissionQueryService>();
+        queryService.Setup(service => service.GetEffectivePermissionsAsync(UserId, TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(["teams.read"]);
+        var auditService = new Mock<IAuditService>();
+        var logged = new List<CreateAuditLogRequest>();
+        auditService.Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
+            .Callback<CreateAuditLogRequest>(logged.Add)
+            .Returns(Task.CompletedTask);
+        auditService.Setup(service => service.GetAuditLogCountAsync(It.IsAny<AuditLogQuery>())).ReturnsAsync(0);
+        var rbacResolver = new Mock<IRbacPermissionResolver>();
+        rbacResolver
+            .Setup(resolver => resolver.ResolvePermissionsAsync(UserId, TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RbacResolutionResult(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                [new RoleContribution(Guid.NewGuid(), "Member", [], IsInherited: false, InheritedFromRoleId: null)]))
+            .Verifiable(Times.Once);
+        var service = CreateService(queryService.Object, auditService.Object, rbacResolver: rbacResolver.Object);
+
+        await service.HasAllPermissionsAsync(UserId, TenantId, ["teams.read", "teams.write"]);
+
+        logged.Should().HaveCount(2);
+        logged.Select(ExtractMetadataRoles).Should().AllSatisfy(roles => roles.Should().Equal("Member"));
+        rbacResolver.Verify();
+    }
+
+    [Fact]
+    public async Task HasPermissionAsync_RecordsAnEmptyRoleAttributionForAnonymousRequests()
+    {
+        var queryService = new Mock<IPermissionQueryService>();
+        queryService.Setup(service => service.HasTenantPermissionAsync(UserId, TenantId, "teams.read", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        var auditService = new Mock<IAuditService>();
+        CreateAuditLogRequest? captured = null;
+        auditService.Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
+            .Callback<CreateAuditLogRequest>(request => captured = request)
+            .Returns(Task.CompletedTask);
+        auditService.Setup(service => service.GetAuditLogCountAsync(It.IsAny<AuditLogQuery>())).ReturnsAsync(0);
+        var rbacResolver = new Mock<IRbacPermissionResolver>(MockBehavior.Strict);
+        var service = CreateService(
+            queryService.Object,
+            auditService.Object,
+            rbacResolver: rbacResolver.Object,
+            anonymousUser: true);
+
+        await service.HasPermissionAsync(UserId, TenantId, "teams.read");
+
+        captured.Should().NotBeNull();
+        ExtractMetadataRoles(captured!).Should().BeEmpty("anonymous actors carry an empty, never-null role attribution");
+        rbacResolver.VerifyNoOtherCalls();
+    }
+
     private static AuditingAuthorizationPermissionService CreateService(
         IPermissionQueryService queryService,
         IAuditService auditService,
-        ISiemIntegrationService? siemService = null)
+        ISiemIntegrationService? siemService = null,
+        IRbacPermissionResolver? rbacResolver = null,
+        bool anonymousUser = false)
     {
         var context = new DefaultHttpContext
         {
             TraceIdentifier = "permission-correlation-8",
-            User = new ClaimsPrincipal(new ClaimsIdentity(
-                [new Claim(ClaimTypes.NameIdentifier, UserId.ToString("D"))],
-                "Bearer"))
+            User = anonymousUser
+                ? new ClaimsPrincipal(new ClaimsIdentity())
+                : new ClaimsPrincipal(new ClaimsIdentity(
+                    [new Claim(ClaimTypes.NameIdentifier, UserId.ToString("D"))],
+                    "Bearer"))
         };
         context.Connection.RemoteIpAddress = IPAddress.Parse("203.0.113.20");
 
@@ -178,6 +279,49 @@ public sealed class AuditingAuthorizationPermissionServiceTests
             }).Build(),
             siemService ?? new Mock<ISiemIntegrationService>().Object,
             new MemoryCache(new MemoryCacheOptions()),
+            rbacResolver ?? CreateRbacResolverReturningNoRoles(),
             NullLogger<AuditingAuthorizationPermissionService>.Instance);
+    }
+
+    private static IRbacPermissionResolver CreateRbacResolverReturningNoRoles()
+    {
+        var rbacResolver = new Mock<IRbacPermissionResolver>();
+        rbacResolver
+            .Setup(resolver => resolver.ResolvePermissionsAsync(UserId, TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RbacResolutionResult(new HashSet<string>(), new HashSet<string>(), []));
+        return rbacResolver.Object;
+    }
+
+    private static IRbacPermissionResolver CreateRbacResolverReturningContributions()
+    {
+        var rbacResolver = new Mock<IRbacPermissionResolver>();
+        rbacResolver
+            .Setup(resolver => resolver.ResolvePermissionsAsync(UserId, TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RbacResolutionResult(
+                new HashSet<string>(["teams.read"], StringComparer.OrdinalIgnoreCase),
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                [
+                    new RoleContribution(
+                        Guid.NewGuid(),
+                        "Member",
+                        ["teams.read"],
+                        IsInherited: false,
+                        InheritedFromRoleId: null),
+                    new RoleContribution(
+                        Guid.NewGuid(),
+                        "Admin",
+                        ["teams.write"],
+                        IsInherited: true,
+                        InheritedFromRoleId: Guid.NewGuid())
+                ]));
+        return rbacResolver.Object;
+    }
+
+    private static IReadOnlyList<string> ExtractMetadataRoles(CreateAuditLogRequest request)
+    {
+        using var document = JsonDocument.Parse(JsonSerializer.Serialize(request.Metadata));
+        return document.RootElement.GetProperty("Roles").EnumerateArray()
+            .Select(item => item.GetString() ?? string.Empty)
+            .ToList();
     }
 }
