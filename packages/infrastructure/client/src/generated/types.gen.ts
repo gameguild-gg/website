@@ -1896,6 +1896,286 @@ export interface CommercePaymentsProcessRefundResult {
   status: CommercePaymentsTransactionStatus;
 }
 
+/** Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Detection is idempotent per (kind, day): re-running detection for the same
+day never duplicates an alert. */
+export interface CommercePaymentsRevenueAnomalyAlert {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the alert was acknowledged (UTC). */
+  acknowledgedAtUtc?: string | null;
+  /** Operator that acknowledged the alert. */
+  acknowledgedByUserId?: string | null;
+  /** Optional operator notes recorded at acknowledgement. */
+  acknowledgementNotes?: string | null;
+  /** Number of baseline days used for the evaluation. */
+  baselineDays?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Moment the anomaly was detected (UTC). */
+  detectedAtUtc?: string;
+  /** UTC day (midnight) the anomalous net revenue belongs to. */
+  detectedForDateUtc?: string;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Baseline (mean) net revenue expected for the evaluated day. */
+  expectedNetRevenue?: number;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueAnomalyKind;
+  /** Net revenue observed for the evaluated day. */
+  observedNetRevenue?: number;
+  status?: CommercePaymentsRevenueAnomalyStatus;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+  /** Standard-score of the observation against the baseline, rounded to 4 decimals. */
+  zScore?: number;
+}
+
+/** Kind of revenue anomaly detected by the statistical detector */
+export type CommercePaymentsRevenueAnomalyKind = 'Spike' | 'Drop';
+
+/** Lifecycle status of a revenue anomaly alert */
+export type CommercePaymentsRevenueAnomalyStatus = 'Open' | 'Acknowledged';
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput {
+  notes?: string | null;
+}
+
+/** Result of a manual anomaly detection pass. */
+export interface CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult {
+  alertsCreated?: number;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput {
+  evaluationDateUtc?: string | null;
+  tenantId?: string | null;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput {
+  externalStatementId?: string | null;
+  lines?: Array<CommercePaymentsRevenueAuditingControllerStatementLineInput> | null;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  source?: string | null;
+  tenantId?: string | null;
+}
+
+/** One external statement line supplied inline. */
+export interface CommercePaymentsRevenueAuditingControllerStatementLineInput {
+  amount?: number;
+  currency?: string | null;
+  occurredAtUtc?: string;
+  referenceId?: string | null;
+}
+
+/** Compliance-grade revenue summary for an inclusive period. */
+export interface CommercePaymentsRevenueComplianceReport {
+  /** Human-readable attestation statement for compliance filings. */
+  attestation?: string | null;
+  /** Start of the period (inclusive). */
+  fromUtc?: string;
+  /** Moment the report was produced. */
+  generatedAtUtc?: string;
+  reconciliation?: CommercePaymentsRevenueReconciliationCoverage;
+  /** Revenue totals grouped by event type. */
+  totalsByEventType?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** Revenue totals grouped by source. */
+  totalsBySource?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** Revenue totals grouped by processing status. */
+  totalsByStatus?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** End of the period (inclusive). */
+  toUtc?: string;
+  /** Revenue events still pending processing (not counted as recognized revenue). */
+  uncountedEventCount?: number;
+}
+
+/** Kind of mismatch detected between an external statement and internal revenue events */
+export type CommercePaymentsRevenueDiscrepancyKind =
+  'MissingInternal' | 'MissingExternal' | 'AmountMismatch' | 'CurrencyMismatch' | 'DuplicateExternalReference';
+
+/** Grouped totals for one key of a grouping dimension (event type, source or status). */
+export interface CommercePaymentsRevenueEventGroupTotal {
+  /** Number of revenue events in the group. */
+  count?: number;
+  /** Grouping key (enum name). */
+  key?: string | null;
+  /** Sum of event amounts in the group. */
+  total?: number;
+}
+
+/** Reconciliation coverage summary included in compliance reports. */
+export interface CommercePaymentsRevenueReconciliationCoverage {
+  /** Total discrepancies recorded by those runs. */
+  discrepancies?: number;
+  /** Completion timestamp of the most recent run, if any. */
+  lastRunCompletedAtUtc?: string | null;
+  /** Total statement lines matched by those runs. */
+  matchedLines?: number;
+  /** Number of reconciliation runs overlapping the period. */
+  reconciliationRuns?: number;
+}
+
+/** One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+export interface CommercePaymentsRevenueReconciliationDiscrepancy {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Amount reported by the external statement, when applicable. */
+  externalAmount?: number | null;
+  /** Currency reported by the external statement, when applicable. */
+  externalCurrency?: string | null;
+  /** Settlement moment reported by the external statement, when applicable. */
+  externalOccurredAtUtc?: string | null;
+  /** External reference of the mismatched statement line. */
+  externalReference: string;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Amount recorded internally, when a revenue event was found. */
+  internalAmount?: number | null;
+  /** Currency recorded internally, when a revenue event was found. */
+  internalCurrency?: string | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueDiscrepancyKind;
+  /** Human-readable explanation of the mismatch. */
+  message?: string | null;
+  /** Internal revenue event involved in the mismatch, when one was found. */
+  revenueEventId?: string | null;
+  run?: CommercePaymentsRevenueReconciliationRun;
+  /** Run that recorded the discrepancy. */
+  runId?: string;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+export interface CommercePaymentsRevenueReconciliationRun {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the run committed its results (UTC). */
+  completedAtUtc?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Discrepancies recorded by this run. */
+  discrepancies?: Array<CommercePaymentsRevenueReconciliationDiscrepancy> | null;
+  /** Number of discrepancies recorded by the run. */
+  discrepancyCount?: number;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Optional identifier of the statement/batch within the external system. */
+  externalStatementId?: string | null;
+  /** Reason the run failed, when GameGuild.Commerce.Payments.RevenueReconciliationRun.Status is GameGuild.Commerce.Payments.RevenueReconciliationStatus.Failed. */
+  failureReason?: string | null;
+  /** Actor that initiated the run, when initiated by an interactive request. */
+  initiatedByUserId?: string | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Number of statement lines matched to an internal revenue event. */
+  matchedCount?: number;
+  /** Inclusive end of the reconciled period (UTC). */
+  periodEndUtc?: string;
+  /** Inclusive start of the reconciled period (UTC). */
+  periodStartUtc?: string;
+  /** External system the statement came from (for example "stripe-payouts" or "manual-export"). */
+  source: string;
+  /** Moment the run started (UTC). */
+  startedAtUtc?: string;
+  /** Number of statement lines evaluated by the run. */
+  statementLineCount?: number;
+  status?: CommercePaymentsRevenueReconciliationStatus;
+  /** Machine-readable totals snapshot (per discrepancy kind) captured at completion. */
+  summaryJson?: string | null;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle status of a revenue reconciliation run */
+export type CommercePaymentsRevenueReconciliationStatus = 'Running' | 'Completed' | 'Failed';
+
+/** One point of a historical revenue trend. */
+export interface CommercePaymentsRevenueTrendPoint {
+  /** Credit-side total for the day. */
+  creditTotal?: number;
+  /** UTC day (midnight) the point covers. */
+  dateUtc?: string;
+  /** Debit-side total for the day. */
+  debitTotal?: number;
+  /** Revenue events counted for the day. */
+  eventCount?: number;
+  /** Net total for the day. */
+  netTotal?: number;
+}
+
+/** Historical revenue trend over an inclusive date range. */
+export interface CommercePaymentsRevenueTrendReport {
+  /** Start of the range (inclusive). */
+  fromUtc?: string;
+  /** One point per UTC day in the range, including zero-activity days. */
+  points?: Array<CommercePaymentsRevenueTrendPoint> | null;
+  /** Credit total across the range. */
+  totalCredit?: number;
+  /** Debit total across the range. */
+  totalDebit?: number;
+  /** Net total across the range. */
+  totalNet?: number;
+  /** End of the range (inclusive). */
+  toUtc?: string;
+}
+
 /** Individual tax breakdown (for compound/multiple taxes) */
 export interface CommercePaymentsTaxBreakdown {
   description?: string | null;
@@ -14461,6 +14741,75 @@ export interface PagedResultPromoCodeDto {
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueAnomalyAlert {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueAnomalyAlert> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationDiscrepancy {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueReconciliationDiscrepancy> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationRun {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueReconciliationRun> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultSubscription {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -19322,6 +19671,23 @@ export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodTyp
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
+export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
+export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
+export let CommercePaymentsRevenueAnomalyStatusSchema: z.ZodType<CommercePaymentsRevenueAnomalyStatus>;
+export let CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput>;
+export let CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult>;
+export let CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput>;
+export let CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput>;
+export let CommercePaymentsRevenueAuditingControllerStatementLineInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerStatementLineInput>;
+export let CommercePaymentsRevenueComplianceReportSchema: z.ZodType<CommercePaymentsRevenueComplianceReport>;
+export let CommercePaymentsRevenueDiscrepancyKindSchema: z.ZodType<CommercePaymentsRevenueDiscrepancyKind>;
+export let CommercePaymentsRevenueEventGroupTotalSchema: z.ZodType<CommercePaymentsRevenueEventGroupTotal>;
+export let CommercePaymentsRevenueReconciliationCoverageSchema: z.ZodType<CommercePaymentsRevenueReconciliationCoverage>;
+export let CommercePaymentsRevenueReconciliationDiscrepancySchema: z.ZodType<CommercePaymentsRevenueReconciliationDiscrepancy>;
+export let CommercePaymentsRevenueReconciliationRunSchema: z.ZodType<CommercePaymentsRevenueReconciliationRun>;
+export let CommercePaymentsRevenueReconciliationStatusSchema: z.ZodType<CommercePaymentsRevenueReconciliationStatus>;
+export let CommercePaymentsRevenueTrendPointSchema: z.ZodType<CommercePaymentsRevenueTrendPoint>;
+export let CommercePaymentsRevenueTrendReportSchema: z.ZodType<CommercePaymentsRevenueTrendReport>;
 export let CommercePaymentsTaxBreakdownSchema: z.ZodType<CommercePaymentsTaxBreakdown>;
 export let CommercePaymentsTaxCalculationResultSchema: z.ZodType<CommercePaymentsTaxCalculationResult>;
 export let CommercePaymentsTaxExemptionValidationResultSchema: z.ZodType<CommercePaymentsTaxExemptionValidationResult>;
@@ -20455,6 +20821,9 @@ export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDel
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
+export let PagedResultRevenueAnomalyAlertSchema: z.ZodType<PagedResultRevenueAnomalyAlert>;
+export let PagedResultRevenueReconciliationDiscrepancySchema: z.ZodType<PagedResultRevenueReconciliationDiscrepancy>;
+export let PagedResultRevenueReconciliationRunSchema: z.ZodType<PagedResultRevenueReconciliationRun>;
 export let PagedResultSubscriptionSchema: z.ZodType<PagedResultSubscription>;
 export let PagedResultSubscriptionNotificationDtoSchema: z.ZodType<PagedResultSubscriptionNotificationDto>;
 export let PagedResultSupportTicketDtoSchema: z.ZodType<PagedResultSupportTicketDto>;
@@ -22752,6 +23121,228 @@ CommercePaymentsProcessRefundResultSchema = z.object({
   refundedAmount: z.number(),
   refundId: z.string().uuid(),
   status: z.lazy(() => CommercePaymentsTransactionStatusSchema),
+});
+
+/** Zod schema for CommercePaymentsRevenueAnomalyAlert. Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Detection is idempotent per (kind, day): re-running detection for the same
+day never duplicates an alert. */
+CommercePaymentsRevenueAnomalyAlertSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().max(1000).nullable().optional(),
+  baselineDays: z.number().int().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  detectedAtUtc: z.string().datetime().optional(),
+  detectedForDateUtc: z.string().datetime().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  expectedNetRevenue: z.number().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueAnomalyKindSchema).optional(),
+  observedNetRevenue: z.number().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueAnomalyStatusSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+  zScore: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAnomalyKind. Kind of revenue anomaly detected by the statistical detector */
+CommercePaymentsRevenueAnomalyKindSchema = z.enum(['Spike', 'Drop']);
+
+/** Zod schema for CommercePaymentsRevenueAnomalyStatus. Lifecycle status of a revenue anomaly alert */
+CommercePaymentsRevenueAnomalyStatusSchema = z.enum(['Open', 'Acknowledged']);
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult. Result of a manual anomaly detection pass. */
+CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema = z.object({
+  alertsCreated: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema = z.object({
+  evaluationDateUtc: z.string().datetime().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema = z.object({
+  externalStatementId: z.string().nullable().optional(),
+  lines: z
+    .array(z.lazy(() => CommercePaymentsRevenueAuditingControllerStatementLineInputSchema))
+    .nullable()
+    .optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerStatementLineInput. One external statement line supplied inline. */
+CommercePaymentsRevenueAuditingControllerStatementLineInputSchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  referenceId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueComplianceReport. Compliance-grade revenue summary for an inclusive period. */
+CommercePaymentsRevenueComplianceReportSchema = z.object({
+  attestation: z.string().nullable().optional(),
+  fromUtc: z.string().datetime().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  reconciliation: z.lazy(() => CommercePaymentsRevenueReconciliationCoverageSchema).optional(),
+  totalsByEventType: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsBySource: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsByStatus: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  toUtc: z.string().datetime().optional(),
+  uncountedEventCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueDiscrepancyKind. Kind of mismatch detected between an external statement and internal revenue events */
+CommercePaymentsRevenueDiscrepancyKindSchema = z.enum([
+  'MissingInternal',
+  'MissingExternal',
+  'AmountMismatch',
+  'CurrencyMismatch',
+  'DuplicateExternalReference',
+]);
+
+/** Zod schema for CommercePaymentsRevenueEventGroupTotal. Grouped totals for one key of a grouping dimension (event type, source or status). */
+CommercePaymentsRevenueEventGroupTotalSchema = z.object({
+  count: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationCoverage. Reconciliation coverage summary included in compliance reports. */
+CommercePaymentsRevenueReconciliationCoverageSchema = z.object({
+  discrepancies: z.number().int().optional(),
+  lastRunCompletedAtUtc: z.string().datetime().nullable().optional(),
+  matchedLines: z.number().int().optional(),
+  reconciliationRuns: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationDiscrepancy. One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+CommercePaymentsRevenueReconciliationDiscrepancySchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalAmount: z.number().nullable().optional(),
+  externalCurrency: z.string().max(3).nullable().optional(),
+  externalOccurredAtUtc: z.string().datetime().nullable().optional(),
+  externalReference: z.string().min(1).max(200),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  internalAmount: z.number().nullable().optional(),
+  internalCurrency: z.string().max(3).nullable().optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueDiscrepancyKindSchema).optional(),
+  message: z.string().max(1000).nullable().optional(),
+  revenueEventId: z.string().uuid().nullable().optional(),
+  run: z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema).optional(),
+  runId: z.string().uuid().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationRun. One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+CommercePaymentsRevenueReconciliationRunSchema = z.object({
+  id: z.string().uuid().optional(),
+  completedAtUtc: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  discrepancies: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  discrepancyCount: z.number().int().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalStatementId: z.string().max(200).nullable().optional(),
+  failureReason: z.string().max(1000).nullable().optional(),
+  initiatedByUserId: z.string().uuid().nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  matchedCount: z.number().int().optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().min(1).max(100),
+  startedAtUtc: z.string().datetime().optional(),
+  statementLineCount: z.number().int().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueReconciliationStatusSchema).optional(),
+  summaryJson: z.string().max(2000).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationStatus. Lifecycle status of a revenue reconciliation run */
+CommercePaymentsRevenueReconciliationStatusSchema = z.enum(['Running', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRevenueTrendPoint. One point of a historical revenue trend. */
+CommercePaymentsRevenueTrendPointSchema = z.object({
+  creditTotal: z.number().optional(),
+  dateUtc: z.string().datetime().optional(),
+  debitTotal: z.number().optional(),
+  eventCount: z.number().int().optional(),
+  netTotal: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueTrendReport. Historical revenue trend over an inclusive date range. */
+CommercePaymentsRevenueTrendReportSchema = z.object({
+  fromUtc: z.string().datetime().optional(),
+  points: z
+    .array(z.lazy(() => CommercePaymentsRevenueTrendPointSchema))
+    .nullable()
+    .optional(),
+  totalCredit: z.number().optional(),
+  totalDebit: z.number().optional(),
+  totalNet: z.number().optional(),
+  toUtc: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsTaxBreakdown. Individual tax breakdown (for compound/multiple taxes) */
@@ -34786,6 +35377,57 @@ PagedResultPromoCodeDtoSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
   items: z
     .array(z.lazy(() => CommerceProductsPromoCodeDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueAnomalyAlert. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueAnomalyAlertSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueAnomalyAlertSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationDiscrepancy. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationDiscrepancySchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationRun. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationRunSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema))
     .nullable()
     .optional(),
   pageNumber: z.number().int().optional(),
