@@ -26,12 +26,18 @@ public sealed record MarketplacePriceLegSnapshot
         long sellerUnits,
         long platformFeeUnits)
     {
-        if (!Enum.IsDefined(currency)) throw new ArgumentOutOfRangeException(nameof(currency));
+        if (!Enum.IsDefined(currency))
+        {
+            throw new ArgumentOutOfRangeException(nameof(currency));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(units);
         ArgumentOutOfRangeException.ThrowIfNegative(sellerUnits);
         ArgumentOutOfRangeException.ThrowIfNegative(platformFeeUnits);
         if (checked(sellerUnits + platformFeeUnits) != units)
+        {
             throw new ArgumentException("Seller proceeds and platform fee must conserve the quoted leg.", nameof(sellerUnits));
+        }
 
         Currency = currency;
         Units = units;
@@ -55,13 +61,27 @@ public sealed record MarketplaceQuoteSnapshot
         ProductCurrencyMode mode,
         IReadOnlyList<MarketplacePriceLegSnapshot> legs)
     {
-        if (productId == Guid.Empty) throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
-        if (sellerId == Guid.Empty) throw new ArgumentException("Seller ID cannot be empty.", nameof(sellerId));
+        if (productId == Guid.Empty)
+        {
+            throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
+        }
+
+        if (sellerId == Guid.Empty)
+        {
+            throw new ArgumentException("Seller ID cannot be empty.", nameof(sellerId));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(policyVersion);
-        if (!Enum.IsDefined(mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+        if (!Enum.IsDefined(mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+
         ArgumentNullException.ThrowIfNull(legs);
         if (legs.Count == 0 || legs.Select(leg => leg.Currency).Distinct().Count() != legs.Count)
+        {
             throw new ArgumentException("A quote requires unique currency legs.", nameof(legs));
+        }
 
         ProductId = productId;
         SellerId = sellerId;
@@ -120,13 +140,23 @@ public sealed class ProductCurrencyPolicyVersion
         int platformFeePpm,
         DateTimeOffset effectiveAt)
     {
-        if (productId == Guid.Empty) throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
-        if (sellerId == Guid.Empty) throw new ArgumentException("Seller ID cannot be empty.", nameof(sellerId));
+        if (productId == Guid.Empty)
+        {
+            throw new ArgumentException("Product ID cannot be empty.", nameof(productId));
+        }
+
+        if (sellerId == Guid.Empty)
+        {
+            throw new ArgumentException("Seller ID cannot be empty.", nameof(sellerId));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(version);
         ArgumentOutOfRangeException.ThrowIfNegative(hardPriceUnits);
         ArgumentOutOfRangeException.ThrowIfNegative(softPriceUnits);
         if (platformFeePpm is < 0 or >= PartsPerMillion)
+        {
             throw new ArgumentOutOfRangeException(nameof(platformFeePpm));
+        }
 
         var validPrices = mode switch
         {
@@ -137,7 +167,9 @@ public sealed class ProductCurrencyPolicyVersion
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
         if (!validPrices)
+        {
             throw new MarketplaceCurrencyPolicyException("Currency prices do not match the accepted-currency mode.");
+        }
 
         return new ProductCurrencyPolicyVersion(
             productId, sellerId, version, mode, hardPriceUnits, softPriceUnits,
@@ -146,7 +178,10 @@ public sealed class ProductCurrencyPolicyVersion
 
     public MarketplaceQuoteSnapshot Quote(MarketplaceCurrencyChoice choice)
     {
-        if (!Enum.IsDefined(choice)) throw new ArgumentOutOfRangeException(nameof(choice));
+        if (!Enum.IsDefined(choice))
+        {
+            throw new ArgumentOutOfRangeException(nameof(choice));
+        }
 
         var amounts = (Mode, choice) switch
         {
@@ -181,7 +216,10 @@ public sealed class ProductCurrencyPolicyVersion
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(units);
         if (feePpm is < 0 or >= PartsPerMillion)
+        {
             throw new ArgumentOutOfRangeException(nameof(feePpm));
+        }
+
         return (long)(new BigInteger(units) * feePpm / PartsPerMillion);
     }
 }

@@ -12,8 +12,13 @@ internal sealed class CommandHandlerSender(params object[] dependencies) : ISend
     {
         var services = new ServiceCollection().AddLogging();
         foreach (var dependency in dependencies)
+        {
             foreach (var contract in dependency.GetType().GetInterfaces())
+            {
                 services.AddSingleton(contract, dependency);
+            }
+        }
+
         using var provider = services.BuildServiceProvider();
         var handlerContract = typeof(IRequestHandler<,>).MakeGenericType(request.GetType(), typeof(TResponse));
         var handlerType = request.GetType().Assembly.GetTypes().Single(type =>

@@ -54,7 +54,10 @@ public class DataMaskingRule
     /// </summary>
     public string ApplyMasking(string value)
     {
-        if (!IsEnabled || string.IsNullOrEmpty(value)) return value;
+        if (!IsEnabled || string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
 
         return MaskingType switch
         {
@@ -72,7 +75,10 @@ public class DataMaskingRule
         var showFirstCount = ShowFirst ?? 0;
         var showLastCount = ShowLast ?? 0;
 
-        if (showFirstCount + showLastCount >= value.Length) return value;
+        if (showFirstCount + showLastCount >= value.Length)
+        {
+            return value;
+        }
 
         var maskLength = value.Length - showFirstCount - showLastCount;
         var maskedPart = new string(MaskCharacter, maskLength);
@@ -85,7 +91,9 @@ public class DataMaskingRule
     private string ApplyPatternMask(string value)
     {
         if (string.IsNullOrEmpty(MaskingPattern))
+        {
             return new string(MaskCharacter, value.Length);
+        }
 
         return MaskingPattern;
     }
@@ -95,7 +103,10 @@ public class DataMaskingRule
     /// </summary>
     public bool IsUserExempt(Guid userId)
     {
-        if (string.IsNullOrEmpty(ExemptUsers)) return false;
+        if (string.IsNullOrEmpty(ExemptUsers))
+        {
+            return false;
+        }
 
         if (Guid.TryParse(ExemptUsers, out var exemptUserId))
         {

@@ -29,7 +29,11 @@ public sealed class EconomyComplianceHoldAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryOperator(out var tenantId, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await holds.ListAsync(
             tenantId,
             active,
@@ -45,7 +49,11 @@ public sealed class EconomyComplianceHoldAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid holdId, CancellationToken cancellationToken)
     {
-        if (!TryOperator(out var tenantId, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(await holds.CurrentAsync(tenantId, holdId, cancellationToken)
@@ -62,7 +70,11 @@ public sealed class EconomyComplianceHoldAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Audit(Guid holdId, CancellationToken cancellationToken)
     {
-        if (!TryOperator(out var tenantId, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(await holds.EventsAsync(tenantId, holdId, cancellationToken)
@@ -83,7 +95,11 @@ public sealed class EconomyComplianceHoldAdministrationController(
         [FromBody] EconomyStepUpRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryOperator(out var tenantId, out var actorId)) return Forbid();
+        if (!TryOperator(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var operation = EconomyStepUpOperation.Create(
             "economy.compliance-hold.release.propose",
@@ -103,7 +119,11 @@ public sealed class EconomyComplianceHoldAdministrationController(
         [FromBody] EconomyStepUpRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryOperator(out var tenantId, out var actorId)) return Forbid();
+        if (!TryOperator(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var operation = EconomyStepUpOperation.Create(
             "economy.compliance-hold.release.approve",
@@ -139,7 +159,10 @@ public sealed class EconomyComplianceHoldAdministrationController(
             actor.TenantId is not { } resolvedTenant ||
             actor.SubjectIdAsGuid is not { } resolvedActor ||
             !actor.HasPermission(EconomyPermission.Keys.OperateCompliance))
+        {
             return false;
+        }
+
         tenantId = resolvedTenant;
         actorId = resolvedActor;
         return true;

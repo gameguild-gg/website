@@ -82,18 +82,18 @@ public class LocalAuthService(
                 {
                     authenticationSucceeded = true;
                     userId = user.Id;
-                    logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", user.Email, userId);
+                    logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", LogRedaction.MaskEmail(user.Email), userId);
                 }
                 else
                 {
                     failureReason = "InvalidCredentials";
-                    logger.LogWarning("Invalid password for user {Email}", request.Email);
+                    logger.LogWarning("Invalid password for user {Email}", LogRedaction.MaskEmail(request.Email));
                 }
             }
             else
             {
                 failureReason = "InvalidCredentials";
-                logger.LogWarning("User not found: {Email}", request.Email);
+                logger.LogWarning("User not found: {Email}", LogRedaction.MaskEmail(request.Email));
             }
 
             // Apply user enumeration protection timing
@@ -289,7 +289,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during authentication for {Email}", request.Email);
+            logger.LogError(ex, "Unexpected error during authentication for {Email}", LogRedaction.MaskEmail(request.Email));
 
             await authAttemptService.RecordFailedAttemptAsync(request.Email, userId, ipAddress, userAgent, "SystemError", stopwatch.Elapsed).ConfigureAwait(false);
 
@@ -489,7 +489,7 @@ public class LocalAuthService(
             if (emailExists)
             {
                 await enumerationProtection.AddTimingProtectionDelayAsync(true, SystemClock.UtcNow).ConfigureAwait(false);
-                logger.LogWarning("Sign-up attempt with existing email: {Email}", request.Email);
+                logger.LogWarning("Sign-up attempt with existing email: {Email}", LogRedaction.MaskEmail(request.Email));
 
                 throw new InvalidOperationException("User already exists");
             }
@@ -517,7 +517,7 @@ public class LocalAuthService(
             await userRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             var userId = newUser.Id;
 
-            logger.LogInformation("Created new user with ID: {UserId} and Email: {Email}", userId, newUser.Email);
+            logger.LogInformation("Created new user with ID: {UserId} and Email: {Email}", userId, LogRedaction.MaskEmail(newUser.Email));
 
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, userId, cancellationToken).ConfigureAwait(false);
 
@@ -554,7 +554,7 @@ public class LocalAuthService(
 
             // Record successful registration
             await authAttemptService.RecordSuccessfulAttemptAsync(request.Email, userId, ipAddress ?? "unknown", userAgent, stopwatch.Elapsed, "Registration").ConfigureAwait(false);
-            logger.LogInformation("User {Email} successfully signed up", request.Email);
+            logger.LogInformation("User {Email} successfully signed up", LogRedaction.MaskEmail(request.Email));
 
             var accessTokenExpirationMinutes = jwtOptions?.Value.AccessTokenExpirationMinutes
                                                ?? int.Parse(configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60", CultureInfo.InvariantCulture);
@@ -578,7 +578,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error during user registration for {Email}", request.Email);
+            logger.LogError(ex, "Error during user registration for {Email}", LogRedaction.MaskEmail(request.Email));
 
             throw;
         }
@@ -814,7 +814,9 @@ public class LocalAuthService(
     private static TenantAccessContext RequireActiveTenantAccess(TenantAccessContext tenantAccessContext)
     {
         if (tenantAccessContext.TenantId.HasValue)
+        {
             return tenantAccessContext;
+        }
 
         throw new AccessDeniedException("Authenticated user has no active tenant membership.");
     }

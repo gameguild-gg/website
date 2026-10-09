@@ -237,6 +237,24 @@ public class ResultTests
     }
 
     [Fact]
+    public void Ensure_Generic_ShouldPreserveFailureWithoutRunningPredicate()
+    {
+        var originalError = Error.Failure("original", "original failure");
+        var original = Result.Failure<int>(originalError);
+        var predicateCalls = 0;
+
+        var result = original.Ensure(_ =>
+        {
+            predicateCalls++;
+            return true;
+        }, Error.Failure("replacement", "replacement failure"));
+
+        result.Should().BeSameAs(original);
+        result.Error.Should().Be(originalError);
+        predicateCalls.Should().Be(0);
+    }
+
+    [Fact]
     public void Tap_Generic_ShouldExecuteAction_OnSuccess()
     {
         var captured = 0;

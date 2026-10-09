@@ -88,11 +88,19 @@ public class TenantStorageConfiguration : EntityBase
         Guid createdBy)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("TenantId is required", nameof(tenantId));
+        }
+
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException("Name is required", nameof(name));
+        }
+
         if (string.IsNullOrWhiteSpace(bucketName))
+        {
             throw new ArgumentException("BucketName is required", nameof(bucketName));
+        }
 
         return new TenantStorageConfiguration
         {
@@ -113,8 +121,10 @@ public class TenantStorageConfiguration : EntityBase
     public void Enable()
     {
         if (LastValidationSuccess != true)
+        {
             throw new InvalidOperationException("Cannot enable storage configuration that hasn't been validated");
-        
+        }
+
         IsEnabled = true;
     }
 

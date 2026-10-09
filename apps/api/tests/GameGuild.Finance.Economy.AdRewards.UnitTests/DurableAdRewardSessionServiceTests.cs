@@ -81,9 +81,14 @@ public sealed class DurableAdRewardSessionServiceTests
         Func<Task> action = () => service.StartAsync(Request()).AsTask();
 
         if (scenario == "stale")
+        {
             await action.Should().ThrowAsync<AdNetworkReportStaleException>();
+        }
         else
+        {
             await action.Should().ThrowAsync<AdRewardIssuanceDisabledException>();
+        }
+
         (await context.Set<AdRewardSessionRow>().CountAsync()).Should().Be(0);
     }
 

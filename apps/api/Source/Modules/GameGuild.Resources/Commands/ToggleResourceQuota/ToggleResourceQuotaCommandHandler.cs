@@ -13,7 +13,10 @@ public sealed class ToggleResourceQuotaCommandHandler(IResourceQuotaRepository r
 
         var quota = await resourceQuotaRepository.GetByTenantAndTypeAsync(request.TenantId, request.Type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return Unit.Value;
+        if (quota == null)
+        {
+            return Unit.Value;
+        }
 
         quota.IsActive = request.IsActive;
         quota.Touch();

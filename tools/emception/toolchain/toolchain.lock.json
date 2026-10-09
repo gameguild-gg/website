@@ -45,7 +45,7 @@
     },
     "curlLite": {
       "source": {
-        "contentHash": "d40829ec28a06101842a528c68ff0433c5847e873e40b3934b0b007772a34fae",
+        "contentHash": "4897f285d45c27549c8527fbaa3e9fc86ea86c54abbb96c1ae3f0506dfa0a5c4",
         "kind": "workspace",
         "path": "toolchain/overlays/libcurl-lite"
       },
@@ -85,7 +85,7 @@
           },
           {
             "gitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
-            "review": "toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b.json: all 175014 files and 191207 archive headers compared; only the declared Git describe abbreviation and its file size differ",
+            "review": "toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b-96cf1ae6.json; summary in toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b.json: all 175014 files and 191207 archive headers compared; only the declared Git describe abbreviation and its file size differ",
             "sha256": "96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce"
           }
         ],

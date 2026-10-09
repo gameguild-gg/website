@@ -1,0 +1,12 @@
+---
+# Keep the original remediation scope visible to Codacy. Exclusion, suppression,
+# a local baseline, and an ignored issue are not evidence that a finding is fixed.
+# Do not reapply bulk issue ignores. Preserve each finding until its underlying
+# behavior is repaired and the relevant scanner verifies the published change.
+exclude_paths: []
+include_paths:
+  - "packages/infrastructure/client/src/generated/**"
+  - "apps/web/src/lib/api/generated/**"
+  - "apps/api/tests/**"
+  - "tools/emception/packages/browser/src/emscripten/**"
+  - "**/*.md"

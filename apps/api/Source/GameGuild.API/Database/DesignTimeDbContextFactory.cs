@@ -40,6 +40,12 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
     public static string ResolveConnectionString(IConfiguration configuration) =>
         DatabaseStartupConfiguration.ResolveMigrationConnectionString(configuration)
         ?? PostgresConnectionString.Resolve(configuration)
+        // Justified constant (SonarCSharp S2068 / hard-coded-password): this
+        // fallback exists only for `dotnet ef` design-time tooling when no
+        // configuration source is available. It matches the local docker-compose
+        // development database (postgres/postgres), is never used at runtime —
+        // DatabaseStartupInitializer resolves the real connection from
+        // POSTGRES_* / connection-string configuration before this factory runs.
         ?? "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
 
     /// <summary>

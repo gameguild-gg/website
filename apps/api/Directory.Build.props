@@ -52,9 +52,9 @@
         <Using Include="Microsoft.EntityFrameworkCore" />
     </ItemGroup>
 
-    <!-- Opt-in flag for Sonar analyzers. Disabled by default to unblock current build. -->
+    <!-- Opt-in flag for Sonar analyzers (todo 10: staged severities in root .editorconfig). -->
     <PropertyGroup>
-        <IncludeSonarAnalyzers>false</IncludeSonarAnalyzers>
+        <IncludeSonarAnalyzers>true</IncludeSonarAnalyzers>
     </PropertyGroup>
 
     <ItemGroup

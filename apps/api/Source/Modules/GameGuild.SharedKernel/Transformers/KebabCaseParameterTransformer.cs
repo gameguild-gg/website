@@ -10,7 +10,10 @@ public sealed partial class KebabCaseParameterTransformer : IOutboundParameterTr
 {
     public string? TransformOutbound(object? value)
     {
-        if (value == null) return null;
+        if (value == null)
+        {
+            return null;
+        }
 
         var stringValue = value.ToString();
 

@@ -37,9 +37,14 @@ public sealed class ProjectTeamAgreement : EntityBase
         DateTime endsAt)
     {
         if (proposingTeamId == receivingTeamId)
+        {
             throw new ArgumentException("An agreement requires two different teams.", nameof(receivingTeamId));
+        }
+
         if (endsAt <= startsAt)
+        {
             throw new ArgumentException("Agreement end must be after its start.", nameof(endsAt));
+        }
 
         return new ProjectTeamAgreement
         {
@@ -57,8 +62,15 @@ public sealed class ProjectTeamAgreement : EntityBase
     public void CounterPropose(Guid actorId, string scope, string deliverables, DateTime startsAt, DateTime endsAt)
     {
         if (Status is ProjectTeamAgreementStatus.Accepted or ProjectTeamAgreementStatus.Cancelled or ProjectTeamAgreementStatus.Completed)
+        {
             throw new InvalidOperationException("This agreement can no longer be revised.");
-        if (endsAt <= startsAt) throw new ArgumentException("Agreement end must be after its start.", nameof(endsAt));
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Agreement end must be after its start.", nameof(endsAt));
+        }
+
         ProposedByUserId = actorId;
         Scope = scope.Trim();
         Deliverables = deliverables.Trim();
@@ -72,9 +84,15 @@ public sealed class ProjectTeamAgreement : EntityBase
     public void Accept(Guid actorId)
     {
         if (actorId == ProposedByUserId)
+        {
             throw new InvalidOperationException("Agreement acceptance requires a distinct actor.");
+        }
+
         if (Status is not (ProjectTeamAgreementStatus.Proposed or ProjectTeamAgreementStatus.CounterProposed))
+        {
             throw new InvalidOperationException("This agreement cannot be accepted in its current state.");
+        }
+
         AcceptedByUserId = actorId;
         AcceptedAt = SystemClock.UtcNow;
         Status = ProjectTeamAgreementStatus.Accepted;
@@ -84,7 +102,10 @@ public sealed class ProjectTeamAgreement : EntityBase
     public void Cancel()
     {
         if (Status == ProjectTeamAgreementStatus.Completed)
+        {
             throw new InvalidOperationException("A completed agreement cannot be cancelled.");
+        }
+
         Status = ProjectTeamAgreementStatus.Cancelled;
         CancelledAt = SystemClock.UtcNow;
         Touch();
@@ -93,7 +114,10 @@ public sealed class ProjectTeamAgreement : EntityBase
     public void Complete()
     {
         if (Status != ProjectTeamAgreementStatus.Accepted)
+        {
             throw new InvalidOperationException("Only an accepted agreement can be completed.");
+        }
+
         Status = ProjectTeamAgreementStatus.Completed;
         CompletedAt = SystemClock.UtcNow;
         Touch();

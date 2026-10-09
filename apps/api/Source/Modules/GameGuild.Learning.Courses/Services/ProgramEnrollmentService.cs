@@ -45,12 +45,18 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
     // Verify program exists and is available for enrollment
     var program = await _context.Set<Program>().FirstOrDefaultAsync(p => p.Id == programId);
 
-    if (program == null) throw new ArgumentException("Program not found", nameof(programId));
+    if (program == null)
+        {
+            throw new ArgumentException("Program not found", nameof(programId));
+        }
 
-    if (program.EnrollmentStatus != EnrollmentStatus.Open) throw new InvalidOperationException("Program is not available for enrollment");
+        if (program.EnrollmentStatus != EnrollmentStatus.Open)
+        {
+            throw new InvalidOperationException("Program is not available for enrollment");
+        }
 
-    // Create new enrollment
-    var enrollment = new ProgramEnrollment { UserId = userId, ProgramId = programId, EnrollmentSource = source, EnrolledAt = SystemClock.UtcNow, StartDate = SystemClock.UtcNow };
+        // Create new enrollment
+        var enrollment = new ProgramEnrollment { UserId = userId, ProgramId = programId, EnrollmentSource = source, EnrolledAt = SystemClock.UtcNow, StartDate = SystemClock.UtcNow };
 
     _context.Set<ProgramEnrollment>().Add(enrollment);
     await _context.SaveChangesAsync().ConfigureAwait(false);
@@ -115,9 +121,12 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
   public async Task<ProgramEnrollment> UpdateProgressAsync(Guid enrollmentId, PercentValue progressPercentage) {
     var enrollment = await _context.Set<ProgramEnrollment>().FirstOrDefaultAsync(pe => pe.Id == enrollmentId);
 
-    if (enrollment == null) throw new ArgumentException("Enrollment not found", nameof(enrollmentId));
+    if (enrollment == null)
+        {
+            throw new ArgumentException("Enrollment not found", nameof(enrollmentId));
+        }
 
-    enrollment.ProgressPercentage = progressPercentage;
+        enrollment.ProgressPercentage = progressPercentage;
 
     // Update completion status based on progress
     if (enrollment.ProgressPercentage.CompareTo(PercentValue.Hundred) == 0 && enrollment.CompletionStatus != CompletionStatus.Completed) {
@@ -136,9 +145,12 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
   public async Task<ProgramEnrollment> CompleteEnrollmentAsync(Guid enrollmentId, PercentValue? finalGrade = null) {
     var enrollment = await _context.Set<ProgramEnrollment>().FirstOrDefaultAsync(pe => pe.Id == enrollmentId);
 
-    if (enrollment == null) throw new ArgumentException("Enrollment not found", nameof(enrollmentId));
+    if (enrollment == null)
+        {
+            throw new ArgumentException("Enrollment not found", nameof(enrollmentId));
+        }
 
-    enrollment.MarkAsCompleted(finalGrade);
+        enrollment.MarkAsCompleted(finalGrade);
     await _context.SaveChangesAsync().ConfigureAwait(false);
 
     return enrollment;
@@ -148,9 +160,12 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
   public async Task<bool> CancelEnrollmentAsync(Guid enrollmentId) {
     var enrollment = await _context.Set<ProgramEnrollment>().FirstOrDefaultAsync(pe => pe.Id == enrollmentId);
 
-    if (enrollment == null) return false;
+    if (enrollment == null)
+        {
+            return false;
+        }
 
-    enrollment.EnrollmentStatus = EnrollmentStatus.Cancelled;
+        enrollment.EnrollmentStatus = EnrollmentStatus.Cancelled;
     enrollment.Touch();
     await _context.SaveChangesAsync().ConfigureAwait(false);
 

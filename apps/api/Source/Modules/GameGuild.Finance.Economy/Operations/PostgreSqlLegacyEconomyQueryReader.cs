@@ -46,8 +46,16 @@ public sealed class PostgreSqlLegacyEconomyQueryReader : ILegacyEconomyQueryRead
         string? cursor,
         CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
         var position = DecodeCursor(cursor);
         var query = _db.Set<EconomyLegacyShadowBatchRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
@@ -109,12 +117,19 @@ public sealed class PostgreSqlLegacyEconomyQueryReader : ILegacyEconomyQueryRead
 
     private static (DateTimeOffset At, Guid Id)? DecodeCursor(string? cursor)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var ticks) || !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException("Legacy Economy batch cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 }

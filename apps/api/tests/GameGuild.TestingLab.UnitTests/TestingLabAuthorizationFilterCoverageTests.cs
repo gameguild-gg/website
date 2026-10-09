@@ -174,9 +174,13 @@ public sealed class TestingLabAuthorizationFilterCoverageTests
             context, actor, action, resourceType, "id", resourceId.ToString(), permissions: permission.Object);
 
         if (ownerBypass)
+        {
             result.Result.Should().BeNull();
+        }
         else
+        {
             result.Result.Should().BeOfType<ForbidResult>();
+        }
     }
 
     [Theory]
@@ -275,9 +279,15 @@ public sealed class TestingLabAuthorizationFilterCoverageTests
         var http = new DefaultHttpContext();
         var route = new RouteData();
         if (parameter != null && routeValue != null)
+        {
             route.Values[parameter] = routeValue;
+        }
+
         if (parameter != null && queryValue != null)
+        {
             http.Request.QueryString = QueryString.Create(parameter, queryValue);
+        }
+
         var action = new ActionContext(http, route, new ActionDescriptor(), new ModelStateDictionary());
         return new AuthorizationFilterContext(action, []);
     }

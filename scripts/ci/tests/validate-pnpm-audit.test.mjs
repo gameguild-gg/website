@@ -154,3 +154,93 @@ test("both exact locally verified mitigations pass and an additional advisory st
   combined.metadata.vulnerabilities.low = 1;
   assert.throws(() => validateAuditReport(combined, 1, true, true), /Unmitigated.*GHSA-other/);
 });
+
+test("metadata counts every workspace finding of a verified advisory", () => {
+  const multiple = patchedReport();
+  multiple.advisories["1240992"].findings.push({ version: "3.0.3" });
+  multiple.metadata.vulnerabilities.high = 2;
+  assert.deepEqual(validateAuditReport(multiple, 1, true), {
+    advisories: 1,
+    verifiedLocalPatches: 1,
+  });
+  multiple.metadata.vulnerabilities.high = 1;
+  assert.throws(() => validateAuditReport(multiple, 1, true), /disagree/);
+});
+
+test("multiple findings of both verified patches retain all metadata checks", () => {
+  const multiple = patchedReport();
+  multiple.advisories["1240992"].findings.push({ version: "3.0.3" });
+  multiple.metadata.vulnerabilities.high = 2;
+  multiple.advisories["1241202"] = patchedSprintfReport().advisories["1241202"];
+  multiple.advisories["1241202"].findings.push({ version: "1.1.3" });
+  multiple.metadata.vulnerabilities.moderate = 2;
+  assert.deepEqual(validateAuditReport(multiple, 1, true, true), {
+    advisories: 2,
+    verifiedLocalPatches: 2,
+  });
+  multiple.metadata.vulnerabilities.moderate = 3;
+  assert.throws(() => validateAuditReport(multiple, 1, true, true), /disagree/);
+});
+
+test("a new Next.js advisory fails for every workspace installation", () => {
+  for (const github_advisory_id of [
+    "GHSA-3w37-wq28-93x7",
+    "GHSA-4jqv-mc3x-m676",
+    "GHSA-39w2-rjm5-chcv",
+    "GHSA-f87g-xv8r-7p7x",
+    "GHSA-mcj8-r9mp-w47p",
+    "GHSA-cjq9-62q9-8jv4",
+  ]) {
+    const invalid = patchedReport();
+    invalid.advisories.next = {
+      module_name: "next",
+      github_advisory_id,
+      findings: [
+        { version: "16.3.6", paths: ["apps__web>next"] },
+        { version: "16.3.6", paths: ["demos__emception-ide-next>next"] },
+      ],
+    };
+    invalid.metadata.vulnerabilities.moderate = 2;
+    assert.throws(
+      () => validateAuditReport(invalid, 1, true, true),
+      new RegExp(`Unmitigated.*${github_advisory_id}`),
+    );
+  }
+});
+
+test("each severity rejects non-integer and non-numeric vulnerability counts", () => {
+  for (const level of ["info", "low", "moderate", "high", "critical"]) {
+    for (const count of [null, false, true, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+      const invalid = report();
+      invalid.metadata.vulnerabilities[level] = count;
+      assert.throws(() => validateAuditReport(invalid, 0, true, true), new RegExp("Invalid pnpm audit vulnerability count: " + level));
+    }
+  }
+});
+
+test("both mitigations reject malformed CVE and finding collections", () => {
+  for (const factory of [patchedReport, patchedSprintfReport]) {
+    for (const mutation of [
+      { cves: undefined }, { cves: null }, { cves: "CVE-2026-93687" }, { cves: {} },
+      { findings: undefined }, { findings: null }, { findings: {} }, { findings: [{}] },
+    ]) {
+      const invalid = factory();
+      Object.assign(Object.values(invalid.advisories)[0], mutation);
+      assert.throws(() => validateAuditReport(invalid, 1, true, true), /Unmitigated/);
+    }
+  }
+});
+
+test("a combined report requires independent verification of both installed patches", () => {
+  const combined = patchedReport();
+  combined.advisories["1241202"] = patchedSprintfReport().advisories["1241202"];
+  combined.metadata.vulnerabilities.moderate = 1;
+  for (const [bracesVerified, sprintfVerified, rejectedId] of [
+    [false, false, "GHSA-vfj7-8cjw-p6xm"],
+    [false, true, "GHSA-vfj7-8cjw-p6xm"],
+    [true, false, "GHSA-hp3w-g68c-fv3c"],
+  ]) {
+    assert.throws(() => validateAuditReport(combined, 1, bracesVerified, sprintfVerified), new RegExp("Unmitigated.*" + rejectedId));
+  }
+  assert.deepEqual(validateAuditReport(combined, 1, true, true), { advisories: 2, verifiedLocalPatches: 2 });
+});

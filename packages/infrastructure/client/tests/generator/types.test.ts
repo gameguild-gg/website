@@ -137,8 +137,7 @@ describe('Type Generator', () => {
 
     const output = generateTypes(spec);
 
-    // Generator outputs Array<T> instead of T[]
-    expect(output).toContain('export type StringArray = Array<string>');
+    expect(output).toContain('export type StringArray = string[]');
   });
 
   it('should handle nested object schemas', () => {

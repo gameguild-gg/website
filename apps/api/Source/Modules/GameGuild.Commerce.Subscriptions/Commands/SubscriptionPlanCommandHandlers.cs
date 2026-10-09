@@ -132,7 +132,9 @@ public sealed class DeleteSubscriptionPlanCommandHandler(ISubscriptionPlanReposi
     public async Task<Unit> Handle(DeleteSubscriptionPlanCommand request, CancellationToken cancellationToken)
     {
         if (await repository.GetByIdAsync(request.Id, cancellationToken).ConfigureAwait(false) is null)
+        {
             throw new EntityNotFoundException("SubscriptionPlan", request.Id);
+        }
 
         await repository.DeleteAsync(request.Id, cancellationToken).ConfigureAwait(false);
         return Unit.Value;

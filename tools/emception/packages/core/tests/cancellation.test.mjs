@@ -117,3 +117,116 @@ test('timeoutMs<=0 disables the timer', async () => {
     const out = await withCancellation(wait(5).then(() => 'done'), { timeoutMs: 0 });
     assert.equal(out.kind, 'ok');
 });
+
+const deferred = () => {
+    let resolve;
+    const promise = new Promise((complete) => { resolve = complete; });
+    return { promise, resolve };
+};
+
+test('timeout retains its outcome while asynchronous cleanup is pending', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const operation = deferred();
+    const cleanup = deferred();
+    let cleanupCalls = 0;
+    let elapsed = 0;
+    const result = withCancellation(operation.promise, {
+        timeoutMs: 20,
+        now: () => elapsed,
+        cleanup: () => { cleanupCalls += 1; return cleanup.promise; },
+    });
+    elapsed = 20;
+    t.mock.timers.tick(20);
+    operation.resolve('completed after cancellation started');
+    await Promise.resolve();
+    cleanup.resolve();
+    const outcome = await result;
+    assert.equal(outcome.kind, 'timeout');
+    assert.equal(cleanupCalls, 1);
+});
+
+test('timeout followed by abort invokes asynchronous cleanup exactly once', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const operation = deferred();
+    const cleanup = deferred();
+    const controller = new AbortController();
+    let cleanupCalls = 0;
+    let elapsed = 0;
+    const result = withCancellation(operation.promise, {
+        timeoutMs: 20,
+        signal: controller.signal,
+        now: () => elapsed,
+        cleanup: () => { cleanupCalls += 1; return cleanup.promise; },
+    });
+    elapsed = 20;
+    t.mock.timers.tick(20);
+    controller.abort('later abort');
+    cleanup.resolve();
+    const outcome = await result;
+    assert.equal(outcome.kind, 'timeout');
+    assert.equal(cleanupCalls, 1);
+});
+
+test('an operation that completes first does not invoke cancellation cleanup', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const controller = new AbortController();
+    let cleanupCalls = 0;
+    const outcome = await withCancellation(Promise.resolve('completed'), {
+        timeoutMs: 20,
+        signal: controller.signal,
+        cleanup: () => { cleanupCalls += 1; },
+    });
+    t.mock.timers.tick(20);
+    controller.abort('later abort');
+    assert.equal(outcome.kind, 'ok');
+    assert.equal(cleanupCalls, 0);
+});
+
+test('an early timer callback waits for the actual elapsed deadline', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const operation = deferred();
+    let cleanupCalls = 0;
+    let elapsed = 0;
+    const result = withCancellation(operation.promise, {
+        timeoutMs: 20,
+        now: () => elapsed,
+        cleanup: () => { cleanupCalls += 1; },
+    });
+    elapsed = 19;
+    t.mock.timers.tick(20);
+    assert.equal(cleanupCalls, 0);
+    elapsed = 20;
+    t.mock.timers.tick(1);
+    const outcome = await result;
+    assert.equal(outcome.kind, 'timeout');
+    assert.equal(outcome.durationMs, 20);
+    assert.equal(cleanupCalls, 1);
+});
+
+for (const timeoutMs of [Infinity, NaN]) {
+    test(`non-finite timeout ${timeoutMs} is rejected`, async () => {
+        await assert.rejects(withCancellation(Promise.resolve('completed'), { timeoutMs }), RangeError);
+    });
+}
+
+test('long deadlines are scheduled without overflowing the timer range', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const timeoutMs = 2_147_483_648;
+    const operation = deferred();
+    let cleanupCalls = 0;
+    let elapsed = 0;
+    const result = withCancellation(operation.promise, {
+        timeoutMs,
+        now: () => elapsed,
+        cleanup: () => { cleanupCalls += 1; },
+    });
+    elapsed = timeoutMs - 1;
+    t.mock.timers.tick(timeoutMs - 1);
+    assert.equal(cleanupCalls, 0);
+    elapsed = timeoutMs;
+    t.mock.timers.tick(1);
+    const outcome = await result;
+    assert.equal(outcome.kind, 'timeout');
+    assert.equal(outcome.durationMs, timeoutMs);
+    assert.equal(cleanupCalls, 1);
+});

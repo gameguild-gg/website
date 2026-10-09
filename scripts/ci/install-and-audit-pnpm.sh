@@ -23,8 +23,15 @@ rm -f "$audit_lock" "$audit_report" "$audit_stderr_report"
 cd "$repository_root"
 export CI=true
 
+# Discard the derived dependency-status cache so the frozen install checks
+# the current lockfile and security patches, including after a pnpm upgrade.
+rm -f "$repository_root/node_modules/.pnpm-workspace-state.json"
 printf '> pnpm install --frozen-lockfile --ignore-scripts\n'
 pnpm install --frozen-lockfile --ignore-scripts
+# Patch application uses pnpm's dependency build stage. Only these two
+# reviewed packages are approved for that stage in the root manifest.
+printf '> pnpm rebuild braces sprintf-js\n'
+pnpm rebuild braces sprintf-js
 lock_hash_after_install="$(sha256sum "$root_lock" | awk '{print $1}')"
 [[ "$lock_hash_before" == "$lock_hash_after_install" ]] || economy_gate_error 'pnpm install unexpectedly changed the repository lockfile'
 [[ -f "$virtual_store_lock" ]] || economy_gate_error "pnpm install did not produce its virtual-store resolution: $virtual_store_lock"
@@ -43,3 +50,4 @@ lock_hash_after_audit="$(sha256sum "$root_lock" | awk '{print $1}')"
 
 printf '> node scripts/ci/validate-pnpm-audit.mjs\n'
 node "$script_dir/validate-pnpm-audit.mjs" "$audit_report" "$audit_exit_code"
+node --test "$script_dir/tests/dependency-security.test.mjs" "$script_dir/tests/next-dev-origin-security.test.mjs"

@@ -57,8 +57,14 @@ public static class ReserveFormula
     {
         ArgumentOutOfRangeException.ThrowIfNegative(stressedUnitCostUsdNanos);
         if (targetGrossMarginPpm is < 0 or >= PpmScale)
+        {
             throw new ArgumentOutOfRangeException(nameof(targetGrossMarginPpm));
-        if (stressedUnitCostUsdNanos == 0) return 0;
+        }
+
+        if (stressedUnitCostUsdNanos == 0)
+        {
+            return 0;
+        }
 
         return CeilingDivide(
             (BigInteger)stressedUnitCostUsdNanos * EconomyParity.SoftCoinUnitsPerUsd * PpmScale,
@@ -92,12 +98,17 @@ public static class ReserveFormula
                 service.CurrentProviderCostUsdNanos < 0 ||
                 service.TrailingHighPercentileCostUsdNanos < 0 ||
                 service.ProviderFxStressCostUsdNanos < 0)
+            {
                 throw new ReserveInputUnknownException("Service reserve input is missing, stale, or invalid.");
+            }
 
             if (!service.Enabled)
             {
                 if (service.ReservedSoftUnits > 0)
+                {
                     throw new ReserveInputUnknownException("A disabled service still has an open authorization.");
+                }
+
                 continue;
             }
 
@@ -107,14 +118,22 @@ public static class ReserveFormula
                 service.TrailingHighPercentileCostUsdNanos,
                 service.ProviderFxStressCostUsdNanos);
             if (!enabled.TryAdd(code, (service, cost)))
+            {
                 throw new ReserveInputUnknownException($"Service reserve input {code} is duplicated.");
+            }
+
             reservedTotal += service.ReservedSoftUnits;
         }
 
         if (outstandingSoftUnits > 0 && enabled.Count == 0)
+        {
             throw new ReserveInputUnknownException("No enabled service reserve input is available.");
+        }
+
         if ((BigInteger)unreservedSoftUnits + reservedTotal != outstandingSoftUnits)
+        {
             throw new ReserveInputUnknownException("Reserved and unreserved soft units must equal outstanding soft units.");
+        }
 
         BigInteger result = irreversibleInFlightProviderCostUsdNanos;
         if (unreservedSoftUnits > 0)
@@ -131,7 +150,11 @@ public static class ReserveFormula
 
         foreach (var (service, cost) in enabled.Values)
         {
-            if (service.ReservedSoftUnits == 0) continue;
+            if (service.ReservedSoftUnits == 0)
+            {
+                continue;
+            }
+
             result += CeilingDivideBigInteger(
                 (BigInteger)service.ReservedSoftUnits * cost,
                 service.CurrentServicePriceSoftUnits);
@@ -172,12 +195,18 @@ public static class ReserveFormula
     private static long ToLong(BigInteger value)
     {
         if (value > long.MaxValue)
+        {
             throw new OverflowException("Reserve arithmetic exceeded the supported unit range.");
+        }
+
         return (long)value;
     }
 
     private static void EnsureNonNegative(params long[] values)
     {
-        if (values.Any(value => value < 0)) throw new ArgumentOutOfRangeException(nameof(values));
+        if (values.Any(value => value < 0))
+        {
+            throw new ArgumentOutOfRangeException(nameof(values));
+        }
     }
 }

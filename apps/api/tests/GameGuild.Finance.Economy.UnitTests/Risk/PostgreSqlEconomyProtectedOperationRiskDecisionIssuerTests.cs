@@ -159,10 +159,12 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuerTests
                  {
                      fingerprint, outcome, policyVersion, reserveVersion, template, amount
                  })
+        {
             FluentActions.Invoking(() =>
-                    PostgreSqlEconomyProtectedOperationRiskDecisionIssuer.EnsureReplay(
-                        existing, request, policy, reserve, assessment))
-                .Should().Throw<RiskDecisionReuseException>();
+                PostgreSqlEconomyProtectedOperationRiskDecisionIssuer.EnsureReplay(
+                    existing, request, policy, reserve, assessment))
+            .Should().Throw<RiskDecisionReuseException>();
+        }
     }
 
     [Fact]
@@ -225,7 +227,9 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuerTests
         ];
 
         foreach (var action in invalid)
+        {
             FluentActions.Invoking(action).Should().Throw<ArgumentNullException>();
+        }
     }
 
     private static EconomyProtectedRiskDecisionRequest Request(

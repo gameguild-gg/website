@@ -192,11 +192,19 @@ describe("PostEngagement", () => {
     fireEvent.click(follow);
     expect(mocks.followCreator).toHaveBeenCalledTimes(1);
     releaseFollow({ userId: "author-1", isFollowing: true });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Unfollow Ada" })).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => {
+      const settledFollow = screen.getByRole("button", { name: "Unfollow Ada" });
+      expect(settledFollow).toHaveAttribute("aria-pressed", "true");
+      expect(settledFollow).toBeEnabled();
+    });
 
     mocks.followCreator.mockResolvedValueOnce({ userId: "author-1", isFollowing: false });
     fireEvent.click(screen.getByRole("button", { name: "Unfollow Ada" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Follow Ada" })).toHaveAttribute("aria-pressed", "false"));
+    await waitFor(() => {
+      const settledUnfollow = screen.getByRole("button", { name: "Follow Ada" });
+      expect(settledUnfollow).toHaveAttribute("aria-pressed", "false");
+      expect(settledUnfollow).toBeEnabled();
+    });
 
     mocks.followCreator.mockRejectedValueOnce(new Error("Follow unavailable"));
     fireEvent.click(screen.getByRole("button", { name: "Follow Ada" }));

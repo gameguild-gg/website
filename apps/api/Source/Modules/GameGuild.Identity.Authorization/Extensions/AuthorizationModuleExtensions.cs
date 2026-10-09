@@ -57,6 +57,20 @@ public static class AuthorizationModuleExtensions
             })
             .ValidateOnStart();
 
+        // External authorization-decision integration (issue #146): OAuth2
+        // client-credentials decision provider under Authorization:ExternalDecision.
+        // Disabled by default; enabling requires complete HTTPS endpoints and client
+        // credentials (validation fails host startup otherwise, so a half-configured
+        // provider can never silently run).
+        services.AddOptions<ExternalAuthorizationOptions>()
+            .Bind(configuration.GetSection(ExternalAuthorizationOptions.SectionName))
+            .Validate(options =>
+            {
+                options.Validate();
+                return true;
+            })
+            .ValidateOnStart();
+
         return services;
     }
 
@@ -211,8 +225,11 @@ public static class AuthorizationModuleExtensions
         services.AddResourcePermissionAuthorization();
 
         // Dynamic policy provider (Singleton - required by ASP.NET Core MVC infrastructure)
-        // Uses IServiceScopeFactory to resolve scoped services when needed
-        services.AddSingleton<IAuthorizationPolicyProvider, DbAuthorizationPolicyProvider>();
+        // Uses IServiceScopeFactory to resolve scoped services when needed.
+        // Also registered as its concrete type so composition roots can wrap it
+        // (e.g. with the API-key scope policy provider) without a second instance.
+        services.AddSingleton<DbAuthorizationPolicyProvider>();
+        services.AddSingleton<IAuthorizationPolicyProvider>(sp => sp.GetRequiredService<DbAuthorizationPolicyProvider>());
 
         // Register TimeProvider for environment handler
         services.AddSingleton(TimeProvider.System);
@@ -404,6 +421,23 @@ public static class AuthorizationModuleExtensions
         // Single resolution contract for authorization entry points and permission-query
         // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
+
+        // External authorization-decision provider (issue #146): consulted by the
+        // effective-permission resolver after every local layer. The built-in HTTP
+        // implementation is disabled by default (Authorization:ExternalDecision:Enabled
+        // = false) and then returns no decision for any query, preserving purely local
+        // resolution with zero outbound calls. No real outbound traffic happens in
+        // tests: the HTTP pipeline is injectable via the typed client's handler.
+        services.AddHttpClient<IExternalAuthorizationDecisionProvider, HttpExternalAuthorizationDecisionProvider>((sp, client) =>
+        {
+            var externalOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExternalAuthorizationOptions>>().Value;
+            client.Timeout = externalOptions.Timeout;
+        });
+
+        // Read-only graph visualization and impact analysis over the same
+        // RBAC/defaults data as the effective resolver (issue #334).
+        services.AddScoped<IPermissionGraphService, PermissionGraphService>();
+        services.AddScoped<IPermissionImpactAnalysisService, PermissionImpactAnalysisService>();
 
         // Layer 2: Centralized DAC permission resolution (issue #339). Single entry
         // point for the 3-layer DAC model (tenant / content-type / resource) that

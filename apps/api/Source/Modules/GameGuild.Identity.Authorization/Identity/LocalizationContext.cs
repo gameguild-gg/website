@@ -19,11 +19,17 @@ public class LocalizationContext(IHttpContextAccessor httpContextAccessor) : ILo
         get
         {
             var httpContext = httpContextAccessor.HttpContext;
-            if (httpContext == null) return null;
+            if (httpContext == null)
+            {
+                return null;
+            }
 
             // Try claim first
             var cultureClaim = httpContext.User.FindFirst(CultureClaimType)?.Value;
-            if (!string.IsNullOrEmpty(cultureClaim)) return cultureClaim;
+            if (!string.IsNullOrEmpty(cultureClaim))
+            {
+                return cultureClaim;
+            }
 
             // Fallback to Accept-Language header
             if (httpContext.Request.Headers.TryGetValue(AcceptLanguageHeader, out var acceptLanguage))
@@ -45,7 +51,10 @@ public class LocalizationContext(IHttpContextAccessor httpContextAccessor) : ILo
         get
         {
             var httpContext = httpContextAccessor.HttpContext;
-            if (httpContext == null) return null;
+            if (httpContext == null)
+            {
+                return null;
+            }
 
             var uiCultureClaim = httpContext.User.FindFirst(UICultureClaimType)?.Value;
             return !string.IsNullOrEmpty(uiCultureClaim) ? uiCultureClaim : CultureCode;

@@ -45,7 +45,10 @@ public class KeyRotationController : BaseApiController
         {
             var activeKey = await _keyRotationService.GetActiveSigningKeyAsync(cancellationToken).ConfigureAwait(false);
             if (activeKey == null)
+            {
                 return Ok(new List<JwtKeyInfoDto>());
+            }
+
             return Ok(new List<JwtKeyInfoDto> { JwtKeyInfoDto.FromEntity(activeKey) });
         }
 
@@ -72,7 +75,7 @@ public class KeyRotationController : BaseApiController
         CancellationToken cancellationToken)
     {
         _logger.LogWarning("Manual key rotation requested by {User}. Reason: {Reason}",
-            User.Identity?.Name, request.Reason);
+            LogRedaction.Sanitize(User.Identity?.Name), LogRedaction.Sanitize(request.Reason));
 
         var newKey = await _sender.Send(new RotateSigningKeyCommand(
             request.Reason ?? "manual-rotation",

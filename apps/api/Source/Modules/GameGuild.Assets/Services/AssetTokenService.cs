@@ -131,7 +131,9 @@ public class AssetTokenService : IAssetTokenService
             
             var tokenBytes = Base64UrlDecode(token);
             if (tokenBytes.Length < 22)
+            {
                 return null;
+            }
 
             var currentWindow = GetCurrentTimeWindow();
             int timeWindow;
@@ -160,11 +162,15 @@ public class AssetTokenService : IAssetTokenService
 
             // Check time window (current or previous)
             if (timeWindow != currentWindow && timeWindow != currentWindow - 1)
+            {
                 return null;
+            }
 
             // Check expiry
             if (expiryTimestamp < DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            {
                 return null;
+            }
 
             // Verify signature for all possible access policies (O(n) on cache miss only)
             foreach (var accessPolicy in Enum.GetValues<AssetAccessPolicy>())
@@ -259,7 +265,9 @@ public class AssetTokenService : IAssetTokenService
         {
             var tokenBytes = Base64UrlDecode(token);
             if (tokenBytes.Length < 37) // Minimum: 16 + 4 + 1 + 16 = 37
+            {
                 return null;
+            }
 
             var assetReferenceId = new Guid(tokenBytes.AsSpan(0, 16));
             var expiryOffset = BitConverter.ToInt32(tokenBytes, 16);
@@ -271,7 +279,10 @@ public class AssetTokenService : IAssetTokenService
             if (hasUser)
             {
                 if (tokenBytes.Length < 53) // With user: 16 + 4 + 1 + 16 + 16 = 53
+                {
                     return null;
+                }
+
                 userId = new Guid(tokenBytes.AsSpan(offset, 16));
                 offset += 16;
             }
@@ -283,7 +294,9 @@ public class AssetTokenService : IAssetTokenService
             var expectedSignature = ComputeSignature(payloadString);
 
             if (!providedSignature.SequenceEqual(expectedSignature.AsSpan(0, 16)))
+            {
                 return null;
+            }
 
             return new EphemeralTokenPayload(
                 assetReferenceId,

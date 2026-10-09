@@ -63,6 +63,8 @@ const TESTING_EVENT_ANNOUNCEMENT =
   /🧪 New testing event:\s*(.+?)\s*Event starts\s*([^.]*)\.\s*Details:\s*(\/testing-lab\/events\/[a-z0-9-]+)/iu;
 const TESTING_GAME_JOINED_ANNOUNCEMENT =
   /🎮\s*['"](.+?)['"]\s+just joined the testing event\s+(.+?)!\s*Follow the build and share your feedback:\s*(\/testing-lab\/events\/[a-z0-9-]+)/iu;
+const BLOG_POST_ANNOUNCEMENT =
+  /📝 New blog post:\s*(.+?)!\s*(.*?)\s*Read it here:\s*(\/blogs\/[^\s]+)/iu;
 
 function parseTestingEventAnnouncement(content: string) {
   const match = content.match(TESTING_EVENT_ANNOUNCEMENT);
@@ -82,6 +84,18 @@ function parseTestingGameJoinedAnnouncement(content: string) {
     kind: "game-joined" as const,
     gameTitle: match[1]!.trim(),
     name: match[2]!.trim(),
+    href: match[3]!,
+  };
+}
+
+function parseBlogPostAnnouncement(content: string) {
+  const match = content.match(BLOG_POST_ANNOUNCEMENT);
+  if (!match) return null;
+  const excerpt = match[2]?.trim();
+  return {
+    kind: "blog-post" as const,
+    title: match[1]!.trim(),
+    excerpt: excerpt ? excerpt : null,
     href: match[3]!,
   };
 }
@@ -245,6 +259,26 @@ function TestingEventEmbed({
   );
 }
 
+function BlogPostEmbed({ title, excerpt, href }: { title: string; excerpt: string | null; href: string }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
+      <p className="text-sm font-semibold text-primary">📝 Blog post</p>
+      <h3 className="truncate text-lg font-bold leading-snug text-foreground">{title}</h3>
+      {excerpt ? (
+        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{excerpt}</p>
+      ) : null}
+      <div className="flex justify-end">
+        <Link
+          href={href}
+          className="inline-flex h-8 items-center rounded-md border border-border px-4 text-sm font-medium text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          Read post
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function TestingSessionCard({
   item,
   currentUserId,
@@ -336,6 +370,7 @@ export function PostCard({ item, currentUserId }: { item: SocialFeedItem; curren
   const announcement =
     parseTestingEventAnnouncement(content) ??
     parseTestingGameJoinedAnnouncement(content);
+  const blogEmbed = announcement ? null : parseBlogPostAnnouncement(content);
 
   return (
     <article
@@ -369,8 +404,8 @@ export function PostCard({ item, currentUserId }: { item: SocialFeedItem; curren
         )
       ) : null}
 
-      <div className={announcement ? "px-4 pt-0 sm:px-6" : "px-4 pt-4 sm:px-6"}>
-        {announcement ? null : <Caption text={content} />}
+      <div className={announcement || blogEmbed ? "px-4 pt-0 sm:px-6" : "px-4 pt-4 sm:px-6"}>
+        {announcement || blogEmbed ? null : <Caption text={content} />}
         {post.repostedPost ? (
           <div className="mt-3 rounded-xl bg-accent/40 p-3">
             <p className="text-xs font-semibold text-foreground">{post.repostedPost.author.displayName} <span className="font-normal text-muted-foreground">@{post.repostedPost.author.handle}</span></p>
@@ -379,6 +414,9 @@ export function PostCard({ item, currentUserId }: { item: SocialFeedItem; curren
         ) : null}
         {item.tags.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">{item.tags.map((tag) => <Link key={tag} href={`/?tag=${encodeURIComponent(tag)}`} className="text-xs font-medium text-primary">#{tag}</Link>)}</div>
+        ) : null}
+        {blogEmbed ? (
+          <BlogPostEmbed title={blogEmbed.title} excerpt={blogEmbed.excerpt} href={blogEmbed.href} />
         ) : null}
         {announcement ? (
           <TestingEventEmbed

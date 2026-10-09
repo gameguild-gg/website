@@ -54,9 +54,16 @@ public sealed class AdminWithdrawalCoordinator
         lock (_gate)
         {
             var replay = _operations.FindReplay(request.IdempotencyKey.Value, requestHash);
-            if (replay is not null) return replay;
+            if (replay is not null)
+            {
+                return replay;
+            }
+
             if (_operations.FindPeriod(request.PeriodStart) is not null)
+            {
                 throw new AdminWithdrawalOverlapException("A withdrawal run already owns this monthly period.");
+            }
+
             EnsureNoActiveHold(request.PlatformFeeWalletId);
             var eligible = EligibleLots(
                 _ledger.GetAvailableLots(request.PlatformFeeWalletId, CurrencyCode.HardCoin),
@@ -64,8 +71,11 @@ public sealed class AdminWithdrawalCoordinator
                 request.RequestedAt);
             var total = SumUnits(eligible);
             if (total <= 0)
+            {
                 throw new AdminWithdrawalEligibilityException(
-                    "No mature, confirmed, unheld platform fee fragments are eligible for withdrawal.");
+                "No mature, confirmed, unheld platform fee fragments are eligible for withdrawal.");
+            }
+
             var amount = new CoinAmount(CurrencyCode.HardCoin, total);
             var selection = FifoFragmentSelector.Select(eligible, amount);
             var roots = Roots(selection);
@@ -94,11 +104,14 @@ public sealed class AdminWithdrawalCoordinator
                         SelectionHash(currentSelection));
                     transaction.AppendJournal(ReservationPosting(run), request.RequestedAt);
                     foreach (var item in selection.Selections)
+                    {
                         transaction.AddFragmentReservation(new ValueFragmentReservation(
-                            Guid.NewGuid(), run.Id, FragmentReservationPurpose.AdminWithdrawal,
-                            item.ParentLotId, run.PlatformFeeWalletId, item.Amount, item.SelectedRanges,
-                            1, fencingToken, run.ExecutionEpoch, FragmentReservationStatus.Reserved,
-                            request.RequestedAt, null));
+                        Guid.NewGuid(), run.Id, FragmentReservationPurpose.AdminWithdrawal,
+                        item.ParentLotId, run.PlatformFeeWalletId, item.Amount, item.SelectedRanges,
+                        1, fencingToken, run.ExecutionEpoch, FragmentReservationStatus.Reserved,
+                        request.RequestedAt, null));
+                    }
+
                     transaction.AddOutbox(new ImmutableOutboxMessage(
                         Guid.NewGuid(), "economy.admin-withdrawal.reserved.v1",
                         JsonSerializer.Serialize(new { run.Id, run.PeriodStart, run.Amount.Units, requestHash }),
@@ -119,15 +132,25 @@ public sealed class AdminWithdrawalCoordinator
         Guid approvedBy,
         DateTimeOffset approvedAt)
     {
-        if (approvedBy == Guid.Empty) throw new ArgumentException("Approver ID is required.", nameof(approvedBy));
+        if (approvedBy == Guid.Empty)
+        {
+            throw new ArgumentException("Approver ID is required.", nameof(approvedBy));
+        }
+
         lock (_gate)
         {
             var run = _operations.Get(runId);
             if (run.Version != expectedVersion || run.State != AdminWithdrawalRunState.PendingApproval)
+            {
                 throw new AdminWithdrawalStaleCommandException("The withdrawal approval command is stale.");
+            }
+
             if (run.RequestedBy == approvedBy)
+            {
                 throw new AdminWithdrawalApprovalException(
-                    "The withdrawal requester cannot approve the same run.");
+                "The withdrawal requester cannot approve the same run.");
+            }
+
             var approved = run with
             {
                 ApprovedBy = approvedBy,
@@ -227,8 +250,11 @@ public sealed class AdminWithdrawalCoordinator
     {
         var run = _operations.Get(runId);
         if (run.State is not (AdminWithdrawalRunState.Dispatching or AdminWithdrawalRunState.Ambiguous))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Only an in-flight or ambiguous withdrawal can be reconciled.");
+            "Only an in-flight or ambiguous withdrawal can be reconciled.");
+        }
+
         var providerEvent = await _provider.ReconcileAsync(
             run.TenantId, run.Id, run.IdempotencyKey.Value, run.ProviderTransferId, cancellationToken).ConfigureAwait(false);
         return ApplyProviderEvent(providerEvent, requestedAt);
@@ -240,18 +266,31 @@ public sealed class AdminWithdrawalCoordinator
     {
         ArgumentNullException.ThrowIfNull(providerEvent);
         if (string.IsNullOrWhiteSpace(providerEvent.EventId))
+        {
             throw new AdminWithdrawalEvidenceException("Provider withdrawal event ID is required.");
+        }
+
         var eventHash = ProviderEventHash(providerEvent);
         var replay = _operations.FindProviderEvent(providerEvent.EventId, eventHash);
-        if (replay.HasValue) return _operations.Get(replay.Value);
+        if (replay.HasValue)
+        {
+            return _operations.Get(replay.Value);
+        }
+
         if (!_providerEvidence.Verify(providerEvent))
+        {
             throw new AdminWithdrawalEvidenceException("Provider withdrawal event signature is invalid.");
+        }
+
         var run = _operations.Get(providerEvent.RunId);
         ValidateProviderEvent(providerEvent, run);
         if (providerEvent.Outcome is not (AdminWithdrawalProviderOutcome.Succeeded or
             AdminWithdrawalProviderOutcome.Failed))
+        {
             throw new AdminWithdrawalEvidenceException(
-                "Only a terminal provider event can complete an admin withdrawal.");
+            "Only a terminal provider event can complete an admin withdrawal.");
+        }
+
         return Complete(run, providerEvent, eventHash, requestedAt);
     }
 
@@ -316,8 +355,11 @@ public sealed class AdminWithdrawalCoordinator
         {
             var current = _operations.Get(run.Id);
             if (current.State is not (AdminWithdrawalRunState.Dispatching or AdminWithdrawalRunState.Ambiguous))
+            {
                 throw new AdminWithdrawalStaleCommandException(
-                    "Provider terminal evidence is out of order.");
+                "Provider terminal evidence is out of order.");
+            }
+
             var reservations = RequireReservations(current.Id, FragmentReservationStatus.Dispatching);
             var succeeded = providerEvent.Outcome == AdminWithdrawalProviderOutcome.Succeeded;
             var postingKind = succeeded
@@ -330,10 +372,15 @@ public sealed class AdminWithdrawalCoordinator
             {
                 transaction.AppendJournal(TerminalPosting(current, postingKind, requestedAt), requestedAt);
                 if (succeeded)
+                {
                     foreach (var reservation in reservations)
+                    {
                         transaction.AddConsumption(new FragmentConsumption(
-                            DeterministicPostingId(current.Id, "success"), reservation.LotId,
-                            reservation.Amount, reservation.Ranges));
+                        DeterministicPostingId(current.Id, "success"), reservation.LotId,
+                        reservation.Amount, reservation.Ranges));
+                    }
+                }
+
                 transaction.TransitionFragmentReservations(
                     current.Id, FragmentReservationStatus.Dispatching,
                     nextReservationState, requestedAt);
@@ -365,24 +412,35 @@ public sealed class AdminWithdrawalCoordinator
                    throw new ReserveAuthorizationException("No authoritative reserve head is active.");
         if (head.Version != run.ReserveVersion ||
             head.AuthorizationEpoch != run.ReserveAuthorizationEpoch)
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "The active reserve head changed before admin withdrawal dispatch.");
+            "The active reserve head changed before admin withdrawal dispatch.");
+        }
+
         var sourceAsset = head.AssetAllocations.SingleOrDefault(asset =>
             string.Equals(asset.AssetKey, run.SourceAssetKey, StringComparison.Ordinal));
         if (sourceAsset is null || sourceAsset.Purpose != ReserveBackingPurpose.HardCoin)
+        {
             throw new AdminWithdrawalEligibilityException(
-                "The withdrawal source is not an allocated hard-reserve asset.");
+            "The withdrawal source is not an allocated hard-reserve asset.");
+        }
+
         var withdrawalNanos = checked(run.Amount.Units * UsdNanosPerCent);
         var sourceCustody = custody.Variances.SingleOrDefault(item =>
             string.Equals(item.AssetKey, run.SourceAssetKey, StringComparison.Ordinal));
         if (sourceCustody is null || sourceCustody.ActualUsdNanos < withdrawalNanos ||
             sourceAsset.EligibleUsdNanos < withdrawalNanos)
+        {
             throw new ReserveShortfallException(
-                "The selected custody asset cannot fund the admin withdrawal.");
+            "The selected custody asset cannot fund the admin withdrawal.");
+        }
+
         var requiredHardNanos = checked(head.Requirements.RequiredHardReserveUsdMinor * UsdNanosPerCent);
         if (head.HardBackingUsdNanos - withdrawalNanos < requiredHardNanos)
+        {
             throw new ReserveShortfallException(
-                "The admin withdrawal would reduce hard-reserve backing below policy.");
+            "The admin withdrawal would reduce hard-reserve backing below policy.");
+        }
     }
 
     private IReadOnlyList<ValueFragmentReservation> RequireReservations(
@@ -392,16 +450,21 @@ public sealed class AdminWithdrawalCoordinator
         var reservations = _ledger.GetFragmentReservations(runId);
         if (reservations.Count == 0 || reservations.Any(item =>
                 item.Purpose != FragmentReservationPurpose.AdminWithdrawal || item.Status != status))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Admin withdrawal fragment reservations are missing or stale.");
+            "Admin withdrawal fragment reservations are missing or stale.");
+        }
+
         return reservations;
     }
 
     private void EnsureNoActiveHold(WalletId walletId)
     {
         if (_ledger.GetActiveHolds(walletId).Any(hold => hold.Amount.Currency == CurrencyCode.HardCoin))
+        {
             throw new AdminWithdrawalEligibilityException(
-                "An active hold blocks platform fee withdrawal.");
+            "An active hold blocks platform fee withdrawal.");
+        }
     }
 
     private static CreditLot[] EligibleLots(
@@ -425,9 +488,15 @@ public sealed class AdminWithdrawalCoordinator
     private static void ValidateRequest(AdminWithdrawalReservationRequest request)
     {
         if (request.RunId == Guid.Empty || request.TenantId == Guid.Empty || request.RequestedBy == Guid.Empty)
+        {
             throw new ArgumentException("Run, tenant, and requester identities are required.", nameof(request));
+        }
+
         if (request.PeriodStart.Day != 1)
+        {
             throw new ArgumentException("Withdrawal period must start on the first day of a month.", nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.ReserveAuthorizationEpoch);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.SourceAssetKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DestinationHash);
@@ -439,13 +508,40 @@ public sealed class AdminWithdrawalCoordinator
         long fencingToken,
         long executionEpoch)
     {
-        if (run.State != AdminWithdrawalRunState.Approved) ThrowStaleDispatch();
-        if (run.Version != expectedVersion) ThrowStaleDispatch();
-        if (run.FencingToken != fencingToken) ThrowStaleDispatch();
-        if (run.ExecutionEpoch != executionEpoch) ThrowStaleDispatch();
-        if (_execution.Epoch != executionEpoch) ThrowStaleDispatch();
-        if (!run.ApprovedBy.HasValue) ThrowStaleDispatch();
-        if (run.ApprovedBy.GetValueOrDefault() == run.RequestedBy) ThrowStaleDispatch();
+        if (run.State != AdminWithdrawalRunState.Approved)
+        {
+            ThrowStaleDispatch();
+        }
+
+        if (run.Version != expectedVersion)
+        {
+            ThrowStaleDispatch();
+        }
+
+        if (run.FencingToken != fencingToken)
+        {
+            ThrowStaleDispatch();
+        }
+
+        if (run.ExecutionEpoch != executionEpoch)
+        {
+            ThrowStaleDispatch();
+        }
+
+        if (_execution.Epoch != executionEpoch)
+        {
+            ThrowStaleDispatch();
+        }
+
+        if (!run.ApprovedBy.HasValue)
+        {
+            ThrowStaleDispatch();
+        }
+
+        if (run.ApprovedBy.GetValueOrDefault() == run.RequestedBy)
+        {
+            ThrowStaleDispatch();
+        }
     }
 
     private static void ThrowStaleDispatch() =>
@@ -483,8 +579,10 @@ public sealed class AdminWithdrawalCoordinator
              !string.Equals(providerEvent.ProviderTransferId, run.ProviderTransferId, StringComparison.Ordinal)) ||
             string.IsNullOrWhiteSpace(providerEvent.EvidenceHash) ||
             string.IsNullOrWhiteSpace(providerEvent.Signature))
+        {
             throw new AdminWithdrawalEvidenceException(
-                "Provider withdrawal event is not bound to the fenced run.");
+            "Provider withdrawal event is not bound to the fenced run.");
+        }
     }
 
     private static AdminWithdrawalRun Transition(

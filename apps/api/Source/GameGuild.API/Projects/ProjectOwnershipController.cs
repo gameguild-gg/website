@@ -115,7 +115,10 @@ public sealed class ProjectOwnershipController(
     public async Task<ActionResult<ProjectOwnershipDto>> Get(Guid projectId, CancellationToken cancellationToken)
     {
         if (!await projectAuthorization.HasPermissionAsync(projectId, PermissionType.Read, cancellationToken).ConfigureAwait(false))
+        {
             return NotFound();
+        }
+
         var project = await LoadProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
         return project == null ? NotFound() : Ok(Map(project));
     }
@@ -127,15 +130,27 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var project = access.Project!;
         if (request.Role == ProjectTeamRole.Owner)
+        {
             return UnprocessableEntity(new { code = "Projects.UseOwnerTransfer" });
+        }
+
         if (request.ContributionPercentage is < 0 or > 100)
+        {
             return UnprocessableEntity(new { code = "Projects.InvalidContributionPercentage" });
+        }
+
         var targetTeam = await GetActiveTeamInProjectTenantAsync(request.TeamId, project.TenantId!.Value, cancellationToken).ConfigureAwait(false);
         if (targetTeam == null)
+        {
             return NotFound();
+        }
 
         try
         {
@@ -162,15 +177,31 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         if (request.Role == ProjectTeamRole.Owner)
+        {
             return UnprocessableEntity(new { code = "Projects.UseOwnerTransfer" });
+        }
+
         if (request.ContributionPercentage is < 0 or > 100)
+        {
             return UnprocessableEntity(new { code = "Projects.InvalidContributionPercentage" });
+        }
+
         var team = access.Project!.Teams.SingleOrDefault(candidate => candidate.Id == projectTeamId && candidate.IsActive);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         if (team.Role == ProjectTeamRole.Owner)
+        {
             return Conflict(Problem("The owner team must be transferred before changing its role.", StatusCodes.Status409Conflict));
+        }
 
         team.Role = request.Role;
         Apply(team, request.ParticipationMode, request.Permissions, request.Notes, request.ContributionPercentage);
@@ -183,11 +214,22 @@ public sealed class ProjectOwnershipController(
     public async Task<IActionResult> RemoveTeam(Guid projectId, Guid projectTeamId, CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var team = access.Project!.Teams.SingleOrDefault(candidate => candidate.Id == projectTeamId && candidate.IsActive);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         if (team.Role == ProjectTeamRole.Owner)
+        {
             return Conflict(Problem("The owner team cannot be removed.", StatusCodes.Status409Conflict));
+        }
+
         team.IsActive = false;
         team.EndedAt = SystemClock.UtcNow;
         team.Touch();
@@ -208,19 +250,38 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var project = access.Project!;
         var currentOwner = project.Teams.SingleOrDefault(team => team.IsActive && team.Role == ProjectTeamRole.Owner);
-        if (currentOwner == null) return Conflict(Problem("The project has no active owner team.", StatusCodes.Status409Conflict));
+        if (currentOwner == null)
+        {
+            return Conflict(Problem("The project has no active owner team.", StatusCodes.Status409Conflict));
+        }
+
         if (!await teamAuthorization.HasAuthorityAsync(currentOwner.TeamId, TeamMemberAuthority.Owner, cancellationToken).ConfigureAwait(false) ||
             !await teamAuthorization.HasAuthorityAsync(request.TeamId, TeamMemberAuthority.Owner, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         if (!await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         if (await GetActiveTeamInProjectTenantAsync(request.TeamId, project.TenantId!.Value, cancellationToken).ConfigureAwait(false) == null)
+        {
             return NotFound();
+        }
+
         if (!await HasOwnerTransferApprovalAsync(project, currentOwner.TeamId, request.TeamId, cancellationToken).ConfigureAwait(false))
+        {
             return Conflict(Problem("An accepted agreement approved by a distinct team owner is required for this owner transfer.", StatusCodes.Status409Conflict));
+        }
 
         project.SetOwnerTeam(request.TeamId);
         await sender.Send(new TransferProjectOwnerTeamEndpointCommand(project), cancellationToken).ConfigureAwait(false);
@@ -234,14 +295,27 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var project = access.Project!;
         var projectTeam = project.Teams.SingleOrDefault(team => team.Id == request.ProjectTeamId && team.IsActive && team.EndedAt == null);
-        if (projectTeam == null) return NotFound();
+        if (projectTeam == null)
+        {
+            return NotFound();
+        }
+
         if (!await IsActiveTeamMemberAsync(projectTeam.TeamId, request.UserId, cancellationToken).ConfigureAwait(false))
+        {
             return UnprocessableEntity(new { code = "Projects.AllocationRequiresActiveTeamMember" });
+        }
+
         if (string.IsNullOrWhiteSpace(request.Function))
+        {
             return UnprocessableEntity(new { code = "Projects.AllocationFunctionRequired" });
+        }
 
         try
         {
@@ -269,11 +343,22 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var allocation = access.Project!.Allocations.SingleOrDefault(candidate => candidate.Id == allocationId);
-        if (allocation == null) return NotFound();
+        if (allocation == null)
+        {
+            return NotFound();
+        }
+
         if (string.IsNullOrWhiteSpace(request.Function) || request.CapacityPercentage is <= 0 or > 100 || request.EndsAt <= request.StartsAt)
+        {
             return UnprocessableEntity(new { code = "Projects.InvalidAllocation" });
+        }
+
         allocation.Function = request.Function.Trim();
         allocation.CapacityPercentage = request.CapacityPercentage;
         allocation.StartsAt = request.StartsAt;
@@ -288,9 +373,17 @@ public sealed class ProjectOwnershipController(
     public async Task<IActionResult> RemoveAllocation(Guid projectId, Guid allocationId, CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var allocation = access.Project!.Allocations.SingleOrDefault(candidate => candidate.Id == allocationId && candidate.IsActive);
-        if (allocation == null) return NotFound();
+        if (allocation == null)
+        {
+            return NotFound();
+        }
+
         allocation.IsActive = false;
         allocation.EndsAt ??= SystemClock.UtcNow;
         allocation.Touch();
@@ -305,13 +398,26 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var access = await RequireProjectManagementAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (access.Result != null) return access.Result;
+        if (access.Result != null)
+        {
+            return access.Result;
+        }
+
         var project = access.Project!;
         if (!IsParticipatingTeam(project, request.ProposingTeamId) || !IsParticipatingTeam(project, request.ReceivingTeamId))
+        {
             return UnprocessableEntity(new { code = "Projects.AgreementRequiresParticipatingTeams" });
+        }
+
         if (!await teamAuthorization.HasAuthorityAsync(request.ProposingTeamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
-        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId) return Unauthorized();
+        }
+
+        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId)
+        {
+            return Unauthorized();
+        }
 
         try
         {
@@ -342,7 +448,11 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var change = await PrepareAgreementChangeAsync(projectId, agreementId, "counter", request, cancellationToken).ConfigureAwait(false);
-        if (change.Result != null) return change.Result;
+        if (change.Result != null)
+        {
+            return change.Result;
+        }
+
         await sender.Send(new CounterProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
         return Ok(Map(change.Agreement!));
     }
@@ -354,7 +464,11 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var change = await PrepareAgreementChangeAsync(projectId, agreementId, "accept", null, cancellationToken).ConfigureAwait(false);
-        if (change.Result != null) return change.Result;
+        if (change.Result != null)
+        {
+            return change.Result;
+        }
+
         await sender.Send(new AcceptProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
         return Ok(Map(change.Agreement!));
     }
@@ -366,7 +480,11 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var change = await PrepareAgreementChangeAsync(projectId, agreementId, "cancel", null, cancellationToken).ConfigureAwait(false);
-        if (change.Result != null) return change.Result;
+        if (change.Result != null)
+        {
+            return change.Result;
+        }
+
         await sender.Send(new CancelProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
         return Ok(Map(change.Agreement!));
     }
@@ -378,7 +496,11 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var change = await PrepareAgreementChangeAsync(projectId, agreementId, "complete", null, cancellationToken).ConfigureAwait(false);
-        if (change.Result != null) return change.Result;
+        if (change.Result != null)
+        {
+            return change.Result;
+        }
+
         await sender.Send(new CompleteProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
         return Ok(Map(change.Agreement!));
     }
@@ -391,22 +513,46 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var actor = actorContextAccessor.ActorContext;
-        if (actor.TenantId is not { } tenantId) return (null, Unauthorized());
+        if (actor.TenantId is not { } tenantId)
+        {
+            return (null, Unauthorized());
+        }
+
         var project = await LoadProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (project == null || project.TenantId != tenantId) return (null, NotFound());
+        if (project == null || project.TenantId != tenantId)
+        {
+            return (null, NotFound());
+        }
+
         var agreement = project.TeamAgreements.SingleOrDefault(candidate => candidate.Id == agreementId && candidate.DeletedAt == null);
-        if (agreement == null) return (null, NotFound());
+        if (agreement == null)
+        {
+            return (null, NotFound());
+        }
+
         var authorityTeamId = action == "accept" ? agreement.ReceivingTeamId :
             await teamAuthorization.HasAuthorityAsync(agreement.ProposingTeamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false)
                 ? agreement.ProposingTeamId
                 : agreement.ReceivingTeamId;
         if (!await teamAuthorization.HasAuthorityAsync(authorityTeamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return (null, Forbid());
-        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId) return (null, Unauthorized());
+        }
+
+        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId)
+        {
+            return (null, Unauthorized());
+        }
+
         if (action == "accept" && agreement.ProposedByUserId == actorId)
+        {
             return (null, Conflict(Problem("An agreement must be accepted by a different actor.", StatusCodes.Status409Conflict)));
+        }
+
         if (action == "accept" && !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return (null, Forbid());
+        }
 
         try
         {
@@ -437,15 +583,32 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         if (!await projectAuthorization.HasPermissionAsync(projectId, PermissionType.Read, cancellationToken).ConfigureAwait(false))
+        {
             return (null, NotFound());
+        }
+
         if (!await projectAuthorization.HasPermissionAsync(projectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return (null, Forbid());
+        }
+
         var project = await LoadProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (project == null) return (null, NotFound());
+        if (project == null)
+        {
+            return (null, NotFound());
+        }
+
         var owner = project.Teams.SingleOrDefault(team => team.IsActive && team.Role == ProjectTeamRole.Owner);
-        if (owner == null) return (null, Conflict(Problem("The project has no active owner team.", StatusCodes.Status409Conflict)));
+        if (owner == null)
+        {
+            return (null, Conflict(Problem("The project has no active owner team.", StatusCodes.Status409Conflict)));
+        }
+
         if (!await teamAuthorization.HasAuthorityAsync(owner.TeamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return (null, Forbid());
+        }
+
         return (project, null);
     }
 
@@ -463,8 +626,15 @@ public sealed class ProjectOwnershipController(
         var actor = actorContextAccessor.ActorContext;
         if (actor.TypedAttributes.AuthenticatedAt is not { } authenticatedAt ||
             authenticatedAt < DateTimeOffset.UtcNow.Subtract(RecentAuthenticationWindow))
+        {
             return false;
-        if (actor.SubjectIdAsGuid is not { } actorId) return false;
+        }
+
+        if (actor.SubjectIdAsGuid is not { } actorId)
+        {
+            return false;
+        }
+
         var hasMfa = await context.Set<UserMfaConfiguration>().AsNoTracking()
             .AnyAsync(configuration =>
                 configuration.UserId == actorId && configuration.IsEnabled && configuration.IsSetupComplete,
@@ -478,7 +648,11 @@ public sealed class ProjectOwnershipController(
         Guid targetTeamId,
         CancellationToken cancellationToken)
     {
-        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId) return false;
+        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId)
+        {
+            return false;
+        }
+
         var anotherOwnerAvailable = await context.Set<TeamMember>().AsNoTracking().AnyAsync(member =>
             (member.TeamId == currentOwnerTeamId || member.TeamId == targetTeamId) &&
             member.UserId != actorId &&
@@ -486,7 +660,10 @@ public sealed class ProjectOwnershipController(
             member.IsActive && member.LeftAt == null && member.DeletedAt == null &&
             member.TenantId == project.TenantId,
             cancellationToken).ConfigureAwait(false);
-        if (!anotherOwnerAvailable) return true;
+        if (!anotherOwnerAvailable)
+        {
+            return true;
+        }
 
         return project.TeamAgreements.Any(agreement =>
             agreement.DeletedAt == null &&

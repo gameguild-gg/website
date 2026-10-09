@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using GameGuild.Compliance.Audit;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -23,6 +24,7 @@ public sealed class ScheduledAuditExportServiceTests
             auditService.Object,
             new AuditExportCronSchedule(),
             Mock.Of<IAuditScheduledExportStorage>(),
+            Options.Create(new AuditScheduledExportOptions()),
             Mock.Of<ILogger<ScheduledAuditExportService>>());
         var request = new CreateScheduledAuditExportRequest
         {
@@ -93,6 +95,7 @@ public sealed class ScheduledAuditExportServiceTests
             Mock.Of<IAuditService>(),
             new AuditExportCronSchedule(),
             storage.Object,
+            Options.Create(new AuditScheduledExportOptions()),
             Mock.Of<ILogger<ScheduledAuditExportService>>());
 
         var expired = await service.ExpireExpiredFilesAsync(CancellationToken.None);
@@ -120,12 +123,41 @@ public sealed class ScheduledAuditExportServiceTests
             Mock.Of<IAuditService>(),
             new AuditExportCronSchedule(),
             storage.Object,
+            Options.Create(new AuditScheduledExportOptions()),
             Mock.Of<ILogger<ScheduledAuditExportService>>());
 
         var expired = await service.ExpireExpiredFilesAsync(CancellationToken.None);
 
         Assert.Equal(0, expired);
         repository.Verify(item => item.MarkFileExpiredAsync(historyId, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessDueAsync_RecoversStaleClaimsWithConfiguredThresholdBeforeClaiming()
+    {
+        var options = new AuditScheduledExportOptions { StaleClaimThreshold = TimeSpan.FromMinutes(45) };
+        var repository = new Mock<IScheduledAuditExportRepository>();
+        repository
+            .Setup(item => item.GetDueAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ScheduledAuditExport>());
+        repository
+            .Setup(item => item.RecoverStaleClaimsAsync(It.IsAny<DateTime>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+        var service = new ScheduledAuditExportService(
+            repository.Object,
+            Mock.Of<IAuditService>(),
+            new AuditExportCronSchedule(),
+            Mock.Of<IAuditScheduledExportStorage>(),
+            Options.Create(options),
+            Mock.Of<ILogger<ScheduledAuditExportService>>());
+
+        var processed = await service.ProcessDueAsync(CancellationToken.None);
+
+        Assert.Equal(0, processed);
+        repository.Verify(item => item.RecoverStaleClaimsAsync(
+            It.IsAny<DateTime>(),
+            TimeSpan.FromMinutes(45),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static CreateScheduledAuditExportRequest ValidRequest() => new()

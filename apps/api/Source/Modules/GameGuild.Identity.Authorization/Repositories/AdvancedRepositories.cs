@@ -54,7 +54,9 @@ public class JitElevationRequestRepository(DbContext context) : IJitElevationReq
         var query = DbSet.Where(r => r.Status == ElevationRequestStatus.Pending);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.OrderBy(r => r.CreatedAt).ToListAsync(cancellationToken);
     }
@@ -68,7 +70,9 @@ public class JitElevationRequestRepository(DbContext context) : IJitElevationReq
         var query = DbSet.Where(r => r.RequesterId == requesterId);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.OrderByDescending(r => r.CreatedAt).ToListAsync(cancellationToken);
     }
@@ -91,7 +95,9 @@ public class JitElevationRequestRepository(DbContext context) : IJitElevationReq
         );
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -161,7 +167,9 @@ public class PermissionDelegationRepository(DbContext context) : IPermissionDele
         var query = DbSet.Where(d => d.DelegatorUserId == delegatorUserId);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(d => d.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.OrderByDescending(d => d.CreatedAt).ToListAsync(cancellationToken);
     }
@@ -181,7 +189,9 @@ public class PermissionDelegationRepository(DbContext context) : IPermissionDele
         );
 
         if (tenantId.HasValue)
+        {
             query = query.Where(d => d.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -261,7 +271,9 @@ public class SoDRuleRepository(DbContext context) : ISoDRuleRepository
         var query = DbSet.Where(r => r.IsEnabled);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -319,7 +331,9 @@ public class SoDViolationRepository(DbContext context) : ISoDViolationRepository
         var query = DbSet.Where(v => v.UserId == userId);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(v => v.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.OrderByDescending(v => v.DetectedAt).ToListAsync(cancellationToken);
     }
@@ -339,7 +353,9 @@ public class SoDViolationRepository(DbContext context) : ISoDViolationRepository
         var query = DbSet.Where(v => v.Status == SoDViolationStatus.Active);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(v => v.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -413,7 +429,9 @@ public class AccessReviewCampaignRepository(DbContext context) : IAccessReviewCa
         );
 
         if (tenantId.HasValue)
+        {
             query = query.Where(c => c.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -566,7 +584,9 @@ public class DelegatedAdminScopeRepository(DbContext context) : IDelegatedAdminS
         var query = DbSet.Where(s => s.AdminUserId == adminUserId && s.IsActive);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(s => s.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }

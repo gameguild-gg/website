@@ -158,7 +158,11 @@ public sealed class UnavailableComplianceEvidenceReader : IComplianceEvidenceRea
         string evidenceKind,
         CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(subjectHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceKind);
         return ValueTask.FromResult<DurableComplianceEvidence?>(null);
@@ -196,10 +200,12 @@ public sealed class PostgreSqlComplianceEvidenceStore : IComplianceEvidenceStore
         if (existingInbox is not null)
         {
             if (!string.Equals(existingInbox.PayloadHash, envelope.PayloadHash, StringComparison.Ordinal))
-                throw new ComplianceEvidenceConflictException(
+                {
+                    throw new ComplianceEvidenceConflictException(
                     "The provider event was replayed with a different payload hash.");
+                }
 
-            var existingEvidence = await _db.Set<EconomyComplianceEvidenceRow>()
+                var existingEvidence = await _db.Set<EconomyComplianceEvidenceRow>()
                 .AsNoTracking()
                 .SingleOrDefaultAsync(
                     row => row.Provider == envelope.Provider &&
@@ -301,26 +307,43 @@ public sealed class PostgreSqlComplianceEvidenceStore : IComplianceEvidenceStore
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.Environment);
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.ProviderEventId);
         if (envelope.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Compliance evidence tenant cannot be empty.", nameof(envelope));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.SubjectHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.EvidenceKind);
         if (envelope.Version <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(envelope), "Compliance evidence version must be positive.");
+        }
+
         if (envelope.PolicyVersion <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(envelope), "Compliance policy version must be positive.");
+        }
+
         if (envelope.JurisdictionCode is not null &&
             EconomyJurisdictionCode.NormalizeOptional(envelope.JurisdictionCode) != envelope.JurisdictionCode)
+        {
             throw new ArgumentException("Compliance evidence jurisdiction is invalid.", nameof(envelope));
+        }
+
         if (envelope.EvidenceKind == ComplianceEvidenceKinds.KycAml &&
             envelope.Result == ComplianceEvidenceResult.Approved &&
             envelope.JurisdictionCode is null)
+        {
             throw new ArgumentException(
                 "Approved KYC/AML evidence requires a verified jurisdiction.", nameof(envelope));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.PayloadHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.RawObjectReference);
         ArgumentException.ThrowIfNullOrWhiteSpace(envelope.EvidenceHash);
         if (envelope.ReceivedAt < envelope.IssuedAt)
+        {
             throw new ArgumentException("Compliance evidence cannot be received before it was issued.", nameof(envelope));
+        }
     }
 
     public async ValueTask<DurableComplianceEvidence?> ReadLatestAsync(
@@ -329,7 +352,11 @@ public sealed class PostgreSqlComplianceEvidenceStore : IComplianceEvidenceStore
         string evidenceKind,
         CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(subjectHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceKind);
         var row = await _db.Set<EconomyComplianceEvidenceRow>()
@@ -338,9 +365,16 @@ public sealed class PostgreSqlComplianceEvidenceStore : IComplianceEvidenceStore
                            item.EvidenceKind == evidenceKind)
             .OrderByDescending(item => item.Version)
             .FirstOrDefaultAsync(cancellationToken);
-        if (row is null) return null;
+        if (row is null)
+        {
+            return null;
+        }
+
         if (!Enum.TryParse<ComplianceEvidenceResult>(row.Result, out var result))
+        {
             result = ComplianceEvidenceResult.Unavailable;
+        }
+
         return new DurableComplianceEvidence(
             row.Provider, row.Environment, row.ProviderEventId, row.TenantId, row.SubjectHash,
             row.EvidenceKind, row.Version, result, row.PolicyVersion, row.EvidenceHash,

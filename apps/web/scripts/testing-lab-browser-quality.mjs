@@ -153,3 +153,6 @@ export async function collectViewportFailures(page, label) {
     ? [`${label}: ${dimensions.scrollWidth}px content in a ${dimensions.clientWidth}px viewport`]
     : [];
 }
+
+// Compatibility for existing callers; retain the complete bounded unique tag.
+export const createTestingLabFixtureUsername = buildTestingLabFixtureUsername;

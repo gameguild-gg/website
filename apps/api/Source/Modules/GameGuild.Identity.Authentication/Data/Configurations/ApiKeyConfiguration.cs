@@ -23,6 +23,8 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
         builder.Property(key => key.IpWhitelist).HasColumnName("ip_whitelist").HasMaxLength(100);
         builder.Property(key => key.RevokedAt).HasColumnName("revoked_at");
         builder.Property(key => key.RevocationReason).HasColumnName("revocation_reason").HasMaxLength(200);
+        builder.Property(key => key.ReplacesKeyId).HasColumnName("replaces_key_id");
+        builder.Property(key => key.RotationGraceEndsAt).HasColumnName("rotation_grace_ends_at");
         builder.Property(key => key.Version).HasColumnName("version").IsConcurrencyToken();
         builder.Property(key => key.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(key => key.UpdatedAt).HasColumnName("updated_at").IsRequired();
@@ -32,6 +34,7 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
         builder.HasIndex(key => key.TenantId).HasDatabaseName("ix_api_keys_tenant_id");
         builder.HasIndex(key => key.IsActive).HasDatabaseName("ix_api_keys_is_active");
         builder.HasIndex(key => key.ExpiresAt).HasDatabaseName("ix_api_keys_expires_at");
+        builder.HasIndex(key => key.ReplacesKeyId).HasDatabaseName("ix_api_keys_replaces_key_id");
         builder.Ignore(key => key.DomainEvents);
         builder.Ignore(key => key.IsGlobal);
         builder.Ignore(key => key.IsNew);

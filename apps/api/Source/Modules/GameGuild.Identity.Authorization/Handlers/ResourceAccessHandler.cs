@@ -134,7 +134,9 @@ public sealed class ResourceAccessHandler : AuthorizationHandler<ResourceAccessR
         var isAuthenticated = user.Identity?.IsAuthenticated == true;
 
         if (!isAuthenticated)
+        {
             return AclSubject.Anonymous;
+        }
 
         Guid? userId = null;
         var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -179,7 +181,9 @@ public sealed class ResourceAccessHandler : AuthorizationHandler<ResourceAccessR
         // Fall back to claims
         var tenantClaim = user.FindFirstValue(_tokenOptions.TenantClaimType);
         if (!string.IsNullOrEmpty(tenantClaim) && Guid.TryParse(tenantClaim, out tenantId))
+        {
             return tenantId != Guid.Empty;
+        }
 
         return false;
     }
@@ -189,14 +193,18 @@ public sealed class ResourceAccessHandler : AuthorizationHandler<ResourceAccessR
         ResourceAccessRequirement requirement)
     {
         if (resource is IAccessControlListResource accessControlListResource)
+        {
             return (accessControlListResource.ResourceType, accessControlListResource.ResourceId);
+        }
 
         // Use requirement's resource type if available
         if (!string.IsNullOrEmpty(requirement.ResourceType))
         {
             // Try to get ID from resource if it's IOwnedResource
             if (resource is IOwnedResource ownedResource)
+            {
                 return (requirement.ResourceType, ownedResource.OwnerId.ToString());
+            }
         }
 
         return (null, null);

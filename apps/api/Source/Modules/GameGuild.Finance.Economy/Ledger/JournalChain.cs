@@ -23,7 +23,10 @@ public sealed class JournalChain
     {
         get
         {
-            lock (_gate) return _entries.ToArray();
+            lock (_gate)
+            {
+                return _entries.ToArray();
+            }
         }
     }
 
@@ -31,7 +34,10 @@ public sealed class JournalChain
     {
         get
         {
-            lock (_gate) return _entries.Count == 0 ? null : _entries[^1];
+            lock (_gate)
+            {
+                return _entries.Count == 0 ? null : _entries[^1];
+            }
         }
     }
 
@@ -43,7 +49,10 @@ public sealed class JournalChain
         lock (_gate)
         {
             if (_entries.Any(entry => entry.PostingId == request.Id))
+            {
                 throw new DuplicatePostingException(request.Id);
+            }
+
             var sequence = checked((long)_entries.Count + 1);
             var previousHash = _entries.Count == 0 ? GenesisHash : _entries[^1].Hash;
             var requestHash = CanonicalPostingSerializer.ComputeHash(request);
@@ -101,9 +110,15 @@ public sealed class JournalChain
         foreach (var entry in entries)
         {
             if (entry.Sequence != expectedSequence || entry.PreviousHash != previousHash)
+            {
                 return false;
+            }
+
             if (entry.Hash != ComputeVerificationHash(entry.Sequence, entry.PreviousHash, entry.RequestHash, entry.RecordedAt))
+            {
                 return false;
+            }
+
             previousHash = entry.Hash;
             expectedSequence = checked(expectedSequence + 1);
         }

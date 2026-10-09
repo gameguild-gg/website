@@ -72,7 +72,9 @@ public static class BackgroundJobQuotaHelper
         ArgumentNullException.ThrowIfNull(action);
 
         if (amount <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than zero");
+        }
 
         // Step 1: Atomically consume quota BEFORE executing action
         var (success, currentUsage, hardLimit) = await quotaService.TryAtomicConsumeAsync(
@@ -140,7 +142,9 @@ public static class BackgroundJobQuotaHelper
         ArgumentNullException.ThrowIfNull(action);
 
         if (amount <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than zero");
+        }
 
         // Step 1: Atomically consume quota BEFORE executing action
         var (success, currentUsage, hardLimit) = await quotaService.TryAtomicConsumeAsync(
@@ -218,7 +222,9 @@ public static class BackgroundJobQuotaHelper
         ArgumentNullException.ThrowIfNull(processor);
 
         if (items.Count == 0)
+        {
             return (Array.Empty<TResult>(), Array.Empty<TInput>());
+        }
 
         // Step 1: Atomically consume quota for the entire batch
         var batchSize = items.Count;

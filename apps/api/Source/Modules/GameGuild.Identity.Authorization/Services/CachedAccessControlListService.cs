@@ -517,7 +517,9 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         {
             string[] keySnapshot;
             lock (keys)
+            {
                 keySnapshot = keys.ToArray();
+            }
 
             foreach (var key in keySnapshot)
             {
@@ -671,13 +673,11 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         }
         else
         {
-            InvalidatePrincipalResourceCache(principalType, principalId, tenantId, resourceType, resourceId);
+            InvalidatePrincipalResourceCache(tenantId, resourceType, resourceId);
         }
     }
 
-    // ReSharper disable UnusedParameter.Local - Parameters reserved for future fine-grained cache invalidation
-    private void InvalidatePrincipalResourceCache(AclPrincipalType principalType, Guid? principalId, Guid tenantId, string resourceType, string resourceId)
-    // ReSharper restore UnusedParameter.Local
+    private void InvalidatePrincipalResourceCache(Guid tenantId, string resourceType, string resourceId)
     {
         // When a principal's access changes, we need to invalidate any subject cache that might include this principal.
         // Since subject cache keys include multiple principals, we use a more aggressive invalidation strategy.

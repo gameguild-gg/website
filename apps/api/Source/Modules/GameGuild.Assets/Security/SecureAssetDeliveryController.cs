@@ -83,7 +83,7 @@ public class SecureAssetDeliveryController : BaseApiController
         // Threat #3: Check if IP is blocked (brute force protection)
         if (await _rateLimitService.IsIpBlockedAsync(clientIp, ct))
         {
-            _logger.LogWarning("Blocked IP {IP} attempted access to asset {AssetId}", clientIp, assetId);
+            _logger.LogWarning("Blocked IP {IP} attempted access to asset {AssetId}", LogRedaction.Sanitize(clientIp), LogRedaction.Sanitize(assetId.ToString()));
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
                 Title = "Access Denied",
@@ -138,7 +138,7 @@ public class SecureAssetDeliveryController : BaseApiController
         {
             _logger.LogWarning(
                 "Tenant validation failed for asset {AssetId}: {Error}",
-                assetId, tenantValidation.Error);
+                LogRedaction.Sanitize(assetId.ToString()), LogRedaction.Sanitize(tenantValidation.Error));
             await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
             return ForbiddenProblem(tenantValidation.Error ?? "Tenant access denied");
         }
@@ -146,7 +146,7 @@ public class SecureAssetDeliveryController : BaseApiController
         // Threat #7: Block serving content pending or failed virus scan
         if (reference.Content.VirusScanStatus == VirusScanStatus.Pending)
         {
-            _logger.LogInformation("Attempted access to content pending virus scan: {AssetId}", assetId);
+            _logger.LogInformation("Attempted access to content pending virus scan: {AssetId}", LogRedaction.Sanitize(assetId.ToString()));
             return StatusCode(StatusCodes.Status202Accepted, new ProblemDetails
             {
                 Title = "Content Processing",
@@ -156,7 +156,7 @@ public class SecureAssetDeliveryController : BaseApiController
 
         if (reference.Content.VirusScanStatus == VirusScanStatus.Infected)
         {
-            _logger.LogWarning("Attempted access to infected content: {AssetId}", assetId);
+            _logger.LogWarning("Attempted access to infected content: {AssetId}", LogRedaction.Sanitize(assetId.ToString()));
             return StatusCode(StatusCodes.Status410Gone, new ProblemDetails
             {
                 Title = "Content Unavailable",
@@ -402,7 +402,7 @@ public class SecureAssetDeliveryController : BaseApiController
         {
             _logger.LogWarning(
                 "IP {IP} blocked after {Count} failed access attempts",
-                clientIp, result.CurrentCount);
+                LogRedaction.Sanitize(clientIp), result.CurrentCount);
         }
     }
 

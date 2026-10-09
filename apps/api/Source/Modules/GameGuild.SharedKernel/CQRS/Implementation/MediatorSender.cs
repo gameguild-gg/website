@@ -101,11 +101,15 @@ internal class MediatorSender : ISender
                     foreach (var m in methods)
                     {
                         if (m.Name != "Send" || !m.IsGenericMethodDefinition || m.GetParameters().Length != 2)
+                        {
                             continue;
+                        }
 
                         var paramType = m.GetParameters()[0].ParameterType;
                         if (paramType.IsGenericType && paramType.GetGenericTypeDefinition() == typeof(IRequest<>))
+                        {
                             return m.MakeGenericMethod(rt);
+                        }
                     }
 
                     throw new InvalidOperationException($"Cannot find Send<TResponse> method for response type {rt}");
@@ -147,7 +151,9 @@ internal class MediatorSender : ISender
         var behaviors = GetPipelineBehaviors(requestType, typeof(TResponse));
 
         if (behaviors.Count == 0)
+        {
             return terminalHandler;
+        }
 
         // Build the pipeline chain from innermost to outermost
         var handlerDelegate = terminalHandler;
@@ -174,13 +180,17 @@ internal class MediatorSender : ISender
         var behaviorsEnumerable = _serviceFactory(enumerableType) as IEnumerable;
 
         if (behaviorsEnumerable == null)
+        {
             return [];
+        }
 
         var behaviors = new List<object>();
         foreach (var behavior in behaviorsEnumerable)
         {
             if (behavior != null)
+            {
                 behaviors.Add(behavior);
+            }
         }
 
         return behaviors;
@@ -206,10 +216,14 @@ internal class MediatorSender : ISender
 
         // Handle null results: nullable TResponse (e.g. Tenant?) returns null legitimately
         if (result is null)
+        {
             return default!;
+        }
 
         if (result is TResponse typedResult)
+        {
             return typedResult;
+        }
 
         throw new InvalidOperationException(
             $"Pipeline behavior {behaviorType.Name} returned unexpected type: {result?.GetType()}");
@@ -296,7 +310,10 @@ internal class MediatorSender : ISender
         var compiledInvoker = ExpressionTreeCompiler.GetOrCompile(method);
         var result = await compiledInvoker(handler, [request, cancellationToken]).ConfigureAwait(false);
 
-        if (result is TResponse typedResult) return typedResult;
+        if (result is TResponse typedResult)
+        {
+            return typedResult;
+        }
 
         throw new InvalidOperationException($"Handler returned unexpected type: {result?.GetType()}");
     }
@@ -313,7 +330,9 @@ internal class MediatorSender : ISender
         {
             var @interface = interfaces[i];
             if (@interface.IsGenericType && @interface.GetGenericTypeDefinition() == typeof(IRequest<>))
+            {
                 return @interface;
+            }
         }
 
         return null;

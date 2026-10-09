@@ -24,6 +24,7 @@ import { generateErrors } from './codegen/errors.js';
 import { generateModules } from './codegen/modules.js';
 import { formatOutput } from './utils/formatting.js';
 import { cleanGeneratedOutput } from './utils/clean-generated-output.js';
+import { safeJoin } from './utils/safe-join.js';
 import { resolveGeneratorConfig } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -137,7 +138,8 @@ function ensureOutputDir(): void {
  * Write generated file with formatting
  */
 async function writeGeneratedFile(filename: string, content: string): Promise<void> {
-  const filepath = join(CONFIG.outputDir, filename);
+  // Filename embeds OpenAPI tag names (external data) — keep writes inside the output dir.
+  const filepath = safeJoin(CONFIG.outputDir, filename);
   const formatted = await formatOutput(content, filepath);
   writeFileSync(filepath, formatted);
   console.log(`  ✓ Generated ${filename}`);

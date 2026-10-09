@@ -89,10 +89,17 @@ public class ContentProgress : EntityBase {
     CompletedAt = SystemClock.UtcNow;
     ProgressPercentage = PercentValue.Hundred;
 
-    if (score.HasValue) Score = score.Value;
-    if (maxScore.HasValue) MaxScore = maxScore.Value;
+    if (score.HasValue)
+        {
+            Score = score.Value;
+        }
 
-    MarkAsAccessed();
+        if (maxScore.HasValue)
+        {
+            MaxScore = maxScore.Value;
+        }
+
+        MarkAsAccessed();
   }
 
   /// <summary> Update progress percentage </summary>

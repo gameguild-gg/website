@@ -62,9 +62,12 @@ public class ProgramWriteService(
       .Where(p => p.DeletedAt == null)
       .FirstOrDefaultAsync(p => p.Id == id);
 
-    if (originalProgram == null) throw new ArgumentException("Program not found", nameof(id));
+    if (originalProgram == null)
+        {
+            throw new ArgumentException("Program not found", nameof(id));
+        }
 
-    var clonedProgram = new Program
+        var clonedProgram = new Program
     {
       TenantId = originalProgram.TenantId,
       CreatorId = originalProgram.CreatorId,
@@ -99,9 +102,11 @@ public class ProgramWriteService(
 
       clonedContent.NormalizeLearningContract();
       if (content.GetActivitySettings() is { } activitySettings)
-        clonedContent.SetActivitySettings(activitySettings);
+            {
+                clonedContent.SetActivitySettings(activitySettings);
+            }
 
-      context.Set<ProgramContent>().Add(clonedContent);
+            context.Set<ProgramContent>().Add(clonedContent);
     }
 
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -137,29 +142,105 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    if (updateDto.Title != null) program.Title = updateDto.Title;
-    if (updateDto.Description != null) program.Description = updateDto.Description;
-    if (updateDto.Metadata != null) program.Metadata = updateDto.Metadata;
-    if (updateDto.Slug != null) program.Slug = updateDto.Slug;
-    if (updateDto.Thumbnail != null) program.Thumbnail = updateDto.Thumbnail;
-    if (updateDto.VideoShowcaseUrl != null) program.VideoShowcaseUrl = updateDto.VideoShowcaseUrl;
-    if (updateDto.EstimatedHours.HasValue) program.EstimatedHours = updateDto.EstimatedHours.Value;
-    if (updateDto.Visibility.HasValue) program.Visibility = updateDto.Visibility.Value;
-    if (updateDto.Category.HasValue) program.Category = updateDto.Category.Value;
-    if (updateDto.Difficulty.HasValue) program.Difficulty = updateDto.Difficulty.Value;
-    if (updateDto.SkillsRequired != null) program.SkillsRequired = updateDto.SkillsRequired;
-    if (updateDto.SkillsProvided != null) program.SkillsProvided = updateDto.SkillsProvided;
-    if (updateDto.CreatorId.HasValue) program.CreatorId = updateDto.CreatorId.Value;
-    if (updateDto.EnrollmentStatus.HasValue) program.EnrollmentStatus = updateDto.EnrollmentStatus.Value;
-    if (updateDto.ClearMaxEnrollments) program.MaxEnrollments = null;
-    else if (updateDto.MaxEnrollments.HasValue) program.MaxEnrollments = updateDto.MaxEnrollments.Value;
-    if (updateDto.ClearEnrollmentDeadline) program.EnrollmentDeadline = null;
-    else if (updateDto.EnrollmentDeadline.HasValue) program.EnrollmentDeadline = updateDto.EnrollmentDeadline.Value;
-    if (updateDto.PassingScore.HasValue) program.PassingScore = updateDto.PassingScore.Value;
+        if (updateDto.Title != null)
+        {
+            program.Title = updateDto.Title;
+        }
 
-    program.Touch();
+        if (updateDto.Description != null)
+        {
+            program.Description = updateDto.Description;
+        }
+
+        if (updateDto.Metadata != null)
+        {
+            program.Metadata = updateDto.Metadata;
+        }
+
+        if (updateDto.Slug != null)
+        {
+            program.Slug = updateDto.Slug;
+        }
+
+        if (updateDto.Thumbnail != null)
+        {
+            program.Thumbnail = updateDto.Thumbnail;
+        }
+
+        if (updateDto.VideoShowcaseUrl != null)
+        {
+            program.VideoShowcaseUrl = updateDto.VideoShowcaseUrl;
+        }
+
+        if (updateDto.EstimatedHours.HasValue)
+        {
+            program.EstimatedHours = updateDto.EstimatedHours.Value;
+        }
+
+        if (updateDto.Visibility.HasValue)
+        {
+            program.Visibility = updateDto.Visibility.Value;
+        }
+
+        if (updateDto.Category.HasValue)
+        {
+            program.Category = updateDto.Category.Value;
+        }
+
+        if (updateDto.Difficulty.HasValue)
+        {
+            program.Difficulty = updateDto.Difficulty.Value;
+        }
+
+        if (updateDto.SkillsRequired != null)
+        {
+            program.SkillsRequired = updateDto.SkillsRequired;
+        }
+
+        if (updateDto.SkillsProvided != null)
+        {
+            program.SkillsProvided = updateDto.SkillsProvided;
+        }
+
+        if (updateDto.CreatorId.HasValue)
+        {
+            program.CreatorId = updateDto.CreatorId.Value;
+        }
+
+        if (updateDto.EnrollmentStatus.HasValue)
+        {
+            program.EnrollmentStatus = updateDto.EnrollmentStatus.Value;
+        }
+
+        if (updateDto.ClearMaxEnrollments)
+        {
+            program.MaxEnrollments = null;
+        }
+        else if (updateDto.MaxEnrollments.HasValue)
+        {
+            program.MaxEnrollments = updateDto.MaxEnrollments.Value;
+        }
+
+        if (updateDto.ClearEnrollmentDeadline)
+        {
+            program.EnrollmentDeadline = null;
+        }
+        else if (updateDto.EnrollmentDeadline.HasValue)
+        {
+            program.EnrollmentDeadline = updateDto.EnrollmentDeadline.Value;
+        }
+
+        if (updateDto.PassingScore.HasValue)
+        {
+            program.PassingScore = updateDto.PassingScore.Value;
+        }
+
+        program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
 
     return program;
@@ -175,9 +256,12 @@ public class ProgramWriteService(
       .SingleOrDefaultAsync(p => p.Id == programId)
       .ConfigureAwait(false);
 
-    if (program == null) throw new ArgumentException("Program not found", nameof(programId));
+    if (program == null)
+        {
+            throw new ArgumentException("Program not found", nameof(programId));
+        }
 
-    content.ProgramId = programId;
+        content.ProgramId = programId;
     content.TenantId = program.TenantId;
     content.NormalizeLearningContract();
     ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
@@ -200,10 +284,15 @@ public class ProgramWriteService(
       .AcquireAsync(context, [content.Id])
       .ConfigureAwait(false);
     var existingContent = await context.Set<ProgramContent>()
+      .AsNoTracking()
       .FirstOrDefaultAsync(candidate => candidate.Id == content.Id && candidate.DeletedAt == null)
       .ConfigureAwait(false);
-    if (existingContent == null) throw new InvalidOperationException($"ProgramContent with ID {content.Id} not found or has been deleted");
+    if (existingContent == null)
+        {
+            throw new InvalidOperationException($"ProgramContent with ID {content.Id} not found or has been deleted");
+        }
 
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, existingContent, ProgramContentAcademicMutation.Authoring);
     content.NormalizeLearningContract();
     ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
     if (await lifecycleGuard.HasBlockingIncompatibleUpdateReference(
@@ -247,9 +336,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == programId).ConfigureAwait(false);
 
-    if (program == null) throw new ArgumentException("Program not found", nameof(programId));
+    if (program == null)
+        {
+            throw new ArgumentException("Program not found", nameof(programId));
+        }
 
-    var contents = await context.Set<ProgramContent>().Where(pc => pc.DeletedAt == null && pc.ProgramId == programId && contentIds.Contains(pc.Id)).ToListAsync();
+        var contents = await context.Set<ProgramContent>().Where(pc => pc.DeletedAt == null && pc.ProgramId == programId && contentIds.Contains(pc.Id)).ToListAsync();
 
     for (var i = 0; i < contentIds.Count; i++)
     {
@@ -271,9 +363,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == programId).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var content = new ProgramContent
+        var content = new ProgramContent
     {
       Id = Guid.NewGuid(),
       TenantId = program.TenantId,
@@ -303,11 +398,23 @@ public class ProgramWriteService(
       .ConfigureAwait(false);
     var content = await context.Set<ProgramContent>().FirstOrDefaultAsync(c => c.Id == contentId && c.ProgramId == programId && c.DeletedAt == null);
 
-    if (content == null) return null;
+    if (content == null)
+        {
+            return null;
+        }
 
-    if (contentDto.Title != null) content.Title = contentDto.Title;
-    if (contentDto.Description != null) content.Description = contentDto.Description;
-    if (contentDto.Body != null)
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
+    if (contentDto.Title != null)
+        {
+            content.Title = contentDto.Title;
+        }
+
+        if (contentDto.Description != null)
+        {
+            content.Description = contentDto.Description;
+        }
+
+        if (contentDto.Body != null)
     {
       content.Body = contentDto.Body;
       if (ProgramContentMappingExtensions.NormalizeProfessorFacingType(content.Type) == ProgramContentType.Lesson &&
@@ -316,11 +423,22 @@ public class ProgramWriteService(
         content.LessonFormat = LessonContentFormatInference.FromBody(contentDto.Body);
       }
     }
-    if (contentDto.SortOrder != null) content.SortOrder = contentDto.SortOrder.Value;
-    if (contentDto.IsRequired != null) content.IsRequired = contentDto.IsRequired.Value;
-    if (contentDto.EstimatedMinutes != null) content.EstimatedMinutes = contentDto.EstimatedMinutes;
+    if (contentDto.SortOrder != null)
+        {
+            content.SortOrder = contentDto.SortOrder.Value;
+        }
 
-    content.NormalizeLearningContract();
+        if (contentDto.IsRequired != null)
+        {
+            content.IsRequired = contentDto.IsRequired.Value;
+        }
+
+        if (contentDto.EstimatedMinutes != null)
+        {
+            content.EstimatedMinutes = contentDto.EstimatedMinutes;
+        }
+
+        content.NormalizeLearningContract();
     ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
     if (await lifecycleGuard.HasBlockingIncompatibleUpdateReference(
           content.Id,
@@ -344,9 +462,12 @@ public class ProgramWriteService(
       .ConfigureAwait(false);
     var content = await context.Set<ProgramContent>().FirstOrDefaultAsync(c => c.Id == contentId && c.ProgramId == programId && c.DeletedAt == null);
 
-    if (content == null) return false;
+    if (content == null)
+        {
+            return false;
+        }
 
-    if (await lifecycleGuard.HasBlockingDeleteReference(content.Id).ConfigureAwait(false))
+        if (await lifecycleGuard.HasBlockingDeleteReference(content.Id).ConfigureAwait(false))
     {
       throw new GameGuild.CQRS.RequestValidationException(
         "Content linked to an assessment cue cannot be deleted. Remove the assessment cue first.");
@@ -417,9 +538,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == programId).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var now = SystemClock.UtcNow;
+        var now = SystemClock.UtcNow;
     var programUser = await context.Set<ProgramUser>()
       .FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId);
     if (programUser == null)
@@ -439,8 +563,12 @@ public class ProgramWriteService(
     }
     else
     {
-      if (programUser.DeletedAt.HasValue) programUser.Restore();
-      programUser.IsActive = true;
+      if (programUser.DeletedAt.HasValue)
+            {
+                programUser.Restore();
+            }
+
+            programUser.IsActive = true;
       programUser.TenantId ??= program.TenantId;
     }
 
@@ -465,8 +593,12 @@ public class ProgramWriteService(
     }
     else
     {
-      if (canonicalEnrollment.DeletedAt.HasValue) canonicalEnrollment.Restore();
-      canonicalEnrollment.EnrollmentStatus = EnrollmentStatus.Active;
+      if (canonicalEnrollment.DeletedAt.HasValue)
+            {
+                canonicalEnrollment.Restore();
+            }
+
+            canonicalEnrollment.EnrollmentStatus = EnrollmentStatus.Active;
       canonicalEnrollment.TenantId ??= program.TenantId;
       canonicalEnrollment.Touch();
     }
@@ -479,9 +611,12 @@ public class ProgramWriteService(
   {
     var programUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null);
 
-    if (programUser == null) return false;
+    if (programUser == null)
+        {
+            return false;
+        }
 
-    programUser.IsActive = false;
+        programUser.IsActive = false;
     programUser.SoftDelete();
     var canonicalEnrollment = await context.Set<ProgramEnrollment>()
       .FirstOrDefaultAsync(enrollment => enrollment.ProgramId == programId && enrollment.UserId == userId);
@@ -501,13 +636,19 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == programId).ConfigureAwait(false);
 
-    if (program == null) throw new ArgumentException("Program not found", nameof(programId));
+    if (program == null)
+        {
+            throw new ArgumentException("Program not found", nameof(programId));
+        }
 
-    var programUser = await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.UserId == userId).FirstOrDefaultAsync();
+        var programUser = await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.UserId == userId).FirstOrDefaultAsync();
 
-    if (programUser == null) throw new ArgumentException("User not enrolled in program");
+    if (programUser == null)
+        {
+            throw new ArgumentException("User not enrolled in program");
+        }
 
-    var interaction = await context.Set<ContentInteraction>()
+        var interaction = await context.Set<ContentInteraction>()
       .Where(ci => ci.DeletedAt == null && ci.ProgramUserId == programUser.Id && ci.ContentId == contentId)
       .OrderBy(ci => ci.SubmittedAt.HasValue)
       .ThenByDescending(ci => ci.CreatedAt)
@@ -522,13 +663,18 @@ public class ProgramWriteService(
     ApplyProgressStatus(interaction!, status);
 
     if (isNewInteraction)
-      interaction = await SaveNewActiveAttemptAsync(
+        {
+            await SaveNewActiveAttemptAsync(
           interaction!,
           winner => ApplyProgressStatus(winner, status))
         .ConfigureAwait(false);
-    else
-      await context.SaveChangesAsync().ConfigureAwait(false);
-    await RecalculateUserProgressAsync(programUser.Id).ConfigureAwait(false);
+        }
+        else
+        {
+            await context.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        await RecalculateUserProgressAsync(programUser.Id).ConfigureAwait(false);
     await context.SaveChangesAsync().ConfigureAwait(false);
 
     return program;
@@ -538,10 +684,17 @@ public class ProgramWriteService(
   {
     var programUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null);
 
-    if (programUser == null) return null;
+    if (programUser == null)
+        {
+            return null;
+        }
 
-    if (progressDto.LastAccessedAt != null) programUser.LastAccessedAt = progressDto.LastAccessedAt.Value;
-    programUser.Touch();
+        if (progressDto.LastAccessedAt != null)
+        {
+            programUser.LastAccessedAt = progressDto.LastAccessedAt.Value;
+        }
+
+        programUser.Touch();
 
     await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -552,50 +705,70 @@ public class ProgramWriteService(
   {
     var actorId = requestContextAccessor?.CurrentUserId;
     if (requestContextAccessor?.IsAuthenticated != true || !actorId.HasValue)
-      throw new RequestValidationException("An authenticated actor is required to submit course content.");
-    if (actorId.Value != userId && !await HasProgramEditAccessAsync(programId).ConfigureAwait(false))
-      throw new RequestValidationException("Program management permission is required to submit content for another learner.");
+        {
+            throw new RequestValidationException("An authenticated actor is required to submit course content.");
+        }
 
-    var programUser = await context.Set<ProgramUser>()
+        if (actorId.Value != userId && !await HasProgramEditAccessAsync(programId).ConfigureAwait(false))
+        {
+            throw new RequestValidationException("Program management permission is required to submit content for another learner.");
+        }
+
+        var programUser = await context.Set<ProgramUser>()
       .FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null && pu.IsActive)
       .ConfigureAwait(false);
 
-    if (programUser == null) return null;
+    if (programUser == null)
+        {
+            return null;
+        }
 
-    var initialContentType = await context.Set<ProgramContent>()
+        var initialContentType = await context.Set<ProgramContent>()
       .AsNoTracking()
       .Where(pc => pc.Id == contentId && pc.ProgramId == programId && pc.DeletedAt == null)
       .Select(pc => (ProgramContentType?)pc.Type)
       .FirstOrDefaultAsync()
       .ConfigureAwait(false);
 
-    if (!initialContentType.HasValue) return null;
+    if (!initialContentType.HasValue)
+        {
+            return null;
+        }
 
-    var currentContentType = await context.Set<ProgramContent>()
+        var currentContentType = await context.Set<ProgramContent>()
       .AsNoTracking()
       .Where(pc => pc.Id == contentId && pc.ProgramId == programId && pc.DeletedAt == null)
       .Select(pc => (ProgramContentType?)pc.Type)
       .FirstOrDefaultAsync()
       .ConfigureAwait(false);
-    if (!currentContentType.HasValue) return null;
+    if (!currentContentType.HasValue)
+        {
+            return null;
+        }
 
-    await using var submissionPolicyTransaction = LearningActivityContract.RequiresSubmissionPolicyLock(currentContentType.Value)
+        await using var submissionPolicyTransaction = LearningActivityContract.RequiresSubmissionPolicyLock(currentContentType.Value)
       ? await ProgramContentLifecycleDatabaseLock.AcquireAsync(context, [contentId]).ConfigureAwait(false)
       : null;
     var content = await context.Set<ProgramContent>()
       .AsNoTracking()
       .FirstOrDefaultAsync(pc => pc.Id == contentId && pc.ProgramId == programId && pc.DeletedAt == null)
       .ConfigureAwait(false);
-    if (content == null) return null;
-    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Submit);
+    if (content == null)
+        {
+            return null;
+        }
+
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Submit);
 
     var response = LearningActivityContract.IsActivityType(content.Type)
       ? ActivityResponseContract.Parse(content.Type, submissionData, content.GetActivitySettings())
       : null;
     if (response is not null)
-      await LearningActivityContract.ValidateDiscussionThreadRootAsync(context, programId, contentId, response).ConfigureAwait(false);
+        {
+            await LearningActivityContract.ValidateDiscussionThreadRootAsync(context, programId, contentId, response).ConfigureAwait(false);
+        }
 
-    var now = SystemClock.UtcNow;
+        var now = SystemClock.UtcNow;
     var interaction = await context.Set<ContentInteraction>()
       .Where(ci => ci.ProgramUserId == programUser.Id && ci.ContentId == contentId && ci.DeletedAt == null)
       .OrderBy(ci => ci.SubmittedAt.HasValue)
@@ -657,8 +830,11 @@ public class ProgramWriteService(
       }
     }
     else
-      await context.SaveChangesAsync().ConfigureAwait(false);
-    await RecalculateUserProgressAsync(programUser.Id).ConfigureAwait(false);
+        {
+            await context.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        await RecalculateUserProgressAsync(programUser.Id).ConfigureAwait(false);
     await context.SaveChangesAsync().ConfigureAwait(false);
     await ProgramContentLifecycleDatabaseLock.CommitAsync(submissionPolicyTransaction).ConfigureAwait(false);
 
@@ -672,15 +848,22 @@ public class ProgramWriteService(
   {
     var programUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null);
 
-    if (programUser == null) return false;
+    if (programUser == null)
+        {
+            return false;
+        }
 
-    var content = await context.Set<ProgramContent>()
+        var content = await context.Set<ProgramContent>()
       .AsNoTracking()
       .FirstOrDefaultAsync(pc => pc.Id == contentId && pc.ProgramId == programId && pc.DeletedAt == null)
       .ConfigureAwait(false);
 
-    if (content is null) return false;
-    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Complete);
+    if (content is null)
+        {
+            return false;
+        }
+
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Complete);
 
     var now = SystemClock.UtcNow;
     var interaction = await context.Set<ContentInteraction>()
@@ -717,13 +900,18 @@ public class ProgramWriteService(
     programUser.Touch();
 
     if (isNewInteraction)
-      interaction = await SaveNewActiveAttemptAsync(
+        {
+            await SaveNewActiveAttemptAsync(
           interaction!,
           winner => CompleteInteraction(winner, userId, now))
         .ConfigureAwait(false);
-    else
-      await context.SaveChangesAsync().ConfigureAwait(false);
-    await RecalculateUserProgressAsync(programUser.Id).ConfigureAwait(false);
+        }
+        else
+        {
+            await context.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        await RecalculateUserProgressAsync(programUser.Id).ConfigureAwait(false);
     await context.SaveChangesAsync().ConfigureAwait(false);
 
     return true;
@@ -733,9 +921,12 @@ public class ProgramWriteService(
   {
     var programUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null);
 
-    if (programUser == null) return false;
+    if (programUser == null)
+        {
+            return false;
+        }
 
-    programUser.CompletionPercentage = PercentValue.Zero;
+        programUser.CompletionPercentage = PercentValue.Zero;
     programUser.CompletedAt = null;
     programUser.LastAccessedAt = SystemClock.UtcNow;
     programUser.Touch();
@@ -751,9 +942,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    ProgramPricingMetadata.Enable(program, monetizationDto);
+        ProgramPricingMetadata.Enable(program, monetizationDto);
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -764,9 +958,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    ProgramPricingMetadata.Disable(program);
+        ProgramPricingMetadata.Disable(program);
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -777,9 +974,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var pricing = ProgramPricingMetadata.Update(program, pricingDto);
+        var pricing = ProgramPricingMetadata.Update(program, pricingDto);
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -792,9 +992,12 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == programId).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    var name = string.IsNullOrWhiteSpace(productDto.Name) ? program.Title : productDto.Name.Trim();
+        var name = string.IsNullOrWhiteSpace(productDto.Name) ? program.Title : productDto.Name.Trim();
     var description = string.IsNullOrWhiteSpace(productDto.Description) ? program.Description : productDto.Description.Trim();
     var product = Product.Create(
       name,
@@ -839,23 +1042,32 @@ public class ProgramWriteService(
   {
     var program = await context.Set<Program>().Where(p => p.DeletedAt == null).FirstOrDefaultAsync(p => p.Id == programId).ConfigureAwait(false);
 
-    if (program == null) return false;
+    if (program == null)
+        {
+            return false;
+        }
 
-    var productExists = await context.Set<Product>()
+        var productExists = await context.Set<Product>()
       .Where(p => p.DeletedAt == null)
       .AnyAsync(p => p.Id == productId)
       .ConfigureAwait(false);
 
-    if (!productExists) return false;
+    if (!productExists)
+        {
+            return false;
+        }
 
-    var existingLink = await context.Set<ProductProgram>()
+        var existingLink = await context.Set<ProductProgram>()
       .Where(pp => pp.DeletedAt == null)
       .FirstOrDefaultAsync(pp => pp.ProgramId == programId && pp.ProductId == productId)
       .ConfigureAwait(false);
 
-    if (existingLink != null) return true;
+    if (existingLink != null)
+        {
+            return true;
+        }
 
-    var sortOrder = await GetNextProductProgramSortOrderAsync(productId).ConfigureAwait(false);
+        var sortOrder = await GetNextProductProgramSortOrderAsync(productId).ConfigureAwait(false);
     context.Set<ProductProgram>().Add(new ProductProgram
     {
       ProductId = productId,
@@ -876,9 +1088,12 @@ public class ProgramWriteService(
       .FirstOrDefaultAsync(pp => pp.ProgramId == programId && pp.ProductId == productId)
       .ConfigureAwait(false);
 
-    if (link == null) return false;
+    if (link == null)
+        {
+            return false;
+        }
 
-    context.Set<ProductProgram>().Remove(link);
+        context.Set<ProductProgram>().Remove(link);
     await context.SaveChangesAsync().ConfigureAwait(false);
 
     return true;
@@ -902,9 +1117,12 @@ public class ProgramWriteService(
   {
     var programUser = await context.Set<ProgramUser>().Where(pu => pu.Id == programUserId).FirstOrDefaultAsync();
 
-    if (programUser == null) return;
+    if (programUser == null)
+        {
+            return;
+        }
 
-    var requiredContentIds = await context.Set<ProgramContent>()
+        var requiredContentIds = await context.Set<ProgramContent>()
       .Where(pc => pc.DeletedAt == null && pc.ProgramId == programUser.ProgramId && pc.IsRequired)
       .Select(pc => pc.Id)
       .ToListAsync()
@@ -932,11 +1150,15 @@ public class ProgramWriteService(
     programUser.CompletionPercentage = PercentValue.FromRatio(completedContent, totalContent);
 
     if (programUser.CompletionPercentage.CompareTo(PercentValue.Hundred) == 0 && programUser.CompletedAt is null)
-      programUser.CompletedAt = SystemClock.UtcNow;
-    else if (programUser.CompletionPercentage.CompareTo(PercentValue.Hundred) < 0)
-      programUser.CompletedAt = null;
+        {
+            programUser.CompletedAt = SystemClock.UtcNow;
+        }
+        else if (programUser.CompletionPercentage.CompareTo(PercentValue.Hundred) < 0)
+        {
+            programUser.CompletedAt = null;
+        }
 
-    programUser.Touch();
+        programUser.Touch();
   }
 
   private static void ApplyProgressStatus(ContentInteraction interaction, ProgressStatus status)
@@ -947,9 +1169,12 @@ public class ProgramWriteService(
       return;
     }
 
-    if (interaction.IsCompleted) return;
+    if (interaction.IsCompleted)
+        {
+            return;
+        }
 
-    interaction.Status = status;
+        interaction.Status = status;
     interaction.LastAccessedAt = SystemClock.UtcNow;
     interaction.Touch();
   }
@@ -1010,9 +1235,12 @@ public class ProgramWriteService(
         .IgnoreQueryFilters()
         .FirstOrDefaultAsync(interaction => interaction.Id == newInteraction.Id)
         .ConfigureAwait(false);
-      if (winningInteraction is null) throw;
+      if (winningInteraction is null)
+            {
+                throw;
+            }
 
-      if (winningInteraction.DeletedAt is not null)
+            if (winningInteraction.DeletedAt is not null)
       {
         winningInteraction.Restore();
         SubmitInteraction(winningInteraction, newInteraction.UserId, submissionData, now);
@@ -1046,9 +1274,12 @@ public class ProgramWriteService(
         .OrderByDescending(interaction => interaction.CreatedAt)
         .FirstOrDefaultAsync()
         .ConfigureAwait(false);
-      if (winningInteraction is null) throw;
+      if (winningInteraction is null)
+            {
+                throw;
+            }
 
-      reconcileWinner(winningInteraction);
+            reconcileWinner(winningInteraction);
       await context.SaveChangesAsync().ConfigureAwait(false);
       return winningInteraction;
     }
@@ -1059,9 +1290,12 @@ public class ProgramWriteService(
   {
     var programUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.ProgramId == programId && pu.UserId == userId && pu.DeletedAt == null);
 
-    if (programUser == null) return null;
+    if (programUser == null)
+        {
+            return null;
+        }
 
-    var interactions = await context.Set<ContentInteraction>()
+        var interactions = await context.Set<ContentInteraction>()
       .Include(ci => ci.Content)
       .Where(ci => ci.ProgramUserId == programUser.Id && ci.DeletedAt == null)
       .ToListAsync()

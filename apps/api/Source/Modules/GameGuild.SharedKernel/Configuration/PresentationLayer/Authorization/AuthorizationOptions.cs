@@ -50,7 +50,10 @@ public sealed class AuthorizationOptions : BaseOptions
     {
         base.Validate();
 
-        if (string.IsNullOrWhiteSpace(DefaultPolicy)) throw new InvalidOperationException("Default policy cannot be null or empty.");
+        if (string.IsNullOrWhiteSpace(DefaultPolicy))
+        {
+            throw new InvalidOperationException("Default policy cannot be null or empty.");
+        }
 
         if (FallbackPolicyName is not null && string.IsNullOrWhiteSpace(FallbackPolicyName))
         {
@@ -58,7 +61,9 @@ public sealed class AuthorizationOptions : BaseOptions
         }
         
         if (SystemAccountId == Guid.Empty)
+        {
             throw new InvalidOperationException("SystemAccountId cannot be empty GUID.");
+        }
 
         ValidatePolicies();
         ValidateRoleHierarchy();

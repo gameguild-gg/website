@@ -67,7 +67,10 @@ public static class ExternalRiskEvidenceValidator
             if (candidate is null || candidate.Version <= 0 || candidate.IssuedAt > now ||
                 candidate.ExpiresAt <= now || candidate.Outcome != ExternalRiskOutcome.Allow ||
                 string.IsNullOrWhiteSpace(candidate.EvidenceHash) || !candidate.IsAuditable)
+            {
                 throw new ExternalRiskEvidenceException($"Fresh Allow evidence is required from {source}.");
+            }
+
             selected.Add(candidate);
         }
 

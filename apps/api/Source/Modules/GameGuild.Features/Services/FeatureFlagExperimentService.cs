@@ -7,7 +7,10 @@ public class FeatureFlagExperimentService : IFeatureFlagExperimentService
 {
     public AbTestResult EvaluateAbTest(Dictionary<string, (int observations, int conversions)> variants, double confidenceLevel = 0.95)
     {
-        if (variants.Count < 2) throw new ArgumentException("At least two variants required for A/B test");
+        if (variants.Count < 2)
+        {
+            throw new ArgumentException("At least two variants required for A/B test");
+        }
 
         var control = variants.First();
         var treatment = variants.Skip(1).First();
@@ -145,7 +148,10 @@ public class FeatureFlagExperimentService : IFeatureFlagExperimentService
     // Inverse standard normal CDF approximation
     private double InverseStandardNormalCdf(double p)
     {
-        if (p <= 0 || p >= 1) throw new ArgumentException("Probability must be between 0 and 1");
+        if (p <= 0 || p >= 1)
+        {
+            throw new ArgumentException("Probability must be between 0 and 1");
+        }
 
         // Beasley-Springer-Moro approximation
         double[ ] a = [2.50662823884, -18.61500062529, 41.39119773534, -25.44106049637];
@@ -165,7 +171,10 @@ public class FeatureFlagExperimentService : IFeatureFlagExperimentService
             var r = p < 0.5 ? p : 1 - p;
             r = Math.Log(-Math.Log(r));
             x = c[0] + r * (c[1] + r * (c[2] + r * (c[3] + r * (c[4] + r * (c[5] + r * (c[6] + r * (c[7] + r * c[8])))))));
-            if (y < 0) x = -x;
+            if (y < 0)
+            {
+                x = -x;
+            }
         }
 
         return x;

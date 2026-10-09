@@ -99,12 +99,16 @@ public sealed class EnvironmentHandler : AuthorizationHandler<EnvironmentRequire
             if (TryParseIpRange(range, out var network, out var prefixLength))
             {
                 if (IsInRange(clientIp, network, prefixLength))
+                {
                     return true;
+                }
             }
             else if (IPAddress.TryParse(range, out var singleIp))
             {
                 if (clientIp.Equals(singleIp))
+                {
                     return true;
+                }
             }
         }
 
@@ -118,13 +122,19 @@ public sealed class EnvironmentHandler : AuthorizationHandler<EnvironmentRequire
 
         var parts = cidr.Split('/');
         if (parts.Length != 2)
+        {
             return false;
+        }
 
         if (!IPAddress.TryParse(parts[0], out network!))
+        {
             return false;
+        }
 
         if (!int.TryParse(parts[1], out prefixLength))
+        {
             return false;
+        }
 
         return true;
     }
@@ -135,7 +145,9 @@ public sealed class EnvironmentHandler : AuthorizationHandler<EnvironmentRequire
         var networkBytes = network.GetAddressBytes();
 
         if (addressBytes.Length != networkBytes.Length)
+        {
             return false;
+        }
 
         var bytesToCheck = prefixLength / 8;
         var bitsToCheck = prefixLength % 8;
@@ -143,14 +155,18 @@ public sealed class EnvironmentHandler : AuthorizationHandler<EnvironmentRequire
         for (var i = 0; i < bytesToCheck; i++)
         {
             if (addressBytes[i] != networkBytes[i])
+            {
                 return false;
+            }
         }
 
         if (bitsToCheck > 0 && bytesToCheck < addressBytes.Length)
         {
             var mask = (byte)(0xFF << (8 - bitsToCheck));
             if ((addressBytes[bytesToCheck] & mask) != (networkBytes[bytesToCheck] & mask))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -161,7 +177,9 @@ public sealed class EnvironmentHandler : AuthorizationHandler<EnvironmentRequire
         foreach (var window in timeWindows)
         {
             if (window.Contains(currentTime))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -181,11 +199,19 @@ public sealed class EnvironmentHandler : AuthorizationHandler<EnvironmentRequire
         foreach (var type in allowedTypes)
         {
             if (type.Equals("mobile", StringComparison.OrdinalIgnoreCase) && isMobile)
+            {
                 return true;
+            }
+
             if (type.Equals("tablet", StringComparison.OrdinalIgnoreCase) && isTablet)
+            {
                 return true;
+            }
+
             if (type.Equals("desktop", StringComparison.OrdinalIgnoreCase) && isDesktop)
+            {
                 return true;
+            }
         }
 
         return false;

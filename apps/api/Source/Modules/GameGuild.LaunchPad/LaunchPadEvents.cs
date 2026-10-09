@@ -72,9 +72,21 @@ public sealed class LaunchPadEvent : EntityBase<Guid>
 
     public static LaunchPadEvent Create(Guid tenantId, string name, DateTime startsAt, DateTime endsAt, string? description = null)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant is required.", nameof(tenantId));
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
-        if (endsAt <= startsAt) throw new ArgumentException("Event end must be after start.", nameof(endsAt));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant is required.", nameof(tenantId));
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name is required.", nameof(name));
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Event end must be after start.", nameof(endsAt));
+        }
+
         return new LaunchPadEvent
         {
             Id = Guid.NewGuid(),
@@ -90,7 +102,10 @@ public sealed class LaunchPadEvent : EntityBase<Guid>
     {
         EnsureState(LaunchPadEventStatus.Draft);
         if (closesAt <= opensAt || closesAt > StartsAt)
+        {
             throw new InvalidOperationException("Application window must close after opening and before the event starts.");
+        }
+
         ApplicationsOpenAt = opensAt;
         ApplicationsCloseAt = closesAt;
         Touch();
@@ -100,14 +115,31 @@ public sealed class LaunchPadEvent : EntityBase<Guid>
         DateTime? applicationsOpenAt, DateTime? applicationsCloseAt)
     {
         if (Status is not (LaunchPadEventStatus.Draft or LaunchPadEventStatus.ApplicationsOpen or LaunchPadEventStatus.ApplicationsClosed))
+        {
             throw new InvalidOperationException("A scheduled, active, completed or archived event can no longer be edited.");
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
-        if (endsAt <= startsAt) throw new ArgumentException("Event end must be after start.", nameof(endsAt));
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name is required.", nameof(name));
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Event end must be after start.", nameof(endsAt));
+        }
+
         if (applicationsOpenAt.HasValue != applicationsCloseAt.HasValue)
+        {
             throw new ArgumentException("Both application window dates are required.");
+        }
+
         if (applicationsOpenAt.HasValue &&
             (applicationsCloseAt <= applicationsOpenAt || applicationsCloseAt > startsAt))
+        {
             throw new InvalidOperationException("Application window must close after opening and before the event starts.");
+        }
+
         Name = name.Trim();
         Description = description?.Trim();
         StartsAt = startsAt;
@@ -126,7 +158,10 @@ public sealed class LaunchPadEvent : EntityBase<Guid>
     public void Cancel()
     {
         if (Status is LaunchPadEventStatus.Completed or LaunchPadEventStatus.Archived)
+        {
             throw new InvalidOperationException("A completed or archived event cannot be cancelled.");
+        }
+
         Status = LaunchPadEventStatus.Cancelled;
         Touch();
     }
@@ -134,7 +169,10 @@ public sealed class LaunchPadEvent : EntityBase<Guid>
     public void Archive()
     {
         if (Status is not (LaunchPadEventStatus.Completed or LaunchPadEventStatus.Cancelled))
+        {
             throw new InvalidOperationException("Only completed or cancelled events can be archived.");
+        }
+
         Status = LaunchPadEventStatus.Archived;
         Touch();
     }
@@ -148,7 +186,10 @@ public sealed class LaunchPadEvent : EntityBase<Guid>
 
     private void EnsureState(LaunchPadEventStatus expected)
     {
-        if (Status != expected) throw new InvalidOperationException($"Expected event status {expected}, but was {Status}.");
+        if (Status != expected)
+        {
+            throw new InvalidOperationException($"Expected event status {expected}, but was {Status}.");
+        }
     }
 }
 
@@ -194,7 +235,10 @@ public sealed class LaunchPadApplication : EntityBase<Guid>
         VersionSubmissionPolicy submissionVersionPolicy = VersionSubmissionPolicy.ReleasedImmutable)
     {
         if (new[] { tenantId, launchPadEventId, projectId, projectVersionId, submittedByUserId }.Any(id => id == Guid.Empty))
+        {
             throw new ArgumentException("Tenant, event, project, version and submitter are required.");
+        }
+
         return new LaunchPadApplication
         {
             Id = Guid.NewGuid(), TenantId = tenantId, LaunchPadEventId = launchPadEventId,
@@ -216,14 +260,23 @@ public sealed class LaunchPadApplication : EntityBase<Guid>
     public void Update(Guid projectVersionId, string? pitch, IReadOnlyCollection<Guid>? submittedAssetReferenceIds = null)
     {
         if (Status != LaunchPadApplicationStatus.Submitted)
+        {
             throw new InvalidOperationException("The application can no longer be edited.");
+        }
+
         if (projectVersionId != ProjectVersionId &&
             !ProjectVersionEligibility.CanReplaceAfterSubmission(SubmissionVersionPolicy))
+        {
             throw new InvalidOperationException("The submitted project version is immutable under this application's policy.");
+        }
+
         ProjectVersionId = projectVersionId;
         Pitch = pitch?.Trim();
         if (submittedAssetReferenceIds != null)
+        {
             SubmittedAssetReferenceIdsJson = SerializeAssetIds(submittedAssetReferenceIds);
+        }
+
         Touch();
     }
 
@@ -235,7 +288,10 @@ public sealed class LaunchPadApplication : EntityBase<Guid>
     public void Withdraw()
     {
         if (Status is LaunchPadApplicationStatus.Approved or LaunchPadApplicationStatus.Rejected or LaunchPadApplicationStatus.Withdrawn)
+        {
             throw new InvalidOperationException("The application cannot be withdrawn.");
+        }
+
         Status = LaunchPadApplicationStatus.Withdrawn;
         Touch();
     }
@@ -243,7 +299,10 @@ public sealed class LaunchPadApplication : EntityBase<Guid>
     private void ReviewTransition(LaunchPadApplicationStatus next, Guid reviewerId)
     {
         if (Status is not (LaunchPadApplicationStatus.Submitted or LaunchPadApplicationStatus.UnderReview or LaunchPadApplicationStatus.Waitlisted))
+        {
             throw new InvalidOperationException("The application is not reviewable.");
+        }
+
         Status = next;
         ReviewedByUserId = reviewerId;
         ReviewedAt = SystemClock.UtcNow;
@@ -252,7 +311,11 @@ public sealed class LaunchPadApplication : EntityBase<Guid>
 
     private void Transition(LaunchPadApplicationStatus expected, LaunchPadApplicationStatus next)
     {
-        if (Status != expected) throw new InvalidOperationException($"Expected application status {expected}, but was {Status}.");
+        if (Status != expected)
+        {
+            throw new InvalidOperationException($"Expected application status {expected}, but was {Status}.");
+        }
+
         Status = next;
         Touch();
     }
@@ -276,8 +339,16 @@ public sealed class LaunchPadParticipantSlot : EntityBase<Guid>
 
     public static LaunchPadParticipantSlot Create(Guid tenantId, Guid eventId, string name, LaunchPadParticipantRole role, int capacity, DateTime startsAt, DateTime endsAt)
     {
-        if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
-        if (endsAt <= startsAt) throw new ArgumentException("Slot end must be after start.");
+        if (capacity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(capacity));
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Slot end must be after start.");
+        }
+
         return new LaunchPadParticipantSlot
         {
             Id = Guid.NewGuid(), TenantId = tenantId, LaunchPadEventId = eventId, Name = name.Trim(),
@@ -289,9 +360,21 @@ public sealed class LaunchPadParticipantSlot : EntityBase<Guid>
 
     public void Update(string name, LaunchPadParticipantRole role, int capacity, DateTime startsAt, DateTime endsAt)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.", nameof(name));
-        if (capacity <= 0 || capacity < ReservedCount) throw new ArgumentOutOfRangeException(nameof(capacity));
-        if (endsAt <= startsAt) throw new ArgumentException("Slot end must be after start.");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name is required.", nameof(name));
+        }
+
+        if (capacity <= 0 || capacity < ReservedCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(capacity));
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Slot end must be after start.");
+        }
+
         Name = name.Trim();
         Role = role;
         Capacity = capacity;
@@ -302,14 +385,22 @@ public sealed class LaunchPadParticipantSlot : EntityBase<Guid>
 
     public void Reserve()
     {
-        if (!HasCapacity) throw new InvalidOperationException("The participant slot is full.");
+        if (!HasCapacity)
+        {
+            throw new InvalidOperationException("The participant slot is full.");
+        }
+
         ReservedCount++;
         Touch();
     }
 
     public void Release()
     {
-        if (ReservedCount > 0) ReservedCount--;
+        if (ReservedCount > 0)
+        {
+            ReservedCount--;
+        }
+
         Touch();
     }
 }
@@ -370,7 +461,10 @@ public sealed class LaunchPadParticipantRegistration : EntityBase<Guid>
     public void Cancel()
     {
         if (Status is LaunchPadParticipantStatus.Completed or LaunchPadParticipantStatus.Cancelled or LaunchPadParticipantStatus.NoShow)
+        {
             throw new InvalidOperationException("Registration cannot be cancelled.");
+        }
+
         Status = LaunchPadParticipantStatus.Cancelled;
         Touch();
     }
@@ -378,13 +472,19 @@ public sealed class LaunchPadParticipantRegistration : EntityBase<Guid>
     public void MarkNoShow()
     {
         if (Status is not (LaunchPadParticipantStatus.Registered or LaunchPadParticipantStatus.CheckedIn))
+        {
             throw new InvalidOperationException("Registration cannot be marked as no-show.");
+        }
+
         Status = LaunchPadParticipantStatus.NoShow;
         Touch();
     }
 
     private void Ensure(LaunchPadParticipantStatus expected)
     {
-        if (Status != expected) throw new InvalidOperationException($"Expected participant status {expected}, but was {Status}.");
+        if (Status != expected)
+        {
+            throw new InvalidOperationException($"Expected participant status {expected}, but was {Status}.");
+        }
     }
 }

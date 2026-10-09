@@ -30,7 +30,10 @@ public sealed class TestingApplicationVote : EntityBase
         Guid? tenantId)
     {
         if (applicationId == Guid.Empty || reviewerId == Guid.Empty)
+        {
             throw new ArgumentException("Application and reviewer are required.");
+        }
+
         return new TestingApplicationVote
         {
             Id = Guid.NewGuid(),

@@ -158,16 +158,23 @@ public sealed class PolicyEvaluationLogger : IPolicyEvaluationLogger
     /// <inheritdoc />
     public PolicyDebugSettings? GetDebugSettings(object? endpoint)
     {
-        if (endpoint == null) return null;
+        if (endpoint == null)
+        {
+            return null;
+        }
 
         // Check for PolicyDebugAttribute on the endpoint
         if (endpoint is not Microsoft.AspNetCore.Http.Endpoint metadata)
+        {
             return null;
+        }
 
         var attribute = metadata.Metadata.GetMetadata<PolicyDebugAttribute>();
 
         if (attribute == null || !attribute.Enabled)
+        {
             return null;
+        }
 
         return new PolicyDebugSettings
         {
@@ -190,14 +197,20 @@ public sealed class PolicyEvaluationLogger : IPolicyEvaluationLogger
     {
         var nameIdentifierClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (nameIdentifierClaim is not null)
+        {
             return nameIdentifierClaim.Value;
+        }
 
         var subjectClaim = user.FindFirst("sub");
         if (subjectClaim is not null)
+        {
             return subjectClaim.Value;
+        }
 
         if (user.Identity is not null && user.Identity.Name is { } identityName)
+        {
             return identityName;
+        }
 
         return "(anonymous)";
     }
@@ -242,7 +255,9 @@ public sealed class PolicyEvaluationLogger : IPolicyEvaluationLogger
             });
 
             if (json.Length > 500)
+            {
                 json = json[..500] + "...";
+            }
 
             _logger.LogTrace(
                 "[PolicyDebug:{TraceId}] Resource data: {ResourceJson}",
@@ -333,7 +348,11 @@ public sealed class PolicyEvaluationLogger : IPolicyEvaluationLogger
 
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+            {
+                return;
+            }
+
             _isDisposed = true;
 
             _stopwatch.Stop();

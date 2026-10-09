@@ -13696,6 +13696,10 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("ReplacesKeyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaces_key_id");
+
                     b.Property<string>("RevocationReason")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -13704,6 +13708,10 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
+
+                    b.Property<DateTime?>("RotationGraceEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rotation_grace_ends_at");
 
                     b.Property<string>("Scopes")
                         .IsRequired()
@@ -13745,6 +13753,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("KeyHash")
                         .IsUnique()
                         .HasDatabaseName("ix_api_keys_key_hash");
+
+                    b.HasIndex("ReplacesKeyId")
+                        .HasDatabaseName("ix_api_keys_replaces_key_id");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("ix_api_keys_tenant_id");
@@ -13844,6 +13855,88 @@ namespace GameGuild.API.Database.Migrations
                         .HasDatabaseName("ix_authenticationattempt_user_id");
 
                     b.ToTable("authenticationattempt", "gameguild.authentication");
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.AuthenticationFlowStateRecord", b =>
+                {
+                    b.Property<Guid>("FlowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("flow_id");
+
+                    b.Property<DateTime?>("AbandonedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("abandoned_at");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<string>("CompletedStepsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("completed_steps");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("CurrentStep")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_step");
+
+                    b.Property<string>("DeviceFingerprint")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("device_fingerprint");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTime>("InitiatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("initiated_at");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<bool>("IsComplete")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_complete");
+
+                    b.Property<string>("RequiredStepsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("required_steps");
+
+                    b.Property<double?>("RiskScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("risk_score");
+
+                    b.Property<string>("StepDataJson")
+                        .HasColumnType("text")
+                        .HasColumnName("step_data");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("FlowId");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_authentication_flow_states_expires_at");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_authentication_flow_states_user_id");
+
+                    b.ToTable("authentication_flow_states", "gameguild.authentication");
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authentication.BlockchainCertificateAnchor", b =>
@@ -14028,6 +14121,81 @@ namespace GameGuild.API.Database.Migrations
                         .HasDatabaseName("ix_externallogin_provider_provider_key");
 
                     b.ToTable("externallogin", "gameguild.authentication");
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.GenericResourcePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("GrantedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Permissions")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResourceTitle")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResourceType")
+                        .HasDatabaseName("ix_genericresourcepermission_resource_type");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_genericresourcepermission_tenant_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_genericresourcepermission_user_id");
+
+                    b.HasIndex("TenantId", "ResourceType", "ResourceId")
+                        .HasDatabaseName("ix_genericresourcepermission_tenant_resource");
+
+                    b.ToTable("genericresourcepermission", "gameguild.authentication");
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authentication.IdentityVerification", b =>
@@ -22989,8 +23157,7 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Metadata")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("NextAttemptAt")
                         .HasColumnType("timestamp with time zone");

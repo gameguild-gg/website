@@ -16,12 +16,17 @@ public static class RootReversalSelector
 
         var history = alreadyReversed.OrderBy(range => range.Start).ToArray();
         if (history.Any(range => range.Root != root))
+        {
             throw new LineageConservationException("Reversal history must belong to the selected root.");
+        }
+
         LineageAllocator.EnsureNonOverlapping(history);
 
         var reversedUnits = history.Aggregate(0L, static (total, range) => checked(total + range.Length));
         if (cumulativeTargetUnits < reversedUnits)
+        {
             throw new ArgumentOutOfRangeException(nameof(cumulativeTargetUnits));
+        }
 
         var trace = activeLots
             .Where(lot => lot.State == CreditLotState.Active)
@@ -42,11 +47,18 @@ public static class RootReversalSelector
 
         foreach (var item in trace)
         {
-            if (unitsNeeded == 0) break;
+            if (unitsNeeded == 0)
+            {
+                break;
+            }
 
             foreach (var available in Subtract(item.Range, history))
             {
-                if (unitsNeeded == 0) break;
+                if (unitsNeeded == 0)
+                {
+                    break;
+                }
+
                 var selectedUnits = Math.Min(unitsNeeded, available.Length);
                 var selected = available.Take(selectedUnits).Selected;
                 newFragments.Add(new RootReversalFragment(item.Lot.Id, [selected]));
@@ -54,7 +66,10 @@ public static class RootReversalSelector
             }
         }
 
-        if (unitsNeeded != 0) throw new InsufficientFragmentsException(unitsNeeded);
+        if (unitsNeeded != 0)
+        {
+            throw new InsufficientFragmentsException(unitsNeeded);
+        }
 
         var all = history.Concat(newFragments.SelectMany(fragment => fragment.Ranges))
             .OrderBy(range => range.Start)
@@ -75,13 +90,21 @@ public static class RootReversalSelector
                      .OrderBy(range => range.Start))
         {
             if (exclusion.Start > cursor)
+            {
                 result.Add(new RootTraceRange(source.Root, cursor, exclusion.Start - cursor, source.Epoch));
+            }
+
             cursor = Math.Max(cursor, exclusion.EndExclusive);
-            if (cursor >= source.EndExclusive) break;
+            if (cursor >= source.EndExclusive)
+            {
+                break;
+            }
         }
 
         if (cursor < source.EndExclusive)
+        {
             result.Add(new RootTraceRange(source.Root, cursor, source.EndExclusive - cursor, source.Epoch));
+        }
 
         return result;
     }
@@ -94,7 +117,10 @@ public static class RootReversalSelector
         {
             var covered = trace.Any(candidate =>
                 candidate.Start <= reversed.Start && candidate.EndExclusive >= reversed.EndExclusive);
-            if (!covered) throw new LineageConservationException("Reversal history must be contained in known root trace ranges.");
+            if (!covered)
+            {
+                throw new LineageConservationException("Reversal history must be contained in known root trace ranges.");
+            }
         }
     }
 

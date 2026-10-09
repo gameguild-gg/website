@@ -1,3 +1,5 @@
+using GameGuild.Notifications.Services.Email;
+using Microsoft.AspNetCore.DataProtection;
 using GameGuild.Notifications.UnitTests.Infrastructure;
 
 namespace GameGuild.Notifications.UnitTests.Services;
@@ -225,7 +227,8 @@ public class NotificationDeliveryServiceTests
             new ApplicationDbContextAdapter(context),
             preferenceService.Object,
             templateService.Object,
-            NullLogger<NotificationDeliveryService>.Instance);
+            NullLogger<NotificationDeliveryService>.Instance,
+            new NotificationMetadataProtector(new EphemeralDataProtectionProvider()));
 
         var result = await subject.SendBulkAsync([allowed, blocked], NotificationType.System, "Bulk", "Message");
 
@@ -259,7 +262,8 @@ public class NotificationDeliveryServiceTests
             new ApplicationDbContextAdapter(context),
             preferenceService.Object,
             CreateTemplateServiceMock().Object,
-            NullLogger<NotificationDeliveryService>.Instance);
+            NullLogger<NotificationDeliveryService>.Instance,
+            new NotificationMetadataProtector(new EphemeralDataProtectionProvider()));
 
         var result = await subject.SendBulkAsync([immediate, held, digested, dropped], NotificationType.System, "Bulk", "Message", NotificationChannel.Email);
 
@@ -407,7 +411,8 @@ public class NotificationDeliveryServiceTests
             new ApplicationDbContextAdapter(context),
             preferenceService.Object,
             CreateTemplateServiceMock().Object,
-            NullLogger<NotificationDeliveryService>.Instance);
+            NullLogger<NotificationDeliveryService>.Instance,
+            new NotificationMetadataProtector(new EphemeralDataProtectionProvider()));
     }
 
     private static Mock<INotificationTemplateService> CreateTemplateServiceMock()

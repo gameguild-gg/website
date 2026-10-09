@@ -77,8 +77,10 @@ internal sealed class EconomyValueMovementDecisionGate(
     {
         EnsureEnabled();
         if (!IsCapabilityEnabled(capability))
+        {
             throw new EconomyValueMovementDisabledException(
                 "Economy capability " + capability + " is disabled until explicitly enabled for rollout.");
+        }
     }
 }
 
@@ -91,8 +93,11 @@ public static class EconomyValueMovementCapabilities
         {
             if (!Enum.TryParse<EconomyValueMovementCapability>(configuredCapability, ignoreCase: true, out var capability) ||
                 !Enum.IsDefined(capability))
+            {
                 throw new EconomyCapabilityConfigurationException(
                     "Unknown Economy value-moving capability " + configuredCapability + ".");
+            }
+
             capabilities.Add(capability);
         }
 
@@ -104,8 +109,10 @@ public static class EconomyValueMovementCapabilities
         ArgumentNullException.ThrowIfNull(options);
         var enabledCapabilities = Parse(options.EnabledCapabilities);
         if (options.ValueMovingDecisionsEnabled && enabledCapabilities.Count == 0)
+        {
             throw new EconomyCapabilityConfigurationException(
                 "ValueMovingDecisionsEnabled requires at least one explicitly enabled Economy capability.");
+        }
     }
 
     public static bool HasAllowedJurisdiction(IEnumerable<string>? configuredJurisdictions) =>

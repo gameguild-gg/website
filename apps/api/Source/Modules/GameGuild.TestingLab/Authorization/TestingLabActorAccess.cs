@@ -32,7 +32,10 @@ internal static class TestingLabActorAccess
                 user.DeletedAt == null,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (!activeUser) return false;
+        if (!activeUser)
+        {
+            return false;
+        }
 
         return await context.Set<TenantMember>()
             .AsNoTracking()

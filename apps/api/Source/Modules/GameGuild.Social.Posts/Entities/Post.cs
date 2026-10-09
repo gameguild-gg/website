@@ -53,7 +53,11 @@ public class Post : EntityBase
 
     public void AttachMedia(string mediaUrl, MediaType? mediaType)
     {
-        if (string.IsNullOrWhiteSpace(mediaUrl)) throw new ArgumentException("Media URL is required.", nameof(mediaUrl));
+        if (string.IsNullOrWhiteSpace(mediaUrl))
+        {
+            throw new ArgumentException("Media URL is required.", nameof(mediaUrl));
+        }
+
         MediaUrl = mediaUrl.Trim();
         MediaType = mediaType;
         UpdatedAt = SystemClock.UtcNow;
@@ -70,11 +74,23 @@ public class Post : EntityBase
     public void Pin() { IsPinned = true; UpdatedAt = SystemClock.UtcNow; }
     public void Unpin() { IsPinned = false; UpdatedAt = SystemClock.UtcNow; }
     public void IncrementLikes() => LikesCount++;
-    public void DecrementLikes() { if (LikesCount > 0) LikesCount--; }
+    public void DecrementLikes() { if (LikesCount > 0)
+        {
+            LikesCount--;
+        }
+    }
     public void IncrementComments() => CommentsCount++;
-    public void DecrementComments() { if (CommentsCount > 0) CommentsCount--; }
+    public void DecrementComments() { if (CommentsCount > 0)
+        {
+            CommentsCount--;
+        }
+    }
     public void IncrementShares() => SharesCount++;
-    public void DecrementShares() { if (SharesCount > 0) SharesCount--; }
+    public void DecrementShares() { if (SharesCount > 0)
+        {
+            SharesCount--;
+        }
+    }
     public void IncrementViews() => ViewsCount++;
     public void Delete() => SoftDelete();
 }
@@ -117,7 +133,11 @@ public class PostComment : EntityBase
     }
 
     public void IncrementLikes() => LikesCount++;
-    public void DecrementLikes() { if (LikesCount > 0) LikesCount--; }
+    public void DecrementLikes() { if (LikesCount > 0)
+        {
+            LikesCount--;
+        }
+    }
     public void Delete() => SoftDelete();
 }
 

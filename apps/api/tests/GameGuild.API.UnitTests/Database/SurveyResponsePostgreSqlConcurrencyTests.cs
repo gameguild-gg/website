@@ -232,7 +232,11 @@ public sealed class SurveyResponsePostgreSqlConcurrencyTests
     private static DbContextOptions<SurveyPolicyDbContext> CreateOptions(string connectionString, params IInterceptor[] interceptors)
     {
         var builder = new DbContextOptionsBuilder<SurveyPolicyDbContext>().UseNpgsql(connectionString);
-        if (interceptors.Length > 0) builder.AddInterceptors(interceptors);
+        if (interceptors.Length > 0)
+        {
+            builder.AddInterceptors(interceptors);
+        }
+
         return builder.Options;
     }
 
@@ -407,7 +411,9 @@ public sealed class SurveyResponsePostgreSqlConcurrencyTests
         public PostgreSqlFactAttribute()
         {
             if (string.Equals(Environment.GetEnvironmentVariable("SKIP_DOCKER_TESTS"), "1", StringComparison.Ordinal))
+            {
                 Skip = "Docker tests disabled by SKIP_DOCKER_TESTS=1.";
+            }
         }
     }
 
@@ -438,7 +444,9 @@ public sealed class SurveyResponsePostgreSqlConcurrencyTests
         private void CountAdvisoryLock(DbCommand command)
         {
             if (command.CommandText.Contains("pg_advisory_xact_lock", StringComparison.Ordinal))
+            {
                 AcquisitionCount++;
+            }
         }
     }
 }
