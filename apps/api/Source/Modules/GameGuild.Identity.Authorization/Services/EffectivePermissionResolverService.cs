@@ -20,6 +20,22 @@ namespace GameGuild.Identity.Authorization;
 ///         The resolver is deterministic and cache-free. Layer order fixes source
 ///         attribution; grants from unrelated users, tenants or resources never contribute.
 ///     </para>
+///     <para>
+///         <b>Extension point (issue #358).</b> Registered
+///         <see cref="IPermissionEvaluationExtension"/> plugins run after built-in layers
+///         1-8, in ascending <see cref="IPermissionEvaluationExtension.Order"/> (ties in DI
+///         registration order), each observing the accumulated allow/deny sets. Their
+///         contributions are attributed <see cref="PermissionSource.Extension"/> and remain
+///         fully subject to DENY-WINS; a throwing extension is logged and skipped so a
+///         broken plugin can neither open nor break the permission decision path.
+///     </para>
+///     <para>
+///         <b>Evaluation throttle (issue #358).</b> When the optional
+///         <see cref="IEvaluationDenialThrottleService"/> reports a throttled user+tenant
+///         pair, resolution short-circuits to an empty fail-closed result
+///         (<see cref="EffectivePermissions.Throttled"/> = true) without consulting any
+///         permission store.
+///     </para>
 /// </remarks>
 public sealed class EffectivePermissionResolverService(
     ITenantPermissionRepository tenantPermissionRepository,
@@ -28,10 +44,16 @@ public sealed class EffectivePermissionResolverService(
     IResourcePermissionService resourcePermissionService,
     IOptions<AuthorizationOptions> authorizationOptions,
     ILogger<EffectivePermissionResolverService> logger,
-    IJitElevationRequestRepository? jitElevationRepository = null
+    IJitElevationRequestRepository? jitElevationRepository = null,
+    IEnumerable<IPermissionEvaluationExtension>? evaluationExtensions = null,
+    IEvaluationDenialThrottleService? denialThrottle = null
 ) : IEffectivePermissionResolver
 {
     private readonly AuthorizationOptions _authOptions = authorizationOptions.Value;
+    private readonly List<IPermissionEvaluationExtension> _extensions =
+        (evaluationExtensions ?? Enumerable.Empty<IPermissionEvaluationExtension>())
+            .OrderBy(extension => extension.Order)
+            .ToList();
 
     public async Task<EffectivePermissions> ResolveAsync(
         EffectivePermissionContext context,
@@ -43,6 +65,26 @@ public sealed class EffectivePermissionResolverService(
                 "Effective permission resolution requested with an invalid context (user {UserId}, tenant {TenantId}, resource {ResourceType}/{ResourceId}) - returning empty permissions (fail-closed).",
                 context.UserId, context.TenantId, context.ResourceType ?? "<none>", context.ResourceId ?? "<none>");
             return FailClosed(context);
+        }
+
+        // Enumeration protection (issue #358): a throttled user+tenant pair fails closed
+        // immediately, without leaking store contents to a probing client.
+        if (denialThrottle is not null && denialThrottle.IsThrottled(context.UserId, context.TenantId))
+        {
+            logger.LogWarning(
+                "Effective permission resolution for user {UserId} in tenant {TenantId} short-circuited by the evaluation denial throttle (fail-closed).",
+                context.UserId,
+                context.TenantId);
+            return new EffectivePermissions
+            {
+                UserId = context.UserId,
+                TenantId = context.TenantId,
+                Permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                Sources = new Dictionary<string, PermissionSource>(StringComparer.OrdinalIgnoreCase),
+                Context = context,
+                ContextValid = true,
+                Throttled = true
+            };
         }
 
         var allows = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -158,6 +200,55 @@ public sealed class EffectivePermissionResolverService(
             }
         }
 
+        // Extension layer (issue #358): registered evaluation plugins run after every
+        // built-in layer, ordered by Order then DI registration order. Each extension
+        // observes the accumulated sets; contributions are subject to DENY-WINS below
+        // and can never mint static or non-delegable grants.
+        foreach (var extension in _extensions)
+        {
+            PermissionEvaluationExtensionResult? contribution = null;
+            try
+            {
+                contribution = await extension.EvaluateAsync(
+                    new PermissionEvaluationExtensionContext
+                    {
+                        UserId = context.UserId,
+                        TenantId = context.TenantId,
+                        ResourceType = context.ResourceType,
+                        ResourceId = context.ResourceId,
+                        CurrentAllows = allows,
+                        CurrentDenies = denies
+                    },
+                    ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                // A broken plugin must not break (or open) the decision path: skip it.
+                logger.LogError(
+                    exception,
+                    "Permission evaluation extension {ExtensionName} threw during evaluation for user {UserId} in tenant {TenantId} - its contributions are skipped.",
+                    extension.Name,
+                    context.UserId,
+                    context.TenantId);
+            }
+
+            if (contribution is null)
+            {
+                continue;
+            }
+
+            foreach (var permission in contribution.AdditionalAllows.Where(IsDelegableRolePermission))
+            {
+                AddAllow(permission, PermissionSource.Extension);
+            }
+
+            denies.UnionWith(contribution.AdditionalDenies);
+        }
+
         // DENY-WINS: subtract every layer's explicit denies. Static (system-account)
         // permissions are the only grants that survive an explicit deny.
         var effectivePermissions = new HashSet<string>(allows, StringComparer.OrdinalIgnoreCase);
@@ -206,7 +297,9 @@ public sealed class EffectivePermissionResolverService(
         CancellationToken ct = default)
     {
         var effective = await ResolveAsync(userId, tenantId, ct).ConfigureAwait(false);
-        return effective.Permissions.Contains(permission);
+        var hasPermission = effective.Permissions.Contains(permission);
+        RecordDeniedEvaluationIfNeeded(userId, tenantId, effective, hasPermission);
+        return hasPermission;
     }
 
     public async Task<bool> HasAllPermissionsAsync(
@@ -216,7 +309,9 @@ public sealed class EffectivePermissionResolverService(
         CancellationToken ct = default)
     {
         var effective = await ResolveAsync(userId, tenantId, ct).ConfigureAwait(false);
-        return effective.HasAllPermissions(permissions);
+        var hasAll = effective.HasAllPermissions(permissions);
+        RecordDeniedEvaluationIfNeeded(userId, tenantId, effective, hasAll);
+        return hasAll;
     }
 
     public async Task<bool> HasAnyPermissionAsync(
@@ -226,7 +321,24 @@ public sealed class EffectivePermissionResolverService(
         CancellationToken ct = default)
     {
         var effective = await ResolveAsync(userId, tenantId, ct).ConfigureAwait(false);
-        return effective.HasAnyPermission(permissions);
+        var hasAny = effective.HasAnyPermission(permissions);
+        RecordDeniedEvaluationIfNeeded(userId, tenantId, effective, hasAny);
+        return hasAny;
+    }
+
+    /// <summary>
+    ///     Feeds denied evaluation outcomes to the throttle (enumeration protection,
+    ///     issue #358). Only evaluations with a valid tenant scope are tracked; an
+    ///     already-throttled (fail-closed empty) result is not re-counted.
+    /// </summary>
+    private void RecordDeniedEvaluationIfNeeded(Guid userId, Guid? tenantId, EffectivePermissions effective, bool allowed)
+    {
+        if (allowed || denialThrottle is null || effective.Throttled || tenantId is not Guid tenant)
+        {
+            return;
+        }
+
+        denialThrottle.RecordDenial(userId, tenant);
     }
 
     /// <summary>

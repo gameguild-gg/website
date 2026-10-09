@@ -488,8 +488,8 @@ public class EfConfigAndExtendedCoverageTests
     public void RbacPermissionResolver_CanBeCreated()
     {
         var resolver = new RbacPermissionResolver(
-            Mock.Of<IDynamicRoleRepository>(),
             Mock.Of<IDynamicRoleAssignmentRepository>(),
+            Mock.Of<IRoleInheritanceEngine>(),
             Mock.Of<ILogger<RbacPermissionResolver>>());
         resolver.Should().NotBeNull();
     }
