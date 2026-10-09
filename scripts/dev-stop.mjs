@@ -281,7 +281,8 @@ function run(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: repositoryRoot,
-      shell: process.platform === "win32",
+      shell: false,
+      windowsHide: true,
       stdio: "inherit",
     });
     child.once("error", reject);
