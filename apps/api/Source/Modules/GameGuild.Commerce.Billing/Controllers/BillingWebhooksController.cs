@@ -1,21 +1,27 @@
 using Asp.Versioning;
 
 
+using GameGuild.Configuration.PresentationLayer.RateLimiting;
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Commerce.Billing;
 
 /// <summary>
-///     Controller for handling billing webhooks from external payment providers
+///     Controller for handling billing webhooks from external payment providers.
+///     Only the provider callback actions are anonymous (each is registered in the
+///     anonymous endpoint registry and authenticated by provider signatures/secrets
+///     plus the webhook source security filter); event inspection, manual retry, and
+///     the security monitoring surface require the SystemAdmin policy.
 /// </summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/billing/webhooks")]
 [Microsoft.AspNetCore.Http.Tags("billing/webhooks")]
-[AllowAnonymous]
 public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWebhooksController> logger) : BaseApiController
 {
     /// <summary>
@@ -42,6 +48,9 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
     ///     - Google-Cloud-Project-Id: Project identifier for multi-tenant validation
     /// </remarks>
     [HttpPost("google-pay")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Webhook)]
+    [ServiceFilter(typeof(WebhookSourceSecurityFilter))]
     [EndpointSummary("Handle Google Pay webhook events for transaction notifications")]
     [EndpointDescription(
         "Processes Google Pay webhook notifications for payment processing, subscription billing, and transaction status updates. Google Pay webhooks provide real-time notifications for payment completions, failures, refunds, and subscription lifecycle events."
@@ -101,6 +110,9 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
     ///     - Apple-Pay-Signature: Signature for webhook verification
     /// </remarks>
     [HttpPost("apple-pay")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Webhook)]
+    [ServiceFilter(typeof(WebhookSourceSecurityFilter))]
     [EndpointSummary("Handle Apple Pay webhook events for transaction notifications")]
     [EndpointDescription("Processes Apple Pay webhook notifications for payment completions and transaction status updates.")]
     [ProducesResponseType<object>(StatusCodes.Status200OK)]
@@ -152,6 +164,9 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
     ///     - Stripe-Signature: The signature provided by Stripe for webhook verification
     /// </remarks>
     [HttpPost("stripe")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Webhook)]
+    [ServiceFilter(typeof(WebhookSourceSecurityFilter))]
     [EndpointSummary("Handle Stripe webhook events with signature verification")]
     [EndpointDescription(
         "Processes Stripe webhook notifications with enhanced security through signature verification. Handles subscription lifecycle events, payment confirmations, invoice updates, and customer changes. Stripe signatures are verified using the webhook signing secret to ensure event authenticity."
@@ -209,6 +224,9 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
     ///     Note: PayPal IPN requires additional verification by sending the payload back to PayPal for validation.
     /// </remarks>
     [HttpPost("paypal")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Webhook)]
+    [ServiceFilter(typeof(WebhookSourceSecurityFilter))]
     [EndpointSummary("Handle PayPal IPN (Instant Payment Notification) webhook events")]
     [EndpointDescription(
         "Processes PayPal Instant Payment Notification (IPN) webhook events for subscription billing, payment confirmations, and account updates. PayPal IPN provides real-time transaction status updates and subscription lifecycle management for PayPal-based billing integrations."
@@ -270,6 +288,7 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
     ///     - Provider information
     /// </remarks>
     [HttpGet("webhook-events/{eventId}")]
+    [Authorize(Policy = Policies.SystemAdmin)]
     [EndpointSummary("Retrieve webhook event details by event ID")]
     [EndpointDescription(
         "Retrieves detailed information about a specific webhook event for debugging and monitoring purposes. Shows event payload, processing status, timestamps, and any error messages. Useful for troubleshooting webhook processing issues and verifying event delivery."
@@ -301,6 +320,7 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
     ///     Note: Only failed events can be retried. Successfully processed events will return an error.
     /// </remarks>
     [HttpPost("webhook-events/{eventId}:retry")]
+    [Authorize(Policy = Policies.SystemAdmin)]
     [EndpointSummary("Retry failed webhook event processing")]
     [EndpointDescription(
         "Manually retries processing of a previously failed webhook event. Useful for handling temporary failures such as downstream service unavailability, network timeouts, or transient processing errors. The retry operation uses the original event payload and applies current business logic."
@@ -312,5 +332,30 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
         var result = await sender.Send(new RetryWebhookEventCommand(eventId), ct).ConfigureAwait(false);
 
         return result.Success ? Ok(result) : NotFound();
+    }
+
+    /// <summary>
+    ///     Get the billing webhook security monitoring summary
+    /// </summary>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Security posture summary for the billing webhook endpoints</returns>
+    /// <remarks>
+    ///     Admin-facing monitoring surface for the billing webhook security controls: the state of
+    ///     the source IP allowlist, the suspicious-activity threshold blocking (currently blocked
+    ///     sources), and the delivery health of the central security event pipeline that persists
+    ///     verification failures, allowlist rejections, and replay detections.
+    /// </remarks>
+    [HttpGet("security")]
+    [Authorize(Policy = Policies.SystemAdmin)]
+    [EndpointSummary("Get the billing webhook security monitoring summary")]
+    [EndpointDescription(
+        "Admin-facing monitoring surface for the billing webhook security controls: the state of the source IP allowlist, the suspicious-activity threshold blocking (currently blocked sources), and the delivery health of the central security event pipeline that persists verification failures, allowlist rejections, and replay detections."
+    )]
+    [ProducesResponseType<BillingWebhookSecuritySummaryDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetWebhookSecuritySummary(CancellationToken ct)
+    {
+        var summary = await sender.Send(new GetBillingWebhookSecuritySummaryQuery(), ct).ConfigureAwait(false);
+
+        return Ok(summary);
     }
 }

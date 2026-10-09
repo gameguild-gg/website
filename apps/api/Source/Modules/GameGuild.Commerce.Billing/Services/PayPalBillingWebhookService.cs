@@ -12,6 +12,7 @@ public class PayPalBillingWebhookService : BillingWebhookService
 {
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly IPayPalSignatureVerificationService _signatureVerificationService;
+    private readonly IWebhookSecurityEventPublisher? _securityEvents;
     private readonly ILogger<PayPalBillingWebhookService> _logger;
 
     public PayPalBillingWebhookService(
@@ -21,11 +22,13 @@ public class PayPalBillingWebhookService : BillingWebhookService
         ISubscriptionLifecycleService lifecycleService,
         ISubscriptionQueryService queryService,
         ISubscriptionBillingService billingService,
-        ISubscriptionExternalIdService externalIdService)
+        ISubscriptionExternalIdService externalIdService,
+        IWebhookSecurityEventPublisher? securityEvents = null)
         : base(logger, lifecycleService, queryService, billingService, externalIdService)
     {
         _webhookRepository = webhookRepository;
         _signatureVerificationService = signatureVerificationService;
+        _securityEvents = securityEvents;
         _logger = logger;
     }
 
@@ -61,6 +64,12 @@ public class PayPalBillingWebhookService : BillingWebhookService
         if (existingEvent != null)
         {
             _logger.LogInformation("Duplicate PayPal webhook detected: {TransmissionId}. Returning success.", transmissionId);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.ReplayDetected,
+                    "Duplicate PayPal webhook delivery acknowledged by the idempotent inbox.",
+                    eventId,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return WebhookProcessingResult.AlreadyProcessed(eventId, existingEvent.ProcessedAt);
         }
 
@@ -96,6 +105,12 @@ public class PayPalBillingWebhookService : BillingWebhookService
             if (!verificationResult.IsValid)
             {
                 _logger.LogWarning("PayPal webhook signature verification failed: {Error}", verificationResult.ErrorMessage);
+                await PublishSecurityEventAsync(
+                        WebhookSecurityEventKind.SignatureFailed,
+                        verificationResult.ErrorMessage ?? "Invalid webhook signature",
+                        eventId,
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 webhookEvent.MarkAsFailed($"Invalid webhook signature: {verificationResult.ErrorMessage}");
                 await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
                 return WebhookProcessingResult.Failed(eventId, verificationResult.ErrorMessage ?? "Invalid webhook signature");
@@ -120,6 +135,27 @@ public class PayPalBillingWebhookService : BillingWebhookService
 
             return WebhookProcessingResult.Failed(eventId, ex.Message);
         }
+    }
+
+    private async Task PublishSecurityEventAsync(
+        WebhookSecurityEventKind kind,
+        string detail,
+        string? eventId,
+        CancellationToken cancellationToken)
+    {
+        if (_securityEvents is null)
+        {
+            return;
+        }
+
+        await _securityEvents.PublishAsync(
+                kind,
+                PaymentProviders.PayPal,
+                sourceIpAddress: null,
+                detail,
+                eventId,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

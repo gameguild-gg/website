@@ -12,6 +12,7 @@ public class ApplePayBillingWebhookService : BillingWebhookService
 {
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly IApplePayReceiptValidationService _receiptValidationService;
+    private readonly IWebhookSecurityEventPublisher? _securityEvents;
     private readonly ILogger<ApplePayBillingWebhookService> _logger;
 
     public ApplePayBillingWebhookService(
@@ -21,11 +22,13 @@ public class ApplePayBillingWebhookService : BillingWebhookService
         ISubscriptionLifecycleService lifecycleService,
         ISubscriptionQueryService queryService,
         ISubscriptionBillingService billingService,
-        ISubscriptionExternalIdService externalIdService)
+        ISubscriptionExternalIdService externalIdService,
+        IWebhookSecurityEventPublisher? securityEvents = null)
         : base(logger, lifecycleService, queryService, billingService, externalIdService)
     {
         _webhookRepository = webhookRepository;
         _receiptValidationService = receiptValidationService;
+        _securityEvents = securityEvents;
         _logger = logger;
     }
 
@@ -48,6 +51,12 @@ public class ApplePayBillingWebhookService : BillingWebhookService
         if (!validationResult.IsValid)
         {
             _logger.LogWarning("Apple notification validation failed: {Error}", validationResult.ErrorMessage);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.SignatureFailed,
+                    validationResult.ErrorMessage ?? "Validation failed",
+                    eventId: null,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return WebhookProcessingResult.Failed("unknown", validationResult.ErrorMessage ?? "Validation failed");
         }
 
@@ -61,6 +70,12 @@ public class ApplePayBillingWebhookService : BillingWebhookService
         if (existingEvent != null)
         {
             _logger.LogInformation("Duplicate Apple notification detected: {EventId}. Returning success.", eventId);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.ReplayDetected,
+                    "Duplicate Apple notification delivery acknowledged by the idempotent inbox.",
+                    eventId,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return WebhookProcessingResult.AlreadyProcessed(eventId, existingEvent.ProcessedAt);
         }
 
@@ -100,6 +115,27 @@ public class ApplePayBillingWebhookService : BillingWebhookService
 
             return WebhookProcessingResult.Failed(eventId, ex.Message);
         }
+    }
+
+    private async Task PublishSecurityEventAsync(
+        WebhookSecurityEventKind kind,
+        string detail,
+        string? eventId,
+        CancellationToken cancellationToken)
+    {
+        if (_securityEvents is null)
+        {
+            return;
+        }
+
+        await _securityEvents.PublishAsync(
+                kind,
+                PaymentProviders.AppleAppStore,
+                sourceIpAddress: null,
+                detail,
+                eventId,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

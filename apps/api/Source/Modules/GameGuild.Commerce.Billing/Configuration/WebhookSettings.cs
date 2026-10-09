@@ -29,6 +29,12 @@ public class WebhookSettings
     ///     Retry policy configuration for failed webhook processing.
     /// </summary>
     public WebhookRetryPolicy RetryPolicy { get; set; } = new WebhookRetryPolicy();
+
+    /// <summary>
+    ///     Security hardening for webhook callback endpoints (source IP allowlist,
+    ///     suspicious-activity auto-blocking). See <see cref="WebhookSecuritySettings"/>.
+    /// </summary>
+    public WebhookSecuritySettings Security { get; set; } = new WebhookSecuritySettings();
 }
 
 /// <summary>

@@ -17,6 +17,7 @@ public class StripeBillingWebhookService : BillingWebhookService
     private readonly IReadOnlyList<IStripeVerifiedEventConsumer> _verifiedEventConsumers;
     private readonly ISubscriptionQueryService _subscriptionQueryService;
     private readonly WebhookSettings _webhookSettings;
+    private readonly IWebhookSecurityEventPublisher? _securityEvents;
 
     public StripeBillingWebhookService(
         IBillingWebhookRepository webhookRepository,
@@ -28,7 +29,8 @@ public class StripeBillingWebhookService : BillingWebhookService
         ISubscriptionBillingService billingService,
         ISubscriptionExternalIdService externalIdService,
         IOptions<BillingConfiguration>? configuration = null,
-        IEnumerable<IStripeVerifiedEventConsumer>? verifiedEventConsumers = null)
+        IEnumerable<IStripeVerifiedEventConsumer>? verifiedEventConsumers = null,
+        IWebhookSecurityEventPublisher? securityEvents = null)
         : base(logger, lifecycleService, queryService, billingService, externalIdService)
     {
         _webhookRepository = webhookRepository;
@@ -38,6 +40,7 @@ public class StripeBillingWebhookService : BillingWebhookService
         _subscriptionQueryService = queryService;
         _logger = logger;
         _webhookSettings = configuration?.Value.Webhook ?? new WebhookSettings();
+        _securityEvents = securityEvents;
     }
 
     /// <summary>
@@ -52,7 +55,23 @@ public class StripeBillingWebhookService : BillingWebhookService
         string signature,
         CancellationToken cancellationToken = default)
     {
-        var verifiedEvent = _webhookVerifier.Verify(payload, signature);
+        VerifiedStripeWebhookEvent verifiedEvent;
+        try
+        {
+            verifiedEvent = _webhookVerifier.Verify(payload, signature);
+        }
+        catch (InvalidWebhookSignatureException exception)
+        {
+            _logger.LogWarning("Stripe webhook signature verification failed: {Message}", exception.Message);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.SignatureFailed,
+                    exception.Message,
+                    eventId: null,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            throw;
+        }
+
         _logger.LogInformation(
             "Processing verified Stripe webhook: {EventType} with ID {EventId}",
             verifiedEvent.EventType,
@@ -69,6 +88,12 @@ public class StripeBillingWebhookService : BillingWebhookService
         if (existingEvent?.IsProcessed == true)
         {
             _logger.LogInformation("Duplicate Stripe webhook detected: {EventId}. Returning success.", verifiedEvent.EventId);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.ReplayDetected,
+                    "Duplicate Stripe webhook delivery acknowledged by the idempotent inbox.",
+                    verifiedEvent.EventId,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return WebhookProcessingResult.AlreadyProcessed(verifiedEvent.EventId, existingEvent.ProcessedAt);
         }
 
@@ -155,6 +180,27 @@ public class StripeBillingWebhookService : BillingWebhookService
 
             return WebhookProcessingResult.Failed(verifiedEvent.EventId, ex.Message);
         }
+    }
+
+    private async Task PublishSecurityEventAsync(
+        WebhookSecurityEventKind kind,
+        string detail,
+        string? eventId,
+        CancellationToken cancellationToken)
+    {
+        if (_securityEvents is null)
+        {
+            return;
+        }
+
+        await _securityEvents.PublishAsync(
+                kind,
+                PaymentProviders.Stripe,
+                sourceIpAddress: null,
+                detail,
+                eventId,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task<StripeWebhookSubscriptionBinding?> ValidateSubscriptionBindingAsync(
