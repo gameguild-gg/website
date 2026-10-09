@@ -29,7 +29,13 @@ vi.mock("next/image", () => ({
     createElement("img", { ...props, alt: typeof alt === "string" ? alt : "" }),
 }));
 
-import { SocialShell } from "./social-shell";
+import { Suspense } from "react";
+import { SocialFeed, SocialShell } from "./social-shell";
+
+async function renderResolvedFeed(props: { tab?: "foryou" | "following" | "community" | "saved" }) {
+  const feed = await SocialFeed(props);
+  return render(<Suspense fallback={<div data-testid="feed-loading-skeleton" />}>{feed}</Suspense>);
+}
 
 describe("SocialShell", () => {
   beforeEach(() => {
@@ -50,20 +56,28 @@ describe("SocialShell", () => {
     ["community", "community"],
     ["saved", "saved"],
   ] as const)("maps %s to the %s API scope", async (tab, scope) => {
-    render(await SocialShell({ tab }));
+    await renderResolvedFeed({ tab });
     expect(mocks.loadSocialFeed).toHaveBeenCalledWith({ scope, tag: null });
   });
 
   it("shows a recoverable error without substituting demo posts", async () => {
     mocks.loadSocialFeed.mockRejectedValue(new Error("offline"));
-    render(await SocialShell({ tab: "foryou" }));
+    await renderResolvedFeed({ tab: "foryou" });
     expect(screen.getByText(/feed is temporarily unavailable/i)).toBeInTheDocument();
     expect(screen.queryByTestId("post-card")).not.toBeInTheDocument();
   });
 
   it("loads moderation-aware creator suggestions for the current actor", async () => {
-    render(await SocialShell({ tab: "foryou" }));
+    await renderResolvedFeed({ tab: "foryou" });
 
     expect(mocks.loadCreatorSuggestions).toHaveBeenCalledWith("user-1", 8);
+  });
+
+  it("streams behind the FeedSkeleton fallback", async () => {
+    mocks.loadSocialFeed.mockReturnValue(new Promise(() => {}));
+
+    render(<SocialShell tab="foryou" />);
+
+    expect(screen.getByTestId("feed-loading-skeleton")).toBeInTheDocument();
   });
 });

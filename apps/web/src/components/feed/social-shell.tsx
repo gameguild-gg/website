@@ -3,6 +3,7 @@ import {
   BuildStories,
   type SocialStoryPreview,
 } from "@/components/feed/build-stories";
+import { FeedSkeleton } from "@/components/feed/feed-skeleton";
 import { SocialFeedClient } from "@/components/feed/social-feed-client";
 import {
   SocialFeedTabs,
@@ -21,6 +22,7 @@ import {
   loadTrendingTags,
 } from "@/lib/feed/queries";
 import { AlertCircle } from "lucide-react";
+import { Suspense } from "react";
 
 const TAB_SCOPE: Record<SocialFeedTab, FeedScope> = {
   foryou: "for-you",
@@ -37,7 +39,21 @@ async function optional<T>(operation: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-export async function SocialShell({
+export function SocialShell({
+  tab = "foryou",
+  tag = null,
+}: {
+  tab?: SocialFeedTab;
+  tag?: string | null;
+}): React.JSX.Element {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <SocialFeed tab={tab} tag={tag} />
+    </Suspense>
+  );
+}
+
+export async function SocialFeed({
   tab = "foryou",
   tag = null,
 }: {
