@@ -447,11 +447,6 @@
       "count": 1
     }
   },
-  "src/app/sitemap.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 1
-    }
-  },
   "src/components/__tests__/forgot-password-form.test.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
