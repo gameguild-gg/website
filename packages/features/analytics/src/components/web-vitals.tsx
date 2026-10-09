@@ -28,6 +28,9 @@ function sendMetric(endpoint: string, metric: {name: string; value: number; rati
     return;
   }
 
+  // SSRF (Codacy rule-node-ssrf) — false positive: absolute endpoints are
+  // gated by the guard above (https-only, no private/loopback hosts) and the
+  // default target is a same-origin relative path.
   void fetch(target, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},

@@ -138,6 +138,9 @@ export function useAuth(options?: AuthActionOptions): UseAuthReturn {
         const csrfToken = await getCSRFToken();
         const { redirectTo, redirect = true, ...credentials } = actionOptions ?? {};
 
+        // SSRF (Codacy rule-node-ssrf) — false positive: the target origin is
+        // pinned to the hook's configured auth base path by assertSafeServiceUrl;
+        // the provider segment cannot select another origin.
         const response = await fetch(assertSafeServiceUrl(`${basePathRef.current}/signin/${provider}`, basePathRef.current), {
           redirect: 'error',
           method: 'POST',
