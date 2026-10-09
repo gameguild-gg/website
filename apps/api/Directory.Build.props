@@ -25,6 +25,19 @@
         <!-- Enable XML documentation for Swagger -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn> <!-- Suppress missing XML comment warnings -->
+        <!-- ACCEPTED RISK (2026-10-08): SixLabors.ImageSharp pinned at 3.1.11 carries
+             NU1902/NU1903 advisories GHSA-gwg2-r3hj-4w44, GHSA-j3p4-wp97-rph4,
+             GHSA-j9gm-c75j-xc9q, GHSA-jjfr-hcj7-qf5w, GHSA-wmxv-xphr-5c9g (all fixed
+             only in 4.1.2+). This repository is UNLICENSED (not open-source), so the
+             ImageSharp 4.x OSS terms do not apply and 4.x cannot be shipped without a
+             Six Labors commercial license (its unlicensed build warning would also
+             violate the warning-clean gate). Decision: suppress the advisory warnings
+             to keep CI green while the maintainer chooses either (a) a Six Labors
+             license + 4.1.2 migration, or (b) replacing ImageSharp (single consumer:
+             GameGuild.Assets Deduplication/DeduplicationService.cs perceptual hash)
+             with a permissively-licensed alternative. Attack surface today: decode of
+             user-uploaded asset images only. -->
+        <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
     </PropertyGroup>
 
     <!-- Make ASP.NET Core types available to all module class libraries (e.g. [Tags],

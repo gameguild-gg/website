@@ -9,17 +9,28 @@ namespace GameGuild.Tests.Audit.Unit.Services;
 
 public sealed class CentralAuthenticationAuditEventSinkTests
 {
+    private readonly Mock<ISecurityEventLogger> _securityEvents = new();
+
+    private static SecurityEventCaptureResult Capture(CreateAuditLogRequest? request) =>
+        new(
+            SecurityEventCaptureOutcome.PersistedToDatabase,
+            SecurityEventTaxonomy.Classify(
+                request?.ActionType ?? string.Empty,
+                request?.Category ?? AuditCategory.General,
+                request?.Success ?? false,
+                request?.RiskLevel),
+            Guid.NewGuid());
+
     [Fact]
-    public async Task RecordAsync_MapsAuthenticationContextToCentralAuditLog()
+    public async Task RecordAsync_MapsAuthenticationContextToSecurityEventPipeline()
     {
-        var auditService = new Mock<IAuditService>();
         CreateAuditLogRequest? captured = null;
-        auditService
-            .Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
-            .Callback<CreateAuditLogRequest>(request => captured = request)
-            .Returns(Task.CompletedTask);
+        _securityEvents
+            .Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<CreateAuditLogRequest, CancellationToken>((request, _) => captured = request)
+            .ReturnsAsync((CreateAuditLogRequest request, CancellationToken _) => Capture(request));
         var sink = new CentralAuthenticationAuditEventSink(
-            auditService.Object,
+            _securityEvents.Object,
             NullLogger<CentralAuthenticationAuditEventSink>.Instance);
         var userId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
@@ -54,14 +65,13 @@ public sealed class CentralAuthenticationAuditEventSinkTests
     [Fact]
     public async Task RecordAsync_MapsAssessedRiskLevelForSuccessfulThreatEvents()
     {
-        var auditService = new Mock<IAuditService>();
         CreateAuditLogRequest? captured = null;
-        auditService
-            .Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
-            .Callback<CreateAuditLogRequest>(request => captured = request)
-            .Returns(Task.CompletedTask);
+        _securityEvents
+            .Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<CreateAuditLogRequest, CancellationToken>((request, _) => captured = request)
+            .ReturnsAsync((CreateAuditLogRequest request, CancellationToken _) => Capture(request));
         var sink = new CentralAuthenticationAuditEventSink(
-            auditService.Object,
+            _securityEvents.Object,
             NullLogger<CentralAuthenticationAuditEventSink>.Instance);
 
         await sink.RecordAsync(new AuthenticationAuditEvent(
@@ -77,5 +87,42 @@ public sealed class CentralAuthenticationAuditEventSinkTests
         captured!.Success.Should().BeTrue();
         captured.ActionType.Should().Be("Authentication.ThreatDetected");
         captured.RiskLevel.Should().Be(AuditRiskLevel.Medium);
+    }
+
+    [Fact]
+    public async Task RecordAsync_SwallowsExceptionsSoAuthenticationOperationsNeverFail()
+    {
+        _securityEvents
+            .Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("pipeline unavailable"));
+        var sink = new CentralAuthenticationAuditEventSink(
+            _securityEvents.Object,
+            NullLogger<CentralAuthenticationAuditEventSink>.Instance);
+
+        var act = () => sink.RecordAsync(
+            new AuthenticationAuditEvent("Authentication.Login", Guid.NewGuid(), true, "Password"),
+            CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task RecordAsync_ForwardsCancellationToThePipeline()
+    {
+        var cancellationToken = new CancellationToken(canceled: true);
+        CancellationToken forwarded = CancellationToken.None;
+        _securityEvents
+            .Setup(service => service.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<CreateAuditLogRequest, CancellationToken>((_, token) => forwarded = token)
+            .ReturnsAsync((CreateAuditLogRequest request, CancellationToken _) => Capture(request));
+        var sink = new CentralAuthenticationAuditEventSink(
+            _securityEvents.Object,
+            NullLogger<CentralAuthenticationAuditEventSink>.Instance);
+
+        await sink.RecordAsync(
+            new AuthenticationAuditEvent("Authentication.Login", Guid.NewGuid(), true, "Password"),
+            cancellationToken);
+
+        forwarded.Should().Be(cancellationToken);
     }
 }

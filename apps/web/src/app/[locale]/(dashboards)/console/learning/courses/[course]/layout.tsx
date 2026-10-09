@@ -1,6 +1,6 @@
 import { getCourseRouteParam } from '@/lib/learning/course-route';
-import { getCourse, getCourseAnalytics, getCourseCohorts, getCourseContent, getCourseStudents } from '@/lib/learning';
-import { notFound } from 'next/navigation';
+import { getCourse, getCourseAccessCapabilities, getCourseAnalytics, getCourseCohorts, getCourseContent, getCourseStudents } from '@/lib/learning';
+import { forbidden, notFound } from 'next/navigation';
 import React from 'react';
 import { CourseNav } from '@/components/learning/console/courses/[course]/course-nav';
 
@@ -20,14 +20,22 @@ export default async function Layout({ children, params }: LayoutProps<'/[locale
 
   const courseId = course.id;
   const courseRouteParam = getCourseRouteParam(course);
+  const access = await getCourseAccessCapabilities(courseId);
 
-  // Parallel preload after resolving the route param to the canonical API ID.
-  getCourseAnalytics(courseId);
-  getCourseContent(courseId);
-  getCourseStudents(courseId);
+  if (!access.canAccessWorkspace) {
+    forbidden();
+  }
 
-  // Conditional preload based on features
-  if (course.features.hasClasses) {
+  if (access.canReviewAsStaff) {
+    getCourseAnalytics(courseId);
+    getCourseStudents(courseId);
+  }
+
+  if (access.canEdit) {
+    getCourseContent(courseId);
+  }
+
+  if (access.canEdit && course.features.hasClasses) {
     getCourseCohorts(courseId);
   }
 
@@ -40,6 +48,7 @@ export default async function Layout({ children, params }: LayoutProps<'/[locale
       courseRouteParam={courseRouteParam}
       locale={locale}
       features={course.features}
+      access={access}
     >
       {children}
     </CourseNav>
