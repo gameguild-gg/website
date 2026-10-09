@@ -77,4 +77,39 @@ public class ExternalLoginRepository(IApplicationDbContext context) : IExternalL
 
         return true;
     }
+
+    /// <inheritdoc />
+    public async Task<ExternalLogin?> UpdateGrantedScopesAsync(string provider, Guid userId, IReadOnlyList<string> grantedScopes, CancellationToken cancellationToken = default)
+    {
+        var existing = await ExternalLogins.FirstOrDefaultAsync(
+            e => e.Provider == provider && e.UserId == userId,
+            cancellationToken);
+
+        if (existing == null) { return null; }
+
+        existing.GrantedScopes = ExternalLoginGrants.Serialize(grantedScopes);
+        existing.UpdatedAt = SystemClock.UtcNow;
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return existing;
+    }
+
+    /// <inheritdoc />
+    public async Task<ExternalLogin?> RecordConsentAsync(string provider, Guid userId, IReadOnlyList<string> grantedScopes, CancellationToken cancellationToken = default)
+    {
+        var existing = await ExternalLogins.FirstOrDefaultAsync(
+            e => e.Provider == provider && e.UserId == userId,
+            cancellationToken);
+
+        if (existing == null) { return null; }
+
+        var now = SystemClock.UtcNow;
+        existing.GrantedScopes = ExternalLoginGrants.Serialize(grantedScopes);
+        existing.ConsentedAt = now;
+        existing.ConsentVersion = OAuthConsentVersions.Current;
+        existing.UpdatedAt = now;
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return existing;
+    }
 }

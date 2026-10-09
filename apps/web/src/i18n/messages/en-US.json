@@ -188,6 +188,14 @@
         "stateMismatch": "The linking request expired or was tampered with. Please try again.",
         "generic": "We couldn't complete the request. Please try again."
       }
+    },
+    "scopes": {
+      "consentedOn": "Consented on {date} (terms v{version})",
+      "grantedList": "Granted OAuth scopes",
+      "noneGranted": "No scopes currently granted on this link.",
+      "revokeSuccess": "Scope {scope} revoked.",
+      "revokeAriaLabel": "Revoke scope {scope}",
+      "unlinkRevokesAll": "Unlink removes the connection and revokes every granted scope for this provider."
     }
   },
   "passwordChange": {

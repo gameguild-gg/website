@@ -7369,6 +7369,14 @@ export interface IdentityAuthenticationEmailVerificationResult {
   verifiedAt?: string | null;
 }
 
+/** Authorization-time consent preview: the exact scopes a link flow will request from
+the provider, shown to the user before they continue (issue #250). */
+export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
+  provider: string | null;
+  /** Scope tokens that will appear on the authorization request. */
+  requestedScopes: Array<string> | null;
+}
+
 /** Response for GitHub sign-in initiation */
 export interface IdentityAuthenticationGitHubSignInOutput {
   /** GitHub OAuth authorization URL */
@@ -7630,6 +7638,24 @@ export interface IdentityAuthenticationRequestPasswordResetInput {
 /** Data model for Identity Authentication Revoke Api Key Request. */
 export interface IdentityAuthenticationRevokeApiKeyInput {
   reason?: string | null;
+}
+
+/** Request to revoke individual OAuth scope grants on a linked provider.
+Revoking every remaining scope is allowed and leaves the link in place with an
+empty grant list; removing the whole provider remains the unlink endpoint's job. */
+export interface IdentityAuthenticationRevokeExternalLoginScopesInput {
+  /** Scope tokens to revoke. Each must be a valid scope token (non-empty, no whitespace). */
+  scopes: Array<string>;
+}
+
+/** Post-revocation snapshot of the link's grant state. */
+export interface IdentityAuthenticationRevokeExternalLoginScopesOutput {
+  /** UTC moment the underlying consent was recorded (revocation does not re-stamp it), when one exists. */
+  consentedAt?: string | null;
+  consentVersion?: number;
+  /** Scope grants remaining after the revocation. */
+  grantedScopes: Array<string> | null;
+  provider: string | null;
 }
 
 /** Request for revoking a refresh token */
@@ -20201,6 +20227,7 @@ export let IdentityAuthenticationDiscordLinkCallbackInputSchema: z.ZodType<Ident
 export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAuthenticationDiscordSignInOutput>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
+export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
@@ -20230,6 +20257,8 @@ export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<Identi
 export let IdentityAuthenticationRequestMagicLinkInputSchema: z.ZodType<IdentityAuthenticationRequestMagicLinkInput>;
 export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<IdentityAuthenticationRequestPasswordResetInput>;
 export let IdentityAuthenticationRevokeApiKeyInputSchema: z.ZodType<IdentityAuthenticationRevokeApiKeyInput>;
+export let IdentityAuthenticationRevokeExternalLoginScopesInputSchema: z.ZodType<IdentityAuthenticationRevokeExternalLoginScopesInput>;
+export let IdentityAuthenticationRevokeExternalLoginScopesOutputSchema: z.ZodType<IdentityAuthenticationRevokeExternalLoginScopesOutput>;
 export let IdentityAuthenticationRevokeRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRevokeRefreshTokenInput>;
 export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticationRiskLevel>;
 export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
@@ -28532,6 +28561,13 @@ IdentityAuthenticationEmailVerificationResultSchema = z.object({
   verifiedAt: z.string().datetime().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationExternalLoginLinkPreviewOutput. Authorization-time consent preview: the exact scopes a link flow will request from
+the provider, shown to the user before they continue (issue #250). */
+IdentityAuthenticationExternalLoginLinkPreviewOutputSchema = z.object({
+  provider: z.string().nullable(),
+  requestedScopes: z.array(z.string()).nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationGitHubSignInOutput. Response for GitHub sign-in initiation */
 IdentityAuthenticationGitHubSignInOutputSchema = z.object({
   authUrl: z.string().nullable(),
@@ -28746,6 +28782,21 @@ IdentityAuthenticationRequestPasswordResetInputSchema = z.object({
 /** Zod schema for IdentityAuthenticationRevokeApiKeyInput. Data model for Identity Authentication Revoke Api Key Request. */
 IdentityAuthenticationRevokeApiKeyInputSchema = z.object({
   reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRevokeExternalLoginScopesInput. Request to revoke individual OAuth scope grants on a linked provider.
+Revoking every remaining scope is allowed and leaves the link in place with an
+empty grant list; removing the whole provider remains the unlink endpoint's job. */
+IdentityAuthenticationRevokeExternalLoginScopesInputSchema = z.object({
+  scopes: z.array(z.string()).min(1),
+});
+
+/** Zod schema for IdentityAuthenticationRevokeExternalLoginScopesOutput. Post-revocation snapshot of the link's grant state. */
+IdentityAuthenticationRevokeExternalLoginScopesOutputSchema = z.object({
+  consentedAt: z.string().datetime().nullable().optional(),
+  consentVersion: z.number().int().optional(),
+  grantedScopes: z.array(z.string()).nullable(),
+  provider: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationRevokeRefreshTokenInput. Request for revoking a refresh token */

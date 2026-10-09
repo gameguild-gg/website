@@ -134,7 +134,7 @@ export class AuthModule {
   /**
    * List the external logins linked to the current user, newest first.
    *
-   * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.
+   * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked. Granted OAuth scopes (issue #250) are conveyed in the X-Granted-Scopes header as comma-separated 'provider=iso8601-consent-timestamp|consent-version|url-encoded-space-separated-scopes' triples, one entry per link with a recorded consent (consent-version 0 marks a legacy row); the header is omitted when no consents are recorded.
    */
   async headAuthExternalLogins(): Promise<Result<void, ApiError>> {
     const url = '/v1/auth/external-logins';
@@ -151,7 +151,7 @@ export class AuthModule {
   /**
    * Unlink an external provider from the current user.
    *
-   * Removes the external login link for the given provider. Refused with 400 when it is the user's last sign-in method and no password is set.
+   * Removes the external login link for the given provider — this is the whole-provider full revocation of every granted scope and the recorded consent. Refused with 400 when it is the user's last sign-in method and no password is set.
    */
   async deleteAuthExternalLogins(provider: string): Promise<Result<void, ApiError>> {
     const url = `/v1/auth/external-logins/${provider}`;
@@ -163,6 +163,59 @@ export class AuthModule {
     });
 
     return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Preview the scopes a provider link flow will request (authorization-time consent screen data).
+   *
+   * Returns the exact OAuth scopes the provider link flow will request, resolved the same way the authorize step embeds them in the authorization URL. Powers the authorization-time consent surface shown before linking (issue #250).
+   */
+  async getAuthExternalLoginsLinkPreview(provider: string): Promise<Result<Types.IdentityAuthenticationExternalLoginLinkPreviewOutput, ApiError>> {
+    const url = `/v1/auth/external-logins/${provider}/link-preview`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationExternalLoginLinkPreviewOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Revoke individual OAuth scope grants on a linked provider.
+   *
+   * Revokes individual scope grants on a linked provider without unlinking it; the remaining grant state is returned. Idempotent for scopes that are not currently granted. Revoking every remaining scope leaves the link in place with an empty grant list — whole-provider revocation remains the unlink endpoint (DELETE /external-logins/{provider}), which removes the link entirely.
+   */
+  async postAuthExternalLoginsScopesRevoke(
+    provider: string,
+    body: Types.IdentityAuthenticationRevokeExternalLoginScopesInput,
+  ): Promise<Result<Types.IdentityAuthenticationRevokeExternalLoginScopesOutput, ApiError>> {
+    const url = `/v1/auth/external-logins/${provider}/scopes:revoke`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRevokeExternalLoginScopesInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationRevokeExternalLoginScopesOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 
   /**

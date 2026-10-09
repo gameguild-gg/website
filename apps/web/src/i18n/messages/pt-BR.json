@@ -188,6 +188,14 @@
         "stateMismatch": "A solicitação de vínculo expirou ou foi adulterada. Tente novamente.",
         "generic": "Não conseguimos concluir a solicitação. Tente novamente."
       }
+    },
+    "scopes": {
+      "consentedOn": "Consentido em {date} (termos v{version})",
+      "grantedList": "Escopos OAuth concedidos",
+      "noneGranted": "Nenhum escopo concedido atualmente neste vínculo.",
+      "revokeSuccess": "Escopo {scope} revogado.",
+      "revokeAriaLabel": "Revogar escopo {scope}",
+      "unlinkRevokesAll": "Desvincular remove a conexão e revoga todos os escopos concedidos deste provedor."
     }
   },
   "passwordChange": {

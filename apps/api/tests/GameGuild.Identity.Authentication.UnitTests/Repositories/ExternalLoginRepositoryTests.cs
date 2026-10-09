@@ -188,6 +188,113 @@ public class ExternalLoginRepositoryTests
         (await repository.GetByProviderKeyAsync("google", "sub-1")).Should().NotBeNull();
     }
 
+    // ── Scope-consent persistence (issue #250) ──────────────────────────
+
+    [Fact]
+    public async Task AddAsync_GrantedScopesRoundTrip_ThroughTheJsonColumn()
+    {
+        await using var context = CreateContext();
+        var repository = new ExternalLoginRepository(context);
+        var userId = Guid.NewGuid();
+        var consentedAt = DateTime.UtcNow;
+
+        var added = await repository.AddAsync(new ExternalLogin
+        {
+            UserId = userId,
+            Provider = "discord",
+            ProviderKey = "snow-1",
+            GrantedScopes = ExternalLoginGrants.Serialize(new[] { "identify", "email" }),
+            ConsentedAt = consentedAt,
+            ConsentVersion = OAuthConsentVersions.Current
+        });
+
+        var hit = await repository.GetByProviderKeyAsync("discord", "snow-1");
+        hit.Should().NotBeNull();
+        ExternalLoginGrants.Deserialize(hit!.GrantedScopes).Should().Equal("identify", "email", "JSON list must round-trip in order");
+        hit.ConsentedAt.Should().Be(consentedAt);
+        hit.ConsentVersion.Should().Be(OAuthConsentVersions.Current);
+        added.GrantedScopes.Should().Be(hit.GrantedScopes);
+    }
+
+    [Fact]
+    public async Task UpdateGrantedScopesAsync_ReplacesList_WithoutTouchingConsentStamp()
+    {
+        await using var context = CreateContext();
+        var repository = new ExternalLoginRepository(context);
+        var userId = Guid.NewGuid();
+        var consentedAt = DateTime.UtcNow.AddDays(-9);
+        var inserted = await repository.AddAsync(new ExternalLogin
+        {
+            UserId = userId,
+            Provider = "google",
+            ProviderKey = "sub-1",
+            GrantedScopes = ExternalLoginGrants.Serialize(new[] { "openid", "email", "profile" }),
+            ConsentedAt = consentedAt,
+            ConsentVersion = OAuthConsentVersions.Current
+        });
+
+        var updated = await repository.UpdateGrantedScopesAsync("google", userId, ["openid", "profile"]);
+
+        updated.Should().NotBeNull();
+        ExternalLoginGrants.Deserialize(updated!.GrantedScopes).Should().Equal("openid", "profile");
+        updated.ConsentedAt.Should().Be(consentedAt, "revocation must keep the first-consent stamp");
+        updated.ConsentVersion.Should().Be(OAuthConsentVersions.Current);
+        updated.UpdatedAt.Should().BeOnOrAfter(inserted.CreatedAt);
+        (await repository.GetByProviderKeyAsync("google", "sub-1"))!.GrantedScopes.Should().Be(updated.GrantedScopes);
+    }
+
+    [Fact]
+    public async Task UpdateGrantedScopesAsync_NoRowForProviderAndUser_ReturnsNull()
+    {
+        await using var context = CreateContext();
+        var repository = new ExternalLoginRepository(context);
+        var userId = Guid.NewGuid();
+        await repository.AddAsync(new ExternalLogin { UserId = userId, Provider = "google", ProviderKey = "sub-1" });
+
+        var missedProvider = await repository.UpdateGrantedScopesAsync("discord", userId, ["identify"]);
+        var missedUser = await repository.UpdateGrantedScopesAsync("google", Guid.NewGuid(), ["email"]);
+
+        missedProvider.Should().BeNull();
+        missedUser.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RecordConsentAsync_StampsConsentAtAndCurrentVersion()
+    {
+        await using var context = CreateContext();
+        var repository = new ExternalLoginRepository(context);
+        var userId = Guid.NewGuid();
+        await repository.AddAsync(new ExternalLogin { UserId = userId, Provider = "discord", ProviderKey = "snow-1" });
+
+        var updated = await repository.RecordConsentAsync("discord", userId, ["identify", "email"]);
+
+        updated.Should().NotBeNull();
+        ExternalLoginGrants.Deserialize(updated!.GrantedScopes).Should().Equal("identify", "email");
+        updated.ConsentedAt.Should().BeOnOrAfter(DateTime.UtcNow.AddSeconds(-5));
+        updated.ConsentVersion.Should().Be(OAuthConsentVersions.Current);
+    }
+
+    [Fact]
+    public void Configuration_MapsGrantColumns()
+    {
+        using var context = CreateContext();
+        var entityType = context.Model.FindEntityType(typeof(ExternalLogin));
+
+        entityType.Should().NotBeNull();
+
+        var grantedScopes = entityType!.FindProperty(nameof(ExternalLogin.GrantedScopes));
+        grantedScopes.Should().NotBeNull();
+        grantedScopes!.GetMaxLength().Should().Be(1024);
+
+        var consentedAt = entityType.FindProperty(nameof(ExternalLogin.ConsentedAt));
+        consentedAt.Should().NotBeNull();
+        consentedAt!.IsNullable.Should().BeTrue();
+
+        var consentVersion = entityType.FindProperty(nameof(ExternalLogin.ConsentVersion));
+        consentVersion.Should().NotBeNull();
+        consentVersion!.IsNullable.Should().BeFalse();
+    }
+
     private static TestExternalLoginDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<TestExternalLoginDbContext>()

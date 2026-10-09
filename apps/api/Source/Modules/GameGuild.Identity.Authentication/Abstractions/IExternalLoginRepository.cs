@@ -36,4 +36,22 @@ public interface IExternalLoginRepository
     /// </summary>
     /// <returns>True when a row was removed; false when no such link exists.</returns>
     Task<bool> DeleteAsync(string provider, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Replaces the persisted granted-scope list for the given (provider, user) without
+    ///     touching the consent stamp — used by per-scope revocation. Keeps the original
+    ///     <see cref="ExternalLogin.ConsentedAt" /> so the first-consent record survives
+    ///     partial revocations.
+    /// </summary>
+    /// <returns>The updated row, or null when no such link exists.</returns>
+    Task<ExternalLogin?> UpdateGrantedScopesAsync(string provider, Guid userId, IReadOnlyList<string> grantedScopes, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Records a fresh consent: replaces the granted-scope list AND stamps
+    ///     <see cref="ExternalLogin.ConsentedAt" /> / <see cref="ExternalLogin.ConsentVersion" />
+    ///     with the current terms. Used when a link is (re-)authorized with a scope set that
+    ///     differs from the recorded one, or to backfill consent on a legacy row.
+    /// </summary>
+    /// <returns>The updated row, or null when no such link exists.</returns>
+    Task<ExternalLogin?> RecordConsentAsync(string provider, Guid userId, IReadOnlyList<string> grantedScopes, CancellationToken cancellationToken = default);
 }

@@ -24,6 +24,9 @@ public class ExternalLoginConfiguration : IEntityTypeConfiguration<ExternalLogin
         builder.Property(x => x.ProviderKey).HasMaxLength(256).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
+        builder.Property(x => x.GrantedScopes).HasMaxLength(1024);
+        builder.Property(x => x.ConsentedAt);
+        builder.Property(x => x.ConsentVersion).IsRequired().HasDefaultValue(0);
 
         // Indexes — unique on (Provider, ProviderKey), non-unique on UserId
         builder.HasIndex(x => new { x.Provider, x.ProviderKey })
