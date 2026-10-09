@@ -1,0 +1,14 @@
+{
+  "contributors": [
+    "tolstenko",
+    "mathrmartins",
+    "Aloneking12",
+    "migmoroni",
+    "Germano123",
+    "LMD9977",
+    "Nominal9977",
+    "hdorer"
+  ],
+  "message": "Thanks for your contribution! Before we can review and merge it, the following contributors need to sign our Contributor License Agreement: {{usersWithoutCLA}}. Please read the [CLA](../blob/main/CLA.md) and comment on your PR stating: \"I have read the CLA Document and I hereby sign the CLA\". A maintainer will then add you to the approved contributor list.",
+  "label": "cla-signed"
+}
