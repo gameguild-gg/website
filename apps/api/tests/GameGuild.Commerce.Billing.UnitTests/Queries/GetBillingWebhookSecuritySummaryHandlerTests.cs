@@ -101,7 +101,12 @@ public class GetBillingWebhookSecuritySummaryHandlerTests
             .Setup(q => q.GetAlertsAsync(It.IsAny<SecurityAlertListRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("down"));
 
-        var handler = CreateHandler(allowlist, Mock.Of<IWebhookSuspiciousActivityMonitor>(), configuration, queryService.Object);
+        var monitor = new Mock<IWebhookSuspiciousActivityMonitor>();
+        monitor
+            .Setup(m => m.GetBlockedSources(It.IsAny<DateTime>()))
+            .Returns([]);
+
+        var handler = CreateHandler(allowlist, monitor.Object, configuration, queryService.Object);
 
         var summary = await handler.Handle(new GetBillingWebhookSecuritySummaryQuery(), CancellationToken.None);
 
