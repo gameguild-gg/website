@@ -91,7 +91,10 @@ public static class EconomyWriterContractValidator
     public static void EnsureValid(EconomyWriterValidationRequest request)
     {
         var result = Validate(request);
-        if (!result.IsValid) throw new EconomyWriterContractException(result.Errors);
+        if (!result.IsValid)
+        {
+            throw new EconomyWriterContractException(result.Errors);
+        }
     }
 
     private static void ValidatePosting(
@@ -99,8 +102,10 @@ public static class EconomyWriterContractValidator
         ICollection<EconomyWriterValidationError> errors)
     {
         if (!PostingMatrix.Validate(posting).IsValid)
+        {
             Add(errors, EconomyWriterRejectionCode.UnauthorizedTemplateShape,
                 "The posting does not match a registered immutable template.");
+        }
     }
 
     private static void ValidateSource(
@@ -108,7 +113,10 @@ public static class EconomyWriterContractValidator
         ICollection<EconomyWriterValidationError> errors)
     {
         var registration = PostingTemplateCatalog.Find(request.Posting.Template.Kind, request.Posting.Template.Version);
-        if (registration?.RequiredSourceState is null) return;
+        if (registration?.RequiredSourceState is null)
+        {
+            return;
+        }
 
         var source = request.Source;
         if (source is null || !source.Exists)
@@ -119,14 +127,22 @@ public static class EconomyWriterContractValidator
         }
 
         if (source.AlreadyMinted)
+        {
             Add(errors, EconomyWriterRejectionCode.ReusedSourceStamp,
                 "The provider source stamp has already funded a mint.");
+        }
+
         if (!string.Equals(source.PersistedHash, source.SubmittedHash, StringComparison.Ordinal))
+        {
             Add(errors, EconomyWriterRejectionCode.MutatedSourceStamp,
                 "Submitted provider evidence differs from the persisted source stamp.");
+        }
+
         if (source.State != registration.RequiredSourceState.Value)
+        {
             Add(errors, EconomyWriterRejectionCode.UnconfirmedExternalMint,
                 "External value cannot mint currency before provider confirmation.");
+        }
 
         var requestedUnits = request.Allocations.Aggregate(
             BigInteger.Zero,
@@ -134,22 +150,32 @@ public static class EconomyWriterContractValidator
         var cumulativeUnits = new BigInteger(source.ProviderPreviouslyCreditedUnits) + requestedUnits;
         if (source.ProviderAuthoritativeUnits < 0 || source.ProviderPreviouslyCreditedUnits < 0 ||
             cumulativeUnits > source.ProviderAuthoritativeUnits)
+        {
             Add(errors, EconomyWriterRejectionCode.ProviderOverCredit,
                 "Cumulative minted units exceed the provider-authoritative amount.");
+        }
+
         if (source.SubmittedConfirmedAt != source.AuthoritativeConfirmedAt)
+        {
             Add(errors, EconomyWriterRejectionCode.ForgedConfirmationTime,
                 "The submitted confirmation timestamp is not provider-authoritative.");
+        }
     }
 
     private static void ValidateMaturity(
         WriterMaturityFact? maturity,
         ICollection<EconomyWriterValidationError> errors)
     {
-        if (maturity is not { Currency: CurrencyCode.HardCoin, Provenance: ProvenanceKind.EarnedHard }) return;
+        if (maturity is not { Currency: CurrencyCode.HardCoin, Provenance: ProvenanceKind.EarnedHard })
+        {
+            return;
+        }
 
         if (maturity.MaturesAt - maturity.ConfirmedAt != TimeSpan.FromDays(EarnedHardMaturityDays))
+        {
             Add(errors, EconomyWriterRejectionCode.EarlyMaturity,
                 "Earned hard currency must mature exactly 120 days after confirmation.");
+        }
     }
 
     private static void ValidateAllocations(
@@ -158,8 +184,10 @@ public static class EconomyWriterContractValidator
     {
         if (allocations.Any(allocation => allocation.RequestedUnits <= 0 || allocation.AvailableUnits < 0 ||
                                           allocation.RequestedUnits > allocation.AvailableUnits))
+        {
             Add(errors, EconomyWriterRejectionCode.OverAllocation,
                 "A posting cannot consume more units than its parent fragment contains.");
+        }
     }
 
     private static void ValidateRootRanges(
@@ -171,7 +199,10 @@ public static class EconomyWriterContractValidator
             var ordered = rootRanges.OrderBy(range => range.Start).ToArray();
             for (var index = 1; index < ordered.Length; index++)
             {
-                if (ordered[index].Start >= ordered[index - 1].EndExclusive) continue;
+                if (ordered[index].Start >= ordered[index - 1].EndExclusive)
+                {
+                    continue;
+                }
 
                 Add(errors, EconomyWriterRejectionCode.OverlappingRootRange,
                     "A root trace interval cannot be owned by more than one output fragment.");
@@ -185,8 +216,10 @@ public static class EconomyWriterContractValidator
         ICollection<EconomyWriterValidationError> errors)
     {
         if (fence is not null && fence.CapturedEpoch != fence.CurrentEpoch)
+        {
             Add(errors, EconomyWriterRejectionCode.StaleReversalEpoch,
                 "The root reversal epoch changed after fragment selection.");
+        }
     }
 
     private static void ValidateLineage(
@@ -194,8 +227,10 @@ public static class EconomyWriterContractValidator
         ICollection<EconomyWriterValidationError> errors)
     {
         if (lineage.Any(fact => fact.InputUnits < 0 || fact.OutputUnits < 0 || fact.InputUnits != fact.OutputUnits))
+        {
             Add(errors, EconomyWriterRejectionCode.LineageNonConservation,
                 "Lineage input and output units must conserve value per currency.");
+        }
     }
 
     private static void Add(

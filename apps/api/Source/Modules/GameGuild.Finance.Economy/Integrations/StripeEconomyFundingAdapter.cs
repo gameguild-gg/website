@@ -118,7 +118,10 @@ public sealed class StripeEconomyFundingAdapter : IStripeEconomyFundingAdapter
         var sourceId = SourceId(leg);
         var units = ToUsdMinorUnits(payment.Amount, nameof(payment));
         if (claim.SourceId != sourceId || claim.ProviderLeg.Key != leg.Key || claim.Amount.Units != units)
+        {
             throw new InvalidOperationException("Payment provider fact does not match the observed Economy funding claim.");
+        }
+
         var key = Key("confirm", leg.Key);
         return new ConfirmObservedTopUpCommand(
             DeterministicPostingId(sourceId, "confirm"),
@@ -149,7 +152,10 @@ public sealed class StripeEconomyFundingAdapter : IStripeEconomyFundingAdapter
         var sourceId = SourceId(leg);
         var units = ToUsdMinorUnits(payment.Amount, nameof(payment));
         if (claim.SourceId != sourceId || claim.ProviderLeg.Key != leg.Key || claim.Amount.Units != units)
+        {
             throw new InvalidOperationException("Payment provider fact does not match the observed Economy funding claim.");
+        }
+
         return new PersistedDurableHardCoinFundingConfirmation(
             DeterministicPostingId(sourceId, "confirm"),
             Key("confirm", leg.Key),
@@ -170,7 +176,10 @@ public sealed class StripeEconomyFundingAdapter : IStripeEconomyFundingAdapter
         ArgumentNullException.ThrowIfNull(payment);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidence);
         if (state is not SourceConfirmationState.Failed and not SourceConfirmationState.Expired)
+        {
             throw new ArgumentOutOfRangeException(nameof(state), "Only failed or expired payments can finalize an unconfirmed funding claim.");
+        }
+
         return new FinalizeObservedTopUpCommand(
             SourceId(ProviderLeg(ToPaymentFact(payment))), state, evidence, occurredAt);
     }
@@ -211,15 +220,24 @@ public sealed class StripeEconomyFundingAdapter : IStripeEconomyFundingAdapter
     private static ProviderMonetaryLeg ProviderLeg(EconomyTopUpPaymentFact payment)
     {
         if (!string.Equals(payment.Provider, "stripe", StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("Stripe Economy funding requires a Stripe payment.");
+        }
+
         if (!string.Equals(payment.Currency, "USD", StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("HardCoin funding accepts authoritative USD amounts only.");
+        }
+
         if (string.IsNullOrWhiteSpace(payment.ProviderEnvironment) ||
             string.IsNullOrWhiteSpace(payment.ProviderAccountId) ||
             string.IsNullOrWhiteSpace(payment.ProviderObjectId) ||
             string.IsNullOrWhiteSpace(payment.ProviderObjectType) ||
             string.IsNullOrWhiteSpace(payment.ProviderMonetaryLeg))
+        {
             throw new InvalidOperationException("Payment must have a verified provider mapping before Economy funding.");
+        }
+
         return new ProviderMonetaryLeg(
             payment.Provider,
             payment.ProviderEnvironment,
@@ -242,10 +260,17 @@ public sealed class StripeEconomyFundingAdapter : IStripeEconomyFundingAdapter
 
     private static long ToUsdMinorUnits(decimal amount, string parameterName)
     {
-        if (amount <= 0) throw new ArgumentOutOfRangeException(parameterName);
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(parameterName);
+        }
+
         var scaled = checked(amount * 100m);
         if (scaled != decimal.Truncate(scaled) || scaled > long.MaxValue)
+        {
             throw new ArgumentException("USD amount must be exactly representable in minor units.", parameterName);
+        }
+
         return decimal.ToInt64(scaled);
     }
 

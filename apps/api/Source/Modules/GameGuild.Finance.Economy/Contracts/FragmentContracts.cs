@@ -13,13 +13,29 @@ public sealed record RootMintContract
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source.State != SourceConfirmationState.Confirmed)
+        {
             throw new ArgumentException("Root mints require confirmed source evidence.", nameof(source));
-        if (amount.Units == 0) throw new ArgumentOutOfRangeException(nameof(amount));
-        if (!Enum.IsDefined(provenance)) throw new ArgumentOutOfRangeException(nameof(provenance));
+        }
+
+        if (amount.Units == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount));
+        }
+
+        if (!Enum.IsDefined(provenance))
+        {
+            throw new ArgumentOutOfRangeException(nameof(provenance));
+        }
+
         if (source.ConfirmedAt!.Value != confirmedAt)
+        {
             throw new ArgumentException("Root mint confirmation must match its source stamp.", nameof(confirmedAt));
+        }
+
         if (maturesAt < confirmedAt)
+        {
             throw new ArgumentException("Maturity cannot precede confirmation.", nameof(maturesAt));
+        }
 
         Source = source;
         LotId = lotId;
@@ -64,7 +80,11 @@ public sealed record FragmentLineageContract
     public FragmentLineageContract(CreditLotId outputLotId, IReadOnlyCollection<FragmentAllocationContract> parents)
     {
         ArgumentNullException.ThrowIfNull(parents);
-        if (parents.Count == 0) throw new ArgumentException("Lineage requires at least one parent fragment.", nameof(parents));
+        if (parents.Count == 0)
+        {
+            throw new ArgumentException("Lineage requires at least one parent fragment.", nameof(parents));
+        }
+
         OutputLotId = outputLotId;
         Parents = parents.ToArray();
     }

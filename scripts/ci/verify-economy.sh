@@ -13,10 +13,13 @@ gate_started_epoch="$(date +%s)"
 gate_profile="${ECONOMY_GATE_PROFILE:-full}"
 test_hang_timeout="${ECONOMY_TEST_HANG_TIMEOUT:-5m}"
 api_test_timeout="${ECONOMY_API_TEST_TIMEOUT:-12m}"
+api_integration_test_timeout="${ECONOMY_API_INTEGRATION_TEST_TIMEOUT:-25m}"
 whole_solution_jobs="${ECONOMY_WHOLE_SOLUTION_JOBS:-}"
 
 # shellcheck source=economy-gate.sh
 source "$script_dir/economy-gate.sh"
+# shellcheck source=disposable-postgres.sh
+source "$script_dir/disposable-postgres.sh"
 
 whole_solution_scaffold_project() {
   case "$1" in
@@ -256,12 +259,10 @@ run() {
   local output_path="$artifact_root/logs/${run_sequence}-${gate_stage}.log"
   local started_epoch="$(date +%s)"
   mkdir -p "$(dirname "$output_path")"
-  printf '> '
-  printf '%q ' "$@"
-  printf '\n'
+  print_redacted_ci_command "$@"
   set +e
-  "$@" 2>&1 | tee "$output_path"
-  local command_status=${PIPESTATUS[0]}
+  "$@" 2>&1 | redact_disposable_postgres_output | tee "$output_path"
+  local command_status=$?
   set -e
   record_timing "$run_sequence" "$gate_stage" "$started_epoch" "$command_status"
   return "$command_status"
@@ -272,12 +273,10 @@ run_logged() {
   shift
   run_sequence=$((run_sequence + 1))
   local started_epoch="$(date +%s)"
-  printf '> '
-  printf '%q ' "$@"
-  printf '\n'
+  print_redacted_ci_command "$@"
   set +e
-  "$@" 2>&1 | tee "$output_path"
-  local command_status=${PIPESTATUS[0]}
+  "$@" 2>&1 | redact_disposable_postgres_output | tee "$output_path"
+  local command_status=$?
   set -e
   record_timing "$run_sequence" "$gate_stage" "$started_epoch" "$command_status"
   return "$command_status"
@@ -288,12 +287,10 @@ run_logged_append() {
   shift
   run_sequence=$((run_sequence + 1))
   local started_epoch="$(date +%s)"
-  printf '> '
-  printf '%q ' "$@"
-  printf '\n'
+  print_redacted_ci_command "$@"
   set +e
-  "$@" 2>&1 | tee -a "$output_path"
-  local command_status=${PIPESTATUS[0]}
+  "$@" 2>&1 | redact_disposable_postgres_output | tee -a "$output_path"
+  local command_status=$?
   set -e
   record_timing "$run_sequence" "$gate_stage" "$started_epoch" "$command_status"
   return "$command_status"
@@ -397,42 +394,54 @@ PY
 
 postgres_container="gameguild-economy-ci-app-$$-$RANDOM"
 economy_postgres_container="gameguild-economy-ci-tests-$$-$RANDOM"
+app_postgres_password="$(new_disposable_postgres_password)"
+economy_postgres_password="$(new_disposable_postgres_password)"
+register_disposable_postgres_password "$app_postgres_password"
+register_disposable_postgres_password "$economy_postgres_password"
 gate_stage='postgres-app'
 run docker run --detach --rm --name "$postgres_container" \
   --env POSTGRES_DB=economy_ci \
   --env POSTGRES_USER=postgres \
-  --env POSTGRES_PASSWORD=postgres \
+  --env "POSTGRES_PASSWORD=$app_postgres_password" \
+  --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --publish 127.0.0.1::5432 \
   postgres:17-alpine >/dev/null
 
 app_postgres_probe() {
-  docker exec "$postgres_container" psql --username postgres --dbname economy_ci --tuples-only --command 'SELECT 1;' >/dev/null 2>&1
+  docker exec --env "PGPASSWORD=$app_postgres_password" "$postgres_container" \
+    psql --host 127.0.0.1 --username postgres --dbname economy_ci \
+    --no-password --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --command 'SELECT 1;' >/dev/null 2>&1
 }
 wait_for_consecutive_successes app_postgres_probe 2 90 1
 
 postgres_mapping="$(docker port "$postgres_container" '5432/tcp')"
 [[ "$postgres_mapping" =~ :([0-9]+)$ ]] || economy_gate_error "Could not resolve disposable PostgreSQL port from '$postgres_mapping'"
 postgres_port="${BASH_REMATCH[1]}"
-connection_string="Host=127.0.0.1;Port=$postgres_port;Database=economy_ci;Username=postgres;Password=postgres;Include Error Detail=true"
+connection_string="Host=127.0.0.1;Port=$postgres_port;Database=economy_ci;Username=postgres;Password=$app_postgres_password;Include Error Detail=true"
 
 gate_stage='postgres-economy-tests'
+# Full-schema resets across isolated test databases share PostgreSQL's lock table.
+# Keep the two test workers while sizing their disposable server for both resets.
 run docker run --detach --rm --name "$economy_postgres_container" \
   --env POSTGRES_DB=economy_tests \
   --env POSTGRES_USER=postgres \
-  --env POSTGRES_PASSWORD=postgres \
+  --env "POSTGRES_PASSWORD=$economy_postgres_password" \
+  --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --tmpfs /var/lib/postgresql/data:rw \
   --publish 127.0.0.1::5432 \
-  postgres:17-alpine >/dev/null
+  postgres:17-alpine -c max_locks_per_transaction=512 >/dev/null
 
 economy_postgres_probe() {
-  docker exec "$economy_postgres_container" psql --username postgres --dbname economy_tests --tuples-only --command 'SELECT 1;' >/dev/null 2>&1
+  docker exec --env "PGPASSWORD=$economy_postgres_password" "$economy_postgres_container" \
+    psql --host 127.0.0.1 --username postgres --dbname economy_tests \
+    --no-password --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --command 'SELECT 1;' >/dev/null 2>&1
 }
 wait_for_consecutive_successes economy_postgres_probe 2 90 1
 
 economy_postgres_mapping="$(docker port "$economy_postgres_container" '5432/tcp')"
 [[ "$economy_postgres_mapping" =~ :([0-9]+)$ ]] || economy_gate_error "Could not resolve Economy test PostgreSQL port from '$economy_postgres_mapping'"
 economy_postgres_port="${BASH_REMATCH[1]}"
-economy_connection_string="Host=127.0.0.1;Port=$economy_postgres_port;Database=economy_tests;Username=postgres;Password=postgres;Include Error Detail=true"
+economy_connection_string="Host=127.0.0.1;Port=$economy_postgres_port;Database=economy_tests;Username=postgres;Password=$economy_postgres_password;Include Error Detail=true"
 export ECONOMY_POSTGRES_CONNECTION="$economy_connection_string"
 export ConnectionStrings__DefaultConnection="$connection_string"
 export ConnectionStrings__AuthenticationDb="$connection_string"
@@ -443,17 +452,21 @@ export SeedData__ImportSnapshotCourses=false
 if [[ "$gate_profile" == full ]]; then
   gate_stage='postgres-whole-solution-migrations'
   whole_solution_postgres_container="gameguild-economy-ci-whole-solution-$$-$RANDOM"
+  whole_solution_postgres_password="$(new_disposable_postgres_password)"
+  register_disposable_postgres_password "$whole_solution_postgres_password"
   run docker run --detach --rm --name "$whole_solution_postgres_container" \
     --env POSTGRES_DB=whole_solution_tests \
     --env POSTGRES_USER=postgres \
-    --env POSTGRES_PASSWORD=postgres \
+    --env "POSTGRES_PASSWORD=$whole_solution_postgres_password" \
+    --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --tmpfs /var/lib/postgresql/data:rw \
     --publish 127.0.0.1::5432 \
     postgres:17-alpine >/dev/null
 
   whole_solution_postgres_probe() {
-    docker exec "$whole_solution_postgres_container" psql --username postgres --dbname whole_solution_tests \
-      --tuples-only --command 'SELECT 1;' >/dev/null 2>&1
+    docker exec --env "PGPASSWORD=$whole_solution_postgres_password" "$whole_solution_postgres_container" \
+      psql --host 127.0.0.1 --username postgres --dbname whole_solution_tests \
+      --no-password --no-psqlrc --set ON_ERROR_STOP=1 --tuples-only --command 'SELECT 1;' >/dev/null 2>&1
   }
   wait_for_consecutive_successes whole_solution_postgres_probe 2 90 1
 
@@ -461,7 +474,7 @@ if [[ "$gate_profile" == full ]]; then
   [[ "$whole_solution_postgres_mapping" =~ :([0-9]+)$ ]] || \
     economy_gate_error "Could not resolve whole-solution PostgreSQL port from '$whole_solution_postgres_mapping'"
   whole_solution_postgres_port="${BASH_REMATCH[1]}"
-  whole_solution_connection_string="Host=127.0.0.1;Port=$whole_solution_postgres_port;Database=whole_solution_tests;Username=postgres;Password=postgres;Include Error Detail=true"
+  whole_solution_connection_string="Host=127.0.0.1;Port=$whole_solution_postgres_port;Database=whole_solution_tests;Username=postgres;Password=$whole_solution_postgres_password;Include Error Detail=true"
 fi
 
 probe_sql='SELECT 1;'
@@ -527,7 +540,7 @@ fi
 
 gate_stage='postgres-economy-template'
 economy_template_database='economy_tests_template'
-economy_template_connection="Host=127.0.0.1;Port=$economy_postgres_port;Database=$economy_template_database;Username=postgres;Password=postgres;Include Error Detail=true"
+economy_template_connection="Host=127.0.0.1;Port=$economy_postgres_port;Database=$economy_template_database;Username=postgres;Password=$economy_postgres_password;Include Error Detail=true"
 run docker exec "$economy_postgres_container" createdb --username postgres "$economy_template_database"
 run dotnet ef database update \
   --project apps/api/Source/GameGuild.API/GameGuild.API.csproj \
@@ -600,6 +613,11 @@ run_whole_solution_test_project() {
       ECONOMY_POSTGRES_TEMPLATE_DATABASE=
     )
     project_timeout="$api_test_timeout"
+  elif [[ "$test_name" == 'GameGuild.API.IntegrationTests' ]]; then
+    # This suite includes hundreds of HTTP/database cases and took 17.6 minutes
+    # in the diagnostic run. Bound the assembly separately from the unchanged
+    # per-test blame timeout so steady progress is not mistaken for a hang.
+    project_timeout="$api_integration_test_timeout"
   fi
   if [[ "$test_name" == 'GameGuild.API.IntegrationTests' ]]; then
     project_timeout="$api_test_timeout"

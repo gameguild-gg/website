@@ -53,7 +53,10 @@ public class JitElevationRequest
     /// </summary>
     public bool IsActive()
     {
-        if (Status != ElevationRequestStatus.Active) return false;
+        if (Status != ElevationRequestStatus.Active)
+        {
+            return false;
+        }
 
         var now = SystemClock.UtcNow;
         var startTime = StartsAt ?? CreatedAt;
@@ -98,7 +101,9 @@ public class JitElevationRequest
     public void Approve(Guid reviewerId, string? comments = null)
     {
         if (Status != ElevationRequestStatus.Pending)
+        {
             throw new InvalidOperationException("Only pending requests can be approved");
+        }
 
         if (reviewerId == RequesterId)
             throw new InvalidOperationException("Self-approval of elevation requests is not allowed");
@@ -128,7 +133,9 @@ public class JitElevationRequest
     public void Deny(Guid reviewerId, string comments)
     {
         if (Status != ElevationRequestStatus.Pending)
+        {
             throw new InvalidOperationException("Only pending requests can be denied");
+        }
 
         Status = ElevationRequestStatus.Denied;
         ReviewerId = reviewerId;
@@ -143,7 +150,9 @@ public class JitElevationRequest
     public void Activate()
     {
         if (Status != ElevationRequestStatus.Approved)
+        {
             throw new InvalidOperationException("Only approved requests can be activated");
+        }
 
         Status = ElevationRequestStatus.Active;
         ActivatedAt = SystemClock.UtcNow;
@@ -156,7 +165,9 @@ public class JitElevationRequest
     public void Revoke(Guid revokedBy, string reason)
     {
         if (Status != ElevationRequestStatus.Active && Status != ElevationRequestStatus.Approved)
+        {
             throw new InvalidOperationException("Only active or approved requests can be revoked");
+        }
 
         Status = ElevationRequestStatus.Revoked;
         RevokedBy = revokedBy;
@@ -182,7 +193,10 @@ public class JitElevationRequest
     /// </summary>
     public int GetRemainingMinutes()
     {
-        if (!IsActive()) return 0;
+        if (!IsActive())
+        {
+            return 0;
+        }
 
         var remaining = ExpiresAt - SystemClock.UtcNow;
         return (int)Math.Max(0, remaining.TotalMinutes);

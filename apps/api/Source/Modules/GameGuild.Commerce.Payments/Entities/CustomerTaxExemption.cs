@@ -27,7 +27,9 @@ public class CustomerTaxExemption : EntityBase
         ArgumentException.ThrowIfNullOrWhiteSpace(certificateNumber);
 
         if (validUntil.HasValue && validUntil.Value <= validFrom)
+        {
             throw new ArgumentException("Valid until date must be after valid from date", nameof(validUntil));
+        }
 
         return new CustomerTaxExemption
         {
@@ -117,16 +119,24 @@ public class CustomerTaxExemption : EntityBase
     public bool IsValidOn(DateTime date)
     {
         if (Status != TaxExemptionStatus.Active)
+        {
             return false;
+        }
 
         if (VerificationStatus != ExemptionVerificationStatus.Verified)
+        {
             return false;
+        }
 
         if (date < ValidFrom)
+        {
             return false;
+        }
 
         if (ValidUntil.HasValue && date > ValidUntil.Value)
+        {
             return false;
+        }
 
         return true;
     }
@@ -161,7 +171,10 @@ public class CustomerTaxExemption : EntityBase
         LastVerifiedAt = SystemClock.UtcNow;
         VerifiedBy = rejectedBy;
         if (!string.IsNullOrEmpty(reason))
+        {
             Notes = $"{Notes}\nRejection reason: {reason}".Trim();
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 
@@ -174,7 +187,9 @@ public class CustomerTaxExemption : EntityBase
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
 
         if (Status == TaxExemptionStatus.Revoked)
+        {
             throw new InvalidOperationException("Exemption is already revoked");
+        }
 
         Status = TaxExemptionStatus.Revoked;
         Notes = $"{Notes}\nRevoked by {revokedBy}: {reason}".Trim();
@@ -196,10 +211,14 @@ public class CustomerTaxExemption : EntityBase
     public void ExtendValidity(DateTime newValidUntil)
     {
         if (Status != TaxExemptionStatus.Active)
+        {
             throw new InvalidOperationException("Cannot extend inactive exemption");
+        }
 
         if (newValidUntil <= ValidFrom)
+        {
             throw new ArgumentException("New validity date must be after valid from date", nameof(newValidUntil));
+        }
 
         ValidUntil = newValidUntil;
         UpdatedAt = SystemClock.UtcNow;

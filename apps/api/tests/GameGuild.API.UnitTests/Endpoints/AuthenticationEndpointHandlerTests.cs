@@ -44,7 +44,7 @@ public sealed class AuthenticationEndpointHandlerTests
 
         var task = (Task<IResult>)method!.Invoke(
             null,
-            [new SignUpRequest("user@example.com", password, "user"), authService.Object, new DefaultHttpContext(), Mock.Of<ILogger<Program>>(), CancellationToken.None])!;
+            [new SignUpRequest("user@example.com", password, "user"), authService.Object, Mock.Of<ILogger<Program>>(), CancellationToken.None])!;
 
         var result = await task;
 

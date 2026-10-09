@@ -66,7 +66,9 @@ internal static class AiJsonHelpers
     public static string? ExtractTextFromParts(JsonElement partsElement)
     {
         if (partsElement.ValueKind != JsonValueKind.Array)
+        {
             return null;
+        }
 
         var parts = partsElement
             .EnumerateArray()

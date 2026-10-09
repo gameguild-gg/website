@@ -37,8 +37,7 @@ public class ServiceAccountTokenController(
     [ProducesResponseType(typeof(OAuth2ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Token([FromForm] ClientCredentialsRequest request, CancellationToken cancellationToken)
     {
-        // Validate grant type
-        if (request.GrantType != "client_credentials")
+        if (!string.Equals(request.GrantType, "client_credentials", StringComparison.Ordinal))
         {
             return BadRequest(new OAuth2ErrorResponse
             {

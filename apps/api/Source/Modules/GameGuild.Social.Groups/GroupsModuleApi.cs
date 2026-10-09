@@ -680,7 +680,9 @@ public sealed class SocialGroupsController(
     {
         var group = await sender.Send(new GetSocialGroupQuery(id), cancellationToken).ConfigureAwait(false);
         if (group is null)
+        {
             return NotFound();
+        }
 
         return IsPubliclyVisible(group) || CanManageGroup(group)
             ? Ok(group)
@@ -693,7 +695,9 @@ public sealed class SocialGroupsController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue || (!actor.IsSystemAdmin && !actor.TenantId.HasValue))
+        {
             return Forbid();
+        }
 
         var tenantId = actor.IsSystemAdmin
             ? request.TenantId ?? actor.TenantId
@@ -718,7 +722,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         var group = await sender.Send(
             new UpdateSocialGroupCommand(id, request.Name, request.Slug, request.Type, request.Visibility, request.Description),
@@ -752,7 +758,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         var members = await sender.Send(
             new ListSocialGroupMembersQuery(id, status, skip, take <= 0 ? 50 : take),
@@ -766,7 +774,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         var membership = await sender.Send(new JoinSocialGroupCommand(id, request.UserId, request.RequestedRole), cancellationToken)
             .ConfigureAwait(false);
@@ -779,11 +789,15 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         var approverId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!approverId.HasValue)
+        {
             return Forbid();
+        }
 
         return await sender.Send(new ApproveSocialGroupMemberCommand(id, userId, approverId.Value), cancellationToken).ConfigureAwait(false)
             ? NoContent()
@@ -796,7 +810,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         return await sender.Send(new RejectSocialGroupMemberCommand(id, userId), cancellationToken).ConfigureAwait(false)
             ? NoContent()
@@ -809,7 +825,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         return await sender.Send(new ChangeSocialGroupMemberRoleCommand(id, userId, request.Role), cancellationToken).ConfigureAwait(false)
             ? NoContent()
@@ -822,7 +840,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         return await sender.Send(new LeaveSocialGroupCommand(id, userId), cancellationToken).ConfigureAwait(false)
             ? NoContent()
@@ -833,7 +853,9 @@ public sealed class SocialGroupsController(
     {
         var access = await EnsureCanManageGroupAsync(id, cancellationToken).ConfigureAwait(false);
         if (access.Failure is not null)
+        {
             return access.Failure;
+        }
 
         return await sender.Send(new SetSocialGroupStatusCommand(id, status), cancellationToken).ConfigureAwait(false)
             ? NoContent()
@@ -846,7 +868,9 @@ public sealed class SocialGroupsController(
     {
         var group = await sender.Send(new GetSocialGroupQuery(id), cancellationToken).ConfigureAwait(false);
         if (group is null)
+        {
             return (null, NotFound());
+        }
 
         return CanManageGroup(group)
             ? (group, null)

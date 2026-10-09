@@ -60,7 +60,9 @@ public sealed class UpdateTenantFeatureFlagsCommandHandler(ITenantSettingsReposi
         var extras = TenantSettingsMapper.GetExtras(settings);
 
         foreach (var flag in request.Request.FeatureFlags)
+        {
             extras.FeatureFlags[flag.Key] = flag.Value;
+        }
 
         TenantSettingsMapper.SaveExtras(settings, extras);
         settings.Touch();
@@ -128,7 +130,9 @@ internal static class TenantSettingsMapper
     {
         var settings = await tenantSettingsRepository.GetByTenantIdAsync(tenantId, ct).ConfigureAwait(false);
         if (settings is not null)
+        {
             return settings;
+        }
 
         settings = TenantSettings.CreateDefault(tenantId);
         return await tenantSettingsRepository.CreateAsync(settings, ct).ConfigureAwait(false);
@@ -157,22 +161,32 @@ internal static class TenantSettingsMapper
         var extras = GetExtras(settings);
 
         if (request.SystemConfiguration is not null)
+        {
             ApplySystemConfiguration(settings, extras, request.SystemConfiguration);
+        }
 
         if (request.FeatureFlags is not null)
         {
             foreach (var flag in request.FeatureFlags)
+            {
                 extras.FeatureFlags[flag.Key] = flag.Value;
+            }
         }
 
         if (request.BusinessRules is not null)
+        {
             extras.BusinessRules = MergeBusinessRules(extras.BusinessRules, request.BusinessRules);
+        }
 
         if (request.UserInterfaceSettings is not null)
+        {
             settings.BrandingSettings = WriteJson(MergeUiSettings(ReadJson(settings.BrandingSettings, DefaultUiSettings()), request.UserInterfaceSettings));
+        }
 
         if (request.SecuritySettings is not null)
+        {
             settings.SecuritySettings = WriteJson(MergeSecuritySettings(ReadJson(settings.SecuritySettings, DefaultSecuritySettings(settings)), request.SecuritySettings));
+        }
 
         if (request.IntegrationSettings is not null)
         {
@@ -181,7 +195,9 @@ internal static class TenantSettingsMapper
         }
 
         if (request.SystemLimits is not null)
+        {
             ApplySystemLimits(settings, extras, request.SystemLimits);
+        }
 
         SaveExtras(settings, extras);
         settings.Touch();
@@ -212,9 +228,14 @@ internal static class TenantSettingsMapper
     public static void ApplySystemLimits(TenantSettings settings, TenantSettingsExtras extras, UpdateTenantSystemLimitsRequest request)
     {
         if (request.MaxUsers.HasValue)
+        {
             settings.MaxUsers = request.MaxUsers;
+        }
+
         if (request.MaxStorage.HasValue)
+        {
             settings.StorageQuota = request.MaxStorage;
+        }
 
         extras.SystemLimits = extras.SystemLimits with
         {
@@ -242,11 +263,19 @@ internal static class TenantSettingsMapper
     private static void ApplySystemConfiguration(TenantSettings settings, TenantSettingsExtras extras, UpdateTenantSystemConfigurationRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.Locale))
+        {
             settings.DefaultLanguage = request.Locale;
+        }
+
         if (!string.IsNullOrWhiteSpace(request.TimeZone))
+        {
             settings.DefaultTimezone = request.TimeZone;
+        }
+
         if (!string.IsNullOrWhiteSpace(request.CurrencySettings?.DefaultCurrency))
+        {
             settings.DefaultCurrency = request.CurrencySettings.DefaultCurrency;
+        }
 
         extras.SystemConfiguration = extras.SystemConfiguration with
         {
@@ -307,10 +336,14 @@ internal static class TenantSettingsMapper
     {
         var merged = new Dictionary<TKey, TValue>(current);
         if (update is null)
+        {
             return merged;
+        }
 
         foreach (var item in update)
+        {
             merged[item.Key] = item.Value;
+        }
 
         return merged;
     }
@@ -324,7 +357,9 @@ internal static class TenantSettingsMapper
     private static T ReadJson<T>(string? json, T fallback)
     {
         if (string.IsNullOrWhiteSpace(json))
+        {
             return fallback;
+        }
 
         try { return JsonSerializer.Deserialize<T>(json, JsonOptions) ?? fallback; }
         catch (JsonException) { return fallback; }

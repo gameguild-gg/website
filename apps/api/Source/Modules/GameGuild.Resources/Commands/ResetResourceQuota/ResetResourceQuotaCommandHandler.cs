@@ -17,7 +17,10 @@ public sealed class ResetResourceQuotaCommandHandler(
 
         var quota = await resourceQuotaRepository.GetByTenantAndTypeAsync(request.TenantId, request.Type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return Unit.Value;
+        if (quota == null)
+        {
+            return Unit.Value;
+        }
 
         var previousUsage = quota.CurrentUsage;
         var actor = actorContextAccessor.ActorContext;

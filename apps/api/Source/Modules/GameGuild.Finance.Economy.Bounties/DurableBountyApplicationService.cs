@@ -131,14 +131,18 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
         var settings = ParseEscrowPolicy(policy);
         var lifetime = request.ExpiresAt - request.RequestedAt;
         if (lifetime < settings.MinimumLifetime || lifetime > settings.MaximumLifetime)
+        {
             throw new BountyPolicyUnavailableException("Bounty lifetime is outside the signed policy window.");
+        }
 
         var posterWallet = await _wallets.GetOwnerWalletAsync(
             actor.TenantId, actor.ActorId, cancellationToken);
         var escrowWallet = await _wallets.GetWalletAsync(
             actor.TenantId, settings.EscrowWalletId, cancellationToken);
         if (posterWallet.WalletId == escrowWallet.WalletId)
+        {
             throw new BountyPolicyUnavailableException("The signed bounty escrow wallet cannot be the poster wallet.");
+        }
 
         var bountyId = DeterministicBountyId(actor.TenantId, request.IdempotencyKey);
         var preview = BountyEscrowPositionFactory.Create(new PostBountyCommand(
@@ -299,7 +303,11 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
         ValidateTenant(tenantId);
         var exists = await _db.Set<BountyRow>().AsNoTracking()
             .AnyAsync(row => row.TenantId == tenantId && row.Id == bountyId.Value, cancellationToken);
-        if (!exists) return null;
+        if (!exists)
+        {
+            return null;
+        }
+
         return Map(_escrows.Get(tenantId, bountyId), _terminals.FindByBounty(tenantId, bountyId));
     }
 
@@ -310,7 +318,11 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
     {
         ValidateTenant(tenantId);
         var query = _db.Set<BountyRow>().AsNoTracking().Where(row => row.TenantId == tenantId);
-        if (status.HasValue) query = query.Where(row => row.Status == status.Value);
+        if (status.HasValue)
+        {
+            query = query.Where(row => row.Status == status.Value);
+        }
+
         var ids = await query.OrderByDescending(row => row.PostedAt).ThenBy(row => row.Id)
             .Select(row => row.Id).ToArrayAsync(cancellationToken);
         return ids.Select(id =>
@@ -325,8 +337,11 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
         var actor = _actorContexts.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
-                "A Bounty value operation requires an authenticated tenant actor.");
+            "A Bounty value operation requires an authenticated tenant actor.");
+        }
+
         return new ProtectedActor(tenantId, actorId);
     }
 
@@ -340,8 +355,10 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
             authorization.JurisdictionCode != jurisdiction.JurisdictionCode ||
             authorization.Receipt.PolicyVersion != policy.Version ||
             authorization.Receipt.ProviderHash != policy.PayloadHash)
+        {
             throw new BountyPolicyUnavailableException(
-                "The protected operation authorization does not match the selected Bounty policy.");
+            "The protected operation authorization does not match the selected Bounty policy.");
+        }
     }
 
     private async ValueTask<EconomyCapabilityPolicy> RequiredPolicyAsync(
@@ -370,7 +387,10 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
             var maximumLifetimeSeconds = root.GetProperty("maximumLifetimeSeconds").GetInt64();
             if (escrowWalletId == Guid.Empty || reclaimFeePpm is < 0 or >= 1_000_000 ||
                 minimumLifetimeSeconds <= 0 || maximumLifetimeSeconds < minimumLifetimeSeconds)
+            {
                 throw new BountyPolicyUnavailableException("The active bounty escrow policy is invalid.");
+            }
+
             return new BountyEscrowPolicySettings(
                 new WalletId(escrowWalletId),
                 reclaimFeePpm,
@@ -426,7 +446,9 @@ public sealed class DurableBountyApplicationService : IDurableBountyApplicationS
     private static void ValidateTenant(Guid tenantId)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("A non-quarantine tenant ID is required.", nameof(tenantId));
+        }
     }
 
     private sealed record BountyEscrowPolicySettings(

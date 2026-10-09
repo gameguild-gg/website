@@ -1857,6 +1857,107 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### In-process verification, reset and magic-link token consumption
+
+EmailVerificationService generates opaque 32-character lowercase hexadecimal
+tokens from 16 cryptographically random bytes. Cache keys contain the full SHA-256
+digest of the supplied token rather than the bearer credential. Generation,
+validation, consumption and expiry removal use the same digest key.
+
+Purpose, requested user and expiry checks precede an atomic claim on the shared
+TokenInfo. Exactly one concurrent consumer may claim a token, including callers
+using separate scoped service instances with the same cache. A claimed token is
+already invalid before physical cache removal; only the winner can mark email
+verification and return a successful token-validation result. Wrong-purpose and
+wrong-user requests do not consume an otherwise valid token.
+
+These guarantees cover the configured in-process MemoryCache. They do not certify
+distributed consumption across independent hosts or introduce a persistent token
+store. Existing token lifetimes, public token format, HTTP contracts, returned
+identity and log redaction are retained.
+
+### Credential metadata in durable email notifications
+
+Verification, password-reset and magic-link metadata is protected with the host's
+ASP.NET Data Protection provider before notification delivery-service persistence.
+The purpose binds the notification ID, type, channel, recipient, tenant and explicit
+recipient address. Renderers decrypt into a local value and leave tracked and stored
+metadata encrypted. Invalid, foreign or malformed payloads fail with a fixed message
+before sending; failed delivery retains the existing retry and dead-letter behavior.
+
+The existing email sweep also protects a bounded batch of legacy plaintext rows,
+including sent, held, dead-lettered and soft-deleted history across tenants, without
+changing delivery state or retry counters. Due rows outside the history batch are
+protected before any lifecycle write. Backfill failure aborts that sweep; it does
+not acknowledge or send an unprotected credential. Completion requires running
+sweeps against the deployed database and observing no remaining legacy rows.
+
+Notification input retains the 4,000-character limit. The Metadata column becomes
+PostgreSQL text to accommodate encryption and Unicode expansion. Rollback locks
+the table and refuses values that would be truncated by the old column limit.
+Decryption across deployments requires the existing persisted Data Protection
+keyring and consistent application identity. This source change does not certify
+production keyring encryption, historical backups, or deployed backfill completion.
+
+### Encryption of persisted Data Protection keys
+
+Durable key registration requires both certificate PEM variables, encoded in
+base64, in every environment. Missing, partial, malformed, mismatched, expired or
+unsuitable RSA certificates stop startup with fixed diagnostics. Runtime startup
+does not generate a certificate or permit plaintext key storage. The certificate
+private key belongs outside the database and must remain available across host
+restarts; local operators must provide their own stable development certificate.
+
+A certificate-encrypted repository protects the canonical Data Protection XML
+serialization as text inside an outer envelope using the framework's XML encryptor
+and decryptor, preserving namespaces, comments and whitespace. On a read it
+locks persisted rows, protects legacy repository encodings transactionally and
+returns the unchanged canonical XML to the framework. Key IDs, master material,
+descriptors, expiration dates and revocations are retained. Existing payloads
+remain readable; no old keys are revoked or deleted. Invalid storage or an
+unavailable certificate aborts the read without committing partial conversions.
+
+The provider execution strategy owns the complete locked read, conversion, save
+and commit transaction, including when PostgreSQL automatic retries are enabled.
+Each attempt clears the dedicated context's tracked state and reloads durable
+rows. An aborted attempt cannot leave uncommitted envelopes hiding plaintext
+legacy rows from the next attempt. Transient write retries preserve canonical
+key identity, revocations and previously protected payloads.
+
+GitHub CI, including the Emception API browser cycle, prepares a synthetic
+certificate outside uploaded artifacts for each disposable runner. It masks the
+private key and removes temporary PEM files.
+Explicit certificate configuration takes precedence; partial configuration fails.
+This CI preparation is separate from runtime startup. Production deployment,
+certificate retention/rotation, historical backups and legacy-row counts still
+require operational verification; source tests alone do not certify them.
+
+### Tenant capability administration
+
+Capability HTTP reads require an authenticated resolved actor and a nonempty target
+tenant matching the actor's request tenant. An authenticated SystemAdmin may select
+another tenant explicitly. Overrides, removal, plan synchronization and audit-log
+reads additionally require tenant administration (Owner, TenantAdmin or Admin) or
+SystemAdmin. The `features:manage` policy governs feature-flag configuration; that
+permission alone does not grant capability entitlement administration.
+
+Mutation handlers and the capability service enforce the same administrator and
+tenant checks before any persistence call, including calls outside MVC or the CQRS
+authorization pipeline. User actors require a nonempty GUID subject. The resolved
+actor supplies override, removal and plan-synchronization audit identity; legacy command/service `UserId`
+arguments cannot impersonate another user. Non-user actors record null user IDs.
+Background synchronization must establish a trusted authenticated SystemAdmin
+context; an actor's System kind alone grants no access. Existing plan mapping,
+audit records and cache invalidation remain in place. Internal capability queries
+retain their service contract; HTTP reads enforce tenant scope before querying.
+
+Plan synchronization preserves every explicit entitlement row, including expired
+overrides, under the existing unique tenant/key constraint. Only plan-sourced rows
+are updated. New rows, value changes and source-only plan changes receive an audit
+entry in the same save as the entitlement mutation. Repeating an unchanged plan
+does not create extra audit entries. The actor recorded on both the row and audit
+is the resolved user, or null for a trusted non-user actor.
+
 ### Refresh-token lifecycle audit and metrics
 
 The identity module emits credential-free `RefreshTokenLifecycleEvent` records through
@@ -2272,6 +2373,22 @@ identifiers.
   authentication plus the `Features.Read` policy (reads) or `Features.Manage` policy
   (mutations). No feature-flag endpoint is public; anonymous callers can never mutate
   flags. Feature *evaluation* for callers happens through the evaluation/SDK surfaces.
+  The four runtime MVC evaluation actions bind identity, tenant and permissions to
+  `IActorContextAccessor`. They reject missing authentication or invalid User subjects
+  with 401, and mismatched body/query user or tenant selectors with 403 before calling
+  evaluation services. Matching selectors remain supported for existing clients.
+  SystemAdmin callers evaluate their own current context on these runtime routes;
+  these routes do not provide an administrative impersonation or preview operation.
+  Authenticated service actors retain a null UserId; a missing tenant remains null
+  so tenant-targeted rules retain their fail-closed behavior and global flags can
+  still be evaluated. An empty tenant GUID is invalid. Subscription-plan targeting
+  uses the actor's `subscription_plan` attribute, never a body-supplied plan. The
+  controller copies the effective permissions and takes IP, user agent and request
+  time from the request transport/server. It creates a new evaluation context and
+  does not mutate the submitted body. Environment and custom attributes remain
+  client-provided evaluation hints; they are not identity or permission assertions.
+  This invariant covers these MVC entry points, not every internal SDK context
+  factory, the freshness of plan attributes, or the completeness of cache keys.
 - **Ledgers** (`GameGuild.Finance.Ledgers`): controllers require authentication plus
   `Ledgers.Read` / `Ledgers.Write`. The effective tenant is the **actor's tenant** — a
   route-supplied tenant is honored only for SystemAdmin; cross-tenant reads fail

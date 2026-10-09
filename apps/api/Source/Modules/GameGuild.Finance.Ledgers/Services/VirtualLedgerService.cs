@@ -38,7 +38,9 @@ public class VirtualLedgerService : IVirtualLedgerService
     {
         // Validate code uniqueness
         if (await _ledgerRepository.ExistsAsync(tenantId, code, ct))
+        {
             throw new InvalidOperationException($"Ledger code '{code}' already exists.");
+        }
 
         var filterSpec = JsonSerializer.Serialize(filter);
         var sourceLedgerIds = filter.SourceLedgerIds?.ToList() ?? [];
@@ -68,7 +70,9 @@ public class VirtualLedgerService : IVirtualLedgerService
             ?? throw new InvalidOperationException($"Virtual ledger '{virtualLedgerId}' not found.");
 
         if (ledger.Type != LedgerType.Virtual)
+        {
             throw new InvalidOperationException("Can only update filter on virtual ledgers.");
+        }
 
         // In a real implementation, we'd have a method on Ledger to update virtual filter
         await _ledgerRepository.UpdateAsync(ledger, ct);
@@ -87,7 +91,9 @@ public class VirtualLedgerService : IVirtualLedgerService
             ?? throw new InvalidOperationException($"Virtual ledger '{virtualLedgerId}' not found.");
 
         if (ledger.Type != LedgerType.Virtual)
+        {
             throw new InvalidOperationException("Not a virtual ledger.");
+        }
 
         var filter = ParseFilter(ledger.VirtualFilterSpec);
 
@@ -161,7 +167,9 @@ public class VirtualLedgerService : IVirtualLedgerService
             ?? throw new InvalidOperationException($"Virtual ledger '{virtualLedgerId}' not found.");
 
         if (ledger.Type != LedgerType.Virtual)
+        {
             throw new InvalidOperationException("Not a virtual ledger.");
+        }
 
         // Get all entries and calculate totals
         var entries = await GetVirtualEntriesAsync(virtualLedgerId, null, asOfDate, 0, int.MaxValue, ct);

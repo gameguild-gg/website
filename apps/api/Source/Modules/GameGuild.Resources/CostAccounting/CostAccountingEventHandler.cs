@@ -115,7 +115,9 @@ public sealed class CostAccountingEventHandler(
         }
 
         if (saveChanges)
+        {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return entries;
     }

@@ -78,25 +78,52 @@ public class TestingLabSettingsService : ITestingLabSettingsService {
     var settings = await GetTestingLabSettingsAsync(tenantId).ConfigureAwait(false);
 
     // Update only non-null properties
-    if (dto.LabName != null) settings.LabName = dto.LabName;
+    if (dto.LabName != null)
+        {
+            settings.LabName = dto.LabName;
+        }
 
-    if (dto.Description != null) settings.Description = dto.Description;
+        if (dto.Description != null)
+        {
+            settings.Description = dto.Description;
+        }
 
-    if (dto.Timezone != null) settings.Timezone = dto.Timezone;
+        if (dto.Timezone != null)
+        {
+            settings.Timezone = dto.Timezone;
+        }
 
-    if (dto.DefaultSessionDuration.HasValue) settings.DefaultSessionDuration = dto.DefaultSessionDuration.Value;
+        if (dto.DefaultSessionDuration.HasValue)
+        {
+            settings.DefaultSessionDuration = dto.DefaultSessionDuration.Value;
+        }
 
-    if (dto.AllowPublicSignups.HasValue) settings.AllowPublicSignups = dto.AllowPublicSignups.Value;
+        if (dto.AllowPublicSignups.HasValue)
+        {
+            settings.AllowPublicSignups = dto.AllowPublicSignups.Value;
+        }
 
-    if (dto.RequireApproval.HasValue) settings.RequireApproval = dto.RequireApproval.Value;
+        if (dto.RequireApproval.HasValue)
+        {
+            settings.RequireApproval = dto.RequireApproval.Value;
+        }
 
-    if (dto.EnableNotifications.HasValue) settings.EnableNotifications = dto.EnableNotifications.Value;
+        if (dto.EnableNotifications.HasValue)
+        {
+            settings.EnableNotifications = dto.EnableNotifications.Value;
+        }
 
-    if (dto.MaxSimultaneousSessions.HasValue) settings.MaxSimultaneousSessions = dto.MaxSimultaneousSessions.Value;
+        if (dto.MaxSimultaneousSessions.HasValue)
+        {
+            settings.MaxSimultaneousSessions = dto.MaxSimultaneousSessions.Value;
+        }
 
-    if (dto.VersionSubmissionPolicy.HasValue) settings.VersionSubmissionPolicy = dto.VersionSubmissionPolicy.Value;
+        if (dto.VersionSubmissionPolicy.HasValue)
+        {
+            settings.VersionSubmissionPolicy = dto.VersionSubmissionPolicy.Value;
+        }
 
-    await _dbContext.SaveChangesAsync().ConfigureAwait(false);
+        await _dbContext.SaveChangesAsync().ConfigureAwait(false);
 
     return settings;
   }

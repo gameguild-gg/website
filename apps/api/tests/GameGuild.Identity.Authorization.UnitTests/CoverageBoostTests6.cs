@@ -1142,7 +1142,11 @@ public class ConditionalPolicyEvaluatorTimeCoverage5
         // If now is 14:00, overnight window 10:00 to 03:00 includes 14:00
         var startH = Math.Max(0, now.Hour - 4);
         var endH = Math.Max(0, now.Hour - 6);
-        if (endH >= startH) endH = (startH + 20) % 24; // Force overnight
+        if (endH >= startH)
+        {
+            endH = (startH + 20) % 24; // Force overnight
+        }
+
         var timeJson = JsonSerializer.Serialize(new
         {
             StartTime = $"{startH:D2}:00",

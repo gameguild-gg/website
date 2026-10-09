@@ -14,7 +14,10 @@ internal static class GradingRuntimeDatabaseLock
         Guid? discriminator = null,
         CancellationToken cancellationToken = default)
     {
-        if (context is not DbContext dbContext || !dbContext.Database.IsRelational()) return null;
+        if (context is not DbContext dbContext || !dbContext.Database.IsRelational())
+        {
+            return null;
+        }
 
         var ownsTransaction = dbContext.Database.CurrentTransaction is null;
         var transaction = ownsTransaction
@@ -35,7 +38,11 @@ internal static class GradingRuntimeDatabaseLock
         }
         catch
         {
-            if (transaction is not null) await transaction.DisposeAsync().ConfigureAwait(false);
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync().ConfigureAwait(false);
+            }
+
             throw;
         }
     }
@@ -47,7 +54,11 @@ internal static class GradingRuntimeDatabaseLock
 
     private static long CreateLockKey(string scope, Guid resourceId, Guid? discriminator)
     {
-        if (string.IsNullOrWhiteSpace(scope)) throw new ArgumentException("Lock scope is required.", nameof(scope));
+        if (string.IsNullOrWhiteSpace(scope))
+        {
+            throw new ArgumentException("Lock scope is required.", nameof(scope));
+        }
+
         var source = Encoding.UTF8.GetBytes($"grading:{scope.Trim()}:{resourceId:N}:{discriminator?.ToString("N") ?? "none"}");
         Span<byte> hash = stackalloc byte[32];
         SHA256.HashData(source, hash);

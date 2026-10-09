@@ -3,8 +3,8 @@
 import type { CodeFile } from "./types"
 import type { RegisteredFileSystemProvider as MonacoFileSystemProvider } from '@codingame/monaco-vscode-files-service-override'
 import { URI } from 'vscode-uri'
-import type { Monaco } from "@monaco-editor/react"
-import type { editor, Position } from "monaco-editor"
+import { getTypeScriptSupport, type MonacoRuntime as Monaco } from './monaco-runtime'
+import type { editor, languages, Position } from "monaco-editor"
 
 let fileSystemProvider: MonacoFileSystemProvider | null = null
 let disposable: { dispose: () => void } | null = null
@@ -100,7 +100,7 @@ export async function syncFilesToMonacoFS(files: CodeFile[], instanceId?: string
     }
     
     // Se Monaco está disponível, adicionar arquivos como extra libs para TypeScript
-    const ts = monacoInstance?.languages?.typescript
+    const ts = getTypeScriptSupport(monacoInstance)
     if (ts) {
       files.forEach(file => {
         if (file.language === 'typescript' || file.language === 'javascript') {
@@ -118,7 +118,7 @@ export async function syncFilesToMonacoFS(files: CodeFile[], instanceId?: string
         }
       })
     }
-  } catch (error) {
+  } catch {
     // Silenciar erros - não são críticos para a funcionalidade
   }
 }
@@ -157,7 +157,7 @@ export async function updateMonacoFile(filePath: string, content: string, instan
     )
     
     // Atualizar extraLib se Monaco estiver disponível
-    const tsUpdate = monacoInstance?.languages?.typescript
+    const tsUpdate = getTypeScriptSupport(monacoInstance)
     if (tsUpdate) {
       const fileExt = filePath.split('.').pop()
       if (fileExt === 'ts' || fileExt === 'tsx' || fileExt === 'js' || fileExt === 'jsx') {
@@ -166,7 +166,7 @@ export async function updateMonacoFile(filePath: string, content: string, instan
         tsUpdate.javascriptDefaults.addExtraLib(content, libPath)
       }
     }
-  } catch (error) {
+  } catch {
     // Silenciar erros de file system - não são críticos
   }
 }
@@ -182,7 +182,7 @@ export async function deleteMonacoFile(filePath: string) {
   }
 }
 
-export async function createMonacoDirectory(dirPath: string) {
+export function createMonacoDirectory(dirPath: string) {
   if (!fileSystemProvider) return
 
   try {
@@ -242,40 +242,40 @@ export function registerPathCompletionProvider(monaco: Monaco) {
       const modelPath = model.uri.path || ''
       const currentDir = modelPath.split('/').slice(0, -1).join('/')
       
-      const suggestions: any[] = []
-      
+      const suggestions: languages.CompletionItem[] = []
+
       // Sugerir arquivos disponíveis
       currentFiles.forEach(file => {
         const filePath = `/${file.path}`
         const fileName = file.path.split('/').pop() || ''
-        
+
         // Não sugerir o próprio arquivo
         if (filePath === modelPath) return
-        
+
         // Calcular caminho relativo
         let relativePath = ''
-        
+
         if (currentPath.startsWith('./') || currentPath.startsWith('../') || currentPath.length === 0) {
-          // Path relativo ou vazio - sugerir arquivos do mesmo diretório
+          // Path relativo ou vazio - sugerir arquivos do mesmo diretário
           const fileDir = filePath.split('/').slice(0, -1).join('/')
-          
+
           if (fileDir === currentDir) {
             relativePath = './' + fileName
           } else {
             // Calcular caminho relativo entre diretórios
             const currentParts = currentDir.split('/').filter(Boolean)
             const fileParts = fileDir.split('/').filter(Boolean)
-            
+
             let commonLength = 0
-            while (commonLength < currentParts.length && 
-                   commonLength < fileParts.length && 
+            while (commonLength < currentParts.length &&
+                   commonLength < fileParts.length &&
                    currentParts[commonLength] === fileParts[commonLength]) {
               commonLength++
             }
-            
+
             const upCount = currentParts.length - commonLength
             const downPath = fileParts.slice(commonLength)
-            
+
             if (upCount === 0) {
               relativePath = './' + downPath.concat([fileName]).join('/')
             } else {
@@ -284,25 +284,25 @@ export function registerPathCompletionProvider(monaco: Monaco) {
             }
           }
         }
-        
+
         if (relativePath) {
           suggestions.push({
             label: relativePath,
             kind: monaco.languages.CompletionItemKind.File,
             insertText: relativePath,
-            range: {
-              startLineNumber: position.lineNumber,
-              startColumn: position.column - currentPath.length,
-              endLineNumber: position.lineNumber,
-              endColumn: position.column,
-            },
+            range: new monaco.Range(
+              position.lineNumber,
+              position.column - currentPath.length,
+              position.lineNumber,
+              position.column,
+            ),
             detail: `${file.language} file`,
             documentation: `Import from ${file.path}`,
             sortText: `0_${relativePath}`, // Priorizar na lista
           })
         }
       })
-      
+
       return { suggestions }
     },
   })
@@ -310,7 +310,7 @@ export function registerPathCompletionProvider(monaco: Monaco) {
   // Provider para Python
   const createPythonProvider = () => ({
     triggerCharacters: ['"', "'", '/', '.'],
-    provideCompletionItems: (model: any, position: any) => {
+    provideCompletionItems: (model: editor.ITextModel, position: Position) => {
       const lineContent = model.getLineContent(position.lineNumber)
       const textBeforeCursor = lineContent.substring(0, position.column - 1)
       
@@ -322,7 +322,7 @@ export function registerPathCompletionProvider(monaco: Monaco) {
       const modelPath = model.uri.path || ''
       const currentDir = modelPath.split('/').slice(0, -1).join('/')
       
-      const suggestions: any[] = []
+      const suggestions: languages.CompletionItem[] = []
       
       // Sugerir arquivos Python disponíveis
       currentFiles.forEach(file => {
@@ -363,7 +363,7 @@ export function registerPathCompletionProvider(monaco: Monaco) {
   // Provider para Lua
   const createLuaProvider = () => ({
     triggerCharacters: ['"', "'", '/', '.', '('],
-    provideCompletionItems: (model: any, position: any) => {
+    provideCompletionItems: (model: editor.ITextModel, position: Position) => {
       const lineContent = model.getLineContent(position.lineNumber)
       const textBeforeCursor = lineContent.substring(0, position.column - 1)
       
@@ -375,7 +375,7 @@ export function registerPathCompletionProvider(monaco: Monaco) {
       const modelPath = model.uri.path || ''
       const currentDir = modelPath.split('/').slice(0, -1).join('/')
       
-      const suggestions: any[] = []
+      const suggestions: languages.CompletionItem[] = []
       
       // Sugerir arquivos Lua disponíveis
       currentFiles.forEach(file => {

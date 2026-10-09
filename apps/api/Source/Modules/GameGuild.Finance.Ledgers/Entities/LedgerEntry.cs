@@ -204,10 +204,14 @@ public class LedgerEntry : IHasIntegrationEvents
         string? externalReferenceId = null)
     {
         if (!ledger.CanAcceptEntry())
+        {
             throw new InvalidOperationException($"Ledger '{ledger.Code}' cannot accept entries in current state.");
+        }
 
         if (amount <= 0)
+        {
             throw new ArgumentException("Amount must be positive.", nameof(amount));
+        }
 
         var entry = new LedgerEntry
         {
@@ -291,7 +295,9 @@ public class LedgerEntry : IHasIntegrationEvents
     public void Post(Guid postedByUserId)
     {
         if (Status != EntryStatus.Pending)
+        {
             throw new InvalidOperationException($"Cannot post entry in {Status} status.");
+        }
 
         Status = EntryStatus.Posted;
         PostingDate = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -305,11 +311,16 @@ public class LedgerEntry : IHasIntegrationEvents
     public void Reconcile(Guid reconciledByUserId, string? externalReferenceId = null)
     {
         if (Status != EntryStatus.Posted)
+        {
             throw new InvalidOperationException("Only posted entries can be reconciled.");
+        }
 
         Status = EntryStatus.Reconciled;
         if (externalReferenceId != null)
+        {
             ExternalReferenceId = externalReferenceId;
+        }
+
         UpdatedByUserId = reconciledByUserId;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -320,10 +331,14 @@ public class LedgerEntry : IHasIntegrationEvents
     public LedgerEntry CreateReversal(Guid createdByUserId, string reason)
     {
         if (Status == EntryStatus.Voided)
+        {
             throw new InvalidOperationException("Entry is already voided.");
+        }
 
         if (ReversedByEntryId.HasValue)
+        {
             throw new InvalidOperationException("Entry has already been reversed.");
+        }
 
         var reversal = new LedgerEntry
         {
@@ -386,10 +401,14 @@ public class LedgerEntry : IHasIntegrationEvents
     public void UpdateDescription(string description, string? notes, Guid updatedByUserId)
     {
         if (Status == EntryStatus.Reconciled)
+        {
             throw new InvalidOperationException("Cannot modify reconciled entries.");
+        }
 
         if (Status == EntryStatus.Voided)
+        {
             throw new InvalidOperationException("Cannot modify voided entries.");
+        }
 
         Description = description;
         Notes = notes;
@@ -403,16 +422,24 @@ public class LedgerEntry : IHasIntegrationEvents
     public void EnsureCanDelete()
     {
         if (Status == EntryStatus.Reconciled)
+        {
             throw new InvalidOperationException("Cannot delete reconciled entries.");
+        }
 
         if (Status == EntryStatus.Voided)
+        {
             throw new InvalidOperationException("Cannot delete voided entries.");
+        }
 
         if (TransferPairEntryId.HasValue)
+        {
             throw new InvalidOperationException("Cannot delete transfer entries.");
+        }
 
         if (ReversesEntryId.HasValue || ReversedByEntryId.HasValue)
+        {
             throw new InvalidOperationException("Cannot delete entries that are part of a reversal chain.");
+        }
     }
 
     /// <summary>

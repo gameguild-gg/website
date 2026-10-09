@@ -33,7 +33,9 @@ public sealed class ProjectLifecycleLock(IApplicationDbContext context) : IProje
             try
             {
                 if (openedConnection)
+                {
                     await dbContext.Database.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+                }
 
                 await dbContext.Database.ExecuteSqlRawAsync(
                         "SELECT pg_advisory_lock({0})",
@@ -45,7 +47,10 @@ public sealed class ProjectLifecycleLock(IApplicationDbContext context) : IProje
             catch
             {
                 if (openedConnection)
+                {
                     await dbContext.Database.CloseConnectionAsync().ConfigureAwait(false);
+                }
+
                 throw;
             }
         }
@@ -79,7 +84,11 @@ public sealed class ProjectLifecycleLock(IApplicationDbContext context) : IProje
 
         private async Task ReleaseAsync()
         {
-            if (_released) return;
+            if (_released)
+            {
+                return;
+            }
+
             _released = true;
 
             try
@@ -96,7 +105,10 @@ public sealed class ProjectLifecycleLock(IApplicationDbContext context) : IProje
             finally
             {
                 if (dbContext != null && closeConnection)
+                {
                     await dbContext.Database.CloseConnectionAsync().ConfigureAwait(false);
+                }
+
                 fallback?.Release();
             }
         }

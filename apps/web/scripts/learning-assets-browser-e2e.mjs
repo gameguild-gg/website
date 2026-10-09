@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { randomUUID } from "node:crypto";
 import { chromium } from "playwright";
 import {
   waitForAuthenticatedNavigation,
@@ -11,7 +12,7 @@ const webBaseUrl = (process.env.LEARNING_ASSETS_E2E_BASE_URL ?? "http://gameguil
 const password = "Str0ng!Passw0rd123!";
 
 function uniqueTag() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${Date.now()}-${randomUUID().replaceAll("-", "").slice(0, 6)}`;
 }
 
 async function apiResponse(path, init = {}, accessToken) {

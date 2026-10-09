@@ -52,8 +52,16 @@ public sealed class QuizDeterministicReviewAlgorithm
             : throw new JsonException("Quiz item maxScore must be an integer."));
         var entry = projection.GetProperty("authoringEntry");
 
-        if (itemType is "ESSAY") return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Pending, "Essay requires instructor review.");
-        if (itemType is "NUMERIC" or "FORMULA") return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Unsupported, "Generated formula prompts are not available.");
+        if (itemType is "ESSAY")
+        {
+            return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Pending, "Essay requires instructor review.");
+        }
+
+        if (itemType is "NUMERIC" or "FORMULA")
+        {
+            return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Unsupported, "Generated formula prompts are not available.");
+        }
+
         if (itemType == "RATING" && !entry.TryGetProperty("correctRating", out _))
         {
             return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Unsupported, "Rating does not define a deterministic answer.");
@@ -61,7 +69,11 @@ public sealed class QuizDeterministicReviewAlgorithm
 
         ValidatePartialCreditAlgorithm(itemType, entry, projection);
 
-        if (!answers.TryGetProperty(itemId, out var answer)) return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
+        if (!answers.TryGetProperty(itemId, out var answer))
+        {
+            return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
+        }
+
         if (!string.Equals(answer.GetProperty("type").GetString(), itemType, StringComparison.Ordinal))
         {
             return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion, "Answer type does not match question type.");
@@ -104,7 +116,11 @@ public sealed class QuizDeterministicReviewAlgorithm
     private static bool GradeBlanks(JsonElement entry, JsonElement answer)
     {
         var blanks = entry.GetProperty("blanks").EnumerateArray().ToArray();
-        if (blanks.Length == 0) return false;
+        if (blanks.Length == 0)
+        {
+            return false;
+        }
+
         var values = answer.GetProperty("values");
         return blanks.All(blank =>
         {
@@ -117,7 +133,11 @@ public sealed class QuizDeterministicReviewAlgorithm
     private static bool GradeBlank(JsonElement input, string rawValue)
     {
         var value = rawValue.Trim();
-        if (value.Length == 0) return false;
+        if (value.Length == 0)
+        {
+            return false;
+        }
+
         return input.GetProperty("type").GetString() switch
         {
             "TEXT" => MatchesAcceptedAnswer(value, StringArray(input, "acceptedAnswers"), OptionalBoolean(input, "caseSensitive")),
@@ -135,20 +155,34 @@ public sealed class QuizDeterministicReviewAlgorithm
         {
             var unit = unitElement.GetString() ?? string.Empty;
             var hasUnit = numeric.EndsWith(unit, StringComparison.Ordinal);
-            if (OptionalBoolean(input, "requireUnit") && !hasUnit) return false;
-            if (hasUnit) numeric = numeric[..^unit.Length].Trim();
+            if (OptionalBoolean(input, "requireUnit") && !hasUnit)
+            {
+                return false;
+            }
+
+            if (hasUnit)
+            {
+                numeric = numeric[..^unit.Length].Trim();
+            }
         }
 
         if (!double.TryParse(numeric, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed) || !double.IsFinite(parsed))
         {
             return false;
         }
-        if (!OptionalBoolean(input, "allowNegative", true) && parsed < 0) return false;
+        if (!OptionalBoolean(input, "allowNegative", true) && parsed < 0)
+        {
+            return false;
+        }
+
         if (input.TryGetProperty("requiredPrecision", out var precision))
         {
             var separator = numeric.IndexOf('.', StringComparison.Ordinal);
             var actualPrecision = separator < 0 ? 0 : numeric.Length - separator - 1;
-            if (actualPrecision != precision.GetInt32()) return false;
+            if (actualPrecision != precision.GetInt32())
+            {
+                return false;
+            }
         }
 
         var expected = input.GetProperty("correctValue").GetDouble();
@@ -173,7 +207,11 @@ public sealed class QuizDeterministicReviewAlgorithm
         string handlerVersion)
     {
         var pairs = entry.GetProperty("pairs").EnumerateArray().ToArray();
-        if (pairs.Length == 0) return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
+        if (pairs.Length == 0)
+        {
+            return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
+        }
+
         var matches = answer.GetProperty("matches");
         var correct = pairs.Count(pair => MatchIsCorrect(pair, matches));
         return Graded(itemId, ScoreValue.ByRatio(maxScore, correct, pairs.Length), maxScore, handlerKey, handlerVersion);
@@ -200,7 +238,11 @@ public sealed class QuizDeterministicReviewAlgorithm
         string handlerVersion)
     {
         var expected = ExpectedOrdering(entry);
-        if (expected.Length == 0) return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
+        if (expected.Length == 0)
+        {
+            return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
+        }
+
         var actual = StringArray(answer, "itemIds");
         var correct = expected.Where((value, index) => actual.ElementAtOrDefault(index) == value).Count();
         return Graded(itemId, ScoreValue.ByRatio(maxScore, correct, expected.Length), maxScore, handlerKey, handlerVersion);
@@ -223,7 +265,11 @@ public sealed class QuizDeterministicReviewAlgorithm
     private static bool GradeHotspot(JsonElement entry, JsonElement answer)
     {
         var point = answer.GetProperty("point");
-        if (point.ValueKind == JsonValueKind.Null) return false;
+        if (point.ValueKind == JsonValueKind.Null)
+        {
+            return false;
+        }
+
         var x = point.GetProperty("x").GetDouble();
         var y = point.GetProperty("y").GetDouble();
         var imageWidth = entry.GetProperty("imageWidth").GetDouble();
@@ -307,11 +353,19 @@ public sealed class QuizDeterministicReviewAlgorithm
 
     private static void ValidatePartialCreditAlgorithm(string itemType, JsonElement entry, JsonElement projection)
     {
-        if (!entry.TryGetProperty("allowPartialCredit", out var enabled) || !enabled.GetBoolean()) return;
+        if (!entry.TryGetProperty("allowPartialCredit", out var enabled) || !enabled.GetBoolean())
+        {
+            return;
+        }
+
         if (itemType == "MATCHING")
+        {
             RequirePartialCreditAlgorithm(projection, QuizAdapterContracts.MatchingPartialCreditAlgorithm);
+        }
         else if (itemType == "ORDERING")
+        {
             RequirePartialCreditAlgorithm(projection, QuizAdapterContracts.OrderingPartialCreditAlgorithm);
+        }
     }
 
     private static GradeItemResultV1 Graded(

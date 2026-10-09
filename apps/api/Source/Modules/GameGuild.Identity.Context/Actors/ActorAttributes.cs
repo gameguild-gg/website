@@ -248,36 +248,155 @@ public sealed record ActorAttributes
     {
         var result = new Dictionary<string, string>();
 
-        if (Email != null) result["email"] = Email;
-        if (EmailVerified) result["email_verified"] = "true";
-        if (DisplayName != null) result["name"] = DisplayName;
-        if (FirstName != null) result["given_name"] = FirstName;
-        if (LastName != null) result["family_name"] = LastName;
-        if (Username != null) result["preferred_username"] = Username;
-        if (PictureUrl != null) result["picture"] = PictureUrl;
-        if (MfaVerified) result["mfa_verified"] = "true";
-        if (MfaMethod != null) result["mfa_method"] = MfaMethod;
-        if (IpAddress != null) result["ip_address"] = IpAddress;
-        if (UserAgent != null) result["user_agent"] = UserAgent;
-        if (DeviceFingerprint != null) result["device_fingerprint"] = DeviceFingerprint;
-        if (TrustedDevice) result["trusted_device"] = "true";
-        if (SessionId != null) result["session_id"] = SessionId;
-        if (TokenId != null) result["jti"] = TokenId;
-        if (AuthenticatedAt.HasValue) result["auth_time"] = AuthenticatedAt.Value.ToUnixTimeSeconds().ToString();
-        if (TokenExpiresAt.HasValue) result["exp"] = TokenExpiresAt.Value.ToUnixTimeSeconds().ToString();
-        if (Department != null) result["department"] = Department;
-        if (JobTitle != null) result["job_title"] = JobTitle;
-        if (ManagerId.HasValue) result["manager_id"] = ManagerId.Value.ToString();
-        if (OrganizationUnit != null) result["org_unit"] = OrganizationUnit;
-        if (EmployeeId != null) result["employee_id"] = EmployeeId;
-        if (CostCenter != null) result["cost_center"] = CostCenter;
-        if (TenantRole != null) result["tenant_role"] = TenantRole;
-        if (TenantJoinedAt.HasValue) result["tenant_joined_at"] = TenantJoinedAt.Value.ToString("O");
-        if (TenantMembershipStatus != null) result["tenant_membership_status"] = TenantMembershipStatus;
-        if (IdentityProvider != null) result["idp"] = IdentityProvider;
-        if (ExternalSubjectId != null) result["external_sub"] = ExternalSubjectId;
-        if (Locale != null) result["locale"] = Locale;
-        if (Timezone != null) result["zoneinfo"] = Timezone;
+        if (Email != null)
+        {
+            result["email"] = Email;
+        }
+
+        if (EmailVerified)
+        {
+            result["email_verified"] = "true";
+        }
+
+        if (DisplayName != null)
+        {
+            result["name"] = DisplayName;
+        }
+
+        if (FirstName != null)
+        {
+            result["given_name"] = FirstName;
+        }
+
+        if (LastName != null)
+        {
+            result["family_name"] = LastName;
+        }
+
+        if (Username != null)
+        {
+            result["preferred_username"] = Username;
+        }
+
+        if (PictureUrl != null)
+        {
+            result["picture"] = PictureUrl;
+        }
+
+        if (MfaVerified)
+        {
+            result["mfa_verified"] = "true";
+        }
+
+        if (MfaMethod != null)
+        {
+            result["mfa_method"] = MfaMethod;
+        }
+
+        if (IpAddress != null)
+        {
+            result["ip_address"] = IpAddress;
+        }
+
+        if (UserAgent != null)
+        {
+            result["user_agent"] = UserAgent;
+        }
+
+        if (DeviceFingerprint != null)
+        {
+            result["device_fingerprint"] = DeviceFingerprint;
+        }
+
+        if (TrustedDevice)
+        {
+            result["trusted_device"] = "true";
+        }
+
+        if (SessionId != null)
+        {
+            result["session_id"] = SessionId;
+        }
+
+        if (TokenId != null)
+        {
+            result["jti"] = TokenId;
+        }
+
+        if (AuthenticatedAt.HasValue)
+        {
+            result["auth_time"] = AuthenticatedAt.Value.ToUnixTimeSeconds().ToString();
+        }
+
+        if (TokenExpiresAt.HasValue)
+        {
+            result["exp"] = TokenExpiresAt.Value.ToUnixTimeSeconds().ToString();
+        }
+
+        if (Department != null)
+        {
+            result["department"] = Department;
+        }
+
+        if (JobTitle != null)
+        {
+            result["job_title"] = JobTitle;
+        }
+
+        if (ManagerId.HasValue)
+        {
+            result["manager_id"] = ManagerId.Value.ToString();
+        }
+
+        if (OrganizationUnit != null)
+        {
+            result["org_unit"] = OrganizationUnit;
+        }
+
+        if (EmployeeId != null)
+        {
+            result["employee_id"] = EmployeeId;
+        }
+
+        if (CostCenter != null)
+        {
+            result["cost_center"] = CostCenter;
+        }
+
+        if (TenantRole != null)
+        {
+            result["tenant_role"] = TenantRole;
+        }
+
+        if (TenantJoinedAt.HasValue)
+        {
+            result["tenant_joined_at"] = TenantJoinedAt.Value.ToString("O");
+        }
+
+        if (TenantMembershipStatus != null)
+        {
+            result["tenant_membership_status"] = TenantMembershipStatus;
+        }
+
+        if (IdentityProvider != null)
+        {
+            result["idp"] = IdentityProvider;
+        }
+
+        if (ExternalSubjectId != null)
+        {
+            result["external_sub"] = ExternalSubjectId;
+        }
+
+        if (Locale != null)
+        {
+            result["locale"] = Locale;
+        }
+
+        if (Timezone != null)
+        {
+            result["zoneinfo"] = Timezone;
+        }
 
         // Add custom attributes
         foreach (var kvp in Custom)
@@ -296,7 +415,9 @@ public sealed record ActorAttributes
     public static ActorAttributes FromDictionary(IReadOnlyDictionary<string, string>? dictionary)
     {
         if (dictionary == null || dictionary.Count == 0)
+        {
             return Empty;
+        }
 
         var custom = new Dictionary<string, string>();
         

@@ -222,7 +222,7 @@ describe('generator coverage edge cases', () => {
     expect(output).toContain('[key: string]: any;');
     expect(output).toContain('[key: string]: number | undefined;');
     expect(output).toContain('EmptyObjectSchema = z.object({});');
-    expect(output).toContain('export type ArrayAlias = Array<string>;');
+    expect(output).toContain('export type ArrayAlias = string[];');
     expect(output).toContain("'required-value': boolean;");
     expect(output).toContain("'required-value': z.boolean()");
     expect(output).toContain('optionalValue: z.number().int().optional()');

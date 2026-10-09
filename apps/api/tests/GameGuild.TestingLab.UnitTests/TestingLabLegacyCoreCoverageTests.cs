@@ -231,17 +231,51 @@ public sealed class TestServiceDelegationCoverageTests
     private static object? CreateArgument(Type type)
     {
         var nullable = Nullable.GetUnderlyingType(type);
-        if (nullable != null) return null;
-        if (type == typeof(string)) return "value";
-        if (type == typeof(Guid)) return Guid.NewGuid();
-        if (type == typeof(int)) return 1;
-        if (type == typeof(bool)) return false;
-        if (type == typeof(CancellationToken)) return CancellationToken.None;
-        if (type.IsEnum) return Enum.GetValues(type).GetValue(0);
-        if (type.IsValueType) return Activator.CreateInstance(type);
+        if (nullable != null)
+        {
+            return null;
+        }
+
+        if (type == typeof(string))
+        {
+            return "value";
+        }
+
+        if (type == typeof(Guid))
+        {
+            return Guid.NewGuid();
+        }
+
+        if (type == typeof(int))
+        {
+            return 1;
+        }
+
+        if (type == typeof(bool))
+        {
+            return false;
+        }
+
+        if (type == typeof(CancellationToken))
+        {
+            return CancellationToken.None;
+        }
+
+        if (type.IsEnum)
+        {
+            return Enum.GetValues(type).GetValue(0);
+        }
+
+        if (type.IsValueType)
+        {
+            return Activator.CreateInstance(type);
+        }
 
         var parameterless = type.GetConstructor(Type.EmptyTypes);
-        if (parameterless != null) return parameterless.Invoke(null);
+        if (parameterless != null)
+        {
+            return parameterless.Invoke(null);
+        }
 
         var constructor = type.GetConstructors().OrderBy(candidate => candidate.GetParameters().Length).First();
         return constructor.Invoke(constructor.GetParameters().Select(parameter => CreateArgument(parameter.ParameterType)).ToArray());

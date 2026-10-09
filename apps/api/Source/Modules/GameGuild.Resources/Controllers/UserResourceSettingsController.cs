@@ -34,12 +34,16 @@ public sealed class UserResourceSettingsController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass ownership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // User can only access their own resources
         return actor.SubjectIdAsGuid.Value == userId;
     }
@@ -58,8 +62,10 @@ public sealed class UserResourceSettingsController(
     public async Task<IActionResult> GetUserSettings(Guid userId, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await settingsRepository.GetByUserAsync(userId, ct).ConfigureAwait(false));
     }
 
@@ -79,11 +85,16 @@ public sealed class UserResourceSettingsController(
     public async Task<IActionResult> GetUserSettingByKey(Guid userId, string key, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         var setting = await settingsRepository.GetByUserKeyAsync(userId, key, ct).ConfigureAwait(false);
 
-        if (setting == null) return NotFound($"Setting override not found for user {userId} and key: {key}");
+        if (setting == null)
+        {
+            return NotFound($"Setting override not found for user {userId} and key: {key}");
+        }
 
         return Ok(setting);
     }
@@ -105,8 +116,10 @@ public sealed class UserResourceSettingsController(
     public async Task<IActionResult> SetUserSetting(Guid userId, string key, [FromBody] SetUserResourceSettingsRequest body, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var setting = await sender.Send(new SetUserResourceSettingCommand(userId, key, body), ct)

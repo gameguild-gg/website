@@ -41,7 +41,10 @@ public sealed class PostgreSqlEconomyWalletDirectory : IEconomyWalletDirectory
         CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty || ownerId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant and owner IDs are required.");
+        }
+
         var row = await _db.Set<EconomyWalletRow>().AsNoTracking()
             .SingleOrDefaultAsync(
                 wallet => wallet.TenantId == tenantId && wallet.OwnerId == ownerId,
@@ -55,7 +58,10 @@ public sealed class PostgreSqlEconomyWalletDirectory : IEconomyWalletDirectory
         CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var row = await _db.Set<EconomyWalletRow>().AsNoTracking()
             .SingleOrDefaultAsync(
                 wallet => wallet.TenantId == tenantId && wallet.Id == walletId.Value,
@@ -66,8 +72,11 @@ public sealed class PostgreSqlEconomyWalletDirectory : IEconomyWalletDirectory
     private static EconomyWalletIdentity MapActive(EconomyWalletRow? row)
     {
         if (row is null || row.State != WalletLifecycleState.Active)
+        {
             throw new EconomyWalletUnavailableException(
                 "An active Economy wallet was not found in the actor tenant.");
+        }
+
         return new EconomyWalletIdentity(new WalletId(row.Id), row.TenantId, row.OwnerId, row.State);
     }
 }

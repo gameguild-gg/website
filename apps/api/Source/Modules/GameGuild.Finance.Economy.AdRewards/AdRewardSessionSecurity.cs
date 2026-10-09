@@ -59,9 +59,16 @@ public sealed class AdRewardSessionTokenService
     public AdRewardSessionTokenService(byte[] secret, TimeSpan lifetime)
     {
         ArgumentNullException.ThrowIfNull(secret);
-        if (secret.Length < 32) throw new ArgumentException("Session signing secret must contain at least 32 bytes.", nameof(secret));
+        if (secret.Length < 32)
+        {
+            throw new ArgumentException("Session signing secret must contain at least 32 bytes.", nameof(secret));
+        }
+
         if (lifetime <= TimeSpan.Zero || lifetime > TimeSpan.FromMinutes(10))
+        {
             throw new ArgumentOutOfRangeException(nameof(lifetime));
+        }
+
         _secret = [.. secret];
         _lifetime = lifetime;
     }
@@ -70,7 +77,10 @@ public sealed class AdRewardSessionTokenService
     {
         ValidateClaims(claims);
         if (claims.IssuedAt != now || claims.ExpiresAt != now + _lifetime)
+        {
             throw new InvalidAdRewardSessionTokenException("Session timestamps must be assigned by the token service policy.");
+        }
+
         var payload = Serialize(claims);
         var encodedPayload = Base64UrlEncode(Encoding.UTF8.GetBytes(payload));
         var signature = Base64UrlEncode(HMACSHA256.HashData(_secret, Encoding.UTF8.GetBytes(encodedPayload)));
@@ -81,7 +91,11 @@ public sealed class AdRewardSessionTokenService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
         var parts = token.Split('.', StringSplitOptions.None);
-        if (parts.Length != 2) throw new InvalidAdRewardSessionTokenException("Session token format is invalid.");
+        if (parts.Length != 2)
+        {
+            throw new InvalidAdRewardSessionTokenException("Session token format is invalid.");
+        }
+
         byte[] supplied;
         try
         {
@@ -94,7 +108,9 @@ public sealed class AdRewardSessionTokenService
 
         var expected = HMACSHA256.HashData(_secret, Encoding.UTF8.GetBytes(parts[0]));
         if (!CryptographicOperations.FixedTimeEquals(expected, supplied))
+        {
             throw new InvalidAdRewardSessionTokenException("Session token signature is invalid.");
+        }
 
         AdRewardSessionClaims claims;
         try
@@ -108,9 +124,15 @@ public sealed class AdRewardSessionTokenService
         }
 
         if (now >= claims.ExpiresAt)
+        {
             throw new ExpiredAdRewardSessionTokenException("Session token has expired.");
+        }
+
         if (now < claims.IssuedAt)
+        {
             throw new InvalidAdRewardSessionTokenException("Session token is not active yet.");
+        }
+
         return claims;
     }
 
@@ -118,20 +140,27 @@ public sealed class AdRewardSessionTokenService
     {
         ArgumentNullException.ThrowIfNull(claims);
         if (claims.SessionId == Guid.Empty || claims.UserId == Guid.Empty)
+        {
             throw new ArgumentException("Session and user IDs are required.", nameof(claims));
+        }
+
         ValidateText(claims.Network, nameof(claims.Network));
         ValidateText(claims.CreativeId, nameof(claims.CreativeId));
         ValidateText(claims.DeviceRiskHash, nameof(claims.DeviceRiskHash));
         ValidateText(claims.Nonce, nameof(claims.Nonce));
         if (claims.RequiredDuration <= TimeSpan.Zero || claims.ExpiresAt <= claims.IssuedAt)
+        {
             throw new ArgumentException("Session timing is invalid.", nameof(claims));
+        }
     }
 
     private static void ValidateText(string value, string parameterName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
         if (value.Contains(Separator, StringComparison.Ordinal))
+        {
             throw new ArgumentException("Session claim contains an invalid separator.", parameterName);
+        }
     }
 
     private static string Serialize(AdRewardSessionClaims claims) => string.Join(Separator,
@@ -150,7 +179,11 @@ public sealed class AdRewardSessionTokenService
     private static AdRewardSessionClaims Deserialize(string payload)
     {
         var values = payload.Split(Separator, StringSplitOptions.None);
-        if (values.Length != 11) throw new FormatException("Session claim count is invalid.");
+        if (values.Length != 11)
+        {
+            throw new FormatException("Session claim count is invalid.");
+        }
+
         return new AdRewardSessionClaims(
             Guid.ParseExact(values[0], "N"),
             Guid.ParseExact(values[1], "N"),
@@ -195,20 +228,31 @@ public sealed class AdRewardSessionService
     public AdRewardSessionStartResult Start(AdRewardSessionRequest request, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.UserId == Guid.Empty) throw new ArgumentException("User ID is required.", nameof(request));
+        if (request.UserId == Guid.Empty)
+        {
+            throw new ArgumentException("User ID is required.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Network);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.CreativeId);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DeviceRiskHash);
         if (request.RequiredDuration <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
 
         var network = request.Network.Trim();
         _controls.EnsureIssuanceEnabled(network);
         var policy = _policies.Current(network, now);
         if (policy.IssuanceMode == AdRewardIssuanceMode.Disabled)
+        {
             throw new AdRewardIssuanceDisabledException("The current network policy disables ad rewards.");
+        }
+
         if (!policy.IsReportCurrent(now))
+        {
             throw new AdNetworkReportStaleException("The provider report is stale; new reward sessions are disabled.");
+        }
 
         var claims = new AdRewardSessionClaims(
             _entropy.CreateSessionId(),

@@ -1216,11 +1216,20 @@ public sealed class TestingEventHandlerTests : IDisposable
         var version = ProjectVersion.Create(project.Id, versionNumber, null, createdById, _tenantId);
         version.Project = project;
         if (status is ProjectVersionStatus.ReadyForTesting or ProjectVersionStatus.Released or ProjectVersionStatus.Archived)
+        {
             version.MarkReadyForTesting();
+        }
+
         if (status is ProjectVersionStatus.Released or ProjectVersionStatus.Archived)
+        {
             version.Release();
+        }
+
         if (status == ProjectVersionStatus.Archived)
+        {
             version.Archive();
+        }
+
         _context.Add(version);
         return version;
     }
@@ -1274,7 +1283,11 @@ public sealed class TestingEventHandlerTests : IDisposable
     private void SetActor(Guid userId, string? role = null)
     {
         var builder = ActorContextBuilder.ForUser(userId).WithTenantId(_tenantId);
-        if (!string.IsNullOrWhiteSpace(role)) builder.WithRole(role);
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            builder.WithRole(role);
+        }
+
         _actorAccessor.SetActorContext(builder.Build());
     }
 

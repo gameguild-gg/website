@@ -1,7 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using FluentAssertions;
+using GameGuild.API.Database;
 using GameGuild.Resources.IntegrationTests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace GameGuild.Resources.IntegrationTests.Security;
@@ -56,6 +59,17 @@ public class ResourcesAuthorizationIntegrationTests : IAsyncLifetime, IDisposabl
             $"{userId}|{tenantId}|{isSystemAdmin}");
         client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId.ToString());
         return client;
+    }
+
+    [Fact]
+    public void Factory_PreservesDatabaseAliasesAndIsolatedConnection()
+    {
+        using var scope = _factory!.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        scope.ServiceProvider.GetRequiredService<DbContext>().Should().BeSameAs(context);
+        scope.ServiceProvider.GetRequiredService<IApplicationDbContext>().Should().BeSameAs(context);
+        context.Database.GetConnectionString().Should().Be(_fixture.ConnectionString);
     }
 
     #region Tenant Quotas Controller Tests

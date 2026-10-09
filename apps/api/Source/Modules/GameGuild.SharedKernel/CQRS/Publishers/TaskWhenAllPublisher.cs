@@ -16,7 +16,10 @@ public sealed class TaskWhenAllPublisher : INotificationPublisher
         // Convert to array once for efficient parallel execution - O(n)
         var executors = handlerExecutors as NotificationHandlerExecutor[ ] ?? handlerExecutors.ToArray();
 
-        if (executors.Length == 0) return;
+        if (executors.Length == 0)
+        {
+            return;
+        }
 
         // Pre-allocate array for better performance - O(1) allocation
         var tasks = new Task[executors.Length];

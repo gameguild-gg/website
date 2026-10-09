@@ -73,7 +73,11 @@ public class AccessReviewCampaign
     /// </summary>
     public double GetCompletionPercentage()
     {
-        if (TotalItems == 0) return 0;
+        if (TotalItems == 0)
+        {
+            return 0;
+        }
+
         return (double)ReviewedItems / TotalItems * 100;
     }
 
@@ -83,7 +87,9 @@ public class AccessReviewCampaign
     public void Start()
     {
         if (Status != AccessReviewStatus.Draft)
+        {
             throw new InvalidOperationException("Only draft campaigns can be started");
+        }
 
         Status = AccessReviewStatus.InProgress;
         UpdatedAt = SystemClock.UtcNow;
@@ -95,7 +101,9 @@ public class AccessReviewCampaign
     public void Complete(Guid completedByUserId)
     {
         if (Status != AccessReviewStatus.InProgress)
+        {
             throw new InvalidOperationException("Only in-progress campaigns can be completed");
+        }
 
         Status = AccessReviewStatus.Completed;
         CompletedBy = completedByUserId;
@@ -109,7 +117,9 @@ public class AccessReviewCampaign
     public void Cancel()
     {
         if (Status == AccessReviewStatus.Completed)
+        {
             throw new InvalidOperationException("Cannot cancel a completed campaign");
+        }
 
         Status = AccessReviewStatus.Expired; // Using Expired as cancelled state
         UpdatedAt = SystemClock.UtcNow;
@@ -201,8 +211,15 @@ public class AccessReviewItem
     /// </summary>
     public bool NeedsReminder(int reminderFrequencyDays)
     {
-        if (Status != AccessReviewItemStatus.Pending) return false;
-        if (LastReminderSent == null) return true;
+        if (Status != AccessReviewItemStatus.Pending)
+        {
+            return false;
+        }
+
+        if (LastReminderSent == null)
+        {
+            return true;
+        }
 
         return (SystemClock.UtcNow - LastReminderSent.Value).TotalDays >= reminderFrequencyDays;
     }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using GameGuild.Notifications.Services.Email;
 
 namespace GameGuild.Notifications.Services;
 
@@ -10,7 +11,8 @@ public class NotificationDeliveryService(
     IApplicationDbContext context,
     INotificationPreferenceService preferenceService,
     INotificationTemplateService templateService,
-    ILogger<NotificationDeliveryService> logger) : INotificationDeliveryService
+    ILogger<NotificationDeliveryService> logger,
+    NotificationMetadataProtector metadataProtector) : INotificationDeliveryService
 {
     public async Task<Result<Notification>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -78,7 +80,7 @@ public class NotificationDeliveryService(
             decision = await preferenceService.DecideDeliveryAsync(userId, type, channel, priority, cancellationToken).ConfigureAwait(false);
             if (decision.Action == NotificationDeliveryAction.Drop)
             {
-                logger.LogDebug("Notification dropped due to user preferences. UserId: {UserId}, Type: {Type}, Reason: {Reason}", userId, type, decision.Reason);
+                logger.LogDebug("Notification dropped due to user preferences. UserId: {UserId}, Type: {Type}, Reason: {Reason}", LogRedaction.Sanitize(userId.ToString()), type, decision.Reason);
                 return Result.Failure<Notification>(Error.Failure("Notification.Skipped", $"Notification skipped due to user preferences ({decision.Reason})"));
             }
         }
@@ -104,6 +106,8 @@ public class NotificationDeliveryService(
             metadata,
             recipientEmail: recipientEmail);
 
+        metadataProtector.ProtectForStorage(notification);
+
         if (decision.Action == NotificationDeliveryAction.Digest)
         {
             notification.MarkHeldForDigest();
@@ -119,7 +123,7 @@ public class NotificationDeliveryService(
         }
 
         logger.LogInformation("Notification sent. Id: {NotificationId}, Recipient: {RecipientId}, Type: {Type}",
-            notification.Id, recipientId, type);
+            notification.Id, LogRedaction.Sanitize(recipientId.ToString()), notification.Type);
 
         return Result.Success(notification);
     }
@@ -196,6 +200,8 @@ public class NotificationDeliveryService(
                 priority,
                 decision.Action == NotificationDeliveryAction.HoldUntil ? decision.HeldUntil : null);
 
+            metadataProtector.ProtectForStorage(notification);
+
             if (decision.Action == NotificationDeliveryAction.Digest)
             {
                 notification.MarkHeldForDigest();
@@ -253,6 +259,7 @@ public class NotificationDeliveryService(
             priority,
             scheduledAt);
 
+        metadataProtector.ProtectForStorage(notification);
         context.Set<Notification>().Add(notification);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

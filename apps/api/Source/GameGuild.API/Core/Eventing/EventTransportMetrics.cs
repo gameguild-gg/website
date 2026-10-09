@@ -31,7 +31,9 @@ public static class EventTransportMetrics
     public static void RecordDispatchCycle(int claimedMessages, TimeSpan duration)
     {
         if (claimedMessages > 0)
+        {
             MessagesClaimed.Add(claimedMessages);
+        }
 
         DispatchDuration.Record(duration.TotalMilliseconds);
     }
@@ -44,7 +46,9 @@ public static class EventTransportMetrics
         var tags = DeliveryTags(eventName, consumerName);
         ConsumerFailures.Add(1, tags);
         if (deadLettered)
+        {
             DeadLetters.Add(1, tags);
+        }
     }
 
     private static KeyValuePair<string, object?>[] DeliveryTags(string eventName, string consumerName) =>

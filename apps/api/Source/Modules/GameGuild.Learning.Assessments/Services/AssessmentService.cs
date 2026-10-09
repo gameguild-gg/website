@@ -128,7 +128,10 @@ public class AssessmentService : IAssessmentService
 
     public async Task<Assessment?> GetAssessmentByContentIdAsync(Guid contentId)
     {
-        if (contentId == Guid.Empty) return null;
+        if (contentId == Guid.Empty)
+        {
+            return null;
+        }
 
         return await _context.Set<Assessment>()
             .Include(a => a.AssessmentGroup)
@@ -473,7 +476,10 @@ public class AssessmentService : IAssessmentService
                 .SingleOrDefaultAsync(value => value.Id == request.CourseId && value.DeletedAt == null)
                 .ConfigureAwait(false);
             if (course is null)
+            {
                 return Result.Failure<AssessmentGroup>(Error.NotFound("Program", "Course not found"));
+            }
+
             var configuredWeights = await _context.Set<AssessmentGroup>()
                 .Where(value => value.CourseId == request.CourseId && value.DeletedAt == null)
                 .Select(value => value.WeightPercent)
@@ -724,7 +730,10 @@ public class AssessmentService : IAssessmentService
     public async Task<IEnumerable<InteractiveVideoAssessmentCue>> GetInteractiveVideoCuesAsync(Guid assessmentId)
     {
         var assessment = await GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return Array.Empty<InteractiveVideoAssessmentCue>();
+        if (assessment == null)
+        {
+            return Array.Empty<InteractiveVideoAssessmentCue>();
+        }
 
         var cues = await _context.Set<InteractiveVideoAssessmentCue>()
             .Where(cue => cue.AssessmentId == assessmentId && cue.DeletedAt == null)
@@ -1210,7 +1219,11 @@ public class AssessmentService : IAssessmentService
                 return Result.Success(false);
             }
 
-            if (UsesGradingRuntime(assessment)) return Result.Success(false);
+            if (UsesGradingRuntime(assessment))
+            {
+                return Result.Success(false);
+            }
+
             var attemptCount = await GetAttemptCountAsync(assessmentId, enrollmentId).ConfigureAwait(false);
             return Result.Success(attemptCount < assessment.MaxAttempts);
         }

@@ -23157,8 +23157,7 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Metadata")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("NextAttemptAt")
                         .HasColumnType("timestamp with time zone");

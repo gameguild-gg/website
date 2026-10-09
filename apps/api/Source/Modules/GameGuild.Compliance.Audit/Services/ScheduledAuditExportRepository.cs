@@ -28,6 +28,11 @@ public interface IScheduledAuditExportRepository
         AuditExportHistory history,
         CancellationToken cancellationToken);
 
+    Task<int> RecoverStaleClaimsAsync(
+        DateTime nowUtc,
+        TimeSpan staleClaimThreshold,
+        CancellationToken cancellationToken);
+
     Task RecordCompletedAsync(
         Guid exportId,
         Guid historyId,
@@ -123,6 +128,51 @@ public sealed class ScheduledAuditExportRepository(IApplicationDbContext context
             .ConfigureAwait(false);
         history.ExpireFile();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<int> RecoverStaleClaimsAsync(
+        DateTime nowUtc,
+        TimeSpan staleClaimThreshold,
+        CancellationToken cancellationToken)
+    {
+        var staleBeforeUtc = nowUtc - staleClaimThreshold;
+        var staleHistories = await context.Set<AuditExportHistory>()
+            .Where(history => history.Status == ExportStatus.InProgress && history.ExecutedAt < staleBeforeUtc)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (staleHistories.Count == 0) { return 0; }
+
+        var exportIds = staleHistories.Select(history => history.ScheduledExportId).Distinct().ToList();
+        var exports = await context.Set<ScheduledAuditExport>()
+            .Where(export => exportIds.Contains(export.Id))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var busyExportIds = (await context.Set<AuditExportHistory>()
+                .Where(history => exportIds.Contains(history.ScheduledExportId)
+                    && history.Status == ExportStatus.InProgress
+                    && history.ExecutedAt >= staleBeforeUtc)
+                .Select(history => history.ScheduledExportId)
+                .Distinct()
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false))
+            .ToHashSet();
+
+        foreach (var history in staleHistories)
+        {
+            history.Fail("Stale claim recovered", nowUtc - history.ExecutedAt);
+        }
+
+        foreach (var export in exports)
+        {
+            export.RecordFailure(nowUtc, "Stale claim recovered");
+            if (!busyExportIds.Contains(export.Id))
+            {
+                export.UpdateNextRunTime(nowUtc);
+            }
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return staleHistories.Count;
     }
 
     public async Task<bool> TryClaimAsync(

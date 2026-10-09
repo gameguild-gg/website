@@ -33,7 +33,10 @@ public sealed class LaunchPadEventEndpointCommandHandler(IApplicationDbContext c
         var request = command.Request;
         var entity = LaunchPadEvent.Create(command.TenantId, request.Name, request.StartsAt, request.EndsAt, request.Description);
         if (request.ApplicationsOpenAt.HasValue && request.ApplicationsCloseAt.HasValue)
+        {
             entity.ConfigureApplicationWindow(request.ApplicationsOpenAt.Value, request.ApplicationsCloseAt.Value);
+        }
+
         context.Set<LaunchPadEvent>().Add(entity);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return entity;
@@ -146,9 +149,12 @@ public sealed class LaunchPadApplicationEndpointCommandHandler(
                     plan => plan.LaunchPadApplicationId == application.Id && plan.DeletedAt == null,
                     cancellationToken).ConfigureAwait(false);
                 if (!exists)
+                {
                     context.Set<LaunchPlan>().Add(LaunchPlan.CreateForApprovedApplication(application.TenantId!.Value,
-                        application.LaunchPadEventId, application.Id, application.ProjectId, application.ProjectVersionId,
-                        command.LaunchPlanName ?? "Launch plan"));
+                    application.LaunchPadEventId, application.Id, application.ProjectId, application.ProjectVersionId,
+                    command.LaunchPlanName ?? "Launch plan"));
+                }
+
                 break;
             case LaunchPadApplicationStatus.Rejected: application.Reject(command.ReviewerId); break;
             default: throw new ArgumentOutOfRangeException(nameof(command.Status));
@@ -158,7 +164,11 @@ public sealed class LaunchPadApplicationEndpointCommandHandler(
             application.SubmittedAssetReferenceIds.Count > 0)
         {
             var expiresAt = application.LaunchPadEvent.EndsAt.AddDays(7);
-            if (expiresAt <= SystemClock.UtcNow) expiresAt = SystemClock.UtcNow.AddHours(24);
+            if (expiresAt <= SystemClock.UtcNow)
+            {
+                expiresAt = SystemClock.UtcNow.AddHours(24);
+            }
+
             await assetScopedAccessService.GrantAsync(application.SubmittedAssetReferenceIds, command.ReviewerId,
                 application.TenantId!.Value, "LaunchPadApplication", application.Id, expiresAt, command.ReviewerId,
                 cancellationToken).ConfigureAwait(false);
@@ -186,7 +196,11 @@ public sealed class LaunchPadRegistrationEndpointCommandHandler(IApplicationDbCo
     public async Task<LaunchPadParticipantRegistration> Handle(RegisterLaunchPadParticipantEndpointCommand command, CancellationToken cancellationToken)
     {
         var waitlisted = !command.Slot.HasCapacity;
-        if (!waitlisted) command.Slot.Reserve();
+        if (!waitlisted)
+        {
+            command.Slot.Reserve();
+        }
+
         var registration = LaunchPadParticipantRegistration.Register(command.Slot.TenantId!.Value, command.Slot.Id,
             command.ActorId, waitlisted);
         context.Set<LaunchPadParticipantRegistration>().Add(registration);
@@ -238,7 +252,11 @@ public sealed class LaunchPadRegistrationEndpointCommandHandler(IApplicationDbCo
 
     private async Task PromoteOldestWaitlistedAsync(LaunchPadParticipantSlot slot, CancellationToken cancellationToken)
     {
-        if (!slot.HasCapacity) return;
+        if (!slot.HasCapacity)
+        {
+            return;
+        }
+
         var next = await context.Set<LaunchPadParticipantRegistration>()
             .Where(registration => registration.LaunchPadParticipantSlotId == slot.Id &&
                                    registration.Status == LaunchPadParticipantStatus.Waitlisted &&
@@ -246,7 +264,11 @@ public sealed class LaunchPadRegistrationEndpointCommandHandler(IApplicationDbCo
             .OrderBy(registration => registration.RegisteredAt)
             .ThenBy(registration => registration.Id)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-        if (next == null) return;
+        if (next == null)
+        {
+            return;
+        }
+
         slot.Reserve();
         next.Promote();
     }
@@ -279,7 +301,10 @@ public sealed class LaunchPadSettingsEndpointCommandHandler(IApplicationDbContex
         var settings = await context.Set<LaunchPadSettings>()
             .SingleOrDefaultAsync(candidate => candidate.TenantId == tenantId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (settings != null) return settings;
+        if (settings != null)
+        {
+            return settings;
+        }
 
         settings = new LaunchPadSettings
         {

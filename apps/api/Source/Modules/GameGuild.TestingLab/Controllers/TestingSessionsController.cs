@@ -35,7 +35,11 @@ public class TestingSessionsController(
     public async Task<ActionResult<TestingSession>> GetTestingSession(Guid id)
     {
         var session = await sessionService.GetTestingSessionByIdAsync(id).ConfigureAwait(false);
-        if (session == null) return NotFound();
+        if (session == null)
+        {
+            return NotFound();
+        }
+
         return Ok(session);
     }
 
@@ -45,7 +49,11 @@ public class TestingSessionsController(
     public async Task<ActionResult<TestingSession>> GetTestingSessionWithDetails(Guid id)
     {
         var session = await sessionService.GetTestingSessionByIdWithDetailsAsync(id).ConfigureAwait(false);
-        if (session == null) return NotFound();
+        if (session == null)
+        {
+            return NotFound();
+        }
+
         return Ok(session);
     }
 
@@ -54,11 +62,16 @@ public class TestingSessionsController(
     [RequireTestingLabPermission(TestingLabActions.Create, TestingLabResourceTypes.Session)]
     public async Task<ActionResult<TestingSession>> CreateTestingSession(CreateTestingSessionDto sessionDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         var createdSession = await mediator.Send(new CreateTestingSessionEndpointCommand(sessionDto, userId.Value)).ConfigureAwait(false);
 
@@ -70,7 +83,10 @@ public class TestingSessionsController(
     [RequireTestingLabPermission(TestingLabActions.Edit, TestingLabResourceTypes.Session, "id")]
     public async Task<ActionResult<TestingSession>> UpdateTestingSession(Guid id, TestingSession session)
     {
-        if (id != session.Id) return BadRequest("ID mismatch");
+        if (id != session.Id)
+        {
+            return BadRequest("ID mismatch");
+        }
 
         try
         {
@@ -90,7 +106,11 @@ public class TestingSessionsController(
     public async Task<ActionResult> DeleteTestingSession(Guid id)
     {
         var result = await mediator.Send(new DeleteTestingSessionEndpointCommand(id)).ConfigureAwait(false);
-        if (!result) return NotFound();
+        if (!result)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -100,7 +120,11 @@ public class TestingSessionsController(
     public async Task<ActionResult> RestoreTestingSession(Guid id)
     {
         var result = await mediator.Send(new RestoreTestingSessionEndpointCommand(id)).ConfigureAwait(false);
-        if (!result) return NotFound();
+        if (!result)
+        {
+            return NotFound();
+        }
+
         return Ok();
     }
 
@@ -157,7 +181,10 @@ public class TestingSessionsController(
     [RequireTestingLabPermission(TestingLabActions.Read, TestingLabResourceTypes.Session)]
     public async Task<ActionResult<IEnumerable<TestingSession>>> SearchTestingSessions([FromQuery] string searchTerm)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm)) return BadRequest("Search term is required");
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return BadRequest("Search term is required");
+        }
 
         var sessions = await sessionService.SearchTestingSessionsAsync(searchTerm).ConfigureAwait(false);
         return Ok(sessions);
@@ -188,7 +215,9 @@ public class TestingSessionsController(
     {
         var currentUserId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (currentUserId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         await mediator.Send(new UpdateTestingSessionAttendanceEndpointCommand(
             sessionId,
@@ -218,7 +247,11 @@ public class TestingSessionsController(
         var result = await mediator.Send(
             new LinkSessionProjectCommand(sessionId, request.ProjectId, request.ProjectVersionId, request.Notes),
             cancellationToken).ConfigureAwait(false);
-        if (result.IsFailure) return ToChannelActionResult(result);
+        if (result.IsFailure)
+        {
+            return ToChannelActionResult(result);
+        }
+
         return CreatedAtAction(nameof(GetSessionProjects), new { sessionId }, result.Value);
     }
 

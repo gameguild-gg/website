@@ -41,7 +41,9 @@ public sealed class TimeWindow
     public static TimeWindow? Parse(string? windowString)
     {
         if (string.IsNullOrWhiteSpace(windowString))
+        {
             return null;
+        }
 
         string? timeZoneId = null;
         var timePart = windowString;
@@ -56,11 +58,15 @@ public sealed class TimeWindow
 
         var parts = timePart.Split('-');
         if (parts.Length != 2)
+        {
             return null;
+        }
 
         if (!TimeOnly.TryParse(parts[0].Trim(), out var start) ||
             !TimeOnly.TryParse(parts[1].Trim(), out var end))
+        {
             return null;
+        }
 
         return new TimeWindow
         {
@@ -107,7 +113,10 @@ public sealed class TimeWindow
     {
         var result = $"{Start:HH:mm}-{End:HH:mm}";
         if (!string.IsNullOrEmpty(TimeZoneId))
+        {
             result += $"@{TimeZoneId}";
+        }
+
         return result;
     }
 }
@@ -136,7 +145,9 @@ public sealed class TimeWindowJsonConverter : JsonConverter<TimeWindow>
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
+                {
                     break;
+                }
 
                 if (reader.TokenType == JsonTokenType.PropertyName)
                 {
@@ -150,7 +161,9 @@ public sealed class TimeWindowJsonConverter : JsonConverter<TimeWindow>
                             {
                                 var startStr = reader.GetString();
                                 if (TimeOnly.TryParse(startStr, out var s))
+                                {
                                     start = s;
+                                }
                             }
                             break;
                         case "end":
@@ -158,7 +171,9 @@ public sealed class TimeWindowJsonConverter : JsonConverter<TimeWindow>
                             {
                                 var endStr = reader.GetString();
                                 if (TimeOnly.TryParse(endStr, out var e))
+                                {
                                     end = e;
+                                }
                             }
                             break;
                         case "timezoneid":

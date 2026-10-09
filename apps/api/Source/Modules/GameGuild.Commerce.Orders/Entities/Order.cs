@@ -160,7 +160,9 @@ public class Order : StatefulEntity<OrderStatus>
         string? userAgent = null)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("TenantId is required for financial entities (fail-closed)", nameof(tenantId));
+        }
 
         return new Order
         {
@@ -226,21 +228,44 @@ public class Order : StatefulEntity<OrderStatus>
         ArgumentNullException.ThrowIfNull(pricing);
 
         if (Status != OrderStatus.Pending)
+        {
             throw new InvalidOperationException($"Cannot add line items to an order in {Status} status.");
+        }
+
         if (TenantId is null || TenantId == Guid.Empty)
+        {
             throw new InvalidOperationException("A tenant is required before adding order line items.");
+        }
+
         if (productId == Guid.Empty || pricing.ProductPricingId == Guid.Empty || pricing.ProductPricingVersionId == Guid.Empty)
+        {
             throw new ArgumentException("Product and pricing identifiers are required.", nameof(pricing));
+        }
+
         if (pricing.PriceVersion < 1)
+        {
             throw new ArgumentOutOfRangeException(nameof(pricing), "Price version must be positive.");
+        }
+
         if (pricing.BasePrice <= 0 || pricing.UnitPrice <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(pricing), "Authoritative prices must be positive.");
+        }
+
         if (quantity < 1)
+        {
             throw new ArgumentOutOfRangeException(nameof(quantity));
+        }
+
         if (discountAmount < 0 || discountAmount >= pricing.UnitPrice * quantity)
+        {
             throw new ArgumentOutOfRangeException(nameof(discountAmount), "Discount must leave a positive line total.");
+        }
+
         if (pricing.Currency.Length != 3 || !pricing.Currency.All(char.IsAsciiLetterUpper))
+        {
             throw new ArgumentException("Currency must be a three-letter uppercase code.", nameof(pricing));
+        }
 
         if (LineItems.Count == 0)
         {
@@ -275,7 +300,9 @@ public class Order : StatefulEntity<OrderStatus>
     public void RecalculateTotals()
     {
         if (Status != OrderStatus.Pending && Status != OrderStatus.Processing)
+        {
             throw new InvalidOperationException($"Cannot modify order totals in {Status} status. Financial amounts are immutable after processing.");
+        }
 
         Subtotal = LineItems.Sum(li => li.UnitPriceSnapshot * li.Quantity);
         DiscountTotal = LineItems.Sum(li => li.DiscountAmount);
@@ -320,7 +347,9 @@ public class Order : StatefulEntity<OrderStatus>
     public void StartPaymentProcessing()
     {
         if (Status == OrderStatus.Processing)
+        {
             return;
+        }
 
         TransitionToWithReason(OrderStatus.Processing, reason: "Authoritative payment capture started");
         Touch();
@@ -329,7 +358,9 @@ public class Order : StatefulEntity<OrderStatus>
     public void ReleasePaymentReservation()
     {
         if (Status != OrderStatus.Processing)
+        {
             throw new InvalidOperationException($"Cannot release payment reservation for order in {Status} status");
+        }
 
         Status = OrderStatus.Pending;
         Touch();
@@ -344,7 +375,9 @@ public class Order : StatefulEntity<OrderStatus>
     public void MarkAsFulfilled()
     {
         if (FulfilledAt.HasValue)
+        {
             return; // Idempotent - already fulfilled
+        }
 
         // Allow transition from Paid or legacy Completed
         if (Status == OrderStatus.Completed)
@@ -369,8 +402,10 @@ public class Order : StatefulEntity<OrderStatus>
     public void AssociatePayment(Guid paymentId)
     {
         if (PaymentId is Guid existingPaymentId && existingPaymentId != paymentId)
+        {
             throw new InvalidOperationException($"Order {Id} already has payment {PaymentId}. Single payment per order enforced.");
-        
+        }
+
         PaymentId = paymentId;
         Touch();
     }

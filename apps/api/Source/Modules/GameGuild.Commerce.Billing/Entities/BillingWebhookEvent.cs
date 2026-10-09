@@ -161,13 +161,17 @@ public class BillingWebhookEvent : EntityBase
     public bool TryBeginProcessing(DateTime staleBefore)
     {
         if (IsProcessed)
+        {
             return false;
+        }
 
         var hasActiveLease = ProcessingAttempts > 0 &&
                              !IsFailed &&
                              UpdatedAt > staleBefore;
         if (hasActiveLease)
+        {
             return false;
+        }
 
         ProcessingAttempts++;
         IsFailed = false;

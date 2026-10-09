@@ -19,7 +19,10 @@ public sealed class RiskDecisionAuthorizer : IRiskDecisionAuthorizer
     {
         get
         {
-            lock (_gate) return [.. _authorizations.Values];
+            lock (_gate)
+            {
+                return [.. _authorizations.Values];
+            }
         }
     }
 
@@ -38,14 +41,18 @@ public sealed class RiskDecisionAuthorizer : IRiskDecisionAuthorizer
             {
                 if (existing.OperationFingerprint == fingerprint &&
                     existing.IdempotencyKey == context.IdempotencyKey)
+                {
                     return existing;
+                }
 
                 throw new RiskDecisionReuseException("A risk decision cannot authorize a different operation.");
             }
 
             RiskDecisionGuard.Validate(decision, fingerprint, now);
             if (decision.Outcome != RiskOutcome.Allow)
+            {
                 throw new RiskAuthorizationDeniedException("Only an Allow risk decision can authorize value movement.");
+            }
 
             var authorization = new RiskAuthorization(decision.Id, fingerprint, context.IdempotencyKey, now);
             _authorizations.Add(decision.Id, authorization);
@@ -64,7 +71,9 @@ public sealed class RiskHoldCoordinator
         ArgumentNullException.ThrowIfNull(context);
         RiskDecisionGuard.Validate(decision, context.Fingerprint(), now);
         if (decision.Outcome != RiskOutcome.Hold)
+        {
             throw new RiskAuthorizationDeniedException("Only a Hold risk decision can create a nonspendable hold.");
+        }
 
         return new HoldContract(
             HoldId.New(), context.SourceWalletId, context.Amount, HoldReason.RiskReview,
@@ -77,8 +86,13 @@ internal static class RiskDecisionGuard
     internal static void Validate(RiskDecisionSnapshot decision, string fingerprint, DateTimeOffset now)
     {
         if (decision.IssuedAt > now || decision.ExpiresAt <= now)
+        {
             throw new RiskDecisionExpiredException("Risk decision is not valid at the operation timestamp.");
+        }
+
         if (!string.Equals(decision.OperationFingerprint, fingerprint, StringComparison.Ordinal))
+        {
             throw new RiskDecisionBindingException("Risk decision is not bound to this operation context.");
+        }
     }
 }

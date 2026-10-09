@@ -85,7 +85,11 @@ public sealed record ReservePostingAuthorization
         long authorizationEpoch,
         DateTimeOffset lockedAt)
     {
-        if (version.Value <= 0) throw new ArgumentOutOfRangeException(nameof(version));
+        if (version.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(version));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(authorizationEpoch);
         Version = version;
         AuthorizationEpoch = authorizationEpoch;

@@ -67,7 +67,9 @@ public class AccessControlListEntryRepository(IApplicationDbContext context) : I
     {
         var principalList = principals.ToList();
         if (principalList.Count == 0)
+        {
             return Array.Empty<AccessControlListEntry>();
+        }
 
         // Build query for all matching principals
         var query = context.Set<AccessControlListEntry>()

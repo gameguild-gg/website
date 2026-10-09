@@ -64,8 +64,11 @@ public static (Guid UserId, Guid? TenantId) RequireActorUser(IActorContextAccess
 {
     var actor = actorContext.ActorContext;
     if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || userId == Guid.Empty)
-        throw new UnauthorizedAccessException("An authenticated user is required.");
-    return (userId, actor.TenantId);
+        {
+            throw new UnauthorizedAccessException("An authenticated user is required.");
+        }
+
+        return (userId, actor.TenantId);
 }
 
 /// <summary>Extracts the authenticated actor user id or throws.</summary>
@@ -73,8 +76,11 @@ public static Guid RequireActorUserId(IActorContextAccessor actorContext)
 {
     var actor = actorContext.ActorContext;
     if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || userId == Guid.Empty)
-        throw new UnauthorizedAccessException("An authenticated user is required.");
-    return userId;
+        {
+            throw new UnauthorizedAccessException("An authenticated user is required.");
+        }
+
+        return userId;
 }
 }
 

@@ -90,7 +90,10 @@ public class ResourceUsageTrend : EntityBase
     public bool IsAnomaly(long currentUsage, double anomalyThreshold = 2.0)
     {
         // Using z-score method: if value is more than N standard deviations from mean
-        if (StandardDeviation == 0) return false;
+        if (StandardDeviation == 0)
+        {
+            return false;
+        }
 
         var zScore = Math.Abs((currentUsage - AverageUsage) / StandardDeviation);
 
@@ -124,7 +127,10 @@ public class ResourceUsageTrend : EntityBase
     /// </summary>
     public bool IsVolatile(double volatilityThreshold = 0.3)
     {
-        if (AverageUsage == 0) return false;
+        if (AverageUsage == 0)
+        {
+            return false;
+        }
 
         var coefficientOfVariation = StandardDeviation / AverageUsage;
 

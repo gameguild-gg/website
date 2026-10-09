@@ -64,11 +64,13 @@ test_shell_only_ci_policy() {
   grep -q '"ci:repository-policy": "bash scripts/ci/verify-repository-policy.sh"' "$repository_root/package.json" || return 1
   grep -q '"ci:economy": "bash scripts/ci/verify-economy.sh"' "$repository_root/package.json" || return 1
   grep -Fq 'pnpm install --frozen-lockfile --ignore-scripts' "$ci_dir/install-and-audit-pnpm.sh" || return 1
+  grep -Fq 'rm -f "$repository_root/node_modules/.pnpm-workspace-state.json"' "$ci_dir/install-and-audit-pnpm.sh" || return 1
+  grep -Fq 'pnpm rebuild braces sprintf-js' "$ci_dir/install-and-audit-pnpm.sh" || return 1
   grep -Fq 'repository pnpm lockfile is required' "$ci_dir/install-and-audit-pnpm.sh" || return 1
   grep -q 'pnpm audit --json' "$ci_dir/install-and-audit-pnpm.sh" || return 1
   grep -Fq 'audit_stderr_report="$audit_root/audit.stderr.log"' "$ci_dir/install-and-audit-pnpm.sh" || return 1
   grep -Fq 'pnpm audit --json >"$audit_report" 2>"$audit_stderr_report"' "$ci_dir/install-and-audit-pnpm.sh" || return 1
-  grep -Fq 'pnpm install --frozen-lockfile --ignore-scripts' "$repository_root/.github/workflows/emception.yml" || return 1
+  grep -Fq 'run: bash scripts/ci/install-and-audit-pnpm.sh' "$repository_root/.github/workflows/emception.yml" || return 1
   ! grep -Fq 'pnpm-lock.yaml|*/pnpm-lock.yaml' "$repository_root/scripts/repository-hygiene.sh" || return 1
   [[ -f "$repository_root/pnpm-lock.yaml" ]]
 }
@@ -85,7 +87,7 @@ test_release_flow_opens_version_pr_to_main() {
   local emception_workflow="$repository_root/.github/workflows/emception.yml"
 
   [[ ! -e "$repository_root/.github/workflows/release.yml" ]] || return 1
-  grep -Fq 'uses: changesets/action@v2' "$emception_workflow" || return 1
+  grep -Eq 'uses: changesets/action@[a-f0-9]{40} # v2([[:space:]]|$)' "$emception_workflow" || return 1
   grep -Fq 'version-script: pnpm run version:emception' "$emception_workflow" || return 1
   grep -Fq 'run: pnpm run publish:emception' "$emception_workflow" || return 1
   grep -Fq 'TAG="emception-v${VERSION}"' "$emception_workflow" || return 1
@@ -118,9 +120,9 @@ test_workflow_caches_gate_dependencies() {
   local playwright_setup="$repository_root/.github/actions/setup-playwright/action.yml"
 
   grep -Fq 'cache: pnpm' "$node_setup" || return 1
-  grep -Fq 'actions/cache@v6' "$dotnet_setup" || return 1
+  grep -Eq 'actions/cache@[a-f0-9]{40} # v6([[:space:]]|$)' "$dotnet_setup" || return 1
   grep -Fq 'key: nuget-' "$dotnet_setup" || return 1
-  grep -Fq 'actions/cache@v6' "$playwright_setup" || return 1
+  grep -Eq 'actions/cache@[a-f0-9]{40} # v6([[:space:]]|$)' "$playwright_setup" || return 1
   grep -Fq 'playwright-browsers-' "$playwright_setup"
 }
 
@@ -280,6 +282,11 @@ test_full_gate_isolates_api_migration_tests_from_the_economy_template() {
   grep -Fq 'project_timeout="$api_test_timeout"' <<< "$runner" || return 1
   grep -Fq 'timeout --kill-after=30s "$project_timeout"' <<< "$runner" || return 1
   grep -Fq 'api_test_timeout="${ECONOMY_API_TEST_TIMEOUT:-12m}"' "$gate" || return 1
+  grep -Fq "elif [[ \"\$test_name\" == 'GameGuild.API.IntegrationTests' ]]" <<< "$runner" || return 1
+  grep -Fq 'project_timeout="$api_integration_test_timeout"' <<< "$runner" || return 1
+  grep -Fq 'api_integration_test_timeout="${ECONOMY_API_INTEGRATION_TEST_TIMEOUT:-25m}"' "$gate" || return 1
+  grep -Fq '"${test_hang_arguments[@]}"' <<< "$runner" || return 1
+  grep -Fq 'test_hang_timeout="${ECONOMY_TEST_HANG_TIMEOUT:-5m}"' "$gate" || return 1
   ! grep -Fq -- '--settings' <<< "$runner" || return 1
   ! grep -Fq 'xunit-postgres-serial.runsettings' "$gate"
 }
@@ -321,6 +328,46 @@ test_economy_gate_uses_memory_backed_disposable_postgres() {
   ! grep -Fq -- '--volume' <<< "$(sed -n '/postgres-economy-tests/,/economy_postgres_probe()/p' "$gate")"
 }
 
+test_economy_gate_sizes_only_its_shared_test_database_lock_table() {
+  local gate="$ci_dir/verify-economy.sh"
+  local test_server app_server migration_server
+
+  test_server="$(sed -n '/gate_stage=.postgres-economy-tests./,/economy_postgres_probe()/p' "$gate")"
+  app_server="$(sed -n '/gate_stage=.postgres-app./,/app_postgres_probe()/p' "$gate")"
+  migration_server="$(sed -n '/gate_stage=.postgres-whole-solution-migrations./,/whole_solution_postgres_probe()/p' "$gate")"
+  grep -Fq 'postgres:17-alpine -c max_locks_per_transaction=512' <<< "$test_server" || return 1
+  ! grep -Fq 'max_locks_per_transaction' <<< "$app_server" || return 1
+  ! grep -Fq 'max_locks_per_transaction' <<< "$migration_server" || return 1
+  grep -Fq 'whole_solution_jobs=2' "$gate"
+}
+
+test_rate_limit_probe_has_debug_and_release_solution_configuration() {
+  "$PYTHON_BIN" - "$repository_root/apps/api/GameGuild.sln" <<'PY'
+import pathlib, re, sys
+solution = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig")
+project = re.search(r'Project\("[^\n]+"\) = "GameGuild.RateLimitingProbeHost", "tests\\RateLimitingProbeHost\\GameGuild.RateLimitingProbeHost.csproj", "(\{[0-9A-F-]+\})"', solution)
+if project is None:
+    raise SystemExit("Rate-limit probe must be a solution project so a Release solution build does not default it to Debug")
+for configuration in ("Debug", "Release"):
+    for platform in ("Any CPU", "x64", "x86"):
+        for mapping in ("ActiveCfg", "Build.0"):
+            line = f"{project[1]}.{configuration}|{platform}.{mapping} = {configuration}|Any CPU"
+            if line not in solution:
+                raise SystemExit(f"Rate-limit probe configuration is missing: {line}")
+PY
+}
+
+test_testing_lab_workflow_routes_evidence_to_its_upload_directory() {
+  local workflow="$repository_root/.github/workflows/pr-verify.yml"
+  local testing_lab
+
+  testing_lab="$(sed -n '/name: Testing Lab critical flow/,/  openapi:/p' "$workflow")"
+  grep -Fq 'TESTING_LAB_E2E_ARTIFACTS: ${{ github.workspace }}/artifacts/test-results/testing-lab' <<< "$testing_lab" || return 1
+  grep -Fq 'path: artifacts/test-results' <<< "$testing_lab" || return 1
+  grep -Fq 'if-no-files-found: error' <<< "$testing_lab" || return 1
+  ! grep -Fq 'if-no-files-found: warn' <<< "$testing_lab"
+}
+
 test_economy_gate_migrates_one_template_and_clones_isolated_test_databases() {
   local gate="$ci_dir/verify-economy.sh"
   local database_support="$repository_root/apps/api/tests/GameGuild.TestSupport.Finance.Economy/EconomyPostgreSqlTestDatabase.cs"
@@ -333,6 +380,38 @@ test_economy_gate_migrates_one_template_and_clones_isolated_test_databases() {
   grep -Fq 'ECONOMY_POSTGRES_TEMPLATE_DATABASE' "$database_support" || return 1
   grep -Fq 'WITH TEMPLATE' "$database_support" || return 1
   grep -Fq 'true,' "$database_support"
+}
+
+test_affected_api_tests_use_migrated_template() {
+  local workflow="$repository_root/.github/workflows/pr-verify.yml"
+  grep -Fq 'bash scripts/ci/run-affected-dotnet-tests.sh' "$workflow" || return 1
+  grep -Fq 'path: artifacts/test-results/affected-api' "$workflow" || return 1
+  bash "$script_dir/run-affected-dotnet-tests.sh"
+}
+
+test_api_workflow_allows_full_selected_suite_with_bounded_hangs() {
+  local workflow="$repository_root/.github/workflows/pr-verify.yml" api
+  api="$(sed -n '/^  api:/,/^  testing-lab:/p' "$workflow")"
+  grep -Fq 'timeout-minutes: 90' <<< "$api" || return 1
+  grep -Fq 'bash scripts/ci/run-affected-dotnet-tests.sh' <<< "$api" || return 1
+  grep -Fq 'Verify full-application OpenAPI over HTTP' <<< "$api" || return 1
+  grep -Fq -- '--blame-hang-timeout 5m' <<< "$api" || return 1
+  grep -Fq -- '--blame-hang-timeout 5m' "$ci_dir/run-affected-dotnet-tests.sh"
+}
+
+test_postgres_probes_require_authenticated_tcp() {
+  local gate="$ci_dir/verify-economy.sh" probe body
+  [[ "$(grep -Fc -- '--env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256' "$gate")" == 3 ]] || return 1
+  for probe in app_postgres_probe economy_postgres_probe whole_solution_postgres_probe; do
+    body="$(sed -n "/${probe}()/,/^ *}/p" "$gate")"
+    grep -Eq -- 'docker exec --env "PGPASSWORD=\$[a-z_]+"' <<< "$body" || return 1
+    grep -Fq -- 'psql --host 127.0.0.1' <<< "$body" || return 1
+    grep -Fq -- '--no-password --no-psqlrc --set ON_ERROR_STOP=1' <<< "$body" || return 1
+  done
+}
+
+test_disposable_postgres_credentials() {
+  bash "$script_dir/disposable-postgres.sh"
 }
 
 test_auto_changeset_bumps_entire_lockstep_workspace() {
@@ -833,7 +912,12 @@ run_test 'Economy gate rejects nested PostgreSQL Testcontainers' test_economy_ga
 run_test 'Economy gate isolates global roles from application databases' test_economy_gate_isolates_global_economy_roles_from_application_databases
 run_test 'full gate isolates API migration tests from the Economy template' test_full_gate_isolates_api_migration_tests_from_the_economy_template
 run_test 'Economy gate uses memory-backed disposable PostgreSQL' test_economy_gate_uses_memory_backed_disposable_postgres
+run_test 'Economy test lock capacity preserves concurrency and application defaults' test_economy_gate_sizes_only_its_shared_test_database_lock_table
+run_test 'rate-limit probe follows Debug and Release solution builds' test_rate_limit_probe_has_debug_and_release_solution_configuration
+run_test 'Testing Lab screenshots reach the required evidence upload' test_testing_lab_workflow_routes_evidence_to_its_upload_directory
 run_test 'Economy gate clones one migrated PostgreSQL template' test_economy_gate_migrates_one_template_and_clones_isolated_test_databases
+run_test 'affected API suites preserve migrations and isolated template setup' test_affected_api_tests_use_migrated_template
+run_test 'API workflow lets the full selected suite finish while bounding hangs' test_api_workflow_allows_full_selected_suite_with_bounded_hangs
 run_test 'Emception versioning is scoped to its fixed group' test_auto_changeset_bumps_entire_lockstep_workspace
 run_test 'Changesets config isolates the Emception release group' test_changesets_config_matches_lockstep_workspace
 run_test 'Emception emits a gate result for every main push' test_emception_emits_a_gate_result_for_every_main_push
@@ -860,6 +944,8 @@ run_test 'manifest records normalize Windows line endings' test_manifest_record_
 run_test 'coverage records preserve empty prefixes and branch threshold' test_coverage_record_fields_preserve_empty_prefixes
 run_test 'warning scope resolves touched Commerce projects' test_warning_scope_finds_commerce_projects
 run_test 'readiness requires consecutive successful probes' test_readiness_requires_consecutive_successes
+run_test 'PostgreSQL readiness waits for authenticated TCP on the final server' test_postgres_probes_require_authenticated_tcp
+run_test 'disposable PostgreSQL credentials are random, consistent, and redacted' test_disposable_postgres_credentials
 run_test 'process cleanup terminates Bash background processes' test_process_cleanup_stops_background_process
 run_test 'TRX evidence rejects skipped and zero-test suites' test_trx_rejects_skips_and_empty_suites
 run_test 'whole-solution evidence allows only named source-empty scaffolds' test_whole_solution_allows_only_source_empty_scaffolds

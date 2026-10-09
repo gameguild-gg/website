@@ -22,7 +22,10 @@ public sealed class PostgreSqlPayoutRequestStore : IPayoutRequestStore
     public PayoutRequest? FindReplay(Guid tenantId, Guid payeeId, string idempotencyKey, string requestHash)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (payeeId == Guid.Empty)
         {
             throw new ArgumentException("Payee ID is required.", nameof(payeeId));
@@ -54,7 +57,10 @@ public sealed class PostgreSqlPayoutRequestStore : IPayoutRequestStore
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(request));
+        }
+
         Execute($"""
             SELECT economy_private.create_payout_request_v3(
                 {request.Id},
@@ -74,7 +80,10 @@ public sealed class PostgreSqlPayoutRequestStore : IPayoutRequestStore
     public PayoutRequest GetForPayee(Guid tenantId, Guid requestId, Guid payeeId)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (requestId == Guid.Empty)
         {
             throw new ArgumentException("Payout request ID is required.", nameof(requestId));
@@ -118,7 +127,10 @@ public sealed class PostgreSqlPayoutRequestStore : IPayoutRequestStore
     public IReadOnlyList<PayoutRequest> ListForPayee(Guid tenantId, Guid payeeId, int take)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (payeeId == Guid.Empty)
         {
             throw new ArgumentException("Payee ID is required.", nameof(payeeId));

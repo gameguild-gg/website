@@ -66,7 +66,9 @@ public class TestingSessionOperationsService(
                                   location.TenantId == tenantId &&
                                   location.DeletedAt == null);
         if (!requestBelongsToTenant || !locationBelongsToTenant)
+        {
             throw new UnauthorizedAccessException("Testing Lab sessions can only reference requests and locations from the current tenant.");
+        }
 
         testingSession.TenantId = tenantId;
         testingSession.Id = Guid.NewGuid();
@@ -88,7 +90,9 @@ public class TestingSessionOperationsService(
             .ConfigureAwait(false);
 
         if (existingSession == null)
+        {
             throw new InvalidOperationException($"Testing session with ID {testingSession.Id} not found.");
+        }
 
         existingSession.SessionName = testingSession.SessionName;
         existingSession.SessionDate = testingSession.SessionDate;
@@ -111,7 +115,10 @@ public class TestingSessionOperationsService(
             .FirstOrDefaultAsync(session => session.Id == id && session.TenantId == tenantId && session.DeletedAt == null)
             .ConfigureAwait(false);
 
-        if (testingSession == null) return false;
+        if (testingSession == null)
+        {
+            return false;
+        }
 
         testingSession.SoftDelete();
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -126,7 +133,10 @@ public class TestingSessionOperationsService(
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(ts => ts.Id == id && ts.TenantId == tenantId);
 
-        if (testingSession == null) return false;
+        if (testingSession == null)
+        {
+            return false;
+        }
 
         testingSession.Restore();
         testingSession.Touch();
@@ -215,7 +225,10 @@ public class TestingSessionOperationsService(
             .FirstOrDefaultAsync(candidate => candidate.Id == testingSessionId && candidate.TenantId == tenantId && candidate.DeletedAt == null)
             .ConfigureAwait(false);
 
-        if (session == null) return new { };
+        if (session == null)
+        {
+            return new { };
+        }
 
         var registrationCount = await context.Set<SessionRegistration>().CountAsync(sr =>
             sr.SessionId == testingSessionId && sr.TenantId == tenantId && sr.DeletedAt == null);
@@ -263,7 +276,9 @@ public class TestingSessionOperationsService(
         var sessionBelongsToTenant = await context.Set<TestingSession>()
             .AnyAsync(session => session.Id == sessionId && session.TenantId == tenantId && session.DeletedAt == null);
         if (!sessionBelongsToTenant)
+        {
             throw new UnauthorizedAccessException("Testing session is outside the current tenant.");
+        }
 
         var registration = await context.Set<SessionRegistration>().FirstOrDefaultAsync(sr =>
             sr.SessionId == sessionId && sr.UserId == userId && sr.TenantId == tenantId && sr.DeletedAt == null);
@@ -281,10 +296,14 @@ public class TestingSessionOperationsService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid == null)
+        {
             throw new AuthenticationRequiredException("Testing Lab session access requires an authenticated actor.");
+        }
 
         if (actor.TenantId == null)
+        {
             throw new AccessDeniedException("Testing Lab session access requires an active tenant membership.");
+        }
 
         return actor.TenantId.Value;
     }

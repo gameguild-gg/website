@@ -82,9 +82,19 @@ public sealed class PostgreSqlPayoutDispatchOutboxTests
         {
             var row = await fixture.Context.Set<PayoutDispatchOutboxRow>()
                 .SingleAsync(value => value.Id == item.Row.Id);
-            if (stale == "owner") row.LeaseOwner = "another-worker";
-            else if (stale == "missing") row.LeaseExpiresAt = null;
-            else row.LeaseExpiresAt = Now.AddTicks(-1);
+            if (stale == "owner")
+            {
+                row.LeaseOwner = "another-worker";
+            }
+            else if (stale == "missing")
+            {
+                row.LeaseExpiresAt = null;
+            }
+            else
+            {
+                row.LeaseExpiresAt = Now.AddTicks(-1);
+            }
+
             await fixture.Context.SaveChangesAsync();
             return Receipt(command);
         });
@@ -117,7 +127,11 @@ public sealed class PostgreSqlPayoutDispatchOutboxTests
         foreach (var invalid in invalids)
         {
             var item = await fixture.AddAsync(PayoutOperationState.Dispatching);
-            if (invalid == "hash") item.Row.PayloadHash = "invalid";
+            if (invalid == "hash")
+            {
+                item.Row.PayloadHash = "invalid";
+            }
+
             if (invalid == "null")
             {
                 item.Row.Payload = "null";

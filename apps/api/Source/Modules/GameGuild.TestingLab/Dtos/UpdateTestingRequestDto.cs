@@ -29,30 +29,69 @@ public class UpdateTestingRequestDto {
   public TestingRequestStatus? Status { get; set; }
 
   public void UpdateTestingRequest(TestingRequest testingRequest) {
-    if (ProjectVersionId.HasValue) testingRequest.ProjectVersionId = ProjectVersionId.Value;
+    if (ProjectVersionId.HasValue)
+        {
+            testingRequest.ProjectVersionId = ProjectVersionId.Value;
+        }
 
-    if (!string.IsNullOrEmpty(Title)) testingRequest.Title = Title;
+        if (!string.IsNullOrEmpty(Title))
+        {
+            testingRequest.Title = Title;
+        }
 
-    if (Description != null) testingRequest.Description = Description;
+        if (Description != null)
+        {
+            testingRequest.Description = Description;
+        }
 
-    if (DownloadUrl != null) testingRequest.DownloadUrl = DownloadUrl;
+        if (DownloadUrl != null)
+        {
+            testingRequest.DownloadUrl = DownloadUrl;
+        }
 
-    if (InstructionsType.HasValue) testingRequest.InstructionsType = InstructionsType.Value;
+        if (InstructionsType.HasValue)
+        {
+            testingRequest.InstructionsType = InstructionsType.Value;
+        }
 
-    if (InstructionsContent != null) testingRequest.InstructionsContent = InstructionsContent;
+        if (InstructionsContent != null)
+        {
+            testingRequest.InstructionsContent = InstructionsContent;
+        }
 
-    if (InstructionsUrl != null) testingRequest.InstructionsUrl = InstructionsUrl;
+        if (InstructionsUrl != null)
+        {
+            testingRequest.InstructionsUrl = InstructionsUrl;
+        }
 
-    if (InstructionsFileId.HasValue) testingRequest.InstructionsFileId = InstructionsFileId.Value;
+        if (InstructionsFileId.HasValue)
+        {
+            testingRequest.InstructionsFileId = InstructionsFileId.Value;
+        }
 
-    if (MaxTesters.HasValue) testingRequest.MaxTesters = MaxTesters.Value;
+        if (MaxTesters.HasValue)
+        {
+            testingRequest.MaxTesters = MaxTesters.Value;
+        }
 
-    if (FeedbackFormContent != null) testingRequest.FeedbackFormContent = FeedbackFormContent;
+        if (FeedbackFormContent != null)
+        {
+            testingRequest.FeedbackFormContent = FeedbackFormContent;
+        }
 
-    if (StartDate.HasValue) testingRequest.StartDate = StartDate.Value;
+        if (StartDate.HasValue)
+        {
+            testingRequest.StartDate = StartDate.Value;
+        }
 
-    if (EndDate.HasValue) testingRequest.EndDate = EndDate.Value;
+        if (EndDate.HasValue)
+        {
+            testingRequest.EndDate = EndDate.Value;
+        }
 
-    if (Status.HasValue) testingRequest.Status = Status.Value;
-  }
+        if (Status.HasValue)
+        {
+            testingRequest.Status = Status.Value;
+        }
+    }
 }

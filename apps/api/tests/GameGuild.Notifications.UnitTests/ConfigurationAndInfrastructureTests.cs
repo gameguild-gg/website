@@ -1,3 +1,5 @@
+using GameGuild.Notifications.Services.Email;
+using Microsoft.AspNetCore.DataProtection;
 using FluentAssertions;
 using GameGuild.Notifications.Configuration;
 using GameGuild.Notifications.Services;
@@ -67,7 +69,8 @@ public class ConfigurationAndInfrastructureTests
             Mock.Of<IApplicationDbContext>(),
             Mock.Of<INotificationPreferenceService>(),
             Mock.Of<INotificationTemplateService>(),
-            NullLogger<NotificationDeliveryService>.Instance);
+            NullLogger<NotificationDeliveryService>.Instance,
+            new NotificationMetadataProtector(new EphemeralDataProtectionProvider()));
 
         service.Should().NotBeNull();
     }

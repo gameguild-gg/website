@@ -33,17 +33,24 @@ public class TestingLabPermissionController : BaseApiController {
     var actor = _actorContextAccessor.ActorContext;
     var currentTenantId = actor.TenantId;
     effectiveTenantId = null;
-    if (!currentTenantId.HasValue) return false;
+    if (!currentTenantId.HasValue)
+        {
+            return false;
+        }
 
-    if (!requestedTenantId.HasValue || currentTenantId.Value == requestedTenantId.Value) {
+        if (!requestedTenantId.HasValue || currentTenantId.Value == requestedTenantId.Value) {
       effectiveTenantId = currentTenantId;
       return true;
     }
 
     // A SystemAdmin remains a member of the protected base tenant. An explicit target
     // tenant scopes the administrative operation without moving or replacing that membership.
-    if (!actor.IsSystemAdmin) return false;
-    effectiveTenantId = requestedTenantId;
+    if (!actor.IsSystemAdmin)
+        {
+            return false;
+        }
+
+        effectiveTenantId = requestedTenantId;
     return true;
   }
 
@@ -65,13 +72,13 @@ public class TestingLabPermissionController : BaseApiController {
 
       var template = await _sender.Send(new CreateTestingLabRoleTemplateEndpointCommand(request.Name, request.Description, permissionTemplates)).ConfigureAwait(false);
 
-      _logger.LogInformation("Admin user {UserId} created TestingLab role template '{RoleName}'", GetCurrentUserId(), request.Name);
+      _logger.LogInformation("Admin user {UserId} created TestingLab role template '{RoleName}'", GetCurrentUserId(), LogRedaction.Sanitize(request.Name));
 
       return Ok(MapToTestingLabRoleTemplate(template));
     }
     catch (InvalidOperationException ex)
     {
-      _logger.LogWarning(ex, "Conflict while creating role template '{RoleName}'", request.Name);
+      _logger.LogWarning(ex, "Conflict while creating role template '{RoleName}'", LogRedaction.Sanitize(request.Name));
       return Conflict("A conflict occurred while creating the role template.");
     }
   }
@@ -86,13 +93,13 @@ public class TestingLabPermissionController : BaseApiController {
 
       if (template == null) { return NotFound($"Role template '{idOrName}' not found"); }
 
-      _logger.LogInformation("Admin user {UserId} updated TestingLab role template '{RoleName}'", GetCurrentUserId(), template.Name);
+      _logger.LogInformation("Admin user {UserId} updated TestingLab role template '{RoleName}'", GetCurrentUserId(), LogRedaction.Sanitize(template.Name));
 
       return Ok(MapToTestingLabRoleTemplate(template));
     }
     catch (InvalidOperationException ex)
     {
-      _logger.LogWarning(ex, "Conflict while updating role template '{RoleName}'", idOrName);
+      _logger.LogWarning(ex, "Conflict while updating role template '{RoleName}'", LogRedaction.Sanitize(idOrName));
       return Conflict("A conflict occurred while updating the role template.");
     }
   }
@@ -106,13 +113,13 @@ public class TestingLabPermissionController : BaseApiController {
 
       if (!deleted) { return NotFound($"Role template '{idOrName}' not found"); }
 
-      _logger.LogInformation("Admin user {UserId} deleted TestingLab role template '{RoleName}'", GetCurrentUserId(), idOrName);
+      _logger.LogInformation("Admin user {UserId} deleted TestingLab role template '{RoleName}'", GetCurrentUserId(), LogRedaction.Sanitize(idOrName));
 
       return NoContent();
     }
     catch (InvalidOperationException ex)
     {
-      _logger.LogWarning(ex, "Conflict while deleting role template '{RoleName}'", idOrName);
+      _logger.LogWarning(ex, "Conflict while deleting role template '{RoleName}'", LogRedaction.Sanitize(idOrName));
       return Conflict("A conflict occurred while deleting the role template.");
     }
   }
@@ -122,18 +129,18 @@ public class TestingLabPermissionController : BaseApiController {
   [HttpDelete("role-templates/by-name/{name}")]
   public async Task<ActionResult> DeleteTestingLabRoleTemplateByName(string name) {
     try {
-      _logger.LogInformation("Attempting to delete TestingLab role template by name '{Name}'", name);
+      _logger.LogInformation("Attempting to delete TestingLab role template by name '{Name}'", LogRedaction.Sanitize(name));
       var deleted = await _sender.Send(new DeleteTestingLabRoleTemplateEndpointCommand(name)).ConfigureAwait(false);
 
       if (!deleted) { return NotFound($"Role template with name '{name}' not found"); }
 
-      _logger.LogInformation("Admin user {UserId} deleted TestingLab role template named '{Name}'", GetCurrentUserId(), name);
+      _logger.LogInformation("Admin user {UserId} deleted TestingLab role template named '{Name}'", GetCurrentUserId(), LogRedaction.Sanitize(name));
 
       return NoContent();
     }
     catch (InvalidOperationException ex)
     {
-      _logger.LogWarning(ex, "Conflict while deleting role template '{Name}'", name);
+      _logger.LogWarning(ex, "Conflict while deleting role template '{Name}'", LogRedaction.Sanitize(name));
       return Conflict("A conflict occurred while deleting the role template.");
     }
   }
@@ -143,8 +150,12 @@ public class TestingLabPermissionController : BaseApiController {
   /// <summary> Get TestingLab permissions for a specific user </summary>
   [HttpGet("users/{userId}")]
   public async Task<ActionResult<UserTestingLabPermissions>> GetUserTestingLabPermissions(Guid userId, [FromQuery] Guid? tenantId = null) {
-    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId)) return Forbid();
-    var userRoles = await _permissionService.GetUserRolesAsync(userId, effectiveTenantId).ConfigureAwait(false);
+    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId))
+        {
+            return Forbid();
+        }
+
+        var userRoles = await _permissionService.GetUserRolesAsync(userId, effectiveTenantId).ConfigureAwait(false);
     var userPermissions = await _permissionService.GetUserPermissionsAsync(userId, effectiveTenantId).ConfigureAwait(false);
 
     var testingLabPermissions = userPermissions.Where(p => IsTestingLabResource(p.ResourceType)).ToList();
@@ -201,16 +212,20 @@ public class TestingLabPermissionController : BaseApiController {
   [HttpPost("users/{userId}/roles")]
   public async Task<ActionResult> AssignTestingLabRole(Guid userId, [FromBody] AssignTestingLabRoleRequest request) {
     try {
-      if (!TryGetEffectiveTenantId(request.TenantId, out var effectiveTenantId)) return Forbid();
-      await _sender.Send(new AssignTestingLabRoleEndpointCommand(userId, effectiveTenantId, request.RoleName, request.ExpiresAt)).ConfigureAwait(false);
+      if (!TryGetEffectiveTenantId(request.TenantId, out var effectiveTenantId))
+            {
+                return Forbid();
+            }
 
-      _logger.LogInformation("Admin user {AdminUserId} assigned TestingLab role '{RoleName}' to user {UserId}", GetCurrentUserId(), request.RoleName, userId);
+            await _sender.Send(new AssignTestingLabRoleEndpointCommand(userId, effectiveTenantId, request.RoleName, request.ExpiresAt)).ConfigureAwait(false);
+
+      _logger.LogInformation("Admin user {AdminUserId} assigned TestingLab role '{RoleName}' to user {UserId}", GetCurrentUserId(), LogRedaction.Sanitize(request.RoleName), LogRedaction.Sanitize(userId.ToString()));
 
       return Ok();
     }
     catch (InvalidOperationException ex)
     {
-      _logger.LogWarning(ex, "Failed to assign role '{RoleName}' to user {UserId}", request.RoleName, userId);
+      _logger.LogWarning(ex, "Failed to assign role '{RoleName}' to user {UserId}", LogRedaction.Sanitize(request.RoleName), LogRedaction.Sanitize(userId.ToString()));
       return NotFound("The specified user or role was not found.");
     }
   }
@@ -218,10 +233,14 @@ public class TestingLabPermissionController : BaseApiController {
   /// <summary> Revoke a TestingLab role from a user </summary>
   [HttpDelete("users/{userId}/roles/{roleName}")]
   public async Task<ActionResult> RevokeTestingLabRole(Guid userId, string roleName, [FromQuery] Guid? tenantId = null) {
-    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId)) return Forbid();
-    await _sender.Send(new RevokeTestingLabRoleEndpointCommand(userId, effectiveTenantId, roleName)).ConfigureAwait(false);
+    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId))
+        {
+            return Forbid();
+        }
 
-    _logger.LogInformation("Admin user {AdminUserId} revoked TestingLab role '{RoleName}' from user {UserId}", GetCurrentUserId(), roleName, userId);
+        await _sender.Send(new RevokeTestingLabRoleEndpointCommand(userId, effectiveTenantId, roleName)).ConfigureAwait(false);
+
+    _logger.LogInformation("Admin user {AdminUserId} revoked TestingLab role '{RoleName}' from user {UserId}", GetCurrentUserId(), LogRedaction.Sanitize(roleName), LogRedaction.Sanitize(userId.ToString()));
 
     return NoContent();
   }
@@ -233,10 +252,14 @@ public class TestingLabPermissionController : BaseApiController {
   public async Task<ActionResult> GrantResourcePermission(Guid userId, string resourceType, Guid resourceId, [FromBody] GrantResourcePermissionRequest request) {
     if (!IsTestingLabResource(resourceType)) { return BadRequest($"'{resourceType}' is not a valid TestingLab resource type"); }
 
-    if (!TryGetEffectiveTenantId(request.TenantId, out var effectiveTenantId)) return Forbid();
-    await _sender.Send(new GrantTestingLabResourcePermissionEndpointCommand(userId, effectiveTenantId, request.Action, resourceType, resourceId, request.ExpiresAt, GetCurrentUserId())).ConfigureAwait(false);
+    if (!TryGetEffectiveTenantId(request.TenantId, out var effectiveTenantId))
+        {
+            return Forbid();
+        }
 
-    _logger.LogInformation("Admin user {AdminUserId} granted permission '{Action}' on {ResourceType} {ResourceId} to user {UserId}", GetCurrentUserId(), request.Action, resourceType, resourceId, userId);
+        await _sender.Send(new GrantTestingLabResourcePermissionEndpointCommand(userId, effectiveTenantId, request.Action, resourceType, resourceId, request.ExpiresAt, GetCurrentUserId())).ConfigureAwait(false);
+
+    _logger.LogInformation("Admin user {AdminUserId} granted permission '{Action}' on {ResourceType} {ResourceId} to user {UserId}", GetCurrentUserId(), LogRedaction.Sanitize(request.Action), LogRedaction.Sanitize(resourceType), LogRedaction.Sanitize(resourceId.ToString()), LogRedaction.Sanitize(userId.ToString()));
 
     return Ok();
   }
@@ -246,10 +269,14 @@ public class TestingLabPermissionController : BaseApiController {
   public async Task<ActionResult> RevokeResourcePermission(Guid userId, string resourceType, Guid resourceId, [FromQuery] string action, [FromQuery] Guid? tenantId = null) {
     if (!IsTestingLabResource(resourceType)) { return BadRequest($"'{resourceType}' is not a valid TestingLab resource type"); }
 
-    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId)) return Forbid();
-    await _sender.Send(new RevokeTestingLabResourcePermissionEndpointCommand(userId, effectiveTenantId, action, resourceType, resourceId, GetCurrentUserId())).ConfigureAwait(false);
+    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId))
+        {
+            return Forbid();
+        }
 
-    _logger.LogInformation("Admin user {AdminUserId} revoked permission '{Action}' on {ResourceType} {ResourceId} from user {UserId}", GetCurrentUserId(), action, resourceType, resourceId, userId);
+        await _sender.Send(new RevokeTestingLabResourcePermissionEndpointCommand(userId, effectiveTenantId, action, resourceType, resourceId, GetCurrentUserId())).ConfigureAwait(false);
+
+    _logger.LogInformation("Admin user {AdminUserId} revoked permission '{Action}' on {ResourceType} {ResourceId} from user {UserId}", GetCurrentUserId(), LogRedaction.Sanitize(action), LogRedaction.Sanitize(resourceType), LogRedaction.Sanitize(resourceId.ToString()), LogRedaction.Sanitize(userId.ToString()));
 
     return NoContent();
   }
@@ -261,8 +288,12 @@ public class TestingLabPermissionController : BaseApiController {
   public async Task<ActionResult<bool>> CheckTestingLabPermission(Guid userId, string resourceType, [FromQuery] string action, [FromQuery] Guid? resourceId = null, [FromQuery] Guid? tenantId = null) {
     if (!IsTestingLabResource(resourceType)) { return BadRequest($"'{resourceType}' is not a valid TestingLab resource type"); }
 
-    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId)) return Forbid();
-    var hasPermission = await _permissionService.HasPermissionAsync(userId, effectiveTenantId, action, resourceType, resourceId).ConfigureAwait(false);
+    if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId))
+        {
+            return Forbid();
+        }
+
+        var hasPermission = await _permissionService.HasPermissionAsync(userId, effectiveTenantId, action, resourceType, resourceId).ConfigureAwait(false);
 
     return Ok(hasPermission);
   }
@@ -283,45 +314,151 @@ public class TestingLabPermissionController : BaseApiController {
     var templates = new List<PermissionTemplate>();
 
     // Sessions
-    if (permissions.CanCreateSessions) templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Session });
-    if (permissions.CanEditSessions) templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Session });
-    if (permissions.CanDeleteSessions) templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Session });
-    if (permissions.CanViewSessions) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Session });
+    if (permissions.CanCreateSessions)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Session });
+        }
 
-    // Locations
-    if (permissions.CanCreateLocations) templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Location });
-    if (permissions.CanEditLocations) templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Location });
-    if (permissions.CanDeleteLocations) templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Location });
-    if (permissions.CanViewLocations) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Location });
+        if (permissions.CanEditSessions)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Session });
+        }
 
-    // Feedback
-    if (permissions.CanCreateFeedback) templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Feedback });
-    if (permissions.CanEditFeedback) templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Feedback });
-    if (permissions.CanDeleteFeedback) templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Feedback });
-    if (permissions.CanViewFeedback) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Feedback });
-    if (permissions.CanModerateFeedback) templates.Add(new PermissionTemplate { Action = TestingLabActions.Moderate, ResourceType = TestingLabResourceTypes.Feedback });
+        if (permissions.CanDeleteSessions)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Session });
+        }
 
-    // Requests
-    if (permissions.CanCreateRequests) templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Request });
-    if (permissions.CanEditRequests) templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Request });
-    if (permissions.CanDeleteRequests) templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Request });
-    if (permissions.CanViewRequests) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Request });
-    if (permissions.CanApproveRequests) templates.Add(new PermissionTemplate { Action = TestingLabActions.Approve, ResourceType = TestingLabResourceTypes.Request });
+        if (permissions.CanViewSessions)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Session });
+        }
 
-    // Participants
-    if (permissions.CanManageParticipants) templates.Add(new PermissionTemplate { Action = TestingLabActions.Manage, ResourceType = TestingLabResourceTypes.Participant });
-    if (permissions.CanViewParticipants) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Participant });
+        // Locations
+        if (permissions.CanCreateLocations)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Location });
+        }
 
-    if (permissions.CanCreateEvents) templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Event });
-    if (permissions.CanEditEvents) templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Event });
-    if (permissions.CanDeleteEvents) templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Event });
-    if (permissions.CanViewEvents) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Event });
-    if (permissions.CanViewApplications) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Application });
-    if (permissions.CanApproveApplications) templates.Add(new PermissionTemplate { Action = TestingLabActions.Approve, ResourceType = TestingLabResourceTypes.Application });
-    if (permissions.CanManageApplications) templates.Add(new PermissionTemplate { Action = TestingLabActions.Manage, ResourceType = TestingLabResourceTypes.Application });
-    if (permissions.CanViewAnalytics) templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Analytics });
+        if (permissions.CanEditLocations)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Location });
+        }
 
-    return templates;
+        if (permissions.CanDeleteLocations)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Location });
+        }
+
+        if (permissions.CanViewLocations)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Location });
+        }
+
+        // Feedback
+        if (permissions.CanCreateFeedback)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Feedback });
+        }
+
+        if (permissions.CanEditFeedback)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Feedback });
+        }
+
+        if (permissions.CanDeleteFeedback)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Feedback });
+        }
+
+        if (permissions.CanViewFeedback)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Feedback });
+        }
+
+        if (permissions.CanModerateFeedback)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Moderate, ResourceType = TestingLabResourceTypes.Feedback });
+        }
+
+        // Requests
+        if (permissions.CanCreateRequests)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Request });
+        }
+
+        if (permissions.CanEditRequests)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Request });
+        }
+
+        if (permissions.CanDeleteRequests)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Request });
+        }
+
+        if (permissions.CanViewRequests)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Request });
+        }
+
+        if (permissions.CanApproveRequests)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Approve, ResourceType = TestingLabResourceTypes.Request });
+        }
+
+        // Participants
+        if (permissions.CanManageParticipants)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Manage, ResourceType = TestingLabResourceTypes.Participant });
+        }
+
+        if (permissions.CanViewParticipants)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Participant });
+        }
+
+        if (permissions.CanCreateEvents)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Create, ResourceType = TestingLabResourceTypes.Event });
+        }
+
+        if (permissions.CanEditEvents)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Edit, ResourceType = TestingLabResourceTypes.Event });
+        }
+
+        if (permissions.CanDeleteEvents)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Delete, ResourceType = TestingLabResourceTypes.Event });
+        }
+
+        if (permissions.CanViewEvents)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Event });
+        }
+
+        if (permissions.CanViewApplications)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Application });
+        }
+
+        if (permissions.CanApproveApplications)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Approve, ResourceType = TestingLabResourceTypes.Application });
+        }
+
+        if (permissions.CanManageApplications)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Manage, ResourceType = TestingLabResourceTypes.Application });
+        }
+
+        if (permissions.CanViewAnalytics)
+        {
+            templates.Add(new PermissionTemplate { Action = TestingLabActions.Read, ResourceType = TestingLabResourceTypes.Analytics });
+        }
+
+        return templates;
   }
 
   private static TestingLabRoleTemplate MapToTestingLabRoleTemplate(RoleTemplate template) {

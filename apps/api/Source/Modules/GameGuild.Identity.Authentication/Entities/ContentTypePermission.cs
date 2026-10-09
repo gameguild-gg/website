@@ -53,7 +53,10 @@ public class ContentTypePermission : WithPermissions
     /// <param name="newContentTypeName">New content type name</param>
     public void UpdateContentTypeName(string newContentTypeName)
     {
-        if (string.IsNullOrWhiteSpace(newContentTypeName)) throw new ArgumentException("Content type name cannot be null or empty", nameof(newContentTypeName));
+        if (string.IsNullOrWhiteSpace(newContentTypeName))
+        {
+            throw new ArgumentException("Content type name cannot be null or empty", nameof(newContentTypeName));
+        }
 
         ContentTypeName = newContentTypeName;
         UpdatedAt = SystemClock.UtcNow;

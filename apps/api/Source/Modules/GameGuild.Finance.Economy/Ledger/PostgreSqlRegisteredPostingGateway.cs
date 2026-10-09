@@ -118,8 +118,10 @@ public sealed class PostgreSqlRegisteredPostingGateway : IRegisteredPostingGatew
                 .SingleOrDefault();
 
             if (accountId == Guid.Empty)
+            {
                 throw new RegisteredPostingRejectedException(
                     "The posting references an economy account that is not provisioned.");
+            }
 
             accountIds.Add(line.Sequence, accountId);
         }

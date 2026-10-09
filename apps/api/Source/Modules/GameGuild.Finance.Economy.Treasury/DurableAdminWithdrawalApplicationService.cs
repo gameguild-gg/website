@@ -110,17 +110,25 @@ public sealed class DurableAdminWithdrawalApplicationService(
             idempotency_key = idempotencyKey.Value
         }));
         var replay = runs.FindReplay(command.TenantId, idempotencyKey.Value, requestHash);
-        if (replay is not null) return replay;
+        if (replay is not null)
+        {
+            return replay;
+        }
 
         var (policy, executionPolicy) = await LoadPolicyAsync(
             command.TenantId, jurisdiction.JurisdictionCode, now, cancellationToken).ConfigureAwait(false);
         if (command.AmountUnits < executionPolicy.MinimumAmountUnits ||
             command.AmountUnits > executionPolicy.MaximumAmountUnits)
+        {
             throw new AdminWithdrawalEligibilityException(
-                "Administrative withdrawal amount is outside the signed policy limits.");
+            "Administrative withdrawal amount is outside the signed policy limits.");
+        }
+
         if (!executionPolicy.DestinationHashes.Contains(destinationHash, StringComparer.Ordinal))
+        {
             throw new AdminWithdrawalEligibilityException(
-                "Administrative withdrawal destination is not allowed by the signed policy.");
+            "Administrative withdrawal destination is not allowed by the signed policy.");
+        }
 
         var wallet = await wallets.GetWalletAsync(
             command.TenantId, executionPolicy.PlatformFeeWalletId, cancellationToken).ConfigureAwait(false);
@@ -165,8 +173,15 @@ public sealed class DurableAdminWithdrawalApplicationService(
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.TenantId == Guid.Empty || command.ActorId == Guid.Empty || command.RunId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, actor, and withdrawal run are required.", nameof(command));
-        if (command.ExpectedVersion <= 0) throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
+        if (command.ExpectedVersion <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         return workflow.ApproveAsync(
             new DurableAdminWithdrawalApprovalRequest(
                 command.TenantId,
@@ -184,8 +199,11 @@ public sealed class DurableAdminWithdrawalApplicationService(
         ValidateDispatch(command);
         var run = runs.Get(command.TenantId, command.RunId);
         if (run.State != AdminWithdrawalRunState.Approved || run.Version != command.ExpectedVersion)
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Administrative withdrawal is not approved at the requested version.");
+            "Administrative withdrawal is not approved at the requested version.");
+        }
+
         var authorization = ReadAuthorizationSnapshot(run);
         var now = timeProvider.GetUtcNow();
         var transactionBinding = TreasuryProtectedOperationBinding.Dispatch(
@@ -203,28 +221,38 @@ public sealed class DurableAdminWithdrawalApplicationService(
             authorization.PolicyVersion != run.PolicyVersion.Value ||
             !string.Equals(executionPolicy.ProviderHash, authorization.ProviderHash, StringComparison.Ordinal) ||
             !executionPolicy.DestinationHashes.Contains(run.DestinationHash, StringComparer.Ordinal))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "The signed Treasury policy changed before dispatch.");
+            "The signed Treasury policy changed before dispatch.");
+        }
 
         var reserve = await reserves.CurrentHeadAsync(now, cancellationToken).ConfigureAwait(false);
         if (reserve.Version != run.ReserveVersion ||
             reserve.AuthorizationEpoch != run.ReserveAuthorizationEpoch ||
             authorization.ReserveVersion != run.ReserveVersion.Value)
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "The authoritative reserve snapshot changed before dispatch.");
+            "The authoritative reserve snapshot changed before dispatch.");
+        }
+
         EnsureReserveAssetCanCover(reserve, run.SourceAssetKey, run.Amount.Units);
 
         var fragments = reservationReader.Read(
             run.Id, PersistedFragmentReservationStatus.Reserved);
         if (fragments.Count == 0 || fragments.Sum(fragment => fragment.Amount.Units) != run.Amount.Units)
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Administrative withdrawal FIFO reservations are missing or incomplete.");
+            "Administrative withdrawal FIFO reservations are missing or incomplete.");
+        }
+
         var sourceRoots = fragments.Select(fragment => fragment.RootSourceStampId)
             .Distinct().OrderBy(root => root.Value).ToArray();
         var rootHashes = sourceRoots.Select(root => Hash(root.Value.ToString("N"))).ToArray();
         if (!rootHashes.SequenceEqual(authorization.SourceRootHashes, StringComparer.Ordinal))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Administrative withdrawal source provenance changed before dispatch.");
+            "Administrative withdrawal source provenance changed before dispatch.");
+        }
 
         return await workflow.BeginDispatchAsync(
             new DurableAdminWithdrawalDispatchRequest(
@@ -248,11 +276,17 @@ public sealed class DurableAdminWithdrawalApplicationService(
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.TenantId == Guid.Empty || command.ActorId == Guid.Empty || command.RunId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, actor, and withdrawal run are required.", nameof(command));
+        }
+
         var run = runs.Get(command.TenantId, command.RunId);
         if (run.State is not (AdminWithdrawalRunState.Dispatching or AdminWithdrawalRunState.Ambiguous))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Only a dispatched or ambiguous withdrawal can be reconciled.");
+            "Only a dispatched or ambiguous withdrawal can be reconciled.");
+        }
+
         var providerEvent = await provider.ReconcileAsync(
             run.TenantId,
             run.Id,
@@ -261,7 +295,10 @@ public sealed class DurableAdminWithdrawalApplicationService(
             cancellationToken).ConfigureAwait(false);
         if (providerEvent.Outcome is not (
                 AdminWithdrawalProviderOutcome.Succeeded or AdminWithdrawalProviderOutcome.Failed))
+        {
             return runs.Get(run.TenantId, run.Id);
+        }
+
         return await workflow.ApplyProviderEventAsync(
             new DurableAdminWithdrawalProviderEventRequest(providerEvent),
             cancellationToken).ConfigureAwait(false);
@@ -295,21 +332,30 @@ public sealed class DurableAdminWithdrawalApplicationService(
                 "No signed Treasury execution policy is active for the jurisdiction.");
         if (policy.State != EconomyCapabilityPolicyState.Active ||
             policy.EffectiveAt > now || policy.ExpiresAt <= now || !policy.ProviderReady)
+        {
             throw new AdminWithdrawalExecutionDisabledException(
-                "Treasury execution policy or provider readiness is unavailable.");
+            "Treasury execution policy or provider readiness is unavailable.");
+        }
+
         if (!string.Equals(Hash(policy.CanonicalPayload), policy.PayloadHash, StringComparison.Ordinal) ||
             !await policySignatureVerifier.VerifyAsync(
                 policy.CanonicalPayload, policy.KeyId, policy.Signature, cancellationToken).ConfigureAwait(false))
+        {
             throw new AdminWithdrawalExecutionDisabledException(
-                "Treasury execution policy signature is invalid.");
+            "Treasury execution policy signature is invalid.");
+        }
+
         return (policy, ParsePolicy(policy.CanonicalPayload));
     }
 
     private AdminWithdrawalAuthorizationSnapshot ReadAuthorizationSnapshot(AdminWithdrawalRun run)
     {
         if (!audit.Verify(run.TenantId, run.Id))
+        {
             throw new AdminWithdrawalEvidenceException(
-                "The administrative-withdrawal audit trail is invalid.");
+            "The administrative-withdrawal audit trail is invalid.");
+        }
+
         var reserved = audit.Events(run.TenantId, run.Id)
             .SingleOrDefault(item => item.Kind == "reserved")
             ?? throw new AdminWithdrawalEvidenceException(
@@ -329,8 +375,11 @@ public sealed class DurableAdminWithdrawalApplicationService(
                 string.IsNullOrWhiteSpace(snapshot.ReauthenticationEvidenceHash) ||
                 string.IsNullOrWhiteSpace(snapshot.ReceiptHash) ||
                 snapshot.SourceRootHashes.Count == 0)
+            {
                 throw new AdminWithdrawalEvidenceException(
-                    "The administrative-withdrawal authorization snapshot is not bound to the run.");
+                "The administrative-withdrawal authorization snapshot is not bound to the run.");
+            }
+
             return snapshot;
         }
         catch (JsonException exception)
@@ -357,7 +406,10 @@ public sealed class DurableAdminWithdrawalApplicationService(
             if (wallet.Value == Guid.Empty || string.IsNullOrWhiteSpace(source) ||
                 string.IsNullOrWhiteSpace(providerHash) || minimum <= 0 || maximum < minimum ||
                 destinations.Length == 0)
+            {
                 throw new JsonException("Treasury policy values are incomplete.");
+            }
+
             return new AdminWithdrawalExecutionPolicy(
                 wallet,
                 source.Trim(),
@@ -393,18 +445,30 @@ public sealed class DurableAdminWithdrawalApplicationService(
                 $"Administrative withdrawal amount exceeds reserve arithmetic limits: {exception.Message}");
         }
         if (asset is null || asset.EligibleUsdNanos < requiredUsdNanos)
+        {
             throw new ReserveShortfallException(
-                "The signed reserve asset allocation cannot cover this administrative withdrawal.");
+            "The signed reserve asset allocation cannot cover this administrative withdrawal.");
+        }
     }
 
     private static void ValidateProposal(ProposeAdminWithdrawalCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.TenantId == Guid.Empty || command.ActorId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant and actor are required.", nameof(command));
+        }
+
         if (command.PeriodStart.Day != 1)
+        {
             throw new ArgumentException("Withdrawal period must start on the first day of a month.", nameof(command));
-        if (command.AmountUnits <= 0) throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
+        if (command.AmountUnits <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.DestinationHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.IdempotencyKey);
         ArgumentNullException.ThrowIfNull(command.Reauthentication);
@@ -414,8 +478,15 @@ public sealed class DurableAdminWithdrawalApplicationService(
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.TenantId == Guid.Empty || command.ActorId == Guid.Empty || command.RunId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, actor, and run are required.", nameof(command));
-        if (command.ExpectedVersion <= 0) throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
+        if (command.ExpectedVersion <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         ArgumentNullException.ThrowIfNull(command.Reauthentication);
     }
 
@@ -424,7 +495,10 @@ public sealed class DurableAdminWithdrawalApplicationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
         var normalized = value.Trim().ToLowerInvariant();
         if (normalized.Length > 128)
+        {
             throw new ArgumentOutOfRangeException(parameterName, "Hashes cannot exceed 128 characters.");
+        }
+
         return normalized;
     }
 

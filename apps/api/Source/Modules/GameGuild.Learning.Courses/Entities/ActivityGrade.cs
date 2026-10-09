@@ -176,9 +176,15 @@ public class ActivityGrade : EntityBase
     {
         var maximum = maxPoints ?? MaxPoints ?? ScoreValue.FromPoints("100");
         if (maximum.CompareTo(ScoreValue.Zero) <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxPoints), "Maximum points must be positive.");
+        }
+
         if (points.CompareTo(maximum) > 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(points), "Points cannot exceed maximum points.");
+        }
+
         Points = points;
         MaxPoints = maximum;
         UpdatedAt = SystemClock.UtcNow;
@@ -244,12 +250,17 @@ public class ActivityGrade : EntityBase
     public string? CalculateLetterGrade()
     {
         if (!PercentageScore.HasValue)
+        {
             return null;
+        }
 
         var value = PercentageScore.Value;
         foreach (var (threshold, letter) in LetterGradeThresholds)
         {
-            if (value.CompareTo(threshold) >= 0) return letter;
+            if (value.CompareTo(threshold) >= 0)
+            {
+                return letter;
+            }
         }
 
         return "F";
@@ -261,10 +272,14 @@ public class ActivityGrade : EntityBase
     public bool IsValid()
     {
         if (Points.HasValue && MaxPoints.HasValue && Points.Value.CompareTo(MaxPoints.Value) > 0)
+        {
             return false;
+        }
 
         if (MaxPoints.HasValue && MaxPoints.Value.CompareTo(ScoreValue.Zero) <= 0)
+        {
             return false;
+        }
 
         return true;
     }
