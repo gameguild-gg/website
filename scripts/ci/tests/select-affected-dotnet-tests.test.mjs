@@ -96,3 +96,20 @@ test("selects the matching integration test project for a changed test", () => {
     ["GameGuild.Identity.Authentication.IntegrationTests"],
   );
 });
+
+test("never selects benchmark harnesses for the affected API test run", () => {
+  assert.deepEqual(
+    selectAffectedDotnetTestNames(
+      [
+        "apps/api/tests/GameGuild.Identity.Authorization.PerformanceTests/PermissionBulkCheckBenchmarks.cs",
+        "apps/api/tests/GameGuild.Commerce.Billing.PerformanceTests/Program.cs",
+      ],
+      [
+        ...availableProjects,
+        "GameGuild.Identity.Authorization.PerformanceTests",
+        "GameGuild.Commerce.Billing.PerformanceTests",
+      ],
+    ),
+    [],
+  );
+});

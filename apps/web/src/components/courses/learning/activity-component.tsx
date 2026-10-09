@@ -16,6 +16,7 @@ import {
 import type { AssessmentSubmissionRuntimeViewV1 } from '@game-guild/grading';
 import {
   createQuizAnswerEnvelope,
+  parseQuizAnswerEnvelope,
   QUIZ_ASSESSMENT_TYPE_ADAPTER,
   type QuizLearnerDeliveryItemV1,
 } from '@game-guild/grading-adapter-quiz';
@@ -27,11 +28,12 @@ import {
 } from '@game-guild/quiz-surface/player';
 import { submitActivity } from '@/lib/courses/server-actions';
 import {
+  getRuntimeSubmission,
   startContentRuntimeSubmission,
   submitRuntimeSubmission,
 } from '@/lib/learning/grading-runtime-actions';
 import { Clock, Code, FileText, MessageSquare, Play, Save, Send, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ContentItem {
   id: string;
@@ -50,6 +52,7 @@ interface ContentItem {
 interface ActivityComponentProps {
   item: ContentItem;
   courseId?: string;
+  existingSubmissionId?: string | null;
   onComplete: (score?: number) => void;
 }
 
@@ -68,9 +71,14 @@ type QuizActivityContent =
       serverGraded: false;
     };
 
-export function ActivityComponent({ item, courseId, onComplete }: ActivityComponentProps) {
+export function ActivityComponent({
+  item,
+  courseId,
+  existingSubmissionId,
+  onComplete,
+}: ActivityComponentProps) {
   const [hasStarted, setHasStarted] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
+  const [isStarting, setIsStarting] = useState(Boolean(existingSubmissionId));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [runtimeSubmission, setRuntimeSubmission] = useState<
@@ -85,8 +93,42 @@ export function ActivityComponent({ item, courseId, onComplete }: ActivityCompon
   const startIdempotencyKey = useRef(createIdempotencyKey());
   const submitCommand = useRef<{ payload: string; key: string } | null>(null);
 
+  useEffect(() => {
+    if (!existingSubmissionId || item.type !== 'quiz') return;
+
+    let cancelled = false;
+
+    void getRuntimeSubmission(existingSubmissionId).then((result) => {
+      if (cancelled) return;
+      setIsStarting(false);
+      if (!result.success) {
+        setRuntimeError(result.error);
+        return;
+      }
+
+      const nextSubmission =
+        result.data as AssessmentSubmissionRuntimeViewV1<QuizLearnerDeliveryItemV1>;
+      const quiz = readQuizActivityContent(item.content, nextSubmission);
+      setRuntimeSubmission(nextSubmission);
+      setQuizAnswers(readSubmittedQuizAnswers(nextSubmission));
+      setQuizSubmissionResults(
+        quiz.serverGraded
+          ? buildQuizSubmissionResults(nextSubmission, quiz)
+          : {},
+      );
+      setHasStarted(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [existingSubmissionId, item.content, item.type]);
+
   const handleStart = async () => {
-    const authoredQuiz = item.type === 'quiz' ? getAuthoredQuizContent() : null;
+    const authoredQuiz =
+      item.type === 'quiz'
+        ? readQuizActivityContent(item.content, null)
+        : null;
     if (!authoredQuiz?.serverGraded) {
       setHasStarted(true);
       return;
@@ -115,7 +157,10 @@ export function ActivityComponent({ item, courseId, onComplete }: ActivityCompon
     setIsSubmitting(true);
 
     try {
-      const quiz = item.type === 'quiz' ? getQuizContent() : null;
+      const quiz =
+        item.type === 'quiz'
+          ? readQuizActivityContent(item.content, runtimeSubmission)
+          : null;
       const quizResponse = quiz
         ? createQuizAnswerEnvelope(Object.fromEntries(
             quiz.questions.map((question) => {
@@ -223,63 +268,8 @@ export function ActivityComponent({ item, courseId, onComplete }: ActivityCompon
       : 0;
   };
 
-  const getAuthoredQuizContent = (): QuizActivityContent => {
-    const runtime = item.content;
-    if (!isQuizRuntimeContentDocument(runtime)) {
-      return { questions: [], serverGraded: false };
-    }
-
-    const content = runtime.document;
-    const rawQuestions = content.order.flatMap((entry) => {
-      if (
-        !Array.isArray(entry) ||
-        typeof entry[0] !== 'string' ||
-        entry[1] !== 'quiz'
-      ) {
-        return [];
-      }
-
-      const data = content.blocks[entry[0]];
-      if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
-
-      return [{ id: entry[0], data }];
-    });
-
-    return runtime.mode === 'server-graded'
-      ? {
-          questions: rawQuestions as Array<
-            QuizActivityQuestion<QuizLearnerEntry>
-          >,
-          serverGraded: true,
-        }
-      : {
-          questions: rawQuestions as Array<
-            QuizActivityQuestion<QuizPracticeEntry>
-          >,
-          serverGraded: false,
-        };
-  };
-
   const getQuizContent = (): QuizActivityContent => {
-    if (!runtimeSubmission) return getAuthoredQuizContent();
-
-    const { delivery } = runtimeSubmission.execution;
-    const questions = delivery.itemOrder.map((itemId) => {
-      const itemDelivery = delivery.items[itemId];
-      if (
-        !itemDelivery ||
-        itemDelivery.adapterKey !== QUIZ_ASSESSMENT_TYPE_ADAPTER.key ||
-        itemDelivery.adapterVersion !== QUIZ_ASSESSMENT_TYPE_ADAPTER.version
-      ) {
-        throw new Error(`Unsupported quiz delivery for item ${itemId}.`);
-      }
-      const payload = itemDelivery.learnerPayload;
-      if (payload.itemId !== itemId) {
-        throw new Error(`Quiz delivery item ${itemId} has a mismatched payload.`);
-      }
-      return { id: itemId, data: payload.entry };
-    });
-    return { questions, serverGraded: true };
+    return readQuizActivityContent(item.content, runtimeSubmission);
   };
 
   const getActivityIcon = () => {
@@ -346,6 +336,7 @@ export function ActivityComponent({ item, courseId, onComplete }: ActivityCompon
               <QuizPlayer
                 entry={learnerEntry!}
                 answer={answer}
+                disabled={runtimeSubmission?.status !== 'inProgress'}
                 onAnswerChange={setAnswer}
                 onSubmit={(nextAnswer) => {
                   setAnswer(nextAnswer);
@@ -574,6 +565,78 @@ export function ActivityComponent({ item, courseId, onComplete }: ActivityCompon
       )}
     </div>
   );
+}
+
+function readQuizActivityContent(
+  content: unknown,
+  runtimeSubmission: AssessmentSubmissionRuntimeViewV1<QuizLearnerDeliveryItemV1> | null,
+): QuizActivityContent {
+  if (runtimeSubmission) {
+    const { delivery } = runtimeSubmission.execution;
+    const questions = delivery.itemOrder.map((itemId) => {
+      const itemDelivery = delivery.items[itemId];
+      if (
+        !itemDelivery ||
+        itemDelivery.adapterKey !== QUIZ_ASSESSMENT_TYPE_ADAPTER.key ||
+        itemDelivery.adapterVersion !== QUIZ_ASSESSMENT_TYPE_ADAPTER.version
+      ) {
+        throw new Error(`Unsupported quiz delivery for item ${itemId}.`);
+      }
+      const payload = itemDelivery.learnerPayload;
+      if (payload.itemId !== itemId) {
+        throw new Error(`Quiz delivery item ${itemId} has a mismatched payload.`);
+      }
+      return { id: itemId, data: payload.entry };
+    });
+    return { questions, serverGraded: true };
+  }
+
+  if (!isQuizRuntimeContentDocument(content)) {
+    return { questions: [], serverGraded: false };
+  }
+
+  const rawQuestions = content.document.order.flatMap((entry) => {
+    if (
+      !Array.isArray(entry) ||
+      typeof entry[0] !== 'string' ||
+      entry[1] !== 'quiz'
+    ) {
+      return [];
+    }
+
+    const data = content.document.blocks[entry[0]];
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
+    return [{ id: entry[0], data }];
+  });
+
+  return content.mode === 'server-graded'
+    ? {
+        questions: rawQuestions as Array<
+          QuizActivityQuestion<QuizLearnerEntry>
+        >,
+        serverGraded: true,
+      }
+    : {
+        questions: rawQuestions as Array<
+          QuizActivityQuestion<QuizPracticeEntry>
+        >,
+        serverGraded: false,
+      };
+}
+
+function readSubmittedQuizAnswers(
+  submission: AssessmentSubmissionRuntimeViewV1<QuizLearnerDeliveryItemV1>,
+): Record<string, QuizAnswer> {
+  if (!submission.execution.submittedResponse) return {};
+
+  try {
+    return {
+      ...parseQuizAnswerEnvelope(submission.execution.submittedResponse).payload
+        .answers,
+    };
+  } catch {
+    return {};
+  }
 }
 
 function createIdempotencyKey(): string {

@@ -115,4 +115,15 @@ describe('WorkspaceHub', () => {
     expect(card).toContainElement(newPostLinks[0]);
     expect(emptyState).toContainElement(newPostLinks[1]);
   });
+
+  it('keeps the workspace available when blog posts cannot be loaded', async () => {
+    mocks.listMyBlogPosts.mockRejectedValue(new Error('Network error'));
+
+    render(await WorkspaceHub());
+
+    expect(screen.getByRole('heading', { name: 'Your teams and projects' })).toBeInTheDocument();
+    expect(screen.getByText('Blog posts').closest('[data-slot="card"]')).toHaveTextContent('Unavailable');
+    expect(screen.getByText('Blog posts are temporarily unavailable.')).toBeInTheDocument();
+    expect(screen.queryByText('No posts yet.')).not.toBeInTheDocument();
+  });
 });
