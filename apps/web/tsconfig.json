@@ -49,7 +49,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next-e2e-coding-cycle/types/**/*.ts",
-    ".next-e2e-coding-cycle/dev/types/**/*.ts"
+    ".next-e2e-coding-cycle/dev/types/**/*.ts",
+    ".next-fast/types/**/*.ts",
+    ".next-fast/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

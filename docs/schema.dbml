@@ -4002,6 +4002,95 @@ Table "ResourceUserPermission" {
   }
 }
 
+Table "revenue_anomaly_alerts" {
+  "Id" uuid [not null]
+  "Kind" text [not null]
+  "DetectedForDateUtc" timestamp [not null]
+  "DetectedAtUtc" timestamp [not null]
+  "ObservedNetRevenue" numeric(18,2) [not null]
+  "ExpectedNetRevenue" numeric(18,2) [not null]
+  "ZScore" numeric(9,4) [not null]
+  "BaselineDays" integer [not null]
+  "Status" text [not null]
+  "AcknowledgedAtUtc" timestamp
+  "AcknowledgedByUserId" uuid
+  "AcknowledgementNotes" "character varying(1000)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_revenue_anomaly_alerts"]
+    DetectedAtUtc [name: "IX_revenue_anomaly_alerts_DetectedAtUtc"]
+    DetectedForDateUtc [name: "IX_revenue_anomaly_alerts_DetectedForDateUtc"]
+    Kind [name: "IX_revenue_anomaly_alerts_Kind"]
+    Status [name: "IX_revenue_anomaly_alerts_Status"]
+  }
+}
+
+Table "revenue_events" {
+  "Id" uuid [not null]
+  "EventType" text [not null]
+  "Amount" numeric(18,2) [not null]
+  "Currency" "character varying(3)" [not null]
+  "Source" text [not null]
+  "ReferenceId" "character varying(200)" [not null]
+  "Timestamp" timestamp [not null]
+  "Metadata" "character varying(2000)"
+  "LedgerEntryId" uuid
+  "ProcessedAt" timestamp
+  "Status" text [not null]
+  "ProcessingNotes" "character varying(1000)"
+  "UserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_revenue_events"]
+    EventType [name: "IX_revenue_events_EventType"]
+    ReferenceId [name: "IX_revenue_events_ReferenceId"]
+    Source [name: "IX_revenue_events_Source"]
+    Status [name: "IX_revenue_events_Status"]
+    Timestamp [name: "IX_revenue_events_Timestamp"]
+    UserId [name: "IX_revenue_events_UserId"]
+  }
+}
+
+Table "revenue_reconciliation_runs" {
+  "Id" uuid [not null]
+  "Source" "character varying(100)" [not null]
+  "ExternalStatementId" "character varying(200)"
+  "PeriodStartUtc" timestamp [not null]
+  "PeriodEndUtc" timestamp [not null]
+  "Status" text [not null]
+  "StatementLineCount" integer [not null]
+  "MatchedCount" integer [not null]
+  "DiscrepancyCount" integer [not null]
+  "StartedAtUtc" timestamp [not null]
+  "CompletedAtUtc" timestamp
+  "FailureReason" "character varying(1000)"
+  "SummaryJson" "character varying(2000)"
+  "InitiatedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_revenue_reconciliation_runs"]
+    CompletedAtUtc [name: "IX_revenue_reconciliation_runs_CompletedAtUtc"]
+    PeriodEndUtc [name: "IX_revenue_reconciliation_runs_PeriodEndUtc"]
+    PeriodStartUtc [name: "IX_revenue_reconciliation_runs_PeriodStartUtc"]
+    Status [name: "IX_revenue_reconciliation_runs_Status"]
+  }
+}
+
 Table "RubricCriteria" {
   "Id" uuid [not null]
   "RubricId" uuid [not null]
@@ -6771,6 +6860,32 @@ Table "team_invitations" {
     Id [pk, name: "PK_team_invitations"]
     (TeamId, InvitedEmail) [name: "IX_team_invitations_TeamId_InvitedEmail"]
     TokenHash [unique, name: "IX_team_invitations_TokenHash"]
+  }
+}
+
+Table "revenue_reconciliation_discrepancies" {
+  "Id" uuid [not null]
+  "RunId" uuid [not null]
+  "Kind" text [not null]
+  "ExternalReference" "character varying(200)" [not null]
+  "ExternalAmount" numeric(18,2)
+  "ExternalCurrency" "character varying(3)"
+  "ExternalOccurredAtUtc" timestamp
+  "RevenueEventId" uuid
+  "InternalAmount" numeric(18,2)
+  "InternalCurrency" "character varying(3)"
+  "Message" "character varying(1000)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_revenue_reconciliation_discrepancies"]
+    ExternalReference [name: "IX_revenue_reconciliation_discrepancies_ExternalReference"]
+    Kind [name: "IX_revenue_reconciliation_discrepancies_Kind"]
+    RunId [name: "IX_revenue_reconciliation_discrepancies_RunId"]
   }
 }
 
@@ -10529,6 +10644,8 @@ Ref "FK_program_contents_programs_ProgramId":"programs"."Id" <? "program_content
 Ref "FK_team_invitations_project_collaboration_teams_TeamId":"project_collaboration_teams"."Id" <? "team_invitations"."TeamId" [delete: cascade]
 
 Ref "FK_sla_impact_analyses_resource_quotas_ResourceQuotaId":"resources"."resource_quotas"."Id" <? "gameguild.resources"."sla_impact_analyses"."ResourceQuotaId" [delete: restrict]
+
+Ref "FK_revenue_reconciliation_discrepancies_revenue_reconciliation~":"revenue_reconciliation_runs"."Id" <? "revenue_reconciliation_discrepancies"."RunId" [delete: cascade]
 
 Ref "FK_user_role_role_role_id":"gameguild.authentication"."role"."id" <? "gameguild.authentication"."user_role"."role_id" [delete: cascade]
 

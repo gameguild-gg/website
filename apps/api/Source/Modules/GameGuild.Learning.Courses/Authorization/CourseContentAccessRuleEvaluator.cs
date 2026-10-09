@@ -1,27 +1,14 @@
-using System.Security.Claims;
 using GameGuild.Identity.Authorization;
-using GameGuild.Identity.Authorization.Utilities;
-using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GameGuild.Learning.Courses;
 
 public sealed class CourseContentAccessRuleEvaluator(
-    IProgramCrudService programService,
-    IActorContextAccessor actorContextAccessor,
-    IAuthorizationSinglePermissionChecker permissionChecker) : IRuleEvaluator
+    ICourseAccessEvaluator courseAccessEvaluator) : IRuleEvaluator
 {
     private const string PublicOutlineAccess = "PublicOutline";
     private const string LearnerAccess = "Learner";
     private const string ManageAccess = "Manage";
-
-    private static readonly PermissionType[] ManagementPermissions =
-    [
-        PermissionType.Read,
-        PermissionType.Edit,
-        PermissionType.Create,
-        PermissionType.Delete
-    ];
 
     public string RuleType => RuleTypes.CourseContentAccess;
 
@@ -38,11 +25,14 @@ public sealed class CourseContentAccessRuleEvaluator(
         return parameters.GetString("access") switch
         {
             PublicOutlineAccess => EvaluatePublicOutline(program),
-            LearnerAccess => await EvaluateLearnerAsync(context.User, program).ConfigureAwait(false),
-            ManageAccess => await EvaluateManagementAsync(
-                context.User,
+            LearnerAccess => await EvaluateCapabilityAsync(
                 program,
-                parameters.GetBool("allowCreator"),
+                CourseCapability.Learn,
+                "User is not actively enrolled in the course",
+                cancellationToken).ConfigureAwait(false),
+            ManageAccess => await EvaluateManagementCapabilityAsync(
+                program,
+                parameters,
                 cancellationToken).ConfigureAwait(false),
             _ => RuleEvaluationResult.Fail("Unknown course content access mode")
         };
@@ -56,68 +46,46 @@ public sealed class CourseContentAccessRuleEvaluator(
             : RuleEvaluationResult.Fail("Course is not published for public access");
     }
 
-    private async Task<RuleEvaluationResult> EvaluateLearnerAsync(
-        ClaimsPrincipal user,
-        Program program)
-    {
-        var userId = ClaimsExtractor.GetUserIdAsGuid(user);
-        if (!(user.Identity?.IsAuthenticated ?? false) || userId is not Guid authenticatedUserId)
-        {
-            return RuleEvaluationResult.Fail("Authenticated learner identity is required");
-        }
-
-        var progress = await programService
-            .GetUserProgressDtoAsync(program.Id, authenticatedUserId)
-            .ConfigureAwait(false);
-
-        return progress is not null
-            ? RuleEvaluationResult.Success()
-            : RuleEvaluationResult.Fail("User is not enrolled in the course");
-    }
-
-    private async Task<RuleEvaluationResult> EvaluateManagementAsync(
-        ClaimsPrincipal user,
+    private async Task<RuleEvaluationResult> EvaluateCapabilityAsync(
         Program program,
-        bool allowCreator,
+        CourseCapability capability,
+        string failureReason,
         CancellationToken cancellationToken)
     {
-        var actor = actorContextAccessor.ActorContext;
-        if (actor.IsSystemAdmin)
-        {
-            return RuleEvaluationResult.Success();
-        }
+        var capabilities = await courseAccessEvaluator
+            .GetCapabilitiesAsync(program, cancellationToken)
+            .ConfigureAwait(false);
 
-        var userId = ClaimsExtractor.GetUserIdAsGuid(user);
-        if (!(user.Identity?.IsAuthenticated ?? false) || userId is not Guid authenticatedUserId)
-        {
-            return RuleEvaluationResult.Fail("Authenticated manager identity is required");
-        }
-
-        if (allowCreator && program.CreatorId == authenticatedUserId)
-        {
-            return RuleEvaluationResult.Success();
-        }
-
-        var tenantId = ClaimsExtractor.GetTenantIdAsGuid(user) ?? actor.TenantId;
-        if (tenantId is not Guid currentTenantId)
-        {
-            return RuleEvaluationResult.Fail("Tenant context is required for course management permissions");
-        }
-
-        foreach (var permission in ManagementPermissions)
-        {
-            var permissionName = $"{nameof(Program)}.{program.Id}.{permission}";
-            if (await permissionChecker.HasPermissionAsync(
-                    authenticatedUserId,
-                    currentTenantId,
-                    permissionName,
-                    cancellationToken).ConfigureAwait(false))
-            {
-                return RuleEvaluationResult.Success();
-            }
-        }
-
-        return RuleEvaluationResult.Fail("No course management permission was granted");
+        return capabilities.Has(capability)
+            ? RuleEvaluationResult.Success()
+            : RuleEvaluationResult.Fail(failureReason);
     }
 
+    private async Task<RuleEvaluationResult> EvaluateManagementCapabilityAsync(
+        Program program,
+        RuleParameters parameters,
+        CancellationToken cancellationToken)
+    {
+        var configured = parameters.GetString("capability");
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return await EvaluateCapabilityAsync(
+                program,
+                CourseCapability.Edit,
+                "The requested course capability was not granted",
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        if (!Enum.TryParse<CourseCapability>(configured, ignoreCase: true, out var capability) ||
+            capability is not (CourseCapability.Edit or CourseCapability.Publish or CourseCapability.StaffReview))
+        {
+            return RuleEvaluationResult.Fail("Unknown course management capability");
+        }
+
+        return await EvaluateCapabilityAsync(
+            program,
+            capability,
+            "The requested course capability was not granted",
+            cancellationToken).ConfigureAwait(false);
+    }
 }

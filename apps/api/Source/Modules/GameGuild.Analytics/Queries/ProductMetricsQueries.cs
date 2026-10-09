@@ -4,9 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using GameGuild.Commerce.Products;
 using GameGuild.Commerce.Subscriptions;
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
 
 namespace GameGuild.Analytics;
 
+/// <summary>
+///     Aggregates revenue, subscription and capacity metrics (business-intelligence data).
+///     Dispatch requires the monetization analytics permission (issue #346, ViewAnalytics)
+///     regardless of the transport (REST, GraphQL or in-process senders).
+/// </summary>
+[AuthorizeRequest(MonetizationPermission.Keys.ViewAnalytics)]
 public sealed record GetProductMetricsQuery(
     DateTime? StartUtc = null,
     DateTime? EndUtc = null,
@@ -288,6 +295,11 @@ public sealed class GetProductMetricsQueryHandler(IApplicationDbContext db)
     }
 }
 
+/// <summary>
+///     Exports aggregated revenue/subscription metrics. Exports leave the platform boundary,
+///     so dispatch requires the monetization analytics permission (issue #346, ViewAnalytics).
+/// </summary>
+[AuthorizeRequest(MonetizationPermission.Keys.ViewAnalytics)]
 public sealed record ExportProductMetricsQuery(
     DateTime? StartUtc = null,
     DateTime? EndUtc = null,

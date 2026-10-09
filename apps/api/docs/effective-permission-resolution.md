@@ -109,3 +109,63 @@ protection, delegable-wildcard exclusion, determinism),
 (fail-closed delegation of the query surface), and
 `apps/api/tests/GameGuild.Identity.Authorization.UnitTests/JitElevationEnforcementTests.cs`
 (JIT enforcement end-to-end through the query surface and the resolver).
+
+## Evaluation engine extensions (issue #358)
+
+### Multi-parent role inheritance
+
+A dynamic role's effective parent set is `{ ParentRoleId } ∪ AdditionalParentRoleIds`.
+`RoleInheritanceEngine` computes the closure breadth-first with a visited set: cycle
+edges are detected, cut and reported (`RoleInheritanceClosure.CyclesCut`); unknown
+parent references contribute nothing (fail closed). Permission flow follows
+`inheritedSet(R) = ∪ over parents P of ((directSet(P) ∪ inheritedSet(P)) − blocked(R))`
+where `blocked(R)` is the role's `BlockedInheritedPermissions` — a role can opt out of
+specific inherited permissions without touching its own direct grants or denies.
+Ancestor `DenyPermissions` always flow down unblocked (DENY-WINS stays global).
+`PermissionEngine:Inheritance` configures the traversal: `Enabled=false` disables all
+inheritance flow, `MaxDepth` (default 10) caps graph depth.
+
+### Evaluation extensions (plugin point)
+
+`IPermissionEvaluationExtension` implementations registered in DI run after built-in
+layers 1–8, ordered by `Order` (ties resolve in DI registration order). Each extension
+receives a read-only snapshot of the context plus the accumulated allow/deny sets and
+returns additional contributions, attributed `PermissionSource.Extension`. Contributions
+are fully subject to DENY-WINS, cannot mint static grants and cannot grant the
+non-delegable `admin:*` wildcard. A throwing extension is logged and skipped — a broken
+plugin can neither open nor break the decision path.
+
+### Evaluation-layer denial throttle (enumeration protection)
+
+`IEvaluationDenialThrottleService` (in-memory sliding window, per user+tenant) is fed by
+the resolver's `HasPermission*` checks whenever an evaluation denies. When the deny count
+inside `PermissionEngine:EvaluationThrottle:WindowSeconds` exceeds
+`MaxDeniedEvaluationsPerWindow`, the pair is throttled for `ThrottleDurationSeconds`:
+resolutions short-circuit to an empty fail-closed result
+(`EffectivePermissions.Throttled = true`) without consulting any permission store. This
+is distinct from endpoint rate limiting — requests are never blocked; only evaluation
+outcomes fail closed.
+
+### Change notifications, synchronization, restoration and compliance
+
+- Permission mutations fan out `PermissionChangeEvent`s to registered
+  `IPermissionChangeNotifier` implementations. The default webhook notifier is
+  config-gated (`PermissionEngine:Webhooks`), signs the payload with HMAC-SHA256
+  (`X-GameGuild-Signature: sha256=…` over the exact body bytes) and retries with
+  exponential backoff; delivery failures never affect the mutation.
+- `IPermissionSyncService` exports/imports permission state as a portable JSON document
+  (schema `1.0`, roles reference parents by name). Imports are admin-guarded, validated
+  in full and fail closed — invalid documents apply nothing; `dryRun` reports the change
+  plan without applying.
+- `IPermissionRestorationService` restores soft-deleted permission rows and undoes
+  Grant/Revoke/Deny audit entries inside `PermissionEngine:Restoration:RetentionDays`.
+  Guards take the tenant from the restored record (never the caller); restorations bump
+  the security version, audit as `PermissionOperationType.Restore` and notify webhooks.
+- `GET /api/v{version}/authorization/compliance/report` summarizes allow/deny rates by
+  permission, evaluation surface and operation from the durable permission evaluation
+  log (`PermissionEvaluationLogs`, written through `IPermissionEvaluationLogSink`).
+
+### Verification (issue #358)
+
+`apps/api/tests/GameGuild.Identity.Authorization.UnitTests/PermissionEngineInheritanceTests.cs`,
+`…/PermissionEngineEvaluationTests.cs` and `…/PermissionEngineOperationsTests.cs`.

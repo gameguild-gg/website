@@ -338,27 +338,47 @@ public class GroupSetServiceTests
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
+    private readonly Mock<ICourseEnrollmentAccessReader> _courseEnrollments = new();
     private readonly Mock<ILogger<GroupSetsController>> _log = new();
 
     private GroupSetsController CreateController(Guid? userId = null, bool isSystemAdmin = false, Guid? tenantId = null)
     {
         var uid = userId ?? Guid.NewGuid();
+        var effectiveTenantId = tenantId ?? Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = uid.ToString(),
-            TenantId = tenantId ?? Guid.NewGuid(),
+            TenantId = effectiveTenantId,
             IsAuthenticated = true,
             Roles = isSystemAdmin ? new HashSet<string> { "SystemAdmin" } : new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                uid,
+                effectiveTenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
         return new GroupSetsController(
             _svc.Object,
             _actor.Object,
             _programs.Object,
-            _permissions.Object,
+            new CourseAccessEvaluator(
+                programReads.Object,
+                _courseEnrollments.Object,
+                _actor.Object,
+                _permissions.Object),
             _log.Object,
-            new AssessmentEndpointTestSender(groupSetService: _svc.Object));
+            new AssessmentEndpointTestSender(groupSetService: _svc.Object))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     [Fact]
@@ -378,13 +398,14 @@ public class GroupSetServiceTests
     public async Task CreateGroupSet_WhenActorIsProgramCreator_ReturnsCreated()
     {
         var actorId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
-            .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
+            .ReturnsAsync(new Program { Id = courseId, TenantId = tenantId, CreatorId = actorId });
         _svc.Setup(service => service.CreateGroupSetAsync(courseId, "Sets"))
             .ReturnsAsync(Result.Success(CourseGroupSet.Create(courseId, "Sets")));
 
-        var result = await CreateController(actorId).CreateGroupSet(courseId, new CreateGroupSetRequest("Sets"));
+        var result = await CreateController(actorId, tenantId: tenantId).CreateGroupSet(courseId, new CreateGroupSetRequest("Sets"));
 
         result.Result.Should().BeOfType<CreatedAtActionResult>();
     }
@@ -396,7 +417,11 @@ public class GroupSetServiceTests
         var courseId = Guid.NewGuid();
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
-        _svc.Setup(service => service.HasActiveEnrollmentAsync(courseId, actorId)).ReturnsAsync(true);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                courseId,
+                actorId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _svc.Setup(service => service.GetCourseGroupSetsAsync(courseId))
             .ReturnsAsync(new List<GroupSetSummaryDto>());
 
@@ -406,7 +431,7 @@ public class GroupSetServiceTests
     }
 
     [Fact]
-    public async Task GetGroupSets_WhenCrossTenantActorHasActiveEnrollment_ReturnsOk()
+    public async Task GetGroupSets_WhenCrossTenantActorHasActiveEnrollment_ReturnsForbidden()
     {
         var actorId = Guid.NewGuid();
         var actorTenantId = Guid.NewGuid();
@@ -419,13 +444,17 @@ public class GroupSetServiceTests
                 CreatorId = Guid.NewGuid(),
                 TenantId = courseTenantId
             });
-        _svc.Setup(service => service.HasActiveEnrollmentAsync(courseId, actorId)).ReturnsAsync(true);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                courseId,
+                actorId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _svc.Setup(service => service.GetCourseGroupSetsAsync(courseId))
             .ReturnsAsync(new List<GroupSetSummaryDto>());
 
         var result = await CreateController(actorId, tenantId: actorTenantId).GetGroupSets(courseId);
 
-        result.Result.Should().BeOfType<OkObjectResult>();
+        result.Result.Should().BeOfType<ForbidResult>();
     }
 
     [Fact]
@@ -435,7 +464,11 @@ public class GroupSetServiceTests
         var courseId = Guid.NewGuid();
         _programs.Setup(service => service.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
-        _svc.Setup(service => service.HasActiveEnrollmentAsync(courseId, actorId)).ReturnsAsync(false);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                courseId,
+                actorId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var result = await CreateController(actorId).GetGroupSets(courseId);
 
@@ -449,6 +482,13 @@ public class GroupSetServiceTests
         var actorId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         var groupId = Guid.NewGuid();
+        _programs.Setup(service => service.GetProgramByIdAsync(courseId))
+            .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid() });
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                courseId,
+                actorId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _svc.Setup(service => service.JoinAsync(courseId, groupId, actorId))
             .ReturnsAsync(Result.Failure<CourseGroupMember>(
                 Error.Validation("GroupMembership.AlreadyInSet", "You are already in a group in this set.")));
