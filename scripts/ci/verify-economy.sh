@@ -405,7 +405,7 @@ run docker run --detach --rm --name "$postgres_container" \
   --env "POSTGRES_PASSWORD=$app_postgres_password" \
   --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --publish 127.0.0.1::5432 \
-  postgres:17-alpine >/dev/null
+  public.ecr.aws/docker/library/postgres:17-alpine >/dev/null
 
 app_postgres_probe() {
   docker exec --env "PGPASSWORD=$app_postgres_password" "$postgres_container" \
@@ -429,7 +429,7 @@ run docker run --detach --rm --name "$economy_postgres_container" \
   --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --tmpfs /var/lib/postgresql/data:rw \
   --publish 127.0.0.1::5432 \
-  postgres:17-alpine -c max_locks_per_transaction=512 >/dev/null
+  public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512 >/dev/null
 
 economy_postgres_probe() {
   docker exec --env "PGPASSWORD=$economy_postgres_password" "$economy_postgres_container" \
@@ -461,7 +461,7 @@ if [[ "$gate_profile" == full ]]; then
     --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --tmpfs /var/lib/postgresql/data:rw \
     --publish 127.0.0.1::5432 \
-    postgres:17-alpine >/dev/null
+    public.ecr.aws/docker/library/postgres:17-alpine >/dev/null
 
   whole_solution_postgres_probe() {
     docker exec --env "PGPASSWORD=$whole_solution_postgres_password" "$whole_solution_postgres_container" \

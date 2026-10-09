@@ -335,7 +335,7 @@ test_economy_gate_sizes_only_its_shared_test_database_lock_table() {
   test_server="$(sed -n '/gate_stage=.postgres-economy-tests./,/economy_postgres_probe()/p' "$gate")"
   app_server="$(sed -n '/gate_stage=.postgres-app./,/app_postgres_probe()/p' "$gate")"
   migration_server="$(sed -n '/gate_stage=.postgres-whole-solution-migrations./,/whole_solution_postgres_probe()/p' "$gate")"
-  grep -Fq 'postgres:17-alpine -c max_locks_per_transaction=512' <<< "$test_server" || return 1
+  grep -Fq 'public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512' <<< "$test_server" || return 1
   ! grep -Fq 'max_locks_per_transaction' <<< "$app_server" || return 1
   ! grep -Fq 'max_locks_per_transaction' <<< "$migration_server" || return 1
   grep -Fq 'whole_solution_jobs=2' "$gate"
