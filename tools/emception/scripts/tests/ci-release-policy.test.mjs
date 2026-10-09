@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { test } from 'node:test';
 
+import { readPnpmSecurityConfig } from '../../../../scripts/ci/read-pnpm-config.mjs';
+
 async function readWorkflow() {
   const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..', '..');
   return (await readFile(path.join(repoRoot, '.github', 'workflows', 'emception.yml'), 'utf8')).replaceAll('\r\n', '\n');
@@ -138,8 +140,9 @@ test('Emception CI is Linux-only, lockfile-driven, receipt-aware, and Changesets
 
   const ignore = await readFile(path.join(repoRoot, '.gitignore'), 'utf8');
   const rootPackage = JSON.parse(await readFile(path.join(repoRoot, 'package.json'), 'utf8'));
-  assert.deepEqual(rootPackage.pnpm.onlyBuiltDependencies, ['braces', 'sprintf-js']);
-  assert.notEqual(rootPackage.pnpm.dangerouslyAllowAllBuilds, true);
+  const pnpmConfig = readPnpmSecurityConfig(repoRoot);
+  assert.deepEqual(pnpmConfig.onlyBuiltDependencies, ['braces', 'sprintf-js']);
+  assert.notEqual(pnpmConfig.dangerouslyAllowAllBuilds, true);
   assert.doesNotMatch(ignore, /^pnpm-lock\.yaml$/m);
   assert.doesNotMatch(rootPackage.scripts.clean, /pnpm-lock\.yaml/);
 });
