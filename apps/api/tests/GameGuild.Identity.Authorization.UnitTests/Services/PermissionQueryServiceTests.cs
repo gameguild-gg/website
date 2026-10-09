@@ -143,6 +143,175 @@ public class PermissionQueryServiceTests
             Times.Once);
     }
 
+    // ── Deny-by-default (#327): decisions come only from the shared resolver ──
+    // Inactive/expired grant filtering for decisions is the resolver's contract
+    // (EffectivePermissionResolverServiceTests.ResolveAsync_InactiveGrant_Excluded,
+    // ResolveAsync_ExpiredGrant_Excluded, ResolveAsync_InactiveTenantDefaults_Excluded).
+    // Here we pin the delegation itself: the query service must never fall back to
+    // reading raw repository rows when deciding.
+
+    [Fact]
+    public async Task HasTenantPermissionAsync_NeverReadsRepositoryRows()
+    {
+        var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        _resolverMock
+            .Setup(x => x.HasPermissionAsync(userId, tenantId, "read", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await _sut.HasTenantPermissionAsync(userId, tenantId, "read");
+
+        result.Should().BeFalse();
+        _repoMock.Verify(
+            x => x.GetByUserAndTenantAsync(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _repoMock.Verify(
+            x => x.GetByUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetEffectivePermissionsAsync_NeverReadsRepositoryRows()
+    {
+        var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        _resolverMock
+            .Setup(x => x.ResolveAsync(
+                It.Is<EffectivePermissionContext>(c => c.UserId == userId && c.TenantId == tenantId && !c.HasResource),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EffectivePermissions
+            {
+                UserId = userId,
+                TenantId = tenantId,
+                Permissions = new HashSet<string>(["active:perm"], StringComparer.OrdinalIgnoreCase),
+                Sources = new Dictionary<string, PermissionSource>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["active:perm"] = PermissionSource.DirectGrant
+                }
+            });
+
+        var result = await _sut.GetEffectivePermissionsAsync(userId, tenantId);
+
+        result.Should().Contain("active:perm");
+        _repoMock.Verify(
+            x => x.GetByUserAndTenantAsync(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _repoMock.Verify(
+            x => x.GetByUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTenantPermissionsAsync_InactiveGrant_ReturnsEmpty()
+    {
+        var permission = new TenantPermission
+        {
+            UserId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            Permissions = new[] { "read" },
+            IsActive = false
+        };
+
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(permission.UserId, permission.TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(permission);
+
+        var result = await _sut.GetTenantPermissionsAsync(permission.UserId, permission.TenantId);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTenantPermissionsAsync_ExpiredGrant_ReturnsEmpty()
+    {
+        var permission = new TenantPermission
+        {
+            UserId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            Permissions = new[] { "read" },
+            ExpiresAt = SystemClock.UtcNow.AddMinutes(-1)
+        };
+
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(permission.UserId, permission.TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(permission);
+
+        var result = await _sut.GetTenantPermissionsAsync(permission.UserId, permission.TenantId);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTenantPermissionsAsync_ActiveUnexpiredGrant_ReturnsPermissions()
+    {
+        var permission = new TenantPermission
+        {
+            UserId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            Permissions = new[] { "read" },
+            ExpiresAt = SystemClock.UtcNow.AddHours(1)
+        };
+
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(permission.UserId, permission.TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(permission);
+
+        var result = await _sut.GetTenantPermissionsAsync(permission.UserId, permission.TenantId);
+        result.Should().BeEquivalentTo(new[] { "read" });
+    }
+
+    [Fact]
+    public async Task GetTenantDefaultPermissionsAsync_InactiveDefaults_ReturnsEmpty()
+    {
+        var tenantId = Guid.NewGuid();
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(null, tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission { Permissions = new[] { "read" }, IsActive = false });
+
+        var result = await _sut.GetTenantDefaultPermissionsAsync(tenantId);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTenantDefaultPermissionsAsync_ExpiredDefaults_ReturnsEmpty()
+    {
+        var tenantId = Guid.NewGuid();
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(null, tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission
+            {
+                Permissions = new[] { "read" },
+                ExpiresAt = SystemClock.UtcNow.AddMinutes(-1)
+            });
+
+        var result = await _sut.GetTenantDefaultPermissionsAsync(tenantId);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetGlobalDefaultPermissionsAsync_InactiveDefaults_ReturnsEmpty()
+    {
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission { Permissions = new[] { "read" }, IsActive = false });
+
+        var result = await _sut.GetGlobalDefaultPermissionsAsync();
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetGlobalDefaultPermissionsAsync_ExpiredDefaults_ReturnsEmpty()
+    {
+        _repoMock
+            .Setup(x => x.GetByUserAndTenantAsync(null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission
+            {
+                Permissions = new[] { "read" },
+                ExpiresAt = SystemClock.UtcNow.AddMinutes(-1)
+            });
+
+        var result = await _sut.GetGlobalDefaultPermissionsAsync();
+        result.Should().BeEmpty();
+    }
+
     // ── GetTenantPermissionsAsync ─────────────────────────────
 
     [Fact]

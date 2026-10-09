@@ -3431,10 +3431,13 @@ export interface ComplianceAuditAuditRetentionComplianceViolation {
   source?: string | null;
 }
 
-/** Data model for Compliance Audit Audit Retention Configuration Response. */
+/** The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 export interface ComplianceAuditAuditRetentionConfigurationOutput {
   id?: string;
   configuration?: ComplianceAuditConfigureAuditRetentionInput;
+  inheritedFromTemplateId?: string | null;
   revision?: number;
   tenantId?: string;
   updatedAtUtc?: string;
@@ -3486,6 +3489,45 @@ export interface ComplianceAuditAuditRetentionObligation {
   minimumRetentionDays?: number;
   name: string;
   source: string;
+}
+
+/** Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+export interface ComplianceAuditAuditRetentionPolicySensitivityRule {
+  /** Optional maximum retention, in days, after which data at this classification may be purged. */
+  maximumRetentionDays: number | null;
+  /** Minimum retention, in days, enforced for data at this classification. */
+  minimumRetentionDays: number;
+  /** Why this classification receives this retention period. */
+  rationale: string | null;
+  sensitivity: ComplianceAuditSensitivityLevel;
+}
+
+/** Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+export interface ComplianceAuditAuditRetentionPolicyTemplate {
+  /** Stable template identifier referenced by GameGuild.Compliance.Audit.AuditRetentionPolicyTemplate.BaseTemplateId. */
+  id: string | null;
+  baselineScenario: ComplianceAuditAuditRetentionScenario;
+  /** Template this one inherits obligations and sensitivity floors from; null for the baseline. */
+  baseTemplateId: string | null;
+  /** What the template presets and why. */
+  description: string | null;
+  /** Human-readable template name. */
+  displayName: string | null;
+  /** Regulatory framework or policy family this template targets. */
+  framework: string | null;
+  /** True only for the platform baseline every other template inherits from. */
+  isBaseline: boolean;
+  /** Retention obligations with the administrator-provided regulatory source for each. */
+  obligations: Array<ComplianceAuditAuditRetentionObligation> | null;
+  /** Publication timestamp of this template revision (UTC). */
+  publishedAtUtc: string;
+  /** Sensitivity classification floors; retention grows with classification. */
+  sensitivityRules: Array<ComplianceAuditAuditRetentionPolicySensitivityRule> | null;
+  /** Storage tier price assumptions preset by the template. */
+  tierPrices: Array<ComplianceAuditAuditStorageTierPrice> | null;
 }
 
 /** Data model for Compliance Audit Audit Retention Recommendation. */
@@ -4079,6 +4121,9 @@ export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
   tenantId?: string;
   updatedByUserId?: string;
 }
+
+/** Defines sensitivity levels for data access auditing */
+export type ComplianceAuditSensitivityLevel = 'Public' | 'Internal' | 'Confidential' | 'Restricted' | 'HighlyRestricted';
 
 /** Data model for Compliance Audit Top Ip Activity. */
 export interface ComplianceAuditTopIpActivity {
@@ -7985,6 +8030,91 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
 /** Status of JIT elevation request */
 export type IdentityAuthorizationElevationRequestStatus = 'None' | 'Pending' | 'Approved' | 'Denied' | 'Active' | 'Expired' | 'Revoked';
 
+/** A tenant permission grant that is about to expire. */
+export interface IdentityAuthorizationExpiringTenantPermission {
+  /** Gets the expiration instant. */
+  expiresAt: string;
+  /** Gets the grant ID. */
+  permissionId: string;
+  /** Gets the grant's permission strings. */
+  permissions: Array<string> | null;
+  /** Gets the user ID the grant belongs to (null for tenant defaults). */
+  userId?: string | null;
+}
+
+/** Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+export interface IdentityAuthorizationExtendTenantPermissionExpirationCommand {
+  /** Gets the positive extension period. */
+  extension: string;
+  /** Gets the IDs of the permission grants to extend. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Permission entry in the sync contract (one TenantPermission row). */
+export interface IdentityAuthorizationExternalPermissionEntry {
+  /** Denied permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Whether the entry is active. */
+  isActive?: boolean;
+  /** Allowed permissions. */
+  permissions?: Array<string> | null;
+  /** Subject user (null = tenant defaults). */
+  userId?: string | null;
+}
+
+/** Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+export interface IdentityAuthorizationExternalPermissionSyncDocument {
+  /** When the document was produced. */
+  exportedAtUtc?: string;
+  /** Permission entries (tenant defaults and user grants) to synchronize. */
+  permissions?: Array<IdentityAuthorizationExternalPermissionEntry> | null;
+  /** Role definitions to synchronize. */
+  roles?: Array<IdentityAuthorizationExternalRoleDefinition> | null;
+  /** Contract version; the only supported value is `1.0`. */
+  schemaVersion?: string | null;
+  /** Tenant scope of the document (null = global, system-admin only). */
+  tenantId?: string | null;
+}
+
+/** Role definition in the sync contract. */
+export interface IdentityAuthorizationExternalRoleDefinition {
+  /** Additional parent role names (multi-parent inheritance, issue #358). */
+  additionalParentRoleNames?: Array<string> | null;
+  /** Inherited permissions the role opts out of (selective blocking, issue #358). */
+  blockedInheritedPermissions?: Array<string> | null;
+  /** Directly assigned deny permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Display name. */
+  displayName?: string | null;
+  /** Whether the role is active. */
+  isActive?: boolean;
+  /** Unique role name within the tenant scope. */
+  name?: string | null;
+  /** Primary parent role name (optional). */
+  parentRoleName?: string | null;
+  /** Directly assigned allow permissions. */
+  permissions?: Array<string> | null;
+  /** Conflict-resolution priority. */
+  priority?: number;
+}
+
+/** Response containing grants that are about to expire in a tenant. */
+export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
+  /** Gets the grants expiring within the requested window, ordered by expiration instant. */
+  expiring: Array<IdentityAuthorizationExpiringTenantPermission> | null;
+  /** Gets the tenant ID. */
+  tenantId: string;
+}
+
 /** Response containing pending invitations for the current user. */
 export interface IdentityAuthorizationGetPendingResourceInvitationsOutput {
   invitations: Array<IdentityAuthorizationResourceInvitationDto> | null;
@@ -8058,6 +8188,15 @@ export interface IdentityAuthorizationHasPermissionOutput {
 /** Impact severity level */
 export type IdentityAuthorizationImpactSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Request body for the permission sync import endpoint. */
+export interface IdentityAuthorizationImportPermissionSyncInput {
+  document?: IdentityAuthorizationExternalPermissionSyncDocument;
+  /** Validate and report without applying. */
+  dryRun?: boolean;
+  /** Optional target tenant (null/empty = global scope, system admins only). */
+  tenantId?: string | null;
+}
+
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
   errorMessage?: string | null;
@@ -8116,6 +8255,54 @@ export interface IdentityAuthorizationPermissionAnomaly {
   userId?: string;
 }
 
+/** Allow/deny rates for one reporting dimension value. */
+export interface IdentityAuthorizationPermissionComplianceBreakdown {
+  /** Allow outcomes. */
+  allow?: number;
+  /** Allow share for this value (0-1). */
+  allowRate?: number;
+  /** Deny outcomes. */
+  deny?: number;
+  /** Deny share for this value (0-1). */
+  denyRate?: number;
+  /** Error outcomes. */
+  error?: number;
+  /** The dimension value (permission, source surface or operation). */
+  key?: string | null;
+  /** Evaluations for this value. */
+  total?: number;
+}
+
+/** Compliance report over recorded permission evaluations. */
+export interface IdentityAuthorizationPermissionComplianceReport {
+  /** Evaluations with outcome Allow. */
+  allowCount?: number;
+  /** Share of evaluations that allowed (0-1). Denominator excludes nothing. */
+  allowRate?: number;
+  /** Effectiveness breakdown per triggering operation (when recorded). */
+  byOperation?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluated permission. */
+  byPermission?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluation surface (the layer that reported the evaluation, e.g. `graphql`). */
+  bySource?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Evaluations with outcome Deny. */
+  denyCount?: number;
+  /** Share of evaluations that denied (0-1). */
+  denyRate?: number;
+  /** Evaluations with outcome Error (failed closed). */
+  errorCount?: number;
+  /** Share of evaluations that errored and failed closed (0-1). */
+  errorRate?: number;
+  /** Inclusive range start. */
+  fromUtc?: string;
+  /** Tenant scope of the report (null = global report). */
+  tenantId?: string | null;
+  /** Recorded evaluations in range. */
+  totalEvaluations?: number;
+  /** Inclusive range end. */
+  toUtc?: string;
+}
+
 /** Permission delegation allows users to delegate their permissions to other users */
 export interface IdentityAuthorizationPermissionDelegation {
   id?: string;
@@ -8134,6 +8321,42 @@ export interface IdentityAuthorizationPermissionDelegation {
   updatedAt?: string | null;
   usageCount?: number;
   usageLimit?: number | null;
+}
+
+/** Result of a permission restoration attempt. */
+export interface IdentityAuthorizationPermissionRestorationResult {
+  /** Human-readable outcome description. */
+  message?: string | null;
+  /** The affected TenantPermission id (when known). */
+  restoredPermissionId?: string | null;
+  /** Whether the restoration was applied. */
+  succeeded?: boolean;
+  /** Tenant scope of the restoration (from the restored/undone record, never from the caller). */
+  tenantId?: string | null;
+}
+
+/** One planned change of a synchronization import. */
+export interface IdentityAuthorizationPermissionSyncChange {
+  /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
+  kind?: string | null;
+  /** The permissions or role fields involved. */
+  payload?: Record<string, string> | null;
+  /** Human-readable target description (role name or user id). */
+  target?: string | null;
+}
+
+/** Result of a synchronization import (or dry-run preview). */
+export interface IdentityAuthorizationPermissionSyncImportResult {
+  /** True when the plan was actually applied (false for dry-runs and invalid documents). */
+  applied?: boolean;
+  /** The planned changes (the full plan when valid). */
+  changes?: Array<IdentityAuthorizationPermissionSyncChange> | null;
+  /** True when this was a dry-run. */
+  dryRun?: boolean;
+  /** False when validation failed — nothing was applied (fail-closed). */
+  isValid?: boolean;
+  /** Validation problems (empty when valid). */
+  validationErrors?: Array<string> | null;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -8380,6 +8603,18 @@ export interface IdentityAuthorizationSetTenantDefaultPermissionsCommand {
   permissions: Array<string> | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+export interface IdentityAuthorizationSetTenantPermissionExpirationCommand {
+  /** Gets the new expiration instant (null = permanent). */
+  expiresAt?: string | null;
+  /** Gets the IDs of the permission grants to update. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
   tenantId: CQRSModelsTenantId;
 }
 
@@ -12276,6 +12511,20 @@ export interface LearningCoursesContentSummaryDto {
   contentType?: string | null;
   estimatedMinutes?: number | null;
   title?: string | null;
+}
+
+/** Data model for Learning Courses Course Access Capabilities. */
+export interface LearningCoursesCourseAccessCapabilities {
+  canAccessWorkspace?: boolean;
+  canEdit?: boolean;
+  canLearn?: boolean;
+  canPublish?: boolean;
+  canReviewAsStaff?: boolean;
+  courseExists?: boolean;
+  courseId?: string;
+  hasActiveEnrollment?: boolean;
+  isOwner?: boolean;
+  isTenantMember?: boolean;
 }
 
 /** Data model for Learning Courses Course Support Ticket Message Request. */
@@ -19204,6 +19453,8 @@ export let ComplianceAuditAuditRetentionGrowthModelSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditRetentionHistoricalEvidenceSchema: z.ZodType<ComplianceAuditAuditRetentionHistoricalEvidence>;
 export let ComplianceAuditAuditRetentionMonthForecastSchema: z.ZodType<ComplianceAuditAuditRetentionMonthForecast>;
 export let ComplianceAuditAuditRetentionObligationSchema: z.ZodType<ComplianceAuditAuditRetentionObligation>;
+export let ComplianceAuditAuditRetentionPolicySensitivityRuleSchema: z.ZodType<ComplianceAuditAuditRetentionPolicySensitivityRule>;
+export let ComplianceAuditAuditRetentionPolicyTemplateSchema: z.ZodType<ComplianceAuditAuditRetentionPolicyTemplate>;
 export let ComplianceAuditAuditRetentionRecommendationSchema: z.ZodType<ComplianceAuditAuditRetentionRecommendation>;
 export let ComplianceAuditAuditRetentionRiskSchema: z.ZodType<ComplianceAuditAuditRetentionRisk>;
 export let ComplianceAuditAuditRetentionScenarioSchema: z.ZodType<ComplianceAuditAuditRetentionScenario>;
@@ -19263,6 +19514,7 @@ export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<Compliance
 export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
 export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
 export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
+export let ComplianceAuditSensitivityLevelSchema: z.ZodType<ComplianceAuditSensitivityLevel>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
 export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditEntry>;
@@ -19652,6 +19904,12 @@ export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<Ide
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
 export let IdentityAuthorizationElevationRequestStatusSchema: z.ZodType<IdentityAuthorizationElevationRequestStatus>;
+export let IdentityAuthorizationExpiringTenantPermissionSchema: z.ZodType<IdentityAuthorizationExpiringTenantPermission>;
+export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationExtendTenantPermissionExpirationCommand>;
+export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
+export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
+export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
@@ -19659,11 +19917,17 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
+export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
+export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
+export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<IdentityAuthorizationPermissionComplianceReport>;
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
+export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
+export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -19676,6 +19940,7 @@ export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizat
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
+export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
@@ -19998,6 +20263,7 @@ export let LearningCoursesContentInteractionSummaryDtoSchema: z.ZodType<Learning
 export let LearningCoursesContentProgressDtoSchema: z.ZodType<LearningCoursesContentProgressDto>;
 export let LearningCoursesContentStatsDtoSchema: z.ZodType<LearningCoursesContentStatsDto>;
 export let LearningCoursesContentSummaryDtoSchema: z.ZodType<LearningCoursesContentSummaryDto>;
+export let LearningCoursesCourseAccessCapabilitiesSchema: z.ZodType<LearningCoursesCourseAccessCapabilities>;
 export let LearningCoursesCourseSupportTicketMessageInputSchema: z.ZodType<LearningCoursesCourseSupportTicketMessageInput>;
 export let LearningCoursesCreateActivityGradeDtoSchema: z.ZodType<LearningCoursesCreateActivityGradeDto>;
 export let LearningCoursesCreateCourseSupportTicketInputSchema: z.ZodType<LearningCoursesCreateCourseSupportTicketInput>;
@@ -23856,10 +24122,13 @@ ComplianceAuditAuditRetentionComplianceViolationSchema = z.object({
   source: z.string().nullable().optional(),
 });
 
-/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. Data model for Compliance Audit Audit Retention Configuration Response. */
+/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 ComplianceAuditAuditRetentionConfigurationOutputSchema = z.object({
   id: z.string().uuid().optional(),
   configuration: z.lazy(() => ComplianceAuditConfigureAuditRetentionInputSchema).optional(),
+  inheritedFromTemplateId: z.string().nullable().optional(),
   revision: z.number().int().optional(),
   tenantId: z.string().uuid().optional(),
   updatedAtUtc: z.string().datetime().optional(),
@@ -23923,6 +24192,32 @@ ComplianceAuditAuditRetentionObligationSchema = z.object({
   minimumRetentionDays: z.number().int().min(1).max(36500).optional(),
   name: z.string().min(1).max(100),
   source: z.string().min(1).max(1000),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicySensitivityRule. Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+ComplianceAuditAuditRetentionPolicySensitivityRuleSchema = z.object({
+  maximumRetentionDays: z.number().int().nullable(),
+  minimumRetentionDays: z.number().int(),
+  rationale: z.string().nullable(),
+  sensitivity: z.lazy(() => ComplianceAuditSensitivityLevelSchema),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicyTemplate. Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+ComplianceAuditAuditRetentionPolicyTemplateSchema = z.object({
+  id: z.string().nullable(),
+  baselineScenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema),
+  baseTemplateId: z.string().nullable(),
+  description: z.string().nullable(),
+  displayName: z.string().nullable(),
+  framework: z.string().nullable(),
+  isBaseline: z.boolean(),
+  obligations: z.array(z.lazy(() => ComplianceAuditAuditRetentionObligationSchema)).nullable(),
+  publishedAtUtc: z.string().datetime(),
+  sensitivityRules: z.array(z.lazy(() => ComplianceAuditAuditRetentionPolicySensitivityRuleSchema)).nullable(),
+  tierPrices: z.array(z.lazy(() => ComplianceAuditAuditStorageTierPriceSchema)).nullable(),
 });
 
 /** Zod schema for ComplianceAuditAuditRetentionRecommendation. Data model for Compliance Audit Audit Retention Recommendation. */
@@ -24571,6 +24866,9 @@ ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
   tenantId: z.string().uuid().optional(),
   updatedByUserId: z.string().uuid().optional(),
 });
+
+/** Zod schema for ComplianceAuditSensitivityLevel. Defines sensitivity levels for data access auditing */
+ComplianceAuditSensitivityLevelSchema = z.enum(['Public', 'Internal', 'Confidential', 'Restricted', 'HighlyRestricted']);
 
 /** Zod schema for ComplianceAuditTopIpActivity. Data model for Compliance Audit Top Ip Activity. */
 ComplianceAuditTopIpActivitySchema = z.object({
@@ -28441,6 +28739,69 @@ IdentityAuthorizationEffectivePermissionsOutputSchema = z.object({
 /** Zod schema for IdentityAuthorizationElevationRequestStatus. Status of JIT elevation request */
 IdentityAuthorizationElevationRequestStatusSchema = z.enum(['None', 'Pending', 'Approved', 'Denied', 'Active', 'Expired', 'Revoked']);
 
+/** Zod schema for IdentityAuthorizationExpiringTenantPermission. A tenant permission grant that is about to expire. */
+IdentityAuthorizationExpiringTenantPermissionSchema = z.object({
+  expiresAt: z.string().datetime(),
+  permissionId: z.string().uuid(),
+  permissions: z.array(z.string()).nullable(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExtendTenantPermissionExpirationCommand. Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema = z.object({
+  extension: z.string(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionEntry. Permission entry in the sync contract (one TenantPermission row). */
+IdentityAuthorizationExternalPermissionEntrySchema = z.object({
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionSyncDocument. Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+IdentityAuthorizationExternalPermissionSyncDocumentSchema = z.object({
+  exportedAtUtc: z.string().datetime().optional(),
+  permissions: z
+    .array(z.lazy(() => IdentityAuthorizationExternalPermissionEntrySchema))
+    .nullable()
+    .optional(),
+  roles: z
+    .array(z.lazy(() => IdentityAuthorizationExternalRoleDefinitionSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalRoleDefinition. Role definition in the sync contract. */
+IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
+  additionalParentRoleNames: z.array(z.string()).nullable().optional(),
+  blockedInheritedPermissions: z.array(z.string()).nullable().optional(),
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  parentRoleName: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  priority: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
+IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
+  expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
+  tenantId: z.string().uuid(),
+});
+
 /** Zod schema for IdentityAuthorizationGetPendingResourceInvitationsOutput. Response containing pending invitations for the current user. */
 IdentityAuthorizationGetPendingResourceInvitationsOutputSchema = z.object({
   invitations: z.array(z.lazy(() => IdentityAuthorizationResourceInvitationDtoSchema)).nullable(),
@@ -28492,6 +28853,13 @@ IdentityAuthorizationHasPermissionOutputSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationImpactSeverity. Impact severity level */
 IdentityAuthorizationImpactSeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthorizationImportPermissionSyncInput. Request body for the permission sync import endpoint. */
+IdentityAuthorizationImportPermissionSyncInputSchema = z.object({
+  document: z.lazy(() => IdentityAuthorizationExternalPermissionSyncDocumentSchema).optional(),
+  dryRun: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
@@ -28560,6 +28928,43 @@ IdentityAuthorizationPermissionAnomalySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionComplianceBreakdown. Allow/deny rates for one reporting dimension value. */
+IdentityAuthorizationPermissionComplianceBreakdownSchema = z.object({
+  allow: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  deny: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  error: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionComplianceReport. Compliance report over recorded permission evaluations. */
+IdentityAuthorizationPermissionComplianceReportSchema = z.object({
+  allowCount: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  byOperation: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  byPermission: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  bySource: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  denyCount: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  errorCount: z.number().int().optional(),
+  errorRate: z.number().optional(),
+  fromUtc: z.string().datetime().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalEvaluations: z.number().int().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionDelegation. Permission delegation allows users to delegate their permissions to other users */
 IdentityAuthorizationPermissionDelegationSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28578,6 +28983,33 @@ IdentityAuthorizationPermissionDelegationSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
   usageCount: z.number().int().optional(),
   usageLimit: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionRestorationResult. Result of a permission restoration attempt. */
+IdentityAuthorizationPermissionRestorationResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  restoredPermissionId: z.string().uuid().nullable().optional(),
+  succeeded: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
+IdentityAuthorizationPermissionSyncChangeSchema = z.object({
+  kind: z.string().nullable().optional(),
+  payload: z.record(z.string(), z.string()).nullable().optional(),
+  target: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncImportResult. Result of a synchronization import (or dry-run preview). */
+IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
+  applied: z.boolean().optional(),
+  changes: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionSyncChangeSchema))
+    .nullable()
+    .optional(),
+  dryRun: z.boolean().optional(),
+  isValid: z.boolean().optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
@@ -28788,6 +29220,15 @@ These are baseline permissions applied to all users in a specific tenant. */
 IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema = z.object({
   permissions: z.array(z.string()).nullable(),
   setBy: z.string().uuid(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationSetTenantPermissionExpirationCommand. Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+IdentityAuthorizationSetTenantPermissionExpirationCommandSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
 });
 
@@ -32347,6 +32788,20 @@ LearningCoursesContentSummaryDtoSchema = z.object({
   contentType: z.string().nullable().optional(),
   estimatedMinutes: z.number().int().nullable().optional(),
   title: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningCoursesCourseAccessCapabilities. Data model for Learning Courses Course Access Capabilities. */
+LearningCoursesCourseAccessCapabilitiesSchema = z.object({
+  canAccessWorkspace: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  canLearn: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
+  canReviewAsStaff: z.boolean().optional(),
+  courseExists: z.boolean().optional(),
+  courseId: z.string().uuid().optional(),
+  hasActiveEnrollment: z.boolean().optional(),
+  isOwner: z.boolean().optional(),
+  isTenantMember: z.boolean().optional(),
 });
 
 /** Zod schema for LearningCoursesCourseSupportTicketMessageInput. Data model for Learning Courses Course Support Ticket Message Request. */

@@ -15,8 +15,12 @@ namespace GameGuild.Identity.Authorization;
 ///     </para>
 ///     <para>
 ///         <b>Role Hierarchy:</b>
-///         A role can have a parent role. Permissions are inherited from parent roles.
-///         Example: "Senior Developer" inherits from "Developer" which inherits from "Member".
+///         A role can have multiple parent roles (multi-parent inheritance, issue #358):
+///         one primary <see cref="DynamicRole.ParentRoleId"/> plus any
+///         <see cref="DynamicRole.AdditionalParentRoleIds"/>. Permissions are inherited
+///         from all parents; cycles are detected and cut during traversal.
+///         Example: "Senior Developer" inherits from "Developer" and "Reviewer",
+///         both of which inherit from "Member".
 ///     </para>
 /// </remarks>
 public class DynamicRole : EntityBase
@@ -43,13 +47,21 @@ public class DynamicRole : EntityBase
     public new Guid? TenantId { get; set; }
 
     /// <summary>
-    ///     Parent role ID for hierarchy.
+    ///     Parent role ID for hierarchy (primary parent).
     ///     This role inherits all permissions from its parent.
     /// </summary>
     public Guid? ParentRoleId { get; set; }
 
     /// <summary>
-    ///     Parent role (navigation property).
+    ///     Additional parent role IDs beyond the primary <see cref="ParentRoleId"/>
+    ///     (issue #358: multi-parent inheritance). The effective parent set is
+    ///     <c>{ ParentRoleId } ∪ AdditionalParentRoleIds</c>; the inheritance graph is a
+    ///     DAG and cycle detection is enforced during traversal.
+    /// </summary>
+    public Guid[] AdditionalParentRoleIds { get; set; } = Array.Empty<Guid>();
+
+    /// <summary>
+    ///     Parent role (navigation property for the primary parent).
     /// </summary>
     public DynamicRole? ParentRole { get; set; }
 
@@ -57,6 +69,14 @@ public class DynamicRole : EntityBase
     ///     Child roles (navigation property).
     /// </summary>
     public ICollection<DynamicRole> ChildRoles { get; set; } = new List<DynamicRole>();
+
+    /// <summary>
+    ///     Permissions inherited from parent roles that this role explicitly opts out
+    ///     of (issue #358: selective inheritance blocking). Blocked permissions do not
+    ///     flow into this role from any ancestor; the role's own direct permissions and
+    ///     denies are unaffected. Applies only to inherited contributions.
+    /// </summary>
+    public string[] BlockedInheritedPermissions { get; set; } = Array.Empty<string>();
 
     /// <summary>
     ///     Permissions directly assigned to this role.
@@ -110,6 +130,30 @@ public class DynamicRole : EntityBase
     ///     Metadata for extensibility.
     /// </summary>
     public Dictionary<string, object>? Metadata { get; set; }
+
+    /// <summary>
+    ///     The effective set of parent role IDs: the primary parent plus any additional
+    ///     parents, de-duplicated and ordered (primary first). Used by the inheritance
+    ///     engine for multi-parent traversal.
+    /// </summary>
+    public IReadOnlyList<Guid> GetEffectiveParentRoleIds()
+    {
+        var parents = new List<Guid>(AdditionalParentRoleIds.Length + 1);
+        if (ParentRoleId.HasValue)
+        {
+            parents.Add(ParentRoleId.Value);
+        }
+
+        foreach (var parentId in AdditionalParentRoleIds)
+        {
+            if (parentId != Guid.Empty && !parents.Contains(parentId))
+            {
+                parents.Add(parentId);
+            }
+        }
+
+        return parents;
+    }
 }
 
 /// <summary>

@@ -232,7 +232,7 @@ public class TasksAggregationTests
             .ReturnsAsync([
                 "Program.not-a-guid.Edit",
                 $"Program.{Guid.NewGuid()}.Review",
-                $"Program.{courseId}.Edit"
+                $"Program.{courseId}.Review"
             ]);
         var service = new TasksService(db, permissions.Object, NullLogger<TasksService>.Instance);
 
@@ -254,7 +254,7 @@ public class TasksAggregationTests
         db.Add(new TenantPermission
         {
             UserId = grantedManager,
-            Permissions = [$"Program.{courseId}.{PermissionType.Edit}"]
+            Permissions = [$"Program.{courseId}.{PermissionType.Review}"]
         });
 
         var assessment = await SeedAssessmentAsync(db, courseId, "Group Project");
@@ -413,7 +413,7 @@ public class TasksAggregationTests
 
     private static async Task SeedCourseAsync(TestTasksDbContext db, Guid courseId, string title, Guid creatorId)
     {
-        db.Add(new Program { Id = courseId, Title = title, CreatorId = creatorId, TenantId = null });
+        db.Add(new Program { Id = courseId, Title = title, CreatorId = creatorId, TenantId = TenantId });
         await db.SaveChangesAsync();
     }
 

@@ -89,6 +89,15 @@ public static class Permissions
     /// <summary>Admin access to content</summary>
     public const string ContentAdmin = ContentPermission.Keys.Admin;
 
+    /// <summary>Edit existing editorial content</summary>
+    public const string ContentEdit = ContentPermission.Keys.Edit;
+
+    /// <summary>Create and maintain content drafts</summary>
+    public const string ContentDraft = ContentPermission.Keys.Draft;
+
+    /// <summary>Schedule and cancel scheduled content publication</summary>
+    public const string ContentSchedule = ContentPermission.Keys.Schedule;
+
     // ========================
     // PROJECT PERMISSIONS
     // ========================

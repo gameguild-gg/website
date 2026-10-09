@@ -152,6 +152,106 @@ export class AccessControlTenantPermissionsModule {
   }
 
   /**
+   * Gets permission grants expiring within a window (administrative visibility
+   * for upcoming expirations).
+   */
+  async getAuthorizationTenantsPermissionsExpiring(
+    tenantId: string,
+    query?: { expiresBefore?: string },
+  ): Promise<Result<Types.IdentityAuthorizationGetExpiringTenantPermissionsOutput, ApiError>> {
+    const url = `/api/v1/authorization/tenants/permissions:expiring`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Bulk-extends the expiration of permission grants in a tenant by a time period.
+   */
+  async postAuthorizationTenantsPermissionsExtendExpiration(
+    body: Types.IdentityAuthorizationExtendTenantPermissionExpirationCommand,
+  ): Promise<Result<number, ApiError>> {
+    const url = '/api/v1/authorization/tenants/permissions:extend-expiration';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<number, ApiError>;
+  }
+
+  /**
+   * Processes (deactivates, audits, notifies) all expired permission grants now,
+   * without waiting for the background worker. System admin only.
+   */
+  async postAuthorizationTenantsPermissionsProcessExpired(): Promise<Result<number, ApiError>> {
+    const url = '/api/v1/authorization/tenants/permissions:process-expired';
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    return result as Result<number, ApiError>;
+  }
+
+  /**
+   * Publishes upcoming-expiration notifications for grants expiring within the
+   * configured window, without waiting for the background worker. System admin only.
+   */
+  async postAuthorizationTenantsPermissionsSendExpirationReminders(): Promise<Result<number, ApiError>> {
+    const url = '/api/v1/authorization/tenants/permissions:send-expiration-reminders';
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: true,
+    });
+
+    return result as Result<number, ApiError>;
+  }
+
+  /**
+   * Bulk-sets an absolute expiration for permission grants in a tenant.
+   */
+  async postAuthorizationTenantsPermissionsSetExpiration(
+    body: Types.IdentityAuthorizationSetTenantPermissionExpirationCommand,
+  ): Promise<Result<number, ApiError>> {
+    const url = '/api/v1/authorization/tenants/permissions:set-expiration';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthorizationSetTenantPermissionExpirationCommandSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<number, ApiError>;
+  }
+
+  /**
    * Revokes tenant-level permissions from a user.
    */
   async postAuthorizationTenantsRevoke(body: Types.IdentityAuthorizationRevokeTenantPermissionCommand): Promise<Result<boolean, ApiError>> {
