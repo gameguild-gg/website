@@ -227,7 +227,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        var user = User.CreateWithPassword(email, "Synthetic suspicious login owner", hasher.HashPassword(Password));
+        var user = User.CreateWithPassword(email, "Synthetic suspicious login owner", hasher.HashPassword(Password), $"suspicious-login-{marker}");
         db.Set<User>().Add(user);
 
         var now = DateTime.UtcNow;
