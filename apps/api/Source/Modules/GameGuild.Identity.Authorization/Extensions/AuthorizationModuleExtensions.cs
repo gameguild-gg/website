@@ -405,6 +405,11 @@ public static class AuthorizationModuleExtensions
         // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
 
+        // Layer 2: Centralized DAC permission resolution (issue #339). Single entry
+        // point for the 3-layer DAC model (tenant / content-type / resource) that
+        // delegates every decision to the canonical effective-permission resolver.
+        services.AddScoped<IDacPermissionResolver, DacPermissionResolver>();
+
         return services;
     }
 
