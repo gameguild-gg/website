@@ -12,6 +12,34 @@ Consolidated summary (replaces prior DAC strategy & related docs).
 
 Resolution order: Resource → Content-Type → Tenant (first explicit grant wins).
 
+## Permission Entity Hierarchy (PermissionBase) — issues #352 / #357
+
+Every persisted permission-grant entity derives from the abstract `PermissionBase`
+(`apps/api/Source/Modules/GameGuild.Identity.Authorization/Entities/PermissionBase.cs`):
+
+```
+PermissionBase (abstract; Id, UserId, TenantId, IsActive, ExpiresAt, GrantedAt,
+                CreatedAt/UpdatedAt/DeletedAt/Version, validation, expiration,
+                audit views, tenant-scope guards, fail-closed parsing)
+├── TenantPermission                    (tenant-wide allow/deny grants)
+├── ResourceUserPermission              (direct per-resource grants, revocation-state)
+└── WithPermissions                     (comma-separated PermissionType payload)
+    ├── ContentTypePermission           (layer 2 above)
+    └── ResourcePermission<TResource>   (layer 3 above)
+        └── GenericResourcePermission   (mapped table: genericresourcepermission)
+```
+
+- **Table-per-type without a mapped hierarchy root**: each entity keeps its own table and
+  maps the inherited common column block (`Id, UserId, TenantId, IsActive, ExpiresAt,
+  GrantedAt, CreatedAt, UpdatedAt, DeletedAt, Version`) into it — no destructive merge.
+- **Fail closed**: raw payload values (numeric or name form) are validated with
+  `Enum.IsDefined` and undefined values are dropped, never cast; inactive, expired or
+  soft-deleted grants convey nothing (`IsEffective()`/`Grants()`).
+- **Audited mutations**: `ApplicationDbContext` captures Added/Modified/Deleted entries of
+  permission entities (including `UserRole`) and flushes them as centralized
+  `PermissionAuditLog` records; role-assignment removal is a soft delete
+  (`DeletedAt`) so permission history is preserved and re-assignment restores the row.
+
 ## Conflict Resolution (DAC Layer)
 
 **Policy: Allow-Wins (Additive)**
