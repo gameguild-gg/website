@@ -1488,7 +1488,7 @@ export interface CommerceBillingBillingWebhookAllowlistStatusDto {
   /** Number of configured CIDR entries. */
   configuredNetworkCount?: number;
   /** Configured CIDR entries (admin-visible; providers rotate egress ranges). */
-  configuredNetworks?: Array<string> | null;
+  configuredNetworks?: string[] | null;
   /** Whether any allowlist entry is configured (fail closed when true). */
   isEnabled?: boolean;
 }
@@ -1516,7 +1516,7 @@ export interface CommerceBillingBillingWebhookSecuritySummaryDto {
   /** UTC moment the summary was produced. */
   generatedAtUtc?: string;
   /** Open (unacknowledged) security alerts raised by the pipeline. */
-  openSecurityAlerts?: Array<CommerceBillingBillingWebhookSecurityAlertDto> | null;
+  openSecurityAlerts?: CommerceBillingBillingWebhookSecurityAlertDto[] | null;
   securityEventPipeline?: ComplianceAuditSecurityEventDeliveryStatusOutput;
   sourceIpAllowlist?: CommerceBillingBillingWebhookAllowlistStatusDto;
   suspiciousActivity?: CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
@@ -1527,7 +1527,7 @@ export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
   /** How long (seconds) a blocked source stays blocked. */
   blockDurationSeconds?: number;
   /** Sources currently blocked, ordered by remaining block duration. */
-  blockedSources?: Array<CommerceBillingBillingWebhookBlockedSourceDto> | null;
+  blockedSources?: CommerceBillingBillingWebhookBlockedSourceDto[] | null;
   /** Failures within the window that trigger a temporary block. */
   failureThreshold?: number;
   /** Whether threshold blocking is enabled (fail open when false). */
