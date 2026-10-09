@@ -216,6 +216,12 @@ public static class InfrastructureLayerExtensions
         services.AddUnifiedAuthorizationLayer();
         logger.LogInformation("Unified Authorization Layer registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
+        // 10.0 Permission Evaluation Engine (issue #358): evaluation throttle, webhooks,
+        // external sync, restoration, compliance reporting.
+        stepStopwatch.Restart();
+        services.AddPermissionEngineServices();
+        logger.LogInformation("Permission Evaluation Engine registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
+
         // 10a. Resources Module (quota, usage tracking, SLA services)
         stepStopwatch.Restart();
         services.AddResourcesInfrastructure(configuration);

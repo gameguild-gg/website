@@ -209,6 +209,15 @@ public interface ITenantPermissionRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Loads a soft-deleted TenantPermission by id, bypassing the soft-delete query
+    ///     filter (issue #358 permission restoration). Returns null when the id is
+    ///     unknown or the row is live (not deleted).
+    /// </summary>
+    Task<TenantPermission?> GetDeletedByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Gets active, non-deleted grants whose <c>ExpiresAt</c> falls within the open
     ///     interval (now, <paramref name="cutoff"/>], ordered by expiration instant.
     ///     Uses the <c>IX_TenantPermissions_ExpiresAt</c> index.

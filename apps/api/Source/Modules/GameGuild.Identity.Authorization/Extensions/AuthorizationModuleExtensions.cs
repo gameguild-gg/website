@@ -43,6 +43,20 @@ public static class AuthorizationModuleExtensions
         services.Configure<PermissionExpirationOptions>(
             configuration.GetSection(PermissionExpirationOptions.SectionName));
 
+        // Permission evaluation engine options (issue #358): inheritance rules, webhooks,
+        // evaluation throttle, restoration retention, external sync limits.
+        services.AddOptions<PermissionEngineOptions>()
+            .Bind(configuration.GetSection(PermissionEngineOptions.SectionName))
+            .Validate(options =>
+            {
+                options.Inheritance.Validate();
+                options.EvaluationThrottle.Validate();
+                options.Restoration.Validate();
+                options.ExternalSync.Validate();
+                return true;
+            })
+            .ValidateOnStart();
+
         return services;
     }
 
@@ -382,10 +396,55 @@ public static class AuthorizationModuleExtensions
         // Layer 2: Permission resolvers
         services.AddScoped<IRbacPermissionResolver, RbacPermissionResolver>();
 
+        // Multi-parent role inheritance engine (issue #358): cycle detection, selective
+        // blocking and configurable traversal rules for RBAC hierarchy resolution.
+        services.AddScoped<IRoleInheritanceEngine, RoleInheritanceEngine>();
+
         // Layer 2: Unified effective-permission resolver (DENY-WINS, fail-closed).
         // Single resolution contract for authorization entry points and permission-query
         // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
+
+        return services;
+    }
+
+    /// <summary>
+    ///     Registers the permission evaluation engine capabilities (issue #358):
+    ///     evaluation-layer throttling, permission-change webhooks, external system
+    ///     synchronization, permission restoration and compliance reporting.
+    ///     Every capability is config-gated and fails closed.
+    /// </summary>
+    public static IServiceCollection AddPermissionEngineServices(this IServiceCollection services)
+    {
+        // Evaluation-layer rate limiting / enumeration protection (per user+tenant).
+        services.AddSingleton<IEvaluationDenialThrottleService, EvaluationDenialThrottleService>();
+
+        // Durable evaluation log: sink (written by IPermissionEvaluationLogService fan-out)
+        // and range reader (used by the compliance report).
+        services.AddScoped<PermissionEvaluationLogEntryRepository>();
+        services.AddScoped<IPermissionEvaluationLogSink>(sp => sp.GetRequiredService<PermissionEvaluationLogEntryRepository>());
+        services.AddScoped<IPermissionEvaluationLogEntryRepository>(sp => sp.GetRequiredService<PermissionEvaluationLogEntryRepository>());
+        services.AddScoped<IPermissionComplianceReportService, PermissionComplianceReportService>();
+
+        // Permission-change webhooks (issue #358): HMAC-signed payloads with retry. The
+        // notifier is a no-op unless PermissionEngine:Webhooks is enabled with an endpoint
+        // and secret. No outbound calls happen in tests (the HTTP pipeline is injectable).
+        services.AddHttpClient<WebhookPermissionChangeNotifier>();
+        services.AddScoped<IPermissionChangeNotifier>(sp => sp.GetRequiredService<WebhookPermissionChangeNotifier>());
+
+        // External system permission synchronization (issue #358).
+        services.AddScoped<IPermissionSyncService, PermissionSyncService>();
+
+        // Permission restoration (issue #358).
+        services.AddScoped<IPermissionRestorationService, PermissionRestorationService>();
+
+        // Shared tenant-scope guard for the engine's admin surfaces.
+        services.AddScoped<PermissionEngineTenantGuard>();
+
+        // NOTE: IPermissionEvaluationExtension plugins are NOT registered here by design:
+        // hosts/plugins register their own implementations against the
+        // IPermissionEvaluationExtension service type; the resolver picks up every
+        // registered implementation and orders them by Order, then DI registration order.
 
         return services;
     }
