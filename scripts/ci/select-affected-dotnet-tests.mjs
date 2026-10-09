@@ -28,7 +28,11 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
       continue;
     }
 
-    if (testProjectMatch?.[1] && availableProjects.includes(testProjectMatch[1])) {
+    if (
+      testProjectMatch?.[1] &&
+      !testProjectMatch[1].endsWith("PerformanceTests") &&
+      availableProjects.includes(testProjectMatch[1])
+    ) {
       selected.add(testProjectMatch[1]);
       continue;
     }

@@ -90,7 +90,7 @@ grep -Fq -- "Password=$fixture_password;" "$MOCK_LOG"
 ! grep -Fq -- "$fixture_password" "$fixture_root/migrated.log"
 grep -Fq -- 'Password=[REDACTED];' "$fixture_root/migrated.log"
 printf 'PASS generated credential is shared by authenticated readiness and template migration, and redacted from output\n'
-grep -Fq -- 'postgres:17-alpine -c max_locks_per_transaction=512' "$MOCK_LOG"
+grep -Fq -- 'public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512' "$MOCK_LOG"
 grep -Fq -- '--context ApplicationDbContext --configuration Release --no-build' "$MOCK_LOG"
 grep -Eq '^dotnet test .*Finance.Economy.UnitTests.* \| template=economy_tests_template$' "$MOCK_LOG"
 [[ "$(grep -c '^docker rm --force aaaa' "$MOCK_LOG")" == 1 ]]

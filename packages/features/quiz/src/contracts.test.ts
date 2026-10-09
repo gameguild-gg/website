@@ -7,6 +7,7 @@ import {
 import {
   FillBlankInputType,
   QuizEntryType,
+  createEssayEntry,
   createHotspotEntry,
   type FillInTheBlankEntry,
   type FormulaEntry,
@@ -255,5 +256,24 @@ describe("quiz contracts", () => {
       }),
     ])
     expect(isCompleteQuizAuthoringEntry(incompleteSingle)).toBe(false)
+  })
+
+  it("validates optional essay word limits before content serialization", () => {
+    const invalidNumbers = createEssayEntry("Explain your reasoning.")
+    invalidNumbers.minWordCount = Number.NaN
+    invalidNumbers.maxWordCount = -1
+
+    expect(validateQuizAuthoringEntry(invalidNumbers)).toEqual([
+      expect.objectContaining({ path: "minWordCount" }),
+      expect.objectContaining({ path: "maxWordCount" }),
+    ])
+
+    const invertedRange = createEssayEntry("Explain your reasoning.")
+    invertedRange.minWordCount = 200
+    invertedRange.maxWordCount = 100
+
+    expect(validateQuizAuthoringEntry(invertedRange)).toEqual([
+      expect.objectContaining({ path: "maxWordCount" }),
+    ])
   })
 })

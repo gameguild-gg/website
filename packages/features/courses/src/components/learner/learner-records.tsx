@@ -23,7 +23,12 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import type { LearnerCertificate, LearnerCourseRecord } from "./types";
+import type {
+  LearnerAssessment,
+  LearnerCertificate,
+  LearnerCourseRecord,
+  LearnerSubmission,
+} from "./types";
 
 function formatDate(value: string, locale = "en-US", timeZone = "UTC") {
   return new Intl.DateTimeFormat(locale, {
@@ -37,6 +42,25 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+function isFinalizedAwaitingRelease(submission: LearnerSubmission | undefined) {
+  return (
+    submission?.score == null && submission?.status?.toLowerCase() === "graded"
+  );
+}
+
+function submissionResultLabel(
+  submission: LearnerSubmission | undefined,
+  assessment: LearnerAssessment,
+) {
+  if (submission?.score != null) {
+    return `${submission.score} / ${assessment.maxScore ?? 0}`;
+  }
+  if (isFinalizedAwaitingRelease(submission)) {
+    return "Graded, awaiting release";
+  }
+  return submission ? "Awaiting grade" : "Not submitted";
 }
 
 function buildCalendarEvents(records: LearnerCourseRecord[]) {
@@ -406,7 +430,17 @@ export function LearnerGradebook({
       const percentage = possible > 0 ? (earned / possible) * 100 : null;
       const contribution =
         percentage == null ? null : (percentage * group.weightPercent) / 100;
-      return { course, group, rows, percentage, contribution };
+      const awaitingRelease = rows.some((row) =>
+        isFinalizedAwaitingRelease(row.submission),
+      );
+      return {
+        course,
+        group,
+        rows,
+        percentage,
+        contribution,
+        awaitingRelease,
+      };
     }),
   );
   const graded = assessments.filter((row) => row.submission?.score != null);
@@ -502,7 +536,7 @@ export function LearnerGradebook({
         <Card className="rounded-lg bg-card">
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">
-              Awaiting grades
+              Awaiting results
             </CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-semibold">
@@ -534,7 +568,14 @@ export function LearnerGradebook({
           </div>
           <div className="divide-y rounded-md border">
             {gradeGroups.map(
-              ({ course, group, rows, percentage, contribution }) => (
+              ({
+                course,
+                group,
+                rows,
+                percentage,
+                contribution,
+                awaitingRelease,
+              }) => (
                 <article
                   key={`${course.id}-${group.id}`}
                   className="grid gap-4 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center"
@@ -555,7 +596,9 @@ export function LearnerGradebook({
                     <span className="text-muted-foreground">Group score</span>
                     <strong className="ml-2">
                       {percentage == null
-                        ? "Not graded"
+                        ? awaitingRelease
+                          ? "Awaiting release"
+                          : "Not graded"
                         : `${formatNumber(percentage)}%`}
                     </strong>
                   </div>
@@ -638,11 +681,7 @@ export function LearnerGradebook({
                   </p>
                 </div>
                 <strong className="text-lg">
-                  {submission?.score != null
-                    ? `${submission.score} / ${assessment.maxScore ?? 0}`
-                    : submission
-                      ? "Awaiting grade"
-                      : "Not submitted"}
+                  {submissionResultLabel(submission, assessment)}
                 </strong>
               </div>
               {submission?.feedback ? (

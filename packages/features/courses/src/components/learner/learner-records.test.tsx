@@ -132,6 +132,35 @@ describe("learner record views", () => {
     ).toBeInTheDocument();
   });
 
+  it("distinguishes a finalized result that has not been released", () => {
+    render(
+      <LearnerGradebook
+        records={[
+          {
+            ...records[0]!,
+            context: {
+              ...records[0]!.context,
+              submissions: [
+                {
+                  ...records[0]!.context.submissions[0]!,
+                  score: null,
+                  passed: null,
+                  feedback: null,
+                  status: "Graded",
+                },
+              ],
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Graded, awaiting release")).toBeInTheDocument();
+    expect(screen.getByText("Awaiting release")).toBeInTheDocument();
+    expect(screen.getByText("Awaiting results")).toBeInTheDocument();
+    expect(screen.queryByText("Awaiting grade")).not.toBeInTheDocument();
+  });
+
   it("renders issued credentials and an honest empty state", () => {
     const { rerender } = render(<LearnerCertificates certificates={[]} />);
 
