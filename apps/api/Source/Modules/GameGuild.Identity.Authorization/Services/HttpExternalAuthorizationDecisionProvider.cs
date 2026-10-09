@@ -119,7 +119,7 @@ public sealed class HttpExternalAuthorizationDecisionProvider(
         {
             logger.LogInformation(
                 "External authorization decision endpoint denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
-                query.Permission, query.UserId, query.TenantId, string.Join("; ", decision.Reasons));
+                query.Permission, query.UserId, query.TenantId, string.Join("; ", decision.Reasons)); // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging
         }
 
         return decision;
