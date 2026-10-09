@@ -3,7 +3,7 @@ import Script from 'next/script';
 import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import { DevelopmentReactDiagnostics } from '@/components/app/development-react-diagnostics';
-import { GoogleTagManagerConsent } from '@/components/app/google-tag-manager-consent';
+import { AnalyticsConsent } from '@/components/app/analytics-consent';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           )}
       </head>
       <body suppressHydrationWarning>
-        <GoogleTagManagerConsent />
+        <AnalyticsConsent />
         <DevelopmentReactDiagnostics />
         {children}
       </body>
