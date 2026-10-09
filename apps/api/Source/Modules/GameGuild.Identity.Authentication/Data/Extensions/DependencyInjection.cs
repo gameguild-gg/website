@@ -5,6 +5,7 @@ using GameGuild.CQRS;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -29,7 +30,7 @@ public static class DataDependencyInjection
         services.AddBlockchainCertificateAnchoring(configuration);
 
         // Register security services
-        RegisterSecurityServices(services);
+        RegisterSecurityServices(services, configuration);
 
         // Register utility services
         RegisterUtilityServices(services);
@@ -189,12 +190,15 @@ public static class DataDependencyInjection
     /// <summary>
     ///     Register security-focused services
     /// </summary>
-    private static void RegisterSecurityServices(IServiceCollection services)
+    private static void RegisterSecurityServices(IServiceCollection services, IConfiguration configuration)
     {
         // Anomaly-detection sub-services
         services.AddScoped<IThreatDetectionService, ThreatDetectionService>();
         services.AddScoped<IBehavioralAnalysisService, BehavioralAnalysisService>();
         services.AddScoped<ILoginAttemptAnalysisService, LoginAttemptAnalysisService>();
+
+        // Credential-stuffing threat intelligence (safe default: local operator-supplied feed)
+        RegisterThreatIntelligence(services, configuration);
 
         // Facade that preserves the original IAuthenticationAnomalyDetectionService contract
         services.AddScoped<AuthenticationAnomalyDetectionService>();
@@ -209,6 +213,65 @@ public static class DataDependencyInjection
 
         // Note: These services have interface mismatches and need interface updates
         // to match GameGuild implementation signatures before registering with interfaces
+    }
+
+    /// <summary>
+    ///     Registers the credential-stuffing threat-intelligence provider selected by
+    ///     <c>ThreatIntelligence:Provider</c>. The safe default is <c>LocalFile</c> (an
+    ///     operator-supplied local feed, zero external calls); <c>None</c> registers the
+    ///     disabled no-op. Unknown providers fail startup so misconfiguration is loud.
+    /// </summary>
+    private static void RegisterThreatIntelligence(IServiceCollection services, IConfiguration configuration)
+    {
+        var threatIntelligenceOptions = OptionBuilderUtilities.CreateAndBind(
+            configuration,
+            ThreatIntelligenceOptions.SectionName,
+            static () => new ThreatIntelligenceOptions());
+        ValidateThreatIntelligenceOptions(threatIntelligenceOptions);
+        services.AddSingleton(threatIntelligenceOptions);
+
+        if (string.Equals(threatIntelligenceOptions.Provider, ThreatIntelligenceOptions.NoneProvider, StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IThreatIntelligenceProvider>(NullThreatIntelligenceProvider.Instance);
+            return;
+        }
+
+        services.AddSingleton<IThreatIntelligenceProvider>(static provider =>
+            new LocalFileThreatIntelligenceProvider(
+                provider.GetRequiredService<ThreatIntelligenceOptions>(),
+                provider.GetRequiredService<TimeProvider>(),
+                provider.GetRequiredService<ILogger<LocalFileThreatIntelligenceProvider>>(),
+                provider.GetService<IServiceScopeFactory>()));
+    }
+
+    private static void ValidateThreatIntelligenceOptions(ThreatIntelligenceOptions options)
+    {
+        var isKnownProvider = string.Equals(options.Provider, ThreatIntelligenceOptions.LocalFileProvider, StringComparison.OrdinalIgnoreCase)
+                              || string.Equals(options.Provider, ThreatIntelligenceOptions.NoneProvider, StringComparison.OrdinalIgnoreCase);
+        if (!isKnownProvider)
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: unknown provider '{options.Provider}'. "
+                + $"Supported providers are '{ThreatIntelligenceOptions.LocalFileProvider}' (default) and '{ThreatIntelligenceOptions.NoneProvider}'.");
+        }
+
+        if (options.MaliciousIpRiskScore is < 0 or > 100 || options.BreachedPasswordRiskScore is < 0 or > 100)
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: risk scores must be between 0 and 100.");
+        }
+
+        if (string.IsNullOrWhiteSpace(options.LocalFile.FilePath))
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: LocalFile:FilePath must not be empty.");
+        }
+
+        if (options.LocalFile.ReloadInterval < TimeSpan.FromSeconds(1))
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ThreatIntelligenceOptions.SectionName} configuration: LocalFile:ReloadInterval must be at least one second.");
+        }
     }
 
     /// <summary>

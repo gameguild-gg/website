@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.CQRS;
 using GameGuild.Email;
@@ -47,6 +49,11 @@ public class LocalAuthService(
         {
             deviceFingerprint = request.DeviceFingerprint;
         }
+
+        // Digest of the candidate password for breached-password (credential-stuffing)
+        // threat-intelligence matching. Only the digest travels on the attempt context;
+        // it is never persisted or logged.
+        var candidatePasswordSha256Hex = ComputePasswordSha256Hex(request.Password);
 
 #pragma warning disable IDE0059 // Unnecessary assignment - Initial null IS used in failure path at RecordFailedAttempt
         Guid? userId = null;
@@ -103,7 +110,8 @@ public class LocalAuthService(
                     logger.LogError(exception, "Could not record failed authentication attempt for user {UserId}", userId);
                 }
 
-                var failedAttemptContext = CreateAttemptContext(request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint);
+                var failedAttemptContext = CreateAttemptContext(
+                    request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint, candidatePasswordSha256Hex);
                 var failedAttemptAnalysis = await AnalyzeAttemptForAuditAsync(failedAttemptContext).ConfigureAwait(false);
                 if (failedAttemptAnalysis is { IsAnomalous: true })
                 {
@@ -123,7 +131,8 @@ public class LocalAuthService(
             var authenticatedUserId = userId ?? throw new InvalidOperationException("A successful authentication must have a user ID.");
 
             // Analyze login attempt for anomalies
-            var attemptContext = CreateAttemptContext(request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint);
+            var attemptContext = CreateAttemptContext(
+                request.Email, userId, ipAddress, userAgent, request.TenantId, deviceFingerprint, candidatePasswordSha256Hex);
 
             var anomalyResult = await anomalyDetectionService.AnalyzeLoginAttemptAsync(attemptContext).ConfigureAwait(false);
             var behavioralAnalysis = await AnalyzeBehavioralPatternsForAuditAsync(authenticatedUserId, attemptContext).ConfigureAwait(false);
@@ -265,17 +274,24 @@ public class LocalAuthService(
         string ipAddress,
         string? userAgent,
         Guid? tenantId,
-        string? deviceFingerprint) => new()
-        {
-            UserId = userId,
-            Identifier = identifier.ToLowerInvariant(),
-            AuthenticationMethod = "Password",
-            IpAddress = ipAddress,
-            UserAgent = userAgent ?? "Unknown",
-            DeviceFingerprint = deviceFingerprint,
-            TenantId = tenantId,
-            AttemptedAt = SystemClock.UtcNow
-        };
+        string? deviceFingerprint,
+        string? passwordSha256Hex = null) => new()
+    {
+        UserId = userId,
+        Identifier = identifier.ToLowerInvariant(),
+        AuthenticationMethod = "Password",
+        IpAddress = ipAddress,
+        UserAgent = userAgent ?? "Unknown",
+        DeviceFingerprint = deviceFingerprint,
+        PasswordSha256Hex = passwordSha256Hex,
+        TenantId = tenantId,
+        AttemptedAt = SystemClock.UtcNow
+    };
+
+    private static string? ComputePasswordSha256Hex(string? password)
+        => string.IsNullOrEmpty(password)
+            ? null
+            : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password)));
 
     private async Task<AuthenticationAnomalyResult?> AnalyzeAttemptForAuditAsync(AuthenticationAttemptContext attemptContext)
     {
