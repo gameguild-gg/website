@@ -1367,8 +1367,9 @@ public class ServiceConstructorTests5
     {
         var repo = new Mock<IJitElevationRequestRepository>();
         var auditSvc = new Mock<IPermissionAuditService>();
+        var versionStore = new Mock<ITenantSecurityVersionStore>();
         var logger = NullLogger<JitElevationService>.Instance;
-        var svc = new JitElevationService(repo.Object, auditSvc.Object, logger);
+        var svc = new JitElevationService(repo.Object, auditSvc.Object, versionStore.Object, logger);
         svc.Should().NotBeNull();
     }
 
@@ -1410,7 +1411,7 @@ public class ServiceConstructorTests5
         var repo = new Mock<ITenantPermissionRepository>();
         var membershipChecker = new Mock<ITenantMembershipChecker>();
         var logger = NullLogger<PermissionQueryService>.Instance;
-        var svc = new PermissionQueryService(repo.Object, membershipChecker.Object, logger);
+        var svc = new PermissionQueryService(repo.Object, membershipChecker.Object, Mock.Of<IEffectivePermissionResolver>(), logger);
         svc.Should().NotBeNull();
     }
 

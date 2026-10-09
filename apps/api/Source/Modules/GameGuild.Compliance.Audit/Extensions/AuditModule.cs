@@ -60,9 +60,41 @@ public static class AuditModule
             services.Configure(configureSigningOptions);
         }
 
+        services.AddOptions<SecurityEventPipelineOptions>()
+            .Configure<IConfiguration>((pipelineOptions, configuration) =>
+            {
+                var bound = SecurityEventPipelineOptionsConfiguration.BindFrom(configuration);
+                pipelineOptions.DatabaseWriteAttempts = bound.DatabaseWriteAttempts;
+                pipelineOptions.RetryDelayMilliseconds = bound.RetryDelayMilliseconds;
+                pipelineOptions.SpoolingEnabled = bound.SpoolingEnabled;
+                pipelineOptions.SpoolDirectoryPath = bound.SpoolDirectoryPath;
+                pipelineOptions.DrainInterval = bound.DrainInterval;
+                pipelineOptions.FailedAuthenticationAlertThreshold = bound.FailedAuthenticationAlertThreshold;
+                pipelineOptions.FailedAuthenticationWindowMinutes = bound.FailedAuthenticationWindowMinutes;
+                pipelineOptions.RetentionEnforcementInterval = bound.RetentionEnforcementInterval;
+                pipelineOptions.DefaultRetentionDays = bound.DefaultRetentionDays;
+                pipelineOptions.RetentionBatchSize = bound.RetentionBatchSize;
+            });
+
         // Register audit services
         services.AddScoped<IAuditService, AuditService>();
         services.TryAddSingleton(TimeProvider.System);
+
+        // Durable security event pipeline: taxonomy-driven capture, alerting, and retention enforcement.
+        services.AddSingleton<ISecurityEventSpool>(provider =>
+        {
+            var pipelineOptions = provider.GetRequiredService<IOptions<SecurityEventPipelineOptions>>().Value;
+            return new SecurityEventFileSpool(pipelineOptions);
+        });
+        services.AddSingleton<ISecurityEventPipelineStatusTracker, SecurityEventPipelineStatusTracker>();
+        services.AddScoped<ISecurityAlertRuleEvaluator, SecurityAlertRuleEvaluator>();
+        services.AddScoped<ISecurityEventLogger, SecurityEventLogger>();
+        services.AddHostedService<SecurityEventSpoolDrainerBackgroundService>();
+        services.AddScoped<ISecurityEventQueryService, SecurityEventQueryService>();
+        services.AddScoped<ISecurityLogRetentionRepository, SecurityLogRetentionRepository>();
+        services.AddScoped<ISecurityLogRetentionService, SecurityLogRetentionService>();
+        services.AddHostedService<SecurityLogRetentionBackgroundService>();
+
         services.AddSingleton<AuditRetentionSimulationEngine>();
         services.AddScoped<IAuditRetentionSimulationRepository, AuditRetentionSimulationRepository>();
         services.AddScoped<IAuditRetentionSimulationService, AuditRetentionSimulationService>();
