@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using GameGuild.CQRS;
-using GameGuild.Identity.Authorization;
 using GameGuild.Learning.Grading.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +13,7 @@ namespace GameGuild.Learning.Courses;
 public sealed class LessonInteractionEventsController(ISender sender) : BaseApiController
 {
     [HttpPost]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Read, "programId")]
+    [RequireCourseCapability(CourseCapability.Learn, "programId")]
     public async Task<ActionResult<ContentInteractionEventDto>> Record(
         Guid programId,
         Guid interactionId,
@@ -37,7 +36,7 @@ public sealed class LessonInteractionEventsController(ISender sender) : BaseApiC
     }
 
     [HttpGet]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Read, "programId")]
+    [RequireCourseCapability(CourseCapability.Learn, "programId")]
     public async Task<ActionResult<IReadOnlyList<ContentInteractionEventDto>>> List(
         Guid programId,
         Guid interactionId,

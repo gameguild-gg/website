@@ -31,19 +31,54 @@ namespace GameGuild.Identity.Authentication.UnitTests;
 public sealed class EncryptionServiceErrorTests
 {
     [Fact]
-    public void EncryptionKey_Fallback_WhenNoConfigKey()
+    public void EncryptionKey_MissingConfigKey_FailsClosed()
     {
-        // No Encryption:Key in config → uses fallback key and logs warning
+        // No Encryption key in config → service must fail closed (no fallback key)
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>()).Build();
         var sut = new EncryptionService(
             Mock.Of<ILogger<EncryptionService>>(), config);
 
-        // Should still work with fallback key
-        var encrypted = sut.Encrypt("test data");
-        encrypted.Should().NotBeEmpty();
-        var decrypted = sut.Decrypt(encrypted);
-        decrypted.Should().Be("test data");
+        // Encrypt refuses to run without a configured key.
+        var encryptAct = () => sut.Encrypt("test data");
+        encryptAct.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Encryption*");
+
+        // Decrypt refuses too — the ciphertext is format-valid so it reaches key resolution.
+        var decryptAct = () => sut.Decrypt(Convert.ToBase64String(new byte[40]));
+        decryptAct.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Encryption*");
+    }
+
+    [Fact]
+    public void EncryptionKey_WhitespaceConfigKey_FailsClosed()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Encryption:Key"] = "   "
+            }).Build();
+        var sut = new EncryptionService(
+            Mock.Of<ILogger<EncryptionService>>(), config);
+
+        var act = () => sut.Encrypt("test data");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void EncryptionKey_ShorterThan32Bytes_FailsClosed()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Encryption:Key"] = "too-short-key"
+            }).Build();
+        var sut = new EncryptionService(
+            Mock.Of<ILogger<EncryptionService>>(), config);
+
+        var act = () => sut.Encrypt("test data");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*32*");
     }
 
     [Fact]

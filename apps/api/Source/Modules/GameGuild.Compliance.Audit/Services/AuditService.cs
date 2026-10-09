@@ -9,36 +9,79 @@ namespace GameGuild.Compliance.Audit;
 
 public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContextAccessor httpContextAccessor, ILogger<AuditService> logger) : IAuditService
 {
-    public async Task LogAsync(CreateAuditLogRequest request)
+    private const int MaxPersistenceAttempts = 2;
+
+    public Task LogAsync(CreateAuditLogRequest request)
     {
-        try
+        return TryLogAsync(request);
+    }
+
+    public async Task<bool> TryLogAsync(CreateAuditLogRequest request)
+    {
+        for (var attempt = 1; ; attempt++)
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-            var httpContext = httpContextAccessor.HttpContext;
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+                var httpContext = httpContextAccessor.HttpContext;
 
-            var auditLog = AuditLogEntryFactory.Create(request, httpContext);
+                var auditLog = AuditLogEntryFactory.Create(request, httpContext);
 
-            context.Set<AuditLog>().Add(auditLog);
-            await context.SaveChangesAsync().ConfigureAwait(false);
+                context.Set<AuditLog>().Add(auditLog);
+                await context.SaveChangesAsync().ConfigureAwait(false);
 
-            // Log to structured logging as well for real-time monitoring
-            var logLevel = GetLogLevel(request.RiskLevel, request.Success);
+                // Log to structured logging as well for real-time monitoring
+                var logLevel = GetLogLevel(request.RiskLevel, request.Success);
 
-            logger.Log(
-                logLevel,
-                "Audit: {ActionType} on {ResourceType} {ResourceId} by User {UserId} - {Success}",
-                request.ActionType,
-                request.ResourceType,
-                request.ResourceId,
-                request.UserId,
-                request.Success ? "Success" : "Failed"
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to create audit log for action {ActionType}", request.ActionType);
-            // Don't throw - audit logging should not break business operations
+                logger.Log(
+                    logLevel,
+                    "Audit: {ActionType} on {ResourceType} {ResourceId} by User {UserId} - {Success}",
+                    request.ActionType,
+                    request.ResourceType,
+                    request.ResourceId,
+                    request.UserId,
+                    request.Success ? "Success" : "Failed"
+                );
+
+                return true;
+            }
+            catch (Exception ex) when (attempt < MaxPersistenceAttempts)
+            {
+                logger.LogWarning(ex,
+                    "Transient failure persisting audit log for action {ActionType} (attempt {Attempt}/{MaxAttempts}); retrying",
+                    request.ActionType, attempt, MaxPersistenceAttempts);
+            }
+            catch (Exception ex)
+            {
+                // Audit persistence must not break business operations, but the event may not
+                // silently vanish either (issue #346: durable audit logging). Escalate to a
+                // critical structured-log entry that carries the full audit payload so the
+                // durable logging pipeline retains the record for later reconciliation.
+                logger.LogCritical(ex,
+                    "Audit log persistence FAILED after {Attempts} attempts for action {ActionType}; durable fallback payload: {AuditPayload}",
+                    MaxPersistenceAttempts,
+                    request.ActionType,
+                    JsonSerializer.Serialize(new
+                    {
+                        request.ActionType,
+                        request.ResourceType,
+                        request.ResourceId,
+                        request.UserId,
+                        request.TenantId,
+                        request.Success,
+                        request.ErrorMessage,
+                        request.RiskLevel,
+                        request.Category,
+                        request.CorrelationId,
+                        request.Description
+                    }));
+
+                // Don't throw - audit logging should not break business operations, but the
+                // observable false return lets callers that must not swallow audit delivery
+                // failures surface them.
+                return false;
+            }
         }
     }
 

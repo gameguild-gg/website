@@ -1896,6 +1896,286 @@ export interface CommercePaymentsProcessRefundResult {
   status: CommercePaymentsTransactionStatus;
 }
 
+/** Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Detection is idempotent per (kind, day): re-running detection for the same
+day never duplicates an alert. */
+export interface CommercePaymentsRevenueAnomalyAlert {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the alert was acknowledged (UTC). */
+  acknowledgedAtUtc?: string | null;
+  /** Operator that acknowledged the alert. */
+  acknowledgedByUserId?: string | null;
+  /** Optional operator notes recorded at acknowledgement. */
+  acknowledgementNotes?: string | null;
+  /** Number of baseline days used for the evaluation. */
+  baselineDays?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Moment the anomaly was detected (UTC). */
+  detectedAtUtc?: string;
+  /** UTC day (midnight) the anomalous net revenue belongs to. */
+  detectedForDateUtc?: string;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Baseline (mean) net revenue expected for the evaluated day. */
+  expectedNetRevenue?: number;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueAnomalyKind;
+  /** Net revenue observed for the evaluated day. */
+  observedNetRevenue?: number;
+  status?: CommercePaymentsRevenueAnomalyStatus;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+  /** Standard-score of the observation against the baseline, rounded to 4 decimals. */
+  zScore?: number;
+}
+
+/** Kind of revenue anomaly detected by the statistical detector */
+export type CommercePaymentsRevenueAnomalyKind = 'Spike' | 'Drop';
+
+/** Lifecycle status of a revenue anomaly alert */
+export type CommercePaymentsRevenueAnomalyStatus = 'Open' | 'Acknowledged';
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput {
+  notes?: string | null;
+}
+
+/** Result of a manual anomaly detection pass. */
+export interface CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult {
+  alertsCreated?: number;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput {
+  evaluationDateUtc?: string | null;
+  tenantId?: string | null;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput {
+  externalStatementId?: string | null;
+  lines?: Array<CommercePaymentsRevenueAuditingControllerStatementLineInput> | null;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  source?: string | null;
+  tenantId?: string | null;
+}
+
+/** One external statement line supplied inline. */
+export interface CommercePaymentsRevenueAuditingControllerStatementLineInput {
+  amount?: number;
+  currency?: string | null;
+  occurredAtUtc?: string;
+  referenceId?: string | null;
+}
+
+/** Compliance-grade revenue summary for an inclusive period. */
+export interface CommercePaymentsRevenueComplianceReport {
+  /** Human-readable attestation statement for compliance filings. */
+  attestation?: string | null;
+  /** Start of the period (inclusive). */
+  fromUtc?: string;
+  /** Moment the report was produced. */
+  generatedAtUtc?: string;
+  reconciliation?: CommercePaymentsRevenueReconciliationCoverage;
+  /** Revenue totals grouped by event type. */
+  totalsByEventType?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** Revenue totals grouped by source. */
+  totalsBySource?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** Revenue totals grouped by processing status. */
+  totalsByStatus?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** End of the period (inclusive). */
+  toUtc?: string;
+  /** Revenue events still pending processing (not counted as recognized revenue). */
+  uncountedEventCount?: number;
+}
+
+/** Kind of mismatch detected between an external statement and internal revenue events */
+export type CommercePaymentsRevenueDiscrepancyKind =
+  'MissingInternal' | 'MissingExternal' | 'AmountMismatch' | 'CurrencyMismatch' | 'DuplicateExternalReference';
+
+/** Grouped totals for one key of a grouping dimension (event type, source or status). */
+export interface CommercePaymentsRevenueEventGroupTotal {
+  /** Number of revenue events in the group. */
+  count?: number;
+  /** Grouping key (enum name). */
+  key?: string | null;
+  /** Sum of event amounts in the group. */
+  total?: number;
+}
+
+/** Reconciliation coverage summary included in compliance reports. */
+export interface CommercePaymentsRevenueReconciliationCoverage {
+  /** Total discrepancies recorded by those runs. */
+  discrepancies?: number;
+  /** Completion timestamp of the most recent run, if any. */
+  lastRunCompletedAtUtc?: string | null;
+  /** Total statement lines matched by those runs. */
+  matchedLines?: number;
+  /** Number of reconciliation runs overlapping the period. */
+  reconciliationRuns?: number;
+}
+
+/** One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+export interface CommercePaymentsRevenueReconciliationDiscrepancy {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Amount reported by the external statement, when applicable. */
+  externalAmount?: number | null;
+  /** Currency reported by the external statement, when applicable. */
+  externalCurrency?: string | null;
+  /** Settlement moment reported by the external statement, when applicable. */
+  externalOccurredAtUtc?: string | null;
+  /** External reference of the mismatched statement line. */
+  externalReference: string;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Amount recorded internally, when a revenue event was found. */
+  internalAmount?: number | null;
+  /** Currency recorded internally, when a revenue event was found. */
+  internalCurrency?: string | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueDiscrepancyKind;
+  /** Human-readable explanation of the mismatch. */
+  message?: string | null;
+  /** Internal revenue event involved in the mismatch, when one was found. */
+  revenueEventId?: string | null;
+  run?: CommercePaymentsRevenueReconciliationRun;
+  /** Run that recorded the discrepancy. */
+  runId?: string;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+export interface CommercePaymentsRevenueReconciliationRun {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the run committed its results (UTC). */
+  completedAtUtc?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Discrepancies recorded by this run. */
+  discrepancies?: Array<CommercePaymentsRevenueReconciliationDiscrepancy> | null;
+  /** Number of discrepancies recorded by the run. */
+  discrepancyCount?: number;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Optional identifier of the statement/batch within the external system. */
+  externalStatementId?: string | null;
+  /** Reason the run failed, when GameGuild.Commerce.Payments.RevenueReconciliationRun.Status is GameGuild.Commerce.Payments.RevenueReconciliationStatus.Failed. */
+  failureReason?: string | null;
+  /** Actor that initiated the run, when initiated by an interactive request. */
+  initiatedByUserId?: string | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Number of statement lines matched to an internal revenue event. */
+  matchedCount?: number;
+  /** Inclusive end of the reconciled period (UTC). */
+  periodEndUtc?: string;
+  /** Inclusive start of the reconciled period (UTC). */
+  periodStartUtc?: string;
+  /** External system the statement came from (for example "stripe-payouts" or "manual-export"). */
+  source: string;
+  /** Moment the run started (UTC). */
+  startedAtUtc?: string;
+  /** Number of statement lines evaluated by the run. */
+  statementLineCount?: number;
+  status?: CommercePaymentsRevenueReconciliationStatus;
+  /** Machine-readable totals snapshot (per discrepancy kind) captured at completion. */
+  summaryJson?: string | null;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle status of a revenue reconciliation run */
+export type CommercePaymentsRevenueReconciliationStatus = 'Running' | 'Completed' | 'Failed';
+
+/** One point of a historical revenue trend. */
+export interface CommercePaymentsRevenueTrendPoint {
+  /** Credit-side total for the day. */
+  creditTotal?: number;
+  /** UTC day (midnight) the point covers. */
+  dateUtc?: string;
+  /** Debit-side total for the day. */
+  debitTotal?: number;
+  /** Revenue events counted for the day. */
+  eventCount?: number;
+  /** Net total for the day. */
+  netTotal?: number;
+}
+
+/** Historical revenue trend over an inclusive date range. */
+export interface CommercePaymentsRevenueTrendReport {
+  /** Start of the range (inclusive). */
+  fromUtc?: string;
+  /** One point per UTC day in the range, including zero-activity days. */
+  points?: Array<CommercePaymentsRevenueTrendPoint> | null;
+  /** Credit total across the range. */
+  totalCredit?: number;
+  /** Debit total across the range. */
+  totalDebit?: number;
+  /** Net total across the range. */
+  totalNet?: number;
+  /** End of the range (inclusive). */
+  toUtc?: string;
+}
+
 /** Individual tax breakdown (for compound/multiple taxes) */
 export interface CommercePaymentsTaxBreakdown {
   description?: string | null;
@@ -3431,10 +3711,13 @@ export interface ComplianceAuditAuditRetentionComplianceViolation {
   source?: string | null;
 }
 
-/** Data model for Compliance Audit Audit Retention Configuration Response. */
+/** The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 export interface ComplianceAuditAuditRetentionConfigurationOutput {
   id?: string;
   configuration?: ComplianceAuditConfigureAuditRetentionInput;
+  inheritedFromTemplateId?: string | null;
   revision?: number;
   tenantId?: string;
   updatedAtUtc?: string;
@@ -3486,6 +3769,45 @@ export interface ComplianceAuditAuditRetentionObligation {
   minimumRetentionDays?: number;
   name: string;
   source: string;
+}
+
+/** Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+export interface ComplianceAuditAuditRetentionPolicySensitivityRule {
+  /** Optional maximum retention, in days, after which data at this classification may be purged. */
+  maximumRetentionDays: number | null;
+  /** Minimum retention, in days, enforced for data at this classification. */
+  minimumRetentionDays: number;
+  /** Why this classification receives this retention period. */
+  rationale: string | null;
+  sensitivity: ComplianceAuditSensitivityLevel;
+}
+
+/** Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+export interface ComplianceAuditAuditRetentionPolicyTemplate {
+  /** Stable template identifier referenced by GameGuild.Compliance.Audit.AuditRetentionPolicyTemplate.BaseTemplateId. */
+  id: string | null;
+  baselineScenario: ComplianceAuditAuditRetentionScenario;
+  /** Template this one inherits obligations and sensitivity floors from; null for the baseline. */
+  baseTemplateId: string | null;
+  /** What the template presets and why. */
+  description: string | null;
+  /** Human-readable template name. */
+  displayName: string | null;
+  /** Regulatory framework or policy family this template targets. */
+  framework: string | null;
+  /** True only for the platform baseline every other template inherits from. */
+  isBaseline: boolean;
+  /** Retention obligations with the administrator-provided regulatory source for each. */
+  obligations: Array<ComplianceAuditAuditRetentionObligation> | null;
+  /** Publication timestamp of this template revision (UTC). */
+  publishedAtUtc: string;
+  /** Sensitivity classification floors; retention grows with classification. */
+  sensitivityRules: Array<ComplianceAuditAuditRetentionPolicySensitivityRule> | null;
+  /** Storage tier price assumptions preset by the template. */
+  tierPrices: Array<ComplianceAuditAuditStorageTierPrice> | null;
 }
 
 /** Data model for Compliance Audit Audit Retention Recommendation. */
@@ -4079,6 +4401,9 @@ export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
   tenantId?: string;
   updatedByUserId?: string;
 }
+
+/** Defines sensitivity levels for data access auditing */
+export type ComplianceAuditSensitivityLevel = 'Public' | 'Internal' | 'Confidential' | 'Restricted' | 'HighlyRestricted';
 
 /** Data model for Compliance Audit Top Ip Activity. */
 export interface ComplianceAuditTopIpActivity {
@@ -7646,21 +7971,44 @@ export interface IdentityAuthenticationWebAuthnCredentialInfo {
   authenticatorType?: IdentityAuthenticationWebAuthnAuthenticatorType;
   backedUp?: boolean;
   createdAt?: string;
+  /** When the credential was temporarily deactivated, if applicable. */
+  deactivatedAt?: string | null;
   friendlyName?: string | null;
   isDefault?: boolean;
   isPasswordless?: boolean;
   lastUsedAt?: string | null;
+  /** When the credential was revoked (terminal), if applicable. */
+  revokedAt?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+}
+
+/** Lifecycle status of a WebAuthn credential. */
+export type IdentityAuthenticationWebAuthnCredentialStatus = 'Active' | 'Deactivated' | 'Revoked';
+
+/** Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+export interface IdentityAuthenticationWebAuthnCredentialTransitionResult {
+  /** Machine-readable failure reason (`CredentialNotFound`, `InvalidTransition`)
+or `null` on success. */
+  error?: string | null;
+  /** Human-readable explanation of the failure, or `null` on success. */
+  errorDescription?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+  /** Whether the requested transition was applied. */
+  success?: boolean;
 }
 
 /** Result of verifying a WebAuthn credential. */
 export interface IdentityAuthenticationWebAuthnCredentialVerifyResult {
   error?: string | null;
+  /** Whether the credential is temporarily deactivated (reversible, unlike revocation). */
+  isDeactivated?: boolean;
   isExpired?: boolean;
   isRevoked?: boolean;
   isValid?: boolean;
   lastUsedAt?: string | null;
   /** Signature counter for replay attack protection (increases with each use). */
   signatureCount?: number;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
   success?: boolean;
 }
 
@@ -7962,6 +8310,91 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
 /** Status of JIT elevation request */
 export type IdentityAuthorizationElevationRequestStatus = 'None' | 'Pending' | 'Approved' | 'Denied' | 'Active' | 'Expired' | 'Revoked';
 
+/** A tenant permission grant that is about to expire. */
+export interface IdentityAuthorizationExpiringTenantPermission {
+  /** Gets the expiration instant. */
+  expiresAt: string;
+  /** Gets the grant ID. */
+  permissionId: string;
+  /** Gets the grant's permission strings. */
+  permissions: Array<string> | null;
+  /** Gets the user ID the grant belongs to (null for tenant defaults). */
+  userId?: string | null;
+}
+
+/** Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+export interface IdentityAuthorizationExtendTenantPermissionExpirationCommand {
+  /** Gets the positive extension period. */
+  extension: string;
+  /** Gets the IDs of the permission grants to extend. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Permission entry in the sync contract (one TenantPermission row). */
+export interface IdentityAuthorizationExternalPermissionEntry {
+  /** Denied permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Whether the entry is active. */
+  isActive?: boolean;
+  /** Allowed permissions. */
+  permissions?: Array<string> | null;
+  /** Subject user (null = tenant defaults). */
+  userId?: string | null;
+}
+
+/** Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+export interface IdentityAuthorizationExternalPermissionSyncDocument {
+  /** When the document was produced. */
+  exportedAtUtc?: string;
+  /** Permission entries (tenant defaults and user grants) to synchronize. */
+  permissions?: Array<IdentityAuthorizationExternalPermissionEntry> | null;
+  /** Role definitions to synchronize. */
+  roles?: Array<IdentityAuthorizationExternalRoleDefinition> | null;
+  /** Contract version; the only supported value is `1.0`. */
+  schemaVersion?: string | null;
+  /** Tenant scope of the document (null = global, system-admin only). */
+  tenantId?: string | null;
+}
+
+/** Role definition in the sync contract. */
+export interface IdentityAuthorizationExternalRoleDefinition {
+  /** Additional parent role names (multi-parent inheritance, issue #358). */
+  additionalParentRoleNames?: Array<string> | null;
+  /** Inherited permissions the role opts out of (selective blocking, issue #358). */
+  blockedInheritedPermissions?: Array<string> | null;
+  /** Directly assigned deny permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Display name. */
+  displayName?: string | null;
+  /** Whether the role is active. */
+  isActive?: boolean;
+  /** Unique role name within the tenant scope. */
+  name?: string | null;
+  /** Primary parent role name (optional). */
+  parentRoleName?: string | null;
+  /** Directly assigned allow permissions. */
+  permissions?: Array<string> | null;
+  /** Conflict-resolution priority. */
+  priority?: number;
+}
+
+/** Response containing grants that are about to expire in a tenant. */
+export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
+  /** Gets the grants expiring within the requested window, ordered by expiration instant. */
+  expiring: Array<IdentityAuthorizationExpiringTenantPermission> | null;
+  /** Gets the tenant ID. */
+  tenantId: string;
+}
+
 /** Response containing pending invitations for the current user. */
 export interface IdentityAuthorizationGetPendingResourceInvitationsOutput {
   invitations: Array<IdentityAuthorizationResourceInvitationDto> | null;
@@ -8035,6 +8468,15 @@ export interface IdentityAuthorizationHasPermissionOutput {
 /** Impact severity level */
 export type IdentityAuthorizationImpactSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Request body for the permission sync import endpoint. */
+export interface IdentityAuthorizationImportPermissionSyncInput {
+  document?: IdentityAuthorizationExternalPermissionSyncDocument;
+  /** Validate and report without applying. */
+  dryRun?: boolean;
+  /** Optional target tenant (null/empty = global scope, system admins only). */
+  tenantId?: string | null;
+}
+
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
   errorMessage?: string | null;
@@ -8093,6 +8535,54 @@ export interface IdentityAuthorizationPermissionAnomaly {
   userId?: string;
 }
 
+/** Allow/deny rates for one reporting dimension value. */
+export interface IdentityAuthorizationPermissionComplianceBreakdown {
+  /** Allow outcomes. */
+  allow?: number;
+  /** Allow share for this value (0-1). */
+  allowRate?: number;
+  /** Deny outcomes. */
+  deny?: number;
+  /** Deny share for this value (0-1). */
+  denyRate?: number;
+  /** Error outcomes. */
+  error?: number;
+  /** The dimension value (permission, source surface or operation). */
+  key?: string | null;
+  /** Evaluations for this value. */
+  total?: number;
+}
+
+/** Compliance report over recorded permission evaluations. */
+export interface IdentityAuthorizationPermissionComplianceReport {
+  /** Evaluations with outcome Allow. */
+  allowCount?: number;
+  /** Share of evaluations that allowed (0-1). Denominator excludes nothing. */
+  allowRate?: number;
+  /** Effectiveness breakdown per triggering operation (when recorded). */
+  byOperation?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluated permission. */
+  byPermission?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluation surface (the layer that reported the evaluation, e.g. `graphql`). */
+  bySource?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Evaluations with outcome Deny. */
+  denyCount?: number;
+  /** Share of evaluations that denied (0-1). */
+  denyRate?: number;
+  /** Evaluations with outcome Error (failed closed). */
+  errorCount?: number;
+  /** Share of evaluations that errored and failed closed (0-1). */
+  errorRate?: number;
+  /** Inclusive range start. */
+  fromUtc?: string;
+  /** Tenant scope of the report (null = global report). */
+  tenantId?: string | null;
+  /** Recorded evaluations in range. */
+  totalEvaluations?: number;
+  /** Inclusive range end. */
+  toUtc?: string;
+}
+
 /** Permission delegation allows users to delegate their permissions to other users */
 export interface IdentityAuthorizationPermissionDelegation {
   id?: string;
@@ -8111,6 +8601,42 @@ export interface IdentityAuthorizationPermissionDelegation {
   updatedAt?: string | null;
   usageCount?: number;
   usageLimit?: number | null;
+}
+
+/** Result of a permission restoration attempt. */
+export interface IdentityAuthorizationPermissionRestorationResult {
+  /** Human-readable outcome description. */
+  message?: string | null;
+  /** The affected TenantPermission id (when known). */
+  restoredPermissionId?: string | null;
+  /** Whether the restoration was applied. */
+  succeeded?: boolean;
+  /** Tenant scope of the restoration (from the restored/undone record, never from the caller). */
+  tenantId?: string | null;
+}
+
+/** One planned change of a synchronization import. */
+export interface IdentityAuthorizationPermissionSyncChange {
+  /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
+  kind?: string | null;
+  /** The permissions or role fields involved. */
+  payload?: Record<string, string> | null;
+  /** Human-readable target description (role name or user id). */
+  target?: string | null;
+}
+
+/** Result of a synchronization import (or dry-run preview). */
+export interface IdentityAuthorizationPermissionSyncImportResult {
+  /** True when the plan was actually applied (false for dry-runs and invalid documents). */
+  applied?: boolean;
+  /** The planned changes (the full plan when valid). */
+  changes?: Array<IdentityAuthorizationPermissionSyncChange> | null;
+  /** True when this was a dry-run. */
+  dryRun?: boolean;
+  /** False when validation failed — nothing was applied (fail-closed). */
+  isValid?: boolean;
+  /** Validation problems (empty when valid). */
+  validationErrors?: Array<string> | null;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -8357,6 +8883,18 @@ export interface IdentityAuthorizationSetTenantDefaultPermissionsCommand {
   permissions: Array<string> | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+export interface IdentityAuthorizationSetTenantPermissionExpirationCommand {
+  /** Gets the new expiration instant (null = permanent). */
+  expiresAt?: string | null;
+  /** Gets the IDs of the permission grants to update. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
   tenantId: CQRSModelsTenantId;
 }
 
@@ -12255,6 +12793,20 @@ export interface LearningCoursesContentSummaryDto {
   title?: string | null;
 }
 
+/** Data model for Learning Courses Course Access Capabilities. */
+export interface LearningCoursesCourseAccessCapabilities {
+  canAccessWorkspace?: boolean;
+  canEdit?: boolean;
+  canLearn?: boolean;
+  canPublish?: boolean;
+  canReviewAsStaff?: boolean;
+  courseExists?: boolean;
+  courseId?: string;
+  hasActiveEnrollment?: boolean;
+  isOwner?: boolean;
+  isTenantMember?: boolean;
+}
+
 /** Data model for Learning Courses Course Support Ticket Message Request. */
 export interface LearningCoursesCourseSupportTicketMessageInput {
   isInternal?: boolean;
@@ -14173,6 +14725,75 @@ export interface PagedResultPromoCodeDto {
   hasPreviousPage?: boolean;
   /** The items in the current page. */
   items?: Array<CommerceProductsPromoCodeDto> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueAnomalyAlert {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueAnomalyAlert> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationDiscrepancy {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueReconciliationDiscrepancy> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationRun {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueReconciliationRun> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -19050,6 +19671,23 @@ export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodTyp
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
+export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
+export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
+export let CommercePaymentsRevenueAnomalyStatusSchema: z.ZodType<CommercePaymentsRevenueAnomalyStatus>;
+export let CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput>;
+export let CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult>;
+export let CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput>;
+export let CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput>;
+export let CommercePaymentsRevenueAuditingControllerStatementLineInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerStatementLineInput>;
+export let CommercePaymentsRevenueComplianceReportSchema: z.ZodType<CommercePaymentsRevenueComplianceReport>;
+export let CommercePaymentsRevenueDiscrepancyKindSchema: z.ZodType<CommercePaymentsRevenueDiscrepancyKind>;
+export let CommercePaymentsRevenueEventGroupTotalSchema: z.ZodType<CommercePaymentsRevenueEventGroupTotal>;
+export let CommercePaymentsRevenueReconciliationCoverageSchema: z.ZodType<CommercePaymentsRevenueReconciliationCoverage>;
+export let CommercePaymentsRevenueReconciliationDiscrepancySchema: z.ZodType<CommercePaymentsRevenueReconciliationDiscrepancy>;
+export let CommercePaymentsRevenueReconciliationRunSchema: z.ZodType<CommercePaymentsRevenueReconciliationRun>;
+export let CommercePaymentsRevenueReconciliationStatusSchema: z.ZodType<CommercePaymentsRevenueReconciliationStatus>;
+export let CommercePaymentsRevenueTrendPointSchema: z.ZodType<CommercePaymentsRevenueTrendPoint>;
+export let CommercePaymentsRevenueTrendReportSchema: z.ZodType<CommercePaymentsRevenueTrendReport>;
 export let CommercePaymentsTaxBreakdownSchema: z.ZodType<CommercePaymentsTaxBreakdown>;
 export let CommercePaymentsTaxCalculationResultSchema: z.ZodType<CommercePaymentsTaxCalculationResult>;
 export let CommercePaymentsTaxExemptionValidationResultSchema: z.ZodType<CommercePaymentsTaxExemptionValidationResult>;
@@ -19181,6 +19819,8 @@ export let ComplianceAuditAuditRetentionGrowthModelSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditRetentionHistoricalEvidenceSchema: z.ZodType<ComplianceAuditAuditRetentionHistoricalEvidence>;
 export let ComplianceAuditAuditRetentionMonthForecastSchema: z.ZodType<ComplianceAuditAuditRetentionMonthForecast>;
 export let ComplianceAuditAuditRetentionObligationSchema: z.ZodType<ComplianceAuditAuditRetentionObligation>;
+export let ComplianceAuditAuditRetentionPolicySensitivityRuleSchema: z.ZodType<ComplianceAuditAuditRetentionPolicySensitivityRule>;
+export let ComplianceAuditAuditRetentionPolicyTemplateSchema: z.ZodType<ComplianceAuditAuditRetentionPolicyTemplate>;
 export let ComplianceAuditAuditRetentionRecommendationSchema: z.ZodType<ComplianceAuditAuditRetentionRecommendation>;
 export let ComplianceAuditAuditRetentionRiskSchema: z.ZodType<ComplianceAuditAuditRetentionRisk>;
 export let ComplianceAuditAuditRetentionScenarioSchema: z.ZodType<ComplianceAuditAuditRetentionScenario>;
@@ -19240,6 +19880,7 @@ export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<Compliance
 export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
 export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
 export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
+export let ComplianceAuditSensitivityLevelSchema: z.ZodType<ComplianceAuditSensitivityLevel>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
 export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditEntry>;
@@ -19595,6 +20236,8 @@ export let IdentityAuthenticationWebAuthnAuthenticationOptionsResultSchema: z.Zo
 export let IdentityAuthenticationWebAuthnAuthenticationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticationResult>;
 export let IdentityAuthenticationWebAuthnAuthenticatorTypeSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticatorType>;
 export let IdentityAuthenticationWebAuthnCredentialInfoSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialInfo>;
+export let IdentityAuthenticationWebAuthnCredentialStatusSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialStatus>;
+export let IdentityAuthenticationWebAuthnCredentialTransitionResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialTransitionResult>;
 export let IdentityAuthenticationWebAuthnCredentialVerifyResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialVerifyResult>;
 export let IdentityAuthenticationWebAuthnRegistrationOptionsResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationOptionsResult>;
 export let IdentityAuthenticationWebAuthnRegistrationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationResult>;
@@ -19627,6 +20270,12 @@ export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<Ide
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
 export let IdentityAuthorizationElevationRequestStatusSchema: z.ZodType<IdentityAuthorizationElevationRequestStatus>;
+export let IdentityAuthorizationExpiringTenantPermissionSchema: z.ZodType<IdentityAuthorizationExpiringTenantPermission>;
+export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationExtendTenantPermissionExpirationCommand>;
+export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
+export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
+export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
@@ -19634,11 +20283,17 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
+export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
+export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
+export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<IdentityAuthorizationPermissionComplianceReport>;
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
+export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
+export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -19651,6 +20306,7 @@ export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizat
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
+export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
@@ -19973,6 +20629,7 @@ export let LearningCoursesContentInteractionSummaryDtoSchema: z.ZodType<Learning
 export let LearningCoursesContentProgressDtoSchema: z.ZodType<LearningCoursesContentProgressDto>;
 export let LearningCoursesContentStatsDtoSchema: z.ZodType<LearningCoursesContentStatsDto>;
 export let LearningCoursesContentSummaryDtoSchema: z.ZodType<LearningCoursesContentSummaryDto>;
+export let LearningCoursesCourseAccessCapabilitiesSchema: z.ZodType<LearningCoursesCourseAccessCapabilities>;
 export let LearningCoursesCourseSupportTicketMessageInputSchema: z.ZodType<LearningCoursesCourseSupportTicketMessageInput>;
 export let LearningCoursesCreateActivityGradeDtoSchema: z.ZodType<LearningCoursesCreateActivityGradeDto>;
 export let LearningCoursesCreateCourseSupportTicketInputSchema: z.ZodType<LearningCoursesCreateCourseSupportTicketInput>;
@@ -20164,6 +20821,9 @@ export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDel
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
+export let PagedResultRevenueAnomalyAlertSchema: z.ZodType<PagedResultRevenueAnomalyAlert>;
+export let PagedResultRevenueReconciliationDiscrepancySchema: z.ZodType<PagedResultRevenueReconciliationDiscrepancy>;
+export let PagedResultRevenueReconciliationRunSchema: z.ZodType<PagedResultRevenueReconciliationRun>;
 export let PagedResultSubscriptionSchema: z.ZodType<PagedResultSubscription>;
 export let PagedResultSubscriptionNotificationDtoSchema: z.ZodType<PagedResultSubscriptionNotificationDto>;
 export let PagedResultSupportTicketDtoSchema: z.ZodType<PagedResultSupportTicketDto>;
@@ -22463,6 +23123,228 @@ CommercePaymentsProcessRefundResultSchema = z.object({
   status: z.lazy(() => CommercePaymentsTransactionStatusSchema),
 });
 
+/** Zod schema for CommercePaymentsRevenueAnomalyAlert. Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Detection is idempotent per (kind, day): re-running detection for the same
+day never duplicates an alert. */
+CommercePaymentsRevenueAnomalyAlertSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().max(1000).nullable().optional(),
+  baselineDays: z.number().int().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  detectedAtUtc: z.string().datetime().optional(),
+  detectedForDateUtc: z.string().datetime().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  expectedNetRevenue: z.number().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueAnomalyKindSchema).optional(),
+  observedNetRevenue: z.number().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueAnomalyStatusSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+  zScore: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAnomalyKind. Kind of revenue anomaly detected by the statistical detector */
+CommercePaymentsRevenueAnomalyKindSchema = z.enum(['Spike', 'Drop']);
+
+/** Zod schema for CommercePaymentsRevenueAnomalyStatus. Lifecycle status of a revenue anomaly alert */
+CommercePaymentsRevenueAnomalyStatusSchema = z.enum(['Open', 'Acknowledged']);
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult. Result of a manual anomaly detection pass. */
+CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema = z.object({
+  alertsCreated: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema = z.object({
+  evaluationDateUtc: z.string().datetime().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema = z.object({
+  externalStatementId: z.string().nullable().optional(),
+  lines: z
+    .array(z.lazy(() => CommercePaymentsRevenueAuditingControllerStatementLineInputSchema))
+    .nullable()
+    .optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerStatementLineInput. One external statement line supplied inline. */
+CommercePaymentsRevenueAuditingControllerStatementLineInputSchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  referenceId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueComplianceReport. Compliance-grade revenue summary for an inclusive period. */
+CommercePaymentsRevenueComplianceReportSchema = z.object({
+  attestation: z.string().nullable().optional(),
+  fromUtc: z.string().datetime().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  reconciliation: z.lazy(() => CommercePaymentsRevenueReconciliationCoverageSchema).optional(),
+  totalsByEventType: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsBySource: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsByStatus: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  toUtc: z.string().datetime().optional(),
+  uncountedEventCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueDiscrepancyKind. Kind of mismatch detected between an external statement and internal revenue events */
+CommercePaymentsRevenueDiscrepancyKindSchema = z.enum([
+  'MissingInternal',
+  'MissingExternal',
+  'AmountMismatch',
+  'CurrencyMismatch',
+  'DuplicateExternalReference',
+]);
+
+/** Zod schema for CommercePaymentsRevenueEventGroupTotal. Grouped totals for one key of a grouping dimension (event type, source or status). */
+CommercePaymentsRevenueEventGroupTotalSchema = z.object({
+  count: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationCoverage. Reconciliation coverage summary included in compliance reports. */
+CommercePaymentsRevenueReconciliationCoverageSchema = z.object({
+  discrepancies: z.number().int().optional(),
+  lastRunCompletedAtUtc: z.string().datetime().nullable().optional(),
+  matchedLines: z.number().int().optional(),
+  reconciliationRuns: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationDiscrepancy. One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+CommercePaymentsRevenueReconciliationDiscrepancySchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalAmount: z.number().nullable().optional(),
+  externalCurrency: z.string().max(3).nullable().optional(),
+  externalOccurredAtUtc: z.string().datetime().nullable().optional(),
+  externalReference: z.string().min(1).max(200),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  internalAmount: z.number().nullable().optional(),
+  internalCurrency: z.string().max(3).nullable().optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueDiscrepancyKindSchema).optional(),
+  message: z.string().max(1000).nullable().optional(),
+  revenueEventId: z.string().uuid().nullable().optional(),
+  run: z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema).optional(),
+  runId: z.string().uuid().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationRun. One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+CommercePaymentsRevenueReconciliationRunSchema = z.object({
+  id: z.string().uuid().optional(),
+  completedAtUtc: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  discrepancies: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  discrepancyCount: z.number().int().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalStatementId: z.string().max(200).nullable().optional(),
+  failureReason: z.string().max(1000).nullable().optional(),
+  initiatedByUserId: z.string().uuid().nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  matchedCount: z.number().int().optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().min(1).max(100),
+  startedAtUtc: z.string().datetime().optional(),
+  statementLineCount: z.number().int().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueReconciliationStatusSchema).optional(),
+  summaryJson: z.string().max(2000).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationStatus. Lifecycle status of a revenue reconciliation run */
+CommercePaymentsRevenueReconciliationStatusSchema = z.enum(['Running', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRevenueTrendPoint. One point of a historical revenue trend. */
+CommercePaymentsRevenueTrendPointSchema = z.object({
+  creditTotal: z.number().optional(),
+  dateUtc: z.string().datetime().optional(),
+  debitTotal: z.number().optional(),
+  eventCount: z.number().int().optional(),
+  netTotal: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueTrendReport. Historical revenue trend over an inclusive date range. */
+CommercePaymentsRevenueTrendReportSchema = z.object({
+  fromUtc: z.string().datetime().optional(),
+  points: z
+    .array(z.lazy(() => CommercePaymentsRevenueTrendPointSchema))
+    .nullable()
+    .optional(),
+  totalCredit: z.number().optional(),
+  totalDebit: z.number().optional(),
+  totalNet: z.number().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for CommercePaymentsTaxBreakdown. Individual tax breakdown (for compound/multiple taxes) */
 CommercePaymentsTaxBreakdownSchema = z.object({
   description: z.string().nullable().optional(),
@@ -23831,10 +24713,13 @@ ComplianceAuditAuditRetentionComplianceViolationSchema = z.object({
   source: z.string().nullable().optional(),
 });
 
-/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. Data model for Compliance Audit Audit Retention Configuration Response. */
+/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 ComplianceAuditAuditRetentionConfigurationOutputSchema = z.object({
   id: z.string().uuid().optional(),
   configuration: z.lazy(() => ComplianceAuditConfigureAuditRetentionInputSchema).optional(),
+  inheritedFromTemplateId: z.string().nullable().optional(),
   revision: z.number().int().optional(),
   tenantId: z.string().uuid().optional(),
   updatedAtUtc: z.string().datetime().optional(),
@@ -23898,6 +24783,32 @@ ComplianceAuditAuditRetentionObligationSchema = z.object({
   minimumRetentionDays: z.number().int().min(1).max(36500).optional(),
   name: z.string().min(1).max(100),
   source: z.string().min(1).max(1000),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicySensitivityRule. Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+ComplianceAuditAuditRetentionPolicySensitivityRuleSchema = z.object({
+  maximumRetentionDays: z.number().int().nullable(),
+  minimumRetentionDays: z.number().int(),
+  rationale: z.string().nullable(),
+  sensitivity: z.lazy(() => ComplianceAuditSensitivityLevelSchema),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicyTemplate. Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+ComplianceAuditAuditRetentionPolicyTemplateSchema = z.object({
+  id: z.string().nullable(),
+  baselineScenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema),
+  baseTemplateId: z.string().nullable(),
+  description: z.string().nullable(),
+  displayName: z.string().nullable(),
+  framework: z.string().nullable(),
+  isBaseline: z.boolean(),
+  obligations: z.array(z.lazy(() => ComplianceAuditAuditRetentionObligationSchema)).nullable(),
+  publishedAtUtc: z.string().datetime(),
+  sensitivityRules: z.array(z.lazy(() => ComplianceAuditAuditRetentionPolicySensitivityRuleSchema)).nullable(),
+  tierPrices: z.array(z.lazy(() => ComplianceAuditAuditStorageTierPriceSchema)).nullable(),
 });
 
 /** Zod schema for ComplianceAuditAuditRetentionRecommendation. Data model for Compliance Audit Audit Retention Recommendation. */
@@ -24546,6 +25457,9 @@ ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
   tenantId: z.string().uuid().optional(),
   updatedByUserId: z.string().uuid().optional(),
 });
+
+/** Zod schema for ComplianceAuditSensitivityLevel. Defines sensitivity levels for data access auditing */
+ComplianceAuditSensitivityLevelSchema = z.enum(['Public', 'Internal', 'Confidential', 'Restricted', 'HighlyRestricted']);
 
 /** Zod schema for ComplianceAuditTopIpActivity. Data model for Compliance Audit Top Ip Activity. */
 ComplianceAuditTopIpActivitySchema = z.object({
@@ -28101,20 +29015,36 @@ IdentityAuthenticationWebAuthnCredentialInfoSchema = z.object({
   authenticatorType: z.lazy(() => IdentityAuthenticationWebAuthnAuthenticatorTypeSchema).optional(),
   backedUp: z.boolean().optional(),
   createdAt: z.string().datetime().optional(),
+  deactivatedAt: z.string().datetime().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isDefault: z.boolean().optional(),
   isPasswordless: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
+  revokedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialStatus. Lifecycle status of a WebAuthn credential. */
+IdentityAuthenticationWebAuthnCredentialStatusSchema = z.enum(['Active', 'Deactivated', 'Revoked']);
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialTransitionResult. Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+IdentityAuthenticationWebAuthnCredentialTransitionResultSchema = z.object({
+  error: z.string().nullable().optional(),
+  errorDescription: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationWebAuthnCredentialVerifyResult. Result of verifying a WebAuthn credential. */
 IdentityAuthenticationWebAuthnCredentialVerifyResultSchema = z.object({
   error: z.string().nullable().optional(),
+  isDeactivated: z.boolean().optional(),
   isExpired: z.boolean().optional(),
   isRevoked: z.boolean().optional(),
   isValid: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   signatureCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
   success: z.boolean().optional(),
 });
 
@@ -28400,6 +29330,69 @@ IdentityAuthorizationEffectivePermissionsOutputSchema = z.object({
 /** Zod schema for IdentityAuthorizationElevationRequestStatus. Status of JIT elevation request */
 IdentityAuthorizationElevationRequestStatusSchema = z.enum(['None', 'Pending', 'Approved', 'Denied', 'Active', 'Expired', 'Revoked']);
 
+/** Zod schema for IdentityAuthorizationExpiringTenantPermission. A tenant permission grant that is about to expire. */
+IdentityAuthorizationExpiringTenantPermissionSchema = z.object({
+  expiresAt: z.string().datetime(),
+  permissionId: z.string().uuid(),
+  permissions: z.array(z.string()).nullable(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExtendTenantPermissionExpirationCommand. Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema = z.object({
+  extension: z.string(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionEntry. Permission entry in the sync contract (one TenantPermission row). */
+IdentityAuthorizationExternalPermissionEntrySchema = z.object({
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionSyncDocument. Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+IdentityAuthorizationExternalPermissionSyncDocumentSchema = z.object({
+  exportedAtUtc: z.string().datetime().optional(),
+  permissions: z
+    .array(z.lazy(() => IdentityAuthorizationExternalPermissionEntrySchema))
+    .nullable()
+    .optional(),
+  roles: z
+    .array(z.lazy(() => IdentityAuthorizationExternalRoleDefinitionSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalRoleDefinition. Role definition in the sync contract. */
+IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
+  additionalParentRoleNames: z.array(z.string()).nullable().optional(),
+  blockedInheritedPermissions: z.array(z.string()).nullable().optional(),
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  parentRoleName: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  priority: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
+IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
+  expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
+  tenantId: z.string().uuid(),
+});
+
 /** Zod schema for IdentityAuthorizationGetPendingResourceInvitationsOutput. Response containing pending invitations for the current user. */
 IdentityAuthorizationGetPendingResourceInvitationsOutputSchema = z.object({
   invitations: z.array(z.lazy(() => IdentityAuthorizationResourceInvitationDtoSchema)).nullable(),
@@ -28451,6 +29444,13 @@ IdentityAuthorizationHasPermissionOutputSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationImpactSeverity. Impact severity level */
 IdentityAuthorizationImpactSeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthorizationImportPermissionSyncInput. Request body for the permission sync import endpoint. */
+IdentityAuthorizationImportPermissionSyncInputSchema = z.object({
+  document: z.lazy(() => IdentityAuthorizationExternalPermissionSyncDocumentSchema).optional(),
+  dryRun: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
@@ -28519,6 +29519,43 @@ IdentityAuthorizationPermissionAnomalySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionComplianceBreakdown. Allow/deny rates for one reporting dimension value. */
+IdentityAuthorizationPermissionComplianceBreakdownSchema = z.object({
+  allow: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  deny: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  error: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionComplianceReport. Compliance report over recorded permission evaluations. */
+IdentityAuthorizationPermissionComplianceReportSchema = z.object({
+  allowCount: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  byOperation: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  byPermission: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  bySource: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  denyCount: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  errorCount: z.number().int().optional(),
+  errorRate: z.number().optional(),
+  fromUtc: z.string().datetime().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalEvaluations: z.number().int().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionDelegation. Permission delegation allows users to delegate their permissions to other users */
 IdentityAuthorizationPermissionDelegationSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28537,6 +29574,33 @@ IdentityAuthorizationPermissionDelegationSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
   usageCount: z.number().int().optional(),
   usageLimit: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionRestorationResult. Result of a permission restoration attempt. */
+IdentityAuthorizationPermissionRestorationResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  restoredPermissionId: z.string().uuid().nullable().optional(),
+  succeeded: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
+IdentityAuthorizationPermissionSyncChangeSchema = z.object({
+  kind: z.string().nullable().optional(),
+  payload: z.record(z.string(), z.string()).nullable().optional(),
+  target: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncImportResult. Result of a synchronization import (or dry-run preview). */
+IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
+  applied: z.boolean().optional(),
+  changes: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionSyncChangeSchema))
+    .nullable()
+    .optional(),
+  dryRun: z.boolean().optional(),
+  isValid: z.boolean().optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
@@ -28747,6 +29811,15 @@ These are baseline permissions applied to all users in a specific tenant. */
 IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema = z.object({
   permissions: z.array(z.string()).nullable(),
   setBy: z.string().uuid(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationSetTenantPermissionExpirationCommand. Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+IdentityAuthorizationSetTenantPermissionExpirationCommandSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
 });
 
@@ -32308,6 +33381,20 @@ LearningCoursesContentSummaryDtoSchema = z.object({
   title: z.string().nullable().optional(),
 });
 
+/** Zod schema for LearningCoursesCourseAccessCapabilities. Data model for Learning Courses Course Access Capabilities. */
+LearningCoursesCourseAccessCapabilitiesSchema = z.object({
+  canAccessWorkspace: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  canLearn: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
+  canReviewAsStaff: z.boolean().optional(),
+  courseExists: z.boolean().optional(),
+  courseId: z.string().uuid().optional(),
+  hasActiveEnrollment: z.boolean().optional(),
+  isOwner: z.boolean().optional(),
+  isTenantMember: z.boolean().optional(),
+});
+
 /** Zod schema for LearningCoursesCourseSupportTicketMessageInput. Data model for Learning Courses Course Support Ticket Message Request. */
 LearningCoursesCourseSupportTicketMessageInputSchema = z.object({
   isInternal: z.boolean().optional(),
@@ -34290,6 +35377,57 @@ PagedResultPromoCodeDtoSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
   items: z
     .array(z.lazy(() => CommerceProductsPromoCodeDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueAnomalyAlert. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueAnomalyAlertSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueAnomalyAlertSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationDiscrepancy. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationDiscrepancySchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationRun. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationRunSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema))
     .nullable()
     .optional(),
   pageNumber: z.number().int().optional(),

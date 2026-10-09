@@ -3,12 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const redirects = vi.hoisted(() => ({
   redirect: vi.fn(),
   notFound: vi.fn(),
+  forbidden: vi.fn(),
 }));
-const learning = vi.hoisted(() => ({ getAssessment: vi.fn() }));
+const learning = vi.hoisted(() => ({
+  getAssessment: vi.fn(),
+  getCourseAccessCapabilities: vi.fn(),
+}));
 
 vi.mock('@/i18n/navigation', () => ({ redirect: redirects.redirect }));
-vi.mock('next/navigation', () => ({ notFound: redirects.notFound }));
-vi.mock('@/lib/learning', () => ({ getAssessment: learning.getAssessment }));
+vi.mock('next/navigation', () => ({
+  notFound: redirects.notFound,
+  forbidden: redirects.forbidden,
+}));
+vi.mock('@/lib/learning', () => ({
+  getAssessment: learning.getAssessment,
+  getCourseAccessCapabilities: learning.getCourseAccessCapabilities,
+}));
 
 import GradeSubmissionPage from './page';
 
@@ -31,6 +41,12 @@ describe('legacy grade route redirect', () => {
     });
     redirects.notFound.mockImplementation(() => {
       throw new Error('NEXT_NOT_FOUND');
+    });
+    redirects.forbidden.mockImplementation(() => {
+      throw new Error('NEXT_FORBIDDEN');
+    });
+    learning.getCourseAccessCapabilities.mockResolvedValue({
+      canReviewAsStaff: true,
     });
   });
 
@@ -59,6 +75,20 @@ describe('legacy grade route redirect', () => {
     ).rejects.toThrow('NEXT_NOT_FOUND');
 
     expect(redirects.notFound).toHaveBeenCalledOnce();
+    expect(redirects.redirect).not.toHaveBeenCalled();
+  });
+
+  it('forbids actors without review capability', async () => {
+    learning.getAssessment.mockResolvedValue({ id: 'assessment-id' });
+    learning.getCourseAccessCapabilities.mockResolvedValue({
+      canReviewAsStaff: false,
+    });
+
+    await expect(
+      GradeSubmissionPage(makePageProps('submission-id')),
+    ).rejects.toThrow('NEXT_FORBIDDEN');
+
+    expect(redirects.forbidden).toHaveBeenCalledOnce();
     expect(redirects.redirect).not.toHaveBeenCalled();
   });
 });

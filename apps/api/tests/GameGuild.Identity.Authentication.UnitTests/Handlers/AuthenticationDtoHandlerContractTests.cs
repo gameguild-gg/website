@@ -49,7 +49,7 @@ public sealed class AuthenticationDtoHandlerContractTests
 
         var mapped = flow switch
         {
-            "signup" => await new LocalSignUpHandler(service.Object, repository.Object, NullLogger<LocalSignUpHandler>.Instance)
+            "signup" => await new LocalSignUpHandler(service.Object, repository.Object, Mock.Of<GameGuild.CQRS.ISender>(), NullLogger<LocalSignUpHandler>.Instance)
                 .Handle(new LocalSignUpCommand { Email = user.Email, Username = "handler", TenantId = source.TenantId }, cancellation.Token),
             "signin" => await new LocalSignInHandler(service.Object, repository.Object, new HttpContextAccessor(), NullLogger<LocalSignInHandler>.Instance, Validator<LocalSignInCommand>())
                 .Handle(new LocalSignInCommand { Email = user.Email, TenantId = source.TenantId }, cancellation.Token),
