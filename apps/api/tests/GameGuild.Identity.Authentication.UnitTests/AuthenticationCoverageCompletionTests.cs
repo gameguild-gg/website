@@ -120,7 +120,7 @@ public sealed class AuthenticationCoverageCompletionTests
             options.Object,
             loggerFactory,
             UrlEncoder.Default,
-            Mock.Of<IApplicationDbContext>());
+            Mock.Of<IApiKeyRepository>());
         handler.Should().NotBeNull();
 
         var services = new ServiceCollection();
@@ -146,7 +146,7 @@ public sealed class AuthenticationCoverageCompletionTests
             options.Object,
             loggerFactory,
             UrlEncoder.Default,
-            Mock.Of<IApplicationDbContext>());
+            Mock.Of<IApiKeyRepository>());
         var context = new DefaultHttpContext();
         context.Request.Scheme = "http";
         context.Request.QueryString = new QueryString("?access_key=secret");
@@ -888,6 +888,7 @@ public sealed class AuthenticationCoverageCompletionTests
     [Fact]
     public void RepositoryConstructorsAndPrivateSetProperties_AreCovered()
     {
+        AssertRepositoryProperty(new ApiKeyRepository(ContextWithSet<ApiKey>()), "ApiKeys");
         AssertRepositoryProperty(new MfaAttemptRepository(ContextWithSet<MfaAttempt>()), "MfaAttempts");
         AssertRepositoryProperty(new RefreshTokenRepository(ContextWithSet<RefreshToken>()), "RefreshTokens");
         AssertRepositoryProperty(new ServiceAccountRepository(ContextWithSet<ServiceAccount>()), "ServiceAccounts");
@@ -1091,7 +1092,7 @@ public sealed class AuthenticationCoverageCompletionTests
             options.Object,
             NullLoggerFactory.Instance,
             UrlEncoder.Default,
-            dbContext,
+            new ApiKeyRepository(dbContext),
             auditSink);
     }
 
