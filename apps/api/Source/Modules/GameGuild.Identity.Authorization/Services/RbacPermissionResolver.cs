@@ -333,14 +333,13 @@ public class RbacPermissionResolver(
             }
 
             logger.LogDebug(
-                "Resolved {DirectCount} direct permissions, {InheritedCount} inherited permissions (from {AncestorCount} ancestors, {CyclesCut} cycle edges cut) and {DenyCount} denies from role {RoleName} for user {UserId}",
+                "Resolved {DirectCount} direct permissions, {InheritedCount} inherited permissions (from {AncestorCount} ancestors, {CyclesCut} cycle edges cut) and {DenyCount} denies from role {RoleName}",
                 directPermissions.Count,
                 closure.InheritedPermissions.Count,
                 closure.Ancestors.Count,
                 closure.CyclesCut,
                 closure.InheritedDenyPermissions.Count,
-                assignment.Role.Name,
-                userId);
+                assignment.Role.Name);
         }
 
         return new RbacResolutionResult(allPermissions, allDenyPermissions, contributions);

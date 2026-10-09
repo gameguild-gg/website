@@ -59,9 +59,8 @@ public sealed class PermissionSyncController(ISender sender, ILogger<PermissionS
     public async Task<IActionResult> Import([FromBody] ImportPermissionSyncRequest request, CancellationToken cancellationToken)
     {
         logger.LogInformation(
-            "Permission sync import requested ({Mode}) for tenant {TenantId}",
-            request.DryRun ? "dry-run" : "apply",
-            request.TenantId);
+            "Permission sync import requested ({Mode})",
+            request.DryRun ? "dry-run" : "apply");
 
         var result = await sender.Send(
             new ImportPermissionSyncCommand
@@ -179,8 +178,7 @@ public sealed class PermissionComplianceController(ISender sender, ILogger<Permi
             cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation(
-            "Permission compliance report served for tenant {TenantId}: {Total} evaluations, deny rate {DenyRate:P1}.",
-            tenantId,
+            "Permission compliance report served: {Total} evaluations, deny rate {DenyRate:P1}.",
             report.TotalEvaluations,
             report.DenyRate);
 
