@@ -223,6 +223,12 @@ describe('runtime GradingPanel', () => {
         { itemId: 'q2', score: 150 },
       ],
     });
+    expect(await screen.findByTestId('result-release-status')).toHaveTextContent(
+      'Ready to release',
+    );
+    expect(screen.getByTestId('release-result')).toHaveTextContent(
+      'Release to learner',
+    );
     expect(router.refresh).toHaveBeenCalled();
   });
 
@@ -260,6 +266,9 @@ describe('runtime GradingPanel', () => {
       version: 4,
       expectedRoundId: 'round-1',
     });
+    expect(await screen.findByTestId('result-release-status')).toHaveTextContent(
+      'Released to learner',
+    );
   });
 
   it('shows one collective result for the frozen participant snapshot', async () => {

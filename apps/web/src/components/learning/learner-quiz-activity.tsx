@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 interface LearnerQuizActivityProps {
   contentId: string;
   courseId: string;
+  existingSubmissionId?: string | null;
   title: string;
   description?: string;
   content: QuizRuntimeContentDocument;
@@ -17,6 +18,7 @@ interface LearnerQuizActivityProps {
 export function LearnerQuizActivity({
   contentId,
   courseId,
+  existingSubmissionId,
   title,
   description,
   content,
@@ -28,6 +30,7 @@ export function LearnerQuizActivity({
   return (
     <ActivityComponent
       courseId={courseId}
+      existingSubmissionId={existingSubmissionId}
       item={{
         id: contentId,
         title,

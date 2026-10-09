@@ -384,6 +384,32 @@ describe('quiz learner experience (server page)', () => {
     expect(screen.queryByTestId('activity-form')).not.toBeInTheDocument();
   });
 
+  it('passes the existing quiz submission to the learner player', async () => {
+    mocks.getCourseLearnerContext.mockResolvedValue({
+      ...makeContext(
+        makeAssessment({
+          title: 'Published Quiz',
+          type: 'Quiz',
+          submissionModalities: 'None',
+        }),
+      ),
+      submissions: [
+        {
+          id: 'submission-1',
+          assessmentId: 'assessment-1',
+          enrollmentId: 'enrollment-1',
+          status: 'Graded',
+        },
+      ],
+    });
+
+    await renderActivityPage();
+
+    const quiz = await screen.findByTestId('quiz-client');
+    const props = JSON.parse(quiz.dataset.props ?? '{}');
+    expect(props.existingSubmissionId).toBe('submission-1');
+  });
+
   it('renders a published questionnaire directly from its content activity route', async () => {
     mocks.getCourseLearnerContext.mockResolvedValue({
       ...makeContext(makeAssessment()),

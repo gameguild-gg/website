@@ -50,7 +50,7 @@ prepare_economy_template() {
     --env POSTGRES_USER=postgres --env "POSTGRES_PASSWORD=$password" \
     --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --publish 127.0.0.1::5432 \
-    postgres:17-alpine -c max_locks_per_transaction=512)"
+    public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512)"
   [[ "$candidate_id" =~ ^[a-f0-9]{12,64}$ ]] || {
     printf 'Docker did not return a valid owned container ID\n' >&2
     return 1

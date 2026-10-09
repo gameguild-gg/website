@@ -45,6 +45,9 @@ This command:
 
 - asks a registered `dev` or `dev:fast` orchestrator to stop its complete
   process tree, including a build that has not opened its web port yet;
+- discovers detached `dotnet watch` API processes owned by this repository,
+  even when they no longer hold port `8080`, and stops their dedicated process
+  groups;
 - waits for graceful shutdown and then stops any orphaned listeners on ports
   `3000` and `8080` as a fallback;
 - runs `docker compose down --remove-orphans`;
@@ -157,7 +160,9 @@ pnpm run kill:ports
 ```
 
 The command first requests a graceful shutdown from a registered or discovered
-`dev` or `dev:fast` orchestrator. It then checks each port independently,
+`dev` or `dev:fast` orchestrator. It also finds detached GameGuild API watchers
+by their project command and repository working directory, so a watcher that
+lost its listener is still stopped. It then checks each port independently,
 restricts the fallback selection to TCP sockets in the `LISTEN` state, and
 forces termination only when a process does not exit within the grace period.
 Prefer `Ctrl+C` in the original terminal for a normal shutdown.
