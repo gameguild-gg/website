@@ -35,7 +35,8 @@ public class LocalAuthService(
     ISessionManagementService sessionManagementService,
     IOptions<JwtOptions>? jwtOptions = null,
     IAuthenticationAuditEventSink? auditEventSink = null,
-    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null
+    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null,
+    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null
 ) : ILocalAuthService
 {
     public async Task<SignInResponse> LocalSignInAsync(LocalSignInRequest request, CancellationToken cancellationToken = default)
@@ -125,6 +126,16 @@ public class LocalAuthService(
                         failedAttemptAnalysis).ConfigureAwait(false);
                 }
 
+                // Brute force against a known account must reach the owner even when the attempt
+                // fails. The publisher gates on the configured severity (High by default).
+                if (failedAttemptAnalysis is not null
+                    && userId.HasValue
+                    && failedAttemptAnalysis.DetectedAnomalies.Contains(SecurityAlertKinds.BruteForceDetected, StringComparer.Ordinal))
+                {
+                    await RecordSuspiciousLoginAlertAsync(
+                        userId, request.TenantId, failedAttemptAnalysis, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
+                }
+
                 throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
             }
 
@@ -150,6 +161,10 @@ public class LocalAuthService(
                     anomalyResult,
                     authenticationSucceeded: false,
                     behavioralAnalysis: behavioralAnalysis).ConfigureAwait(false);
+
+                // The step-up challenge is a confirmed high-risk signal: alert the account owner.
+                await RecordSuspiciousLoginAlertAsync(
+                    userId, request.TenantId, anomalyResult, SecurityAlertKinds.LoginStepUpRequired, cancellationToken).ConfigureAwait(false);
             }
 
             // Require step-up authentication for high-risk logins
@@ -225,6 +240,20 @@ public class LocalAuthService(
                     anomalyResult,
                     authenticationSucceeded: true,
                     behavioralAnalysis: behavioralAnalysis).ConfigureAwait(false);
+            }
+
+            // Confirmed signals on a successful sign-in: impossible travel, and brute force that
+            // eventually succeeded (classic account-takeover pattern). Both must reach the owner.
+            if (anomalyResult.DetectedAnomalies.Contains(SecurityAlertKinds.ImpossibleTravel, StringComparer.Ordinal))
+            {
+                await RecordSuspiciousLoginAlertAsync(
+                    authenticatedUserId, request.TenantId, anomalyResult, SecurityAlertKinds.ImpossibleTravel, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (anomalyResult.DetectedAnomalies.Contains(SecurityAlertKinds.BruteForceDetected, StringComparer.Ordinal))
+            {
+                await RecordSuspiciousLoginAlertAsync(
+                    authenticatedUserId, request.TenantId, anomalyResult, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
             }
 
             // Record successful login attempt
@@ -319,6 +348,27 @@ public class LocalAuthService(
             logger.LogError(exception, "Could not analyze authentication behavior for user {UserId}", userId);
             return null;
         }
+    }
+
+    /// <summary>
+    ///     Forwards a confirmed suspicious-login signal to the (optional) alert publisher, which
+    ///     records a redacted durable event consumed host-side to queue the owner notification.
+    ///     Absent publisher (hosts without the durable transport) degrades to a no-op.
+    /// </summary>
+    private async Task RecordSuspiciousLoginAlertAsync(
+        Guid? userId,
+        Guid? tenantId,
+        AuthenticationAnomalyResult analysis,
+        string alertKind,
+        CancellationToken cancellationToken)
+    {
+        if (suspiciousLoginAlerts is null || userId is not { } alertUserId)
+        {
+            return;
+        }
+
+        await suspiciousLoginAlerts.RecordAsync(
+            alertUserId, tenantId, alertKind, analysis.RiskLevel, analysis.RiskScore, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RecordRiskAuditEventAsync(
