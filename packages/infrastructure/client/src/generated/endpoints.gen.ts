@@ -6244,6 +6244,210 @@ export const postBillingInvoicesRetryEndpoint = {
 } as const;
 
 /**
+ * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
+ *
+ * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
+ */
+export interface GetBillingRevenueAuditingInput {
+  query?: {
+    tenantId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingOutput = Types.PagedResultRevenueReconciliationRun;
+export const getBillingRevenueAuditingEndpoint = {
+  operationId: 'getBillingRevenueAuditing' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run a reconciliation comparing an external accounting/ERP statement against internal
+ * revenue events for an inclusive period. Requires the SystemAdmin role.
+ *
+ * Compares external accounting/ERP statement lines against internal revenue events for an inclusive period, records an immutable reconciliation run and persists every discrepancy (missing internal/external references, amount and currency mismatches, duplicate external references). When no inline lines are supplied, lines are read from the configured external statement source.
+ */
+export interface PostBillingRevenueAuditingInput {
+  body?: Types.CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput;
+}
+export type PostBillingRevenueAuditingOutput = Types.CommercePaymentsRevenueReconciliationRun;
+export const postBillingRevenueAuditingEndpoint = {
+  operationId: 'postBillingRevenueAuditing' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Trigger anomaly detection for the trailing days and persist alerts. Requires the
+ * SystemAdmin role; the periodic worker performs the same pass automatically when
+ * `RevenueAuditing:WorkerEnabled` is set.
+ *
+ * Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Detection is idempotent per kind and day.
+ */
+export interface PostBillingRevenueAuditingAnomaliesDetectInput {
+  body?: Types.CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput;
+}
+export type PostBillingRevenueAuditingAnomaliesDetectOutput = Types.CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult;
+export const postBillingRevenueAuditingAnomaliesDetectEndpoint = {
+  operationId: 'postBillingRevenueAuditingAnomaliesDetect' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing/anomalies/detect' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List revenue anomaly alerts, newest detection first. Tenant-scoped for non-admin actors.
+ *
+ * Returns a paged list of revenue anomaly alerts, newest detection first, optionally filtered by status (Open, Acknowledged). Non-admin actors only see alerts of their own tenant.
+ */
+export interface GetBillingRevenueAuditingAnomalyAlertsInput {
+  query?: {
+    tenantId?: string;
+    status?: Types.CommercePaymentsRevenueAnomalyStatus;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingAnomalyAlertsOutput = Types.PagedResultRevenueAnomalyAlert;
+export const getBillingRevenueAuditingAnomalyAlertsEndpoint = {
+  operationId: 'getBillingRevenueAuditingAnomalyAlerts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/anomaly-alerts' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledge an open anomaly alert, recording the reviewing operator. Requires the
+ * SystemAdmin role.
+ *
+ * Marks an open revenue anomaly alert as acknowledged, recording the reviewing operator and optional notes. The acting identity is taken from the authenticated actor, never from the request body.
+ */
+export interface PostBillingRevenueAuditingAnomalyAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput;
+}
+export type PostBillingRevenueAuditingAnomalyAlertsAcknowledgeOutput = void;
+export const postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint = {
+  operationId: 'postBillingRevenueAuditingAnomalyAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing/anomaly-alerts/{alertId}/acknowledge' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Compliance report for an inclusive period: totals by event type, source and status,
+ * uncounted events, reconciliation coverage and an attestation statement.
+ *
+ * Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status, uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.
+ */
+export interface GetBillingRevenueAuditingComplianceReportInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingComplianceReportOutput = Types.CommercePaymentsRevenueComplianceReport;
+export const getBillingRevenueAuditingComplianceReportEndpoint = {
+  operationId: 'getBillingRevenueAuditingComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/compliance-report' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Export the audit report for a period as CSV (RFC 4180) or JSON for external
+ * accounting and ERP systems.
+ *
+ * Serializes the compliance summary and daily trend for the inclusive period as RFC 4180 CSV or JSON, ready for delivery to external accounting and ERP systems.
+ */
+export interface GetBillingRevenueAuditingExportInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    format?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingExportOutput = Blob;
+export const getBillingRevenueAuditingExportEndpoint = {
+  operationId: 'getBillingRevenueAuditingExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/export' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one reconciliation run with its counters and summary.
+ *
+ * Returns one reconciliation run, including matched/discrepancy counters and the machine-readable summary captured at completion.
+ */
+export interface GetRunByIdInput {
+  runId: string;
+}
+export type GetRunByIdOutput = Types.CommercePaymentsRevenueReconciliationRun;
+export const getRunByIdEndpoint = {
+  operationId: 'getRunById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/runs/{runId}' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the discrepancies recorded by a reconciliation run.
+ *
+ * Returns a paged list of the discrepancies recorded by a reconciliation run, optionally filtered by kind (MissingInternal, MissingExternal, AmountMismatch, CurrencyMismatch, DuplicateExternalReference).
+ */
+export interface GetBillingRevenueAuditingRunsDiscrepanciesInput {
+  runId: string;
+  query?: {
+    kind?: Types.CommercePaymentsRevenueDiscrepancyKind;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingRunsDiscrepanciesOutput = Types.PagedResultRevenueReconciliationDiscrepancy;
+export const getBillingRevenueAuditingRunsDiscrepanciesEndpoint = {
+  operationId: 'getBillingRevenueAuditingRunsDiscrepancies' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/runs/{runId}/discrepancies' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Historical daily net-revenue trend for an inclusive period, with zero-activity days included.
+ *
+ * Returns one net-revenue point per UTC day in the inclusive period (credit total, debit total, net total and event count), including days without activity, plus range totals.
+ */
+export interface GetBillingRevenueAuditingTrendsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingTrendsOutput = Types.CommercePaymentsRevenueTrendReport;
+export const getBillingRevenueAuditingTrendsEndpoint = {
+  operationId: 'getBillingRevenueAuditingTrends' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/trends' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List billing subscriptions
  *
  * Compatibility billing endpoint backed by the subscription query model.
@@ -26060,6 +26264,16 @@ export const endpoints = {
   postBillingChargesRefund: postBillingChargesRefundEndpoint,
   postBillingChargesRetry: postBillingChargesRetryEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
+  postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
+  postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
+  getBillingRevenueAuditingAnomalyAlerts: getBillingRevenueAuditingAnomalyAlertsEndpoint,
+  postBillingRevenueAuditingAnomalyAlertsAcknowledge: postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint,
+  getBillingRevenueAuditingComplianceReport: getBillingRevenueAuditingComplianceReportEndpoint,
+  getBillingRevenueAuditingExport: getBillingRevenueAuditingExportEndpoint,
+  getRunById: getRunByIdEndpoint,
+  getBillingRevenueAuditingRunsDiscrepancies: getBillingRevenueAuditingRunsDiscrepanciesEndpoint,
+  getBillingRevenueAuditingTrends: getBillingRevenueAuditingTrendsEndpoint,
   getBillingSubscriptions: getBillingSubscriptionsEndpoint,
   postBillingSubscriptions: postBillingSubscriptionsEndpoint,
   getBillingSubscriptionById: getBillingSubscriptionByIdEndpoint,
