@@ -42,7 +42,10 @@ public sealed class KmsAdRewardSessionTokenProtector : IAdRewardSessionTokenProt
         ArgumentException.ThrowIfNullOrWhiteSpace(token.Value);
         var parts = token.Value.Split('.', StringSplitOptions.None);
         if (parts.Length != 3)
+        {
             throw new InvalidAdRewardSessionTokenException("Session token format is invalid.");
+        }
+
         try
         {
             var payload = Decode(parts[0]);
@@ -53,11 +56,20 @@ public sealed class KmsAdRewardSessionTokenProtector : IAdRewardSessionTokenProt
                 .ToClaims();
             ValidateClaims(claims);
             if (!await _verifier.VerifyAsync(payload, keyId, signature, cancellationToken))
+            {
                 throw new InvalidAdRewardSessionTokenException("Session token signature is invalid.");
+            }
+
             if (now < claims.IssuedAt)
+            {
                 throw new InvalidAdRewardSessionTokenException("Session token is not active yet.");
+            }
+
             if (now >= claims.ExpiresAt)
+            {
                 throw new ExpiredAdRewardSessionTokenException("Session token has expired.");
+            }
+
             return claims;
         }
         catch (Exception exception) when (exception is FormatException or JsonException)
@@ -71,7 +83,10 @@ public sealed class KmsAdRewardSessionTokenProtector : IAdRewardSessionTokenProt
         ArgumentNullException.ThrowIfNull(claims);
         if (claims.SessionId == Guid.Empty || claims.TenantId == Guid.Empty || claims.UserId == Guid.Empty ||
             claims.WalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("Session, tenant, user and wallet IDs are required.", nameof(claims));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(claims.Network);
         ArgumentException.ThrowIfNullOrWhiteSpace(claims.CreativeId);
         ArgumentException.ThrowIfNullOrWhiteSpace(claims.DeviceRiskHash);
@@ -79,7 +94,9 @@ public sealed class KmsAdRewardSessionTokenProtector : IAdRewardSessionTokenProt
         ArgumentException.ThrowIfNullOrWhiteSpace(claims.AsnRiskHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(claims.Nonce);
         if (claims.RequiredDuration <= TimeSpan.Zero || claims.ExpiresAt <= claims.IssuedAt)
+        {
             throw new ArgumentException("Session timing is invalid.", nameof(claims));
+        }
     }
 
     internal static string HashToken(string token) => Convert.ToHexStringLower(

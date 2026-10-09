@@ -63,9 +63,12 @@ public sealed class ProgramEnrollmentAndProgressQueryHandlers(IApplicationDbCont
 
     var query = context.Set<ProgramUser>().Where(pu => pu.ProgramId == request.ProgramId);
 
-    if (request.OnlyActive) query = query.Where(pu => pu.IsActive);
+    if (request.OnlyActive)
+        {
+            query = query.Where(pu => pu.IsActive);
+        }
 
-    var enrollments = await query.OrderByDescending(pu => pu.JoinedAt) // Fixed property name
+        var enrollments = await query.OrderByDescending(pu => pu.JoinedAt) // Fixed property name
                                  .Skip(request.Skip)
                                  .Take(request.Take)
                                  .ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -115,9 +118,12 @@ public sealed class ProgramEnrollmentAndProgressQueryHandlers(IApplicationDbCont
 
     var enrollment = await context.Set<ProgramUser>().Where(pu => pu.ProgramId == request.ProgramId && pu.UserId == request.UserId && pu.IsActive).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
-    if (enrollment == null) return null;
+    if (enrollment == null)
+        {
+            return null;
+        }
 
-    var totalContent = await context.Set<ProgramContent>().Where(pc => pc.ProgramId == request.ProgramId && pc.DeletedAt == null).CountAsync(cancellationToken).ConfigureAwait(false);
+        var totalContent = await context.Set<ProgramContent>().Where(pc => pc.ProgramId == request.ProgramId && pc.DeletedAt == null).CountAsync(cancellationToken).ConfigureAwait(false);
 
     // Note: This is a simplified implementation. You might want to track actual content completion
     var completedContent = 0; // This would need to be calculated from actual progress tracking

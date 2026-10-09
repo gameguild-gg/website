@@ -89,16 +89,20 @@ public sealed class SelfServiceEconomyTransferService(
         Validate(request);
         var actor = RequiredActor();
         if (request.RecipientUserId == actor.ActorId)
+        {
             throw new SelfServiceEconomyTransferException(
                 "A transfer recipient must differ from the authenticated actor.");
+        }
 
         var sourceWallet = await wallets.GetOwnerWalletAsync(
             actor.TenantId, actor.ActorId, cancellationToken).ConfigureAwait(false);
         var destinationWallet = await wallets.GetOwnerWalletAsync(
             actor.TenantId, request.RecipientUserId, cancellationToken).ConfigureAwait(false);
         if (sourceWallet.WalletId == destinationWallet.WalletId)
+        {
             throw new SelfServiceEconomyTransferException(
                 "A transfer recipient must have a distinct Economy wallet.");
+        }
 
         return await transaction.ExecuteAsync(async token =>
         {
@@ -126,8 +130,10 @@ public sealed class SelfServiceEconomyTransferService(
                     destinationWallet.WalletId),
                 token).ConfigureAwait(false);
             if (reservedRoots.Count == 0)
+            {
                 throw new SelfServiceEconomyTransferException(
                     "The transfer could not reserve an authorized source-root set.");
+            }
 
             var amount = new CoinAmount(request.Currency, request.AmountUnits);
             var intent = new EconomyProtectedOperationIntent(
@@ -182,8 +188,11 @@ public sealed class SelfServiceEconomyTransferService(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
                 "A self-service Economy transfer requires an authenticated tenant actor.");
+        }
+
         return (tenantId, actorId);
     }
 
@@ -191,11 +200,20 @@ public sealed class SelfServiceEconomyTransferService(
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.RecipientUserId == Guid.Empty)
+        {
             throw new ArgumentException("A transfer recipient is required.", nameof(request));
+        }
+
         if (!Enum.IsDefined(request.TransferType))
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
         if (!Enum.IsDefined(request.Currency))
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.AmountUnits);
         _ = new IdempotencyKey(request.IdempotencyKey);
     }
@@ -220,8 +238,11 @@ public sealed class SelfServiceEconomyTransferService(
             prepared.TransferType != request.TransferType || prepared.Currency != request.Currency ||
             prepared.Provenance != provenance || prepared.AmountUnits != request.AmountUnits ||
             prepared.IdempotencyKey != idempotencyKey)
+        {
             throw new SelfServiceEconomyTransferException(
                 "The transfer idempotency key is already bound to another request.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(prepared.RequestHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(prepared.ProviderReferenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(prepared.DestinationHash);
@@ -238,8 +259,10 @@ public sealed class SelfServiceEconomyTransferService(
             authorization.Receipt.Capability != EconomyValueMovementCapability.Transfer ||
             authorization.RiskDecisionId != authorization.Receipt.RiskDecisionId ||
             authorization.OperationFingerprint != authorization.Receipt.OperationFingerprint)
+        {
             throw new SelfServiceEconomyTransferException(
                 "The protected transfer authorization is not bound to the authenticated actor.");
+        }
     }
 }
 

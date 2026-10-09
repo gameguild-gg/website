@@ -215,7 +215,10 @@ public class FeatureFlagExperimentServiceTests
         );
 
         // More lenient alpha should be at least as likely to find significance
-        if (!result) lenient.Should().BeTrue();
+        if (!result)
+        {
+            lenient.Should().BeTrue();
+        }
     }
 
     [Fact]

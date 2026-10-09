@@ -336,7 +336,9 @@ public class ProgramContent : EntityBase
     {
         var interactions = ContentInteractions?.Where(ci => ci.UserId == userId).ToList();
         if (interactions?.Any() != true)
+        {
             return PercentValue.Zero;
+        }
 
         if (Children is { Count: > 0 })
         {

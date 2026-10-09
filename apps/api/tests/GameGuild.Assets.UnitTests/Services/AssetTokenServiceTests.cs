@@ -189,9 +189,13 @@ public class AssetTokenServiceTests
 
         // Assert
         if (expectedValid)
+        {
             payload.Should().NotBeNull();
+        }
         else
+        {
             payload.Should().BeNull();
+        }
     }
 
     #endregion

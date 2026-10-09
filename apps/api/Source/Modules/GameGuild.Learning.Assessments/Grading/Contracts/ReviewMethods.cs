@@ -20,7 +20,10 @@ public sealed class ReviewMethodsJsonConverter : JsonConverter<ReviewMethods>
     public override ReviewMethods Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.Number || !reader.TryGetInt32(out var value))
+        {
             throw new JsonException("ReviewMethods must be a numeric bitmask.");
+        }
+
         try
         {
             return ((ReviewMethods)value).EnsureValid(allowDraft: true);
@@ -85,8 +88,15 @@ public static class ReviewMethodsContract
     public static IReadOnlyList<ReviewMethod> ToSequence(this ReviewMethods value)
     {
         value.EnsureValid(allowDraft: true);
-        if (value == ReviewMethods.None) return [];
-        if (value == ReviewMethods.InstructorReview) return [ReviewMethod.InstructorReview];
+        if (value == ReviewMethods.None)
+        {
+            return [];
+        }
+
+        if (value == ReviewMethods.InstructorReview)
+        {
+            return [ReviewMethod.InstructorReview];
+        }
 
         var primary = PrimaryOrder.Single(method => value.HasFlag(method));
         return value.HasFlag(ReviewMethods.InstructorReview)

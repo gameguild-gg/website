@@ -21,6 +21,7 @@ public static class NotificationsModule
         services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
         services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
         services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();
+        services.AddScoped<NotificationMetadataProtector>();
 
         // Email dispatch pipeline
         services.AddOptions<EmailDispatcherOptions>()

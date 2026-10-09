@@ -46,7 +46,11 @@ public class TestingRequestsController(
     public async Task<ActionResult<TestingRequest>> GetTestingRequestWithDetails(Guid id)
     {
         var request = await requestService.GetTestingRequestByIdWithDetailsAsync(id).ConfigureAwait(false);
-        if (request == null) return NotFound();
+        if (request == null)
+        {
+            return NotFound();
+        }
+
         return Ok(request);
     }
 
@@ -55,11 +59,16 @@ public class TestingRequestsController(
     [RequireTestingLabPermission(TestingLabActions.Create, TestingLabResourceTypes.Request)]
     public async Task<ActionResult<TestingRequest>> CreateTestingRequest(CreateTestingRequestDto requestDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         try
         {
@@ -97,7 +106,11 @@ public class TestingRequestsController(
             var updatedRequest = await mediator.Send(
                 new UpdateTestingRequestEndpointCommand(id, requestDto),
                 cancellationToken).ConfigureAwait(false);
-            if (updatedRequest is null) return NotFound("The requested testing request was not found.");
+            if (updatedRequest is null)
+            {
+                return NotFound("The requested testing request was not found.");
+            }
+
             return ToActionResult(await mediator.Send(
                 new GetTestingRequestDetailQuery(id),
                 cancellationToken).ConfigureAwait(false));
@@ -120,7 +133,11 @@ public class TestingRequestsController(
     public async Task<ActionResult> DeleteTestingRequest(Guid id)
     {
         var result = await mediator.Send(new DeleteTestingRequestEndpointCommand(id)).ConfigureAwait(false);
-        if (!result) return NotFound();
+        if (!result)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -132,7 +149,11 @@ public class TestingRequestsController(
         try
         {
             var result = await mediator.Send(new RestoreTestingRequestEndpointCommand(id)).ConfigureAwait(false);
-            if (!result) return NotFound();
+            if (!result)
+            {
+                return NotFound();
+            }
+
             return Ok();
         }
         catch (KeyNotFoundException ex)
@@ -179,7 +200,10 @@ public class TestingRequestsController(
     [RequireTestingLabPermission(TestingLabActions.Read, TestingLabResourceTypes.Request)]
     public async Task<ActionResult<IEnumerable<TestingRequest>>> SearchTestingRequests([FromQuery] string searchTerm)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm)) return BadRequest("Search term is required");
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return BadRequest("Search term is required");
+        }
 
         var requests = await requestService.SearchTestingRequestsAsync(searchTerm).ConfigureAwait(false);
         return Ok(requests);
@@ -191,11 +215,16 @@ public class TestingRequestsController(
         CreateSimpleTestingRequestDto requestDto,
         CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         TestingRequest request;
         try
@@ -236,7 +265,9 @@ public class TestingRequestsController(
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         var requests = await requestService.GetTestingRequestsByCreatorAsync(userId.Value).ConfigureAwait(false);
         return Ok(requests);

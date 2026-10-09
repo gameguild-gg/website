@@ -129,8 +129,16 @@ public sealed class AccessDeniedException : SecurityException
         Guid? resourceId = null)
     {
         var msg = $"User {userId} lacks permission '{permission}'";
-        if (tenantId.HasValue) msg += $" in tenant {tenantId}";
-        if (resourceId.HasValue) msg += $" for resource {resourceId}";
+        if (tenantId.HasValue)
+        {
+            msg += $" in tenant {tenantId}";
+        }
+
+        if (resourceId.HasValue)
+        {
+            msg += $" for resource {resourceId}";
+        }
+
         return new AccessDeniedException(msg);
     }
 

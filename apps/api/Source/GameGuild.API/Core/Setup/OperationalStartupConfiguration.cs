@@ -10,7 +10,9 @@ public static class OperationalStartupConfiguration
         ArgumentNullException.ThrowIfNull(configuration);
 
         if (AllowsReducedConfiguration(environmentName))
+        {
             return [];
+        }
 
         var failures = new List<string>();
         failures.AddRange(DatabaseStartupConfiguration.Validate(configuration, environmentName));
@@ -33,7 +35,10 @@ public static class OperationalStartupConfiguration
             "Encryption:Key");
 
         if (configuration.GetValue<bool?>("Redis:Enabled") != true)
+        {
             failures.Add("Redis must be enabled.");
+        }
+
         Require(configuration, failures, "Redis:ConnectionString", "A Redis connection string is required.");
 
         ValidateEmail(configuration, failures);
@@ -46,25 +51,34 @@ public static class OperationalStartupConfiguration
     {
         var failures = Validate(configuration, environmentName);
         if (failures.Count != 0)
+        {
             throw new InvalidOperationException($"Unsafe operational startup configuration: {string.Join(" ", failures)}");
+        }
     }
 
     private static void ValidateEmail(IConfiguration configuration, ICollection<string> failures)
     {
         if (configuration.GetValue<bool?>("EmailDelivery:Enabled") != true)
+        {
             failures.Add("Email delivery must be enabled.");
+        }
 
         Require(configuration, failures, "EmailDelivery:FromEmail", "An email delivery sender address is required.");
 
         var provider = configuration["EmailDelivery:Provider"]?.Trim();
         // Preserve region-only SES configuration used before multiple providers were supported.
         if (string.IsNullOrWhiteSpace(provider) && !string.IsNullOrWhiteSpace(configuration["EmailDelivery:Ses:Region"]))
+        {
             provider = "Ses";
+        }
+
         if (string.Equals(provider, "Smtp", StringComparison.OrdinalIgnoreCase))
         {
             Require(configuration, failures, "EmailDelivery:SmtpHost", "An SMTP host is required.");
             if (configuration.GetValue<int?>("EmailDelivery:SmtpPort") is not > 0)
+            {
                 failures.Add("A positive SMTP port is required.");
+            }
         }
         else if (string.Equals(provider, "SendGrid", StringComparison.OrdinalIgnoreCase))
         {
@@ -115,7 +129,9 @@ public static class OperationalStartupConfiguration
         try
         {
             if (Convert.FromBase64String(secret).Length < 32)
+            {
                 failures.Add(unsafeFailure);
+            }
         }
         catch (FormatException)
         {
@@ -130,7 +146,9 @@ public static class OperationalStartupConfiguration
         params string[] keys)
     {
         if (!keys.Any(key => !string.IsNullOrWhiteSpace(configuration[key])))
+        {
             failures.Add(failure);
+        }
     }
 
     private static void Require(
@@ -140,7 +158,9 @@ public static class OperationalStartupConfiguration
         string failure)
     {
         if (string.IsNullOrWhiteSpace(configuration[key]))
+        {
             failures.Add(failure);
+        }
     }
 
     private static void RequireStrongSecret(
@@ -161,7 +181,9 @@ public static class OperationalStartupConfiguration
         }
 
         if (secret.Length < 32 || secret.StartsWith("CHANGE_THIS", StringComparison.OrdinalIgnoreCase))
+        {
             failures.Add(unsafeFailure);
+        }
     }
 
     private static bool AllowsReducedConfiguration(string environmentName) =>

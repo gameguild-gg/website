@@ -182,7 +182,9 @@ public class TestingSession : EntityBase
     public void Start()
     {
         if (Status != SessionStatus.Scheduled)
+        {
             throw new InvalidOperationException("Only scheduled sessions can be started");
+        }
 
         Status = SessionStatus.Active;
         UpdatedAt = SystemClock.UtcNow;
@@ -194,7 +196,9 @@ public class TestingSession : EntityBase
     public void Complete()
     {
         if (Status != SessionStatus.Active)
+        {
             throw new InvalidOperationException("Only active sessions can be completed");
+        }
 
         Status = SessionStatus.Completed;
         UpdatedAt = SystemClock.UtcNow;
@@ -206,7 +210,9 @@ public class TestingSession : EntityBase
     public void Cancel()
     {
         if (Status == SessionStatus.Completed)
+        {
             throw new InvalidOperationException("Completed sessions cannot be cancelled");
+        }
 
         Status = SessionStatus.Cancelled;
         UpdatedAt = SystemClock.UtcNow;

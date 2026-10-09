@@ -27,7 +27,9 @@ public sealed class GetMyEconomyWalletQueryHandler(
             .ConfigureAwait(false);
 
         if (wallet is null)
+        {
             return null;
+        }
 
         var balance = await context.Set<EconomyWalletBalanceProjectionRow>()
             .AsNoTracking()
@@ -86,7 +88,9 @@ public sealed class ListMyEconomyWalletTransactionsQueryHandler(
             .ConfigureAwait(false);
 
         if (walletId is null)
+        {
             return [];
+        }
 
         return await (
                 from line in context.Set<EconomyJournalLineRow>().AsNoTracking()
@@ -135,7 +139,10 @@ internal static class EconomyWalletActor
         ArgumentNullException.ThrowIfNull(accessor);
         var actor = accessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || actor.TenantId is not { } tenantId)
+        {
             throw new UnauthorizedAccessException("Economy wallet access requires an authenticated user and tenant context.");
+        }
+
         return (userId, tenantId);
     }
 }

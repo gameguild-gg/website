@@ -202,8 +202,10 @@ public sealed class DurableMarketplaceServicesTests
             request with { ReasonCode = "different" }
         };
         foreach (var conflict in conflicts)
+        {
             await FluentActions.Awaiting(() => fixture.Refunds.RefundAsync(conflict).AsTask())
-                .Should().ThrowAsync<MarketplaceIdempotencyConflictException>();
+            .Should().ThrowAsync<MarketplaceIdempotencyConflictException>();
+        }
     }
 
     [Fact]
@@ -297,8 +299,16 @@ public sealed class DurableMarketplaceServicesTests
         await using var fixture = await Fixture.CreateAsync(bypassDatabaseConstraints: true);
         var settlement = await fixture.Settlements.SettleAsync(fixture.SettlementRequest());
         var leg = await fixture.Context.Set<MarketplaceSettlementLegRow>().SingleAsync();
-        if (invalid == "refunded-over-target") leg.RefundedUnits = 101;
-        if (invalid == "target-over-total") leg.Units = -1;
+        if (invalid == "refunded-over-target")
+        {
+            leg.RefundedUnits = 101;
+        }
+
+        if (invalid == "target-over-total")
+        {
+            leg.Units = -1;
+        }
+
         if (invalid == "zero-rounded")
         {
             leg.Units = 1;
@@ -459,7 +469,10 @@ public sealed class DurableMarketplaceServicesTests
         {
             var context = new MarketplaceTestContext(bypassDatabaseConstraints);
             if (!bypassDatabaseConstraints)
+            {
                 await context.Database.OpenConnectionAsync();
+            }
+
             await context.Database.EnsureCreatedAsync();
             return new Fixture(context);
         }
@@ -493,10 +506,15 @@ public sealed class DurableMarketplaceServicesTests
         {
             var builder = new DbContextOptionsBuilder<MarketplaceTestContext>();
             if (bypassDatabaseConstraints)
+            {
                 builder.UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-                    .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            }
             else
+            {
                 builder.UseSqlite("Data Source=:memory:");
+            }
+
             return builder.Options;
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder) =>
@@ -639,7 +657,10 @@ public sealed class DurableMarketplaceServicesTests
         {
             Requests.Add(request);
             if (ReturnUnexpectedPosting)
+            {
                 return new RegisteredPostingReceipt(PostingId.New(), 100, "unexpected", false);
+            }
+
             context.Add(new MarketplaceSettlementRow
             {
                 Id = request.SettlementId,
@@ -681,6 +702,7 @@ public sealed class DurableMarketplaceServicesTests
                 Version = 1
             });
             foreach (var leg in request.Legs)
+            {
                 context.Add(new MarketplaceSettlementLegRow
                 {
                     SettlementId = request.SettlementId,
@@ -690,7 +712,10 @@ public sealed class DurableMarketplaceServicesTests
                     PlatformFeeUnits = leg.PlatformFeeUnits,
                     RefundedUnits = 0
                 });
+            }
+
             foreach (var reservation in reservations.Last)
+            {
                 context.Add(new MarketplaceFundingFragmentRow
                 {
                     Id = Guid.NewGuid(),
@@ -702,6 +727,8 @@ public sealed class DurableMarketplaceServicesTests
                     TraceUnitsPerCoinUnit = CurrencyTraceScale.For(reservation.Amount.Currency),
                     SelectedRootRanges = $$"""[{"rootSourceStampId":"{{reservation.RootSourceStampId.Value}}"}]"""
                 });
+            }
+
             context.SaveChanges();
             return new RegisteredPostingReceipt(request.PostingId, 100, "settlement-journal-hash", false);
         }
@@ -721,7 +748,10 @@ public sealed class DurableMarketplaceServicesTests
                 ? MarketplaceSettlementStatus.Refunded
                 : MarketplaceSettlementStatus.PartiallyRefunded;
             if (settlement.Status == MarketplaceSettlementStatus.Refunded)
+            {
                 settlement.EntitlementStatus = MarketplaceEntitlementStatus.Revoked;
+            }
+
             settlement.UpdatedAt = request.RefundedAt;
             settlement.Version++;
             context.Add(new MarketplaceRefundRow
@@ -765,13 +795,21 @@ public sealed class DurableMarketplaceServicesTests
                 settlementLeg.RefundedUnits += leg.Units;
             }
             if (AddDebt)
+            {
                 context.Add(new MarketplaceRefundDebtRow
                 {
-                    Id = Guid.NewGuid(), TenantId = request.Authority.TenantId, RefundId = request.RefundId,
-                    SettlementId = request.SettlementId, ResponsibleWalletId = settlement.SellerWalletId,
-                    Currency = request.Legs[0].Currency, AmountUnits = 10,
-                    EvidenceHash = "debt-evidence", RecordedAt = request.RefundedAt
+                    Id = Guid.NewGuid(),
+                    TenantId = request.Authority.TenantId,
+                    RefundId = request.RefundId,
+                    SettlementId = request.SettlementId,
+                    ResponsibleWalletId = settlement.SellerWalletId,
+                    Currency = request.Legs[0].Currency,
+                    AmountUnits = 10,
+                    EvidenceHash = "debt-evidence",
+                    RecordedAt = request.RefundedAt
                 });
+            }
+
             context.SaveChanges();
             return new RegisteredPostingReceipt(
                 ReturnUnexpectedPosting ? PostingId.New() : request.PostingId,

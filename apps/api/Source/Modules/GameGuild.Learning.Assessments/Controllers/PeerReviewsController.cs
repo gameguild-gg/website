@@ -60,8 +60,15 @@ public class PeerReviewsController : BaseApiController
         }
 
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender
             .Send(new ClaimPeerReviewEndpointCommand(assessmentId, actor.SubjectIdAsGuid.Value))
@@ -92,15 +99,33 @@ public class PeerReviewsController : BaseApiController
     public async Task<ActionResult<AnonymousReviewSubmissionDto>> GetReview(Guid reviewId)
     {
         var actor = _actorContextAccessor.ActorContext;
-        if (actor.SubjectIdAsGuid == null) return Unauthorized();
+        if (actor.SubjectIdAsGuid == null)
+        {
+            return Unauthorized();
+        }
 
         var review = await _peerReviewService.GetReviewAsync(reviewId).ConfigureAwait(false);
-        if (review == null) return NotFound();
-        if (review.ReviewerUserId != actor.SubjectIdAsGuid.Value) return Forbid();
+        if (review == null)
+        {
+            return NotFound();
+        }
+
+        if (review.ReviewerUserId != actor.SubjectIdAsGuid.Value)
+        {
+            return Forbid();
+        }
 
         var assessment = await _assessmentService.GetAssessmentByIdAsync(review.AssessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         if (!IsReviewWindowOpen(assessment))
         {
             return Conflict(new ProblemDetails
@@ -111,7 +136,10 @@ public class PeerReviewsController : BaseApiController
         }
 
         var submission = await _assessmentService.GetSubmissionByIdAsync(review.SubmissionId).ConfigureAwait(false);
-        if (submission == null) return NotFound();
+        if (submission == null)
+        {
+            return NotFound();
+        }
 
         var rubric = await _rubricService.GetAsync(assessment.Id).ConfigureAwait(false);
         return Ok(new AnonymousReviewSubmissionDto(
@@ -138,15 +166,33 @@ public class PeerReviewsController : BaseApiController
     public async Task<IActionResult> SubmitReview(Guid reviewId, [FromBody] PeerReviewSubmitRequest request)
     {
         var actor = _actorContextAccessor.ActorContext;
-        if (actor.SubjectIdAsGuid == null) return Unauthorized();
+        if (actor.SubjectIdAsGuid == null)
+        {
+            return Unauthorized();
+        }
 
         var review = await _peerReviewService.GetReviewAsync(reviewId).ConfigureAwait(false);
-        if (review == null) return NotFound();
-        if (review.ReviewerUserId != actor.SubjectIdAsGuid.Value) return Forbid();
+        if (review == null)
+        {
+            return NotFound();
+        }
+
+        if (review.ReviewerUserId != actor.SubjectIdAsGuid.Value)
+        {
+            return Forbid();
+        }
 
         var assessment = await _assessmentService.GetAssessmentByIdAsync(review.AssessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         if (!IsReviewWindowOpen(assessment))
         {
             return Conflict(new ProblemDetails
@@ -211,10 +257,17 @@ public class PeerReviewsController : BaseApiController
     public async Task<ActionResult<IEnumerable<ReceivedPeerReviewDto>>> GetReceivedPeerReviews(Guid submissionId)
     {
         var actor = _actorContextAccessor.ActorContext;
-        if (actor.SubjectIdAsGuid == null) return Unauthorized();
+        if (actor.SubjectIdAsGuid == null)
+        {
+            return Unauthorized();
+        }
 
         var submission = await _assessmentService.GetSubmissionByIdAsync(submissionId).ConfigureAwait(false);
-        if (submission == null) return NotFound();
+        if (submission == null)
+        {
+            return NotFound();
+        }
+
         if (!await _peerReviewService
                 .IsSubmissionOwnerOrParticipantAsync(submissionId, actor.SubjectIdAsGuid.Value)
                 .ConfigureAwait(false))
@@ -223,8 +276,15 @@ public class PeerReviewsController : BaseApiController
         }
 
         var assessment = await _assessmentService.GetAssessmentByIdAsync(submission.AssessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var reviews = await _peerReviewService.GetReviewsForSubmissionAsync(submissionId).ConfigureAwait(false);
         return Ok(reviews.Select(r => new ReceivedPeerReviewDto(
@@ -238,14 +298,27 @@ public class PeerReviewsController : BaseApiController
     public async Task<ActionResult<IEnumerable<InstructorPeerReviewDto>>> GetPeerReviews(Guid submissionId)
     {
         var actor = _actorContextAccessor.ActorContext;
-        if (actor.SubjectIdAsGuid == null) return Unauthorized();
+        if (actor.SubjectIdAsGuid == null)
+        {
+            return Unauthorized();
+        }
 
         var submission = await _assessmentService.GetSubmissionByIdAsync(submissionId).ConfigureAwait(false);
-        if (submission == null) return NotFound();
+        if (submission == null)
+        {
+            return NotFound();
+        }
 
         var assessment = await _assessmentService.GetAssessmentByIdAsync(submission.AssessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var reviews = await _peerReviewService.GetReviewsForSubmissionAsync(submissionId).ConfigureAwait(false);
         var names = await _peerReviewService

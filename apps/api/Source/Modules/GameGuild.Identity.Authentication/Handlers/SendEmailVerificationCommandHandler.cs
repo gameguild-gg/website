@@ -29,7 +29,7 @@ public sealed class SendEmailVerificationCommandHandler(
 
         if (user is null)
         {
-            logger.LogInformation("Email verification requested for unknown email {Email}", email);
+            logger.LogInformation("Email verification requested for unknown email {Email}", GameGuild.LogRedaction.MaskEmail(email));
             return GenericResponse();
         }
 

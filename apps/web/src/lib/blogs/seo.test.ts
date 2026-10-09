@@ -127,4 +127,30 @@ describe('blog JSON-LD', () => {
 
     expect(JSON.parse(payload)).toMatchObject({ '@type': 'BlogPosting', headline: 'Hello World' });
   });
+
+  it.each(['title', 'author', 'tags', 'override'] as const)(
+    'keeps hostile %s data inside the JSON-LD script while preserving its JSON value',
+    (source) => {
+      const hostile = '</ScRiPt><img src="x" onerror="alert(1)"><script>alert(1)</script><!--';
+      const override = JSON.stringify({ '@type': 'CustomThing', description: hostile });
+      const post: BlogPostDetail = {
+        ...BASE_POST,
+        ...(source === 'title' ? { title: hostile } : {}),
+        ...(source === 'tags' ? { tags: [hostile] } : {}),
+        ...(source === 'override' ? { structuredDataOverride: override } : {}),
+      };
+      const profiles = source === 'author' ? [{ displayName: hostile }] : PROFILES;
+      const expected = source === 'override' ? JSON.parse(override) : buildBlogJsonLd(post, profiles);
+      const payload = resolveBlogJsonLd(post, profiles);
+      const document = new DOMParser().parseFromString(
+        `<script type="application/ld+json">${payload}</script>`,
+        'text/html',
+      );
+
+      expect(document.querySelectorAll('script')).toHaveLength(1);
+      expect(document.querySelector('img')).toBeNull();
+      expect(payload).not.toContain('<');
+      expect(JSON.parse(document.querySelector('script')!.textContent!)).toEqual(expected);
+    },
+  );
 });

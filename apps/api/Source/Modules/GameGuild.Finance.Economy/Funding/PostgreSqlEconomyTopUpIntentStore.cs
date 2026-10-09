@@ -30,14 +30,19 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         Validate(draft);
         var requestHash = RequestHash(draft);
         if (_db.Database.IsRelational())
+        {
             return await PrepareRelationalAsync(draft, requestHash, cancellationToken).ConfigureAwait(false);
+        }
+
         var existing = await _db.Set<EconomyTopUpIntentRow>().AsNoTracking()
             .SingleOrDefaultAsync(row =>
                     row.TenantId == draft.TenantId && row.ActorId == draft.ActorId &&
                     row.IdempotencyKey == draft.IdempotencyKey.Value,
                 cancellationToken).ConfigureAwait(false);
         if (existing is not null)
+        {
             return MapReplay(existing, requestHash);
+        }
 
         var payment = Payment.Create(
             draft.TenantId,
@@ -92,13 +97,18 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         if (row.ProviderObjectId is not null)
         {
             if (!Matches(row, binding))
+            {
                 throw new EconomyTopUpReplayConflictException(
                     "The Economy top-up provider object cannot be rebound.");
+            }
+
             return;
         }
         if (!string.Equals(row.Provider, binding.Provider, StringComparison.Ordinal))
+        {
             throw new EconomySelfServiceCommandRejectedException(
                 "The Economy top-up provider does not match the signed quote.");
+        }
 
         payment.BindProviderMapping(
             binding.Provider,
@@ -109,7 +119,9 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
             binding.ProviderMonetaryLeg);
         payment.MarkAsProcessing(binding.ProviderObjectId);
         if (binding.Status == EconomyTopUpProviderStatus.RequiresAction)
+        {
             payment.MarkAsRequiresAction(binding.ProviderObjectId);
+        }
 
         row.ProviderEnvironment = binding.ProviderEnvironment;
         row.ProviderAccountId = binding.ProviderAccountId;
@@ -130,7 +142,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
     {
         ValidateReaderAuthority(tenantId, actorId);
         if (topUpId == Guid.Empty)
+        {
             throw new ArgumentException("Top-up ID is required.", nameof(topUpId));
+        }
+
         var row = await _db.Set<EconomyTopUpIntentRow>().AsNoTracking()
             .SingleOrDefaultAsync(item =>
                     item.Id == topUpId && item.TenantId == tenantId && item.ActorId == actorId,
@@ -146,7 +161,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
     {
         ValidateReaderAuthority(tenantId, actorId);
         if (take is < 1 or > 100)
+        {
             throw new ArgumentOutOfRangeException(nameof(take));
+        }
+
         return await _db.Set<EconomyTopUpIntentRow>().AsNoTracking()
             .Where(item => item.TenantId == tenantId && item.ActorId == actorId)
             .OrderByDescending(item => item.RequestedAt)
@@ -179,7 +197,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
                     item.ProviderMonetaryLeg == identity.ProviderMonetaryLeg,
                 cancellationToken).ConfigureAwait(false);
         if (row is null)
+        {
             return null;
+        }
+
         var payment = _db.Database.IsRelational()
             ? await ReadPaymentFactAsync(identity, cancellationToken).ConfigureAwait(false)
             : await ReadPaymentFactFromModelAsync(row.PaymentId, cancellationToken).ConfigureAwait(false);
@@ -221,9 +242,14 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
                 cancellationToken).ConfigureAwait(false) ?? throw new KeyNotFoundException(
                 "Economy top-up provider binding was not found.");
         if (row.LastProviderEventId == providerEvent.EventId && row.Status == providerEvent.Status)
+        {
             return new EconomyTopUpProviderEventResult(false, true, row.Status);
+        }
+
         if (row.LastProviderEventAt > providerEvent.OccurredAt || IsTerminalRegression(row.Status, providerEvent.Status))
+        {
             return new EconomyTopUpProviderEventResult(false, false, row.Status);
+        }
 
         var payment = await _db.Set<Payment>()
             .SingleAsync(item => item.Id == row.PaymentId, cancellationToken).ConfigureAwait(false);
@@ -261,37 +287,62 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
     {
         ArgumentNullException.ThrowIfNull(draft);
         if (draft.TenantId == Guid.Empty || draft.ActorId == Guid.Empty || draft.WalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("Top-up tenant, actor, and wallet are required.", nameof(draft));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(draft.HardCoinUnits);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(draft.UsdMinorUnits);
         if (draft.HardCoinUnits != draft.UsdMinorUnits)
+        {
             throw new ArgumentException("HardCoin units must match authoritative USD minor units.", nameof(draft));
+        }
+
         _ = Risk.EconomyJurisdictionCode.Require(draft.JurisdictionCode, nameof(draft));
         if (draft.PolicyVersion <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(draft));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(draft.PolicyHash);
         if (!string.Equals(draft.Provider, "stripe", StringComparison.Ordinal))
+        {
             throw new ArgumentException("Only the signed Stripe top-up provider is supported.", nameof(draft));
+        }
+
         if (draft.RequestedAt == default)
+        {
             throw new ArgumentException("A server request time is required.", nameof(draft));
+        }
     }
 
     internal static void Validate(EconomyTopUpProviderBinding binding)
     {
         ArgumentNullException.ThrowIfNull(binding);
         if (binding.TopUpId == Guid.Empty)
+        {
             throw new ArgumentException("Top-up ID is required.", nameof(binding));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(binding.Provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(binding.ProviderEnvironment);
         ArgumentException.ThrowIfNullOrWhiteSpace(binding.ProviderAccountId);
         ArgumentException.ThrowIfNullOrWhiteSpace(binding.ProviderObjectId);
         if (!string.Equals(binding.ProviderObjectType, "payment_intent", StringComparison.Ordinal) ||
             !string.Equals(binding.ProviderMonetaryLeg, "capture", StringComparison.Ordinal))
+        {
             throw new ArgumentException("Top-up provider binding must reference a payment-intent capture.", nameof(binding));
+        }
+
         if (binding.Status is not (EconomyTopUpProviderStatus.RequiresAction or EconomyTopUpProviderStatus.Processing))
+        {
             throw new ArgumentOutOfRangeException(nameof(binding));
+        }
+
         if (binding.BoundAt == default)
+        {
             throw new ArgumentException("Provider binding time is required.", nameof(binding));
+        }
     }
 
     internal static void Validate(EconomyTopUpProviderIdentity identity)
@@ -303,7 +354,9 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
             string.IsNullOrWhiteSpace(identity.ProviderObjectId) ||
             !string.Equals(identity.ProviderObjectType, "payment_intent", StringComparison.Ordinal) ||
             !string.Equals(identity.ProviderMonetaryLeg, "capture", StringComparison.Ordinal))
+        {
             throw new ArgumentException("A canonical Stripe payment-intent capture identity is required.", nameof(identity));
+        }
     }
 
     internal static void Validate(EconomyTopUpProviderEvent providerEvent)
@@ -312,23 +365,40 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         Validate(providerEvent.Identity);
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.EventId);
         if (providerEvent.OccurredAt == default)
+        {
             throw new ArgumentException("Provider event time is required.", nameof(providerEvent));
+        }
+
         if (providerEvent.Status is not (EconomyTopUpProviderStatus.RequiresAction or
             EconomyTopUpProviderStatus.Processing or EconomyTopUpProviderStatus.Posted or
             EconomyTopUpProviderStatus.Failed or EconomyTopUpProviderStatus.Cancelled or
             EconomyTopUpProviderStatus.Held))
+        {
             throw new ArgumentOutOfRangeException(nameof(providerEvent));
+        }
+
         if (providerEvent.EvidenceHash.Length != 64 ||
             !providerEvent.EvidenceHash.All(Uri.IsHexDigit))
+        {
             throw new ArgumentException("Provider evidence must be a SHA-256 hash.", nameof(providerEvent));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(providerEvent.ProviderUsdMinorUnits);
         if (!string.Equals(providerEvent.Currency, "USD", StringComparison.Ordinal))
+        {
             throw new ArgumentException("HardCoin top-up events require authoritative USD amounts.", nameof(providerEvent));
+        }
+
         if ((providerEvent.Status == EconomyTopUpProviderStatus.Posted) != providerEvent.PostingGroupId.HasValue)
+        {
             throw new ArgumentException("Only a posted top-up may bind a posting group.", nameof(providerEvent));
+        }
+
         if (providerEvent.Status is EconomyTopUpProviderStatus.Failed or EconomyTopUpProviderStatus.Cancelled &&
             string.IsNullOrWhiteSpace(providerEvent.FailureCode))
+        {
             throw new ArgumentException("Terminal provider events require a failure code.", nameof(providerEvent));
+        }
     }
 
     private static PreparedEconomyTopUpIntent MapReplay(EconomyTopUpIntentRow row, string requestHash)
@@ -336,8 +406,11 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         if (!CryptographicOperations.FixedTimeEquals(
                 Encoding.ASCII.GetBytes(row.RequestHash),
                 Encoding.ASCII.GetBytes(requestHash)))
+        {
             throw new EconomyTopUpReplayConflictException(
                 "The top-up idempotency key is already bound to another request.");
+        }
+
         return Map(row, isDuplicate: true);
     }
 
@@ -391,7 +464,9 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
             !string.Equals(payment.ProviderObjectId, row.ProviderObjectId, StringComparison.Ordinal) ||
             !string.Equals(payment.ProviderObjectType, row.ProviderObjectType, StringComparison.Ordinal) ||
             !string.Equals(payment.ProviderMonetaryLeg, row.ProviderMonetaryLeg, StringComparison.Ordinal))
+        {
             throw new InvalidOperationException("The Economy top-up and Payment provider bindings diverged.");
+        }
     }
 
     private async ValueTask<EconomyTopUpPaymentFact> ReadPaymentFactAsync(
@@ -440,39 +515,61 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         if (providerEvent.Status == EconomyTopUpProviderStatus.Processing)
         {
             if (payment.Status != PaymentStatus.Processing)
+            {
                 payment.MarkAsProcessing(providerEvent.Identity.ProviderObjectId);
+            }
+
             return;
         }
         if (providerEvent.Status == EconomyTopUpProviderStatus.RequiresAction)
         {
             if (payment.Status != PaymentStatus.RequiresAction)
+            {
                 payment.MarkAsRequiresAction(providerEvent.Identity.ProviderObjectId);
+            }
+
             return;
         }
         if (providerEvent.Status is EconomyTopUpProviderStatus.Posted or EconomyTopUpProviderStatus.Held)
         {
             if (payment.Status == PaymentStatus.Failed)
+            {
                 payment.PrepareForRetry();
+            }
+
             if (payment.Status == PaymentStatus.Pending)
+            {
                 payment.MarkAsProcessing(providerEvent.Identity.ProviderObjectId);
+            }
+
             if (payment.Status != PaymentStatus.Succeeded)
+            {
                 payment.MarkAsSucceeded(providerEvent.Identity.ProviderObjectId, providerEvent.Identity.ProviderObjectId);
+            }
+
             return;
         }
         if (providerEvent.Status == EconomyTopUpProviderStatus.Failed)
         {
             if (payment.Status != PaymentStatus.Failed)
+            {
                 payment.MarkAsFailed("Stripe reported that the top-up payment failed.", providerEvent.FailureCode);
+            }
+
             return;
         }
         if (payment.Status != PaymentStatus.Cancelled)
+        {
             payment.Cancel("Stripe cancelled the top-up payment.");
+        }
     }
 
     private static void ValidateReaderAuthority(Guid tenantId, Guid actorId)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new ArgumentException("Top-up reader tenant and actor are required.");
+        }
     }
 
     private static string PaymentIdempotencyKey(EconomyTopUpIntentDraft draft) =>
@@ -498,7 +595,9 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
     {
         var existing = await FindAsync(draft, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
+        {
             return MapReplay(existing, requestHash);
+        }
 
         await using var transaction = await BeginOwnedTransactionAsync(cancellationToken).ConfigureAwait(false);
         var lockKey = $"economy-top-up:{draft.TenantId:N}:{draft.ActorId:N}:{draft.IdempotencyKey.Value}";
@@ -511,7 +610,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         if (existing is not null)
         {
             if (transaction is not null)
+            {
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             return MapReplay(existing, requestHash);
         }
 
@@ -528,7 +630,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
             .SingleAsync(cancellationToken).ConfigureAwait(false);
 
         if (transaction is not null)
+        {
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         return Map(row, isDuplicate: false);
     }
 
@@ -542,8 +647,11 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
         if (current.ProviderObjectId is not null)
         {
             if (!Matches(current, binding))
+            {
                 throw new EconomyTopUpReplayConflictException(
                     "The Economy top-up provider object cannot be rebound.");
+            }
+
             return;
         }
 
@@ -566,7 +674,9 @@ public sealed class PostgreSqlEconomyTopUpIntentStore :
                 "The Economy top-up provider object cannot be rebound.", exception);
         }
         if (transaction is not null)
+        {
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private Task<EconomyTopUpIntentRow?> FindAsync(

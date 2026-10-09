@@ -80,7 +80,9 @@ internal sealed class AuthoringAiService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         if (conversations.Count == 0)
+        {
             return [];
+        }
 
         var ids = conversations.Select(item => item.Id).ToArray();
         var messages = await db.Set<AiAuthoringMessage>()
@@ -122,14 +124,20 @@ internal sealed class AuthoringAiService(
                 duplicate.ProposalKind != request.ProposalKind ||
                 !string.Equals(duplicate.Instruction, request.Instruction.Trim(), StringComparison.Ordinal) ||
                 !string.Equals(duplicate.Selection, NormalizeOptional(request.Selection), StringComparison.Ordinal))
+            {
                 throw new AiAuthoringIdempotencyConflictException(
                     "The AI idempotency key is already bound to another authoring request.");
+            }
+
             return await ToDto(duplicate, cancellationToken).ConfigureAwait(false);
         }
 
         var draft = await FindDraft(programId, contentId, tenantId, cancellationToken).ConfigureAwait(false);
         if (draft.Revision != request.DraftRevision)
+        {
             throw new AuthoringRevisionConflictException(request.DraftRevision, draft.Revision);
+        }
+
         EnsureProposalKindAllowed(DeserializePayload(draft.PayloadJson), request.ProposalKind);
 
         var generationRequest = BuildGenerationRequest(
@@ -140,7 +148,9 @@ internal sealed class AuthoringAiService(
             maximumOutputTokens: null);
         var resolved = await ai.DescribeGenerateAsync(new AiExecutionActor(tenantId, actorId), generationRequest, cancellationToken).ConfigureAwait(false);
         if (resolved.IsFailure)
+        {
             throw new AiAuthoringExecutionException(resolved.Error.Code, resolved.Error.Description);
+        }
 
         var maximumInputTokens = EstimateInputTokens(generationRequest);
         var quote = await credits.QuoteAsync(
@@ -210,7 +220,10 @@ internal sealed class AuthoringAiService(
         catch
         {
             if (!creditsReserved)
+            {
                 await ReleaseQuota(tenantId, actorId, maximumQuotaTokens, releaseRequest: true, CancellationToken.None).ConfigureAwait(false);
+            }
+
             throw;
         }
     }
@@ -237,7 +250,9 @@ internal sealed class AuthoringAiService(
     {
         var run = await FindOwnedRun(tenantId, actorId, programId, contentId, runId, cancellationToken).ConfigureAwait(false);
         if (run.Status is AiAuthoringRunStatus.Completed or AiAuthoringRunStatus.Failed or AiAuthoringRunStatus.Cancelled)
+        {
             return await ToDto(run, cancellationToken).ConfigureAwait(false);
+        }
 
         if (run.Status == AiAuthoringRunStatus.Running)
         {
@@ -285,7 +300,10 @@ internal sealed class AuthoringAiService(
                 .SingleAsync(cancellationToken)
                 .ConfigureAwait(false);
             if (status is AiAuthoringRunStatus.Completed or AiAuthoringRunStatus.Failed or AiAuthoringRunStatus.Cancelled)
+            {
                 yield break;
+            }
+
             await Task.Delay(TimeSpan.FromMilliseconds(300), timeProvider, cancellationToken).ConfigureAwait(false);
         }
     }
@@ -307,7 +325,10 @@ internal sealed class AuthoringAiService(
         _ = await FindOwnedRun(tenantId, actorId, programId, contentId, proposal.RunId, cancellationToken).ConfigureAwait(false);
         var draft = await FindDraft(programId, contentId, tenantId, cancellationToken).ConfigureAwait(false);
         if (draft.Revision != request.DraftRevision)
+        {
             throw new AuthoringRevisionConflictException(request.DraftRevision, draft.Revision);
+        }
+
         proposal.EnsureApplicableTo(draft.Revision);
 
         var payload = DeserializePayload(draft.PayloadJson);
@@ -328,7 +349,10 @@ internal sealed class AuthoringAiService(
                 .ConfigureAwait(false)
                 ?? throw new KeyNotFoundException("Authoring draft was not found.");
             if (currentRevision != request.DraftRevision)
+            {
                 throw new AuthoringRevisionConflictException(request.DraftRevision, currentRevision);
+            }
+
             throw await ProposalConflict(proposalId, cancellationToken).ConfigureAwait(false);
         }
         return ToDraftDto(draft);
@@ -366,7 +390,9 @@ internal sealed class AuthoringAiService(
             .SingleOrDefaultAsync(item => item.Id == runId, cancellationToken)
             .ConfigureAwait(false);
         if (run is null || run.Status is AiAuthoringRunStatus.Completed or AiAuthoringRunStatus.Failed or AiAuthoringRunStatus.Cancelled)
+        {
             return;
+        }
 
         var nextSequence = await NextSequence(runId, cancellationToken).ConfigureAwait(false);
         if (run.Status == AiAuthoringRunStatus.Running)
@@ -402,31 +428,48 @@ internal sealed class AuthoringAiService(
         try
         {
             if (await IsCancellationRequested(run.Id, cancellationToken).ConfigureAwait(false))
+            {
                 throw new OperationCanceledException("AI generation was cancelled by the author.");
+            }
+
             var completion = await ai.GenerateForActorStreamingWithReservedQuotaAsync(
                 new AiExecutionActor(run.TenantId!.Value, run.ActorId),
                 BuildGenerationRequest(run, draft.PayloadJson),
                 async (delta, streamCancellationToken) =>
                 {
                     if (string.IsNullOrEmpty(delta))
+                    {
                         return;
+                    }
+
                     if (await IsCancellationRequested(run.Id, streamCancellationToken).ConfigureAwait(false))
+                    {
                         throw new OperationCanceledException("AI generation was cancelled by the author.");
+                    }
+
                     AddEvent(run.Id, nextSequence++, "delta", AiAuthoringRunStatus.Running.ToString(), delta, null, timeProvider.GetUtcNow());
                     await db.SaveChangesAsync(streamCancellationToken).ConfigureAwait(false);
                 },
                 cancellationToken).ConfigureAwait(false);
             if (completion.IsFailure)
+            {
                 throw new AiAuthoringExecutionException(completion.Error.Code, completion.Error.Description);
+            }
+
             if (await IsCancellationRequested(run.Id, cancellationToken).ConfigureAwait(false))
+            {
                 throw new OperationCanceledException("AI generation was cancelled by the author.");
+            }
 
             var inputTokens = completion.Value.Usage.InputTokens ?? 0;
             var outputTokens = completion.Value.Usage.OutputTokens ?? 0;
             var actualQuotaTokens = checked(inputTokens + outputTokens);
             var reservedQuotaTokens = checked(run.MaximumInputTokens + run.MaximumOutputTokens);
             if (actualQuotaTokens > reservedQuotaTokens)
+            {
                 throw new AiAuthoringExecutionException("AI_USAGE_EXCEEDED_RESERVATION", "Provider usage exceeded the reserved token envelope.");
+            }
+
             var originalContent = OriginalContent(draft.PayloadJson, run.ProposalKind);
             var proposedContent = MaterializeProposedContent(run.ProposalKind, originalContent, completion.Value.Text);
             var relationalContext = db as DbContext;
@@ -481,7 +524,9 @@ internal sealed class AuthoringAiService(
                 AddEvent(run.Id, nextSequence, "completed", run.Status.ToString(), null, JsonSerializer.Serialize(completedEvent, JsonOptions), timeProvider.GetUtcNow());
                 await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 if (finalizationTransaction is not null)
+                {
                     await finalizationTransaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                }
             }
             catch
             {
@@ -588,7 +633,9 @@ internal sealed class AuthoringAiService(
             1,
             cancellationToken).ConfigureAwait(false);
         if (!request.Success)
+        {
             throw new AiAuthoringExecutionException("AI_QUOTA_EXCEEDED", "The AI request quota has been exceeded.");
+        }
 
         var tokens = await quotaEnforcer.TryAtomicConsumeAsync(
             tenantId,
@@ -596,7 +643,9 @@ internal sealed class AuthoringAiService(
             maximumTokens,
             cancellationToken).ConfigureAwait(false);
         if (tokens.Success)
+        {
             return;
+        }
 
         await ReleaseQuota(tenantId, actorId, 0, releaseRequest: true, CancellationToken.None).ConfigureAwait(false);
         throw new AiAuthoringExecutionException("AI_QUOTA_EXCEEDED", "The AI token quota has been exceeded.");
@@ -612,6 +661,7 @@ internal sealed class AuthoringAiService(
         try
         {
             if (tokens > 0)
+            {
                 _ = await quotaEnforcer.DecrementUsageAsync(
                     tenantId,
                     ResourceUsageType.AiTokens,
@@ -619,7 +669,10 @@ internal sealed class AuthoringAiService(
                     actorId,
                     ServiceCode,
                     cancellationToken).ConfigureAwait(false);
+            }
+
             if (releaseRequest)
+            {
                 _ = await quotaEnforcer.DecrementUsageAsync(
                     tenantId,
                     ResourceUsageType.AiRequests,
@@ -627,6 +680,7 @@ internal sealed class AuthoringAiService(
                     actorId,
                     ServiceCode,
                     cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (Exception exception)
         {
@@ -656,7 +710,9 @@ internal sealed class AuthoringAiService(
         {
             conversation = await query.SingleOrDefaultAsync(item => item.Id == requestedId.Value, cancellationToken).ConfigureAwait(false);
             if (conversation is null)
+            {
                 throw new KeyNotFoundException("AI conversation was not found.");
+            }
         }
         else
         {
@@ -746,8 +802,11 @@ internal sealed class AuthoringAiService(
     private static AiStreamEvent DeserializeEvent(AiAuthoringStreamEvent item)
     {
         if (!string.IsNullOrWhiteSpace(item.PayloadJson))
+        {
             return JsonSerializer.Deserialize<AiStreamEvent>(item.PayloadJson, JsonOptions)
                    ?? throw new InvalidOperationException("Persisted AI stream event is invalid.");
+        }
+
         return new AiStreamEvent(item.Sequence, item.Type, item.Delta, item.RunId, item.Status);
     }
 
@@ -896,9 +955,11 @@ internal sealed class AuthoringAiService(
         };
 
         if (!allowed)
+        {
             throw new AiProposalKindNotAllowedException(
                 kind,
                 "The requested AI proposal kind cannot safely modify this lesson format.");
+        }
     }
 
     private static string Insert(string source, string value, int? cursorOffset)
@@ -952,7 +1013,9 @@ internal sealed class AuthoringAiService(
     private static void ValidateActor(Guid tenantId, Guid actorId)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI authoring requires a tenant-scoped user actor.");
+        }
     }
 }
 
@@ -1008,6 +1071,8 @@ internal sealed class AuthoringAiBackgroundService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         foreach (var id in ids)
+        {
             await queue.Enqueue(id, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

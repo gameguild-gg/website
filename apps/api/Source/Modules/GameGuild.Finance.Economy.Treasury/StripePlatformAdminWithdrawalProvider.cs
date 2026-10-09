@@ -56,8 +56,11 @@ public sealed class StripePlatformAdminWithdrawalProvider :
         EnsureConfigured();
         if (command.TenantId == Guid.Empty || command.RunId == Guid.Empty || command.Amount.Currency != GameGuild.Finance.Economy.Contracts.CurrencyCode.HardCoin ||
             command.Amount.Units <= 0 || command.Amount.Units % HardUnitsPerUsdMinor != 0)
+        {
             throw new AdminWithdrawalEligibilityException(
-                "Stripe platform payout requires a positive amount aligned to the fixed 1:1000 hard-unit scale.");
+            "Stripe platform payout requires a positive amount aligned to the fixed 1:1000 hard-unit scale.");
+        }
+
         try
         {
             using var request = CreateRequest(
@@ -78,7 +81,10 @@ public sealed class StripePlatformAdminWithdrawalProvider :
             using var response = await _http.SendAsync(request, cancellationToken);
             var raw = await response.Content.ReadAsStringAsync(cancellationToken);
             if ((int)response.StatusCode >= 500)
+            {
                 return SignReceipt(Ambiguous(command, Hash(raw), _time.GetUtcNow()));
+            }
+
             response.EnsureSuccessStatusCode();
             using var document = JsonDocument.Parse(raw);
             return SignReceipt(new AdminWithdrawalProviderReceipt(
@@ -108,8 +114,16 @@ public sealed class StripePlatformAdminWithdrawalProvider :
         string? providerTransferId,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (runId == Guid.Empty) throw new ArgumentException("Run ID is required.", nameof(runId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (runId == Guid.Empty)
+        {
+            throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
         EnsureConfigured();
         var payoutId = string.IsNullOrWhiteSpace(providerTransferId) ||
@@ -133,8 +147,11 @@ public sealed class StripePlatformAdminWithdrawalProvider :
     {
         EnsureConfigured();
         if (!VerifyStripeSignature(rawPayload, signatureHeader, receivedAt))
+        {
             throw new AdminWithdrawalEvidenceException(
-                "Stripe platform webhook signature or timestamp is invalid.");
+            "Stripe platform webhook signature or timestamp is invalid.");
+        }
+
         using var document = JsonDocument.Parse(rawPayload.ToArray());
         var root = document.RootElement;
         var type = RequireString(root, "type");
@@ -160,8 +177,11 @@ public sealed class StripePlatformAdminWithdrawalProvider :
             !Guid.TryParseExact(RequireString(metadata, "run_id"), "N", out var runId) ||
             !long.TryParse(RequireString(metadata, "fencing_token"), out var fencingToken) ||
             !long.TryParse(RequireString(metadata, "execution_epoch"), out var executionEpoch))
+        {
             throw new AdminWithdrawalEvidenceException(
-                "Stripe platform payout evidence has invalid fencing metadata.");
+            "Stripe platform payout evidence has invalid fencing metadata.");
+        }
+
         var amountMinor = payout.GetProperty("amount").GetInt64();
         return new AdminWithdrawalProviderEvent(
             eventId,
@@ -188,10 +208,15 @@ public sealed class StripePlatformAdminWithdrawalProvider :
         response.EnsureSuccessStatusCode();
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
         foreach (var item in document.RootElement.GetProperty("data").EnumerateArray())
+        {
             if (item.TryGetProperty("metadata", out var metadata) &&
-                OptionalString(metadata, "tenant_id") == tenantId.ToString("N") &&
-                OptionalString(metadata, "run_id") == runId.ToString("N"))
+            OptionalString(metadata, "tenant_id") == tenantId.ToString("N") &&
+            OptionalString(metadata, "run_id") == runId.ToString("N"))
+            {
                 return RequireString(item, "id");
+            }
+        }
+
         throw new AdminWithdrawalEvidenceException(
             "Stripe reconciliation found no platform payout for the withdrawal run.");
     }
@@ -204,8 +229,16 @@ public sealed class StripePlatformAdminWithdrawalProvider :
     {
         var request = new HttpRequestMessage(method, new Uri(new Uri(_options.ApiBaseUrl), path));
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _options.SecretKey);
-        if (!string.IsNullOrWhiteSpace(idempotencyKey)) request.Headers.Add("Idempotency-Key", idempotencyKey.Trim());
-        if (fields.Count > 0) request.Content = new FormUrlEncodedContent(fields);
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            request.Headers.Add("Idempotency-Key", idempotencyKey.Trim());
+        }
+
+        if (fields.Count > 0)
+        {
+            request.Content = new FormUrlEncodedContent(fields);
+        }
+
         return request;
     }
 
@@ -241,19 +274,42 @@ public sealed class StripePlatformAdminWithdrawalProvider :
         string header,
         DateTimeOffset receivedAt)
     {
-        if (string.IsNullOrWhiteSpace(header)) return false;
+        if (string.IsNullOrWhiteSpace(header))
+        {
+            return false;
+        }
+
         long timestamp = 0;
         var signatures = new List<string>();
         foreach (var part in header.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var separator = part.IndexOf('=');
-            if (separator <= 0) continue;
-            if (part[..separator] == "t") long.TryParse(part[(separator + 1)..], out timestamp);
-            if (part[..separator] == "v1") signatures.Add(part[(separator + 1)..]);
+            if (separator <= 0)
+            {
+                continue;
+            }
+
+            if (part[..separator] == "t")
+            {
+                long.TryParse(part[(separator + 1)..], out timestamp);
+            }
+
+            if (part[..separator] == "v1")
+            {
+                signatures.Add(part[(separator + 1)..]);
+            }
         }
-        if (timestamp <= 0 || signatures.Count == 0) return false;
+        if (timestamp <= 0 || signatures.Count == 0)
+        {
+            return false;
+        }
+
         var issuedAt = DateTimeOffset.FromUnixTimeSeconds(timestamp);
-        if (issuedAt > receivedAt || receivedAt - issuedAt > _options.WebhookTolerance) return false;
+        if (issuedAt > receivedAt || receivedAt - issuedAt > _options.WebhookTolerance)
+        {
+            return false;
+        }
+
         var signed = Encoding.UTF8.GetBytes(timestamp.ToString(CultureInfo.InvariantCulture) + ".")
             .Concat(payload.ToArray()).ToArray();
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_options.WebhookSecret));
@@ -269,8 +325,10 @@ public sealed class StripePlatformAdminWithdrawalProvider :
             string.IsNullOrWhiteSpace(_options.SecretKey) || string.IsNullOrWhiteSpace(_options.WebhookSecret) ||
             Encoding.UTF8.GetByteCount(_options.EvidenceSigningSecret) < 32 ||
             _options.WebhookTolerance <= TimeSpan.Zero)
+        {
             throw new AdminWithdrawalExecutionDisabledException(
-                "Stripe platform payouts remain disabled until endpoint, credentials and evidence policies are configured.");
+            "Stripe platform payouts remain disabled until endpoint, credentials and evidence policies are configured.");
+        }
     }
 
     private static AdminWithdrawalProviderOutcome MapOutcome(string? status) => status switch
@@ -335,7 +393,11 @@ public static class StripeTreasuryEvidenceSigning
 
     private static string Sign(string payload, string secret)
     {
-        if (Encoding.UTF8.GetByteCount(secret) < 32) return string.Empty;
+        if (Encoding.UTF8.GetByteCount(secret) < 32)
+        {
+            return string.Empty;
+        }
+
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
         return Convert.ToHexStringLower(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)));
     }

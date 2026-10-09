@@ -147,7 +147,10 @@ public sealed class AcademicOutboxTests
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<OutboxTestContext>());
         services.AddScoped<IAcademicOutboxWriter, AcademicOutboxWriter>();
         foreach (var consumer in consumers)
+        {
             services.AddSingleton(typeof(IAcademicOutboxConsumer), consumer);
+        }
+
         return services.BuildServiceProvider();
     }
 
@@ -179,7 +182,10 @@ public sealed class AcademicOutboxTests
         {
             CallCount++;
             if (CallCount <= failuresBeforeSuccess)
+            {
                 throw new InvalidOperationException("Transient consumer failure.");
+            }
+
             return Task.CompletedTask;
         }
     }

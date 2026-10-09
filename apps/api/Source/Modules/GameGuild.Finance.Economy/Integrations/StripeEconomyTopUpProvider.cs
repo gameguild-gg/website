@@ -32,8 +32,11 @@ public sealed class StripeEconomyTopUpProvider(
                 }),
             cancellationToken).ConfigureAwait(false);
         if (result.OutcomeUnknown)
+        {
             throw new EconomyTopUpProviderAmbiguousException(
                 "Stripe payment-intent creation requires provider reconciliation.");
+        }
+
         return Map(
             result.TransactionId,
             result.Status,
@@ -49,8 +52,11 @@ public sealed class StripeEconomyTopUpProvider(
         ArgumentException.ThrowIfNullOrWhiteSpace(providerObjectId);
         var result = await _stripe.GetPaymentAsync(providerObjectId, cancellationToken).ConfigureAwait(false);
         if (string.Equals(result.ErrorCode, "stripe_outcome_unknown", StringComparison.Ordinal))
+        {
             throw new EconomyTopUpProviderAmbiguousException(
                 "Stripe payment-intent retrieval requires provider reconciliation.");
+        }
+
         return Map(
             result.TransactionId,
             result.Status,
@@ -64,18 +70,26 @@ public sealed class StripeEconomyTopUpProvider(
             string.IsNullOrWhiteSpace(_options.ApiKey) ||
             string.IsNullOrWhiteSpace(_options.PublishableKey) ||
             string.IsNullOrWhiteSpace(_options.AccountId))
+        {
             throw new EconomyTopUpProviderUnavailableException(
                 "Stripe top-up is disabled until real provider configuration is complete.");
+        }
     }
 
     internal static void Validate(EconomyTopUpProviderCreateRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.TopUpId == Guid.Empty || request.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Top-up and tenant IDs are required.", nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.UsdMinorUnits);
         if (!string.Equals(request.Currency, "USD", StringComparison.Ordinal))
+        {
             throw new ArgumentException("HardCoin top-ups require USD provider currency.", nameof(request));
+        }
+
         _ = new Contracts.IdempotencyKey(request.IdempotencyKey);
     }
 
@@ -93,8 +107,10 @@ public sealed class StripeEconomyTopUpProvider(
             !string.Equals(mapping.ProviderMonetaryLeg, "capture", StringComparison.Ordinal) ||
             string.IsNullOrWhiteSpace(mapping.ProviderEnvironment) ||
             string.IsNullOrWhiteSpace(mapping.ProviderAccountId))
+        {
             throw new EconomyTopUpProviderUnavailableException(
                 "Stripe returned an incomplete payment-intent binding.");
+        }
 
         var topUpStatus = status switch
         {

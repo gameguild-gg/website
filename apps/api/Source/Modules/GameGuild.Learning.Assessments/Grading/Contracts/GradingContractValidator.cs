@@ -18,7 +18,10 @@ public static class GradingContractValidator
         {
             RequireText(itemId, "Content grading item ID");
             Require(item is not null, $"Content grading item {itemId} is required.");
-            if (item.RubricRef is not null) RequireText(item.RubricRef, $"Content grading item {itemId} rubricRef");
+            if (item.RubricRef is not null)
+            {
+                RequireText(item.RubricRef, $"Content grading item {itemId} rubricRef");
+            }
         }
     }
 
@@ -96,15 +99,24 @@ public static class GradingContractValidator
             RequireText(review.Ai.ProviderKey, "AI providerKey");
             RequireText(review.Ai.PolicyVersion, "AI policyVersion");
         }
-        if (review.Self?.Instructions is not null) RequireText(review.Self.Instructions, "Self review instructions");
+        if (review.Self?.Instructions is not null)
+        {
+            RequireText(review.Self.Instructions, "Self review instructions");
+        }
     }
 
     public static string? NormalizeReviewConfiguration(ReviewMethods methods, string? canonicalJson)
     {
         methods.EnsureValid(allowDraft: true);
-        if (string.IsNullOrWhiteSpace(canonicalJson)) return null;
+        if (string.IsNullOrWhiteSpace(canonicalJson))
+        {
+            return null;
+        }
+
         if (Encoding.UTF8.GetByteCount(canonicalJson) > 65536)
+        {
             throw new ArgumentException("Review configuration cannot exceed 64 KiB.", nameof(canonicalJson));
+        }
 
         var configuration = JsonSerializer.Deserialize<AssessmentReviewConfigurationV1>(canonicalJson, GradingJson.Options)
             ?? throw new JsonException("Review configuration is required.");
@@ -353,14 +365,22 @@ public static class GradingContractValidator
     private static ReviewMethods SequenceToMethods(IReadOnlyList<ReviewMethod> sequence)
     {
         Require(sequence.Count <= 2, "A review workflow supports at most two stages.");
-        if (sequence.Count == 0) return ReviewMethods.None;
+        if (sequence.Count == 0)
+        {
+            return ReviewMethods.None;
+        }
+
         Require(sequence.Count == 1 || sequence[1] == ReviewMethod.InstructorReview,
             "Only InstructorReview may be the final review stage.");
         Require(sequence[0] != ReviewMethod.InstructorReview || sequence.Count == 1,
             "InstructorReview cannot be followed by another stage.");
 
         var methods = ToFlag(sequence[0]);
-        if (sequence.Count == 2) methods |= ReviewMethods.InstructorReview;
+        if (sequence.Count == 2)
+        {
+            methods |= ReviewMethods.InstructorReview;
+        }
+
         return methods.EnsureValid(allowDraft: true);
     }
 
@@ -429,7 +449,11 @@ public static class GradingContractValidator
 
     private static void ValidateUtc(string? value, string label)
     {
-        if (value is null) return;
+        if (value is null)
+        {
+            return;
+        }
+
         Require(DateTimeOffset.TryParseExact(
                 value,
                 "yyyy-MM-dd'T'HH:mm:ss.fff'Z'",
@@ -441,7 +465,10 @@ public static class GradingContractValidator
 
     private static void PositiveWhenPresent(int? value, string label)
     {
-        if (value is not null) Positive(value.Value, label);
+        if (value is not null)
+        {
+            Positive(value.Value, label);
+        }
     }
 
     private static void Positive(int value, string label) => Require(value > 0, $"{label} must be positive.");
@@ -451,6 +478,9 @@ public static class GradingContractValidator
 
     private static void Require([DoesNotReturnIf(false)] bool condition, string message)
     {
-        if (!condition) throw new JsonException(message);
+        if (!condition)
+        {
+            throw new JsonException(message);
+        }
     }
 }

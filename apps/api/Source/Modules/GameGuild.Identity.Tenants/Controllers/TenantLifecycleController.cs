@@ -158,9 +158,20 @@ public sealed class TenantLifecycleController(ISender sender) : BaseApiControlle
     )
     {
         // Validate pagination parameters
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 50;
-        if (pageSize > 200) pageSize = 200;
+        if (page < 1)
+        {
+            page = 1;
+        }
+
+        if (pageSize < 1)
+        {
+            pageSize = 50;
+        }
+
+        if (pageSize > 200)
+        {
+            pageSize = 200;
+        }
 
         var auditLog = await sender.Send(
             new GetTenantAuditLogQuery(tenantId, startDate, endDate, action, actorId, page, pageSize),

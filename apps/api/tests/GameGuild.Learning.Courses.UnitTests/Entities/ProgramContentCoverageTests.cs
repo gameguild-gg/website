@@ -47,9 +47,13 @@ public sealed class ProgramContentCoverageTests
         content.Type.Should().Be(expectedType);
         content.Slug.Should().Be("legacy-content");
         if (expectedType == ProgramContentType.Lesson)
+        {
             content.JsonBody.Should().BeNull();
+        }
         else
+        {
             content.JsonBody.Should().BeNull();
+        }
     }
 
     [Fact]

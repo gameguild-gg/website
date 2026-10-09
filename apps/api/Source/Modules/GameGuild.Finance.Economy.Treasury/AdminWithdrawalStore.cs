@@ -19,21 +19,33 @@ public interface IAdminWithdrawalStore
 
     AdminWithdrawalRun? FindReplay(Guid tenantId, string key, string requestHash)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var run = FindReplay(key, requestHash);
         return run?.TenantId == tenantId ? run : null;
     }
 
     AdminWithdrawalRun? FindPeriod(Guid tenantId, DateOnly periodStart)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var run = FindPeriod(periodStart);
         return run?.TenantId == tenantId ? run : null;
     }
 
     AdminWithdrawalRun Get(Guid tenantId, Guid runId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var run = Get(runId);
         return run.TenantId == tenantId
             ? run
@@ -42,7 +54,11 @@ public interface IAdminWithdrawalStore
 
     Guid? FindProviderEvent(Guid tenantId, string eventId, string eventHash)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var runId = FindProviderEvent(eventId, eventHash);
         return runId.HasValue && Get(runId.Value).TenantId == tenantId ? runId : null;
     }
@@ -55,7 +71,10 @@ public interface IAdminWithdrawalStore
         long expectedVersion)
     {
         if (tenantId == Guid.Empty || run.TenantId != tenantId)
+        {
             throw new ArgumentException("The run must belong to the actor tenant.", nameof(tenantId));
+        }
+
         RecordProviderEvent(eventId, eventHash, run, expectedVersion);
     }
 }
@@ -80,19 +99,31 @@ public interface IAdminWithdrawalAuditTrail
         string evidence,
         DateTimeOffset occurredAt)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return Append(runId, kind, actorId, evidence, occurredAt);
     }
 
     IReadOnlyList<AdminWithdrawalAuditEvent> Events(Guid tenantId, Guid runId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return Events(runId);
     }
 
     bool Verify(Guid tenantId, Guid runId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return Verify(runId);
     }
 }
@@ -106,7 +137,11 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
 
     public int Count
     {
-        get { lock (_gate) return _runs.Count; }
+        get { lock (_gate)
+            {
+                return _runs.Count;
+            }
+        }
     }
 
     public AdminWithdrawalRun? FindReplay(string key, string requestHash)
@@ -115,10 +150,17 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
         ArgumentException.ThrowIfNullOrWhiteSpace(requestHash);
         lock (_gate)
         {
-            if (!_idempotency.TryGetValue(key.Trim(), out var existing)) return null;
+            if (!_idempotency.TryGetValue(key.Trim(), out var existing))
+            {
+                return null;
+            }
+
             if (!string.Equals(existing.Hash, requestHash, StringComparison.Ordinal))
+            {
                 throw new AdminWithdrawalStaleCommandException(
-                    "The withdrawal idempotency key is bound to a different request.");
+                "The withdrawal idempotency key is bound to a different request.");
+            }
+
             return _runs[existing.RunId];
         }
     }
@@ -126,9 +168,11 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
     public AdminWithdrawalRun? FindPeriod(DateOnly periodStart)
     {
         lock (_gate)
+        {
             return _runs.Values.SingleOrDefault(run =>
-                run.PeriodStart == periodStart &&
-                run.State is not (AdminWithdrawalRunState.Failed or AdminWithdrawalRunState.Cancelled));
+            run.PeriodStart == periodStart &&
+            run.State is not (AdminWithdrawalRunState.Failed or AdminWithdrawalRunState.Cancelled));
+        }
     }
 
     public void Add(AdminWithdrawalRun run)
@@ -137,13 +181,22 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
         lock (_gate)
         {
             if (_runs.ContainsKey(run.Id))
+            {
                 throw new AdminWithdrawalStaleCommandException("The withdrawal run already exists.");
+            }
+
             if (_idempotency.ContainsKey(run.IdempotencyKey.Value))
+            {
                 throw new AdminWithdrawalStaleCommandException("The withdrawal idempotency key already exists.");
+            }
+
             if (_runs.Values.Any(current => current.PeriodStart == run.PeriodStart &&
                                             current.State is not (AdminWithdrawalRunState.Failed or
                                                 AdminWithdrawalRunState.Cancelled)))
+            {
                 throw new AdminWithdrawalOverlapException("A withdrawal run already owns this monthly period.");
+            }
+
             _runs.Add(run.Id, run);
             _idempotency.Add(run.IdempotencyKey.Value, (run.RequestHash, run.Id));
         }
@@ -151,11 +204,17 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
 
     public AdminWithdrawalRun Get(Guid runId)
     {
-        if (runId == Guid.Empty) throw new ArgumentException("Run ID is required.", nameof(runId));
+        if (runId == Guid.Empty)
+        {
+            throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         lock (_gate)
+        {
             return _runs.TryGetValue(runId, out var run)
-                ? run
-                : throw new KeyNotFoundException("Admin withdrawal run was not found.");
+            ? run
+            : throw new KeyNotFoundException("Admin withdrawal run was not found.");
+        }
     }
 
     public AdminWithdrawalRun Update(AdminWithdrawalRun run, long expectedVersion)
@@ -165,7 +224,10 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
         {
             var current = GetUnderLock(run.Id);
             if (current.Version != expectedVersion || run.Version != checked(expectedVersion + 1))
+            {
                 throw new AdminWithdrawalStaleCommandException("Admin withdrawal run version is stale.");
+            }
+
             _runs[run.Id] = run;
             return run;
         }
@@ -177,10 +239,17 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
         ArgumentException.ThrowIfNullOrWhiteSpace(eventHash);
         lock (_gate)
         {
-            if (!_providerEvents.TryGetValue(eventId.Trim(), out var existing)) return null;
+            if (!_providerEvents.TryGetValue(eventId.Trim(), out var existing))
+            {
+                return null;
+            }
+
             if (!string.Equals(existing.Hash, eventHash, StringComparison.Ordinal))
+            {
                 throw new AdminWithdrawalEvidenceException(
-                    "The provider event ID is bound to different evidence.");
+                "The provider event ID is bound to different evidence.");
+            }
+
             return existing.RunId;
         }
     }
@@ -192,10 +261,16 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
         lock (_gate)
         {
             if (_providerEvents.ContainsKey(eventId.Trim()))
+            {
                 throw new AdminWithdrawalEvidenceException("The provider event was already recorded.");
+            }
+
             var current = GetUnderLock(run.Id);
             if (current.Version != expectedVersion || run.Version != checked(expectedVersion + 1))
+            {
                 throw new AdminWithdrawalStaleCommandException("Admin withdrawal provider event is stale.");
+            }
+
             _runs[run.Id] = run;
             _providerEvents.Add(eventId.Trim(), (eventHash, run.Id));
         }
@@ -203,12 +278,22 @@ public sealed class InMemoryAdminWithdrawalStore : IAdminWithdrawalStore
 
     public IReadOnlyList<AdminWithdrawalRun> List(Guid tenantId, int limit = 100)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (limit is <= 0 or > 500) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (limit is <= 0 or > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
         lock (_gate)
+        {
             return _runs.Values.Where(run => run.TenantId == tenantId)
-                .OrderByDescending(run => run.CreatedAt).ThenBy(run => run.Id)
-                .Take(limit).ToArray();
+            .OrderByDescending(run => run.CreatedAt).ThenBy(run => run.Id)
+            .Take(limit).ToArray();
+        }
     }
 
     private AdminWithdrawalRun GetUnderLock(Guid runId) =>
@@ -239,7 +324,11 @@ public sealed class AdminWithdrawalAuditTrail : IAdminWithdrawalAuditTrail
         string evidence,
         DateTimeOffset occurredAt)
     {
-        if (runId == Guid.Empty) throw new ArgumentException("Run ID is required.", nameof(runId));
+        if (runId == Guid.Empty)
+        {
+            throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(kind);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidence);
         lock (_gate)
@@ -262,14 +351,20 @@ public sealed class AdminWithdrawalAuditTrail : IAdminWithdrawalAuditTrail
     public IReadOnlyList<AdminWithdrawalAuditEvent> Events(Guid runId)
     {
         lock (_gate)
+        {
             return _events.TryGetValue(runId, out var events) ? events.ToArray() : [];
+        }
     }
 
     public bool Verify(Guid runId)
     {
         lock (_gate)
         {
-            if (!_events.TryGetValue(runId, out var events) || events.Count == 0) return false;
+            if (!_events.TryGetValue(runId, out var events) || events.Count == 0)
+            {
+                return false;
+            }
+
             var previousHash = new string('0', 64);
             for (var index = 0; index < events.Count; index++)
             {
@@ -280,7 +375,10 @@ public sealed class AdminWithdrawalAuditTrail : IAdminWithdrawalAuditTrail
                 if (item.RunId != runId || item.Sequence != index + 1L ||
                     !string.Equals(item.PreviousHash, previousHash, StringComparison.Ordinal) ||
                     !string.Equals(item.Hash, expected, StringComparison.Ordinal))
+                {
                     return false;
+                }
+
                 previousHash = item.Hash;
             }
             return true;

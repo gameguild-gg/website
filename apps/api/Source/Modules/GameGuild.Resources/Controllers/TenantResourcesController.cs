@@ -36,16 +36,22 @@ public sealed class TenantResourcesController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass tenant membership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // If actor's current tenant matches, allow access
         if (actor.TenantId.HasValue && actor.TenantId.Value == tenantId)
+        {
             return true;
-        
+        }
+
         // Check actual tenant membership in database
         return await tenantMembershipChecker.IsUserMemberOfTenantAsync(
             actor.SubjectIdAsGuid.Value, 
@@ -81,8 +87,10 @@ public sealed class TenantResourcesController(
         CancellationToken ct = default)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await sender.Send(new GetResourceUsageRecordsQuery(tenantId, usageType, startDate, endDate, pageNumber, pageSize), ct).ConfigureAwait(false));
     }
 
@@ -101,8 +109,10 @@ public sealed class TenantResourcesController(
     public async Task<IActionResult> GetCurrentUsageSummary(Guid tenantId, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await sender.Send(new GetCurrentResourceUsageSummaryQuery(tenantId), ct).ConfigureAwait(false));
     }
 
@@ -122,8 +132,10 @@ public sealed class TenantResourcesController(
     public async Task<IActionResult> CheckLimits(Guid tenantId, [FromQuery] ResourceUsageType? usageType, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await sender.Send(new CheckResourceUsageLimitsQuery(tenantId, usageType), ct).ConfigureAwait(false));
     }
 
@@ -147,8 +159,10 @@ public sealed class TenantResourcesController(
     public async Task<IActionResult> Record(Guid tenantId, [FromBody] RecordTenantResourceUsageRequest body, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var metadata = body.Metadata != null ? System.Text.Json.JsonSerializer.Serialize(body.Metadata) : null;
@@ -174,8 +188,10 @@ public sealed class TenantResourcesController(
     public async Task<IActionResult> RecordWithQuotaCheck(Guid tenantId, [FromBody] RecordTenantResourceUsageRequest body, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         // ATOMIC: Use TryAtomicConsumeAsync to avoid TOCTOU race condition
@@ -236,8 +252,10 @@ public sealed class TenantResourcesController(
     public async Task<IActionResult> Reset(Guid tenantId, [FromQuery] ResourceUsageType usageType, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         await sender.Send(new ResetResourceUsageCommand(tenantId, usageType), ct).ConfigureAwait(false);
 
         return NoContent();

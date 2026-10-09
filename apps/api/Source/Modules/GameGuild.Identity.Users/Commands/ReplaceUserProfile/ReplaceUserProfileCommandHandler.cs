@@ -9,7 +9,10 @@ public sealed class ReplaceUserProfileCommandHandler(IUserRepository userReposit
         ArgumentNullException.ThrowIfNull(request);
 
         var user = await userRepository.GetByIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
-        if (user == null) throw new UserNotFoundException(request.UserId);
+        if (user == null)
+        {
+            throw new UserNotFoundException(request.UserId);
+        }
 
         var profile = await profileRepository.GetByUserIdAsync(request.UserId, cancellationToken).ConfigureAwait(false);
         var isNewProfile = profile == null;

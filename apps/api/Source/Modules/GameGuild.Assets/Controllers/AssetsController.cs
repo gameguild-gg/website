@@ -38,14 +38,14 @@ public class AssetsController(
         [FromQuery] Guid? referenceId = null,
         CancellationToken ct = default)
     {
-        if (file == null || file.Length == 0)
-        {
-            return BadRequest(new ProblemDetails { Title = "No file provided" });
-        }
-
         if (!Actor.SubjectIdAsGuid.HasValue)
         {
             return Unauthorized();
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new ProblemDetails { Title = "No file provided" });
         }
 
         await using var stream = file.OpenReadStream();
@@ -67,7 +67,11 @@ public class AssetsController(
 
         if (result.Error != null)
         {
-            if (result.Error == "Forbidden") return Forbid();
+            if (result.Error == "Forbidden")
+            {
+                return Forbid();
+            }
+
             return BadRequest(new ProblemDetails { Title = result.Error });
         }
 
@@ -125,7 +129,11 @@ public class AssetsController(
                     folderId),
                 ct).ConfigureAwait(false);
 
-            if (result.Items.Count > 0 && result.Items.All(item => item.Error == "Forbidden")) return Forbid();
+            if (result.Items.Count > 0 && result.Items.All(item => item.Error == "Forbidden"))
+            {
+                return Forbid();
+            }
+
             return Ok(result);
         }
         finally
@@ -256,7 +264,9 @@ public class AssetsController(
                 Actor.SubjectIdAsGuid.Value,
                 Actor.TenantId,
                 ct).ConfigureAwait(false))
+        {
             return Forbid();
+        }
 
         var options = new UploadAssetOptions(
             displayName,

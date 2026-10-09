@@ -68,8 +68,12 @@ public static class ProgramContentMappingExtensions
 
   private static string? FormatBody(string? body)
   {
-    if (string.IsNullOrWhiteSpace(body)) return null;
-    return StripImportMarker(body);
+    if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        return StripImportMarker(body);
   }
 
   private static string StripImportMarker(string body)
@@ -88,9 +92,12 @@ public static class ProgramContentMappingExtensions
     }
 
     var contentStart = markerEnd + 3;
-    while (contentStart < body.Length && body[contentStart] is '\r' or '\n') contentStart++;
+    while (contentStart < body.Length && body[contentStart] is '\r' or '\n')
+        {
+            contentStart++;
+        }
 
-    return body[contentStart..];
+        return body[contentStart..];
   }
 
   /// <summary> Maps CreateProgramContentDto to ProgramContent entity </summary>
@@ -130,11 +137,27 @@ public static class ProgramContentMappingExtensions
   public static void ApplyUpdates(this ProgramContent content, UpdateProgramContentDto dto)
   {
     var wasLesson = NormalizeProfessorFacingType(content.Type) == ProgramContentType.Lesson;
-    if (dto.Title != null) content.Title = dto.Title;
-    if (!string.IsNullOrWhiteSpace(dto.Slug)) content.Slug = dto.Slug;
-    if (dto.Description != null) content.Description = dto.Description;
-    if (dto.Type != null) content.Type = NormalizeProfessorFacingType(dto.Type.Value);
-    if (dto.JsonBody is not null)
+    if (dto.Title != null)
+        {
+            content.Title = dto.Title;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.Slug))
+        {
+            content.Slug = dto.Slug;
+        }
+
+        if (dto.Description != null)
+        {
+            content.Description = dto.Description;
+        }
+
+        if (dto.Type != null)
+        {
+            content.Type = NormalizeProfessorFacingType(dto.Type.Value);
+        }
+
+        if (dto.JsonBody is not null)
     {
       content.JsonBody = JsonSerializer.Serialize(dto.JsonBody);
       content.Body = null;
@@ -148,15 +171,26 @@ public static class ProgramContentMappingExtensions
     {
       content.LessonFormat = dto.LessonFormat.Value;
     }
-    if (dto.ActivitySettings is not null) content.SetActivitySettings(dto.ActivitySettings);
-    else if (NormalizeProfessorFacingType(content.Type) == ProgramContentType.Lesson &&
+    if (dto.ActivitySettings is not null)
+        {
+            content.SetActivitySettings(dto.ActivitySettings);
+        }
+        else if (NormalizeProfessorFacingType(content.Type) == ProgramContentType.Lesson &&
              (!wasLesson || !content.LessonFormat.HasValue))
     {
       content.LessonFormat = LessonContentFormatInference.FromBody(content.Body);
     }
-    if (dto.SortOrder != null) content.SortOrder = dto.SortOrder.Value;
-    if (dto.IsRequired != null) content.IsRequired = dto.IsRequired.Value;
-    if (dto.EstimatedMinutes.HasValue)
+    if (dto.SortOrder != null)
+        {
+            content.SortOrder = dto.SortOrder.Value;
+        }
+
+        if (dto.IsRequired != null)
+        {
+            content.IsRequired = dto.IsRequired.Value;
+        }
+
+        if (dto.EstimatedMinutes.HasValue)
     {
         content.EstimatedMinutes = dto.EstimatedMinutes.Value;
         content.EstimatedMinutesSource = EstimatedMinutesSource.Manual;
@@ -167,7 +201,11 @@ public static class ProgramContentMappingExtensions
         // Value recomputed by RecalculateEstimatedReadingTime() inside NormalizeLearningContract below.
     }
     // else: leave both fields untouched.
-    if (dto.Visibility != null) content.Visibility = dto.Visibility.Value;
-    content.NormalizeLearningContract();
+    if (dto.Visibility != null)
+        {
+            content.Visibility = dto.Visibility.Value;
+        }
+
+        content.NormalizeLearningContract();
   }
 }

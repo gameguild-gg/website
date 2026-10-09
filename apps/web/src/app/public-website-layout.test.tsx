@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -33,5 +34,14 @@ describe('public website layouts', () => {
     expect(within(mainNavigation).getByRole('link', { name: /^testing lab$/i })).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /about gameguild/i })).toBeInTheDocument();
+  });
+
+  it('exposes the Courses route through the Learn dropdown used by the browser smoke', async () => {
+    const user = userEvent.setup();
+    render(await InstitutionalLayout({ children: <main>Public content</main> } as LayoutProps<'/[locale]'>));
+    const mainNavigation = screen.getByRole('navigation', { name: 'Main navigation' });
+    expect(within(mainNavigation).queryByRole('link', { name: 'Courses', exact: true })).not.toBeInTheDocument();
+    await user.click(within(mainNavigation).getByRole('button', { name: 'Learn', exact: true }));
+    expect(await screen.findByRole('menuitem', { name: 'Courses', exact: true })).toHaveAttribute('href', '/courses');
   });
 });

@@ -41,9 +41,15 @@ public static class ReauthenticationEvidenceValidator
         if (evidence.ActorId != actorId || evidence.Operation != operation ||
             !string.Equals(evidence.TransactionBinding, transactionBinding, StringComparison.Ordinal) ||
             evidence.Assurance < minimumAssurance)
+        {
             throw new ReauthenticationEvidenceException("Reauthentication evidence is not bound to this protected operation.");
+        }
+
         if (evidence.IssuedAt > now || evidence.ExpiresAt <= now || string.IsNullOrWhiteSpace(evidence.EvidenceHash))
+        {
             throw new ReauthenticationEvidenceException("Reauthentication evidence is stale or unauditable.");
+        }
+
         return evidence;
     }
 }

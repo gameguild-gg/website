@@ -12,18 +12,17 @@ namespace GameGuild.Resources.UnitTests.Services;
 public class CachedResourceQuotaServiceTests
 {
     private readonly Mock<IResourceQuotaService> _innerServiceMock;
-    private readonly MemoryCache _cache;
     private readonly Mock<ILogger<CachedResourceQuotaService>> _loggerMock;
     private readonly CachedResourceQuotaService _cachedService;
 
     public CachedResourceQuotaServiceTests()
     {
         _innerServiceMock = new Mock<IResourceQuotaService>();
-        _cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1000 });
+        MemoryCache cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1000 });
         _loggerMock = new Mock<ILogger<CachedResourceQuotaService>>();
         _cachedService = new CachedResourceQuotaService(
             _innerServiceMock.Object,
-            _cache,
+            cache,
             _loggerMock.Object);
     }
 

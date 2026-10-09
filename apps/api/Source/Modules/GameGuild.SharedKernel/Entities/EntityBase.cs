@@ -92,8 +92,15 @@ public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomai
     /// </summary>
     public void SoftDelete()
     {
-        if (IsDeleted) return;
-        if (IsNew) throw new InvalidOperationException("Cannot soft-delete an entity that has not been persisted (Version == 0).");
+        if (IsDeleted)
+        {
+            return;
+        }
+
+        if (IsNew)
+        {
+            throw new InvalidOperationException("Cannot soft-delete an entity that has not been persisted (Version == 0).");
+        }
 
         DeletedAt = SystemClock.UtcNow;
         Touch();
@@ -104,7 +111,10 @@ public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomai
     /// </summary>
     public void Restore()
     {
-        if (!IsDeleted) return;
+        if (!IsDeleted)
+        {
+            return;
+        }
 
         DeletedAt = null;
         Touch();
@@ -183,7 +193,10 @@ public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomai
     /// </summary>
     private void InitializeFromPartial(object? partial)
     {
-        if (partial is null) return;
+        if (partial is null)
+        {
+            return;
+        }
 
         var dictionary = EntityPropertyMapper.ToDictionary(partial);
         SetPropertiesInternal(dictionary, true);
@@ -209,9 +222,13 @@ public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomai
             if (!string.Equals(propertyName, nameof(CreatedAt), StringComparison.Ordinal))
             {
                 if (isFromConstructor)
+                {
                     UpdateTimestamp();
+                }
                 else
+                {
                     Touch();
+                }
             }
         });
     }
@@ -246,7 +263,10 @@ public class EntityBase : EntityBase<Guid>, IEntity
     /// </summary>
     private void EnsureIdGenerated()
     {
-        if (Id == Guid.Empty) Id = Guid.NewGuid();
+        if (Id == Guid.Empty)
+        {
+            Id = Guid.NewGuid();
+        }
     }
 
     /// <summary>

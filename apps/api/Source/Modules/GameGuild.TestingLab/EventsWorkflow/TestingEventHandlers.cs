@@ -45,7 +45,10 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventProjection>> Handle(CreateTestingEventCommand request, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<TestingEventProjection>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(actor.Error);
+        }
 
         try
         {
@@ -61,8 +64,10 @@ public sealed class TestingEventHandlers(
                         cancellationToken)
                     .ConfigureAwait(false);
                 if (templateRevision == null)
+                {
                     return Result.Failure<TestingEventProjection>(
                         Error.NotFound("TestingLab.TemplateRevisionNotFound", "Testing event template revision not found."));
+                }
             }
             var occurrenceStarts = TestingEventRecurrenceSchedule.Expand(
                 request.StartsAt,
@@ -113,7 +118,10 @@ public sealed class TestingEventHandlers(
                 })
                 .ToArray();
             foreach (var testingEvent in testingEvents)
+            {
                 context.Set<TestingEvent>().Add(testingEvent);
+            }
+
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             if (mediator is not null)
@@ -142,7 +150,11 @@ public sealed class TestingEventHandlers(
         CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(authorization.Error);
+        }
+
         try
         {
             authorization.Event!.Configure(
@@ -163,7 +175,10 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventProjection>> Handle(UpdateTestingEventCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(authorization.Error);
+        }
 
         try
         {
@@ -190,15 +205,24 @@ public sealed class TestingEventHandlers(
     public async Task<Result<bool>> Handle(DeleteTestingEventCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<bool>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<bool>(authorization.Error);
+        }
+
         var testingEvent = authorization.Event!;
         if (testingEvent.Status != TestingEventStatus.Draft)
+        {
             return Result.Failure<bool>(Validation("Only draft events can be deleted."));
+        }
+
         var hasApplications = await context.Set<TestingProjectApplication>()
             .AnyAsync(application => application.EventId == testingEvent.Id && application.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (hasApplications)
+        {
             return Result.Failure<bool>(Error.Conflict("TestingLab.EventHasApplications", "Events with applications cannot be deleted."));
+        }
 
         testingEvent.DeletedAt = SystemClock.UtcNow;
         testingEvent.Touch();
@@ -209,10 +233,16 @@ public sealed class TestingEventHandlers(
     public async Task<Result<bool>> Handle(ArchiveTestingEventCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<bool>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<bool>(authorization.Error);
+        }
+
         var testingEvent = authorization.Event!;
         if (testingEvent.Status is not (TestingEventStatus.Completed or TestingEventStatus.Cancelled))
+        {
             return Result.Failure<bool>(Validation("Only completed or cancelled events can be archived."));
+        }
 
         testingEvent.DeletedAt = SystemClock.UtcNow;
         testingEvent.Touch();
@@ -223,7 +253,10 @@ public sealed class TestingEventHandlers(
     public async Task<Result<bool>> Handle(RestoreTestingEventCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedArchivedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<bool>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<bool>(authorization.Error);
+        }
 
         authorization.Event!.Restore();
         authorization.Event.Touch();
@@ -234,7 +267,11 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventProjection>> Handle(OpenTestingEventApplicationsCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(authorization.Error);
+        }
+
         try
         {
             authorization.Event!.OpenApplications();
@@ -250,7 +287,11 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventProjection>> Handle(CloseTestingEventApplicationsCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(authorization.Error);
+        }
+
         try
         {
             authorization.Event!.CloseApplications();
@@ -280,7 +321,10 @@ public sealed class TestingEventHandlers(
         CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(authorization.Error);
+        }
 
         try
         {
@@ -301,9 +345,15 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventSlotProjection>> Handle(CreateTestingEventSlotCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventSlotProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventSlotProjection>(authorization.Error);
+        }
+
         if (!IsWithinEvent(authorization.Event!, request.StartsAt, request.EndsAt))
+        {
             return Result.Failure<TestingEventSlotProjection>(Validation("Slot schedule must be inside the event schedule."));
+        }
 
         try
         {
@@ -334,12 +384,16 @@ public sealed class TestingEventHandlers(
         CancellationToken cancellationToken)
     {
         if (request.Slots.Count is < 1 or > 200)
+        {
             return Result.Failure<IReadOnlyList<TestingEventSlotProjection>>(
                 Validation("Create between 1 and 200 time slots at once."));
+        }
 
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
         if (authorization.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingEventSlotProjection>>(authorization.Error);
+        }
 
         try
         {
@@ -347,8 +401,10 @@ public sealed class TestingEventHandlers(
             foreach (var input in request.Slots)
             {
                 if (!IsWithinEvent(authorization.Event!, input.StartsAt, input.EndsAt))
+                {
                     return Result.Failure<IReadOnlyList<TestingEventSlotProjection>>(
                         Validation("Every time slot must be inside the event schedule."));
+                }
 
                 slots.Add(TestingEventSlot.Create(
                     request.EventId,
@@ -378,9 +434,16 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventSlotProjection>> Handle(UpdateTestingEventSlotCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventSlotProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventSlotProjection>(authorization.Error);
+        }
+
         if (!IsWithinEvent(authorization.Event!, request.StartsAt, request.EndsAt))
+        {
             return Result.Failure<TestingEventSlotProjection>(Validation("Slot schedule must be inside the event schedule."));
+        }
+
         var slot = await context.Set<TestingEventSlot>()
             .FirstOrDefaultAsync(candidate =>
                 candidate.Id == request.SlotId &&
@@ -390,7 +453,9 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (slot == null)
+        {
             return Result.Failure<TestingEventSlotProjection>(Error.NotFound("TestingLab.EventSlotNotFound", "Testing event slot not found."));
+        }
 
         try
         {
@@ -416,7 +481,11 @@ public sealed class TestingEventHandlers(
     public async Task<Result<bool>> Handle(DeleteTestingEventSlotCommand request, CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<bool>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<bool>(authorization.Error);
+        }
+
         var slot = await context.Set<TestingEventSlot>()
             .FirstOrDefaultAsync(candidate =>
                 candidate.Id == request.SlotId &&
@@ -426,7 +495,10 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (slot == null)
+        {
             return Result.Failure<bool>(Error.NotFound("TestingLab.EventSlotNotFound", "Testing event slot not found."));
+        }
+
         var assigned = await context.Set<TestingProjectApplication>()
             .AnyAsync(application =>
                 application.AssignedSlotId == slot.Id &&
@@ -435,7 +507,9 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (assigned)
+        {
             return Result.Failure<bool>(Error.Conflict("TestingLab.EventSlotAssigned", "A slot with approved projects cannot be deleted."));
+        }
 
         slot.DeletedAt = SystemClock.UtcNow;
         slot.Touch();
@@ -446,7 +520,11 @@ public sealed class TestingEventHandlers(
     public async Task<Result<TestingEventProjection>> Handle(GetTestingEventQuery request, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<TestingEventProjection>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(actor.Error);
+        }
+
         var canReadAllEvents = IsTenantAdmin || await HasTestingLabPermissionAsync(
             actor,
             TestingLabActions.Read,
@@ -474,7 +552,10 @@ public sealed class TestingEventHandlers(
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return Result.Failure<TestingEventProjection>(Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
+
         var isCommitteeMember = await context.Set<TestingCommitteeMember>().AnyAsync(member =>
             member.EventId == testingEvent.Id &&
             member.UserId == actor.UserId &&
@@ -490,7 +571,11 @@ public sealed class TestingEventHandlers(
     public async Task<Result<IReadOnlyList<TestingEventProjection>>> Handle(GetTestingEventsQuery request, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<IReadOnlyList<TestingEventProjection>>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<IReadOnlyList<TestingEventProjection>>(actor.Error);
+        }
+
         var query = context.Set<TestingEvent>()
             .AsNoTracking()
             .Where(testingEvent => testingEvent.TenantId == actor.TenantId && testingEvent.DeletedAt == null);
@@ -503,7 +588,11 @@ public sealed class TestingEventHandlers(
             var actorId = actor.UserId;
             query = query.Where(testingEvent => testingEvent.ManagerUserId == actorId);
         }
-        if (request.Status.HasValue) query = query.Where(testingEvent => testingEvent.Status == request.Status.Value);
+        if (request.Status.HasValue)
+        {
+            query = query.Where(testingEvent => testingEvent.Status == request.Status.Value);
+        }
+
         var events = await query
             .OrderByDescending(testingEvent => testingEvent.StartsAt)
             .Skip(Math.Max(0, request.Skip))
@@ -519,7 +608,11 @@ public sealed class TestingEventHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<IReadOnlyList<TestingEventProjection>>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<IReadOnlyList<TestingEventProjection>>(actor.Error);
+        }
+
         var query = context.Set<TestingEvent>()
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -593,9 +686,14 @@ public sealed class TestingEventHandlers(
                  testingEvent.Status == TestingEventStatus.Scheduled ||
                  testingEvent.Status == TestingEventStatus.Active));
         if (eventId.HasValue)
+        {
             query = query.Where(testingEvent => testingEvent.Id == eventId.Value);
+        }
+
         if (tenantId.HasValue)
+        {
             query = query.Where(testingEvent => testingEvent.TenantId == tenantId.Value);
+        }
 
         var now = SystemClock.UtcNow;
         var events = await query
@@ -605,7 +703,10 @@ public sealed class TestingEventHandlers(
             .Take(take)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (events.Count == 0) return [];
+        if (events.Count == 0)
+        {
+            return [];
+        }
 
         var eventIds = events.Select(testingEvent => testingEvent.Id).ToArray();
         var slotIds = events.SelectMany(testingEvent => testingEvent.Slots).Select(slot => slot.Id).ToArray();
@@ -699,14 +800,20 @@ public sealed class TestingEventHandlers(
     public async Task<Result<IReadOnlyList<TestingEventSlotProjection>>> Handle(GetTestingEventSlotsQuery request, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<IReadOnlyList<TestingEventSlotProjection>>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<IReadOnlyList<TestingEventSlotProjection>>(actor.Error);
+        }
+
         var eventExists = await context.Set<TestingEvent>().AnyAsync(testingEvent =>
             testingEvent.Id == request.EventId &&
             testingEvent.TenantId == actor.TenantId &&
             testingEvent.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (!eventExists)
+        {
             return Result.Failure<IReadOnlyList<TestingEventSlotProjection>>(Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
 
         var slots = await context.Set<TestingEventSlot>()
             .AsNoTracking()
@@ -746,13 +853,21 @@ public sealed class TestingEventHandlers(
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
         if (authorization.Error != null)
+        {
             return Result.Failure<TestingEventCommitteeMemberProjection>(authorization.Error);
+        }
+
         if (authorization.Event!.ApprovalMode != TestingEventApprovalMode.Committee)
+        {
             return Result.Failure<TestingEventCommitteeMemberProjection>(
                 Validation("Committee members can only be assigned to committee-reviewed events."));
+        }
+
         if (authorization.Event.Status is TestingEventStatus.Active or TestingEventStatus.Completed or TestingEventStatus.Cancelled)
+        {
             return Result.Failure<TestingEventCommitteeMemberProjection>(
                 Validation("Committee membership cannot change for active or terminal events."));
+        }
 
         var user = await context.Set<User>()
             .AsNoTracking()
@@ -773,8 +888,10 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (!isMember)
+        {
             return Result.Failure<TestingEventCommitteeMemberProjection>(
                 Error.NotFound("TestingLab.CommitteeUserNotFound", "An active tenant member is required."));
+        }
 
         var exists = await context.Set<TestingCommitteeMember>()
             .AnyAsync(member =>
@@ -784,8 +901,10 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (exists)
+        {
             return Result.Failure<TestingEventCommitteeMemberProjection>(
                 Error.Conflict("TestingLab.CommitteeMemberExists", "This user already has a committee membership for the event."));
+        }
 
         var member = TestingCommitteeMember.Create(
             request.EventId,
@@ -802,9 +921,15 @@ public sealed class TestingEventHandlers(
         CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<bool>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<bool>(authorization.Error);
+        }
+
         if (authorization.Event!.Status is TestingEventStatus.Active or TestingEventStatus.Completed or TestingEventStatus.Cancelled)
+        {
             return Result.Failure<bool>(Validation("Committee membership cannot change for active or terminal events."));
+        }
 
         var member = await context.Set<TestingCommitteeMember>()
             .FirstOrDefaultAsync(candidate =>
@@ -815,16 +940,21 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (member == null)
+        {
             return Result.Failure<bool>(
                 Error.NotFound("TestingLab.CommitteeMemberNotFound", "Active committee member not found."));
+        }
+
         var hasVotes = await context.Set<TestingApplicationVote>()
             .AnyAsync(vote => vote.ReviewerId == request.UserId &&
                               vote.Application.EventId == request.EventId &&
                               vote.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (hasVotes)
+        {
             return Result.Failure<bool>(
                 Error.Conflict("TestingLab.CommitteeMemberHasVotes", "Committee members with recorded votes cannot be removed."));
+        }
 
         member.Deactivate();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -837,7 +967,9 @@ public sealed class TestingEventHandlers(
     {
         var authorization = await GetManagedEventAsync(request.EventId, cancellationToken).ConfigureAwait(false);
         if (authorization.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingEventCommitteeMemberProjection>>(authorization.Error);
+        }
 
         var members = await context.Set<TestingCommitteeMember>()
             .AsNoTracking()
@@ -867,7 +999,11 @@ public sealed class TestingEventHandlers(
         CancellationToken cancellationToken)
     {
         var authorization = await GetManagedEventAsync(eventId, cancellationToken).ConfigureAwait(false);
-        if (authorization.Error != null) return Result.Failure<TestingEventProjection>(authorization.Error);
+        if (authorization.Error != null)
+        {
+            return Result.Failure<TestingEventProjection>(authorization.Error);
+        }
+
         try
         {
             transition(authorization.Event!);
@@ -883,7 +1019,11 @@ public sealed class TestingEventHandlers(
     private async Task<ManagedEvent> GetManagedEventAsync(Guid eventId, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return new(null, actor.Error);
+        if (actor.Error != null)
+        {
+            return new(null, actor.Error);
+        }
+
         var testingEvent = await context.Set<TestingEvent>()
             .FirstOrDefaultAsync(candidate =>
                 candidate.Id == eventId &&
@@ -892,7 +1032,10 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return new(null, Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
+
         var hasPermission = testingLabPermissionService != null && await testingLabPermissionService.HasPermissionAsync(
             actor.UserId,
             actor.TenantId,
@@ -900,14 +1043,21 @@ public sealed class TestingEventHandlers(
             TestingLabResourceTypes.Event,
             testingEvent.Id).ConfigureAwait(false);
         if (testingEvent.ManagerUserId != actor.UserId && !IsTenantAdmin && !hasPermission)
+        {
             return new(null, Error.Forbidden("TestingLab.EventManagerRequired", "Only the event manager can perform this operation."));
+        }
+
         return new(testingEvent, null);
     }
 
     private async Task<ManagedEvent> GetManagedArchivedEventAsync(Guid eventId, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return new(null, actor.Error);
+        if (actor.Error != null)
+        {
+            return new(null, actor.Error);
+        }
+
         var testingEvent = await context.Set<TestingEvent>()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(candidate =>
@@ -918,7 +1068,10 @@ public sealed class TestingEventHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return new(null, Error.NotFound("TestingLab.ArchivedEventNotFound", "Archived testing event not found."));
+        }
+
         var hasPermission = testingLabPermissionService != null && await testingLabPermissionService.HasPermissionAsync(
             actor.UserId,
             actor.TenantId,
@@ -926,7 +1079,10 @@ public sealed class TestingEventHandlers(
             TestingLabResourceTypes.Event,
             testingEvent.Id).ConfigureAwait(false);
         if (testingEvent.ManagerUserId != actor.UserId && !IsTenantAdmin && !hasPermission)
+        {
             return new(null, Error.Forbidden("TestingLab.EventManagerRequired", "Only the event manager can perform this operation."));
+        }
+
         return new(testingEvent, null);
     }
 
@@ -935,7 +1091,10 @@ public sealed class TestingEventHandlers(
         var actor = actorContextAccessor.ActorContext;
         var userId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || userId == null || actor.TenantId == null)
+        {
             return new(Guid.Empty, Guid.Empty, Error.Unauthorized("TestingLab.Unauthenticated", "An authenticated tenant actor is required."));
+        }
+
         var hasAccess = await TestingLabActorAccess.IsActiveTenantActorAsync(context, actor, cancellationToken).ConfigureAwait(false);
         return hasAccess
             ? new(userId.Value, actor.TenantId.Value, null)
@@ -1021,7 +1180,11 @@ public sealed class TestingEventHandlers(
 
     private static TestingEventConfigurationProjection? ToConfigurationProjection(TestingEvent testingEvent)
     {
-        if (testingEvent.ProjectApplicationSchema == null || testingEvent.TesterRegistrationSchema == null) return null;
+        if (testingEvent.ProjectApplicationSchema == null || testingEvent.TesterRegistrationSchema == null)
+        {
+            return null;
+        }
+
         return new TestingEventConfigurationProjection(
             testingEvent.SourceTemplateId,
             testingEvent.SourceTemplateRevisionId,
@@ -1034,7 +1197,11 @@ public sealed class TestingEventHandlers(
     }
     private static IReadOnlyList<DayOfWeek>? ParseRecurrenceDaysOfWeek(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
         return value.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(item => Enum.TryParse<DayOfWeek>(item, out var day) ? day : (DayOfWeek?)null)
             .Where(day => day.HasValue)

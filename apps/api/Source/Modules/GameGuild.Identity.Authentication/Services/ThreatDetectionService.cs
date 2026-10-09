@@ -32,7 +32,7 @@ public class ThreatDetectionService(
         {
             logger.LogWarning(
                 "Brute force attack detected - Identifier: {Identifier}, Failed attempts: {FailedCount} in {TimeWindowMinutes} minutes",
-                identifier, failedCount, timeWindowMinutes);
+                LogRedaction.MaskIdentifier(identifier), failedCount, timeWindowMinutes);
 
             await siemService
                 .SendBruteForceEventAsync(identifier, failedCount, TimeSpan.FromMinutes(timeWindowMinutes), CancellationToken.None)

@@ -23,14 +23,23 @@ public sealed record AiProviderRateCard
         DateTimeOffset expiresAt)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
-        if (!Enum.IsDefined(provider)) throw new ArgumentOutOfRangeException(nameof(provider));
+        if (!Enum.IsDefined(provider))
+        {
+            throw new ArgumentOutOfRangeException(nameof(provider));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentOutOfRangeException.ThrowIfNegative(inputTokenCostUsdNanosPerMillion);
         ArgumentOutOfRangeException.ThrowIfNegative(outputTokenCostUsdNanosPerMillion);
         if (inputTokenCostUsdNanosPerMillion == 0 && outputTokenCostUsdNanosPerMillion == 0)
+        {
             throw new ArgumentException("At least one token cost must be positive.", nameof(inputTokenCostUsdNanosPerMillion));
+        }
+
         if (expiresAt <= observedAt)
+        {
             throw new ArgumentException("Rate-card expiry must follow observation.", nameof(expiresAt));
+        }
 
         Version = version.Trim();
         Provider = provider;
@@ -75,7 +84,10 @@ public sealed record AiProviderRateCard
     private static long ToLong(BigInteger value)
     {
         if (value > long.MaxValue)
+        {
             throw new OverflowException("AI provider-cost arithmetic exceeded the supported unit range.");
+        }
+
         return (long)value;
     }
 }
@@ -142,11 +154,16 @@ public sealed record AiServicePriceSnapshot
         ArgumentOutOfRangeException.ThrowIfNegative(maximumInputTokens);
         ArgumentOutOfRangeException.ThrowIfNegative(maximumOutputTokens);
         if (maximumInputTokens == 0 && maximumOutputTokens == 0)
+        {
             throw new ArgumentException("At least one token allowance must be positive.", nameof(maximumInputTokens));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(trailingHighPercentileCostUsdNanos);
         ArgumentOutOfRangeException.ThrowIfNegative(providerFxStressCostUsdNanos);
         if (expiresAt <= observedAt)
+        {
             throw new ArgumentException("Service-price expiry must follow observation.", nameof(expiresAt));
+        }
 
         var current = rateCard.CalculateCost(maximumInputTokens, maximumOutputTokens).TotalCostUsdNanos;
         var stressed = ReserveFormula.StressedUnitCostUsdNanos(
@@ -154,7 +171,10 @@ public sealed record AiServicePriceSnapshot
             trailingHighPercentileCostUsdNanos,
             providerFxStressCostUsdNanos);
         if (stressed == 0)
+        {
             throw new AiProviderCostUnknownException("A zero-cost service cannot be authorized.");
+        }
+
         var price = ReserveFormula.MinimumServicePriceSoftUnits(stressed, minimumGrossMarginPpm);
 
         return new AiServicePriceSnapshot(
@@ -174,7 +194,11 @@ public sealed record AiServicePriceSnapshot
 
     public bool MeetsMargin(long priceSoftUnits)
     {
-        if (priceSoftUnits <= 0) return false;
+        if (priceSoftUnits <= 0)
+        {
+            return false;
+        }
+
         var revenueUsdNanos = (BigInteger)priceSoftUnits * UsdNanosPerUsd /
                               EconomyParity.SoftCoinUnitsPerUsd;
         return (revenueUsdNanos - StressedProviderCostUsdNanos) * PpmScale >=
@@ -191,7 +215,10 @@ public sealed class AiServiceRateCardCatalog
     {
         get
         {
-            lock (_gate) return _snapshots.OrderBy(snapshot => snapshot.ObservedAt).ToArray();
+            lock (_gate)
+            {
+                return _snapshots.OrderBy(snapshot => snapshot.ObservedAt).ToArray();
+            }
         }
     }
 
@@ -205,7 +232,10 @@ public sealed class AiServiceRateCardCatalog
                     existing.RateCard.Provider == snapshot.RateCard.Provider &&
                     existing.RateCard.Model == snapshot.RateCard.Model &&
                     existing.RateCard.Version == snapshot.RateCard.Version))
+            {
                 throw new InvalidOperationException("The AI service rate-card version already exists.");
+            }
+
             _snapshots.Add(snapshot);
         }
     }
@@ -217,7 +247,11 @@ public sealed class AiServiceRateCardCatalog
         DateTimeOffset at)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceCode);
-        if (!Enum.IsDefined(provider)) throw new ArgumentOutOfRangeException(nameof(provider));
+        if (!Enum.IsDefined(provider))
+        {
+            throw new ArgumentOutOfRangeException(nameof(provider));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
 
         lock (_gate)
@@ -231,9 +265,15 @@ public sealed class AiServiceRateCardCatalog
                 .OrderByDescending(candidate => candidate.ObservedAt)
                 .FirstOrDefault();
             if (snapshot is null)
+            {
                 throw new AiProviderCostUnknownException("No AI service cost feed is available.");
+            }
+
             if (snapshot.ExpiresAt <= at || snapshot.RateCard.ExpiresAt <= at)
+            {
                 throw new AiProviderCostStaleException("The AI service cost feed is stale.");
+            }
+
             return snapshot;
         }
     }

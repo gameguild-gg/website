@@ -23,7 +23,9 @@ public sealed class TreasuryCustodyReconciler
         ArgumentNullException.ThrowIfNull(head);
         ArgumentNullException.ThrowIfNull(observations);
         if (head.ObservedAt > now || head.ExpiresAt <= now)
+        {
             throw new ReserveInputUnknownException("The reserve head is stale for custody reconciliation.");
+        }
 
         var byAsset = new Dictionary<string, TreasuryCustodyObservation>(StringComparer.Ordinal);
         foreach (var observation in observations)
@@ -32,11 +34,15 @@ public sealed class TreasuryCustodyReconciler
                 string.IsNullOrWhiteSpace(observation.EvidenceHash) || observation.ActualUsdNanos < 0 ||
                 observation.ObservedAt > now || observation.ExpiresAt <= now ||
                 !byAsset.TryAdd(observation.AssetKey.Trim(), observation with { AssetKey = observation.AssetKey.Trim() }))
+            {
                 throw new ReserveInputUnknownException("Custody evidence is missing, stale, invalid, or duplicated.");
+            }
         }
 
         if (head.AssetAllocations.Any(asset => !byAsset.ContainsKey(asset.AssetKey)))
+        {
             throw new ReserveInputUnknownException("Custody evidence is missing for an allocated reserve asset.");
+        }
 
         var expected = head.AssetAllocations.ToDictionary(asset => asset.AssetKey, asset => asset.EligibleUsdNanos, StringComparer.Ordinal);
         var variances = expected.Keys.Union(byAsset.Keys, StringComparer.Ordinal).Order(StringComparer.Ordinal)
@@ -85,7 +91,10 @@ public sealed class TreasuryCustodyReconciler
     {
         var total = values.Aggregate(BigInteger.Zero, (current, value) => current + value);
         if (total > long.MaxValue || total < long.MinValue)
+        {
             throw new OverflowException("Custody reconciliation exceeded the supported range.");
+        }
+
         return (long)total;
     }
 }
@@ -98,7 +107,10 @@ public sealed class TreasuryCustodySigner
     {
         ArgumentNullException.ThrowIfNull(secret);
         if (secret.Length < 32)
+        {
             throw new ArgumentException("Treasury custody signing secret must contain at least 32 bytes.", nameof(secret));
+        }
+
         _secret = [.. secret];
     }
 
@@ -113,7 +125,11 @@ public sealed class TreasuryCustodySigner
     public bool Verify(TreasuryCustodyReport report)
     {
         ArgumentNullException.ThrowIfNull(report);
-        if (string.IsNullOrWhiteSpace(report.Signature)) return false;
+        if (string.IsNullOrWhiteSpace(report.Signature))
+        {
+            return false;
+        }
+
         byte[] supplied;
         try { supplied = Convert.FromBase64String(report.Signature); }
         catch (FormatException) { return false; }
@@ -159,21 +175,40 @@ internal static class TreasuryCustodyCanonicalizer
     {
         ArgumentNullException.ThrowIfNull(custody);
         if (!_signer.Verify(custody))
+        {
             throw new TreasurySignatureException("Treasury custody report signature is invalid.");
-        if (!Enum.IsDefined(operation)) throw new ArgumentOutOfRangeException(nameof(operation));
+        }
+
+        if (!Enum.IsDefined(operation))
+        {
+            throw new ArgumentOutOfRangeException(nameof(operation));
+        }
+
         if (custody.ReserveVersion != reserveVersion || custody.AuthorizationEpoch != authorizationEpoch ||
             custody.ObservedAt > now || custody.ExpiresAt <= now)
+        {
             throw new ReserveInputUnknownException("Custody reconciliation is stale or does not bind the active reserve head.");
+        }
+
         if (!custody.IsReconciled)
+        {
             throw new TreasuryCustodyVarianceException("Unexplained custody variance blocks protected value movement.");
+        }
+
         if (operation == TreasuryProtectedOperation.Issuance)
         {
             if (liabilityIncrease is null || liabilityIncrease.Value.Units <= 0)
+            {
                 throw new ArgumentException("Issuance requires a positive liability increase.", nameof(liabilityIncrease));
+            }
+
             return _authority.AuthorizeIssuance(reserveVersion, authorizationEpoch, liabilityIncrease.Value, now);
         }
         if (liabilityIncrease is not null)
+        {
             throw new ArgumentException("Only issuance accepts a liability increase.", nameof(liabilityIncrease));
+        }
+
         return _authority.Authorize(reserveVersion, authorizationEpoch, now);
     }
 }

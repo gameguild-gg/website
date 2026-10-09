@@ -100,9 +100,15 @@ public sealed class PostgreSqlComplianceHoldReleasePolicyResolver(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         if (capability is not null && !Enum.IsDefined(capability.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(capability));
+        }
 
         var query = _db.Set<EconomyCapabilityPolicyRow>().AsNoTracking()
             .Where(row =>
@@ -112,7 +118,9 @@ public sealed class PostgreSqlComplianceHoldReleasePolicyResolver(
                 row.ExpiresAt > now &&
                 (row.TenantId == null || row.TenantId == tenantId));
         if (capability is not null)
+        {
             query = query.Where(row => row.Capability == capability.Value);
+        }
 
         var policies = await query
             .OrderBy(row => row.Capability)
@@ -121,8 +129,10 @@ public sealed class PostgreSqlComplianceHoldReleasePolicyResolver(
             .ThenBy(row => row.Version)
             .ToArrayAsync(cancellationToken);
         if (policies.Length == 0)
+        {
             throw new InvalidOperationException(
                 "No active signed policy authorizes administrative compliance-hold release.");
+        }
 
         var approvals = new List<int>(policies.Length);
         foreach (var policy in policies)
@@ -134,8 +144,10 @@ public sealed class PostgreSqlComplianceHoldReleasePolicyResolver(
                     policy.KeyId,
                     policy.Signature,
                     cancellationToken))
+            {
                 throw new InvalidOperationException(
                     "A policy governing compliance-hold release has an invalid signature.");
+            }
 
             approvals.Add(EconomyProtectedRiskPolicy.Parse(policy.CanonicalPayload).RequiredReviewApprovals);
         }
@@ -176,19 +188,34 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
     {
         ValidateTenant(tenantId);
         if (capability is not null && !Enum.IsDefined(capability.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(capability));
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
         var position = DecodeCursor(cursor);
         var query = _db.Set<EconomyComplianceHoldRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
         if (active is true)
+        {
             query = query.Where(row =>
                 row.ReleasedAt == null && row.ActivatedAt <= now && row.ExpiresAt > now);
+        }
         else if (active is false)
+        {
             query = query.Where(row =>
                 row.ReleasedAt != null || row.ActivatedAt > now || row.ExpiresAt <= now);
+        }
+
         if (capability is not null)
+        {
             query = query.Where(row => row.Capability == null || row.Capability == capability.Value);
+        }
+
         if (position is not null)
         {
             var activatedAt = position.Value.ActivatedAt;
@@ -206,7 +233,10 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
         var pageRows = rows.Take(limit).ToArray();
         var items = new List<ComplianceHoldAdministrationState>(pageRows.Length);
         foreach (var row in pageRows)
+        {
             items.Add(await MapAsync(row, cancellationToken));
+        }
+
         var nextCursor = rows.Length > limit && pageRows.Length > 0
             ? EncodeCursor(pageRows[^1].ActivatedAt, pageRows[^1].Id)
             : null;
@@ -262,11 +292,16 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
             {
                 var row = await ActiveAsync(tenantId, holdId, proposedAt, token);
                 if (row.ActivatedBy == actorId)
+                {
                     throw new InvalidOperationException(
                         "The hold activator cannot propose its administrative release.");
+                }
+
                 if (row.ReleaseProposedBy is not null)
+                {
                     throw new InvalidOperationException(
                         "Compliance-hold release has already been proposed.");
+                }
 
                 var authorization = await _releasePolicy.ResolveAsync(
                     tenantId,
@@ -275,8 +310,10 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
                     token);
                 if (authorization.RequiredApprovals is < 1 or > 2 ||
                     string.IsNullOrWhiteSpace(authorization.EvidenceHash))
+                {
                     throw new InvalidOperationException(
                         "The signed hold-release policy returned invalid authorization.");
+                }
 
                 row.ReleaseProposedBy = actorId;
                 row.ReleaseProposedAt = proposedAt;
@@ -314,27 +351,40 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
                     row.ReleaseProposedAt is null ||
                     row.RequiredReleaseApprovals is null ||
                     string.IsNullOrWhiteSpace(row.ReleasePolicyEvidenceHash))
+                {
                     throw new InvalidOperationException(
                         "Compliance-hold release must be proposed under a signed policy before approval.");
+                }
+
                 if (row.ReleaseProposedBy == actorId || row.ActivatedBy == actorId)
+                {
                     throw new InvalidOperationException(
                         "Hold activator, release proposer, and reviewers must be distinct.");
+                }
+
                 if (approvedAt < row.ReleaseProposedAt)
+                {
                     throw new ArgumentException(
                         "Release approval cannot predate its proposal.",
                         nameof(approvedAt));
+                }
 
                 var approvalQuery = _db.Set<EconomyComplianceHoldEventRow>()
                     .Where(item =>
                         item.HoldId == holdId &&
                         item.Kind == ComplianceHoldEventKinds.ReleaseApproved);
                 if (await approvalQuery.AnyAsync(item => item.ActorId == actorId, token))
+                {
                     throw new InvalidOperationException(
                         "A hold-release reviewer cannot approve twice.");
+                }
+
                 var approvalCount = await approvalQuery.CountAsync(token);
                 if (approvalCount >= row.RequiredReleaseApprovals)
+                {
                     throw new InvalidOperationException(
                         "Compliance-hold release already has the required approvals.");
+                }
 
                 await AppendEventAsync(
                     row.Id,
@@ -368,7 +418,11 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
 
     internal static (DateTimeOffset ActivatedAt, Guid Id)? DecodeCursor(string? cursor)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(
                 cursor.AsSpan(0, 16),
@@ -378,7 +432,10 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
             !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks ||
             ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException("Compliance-hold cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 
@@ -461,14 +518,18 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
     private static void ValidateTenant(Guid tenantId)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
     }
 
     private static void ValidateTenantHold(Guid tenantId, Guid holdId)
     {
         ValidateTenant(tenantId);
         if (holdId == Guid.Empty)
+        {
             throw new ArgumentException("Hold ID cannot be empty.", nameof(holdId));
+        }
     }
 
     private static void ValidateReleaseInput(
@@ -479,7 +540,10 @@ public sealed class PostgreSqlComplianceHoldAdministrationStore(
     {
         ValidateTenantHold(tenantId, holdId);
         if (actorId == Guid.Empty)
+        {
             throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
     }
 }

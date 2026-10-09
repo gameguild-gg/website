@@ -27,13 +27,20 @@ public sealed class CourseSupportTicketsController(
         [FromBody] CreateCourseSupportTicketRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail)) return Unauthorized();
+        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail))
+        {
+            return Unauthorized();
+        }
+
         var tenantId = actorContextAccessor.ActorContext.TenantId;
         var courseTitle = await db.Set<Program>().AsNoTracking()
             .Where(program => program.Id == courseId && program.DeletedAt == null)
             .Select(program => program.Title)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-        if (tenantId is not Guid resolvedTenantId || courseTitle is null) return NotFound();
+        if (tenantId is not Guid resolvedTenantId || courseTitle is null)
+        {
+            return NotFound();
+        }
 
         var result = await sender.Send(new CreateSupportTicketCommand(
             resolvedTenantId,
@@ -84,8 +91,15 @@ public sealed class CourseSupportTicketsController(
         CancellationToken cancellationToken = default)
     {
         var ticket = await GetOwnedTicketAsync(courseId, ticketId, cancellationToken).ConfigureAwait(false);
-        if (ticket?.TenantId is not Guid tenantId) return NotFound();
-        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail)) return Unauthorized();
+        if (ticket?.TenantId is not Guid tenantId)
+        {
+            return NotFound();
+        }
+
+        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail))
+        {
+            return Unauthorized();
+        }
 
         var result = await sender.Send(new AddSupportTicketMessageCommand(
             ticketId,
@@ -109,8 +123,15 @@ public sealed class CourseSupportTicketsController(
         CancellationToken cancellationToken = default)
     {
         var ticket = await GetOwnedTicketAsync(courseId, ticketId, cancellationToken).ConfigureAwait(false);
-        if (ticket?.TenantId is not Guid tenantId) return NotFound();
-        if (!TryGetActor(out var actorId, out var actorName, out _)) return Unauthorized();
+        if (ticket?.TenantId is not Guid tenantId)
+        {
+            return NotFound();
+        }
+
+        if (!TryGetActor(out var actorId, out var actorName, out _))
+        {
+            return Unauthorized();
+        }
 
         var result = await sender.Send(new ResolveSupportTicketCommand(
             ticketId,

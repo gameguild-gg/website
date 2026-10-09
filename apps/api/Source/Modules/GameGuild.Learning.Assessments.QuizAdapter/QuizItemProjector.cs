@@ -8,11 +8,18 @@ public sealed class QuizItemProjector
 {
     public JsonElement Project(string itemId, JsonElement authoringItem)
     {
-        if (string.IsNullOrWhiteSpace(itemId)) throw new ArgumentException("Item ID is required.", nameof(itemId));
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            throw new ArgumentException("Item ID is required.", nameof(itemId));
+        }
+
         QuizAuthoringEntryValidator.Validate(authoringItem);
 
         var itemType = authoringItem.GetProperty("type").GetString();
-        if (itemType is null) throw new JsonException("Quiz entry type is required.");
+        if (itemType is null)
+        {
+            throw new JsonException("Quiz entry type is required.");
+        }
 
         var maxScore = authoringItem.TryGetProperty("points", out var points)
             ? ScoreValue.FromUnits(points.TryGetInt32(out var units)

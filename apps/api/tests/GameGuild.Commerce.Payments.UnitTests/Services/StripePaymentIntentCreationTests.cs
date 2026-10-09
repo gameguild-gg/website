@@ -5,8 +5,14 @@ using Microsoft.Extensions.Options;
 using Stripe;
 using Xunit;
 
+using GameGuild.Commerce.Payments.UnitTests;
+
 namespace GameGuild.Commerce.Payments.UnitTests.Services;
 
+// Constructs StripePaymentService with real (non-simulated) options, which
+// mutates the process-wide StripeConfiguration via EnsureApiKey; must run in
+// the serialized collection so it cannot race other configuration assertions.
+[Collection(StripeProcessConfigurationCollection.Name)]
 public sealed class StripePaymentIntentCreationTests
 {
     [Fact]

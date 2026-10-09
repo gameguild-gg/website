@@ -101,8 +101,10 @@ public sealed class PostgreSqlSelfServiceEconomyTransferIntentStore(
         if (!CryptographicOperations.FixedTimeEquals(
                 Encoding.ASCII.GetBytes(actual),
                 Encoding.ASCII.GetBytes(expected)))
+        {
             throw new SelfServiceEconomyTransferException(
                 "The transfer idempotency key is already bound to another request.");
+        }
     }
 
     internal static void Validate(SelfServiceEconomyTransferIntentDraft draft)
@@ -110,17 +112,28 @@ public sealed class PostgreSqlSelfServiceEconomyTransferIntentStore(
         ArgumentNullException.ThrowIfNull(draft);
         if (draft.TenantId == Guid.Empty || draft.ActorId == Guid.Empty ||
             draft.RecipientUserId == Guid.Empty || draft.ActorId == draft.RecipientUserId)
+        {
             throw new ArgumentException("A transfer intent requires distinct tenant actors.", nameof(draft));
+        }
+
         if (!Enum.IsDefined(draft.TransferType) || !Enum.IsDefined(draft.Currency) ||
             !Enum.IsDefined(draft.Provenance))
+        {
             throw new ArgumentOutOfRangeException(nameof(draft));
+        }
+
         if ((draft.Currency == CurrencyCode.HardCoin && draft.Provenance != ProvenanceKind.PurchasedHard) ||
             (draft.Currency == CurrencyCode.SoftCoin && draft.Provenance != ProvenanceKind.ConvertedSoft))
+        {
             throw new ArgumentException(
                 "Self-service transfer currency and provenance are incompatible.", nameof(draft));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(draft.AmountUnits);
         if (draft.RequestedAt == default)
+        {
             throw new ArgumentException("A server request time is required.", nameof(draft));
+        }
     }
 }
 
@@ -172,8 +185,11 @@ public sealed class PostgreSqlSelfServiceEconomyTransferSourceRootPlanner(
         ArgumentNullException.ThrowIfNull(roots);
         if (roots.Count == 0 || roots.Any(root => root == Guid.Empty) ||
             roots.Distinct().Count() != roots.Count)
+        {
             throw new SelfServiceEconomyTransferException(
                 "The transfer could not reserve an authorized source-root set.");
+        }
+
         return Array.AsReadOnly(roots.OrderBy(root => root).Select(root => new SourceStampId(root)).ToArray());
     }
 
@@ -183,8 +199,13 @@ public sealed class PostgreSqlSelfServiceEconomyTransferSourceRootPlanner(
         if (request.PostingId.Value == Guid.Empty || request.TenantId == Guid.Empty ||
             request.ActorId == Guid.Empty || request.SourceWalletId.Value == Guid.Empty ||
             request.DestinationWalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("A transfer root reservation requires complete server authority.", nameof(request));
+        }
+
         if (request.SourceWalletId == request.DestinationWalletId)
+        {
             throw new ArgumentException("Transfer root reservation wallets must differ.", nameof(request));
+        }
     }
 }

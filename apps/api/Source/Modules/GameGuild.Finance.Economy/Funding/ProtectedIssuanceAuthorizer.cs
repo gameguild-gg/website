@@ -59,9 +59,15 @@ public sealed class ProtectedIssuanceAuthorization
     {
         if (Operation != operation || IdempotencyKey != idempotencyKey || Amount != amount ||
             Reserve.Version != reserveVersion)
+        {
             throw new IssuanceAuthorizationBindingException("Issuance authorization does not match the posting.");
+        }
+
         if (now > ValidUntil)
+        {
             throw new IssuanceAuthorizationExpiredException("Issuance authorization is no longer current.");
+        }
+
         _reserveAuthority.Authorize(Reserve.Version, Reserve.AuthorizationEpoch, now);
     }
 
@@ -69,7 +75,9 @@ public sealed class ProtectedIssuanceAuthorization
     {
         ArgumentNullException.ThrowIfNull(sourceRoots);
         if (!SourceRoots.SequenceEqual(sourceRoots.OrderBy(root => root.Value)))
+        {
             throw new IssuanceAuthorizationBindingException("Issuance authorization source roots do not match the posting.");
+        }
     }
 }
 
@@ -101,9 +109,15 @@ public sealed class ProtectedIssuanceAuthorizer
         ArgumentNullException.ThrowIfNull(request.PersistenceReadiness);
         ArgumentNullException.ThrowIfNull(request.AggregateLimits);
         if (request.CounterReservationId == Guid.Empty)
+        {
             throw new ArgumentException("Counter reservation ID cannot be empty.", nameof(request));
+        }
+
         if (request.CooldownSubjectId == Guid.Empty)
+        {
             throw new ArgumentException("Cooldown subject ID cannot be empty.", nameof(request));
+        }
+
         EnsureSourceRootLimits(request.Context.SourceRoots, request.AggregateLimits);
 
         lock (_gate)
@@ -156,8 +170,10 @@ public sealed class ProtectedIssuanceAuthorizer
                                      StringComparer.Ordinal.Equals(
                                          limit.Key.SubjectHash,
                                          root.Value.ToString("N"))))
+            {
                 throw new MissingSourceRootRiskLimitException(
                     $"Source root {root.Value:N} is missing an aggregate exposure limit.");
+            }
         }
     }
 
@@ -165,8 +181,10 @@ public sealed class ProtectedIssuanceAuthorizer
     {
         var active = _cooldowns.ForSubject(subjectId).FirstOrDefault(change => now < change.AvailableAt);
         if (active is not null)
+        {
             throw new ProtectedChangeCooldownActiveException(
                 $"Protected change {active.Kind} remains in cooldown until {active.AvailableAt:O}.");
+        }
     }
 }
 

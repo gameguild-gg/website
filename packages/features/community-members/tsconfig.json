@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "@game-guild/typescript-config/tsconfig.react.json",
+  "extends": "../../tooling/typescript/react.library.tsconfig.json",
   "display": "Community Members",
   "compilerOptions": {
     "paths": {

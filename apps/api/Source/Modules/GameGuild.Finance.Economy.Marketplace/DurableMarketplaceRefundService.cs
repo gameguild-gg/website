@@ -117,9 +117,12 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
             if (duplicate.SettlementId != request.SettlementId ||
                 duplicate.Quantity != request.Quantity ||
                 !string.Equals(duplicate.ReasonHash, reasonHash, StringComparison.Ordinal))
-                throw new MarketplaceIdempotencyConflictException(
+                {
+                    throw new MarketplaceIdempotencyConflictException(
                     "The idempotency key is already bound to another Marketplace refund.");
-            return await MapAsync(duplicate, true, transactionToken);
+                }
+
+                return await MapAsync(duplicate, true, transactionToken);
         }
 
         var settlement = await _db.Set<MarketplaceSettlementRow>()
@@ -130,46 +133,64 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
             ?? throw new MarketplaceRefundException("The Marketplace settlement was not found.");
         if (request.Authority == MarketplaceRefundAuthority.SelfService &&
             settlement.BuyerId != actor.ActorId)
-            throw new MarketplaceRefundException(
+            {
+                throw new MarketplaceRefundException(
                 "Only the authoritative order buyer can request a self-service refund.");
-        if (settlement.Status == MarketplaceSettlementStatus.Refunded ||
-            settlement.RefundedQuantity >= settlement.Quantity)
-            throw new MarketplaceAlreadyRefundedException(
-                "The Marketplace settlement has already been refunded in full.");
-        var cumulativeQuantity = checked(settlement.RefundedQuantity + request.Quantity);
-        if (cumulativeQuantity > settlement.Quantity)
-            throw new MarketplaceRefundException(
-                "The requested quantity exceeds the refundable order quantity.");
+            }
 
-        var policy = await _policies.GetVersionAsync(
+            if (settlement.Status == MarketplaceSettlementStatus.Refunded ||
+            settlement.RefundedQuantity >= settlement.Quantity)
+            {
+                throw new MarketplaceAlreadyRefundedException(
+                "The Marketplace settlement has already been refunded in full.");
+            }
+
+            var cumulativeQuantity = checked(settlement.RefundedQuantity + request.Quantity);
+        if (cumulativeQuantity > settlement.Quantity)
+            {
+                throw new MarketplaceRefundException(
+                "The requested quantity exceeds the refundable order quantity.");
+            }
+
+            var policy = await _policies.GetVersionAsync(
             actor.TenantId, settlement.ProductId, settlement.PolicyVersion, transactionToken);
         if (policy.Policy.SellerId != settlement.SellerId ||
             policy.PlatformFeeWalletId != settlement.PlatformFeeWalletId)
-            throw new MarketplaceRefundException(
+            {
+                throw new MarketplaceRefundException(
                 "The historical signed policy does not match the persisted settlement.");
+            }
 
-        var persistedLegs = await _db.Set<MarketplaceSettlementLegRow>()
+            var persistedLegs = await _db.Set<MarketplaceSettlementLegRow>()
             .AsNoTracking()
             .Where(row => row.SettlementId == settlement.Id)
             .OrderBy(row => row.Currency)
             .ToArrayAsync(transactionToken);
         if (persistedLegs.Length == 0)
-            throw new MarketplaceRefundException("The settlement has no durable price legs.");
-        var refundLegs = persistedLegs.Select(leg =>
+            {
+                throw new MarketplaceRefundException("The settlement has no durable price legs.");
+            }
+
+            var refundLegs = persistedLegs.Select(leg =>
         {
             var cumulativeTarget = checked((long)decimal.Truncate(
                 (decimal)leg.Units * cumulativeQuantity / settlement.Quantity));
             if (cumulativeTarget < leg.RefundedUnits || cumulativeTarget > leg.Units)
+            {
                 throw new MarketplaceRefundException(
-                    "The persisted Marketplace refund counters are inconsistent.");
+                "The persisted Marketplace refund counters are inconsistent.");
+            }
+
             return new PersistedMarketplaceRefundLeg(
                 leg.Currency, checked(cumulativeTarget - leg.RefundedUnits));
         }).Where(leg => leg.Units > 0).ToArray();
         if (refundLegs.Length == 0)
-            throw new MarketplaceRefundException(
+            {
+                throw new MarketplaceRefundException(
                 "The requested quantity does not produce a positive refundable amount.");
+            }
 
-        var rootPayloads = await _db.Set<MarketplaceFundingFragmentRow>()
+            var rootPayloads = await _db.Set<MarketplaceFundingFragmentRow>()
             .AsNoTracking()
             .Where(row => row.SettlementId == settlement.Id)
             .Select(row => row.SelectedRootRanges)
@@ -217,8 +238,10 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
                 reasonHash,
                 request.RefundedAt));
             if (posting.PostingId != postingId)
+            {
                 throw new RegisteredPostingRejectedException(
-                    "The Marketplace writer returned an unexpected refund posting identity.");
+                "The Marketplace writer returned an unexpected refund posting identity.");
+            }
 
             var persisted = await _db.Set<MarketplaceRefundRow>()
                 .AsNoTracking()
@@ -275,8 +298,11 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
             CollectRootIds(document.RootElement, roots);
         }
         if (roots.Count == 0)
+        {
             throw new MarketplaceRefundException(
-                "The settlement funding provenance contains no source roots.");
+            "The settlement funding provenance contains no source roots.");
+        }
+
         return roots.Order().Select(root => new SourceStampId(root)).ToArray();
     }
 
@@ -289,13 +315,19 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
                 if (Normalize(property.Name) == "rootsourcestampid" &&
                     property.Value.ValueKind == JsonValueKind.String &&
                     Guid.TryParse(property.Value.GetString(), out var rootId))
+                {
                     roots.Add(rootId);
+                }
+
                 CollectRootIds(property.Value, roots);
             }
         }
         else if (element.ValueKind == JsonValueKind.Array)
         {
-            foreach (var item in element.EnumerateArray()) CollectRootIds(item, roots);
+            foreach (var item in element.EnumerateArray())
+            {
+                CollectRootIds(item, roots);
+            }
         }
     }
 
@@ -306,12 +338,21 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.SettlementId == Guid.Empty)
+        {
             throw new ArgumentException("Settlement ID is required.", nameof(request));
-        if (!Enum.IsDefined(request.Authority)) throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
+        if (!Enum.IsDefined(request.Authority))
+        {
+            throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.Quantity);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReasonCode);
         if (request.ReasonCode.Trim().Length > 100)
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
     }
 
     private ProtectedActor RequiredActor()
@@ -319,8 +360,11 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
         var actor = _actorContexts.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
-                "Marketplace refund requires an authenticated tenant actor.");
+            "Marketplace refund requires an authenticated tenant actor.");
+        }
+
         return new ProtectedActor(tenantId, actorId);
     }
 
@@ -335,8 +379,10 @@ public sealed class DurableMarketplaceRefundService : IDurableMarketplaceRefundS
             authorization.JurisdictionCode != jurisdiction.JurisdictionCode ||
             authorization.Receipt.ProviderHash != providerHash ||
             authorization.Receipt.DestinationHash != destinationHash)
+        {
             throw new MarketplaceRefundException(
-                "The protected operation authorization does not match the Marketplace refund.");
+            "The protected operation authorization does not match the Marketplace refund.");
+        }
     }
 
     private static Guid DeterministicId(Guid source, string purpose)

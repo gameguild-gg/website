@@ -262,10 +262,26 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
     {
         var request = new HttpRequestMessage(method, path);
         request.Headers.Add("X-Test-Subject", subjectId.ToString());
-        if (!string.IsNullOrWhiteSpace(roles)) request.Headers.Add("X-Test-Roles", roles);
-        if (!string.IsNullOrWhiteSpace(permissions)) request.Headers.Add("X-Test-Permissions", permissions);
-        if (!omitTenant) request.Headers.Add("X-Tenant-Id", TestAuthHandler.DefaultTenantId.ToString());
-        if (omitTenant) request.Headers.Add("X-Test-No-Tenant", "true");
+        if (!string.IsNullOrWhiteSpace(roles))
+        {
+            request.Headers.Add("X-Test-Roles", roles);
+        }
+
+        if (!string.IsNullOrWhiteSpace(permissions))
+        {
+            request.Headers.Add("X-Test-Permissions", permissions);
+        }
+
+        if (!omitTenant)
+        {
+            request.Headers.Add("X-Tenant-Id", TestAuthHandler.DefaultTenantId.ToString());
+        }
+
+        if (omitTenant)
+        {
+            request.Headers.Add("X-Test-No-Tenant", "true");
+        }
+
         return request;
     }
 

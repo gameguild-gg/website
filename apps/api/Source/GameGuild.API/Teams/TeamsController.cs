@@ -111,8 +111,15 @@ public sealed class TeamsController(
             var term = search.Trim().ToLower();
             query = query.Where(team => team.Name.ToLower().Contains(term) || team.Slug.ToLower().Contains(term));
         }
-        if (visibility.HasValue) query = query.Where(team => team.Visibility == visibility.Value);
-        if (status.HasValue) query = query.Where(team => team.Status == status.Value);
+        if (visibility.HasValue)
+        {
+            query = query.Where(team => team.Visibility == visibility.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(team => team.Status == status.Value);
+        }
 
         var teams = await query
             .Include(team => team.Members.Where(member => member.IsActive && member.DeletedAt == null))
@@ -161,7 +168,10 @@ public sealed class TeamsController(
     public async Task<ActionResult<TeamDto>> Get(Guid teamId, CancellationToken cancellationToken)
     {
         if (!await authorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Viewer, cancellationToken).ConfigureAwait(false))
+        {
             return NotFound();
+        }
+
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
         return team == null ? NotFound() : Ok(Map(team));
     }
@@ -172,36 +182,50 @@ public sealed class TeamsController(
         var actor = actorContextAccessor.ActorContext;
         if (!await authorization.CanCreateAsync(cancellationToken).ConfigureAwait(false) ||
             actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             return Forbid();
+        }
+
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Slug))
+        {
             return ValidationProblem("Name and slug are required.");
+        }
 
         var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
         if (await context.Set<Team>().AnyAsync(team =>
                 team.TenantId == tenantId && team.Slug == normalizedSlug && team.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false))
+        {
             return Conflict(new ProblemDetails { Title = "Team slug already exists.", Status = StatusCodes.Status409Conflict });
+        }
 
         var (quotaAllowed, currentUsage, hardLimit) = await quotaEnforcer.TryAtomicConsumeAsync(
             tenantId, ResourceUsageType.Teams, cancellationToken: cancellationToken).ConfigureAwait(false);
         if (!quotaAllowed)
+        {
             return StatusCode(StatusCodes.Status429TooManyRequests, new
             {
                 code = "Teams.QuotaExceeded",
                 currentUsage,
                 hardLimit,
             });
+        }
 
         var ownerUserId = request.OwnerUserId ?? actorId;
         if (ownerUserId != actorId && !actor.HasPermission(TeamPermission.Keys.Admin))
+        {
             return Forbid();
+        }
+
         if (!await context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
                 member.UserId == ownerUserId &&
                 member.TenantId == tenantId &&
                 member.IsActive &&
                 member.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false))
+        {
             return UnprocessableEntity(new { code = "Teams.OwnerTenantMembershipRequired" });
+        }
 
         Team team;
         try
@@ -228,9 +252,15 @@ public sealed class TeamsController(
         CancellationToken cancellationToken)
     {
         if (!await authorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
 
         var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
         if (await context.Set<Team>().AnyAsync(candidate =>
@@ -239,7 +269,9 @@ public sealed class TeamsController(
                 candidate.Slug == normalizedSlug &&
                 candidate.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false))
+        {
             return Conflict(new ProblemDetails { Title = "Team slug already exists.", Status = StatusCodes.Status409Conflict });
+        }
 
         team.Name = request.Name.Trim();
         team.Slug = normalizedSlug;
@@ -254,9 +286,16 @@ public sealed class TeamsController(
     public async Task<IActionResult> Archive(Guid teamId, CancellationToken cancellationToken)
     {
         if (!await authorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Owner, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         team.Archive();
         await sender.Send(new ArchiveTeamEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return NoContent();
@@ -266,11 +305,18 @@ public sealed class TeamsController(
     public async Task<ActionResult<TeamDto>> Restore(Guid teamId, CancellationToken cancellationToken)
     {
         if (!await authorization.CanRestoreAsync(teamId, cancellationToken).ConfigureAwait(false))
+        {
             return NotFound();
+        }
+
         var team = await context.Set<Team>().IgnoreQueryFilters().Include(candidate => candidate.Members)
             .SingleOrDefaultAsync(candidate => candidate.Id == teamId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         try
         {
             team.Restore();
@@ -293,14 +339,27 @@ public sealed class TeamsController(
             ? TeamMemberAuthority.Owner
             : TeamMemberAuthority.Manager;
         if (!await authorization.HasAuthorityAsync(teamId, required, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         if (!await IsActiveTenantMemberAsync(request.UserId, team.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
             return UnprocessableEntity(new { code = "Teams.ActiveTenantMembershipRequired" });
+        }
+
         if (request.Authority == TeamMemberAuthority.Owner &&
             !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var existing = team.Members.SingleOrDefault(member => member.UserId == request.UserId && member.DeletedAt == null);
         var member = team.AddMember(request.UserId, request.Authority, request.ProfessionalTitle);
         await sender.Send(new AddTeamMemberEndpointCommand(member, existing == null), cancellationToken).ConfigureAwait(false);
@@ -318,12 +377,22 @@ public sealed class TeamsController(
             ? TeamMemberAuthority.Owner
             : TeamMemberAuthority.Manager;
         if (!await authorization.HasAuthorityAsync(teamId, required, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         if (request.Authority == TeamMemberAuthority.Owner &&
             !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         try { team.ChangeAuthority(userId, request.Authority); }
         catch (InvalidOperationException exception)
         {
@@ -339,9 +408,16 @@ public sealed class TeamsController(
     public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId, CancellationToken cancellationToken)
     {
         if (!await authorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
-        if (team == null) return NotFound();
+        if (team == null)
+        {
+            return NotFound();
+        }
+
         try { team.RemoveMember(userId); }
         catch (InvalidOperationException exception)
         {
@@ -361,14 +437,27 @@ public sealed class TeamsController(
             ? TeamMemberAuthority.Owner
             : TeamMemberAuthority.Manager;
         if (!await authorization.HasAuthorityAsync(teamId, required, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         if (request.Authority == TeamMemberAuthority.Owner &&
             !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var actor = actorContextAccessor.ActorContext;
         var team = await context.Set<Team>().SingleOrDefaultAsync(candidate => candidate.Id == teamId, cancellationToken).ConfigureAwait(false);
-        if (team?.TenantId == null || actor.SubjectIdAsGuid is not { } actorId) return NotFound();
-        if (request.ExpiresAt <= SystemClock.UtcNow) return ValidationProblem("Invitation expiry must be in the future.");
+        if (team?.TenantId == null || actor.SubjectIdAsGuid is not { } actorId)
+        {
+            return NotFound();
+        }
+
+        if (request.ExpiresAt <= SystemClock.UtcNow)
+        {
+            return ValidationProblem("Invitation expiry must be in the future.");
+        }
 
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var invitation = TeamInvitation.Create(
@@ -390,13 +479,23 @@ public sealed class TeamsController(
         CancellationToken cancellationToken)
     {
         if (!await authorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var actorTenantId = actorContextAccessor.ActorContext.TenantId;
-        if (!actorTenantId.HasValue) return Unauthorized();
+        if (!actorTenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var teamExists = await context.Set<Team>().AsNoTracking().AnyAsync(team =>
             team.Id == teamId && team.TenantId == actorTenantId && team.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (!teamExists) return NotFound();
+        if (!teamExists)
+        {
+            return NotFound();
+        }
 
         var invitations = await context.Set<TeamInvitation>().AsNoTracking()
             .Where(invitation => invitation.TeamId == teamId && invitation.TenantId == actorTenantId && invitation.DeletedAt == null)
@@ -420,9 +519,15 @@ public sealed class TeamsController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             return Unauthorized();
+        }
+
         if (!await IsActiveTenantMemberAsync(actorId, tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var actorEmail = await context.Set<User>().AsNoTracking()
             .Where(user => user.Id == actorId && user.IsActive && user.DeletedAt == null)
             .Select(user => user.Email.ToLower())
@@ -454,16 +559,30 @@ public sealed class TeamsController(
         CancellationToken cancellationToken)
     {
         if (!await authorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var actorTenantId = actorContextAccessor.ActorContext.TenantId;
-        if (!actorTenantId.HasValue) return Unauthorized();
+        if (!actorTenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var invitation = await context.Set<TeamInvitation>().SingleOrDefaultAsync(candidate =>
             candidate.Id == invitationId && candidate.TeamId == teamId && candidate.TenantId == actorTenantId &&
             candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (invitation == null) return NotFound();
+        if (invitation == null)
+        {
+            return NotFound();
+        }
+
         if (invitation.UsedAt.HasValue)
+        {
             return Conflict(new ProblemDetails { Title = "An accepted invitation cannot be revoked.", Status = StatusCodes.Status409Conflict });
+        }
+
         invitation.Revoke(SystemClock.UtcNow);
         await sender.Send(new RevokeTeamInvitationEndpointCommand(invitation), cancellationToken).ConfigureAwait(false);
         return NoContent();
@@ -476,18 +595,30 @@ public sealed class TeamsController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             return Unauthorized();
+        }
+
         var hash = TeamInvitation.HashToken(request.Token);
         var invitation = await context.Set<TeamInvitation>()
             .Include(candidate => candidate.Team)!.ThenInclude(team => team!.Members)
             .SingleOrDefaultAsync(candidate => candidate.TokenHash == hash && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (invitation?.Team == null || invitation.TenantId != tenantId)
+        {
             return NotFound();
+        }
+
         if (!await IsActiveTenantMemberAsync(actorId, tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         if (invitation.InvitedUserId.HasValue && invitation.InvitedUserId != actorId)
+        {
             return Forbid();
+        }
+
         if (!invitation.InvitedUserId.HasValue && !string.IsNullOrWhiteSpace(invitation.InvitedEmail))
         {
             var actorEmail = await context.Set<User>().AsNoTracking()
@@ -495,13 +626,21 @@ public sealed class TeamsController(
                 .Select(user => user.Email)
                 .SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
             if (!string.Equals(actorEmail?.Trim(), invitation.InvitedEmail.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
                 return Forbid();
+            }
         }
         if (invitation.Authority == TeamMemberAuthority.Owner &&
             !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         if (!invitation.Accept(request.Token, actorId, SystemClock.UtcNow))
+        {
             return Conflict(new ProblemDetails { Title = "Invitation is expired, revoked, or already used.", Status = StatusCodes.Status409Conflict });
+        }
+
         var existingMember = invitation.Team.Members.SingleOrDefault(member => member.UserId == actorId && member.DeletedAt == null);
         var acceptedMember = invitation.Team.AddMember(actorId, invitation.Authority);
         await sender.Send(new AcceptTeamInvitationEndpointCommand(
@@ -518,9 +657,15 @@ public sealed class TeamsController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             return Unauthorized();
+        }
+
         if (!await IsActiveTenantMemberAsync(actorId, tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         var actorEmail = await context.Set<User>().AsNoTracking()
             .Where(user => user.Id == actorId && user.IsActive && user.DeletedAt == null)
             .Select(user => user.Email)
@@ -531,17 +676,32 @@ public sealed class TeamsController(
                 candidate.Id == invitationId && candidate.TenantId == tenantId && candidate.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false);
         if (invitation?.Team == null || !invitation.Team.IsActive || invitation.Team.DeletedAt != null)
+        {
             return NotFound();
+        }
+
         if (invitation.InvitedUserId.HasValue && invitation.InvitedUserId != actorId)
+        {
             return Forbid();
+        }
+
         if (!invitation.InvitedUserId.HasValue &&
             !string.Equals(actorEmail?.Trim(), invitation.InvitedEmail?.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
             return Forbid();
+        }
+
         if (invitation.Authority == TeamMemberAuthority.Owner &&
             !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
+
         if (!invitation.AcceptAuthenticated(actorId, SystemClock.UtcNow))
+        {
             return Conflict(new ProblemDetails { Title = "Invitation is expired, revoked, or already used.", Status = StatusCodes.Status409Conflict });
+        }
+
         var existingMember = invitation.Team.Members.SingleOrDefault(member => member.UserId == actorId && member.DeletedAt == null);
         var acceptedMember = invitation.Team.AddMember(actorId, invitation.Authority);
         await sender.Send(new AcceptAuthenticatedTeamInvitationEndpointCommand(
@@ -566,7 +726,10 @@ public sealed class TeamsController(
         if (actor.TypedAttributes.AuthenticatedAt is not { } authenticatedAt ||
             authenticatedAt < DateTimeOffset.UtcNow.Subtract(RecentAuthenticationWindow) ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             return false;
+        }
+
         var hasMfa = await context.Set<UserMfaConfiguration>().AsNoTracking().AnyAsync(configuration =>
             configuration.UserId == actorId && configuration.IsEnabled && configuration.IsSetupComplete,
             cancellationToken).ConfigureAwait(false);

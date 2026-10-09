@@ -196,7 +196,7 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error verifying certificate {CertificateNumber}", certificateNumber);
+            _logger.LogError(ex, "Error verifying certificate {CertificateNumber}", LogRedaction.Sanitize(certificateNumber));
             return Result.Failure<CertificateVerificationResult>(
                 Error.Failure("VerifyCertificate", "Failed to verify certificate"));
         }

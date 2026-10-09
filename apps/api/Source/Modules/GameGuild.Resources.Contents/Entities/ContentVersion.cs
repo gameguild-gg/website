@@ -115,20 +115,44 @@ public class ContentVersion : EntityBase
     public void UpdateDraft(string? title = null, string? summary = null, string? body = null, string? metadata = null, string? changeNotes = null)
     {
         if (Status != ContentVersionStatus.Draft)
+        {
             throw new InvalidOperationException("Can only update draft versions");
+        }
 
-        if (title != null) Title = title.Trim();
-        if (summary != null) Summary = summary.Trim();
-        if (body != null) Body = body;
-        if (metadata != null) Metadata = metadata;
-        if (changeNotes != null) ChangeNotes = changeNotes.Trim();
+        if (title != null)
+        {
+            Title = title.Trim();
+        }
+
+        if (summary != null)
+        {
+            Summary = summary.Trim();
+        }
+
+        if (body != null)
+        {
+            Body = body;
+        }
+
+        if (metadata != null)
+        {
+            Metadata = metadata;
+        }
+
+        if (changeNotes != null)
+        {
+            ChangeNotes = changeNotes.Trim();
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 
     public void SubmitForReview(Guid submittedBy)
     {
         if (Status != ContentVersionStatus.Draft)
+        {
             throw new InvalidOperationException("Can only submit drafts for review");
+        }
 
         Status = ContentVersionStatus.PendingReview;
         SubmittedBy = submittedBy;
@@ -139,7 +163,9 @@ public class ContentVersion : EntityBase
     public void Approve(Guid reviewedBy, string? reviewNotes = null)
     {
         if (Status != ContentVersionStatus.PendingReview)
+        {
             throw new InvalidOperationException("Can only approve versions pending review");
+        }
 
         Status = ContentVersionStatus.Approved;
         ReviewedBy = reviewedBy;
@@ -151,7 +177,9 @@ public class ContentVersion : EntityBase
     public void Reject(Guid reviewedBy, string? reviewNotes = null)
     {
         if (Status != ContentVersionStatus.PendingReview)
+        {
             throw new InvalidOperationException("Can only reject versions pending review");
+        }
 
         Status = ContentVersionStatus.Rejected;
         ReviewedBy = reviewedBy;
@@ -163,7 +191,9 @@ public class ContentVersion : EntityBase
     public void Publish(Guid publishedBy)
     {
         if (Status != ContentVersionStatus.Approved && Status != ContentVersionStatus.Scheduled)
+        {
             throw new InvalidOperationException("Can only publish approved or scheduled versions");
+        }
 
         Status = ContentVersionStatus.Published;
         PublishedBy = publishedBy;
@@ -175,7 +205,9 @@ public class ContentVersion : EntityBase
     public void SchedulePublish(DateTime scheduledAt, Guid scheduledBy)
     {
         if (Status != ContentVersionStatus.Approved)
+        {
             throw new InvalidOperationException("Can only schedule approved versions");
+        }
 
         Status = ContentVersionStatus.Scheduled;
         ScheduledPublishAt = scheduledAt;

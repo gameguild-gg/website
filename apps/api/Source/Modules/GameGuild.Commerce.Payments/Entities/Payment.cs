@@ -170,13 +170,19 @@ public class Payment : EntityBase
         string? description = null)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("TenantId is required for payment entities", nameof(tenantId));
+        }
 
         if (amount <= 0)
+        {
             throw new ArgumentException("Amount must be positive", nameof(amount));
+        }
 
         if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
             throw new ArgumentException("Idempotency key is required", nameof(idempotencyKey));
+        }
 
         return new Payment
         {
@@ -236,7 +242,9 @@ public class Payment : EntityBase
                           && string.Equals(ProviderMonetaryLeg, providerMonetaryLeg, StringComparison.Ordinal);
 
         if (!isIdentical)
+        {
             throw new InvalidOperationException("Payment provider mapping is already bound to a different identity");
+        }
     }
 
     /// <summary>Validates cumulative provider amounts without changing payment state.</summary>
@@ -250,16 +258,24 @@ public class Payment : EntityBase
         ArgumentOutOfRangeException.ThrowIfNegative(cumulativeDisputedAmount);
 
         if (cumulativeConfirmedAmount > Amount)
+        {
             throw new InvalidOperationException("Cumulative provider confirmed amount cannot exceed payment amount");
+        }
 
         if (cumulativeRefundedAmount > cumulativeConfirmedAmount)
+        {
             throw new InvalidOperationException("Cumulative provider refunded amount cannot exceed confirmed amount");
+        }
 
         if (cumulativeDisputedAmount > cumulativeConfirmedAmount)
+        {
             throw new InvalidOperationException("Cumulative provider disputed amount cannot exceed confirmed amount");
+        }
 
         if (cumulativeRefundedAmount + cumulativeDisputedAmount > cumulativeConfirmedAmount)
+        {
             throw new InvalidOperationException("Combined provider refunded and disputed amounts cannot exceed confirmed amount");
+        }
     }
 
     /// <summary>Checks if transition to the specified status is valid</summary>
@@ -272,7 +288,9 @@ public class Payment : EntityBase
     private void TransitionTo(PaymentStatus newStatus)
     {
         if (!CanTransitionTo(newStatus))
+        {
             throw new InvalidOperationException($"Cannot transition payment from {Status} to {newStatus}");
+        }
 
         Status = newStatus;
         Touch();
@@ -330,7 +348,9 @@ public class Payment : EntityBase
     public bool BindExternalTransactionId(string? externalTransactionId)
     {
         if (string.IsNullOrWhiteSpace(externalTransactionId))
+        {
             return false;
+        }
 
         if (ExternalTransactionId is null)
         {
@@ -340,7 +360,9 @@ public class Payment : EntityBase
         }
 
         if (string.Equals(ExternalTransactionId, externalTransactionId, StringComparison.Ordinal))
+        {
             return false;
+        }
 
         throw new InvalidOperationException("A payment cannot be rebound to a different provider transaction.");
     }
@@ -358,10 +380,14 @@ public class Payment : EntityBase
     public void PrepareForRetry(string? paymentMethodId = null)
     {
         if (Status != PaymentStatus.Failed)
+        {
             throw new InvalidOperationException("Can only retry failed payments");
+        }
 
         if (RetryCount >= MaxRetries)
+        {
             throw new InvalidOperationException($"Maximum retry attempts ({MaxRetries}) reached");
+        }
 
         RetryCount++;
         Status = PaymentStatus.Pending;
@@ -370,7 +396,10 @@ public class Payment : EntityBase
         NextRetryAt = null;
         ExternalTransactionId = null;
         if (!string.IsNullOrWhiteSpace(paymentMethodId))
+        {
             PaymentMethodId = paymentMethodId;
+        }
+
         Touch();
     }
 
@@ -378,13 +407,19 @@ public class Payment : EntityBase
     public void ProcessRefund(decimal refundAmount, string refundId, string reason)
     {
         if (Status != PaymentStatus.Succeeded && Status != PaymentStatus.Disputed)
+        {
             throw new InvalidOperationException($"Can only refund succeeded or disputed payments, current status: {Status}");
+        }
 
         if (refundAmount <= 0)
+        {
             throw new ArgumentException("Refund amount must be positive", nameof(refundAmount));
+        }
 
         if (RefundedAmount + refundAmount > Amount)
+        {
             throw new InvalidOperationException("Total refund amount cannot exceed payment amount");
+        }
 
         RefundedAmount += refundAmount;
         RefundId = refundId;

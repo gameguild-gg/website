@@ -9,7 +9,10 @@ internal static class AssessmentDefinitionRevisionReader
     {
         ArgumentNullException.ThrowIfNull(revision);
         if (revision.SchemaVersion != 1)
+        {
             throw new InvalidOperationException($"Executable assessment revision {revision.Id} uses an unsupported schema version.");
+        }
+
         if (!string.Equals(revision.AuthoringSourceHashVersion, GradingContractVersions.Hash, StringComparison.Ordinal) ||
             !string.Equals(revision.ExecutionSnapshotHashVersion, GradingContractVersions.Hash, StringComparison.Ordinal))
         {

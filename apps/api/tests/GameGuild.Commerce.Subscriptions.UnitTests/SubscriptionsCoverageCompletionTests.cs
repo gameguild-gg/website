@@ -397,7 +397,9 @@ public sealed class SubscriptionsCoverageCompletionTests
                          .OrderBy(constructor => constructor.GetParameters().Length))
             {
                 if (!TryBuildArguments(constructor.GetParameters(), out var arguments))
+                {
                     continue;
+                }
 
                 try
                 {
@@ -557,7 +559,9 @@ public sealed class SubscriptionsCoverageCompletionTests
         for (var index = 0; index < parameters.Length; index++)
         {
             if (!TryCreateValue(parameters[index].ParameterType, 0, out arguments[index]))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -567,11 +571,15 @@ public sealed class SubscriptionsCoverageCompletionTests
     {
         value = null;
         if (depth > 3)
+        {
             return !type.IsValueType;
+        }
 
         var nullable = Nullable.GetUnderlyingType(type);
         if (nullable is not null)
+        {
             return TryCreateValue(nullable, depth + 1, out value);
+        }
 
         if (type == typeof(string)) { value = "value"; return true; }
         if (type == typeof(Guid)) { value = Guid.NewGuid(); return true; }
@@ -607,7 +615,10 @@ public sealed class SubscriptionsCoverageCompletionTests
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IOptions<>))
         {
             if (!TryCreateValue(type.GetGenericArguments()[0], depth + 1, out var optionValue))
+            {
                 return false;
+            }
+
             value = typeof(Options)
                 .GetMethods()
                 .Single(method => method.Name == nameof(Options.Create) && method.IsGenericMethod)
@@ -621,7 +632,10 @@ public sealed class SubscriptionsCoverageCompletionTests
             var elementType = type.GetGenericArguments()[0];
             var array = Array.CreateInstance(elementType, 1);
             if (TryCreateValue(elementType, depth + 1, out var element))
+            {
                 array.SetValue(element, 0);
+            }
+
             value = array;
             return true;
         }
@@ -661,7 +675,9 @@ public sealed class SubscriptionsCoverageCompletionTests
         foreach (var constructor in constructors)
         {
             if (!TryBuildNestedArguments(constructor.GetParameters(), depth + 1, out var arguments))
+            {
                 continue;
+            }
 
             try
             {
@@ -683,7 +699,9 @@ public sealed class SubscriptionsCoverageCompletionTests
         for (var index = 0; index < parameters.Length; index++)
         {
             if (!TryCreateValue(parameters[index].ParameterType, depth, out arguments[index]))
+            {
                 return false;
+            }
         }
 
         return true;

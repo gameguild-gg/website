@@ -243,7 +243,9 @@ public class DownloadWindowService : IDownloadWindowService
     {
         var reference = await _referenceRepository.GetByIdAsync(assetReferenceId, ct).ConfigureAwait(false);
         if (reference == null)
+        {
             return;
+        }
 
         // Only revoke if the order matches
         if (reference.GrantedByOrderId == orderId)

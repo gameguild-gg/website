@@ -123,7 +123,10 @@ public sealed class AssessmentAuthoringService(
         try
         {
             var source = await MaterializeAuthoringAsync(assessmentId, cancellationToken).ConfigureAwait(false);
-            if (!source.IsSuccess) return Result.Failure<AssessmentAuthoringStateResult>(source.Error);
+            if (!source.IsSuccess)
+            {
+                return Result.Failure<AssessmentAuthoringStateResult>(source.Error);
+            }
 
             var revisions = await context.Set<AssessmentDefinitionRevision>()
                 .AsNoTracking()
@@ -204,7 +207,10 @@ public sealed class AssessmentAuthoringService(
             return await ExecuteWithExecutionStrategyAsync(async () =>
             {
                 if (actorId == Guid.Empty)
+                {
                     return Result.Failure<AssessmentDraftResult>(Error.Validation("AssessmentAuthoring.Actor", "An authenticated actor is required."));
+                }
+
                 await using var transaction = await BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var contentLifecycleLock = await AssessmentLifecycleDatabaseLock
                     .AcquireAsync(context, contentId, cancellationToken)
@@ -212,9 +218,15 @@ public sealed class AssessmentAuthoringService(
                 var content = await context.Set<ProgramContent>()
                     .FirstOrDefaultAsync(item => item.Id == contentId && item.ProgramId == courseId && item.DeletedAt == null, cancellationToken)
                     .ConfigureAwait(false);
-                if (content is null) return Result.Failure<AssessmentDraftResult>(Error.NotFound("ProgramContent", "Assessment content was not found."));
+                if (content is null)
+                {
+                    return Result.Failure<AssessmentDraftResult>(Error.NotFound("ProgramContent", "Assessment content was not found."));
+                }
+
                 if (content.Version != request.ExpectedContentVersion)
+                {
                     return Result.Failure<AssessmentDraftResult>(Error.Conflict("AssessmentAuthoring.ContentVersion", "Assessment content changed before it was saved."));
+                }
 
                 var adapter = assessmentTypeAdapters.ResolveForAuthoring(content.Type);
                 var projection = adapter.ProjectAuthoring(request.Document);
@@ -229,11 +241,19 @@ public sealed class AssessmentAuthoringService(
                         .ConfigureAwait(false);
                 }
                 if (assessment is not null && request.ExpectedAssessmentVersion != assessment.Version)
+                {
                     return Result.Failure<AssessmentDraftResult>(Error.Conflict("AssessmentAuthoring.AssessmentVersion", "Assessment policy changed before it was saved."));
+                }
+
                 if (assessment is null && request.ExpectedAssessmentVersion.HasValue)
+                {
                     return Result.Failure<AssessmentDraftResult>(Error.Conflict("AssessmentAuthoring.AssessmentMissing", "The linked assessment no longer exists."));
+                }
+
                 if (assessment is not null && assessment.Type != adapter.AssessmentType)
+                {
                     return Result.Failure<AssessmentDraftResult>(Error.Conflict("AssessmentAuthoring.TypeMismatch", "The linked assessment type does not match its content adapter."));
+                }
 
                 ApplyContent(content, request);
 
@@ -242,7 +262,10 @@ public sealed class AssessmentAuthoringService(
                     if (assessment is not null)
                     {
                         if (assessment.PublishedDefinitionRevisionId.HasValue)
+                        {
                             assessment.UnpublishRevision(assessment.PublishedDefinitionRevisionId.Value, assessment.Version);
+                        }
+
                         assessment.SoftDelete();
                         context.Set<Assessment>().Update(assessment);
                     }
@@ -254,7 +277,9 @@ public sealed class AssessmentAuthoringService(
                 }
 
                 if (projection.Items.Count == 0)
+                {
                     return Result.Failure<AssessmentDraftResult>(Error.Validation("AssessmentAuthoring.Empty", "Graded content requires at least one assessable item."));
+                }
 
                 var methods = request.ReviewMethods ?? assessment?.ReviewMethods ??
                     (Contracts.ReviewMethods.AutomatedReview | Contracts.ReviewMethods.InstructorReview);
@@ -304,7 +329,11 @@ public sealed class AssessmentAuthoringService(
                     slug: request.Slug);
 
                 context.Set<ProgramContent>().Update(content);
-                if (assessment.Version > 0) context.Set<Assessment>().Update(assessment);
+                if (assessment.Version > 0)
+                {
+                    context.Set<Assessment>().Update(assessment);
+                }
+
                 await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 await CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
                 return Result.Success(new AssessmentDraftResult(content.Id, content.Version, assessment.Id, assessment.Version));
@@ -336,15 +365,24 @@ public sealed class AssessmentAuthoringService(
             return await ExecuteWithExecutionStrategyAsync(async () =>
             {
                 if (actorId == Guid.Empty)
+                {
                     return Result.Failure<PreparedAssessmentRevisionResult>(Error.Validation("AssessmentRevision.Actor", "An authenticated actor is required."));
+                }
+
                 await using var transaction = await BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var lifecycleLock = await AssessmentLifecycleDatabaseLock
                     .AcquireAsync(context, assessmentId, cancellationToken)
                     .ConfigureAwait(false);
                 var materialized = await MaterializeAsync(assessmentId, ReviewExecutionContext.AuthorTest, cancellationToken).ConfigureAwait(false);
-                if (!materialized.IsSuccess) return Result.Failure<PreparedAssessmentRevisionResult>(materialized.Error);
+                if (!materialized.IsSuccess)
+                {
+                    return Result.Failure<PreparedAssessmentRevisionResult>(materialized.Error);
+                }
+
                 if (materialized.Value.Assessment.Version != request.ExpectedAssessmentVersion)
+                {
                     return Result.Failure<PreparedAssessmentRevisionResult>(Error.Conflict("AssessmentRevision.ConcurrentWrite", "Assessment policy changed before prepare."));
+                }
 
                 var latest = await context.Set<AssessmentDefinitionRevision>()
                     .Where(revision => revision.AssessmentId == assessmentId)
@@ -408,7 +446,10 @@ public sealed class AssessmentAuthoringService(
             return await ExecuteWithExecutionStrategyAsync(async () =>
             {
                 if (actorId == Guid.Empty)
+                {
                     return Result.Failure<PreparedAssessmentRevisionResult>(Error.Validation("AssessmentRevision.Actor", "An authenticated actor is required."));
+                }
+
                 await using var transaction = await BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var lifecycleLock = await AssessmentLifecycleDatabaseLock
                     .AcquireAsync(context, assessmentId, cancellationToken)
@@ -416,16 +457,29 @@ public sealed class AssessmentAuthoringService(
                 var assessment = await context.Set<Assessment>()
                     .FirstOrDefaultAsync(value => value.Id == assessmentId && value.DeletedAt == null, cancellationToken)
                     .ConfigureAwait(false);
-                if (assessment is null) return Result.Failure<PreparedAssessmentRevisionResult>(Error.NotFound("Assessment", "Assessment was not found."));
+                if (assessment is null)
+                {
+                    return Result.Failure<PreparedAssessmentRevisionResult>(Error.NotFound("Assessment", "Assessment was not found."));
+                }
+
                 var revision = await context.Set<AssessmentDefinitionRevision>()
                     .FirstOrDefaultAsync(value => value.Id == request.RevisionId && value.AssessmentId == assessmentId, cancellationToken)
                     .ConfigureAwait(false);
-                if (revision is null) return Result.Failure<PreparedAssessmentRevisionResult>(Error.NotFound("AssessmentRevision", "Prepared revision was not found."));
+                if (revision is null)
+                {
+                    return Result.Failure<PreparedAssessmentRevisionResult>(Error.NotFound("AssessmentRevision", "Prepared revision was not found."));
+                }
 
                 var current = await MaterializeAsync(assessmentId, ReviewExecutionContext.AuthorTest, cancellationToken).ConfigureAwait(false);
-                if (!current.IsSuccess) return Result.Failure<PreparedAssessmentRevisionResult>(current.Error);
+                if (!current.IsSuccess)
+                {
+                    return Result.Failure<PreparedAssessmentRevisionResult>(current.Error);
+                }
+
                 if (!string.Equals(current.Value.AuthoringHash, revision.AuthoringSourceHash, StringComparison.Ordinal))
+                {
                     return Result.Failure<PreparedAssessmentRevisionResult>(Error.Conflict("AssessmentRevision.ChangesPending", "The draft changed after this revision was prepared."));
+                }
 
                 ValidatePersistedSnapshot(revision, ReviewExecutionContext.OfficialSubmission);
                 assessment.PublishRevision(revision.Id, request.ExpectedAssessmentVersion);
@@ -464,9 +518,15 @@ public sealed class AssessmentAuthoringService(
             return await ExecuteWithExecutionStrategyAsync(async () =>
             {
                 if (actorId == Guid.Empty)
+                {
                     return Result.Failure(Error.Validation("AssessmentRevision.Actor", "An authenticated actor is required."));
+                }
+
                 if (string.IsNullOrWhiteSpace(request.IdempotencyKey) || request.IdempotencyKey.Length > 200)
+                {
                     return Result.Failure(Error.Validation("AssessmentRevision.IdempotencyKey", "Idempotency key must contain 1 to 200 characters."));
+                }
+
                 await using var transaction = await BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
                 await using var lifecycleLock = await AssessmentLifecycleDatabaseLock
                     .AcquireAsync(context, assessmentId, cancellationToken)
@@ -474,9 +534,15 @@ public sealed class AssessmentAuthoringService(
                 var assessment = await context.Set<Assessment>()
                     .FirstOrDefaultAsync(value => value.Id == assessmentId && value.DeletedAt == null, cancellationToken)
                     .ConfigureAwait(false);
-                if (assessment is null) return Result.Failure(Error.NotFound("Assessment", "Assessment was not found."));
+                if (assessment is null)
+                {
+                    return Result.Failure(Error.NotFound("Assessment", "Assessment was not found."));
+                }
+
                 if (!assessment.TenantId.HasValue)
+                {
                     return Result.Failure(Error.Validation("AssessmentRevision.Tenant", "A tenant-scoped assessment is required."));
+                }
 
                 var requestElement = JsonSerializer.SerializeToElement(new
                 {
@@ -501,7 +567,10 @@ public sealed class AssessmentAuthoringService(
                 if (receipt is not null)
                 {
                     if (!string.Equals(receipt.RequestHash, requestHash, StringComparison.Ordinal))
+                    {
                         return Result.Failure(Error.Conflict("AssessmentRevision.IdempotencyConflict", "The idempotency key was already used with a different request."));
+                    }
+
                     await CommitAsync(transaction, cancellationToken).ConfigureAwait(false);
                     return Result.Success();
                 }
@@ -554,7 +623,10 @@ public sealed class AssessmentAuthoringService(
         CancellationToken cancellationToken)
     {
         var source = await MaterializeAuthoringAsync(assessmentId, cancellationToken).ConfigureAwait(false);
-        if (!source.IsSuccess) return Result.Failure<MaterializedRevision>(source.Error);
+        if (!source.IsSuccess)
+        {
+            return Result.Failure<MaterializedRevision>(source.Error);
+        }
 
         var manifest = BuildManifest(source.Value.Projection, source.Value.Policy, contextKind);
         var projections = source.Value.Projection.Items.ToDictionary(item => item.ItemId, item => item.PrivateProjection, StringComparer.Ordinal);
@@ -579,22 +651,32 @@ public sealed class AssessmentAuthoringService(
             .FirstOrDefaultAsync(value => value.Id == assessmentId && value.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (assessment?.ContentId is not { } contentId)
+        {
             return Result.Failure<MaterializedAuthoring>(Error.NotFound("Assessment", "A content-linked assessment was not found."));
+        }
+
         var content = await context.Set<ProgramContent>()
             .FirstOrDefaultAsync(value => value.Id == contentId && value.ProgramId == assessment.CourseId && value.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (content?.JsonBody is null)
+        {
             return Result.Failure<MaterializedAuthoring>(Error.NotFound("ProgramContent", "Assessment authoring content was not found."));
+        }
 
         using var contentDocument = JsonDocument.Parse(content.JsonBody);
         var adapter = assessmentTypeAdapters.ResolveForAuthoring(content.Type);
         if (adapter.AssessmentType != assessment.Type)
+        {
             return Result.Failure<MaterializedAuthoring>(Error.Conflict("AssessmentRevision.TypeMismatch", "The assessment type does not match its content adapter."));
+        }
+
         var projection = adapter.ProjectAuthoring(contentDocument.RootElement);
         projection = await Code.CodeRubricSnapshot.MaterializeAsync(context, assessment, projection, cancellationToken)
             .ConfigureAwait(false);
         if (projection.Grading is null)
+        {
             return Result.Failure<MaterializedAuthoring>(Error.Validation("AssessmentRevision.GradingDisabled", "Grading is not enabled for this content."));
+        }
 
         var policy = BuildPolicy(assessment);
         var authoring = new AssessmentAuthoringSourceV1(1, projection.ContentType, projection.Content, projection.Grading, policy);
@@ -640,7 +722,9 @@ public sealed class AssessmentAuthoringService(
                 .Distinct()
                 .ToArray();
             if (adapterBindings.Length > 1)
+            {
                 throw new InvalidOperationException($"Assessment adapters disagree about the {method} handler binding.");
+            }
 
             var candidates = handlers.Where(handler =>
                     handler.Method == method &&
@@ -651,7 +735,10 @@ public sealed class AssessmentAuthoringService(
                 .Take(2)
                 .ToArray();
             if (candidates.Length != 1)
+            {
                 throw new InvalidOperationException($"Exactly one {method} handler must be registered for {contextKind}.");
+            }
+
             var handler = candidates[0];
             stageHandlers.Resolve(method, handler.Key, handler.Version, contextKind);
             return new AssessmentReviewStageManifestV1(
@@ -737,7 +824,10 @@ public sealed class AssessmentAuthoringService(
     private static AssessmentReviewConfigurationV1 ReadReviewConfiguration(string? canonicalJson)
     {
         if (string.IsNullOrWhiteSpace(canonicalJson))
+        {
             return new AssessmentReviewConfigurationV1(1);
+        }
+
         return JsonSerializer.Deserialize<AssessmentReviewConfigurationV1>(canonicalJson, GradingJson.Options)
             ?? throw new JsonException("Review configuration is required.");
     }
@@ -777,7 +867,10 @@ public sealed class AssessmentAuthoringService(
     private void AddOutbox(Assessment assessment, string eventType, object payload)
     {
         if (!assessment.TenantId.HasValue)
+        {
             throw new InvalidOperationException("Academic outbox events require a tenant-scoped assessment.");
+        }
+
         var element = JsonSerializer.SerializeToElement(payload, GradingJson.Options);
         outbox.Enqueue(
             assessment.TenantId.Value,

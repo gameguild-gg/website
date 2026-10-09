@@ -20,7 +20,9 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         try
         {
@@ -42,7 +44,9 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         try
         {
@@ -64,7 +68,9 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         try
         {
@@ -91,7 +97,9 @@ public class ContentReviewPublishingService(
             .Where(v => v.Status == ContentVersionStatus.PendingReview);
 
         if (!string.IsNullOrEmpty(entityType))
+        {
             query = query.Where(v => v.EntityType == entityType);
+        }
 
         var versions = await query
             .OrderBy(v => v.SubmittedForReviewAt)
@@ -113,7 +121,9 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersionReview>(ContentVersioningErrors.NotFound);
+        }
 
         var review = ContentVersionReview.Create(
             versionId,
@@ -134,7 +144,9 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         try
         {
@@ -144,7 +156,9 @@ public class ContentReviewPublishingService(
                 .ToListAsync(ct).ConfigureAwait(false);
 
             foreach (var cv in currentVersions)
+            {
                 cv.SetAsCurrent(false);
+            }
 
             version.Publish(GetCurrentUserId());
             await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -166,10 +180,14 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         if (scheduledAt <= SystemClock.UtcNow)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.ScheduleDateMustBeFuture);
+        }
 
         try
         {
@@ -192,10 +210,14 @@ public class ContentReviewPublishingService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         if (version.Status != ContentVersionStatus.Scheduled)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotScheduled);
+        }
 
         version.Approve(GetCurrentUserId(), "Scheduled publishing cancelled");
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -227,7 +249,9 @@ public class ContentReviewPublishingService(
                     .ToListAsync(ct).ConfigureAwait(false);
 
                 foreach (var cv in currentVersions)
+                {
                     cv.SetAsCurrent(false);
+                }
 
                 version.Publish(version.PublishedBy ?? Guid.Empty);
                 publishedCount++;

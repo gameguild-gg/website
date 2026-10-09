@@ -43,11 +43,20 @@ public static class LocalizationOptionsBuilder
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (string.IsNullOrWhiteSpace(options.DefaultCulture)) throw new InvalidOperationException("Default culture cannot be null or empty.");
+        if (string.IsNullOrWhiteSpace(options.DefaultCulture))
+        {
+            throw new InvalidOperationException("Default culture cannot be null or empty.");
+        }
 
-        if (options.SupportedCultures == null || options.SupportedCultures.Length == 0) throw new InvalidOperationException("At least one supported culture must be specified.");
+        if (options.SupportedCultures == null || options.SupportedCultures.Length == 0)
+        {
+            throw new InvalidOperationException("At least one supported culture must be specified.");
+        }
 
-        if (!options.SupportedCultures.Contains(options.DefaultCulture)) throw new InvalidOperationException("Default culture must be included in supported cultures.");
+        if (!options.SupportedCultures.Contains(options.DefaultCulture))
+        {
+            throw new InvalidOperationException("Default culture must be included in supported cultures.");
+        }
     }
 
     /// <summary>

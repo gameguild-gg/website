@@ -169,12 +169,22 @@ public class AbacPolicy
     /// </summary>
     public bool IsEffective()
     {
-        if (!IsEnabled) return false;
+        if (!IsEnabled)
+        {
+            return false;
+        }
 
         var now = SystemClock.UtcNow;
 
-        if (EffectiveFrom.HasValue && now < EffectiveFrom.Value) return false;
-        if (EffectiveUntil.HasValue && now > EffectiveUntil.Value) return false;
+        if (EffectiveFrom.HasValue && now < EffectiveFrom.Value)
+        {
+            return false;
+        }
+
+        if (EffectiveUntil.HasValue && now > EffectiveUntil.Value)
+        {
+            return false;
+        }
 
         return true;
     }
@@ -203,7 +213,9 @@ public class AbacPolicy
     public void SetPriority(int priority)
     {
         if (priority < 0)
+        {
             throw new ArgumentException("Priority must be non-negative", nameof(priority));
+        }
 
         Priority = priority;
         UpdatedAt = SystemClock.UtcNow;
@@ -325,17 +337,26 @@ public class DelegatedAdminScope
     /// </summary>
     public bool IsValid()
     {
-        if (!IsActive) return false;
+        if (!IsActive)
+        {
+            return false;
+        }
 
         var now = SystemClock.UtcNow;
         if (now < StartsAt)
+        {
             return false;
+        }
 
         if (ExpiresAt is null)
+        {
             return true;
+        }
 
         if (now >= ExpiresAt.Value)
+        {
             return false;
+        }
 
         return true;
     }
@@ -345,7 +366,11 @@ public class DelegatedAdminScope
     /// </summary>
     public bool CanManageUser(Guid userId)
     {
-        if (!IsValid() || !CanManageUsers) return false;
+        if (!IsValid() || !CanManageUsers)
+        {
+            return false;
+        }
+
         return AllowedUserIds?.Contains(userId.ToString()) ?? false;
     }
 
@@ -354,7 +379,11 @@ public class DelegatedAdminScope
     /// </summary>
     public bool CanManageResourceType(string resourceType)
     {
-        if (!IsValid() || !CanManageResources) return false;
+        if (!IsValid() || !CanManageResources)
+        {
+            return false;
+        }
+
         return AllowedResourceTypes?.Contains(resourceType) ?? false;
     }
 

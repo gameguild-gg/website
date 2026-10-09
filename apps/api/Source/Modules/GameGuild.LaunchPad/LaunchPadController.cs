@@ -23,7 +23,11 @@ public sealed class LaunchPadController(ISender sender) : ControllerBase
     public async Task<ActionResult<LaunchPlan>> GetLaunchPlan(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(new GetLaunchPlanQuery { LaunchPlanId = id }, cancellationToken).ConfigureAwait(false);
-        if (result.IsFailure) return ToActionResult(result);
+        if (result.IsFailure)
+        {
+            return ToActionResult(result);
+        }
+
         return result.Value == null ? NotFound() : Ok(result.Value);
     }
 
@@ -31,7 +35,11 @@ public sealed class LaunchPadController(ISender sender) : ControllerBase
     public async Task<ActionResult<LaunchPlan>> GetProjectLaunchPlan(Guid projectId, CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(new GetLaunchPlanByProjectQuery { ProjectId = projectId }, cancellationToken).ConfigureAwait(false);
-        if (result.IsFailure) return ToActionResult(result);
+        if (result.IsFailure)
+        {
+            return ToActionResult(result);
+        }
+
         return result.Value == null ? NotFound() : Ok(result.Value);
     }
 

@@ -11,15 +11,27 @@ public sealed record SourceStampContract
         string? providerReference)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
-        if (!Enum.IsDefined(state)) throw new ArgumentOutOfRangeException(nameof(state));
+        if (!Enum.IsDefined(state))
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+
         var postConfirmation = state is SourceConfirmationState.Confirmed or
             SourceConfirmationState.Disputed or SourceConfirmationState.Reversed;
         if (postConfirmation && confirmedAt is null)
+        {
             throw new ArgumentException("Post-confirmation source stamps require a confirmation timestamp.", nameof(confirmedAt));
+        }
+
         if (!postConfirmation && confirmedAt is not null)
+        {
             throw new ArgumentException("Pre-confirmation source stamps cannot carry a confirmation timestamp.", nameof(confirmedAt));
+        }
+
         if (confirmedAt < observedAt)
+        {
             throw new ArgumentException("Confirmation cannot precede observation.", nameof(confirmedAt));
+        }
 
         Id = id;
         EvidenceHash = evidenceHash.Trim();

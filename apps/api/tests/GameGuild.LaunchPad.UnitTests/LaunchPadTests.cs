@@ -408,7 +408,11 @@ public sealed class LaunchPadTests
         var actorId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
         var (project, plan) = AddProjectPlan(context, tenantId, "Unavailable read", status, actorId);
-        if (softDeleted) project.DeletedAt = DateTime.UtcNow;
+        if (softDeleted)
+        {
+            project.DeletedAt = DateTime.UtcNow;
+        }
+
         AddIdentity(context, actorId, tenantId);
         await context.SaveChangesAsync();
 
@@ -453,9 +457,14 @@ public sealed class LaunchPadTests
             isCreator ? "Creator read" : "Collaborator read",
             createdById: isCreator ? actorId : Guid.NewGuid());
         if (isCreator)
+        {
             AddCollaborator(context, project.Id, actorId, ProjectRoles.Owner, string.Empty);
+        }
         else
+        {
             AddCollaborator(context, project.Id, actorId, ProjectRoles.Viewer, "Read");
+        }
+
         AddIdentity(context, actorId, tenantId);
         await context.SaveChangesAsync();
         var handler = CreateHandler(context, ActorAccessor(actorId, tenantId));
@@ -609,7 +618,11 @@ public sealed class LaunchPadTests
         var actorId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
         var project = new Project { Title = "Changed", Slug = "changed", Status = status, TenantId = tenantId };
-        if (softDeleted) project.DeletedAt = DateTime.UtcNow;
+        if (softDeleted)
+        {
+            project.DeletedAt = DateTime.UtcNow;
+        }
+
         var plan = new LaunchPlan
         {
             ProjectId = project.Id,

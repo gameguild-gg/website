@@ -73,9 +73,14 @@ public sealed class HardCoinTopUpPolicyResolver(
             var provider = root.GetProperty("provider").GetString();
             if (minimum <= 0 || maximum < minimum ||
                 !string.Equals(provider, SupportedProvider, StringComparison.Ordinal))
+            {
                 throw new JsonException("Top-up policy values are outside their safe ranges.");
+            }
+
             if (hardCoinUnits < minimum || hardCoinUnits > maximum)
+            {
                 throw Disabled("The requested top-up is outside the signed amount window.");
+            }
 
             var usdNumerator = checked(hardCoinUnits * UsdMinorUnitsPerUsd);
             var usdMinorUnits = usdNumerator / Policy.EconomyParity.HardCoinUnitsPerUsd;

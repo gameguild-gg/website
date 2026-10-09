@@ -55,6 +55,23 @@ public class AuditDateRangeResolverTests
         shortcut.Range.EndUtc.Should().Be(NowUtc);
     }
 
+    [Theory]
+    [InlineData("today", "UTC", 20, 0)]
+    [InlineData("thisWeek", "UTC", 14, 0)]
+    [InlineData("thisMonth", "UTC", 1, 0)]
+    [InlineData("today", "America/Sao_Paulo", 20, 3)]
+    [InlineData("this_week", "America/Sao_Paulo", 14, 3)]
+    [InlineData("this-month", "America/Sao_Paulo", 1, 3)]
+    public void Resolve_ShouldContinueToCalendarPeriodsAfterRollingPeriodSwitch(
+        string period, string timeZoneId, int startDay, int startHour)
+    {
+        var result = AuditDateRangeResolver.Resolve(null, null, period, timeZoneId, NowUtc);
+
+        result.IsValid.Should().BeTrue();
+        result.Range!.StartUtc.Should().Be(new DateTime(2026, 9, startDay, startHour, 0, 0, DateTimeKind.Utc));
+        result.Range.EndUtc.Should().Be(NowUtc);
+    }
+
     [Fact]
     public void Resolve_ShouldInterpretOffsetFreeValuesInRequestedTimezone()
     {

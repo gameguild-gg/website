@@ -165,8 +165,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStoreTests
             binding with { BoundAt = default }
         ];
         foreach (var item in invalid)
+        {
             FluentActions.Invoking(() => PostgreSqlEconomyTopUpIntentStore.Validate(item))
-                .Should().Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
+        }
     }
 
     [Fact]
@@ -292,8 +294,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStoreTests
             identity with { ProviderMonetaryLeg = "refund" }
         ];
         foreach (var invalid in invalidIdentities)
+        {
             FluentActions.Invoking(() => PostgreSqlEconomyTopUpIntentStore.Validate(invalid))
-                .Should().Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
+        }
 
         EconomyTopUpProviderEvent[] invalidEvents =
         [
@@ -309,8 +313,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStoreTests
             valid with { Status = EconomyTopUpProviderStatus.Cancelled }
         ];
         foreach (var invalid in invalidEvents)
+        {
             FluentActions.Invoking(() => PostgreSqlEconomyTopUpIntentStore.Validate(invalid))
-                .Should().Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
+        }
     }
 
     [Fact]
@@ -438,7 +444,10 @@ public sealed class PostgreSqlEconomyTopUpIntentStoreTests
     private static void MovePaymentTo(Payment payment, PaymentStatus status)
     {
         if (status == PaymentStatus.Processing)
+        {
             return;
+        }
+
         if (status == PaymentStatus.Pending)
         {
             payment.MarkAsFailed("retry");

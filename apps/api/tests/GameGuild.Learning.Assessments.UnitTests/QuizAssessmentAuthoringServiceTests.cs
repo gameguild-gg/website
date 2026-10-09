@@ -414,7 +414,10 @@ public sealed class QuizAssessmentAuthoringServiceTests
             ReviewExecutionContext context)
         {
             if (context == rejectContext)
+            {
                 throw new InvalidOperationException($"Exact component version is unavailable for {context}.");
+            }
+
             _contexts.Add(context);
             return inner.Resolve(contentType, key, version, context);
         }

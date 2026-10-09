@@ -46,10 +46,14 @@ public sealed class AuthorizationTokenOptions : BaseOptions
         base.Validate();
         
         if (string.IsNullOrWhiteSpace(TenantClaimType))
+        {
             throw new InvalidOperationException("TenantClaimType cannot be null or empty.");
-        
+        }
+
         if (string.IsNullOrWhiteSpace(PermissionClaimType))
+        {
             throw new InvalidOperationException("PermissionClaimType cannot be null or empty.");
+        }
     }
 
     /// <summary>

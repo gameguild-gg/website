@@ -87,16 +87,28 @@ internal static class ExportOpenApiCommand
         try
         {
             // Basic validation - ensure required properties are present
-            if (string.IsNullOrEmpty(document.Info?.Title)) errors.Add("Document title is required");
+            if (string.IsNullOrEmpty(document.Info?.Title))
+            {
+                errors.Add("Document title is required");
+            }
 
-            if (string.IsNullOrEmpty(document.Info?.Version)) errors.Add("Document version is required");
+            if (string.IsNullOrEmpty(document.Info?.Version))
+            {
+                errors.Add("Document version is required");
+            }
 
-            if (document.Paths == null || !document.Paths.Any()) errors.Add("Document must contain at least one path");
+            if (document.Paths == null || !document.Paths.Any())
+            {
+                errors.Add("Document must contain at least one path");
+            }
 
             // Validate each path
             foreach (var path in document.Paths ?? new Dictionary<string, OpenApiPathItem>())
             {
-                if (path.Value.Operations == null || !path.Value.Operations.Any()) errors.Add($"Path '{path.Key}' must contain at least one operation");
+                if (path.Value.Operations == null || !path.Value.Operations.Any())
+                {
+                    errors.Add($"Path '{path.Key}' must contain at least one operation");
+                }
             }
         }
         catch (Exception ex) { errors.Add($"Validation error: {ex.Message}"); }

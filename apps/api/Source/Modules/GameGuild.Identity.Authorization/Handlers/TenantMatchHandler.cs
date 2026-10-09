@@ -99,7 +99,9 @@ public sealed class TenantMatchHandler : AuthorizationHandler<TenantMatchRequire
     {
         // First check context - convert Guid to string for comparison
         if (_tenantContext.HasTenant && _tenantContext.TenantId.HasValue)
+        {
             return _tenantContext.TenantId.Value.ToString();
+        }
 
         // Fall back to claims
         return _tenantResolver.ResolveFromClaims(user);
