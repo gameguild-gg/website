@@ -641,7 +641,7 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         long userVersion,
         long globalVersion)
     {
-        // Free-form resource segments are fingerprinted so delimiter-bearing values cannot collide.
+        // Free-form resource segments are length-prefixed so delimiter-bearing values cannot collide.
         return AclCacheKeys.BuildUserCacheKey(userId, tenantId, resourceType, resourceId, tenantVersion, userVersion, globalVersion);
     }
 
@@ -863,7 +863,7 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         if (_tenantCacheKeys.TryGetValue(tenantIdString, out var keys))
         {
             // Look for any cache key containing this resource and potentially this principal.
-            // The resource segments are fingerprinted, so match the fingerprinted segment pair.
+            // The resource segments are length-prefixed, so match the encoded segment pair.
             var resourcePattern = $":{AclCacheKeys.BuildResourceSegment(resourceType, resourceId)}:";
             var keysToRemove = keys.Where(k => k.Contains(resourcePattern, StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -887,7 +887,7 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         var tenantIdString = tenantId.ToString();
         if (_tenantCacheKeys.TryGetValue(tenantIdString, out var keys))
         {
-            // Cache keys fingerprint the resource segments, so match the fingerprinted segment pair.
+            // Cache keys length-prefix the resource segments, so match the encoded segment pair.
             var pattern = $"acl:{tenantId}:{userId}:{AclCacheKeys.BuildResourceSegment(resourceType, resourceId)}:";
             var keysToRemove = keys.Where(k => k.StartsWith(pattern, StringComparison.OrdinalIgnoreCase)).ToList();
 

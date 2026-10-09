@@ -12,24 +12,36 @@ namespace GameGuild.Identity.Authorization.UnitTests;
 /// <summary>
 ///     Regression tests for ACL cache-key collision prevention (issue #353): free-form
 ///     resourceType/resourceId values may contain the key delimiter, so two distinct resources
-///     must never share a cache entry. Keys fingerprint those segments with SHA-256 (see
-///     <see cref="AclCacheKeys"/>), mirroring the bulk permission key builder.
+///     must never share a cache entry. Keys length-prefix those segments (see
+///     <see cref="AclCacheKeys"/>), which is collision-safe while keeping the raw values embedded
+///     so substring-based invalidation patterns still match.
 /// </summary>
 public sealed class AclCacheKeyCollisionPreventionTests
 {
     [Fact]
-    public void FingerprintCacheKeyPart_IsDelimiterFreeHexAndDeterministic()
+    public void EncodeLengthPrefixedSegment_IsDeterministicAndPreservesRawValue()
     {
-        var first = AclCacheKeys.FingerprintCacheKeyPart("Document");
-        var second = AclCacheKeys.FingerprintCacheKeyPart("Document");
-        var different = AclCacheKeys.FingerprintCacheKeyPart("Document2");
+        var first = AclCacheKeys.EncodeLengthPrefixedSegment("Document");
+        var second = AclCacheKeys.EncodeLengthPrefixedSegment("Document");
+        var different = AclCacheKeys.EncodeLengthPrefixedSegment("Document2");
 
-        first.Should().Be(second, "the fingerprint must be stable for equal inputs");
-        first.Should().NotBe(different, "distinct inputs must fingerprint differently");
-        first.Should().NotContain(":");
-        first.Should().MatchRegex("^[0-9A-F]+$", "fingerprints are uppercase hex");
-        AclCacheKeys.FingerprintCacheKeyPart(null).Should().Be("none");
-        AclCacheKeys.FingerprintCacheKeyPart(string.Empty).Should().NotBe(AclCacheKeys.FingerprintCacheKeyPart("none"));
+        first.Should().Be(second, "the encoding must be stable for equal inputs");
+        first.Should().NotBe(different, "distinct inputs must encode differently");
+        first.Should().Be("8:Document", "the encoding prefixes the UTF-16 character count");
+        first.Should().Contain("Document", "the raw value stays embedded for pattern matching");
+        AclCacheKeys.EncodeLengthPrefixedSegment(null).Should().Be("0:");
+        AclCacheKeys.EncodeLengthPrefixedSegment(string.Empty).Should().Be("0:");
+        AclCacheKeys.EncodeLengthPrefixedSegment("a:b").Should().Be("3:a:b",
+            "delimiter-bearing values are encoded verbatim behind their length");
+    }
+
+    [Fact]
+    public void BuildUserCacheKey_EmbedsRawResourceValuesForPatternMatching()
+    {
+        var key = AclCacheKeys.BuildUserCacheKey(Guid.NewGuid(), Guid.NewGuid(), "project", "res-123", 1, 2, 3);
+
+        key.Should().Contain("project", "raw resource types stay searchable by invalidation patterns");
+        key.Should().Contain("res-123", "raw resource IDs stay searchable by invalidation patterns");
     }
 
     [Theory]
@@ -136,6 +148,72 @@ public sealed class AclCacheKeyCollisionPreventionTests
     }
 
     [Fact]
+    public async Task InvalidateResourceAsync_PatternContainsRawDelimiterBearingIdentifiers()
+    {
+        var tenantId = Guid.NewGuid();
+        var hybrid = new Mock<IHybridPermissionCache>();
+        var invalidation = new CacheInvalidationService(
+            new MemoryCache(new MemoryCacheOptions()),
+            Mock.Of<ITenantSecurityVersionStore>(),
+            hybrid.Object,
+            Mock.Of<ICacheMetricsService>(),
+            Options.Create(new AuthorizationCacheOptions { UseDistributedCache = false }),
+            NullLogger<CacheInvalidationService>.Instance);
+
+        await invalidation.InvalidateResourceAsync(tenantId, "proj:ect", "res-123:9");
+
+        hybrid.Verify(cache => cache.InvalidatePatternAsync(
+            It.Is<string>(s => s.Contains("proj:ect") && s.Contains("res-123:9")),
+            "acl",
+            It.IsAny<CancellationToken>()), Times.Once,
+            "the invalidation pattern must keep carrying the raw identifiers so it matches the keys");
+    }
+
+    [Fact]
+    public async Task InvalidateResourceAsync_PatternStillEvictsDelimiterBearingEntriesWithoutOverMatching()
+    {
+        var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var metrics = new Mock<ICacheMetricsService>();
+        var tracker = new PermissionCacheKeyTracker(memoryCache, metrics.Object);
+        var hybrid = new HybridPermissionCache(
+            memoryCache,
+            Options.Create(new AuthorizationCacheOptions()),
+            metrics.Object,
+            NullLogger<HybridPermissionCache>.Instance,
+            keyTracker: tracker);
+        var versionStore = new Mock<ITenantSecurityVersionStore>();
+        versionStore.Setup(store => store.IncrementVersionAsync(tenantId.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        var invalidation = new CacheInvalidationService(
+            memoryCache,
+            versionStore.Object,
+            hybrid,
+            metrics.Object,
+            Options.Create(new AuthorizationCacheOptions { UseDistributedCache = true }),
+            NullLogger<CacheInvalidationService>.Instance,
+            invalidationPublisher: null,
+            keyTracker: tracker);
+
+        var targetKey = AclCacheKeys.BuildUserCacheKey(userId, tenantId, "a:b", "c:d", 0, 0, 0);
+        var delimiterAdjacentKey = AclCacheKeys.BuildUserCacheKey(userId, tenantId, "a", "b:c:d", 0, 0, 0);
+        var longerIdKey = AclCacheKeys.BuildUserCacheKey(userId, tenantId, "a:b", "c:d:extra", 0, 0, 0);
+        await hybrid.SetValueAsync(targetKey, new CachedAclDecision(AccessLevel.Write, null), "acl");
+        await hybrid.SetValueAsync(delimiterAdjacentKey, new CachedAclDecision(AccessLevel.Read, null), "acl");
+        await hybrid.SetValueAsync(longerIdKey, new CachedAclDecision(AccessLevel.Read, null), "acl");
+
+        await invalidation.InvalidateResourceAsync(tenantId, "a:b", "c:d");
+
+        (await hybrid.GetValueAsync<CachedAclDecision>(targetKey, "acl")).Found.Should().BeFalse(
+            "pattern invalidation must still evict delimiter-bearing resource entries");
+        (await hybrid.GetValueAsync<CachedAclDecision>(delimiterAdjacentKey, "acl")).Found.Should().BeTrue(
+            "the delimiter-adjacent pair (\"a\", \"b:c:d\") is a distinct resource and must keep its own entry");
+        (await hybrid.GetValueAsync<CachedAclDecision>(longerIdKey, "acl")).Found.Should().BeTrue(
+            "an id that merely starts with the target id must not be evicted");
+    }
+
+    [Fact]
     public async Task ResourceInvalidation_EvictsDelimiterBearingResourceEntries()
     {
         var tenantId = Guid.NewGuid();
@@ -172,7 +250,7 @@ public sealed class AclCacheKeyCollisionPreventionTests
             [new CacheInvalidationTarget(CacheInvalidationTargetType.Resource, ResourceType: "a:b", ResourceId: "c")]);
 
         (await hybrid.GetValueAsync<CachedAclDecision>(key, "acl")).Found.Should().BeFalse(
-            "resource invalidation must match fingerprinted segments of delimiter-bearing resources");
+            "resource invalidation must match length-prefixed segments of delimiter-bearing resources");
     }
 
     private static (CachedAccessControlListService Service, Mock<ITenantSecurityVersionStore> TenantVersions) CreateCachedService(

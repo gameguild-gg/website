@@ -54,14 +54,17 @@ fails. Publish failures are logged, and old cache entries expire through their
 configured TTLs. Pub/Sub provides prompt local cleanup. A singleton per-process key index tracks L1 entries from cache services and request scopes so received events can evict the actual local entries.
 Wildcard matching scans this in-memory index; the implementation does not issue Redis key scans for deletion.
 
-ACL cache keys fingerprint their free-form segments: the `resourceType` and
-`resourceId` parts of `acl:` and `acl:subj:` keys are SHA-256 hex fingerprints
-(the same scheme as the bulk permission keys) instead of the raw strings, so
+ACL cache keys length-prefix their free-form segments: the `resourceType` and
+`resourceId` parts of `acl:` and `acl:subj:` keys are emitted as
+`{length}:{value}` components (for example `8:Document:7:res-123`) instead of the
+bare raw strings. The leading character count makes the encoding injective, so
 delimiter-bearing identifiers can never collide two distinct resources onto one
-cached access decision. GUID-valued segments (tenant, user, role, group) and the
-`tv`/`uv`/`gv` version suffixes remain human-readable, so key-inspection output
-shows which subject and version scope an entry belongs to; the two 64-character
-hex segments after the subject parts identify the resource pair.
+cached access decision, while the raw value stays embedded in the key so
+wildcard and substring invalidation patterns — built from the same
+length-prefixed components — keep matching resource entries. GUID-valued
+segments (tenant, user, role, group) and the `tv`/`uv`/`gv` version suffixes
+remain human-readable, so key-inspection output shows which subject and version
+scope an entry belongs to and which resource pair it was computed for.
 
 ACL keys also include a shared global security version stored under the reserved
 `Guid.Empty` version scope. Global role assignment, removal, update, and deletion

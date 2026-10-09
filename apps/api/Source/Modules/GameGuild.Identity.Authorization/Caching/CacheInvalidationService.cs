@@ -294,8 +294,8 @@ public sealed class CacheInvalidationService : ICacheInvalidationService
         // entries are bypassed even when a Redis invalidation message cannot be delivered.
         await _versionStore.IncrementVersionAsync(tenantId.ToString(), cancellationToken).ConfigureAwait(false);
 
-        // ACL keys fingerprint the free-form resource segments (see AclCacheKeys), so the pattern
-        // must match the fingerprinted type/ID pair rather than the raw values.
+        // ACL keys length-prefix the free-form resource segments (see AclCacheKeys), so the
+        // pattern must match the length-prefixed type/ID pair rather than bare raw values.
         var keyPattern = $"acl:{tenantId}:*:{AclCacheKeys.BuildResourceSegment(resourceType, resourceId)}:";
         await _hybridCache.InvalidatePatternAsync(keyPattern, "acl", cancellationToken).ConfigureAwait(false);
 
@@ -446,7 +446,7 @@ public sealed class CacheInvalidationService : ICacheInvalidationService
             case CacheInvalidationType.Resource:
                 if (!string.IsNullOrEmpty(invalidationEvent.ResourceType) && !string.IsNullOrEmpty(invalidationEvent.ResourceId))
                 {
-                    // ACL keys fingerprint the resource segments; match the fingerprinted pair.
+                    // ACL keys length-prefix the resource segments; match the encoded pair.
                     var resourcePattern = $":{AclCacheKeys.BuildResourceSegment(invalidationEvent.ResourceType, invalidationEvent.ResourceId)}:";
                     ClearKeysMatchingPattern(invalidationEvent.TenantId, resourcePattern);
                 }

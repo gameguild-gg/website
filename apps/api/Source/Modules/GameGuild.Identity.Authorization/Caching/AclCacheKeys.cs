@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace GameGuild.Identity.Authorization.Caching;
 
 /// <summary>
@@ -12,33 +9,42 @@ namespace GameGuild.Identity.Authorization.Caching;
 ///         data-controlled strings that may contain the colon (<c>:</c>) key delimiter. Interpolating them
 ///         raw would let two distinct pairs — for example (<c>a:b</c>, <c>c</c>) and (<c>a</c>, <c>b:c</c>) —
 ///         produce the same cache key and share each other's cached access decisions. Every free-form
-///         segment is therefore replaced by its SHA-256 fingerprint (fixed-length uppercase hex, which
-///         never contains the delimiter), mirroring the bulk permission key builder. Distinct inputs
-///         always occupy distinct, delimiter-unambiguous key segments.
+///         segment is therefore emitted as a length-prefixed component, <c>{length}:{value}</c>: the
+///         leading character count lets a reader consume exactly that many characters, so delimiters
+///         inside the value can never shift the segment boundaries and distinct inputs always occupy
+///         distinct keys (the encoding is injective). Unlike an opaque hash, the raw value stays embedded
+///         in the key, so wildcard and substring invalidation patterns — which are built from the same
+///         length-prefixed components — keep matching resource entries.
 ///     </para>
 ///     <para>
 ///         GUID-valued segments (tenant, user, role, and group IDs) and the numeric version suffixes
 ///         use fixed canonical formats and are interpolated directly to keep keys debuggable.
+///         A <c>null</c> free-form segment is encoded the same way as the empty string.
 ///     </para>
 /// </remarks>
 public static class AclCacheKeys
 {
     /// <summary>
-    ///     Returns a delimiter-safe, fixed-length fingerprint for a free-form cache key segment.
+    ///     Encodes a free-form cache key segment as a length-prefixed component:
+    ///     <c>{length}:{value}</c>, where <paramref name="value"/> may contain the key delimiter.
     /// </summary>
-    /// <param name="value">The raw segment value; <c>null</c> is fingerprinted as <c>none</c>.</param>
-    public static string FingerprintCacheKeyPart(string? value) =>
-        value is null ? "none" : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    /// <param name="value">The raw segment value; <c>null</c> is encoded as the empty string.</param>
+    public static string EncodeLengthPrefixedSegment(string? value)
+    {
+        var segment = value ?? string.Empty;
+        return $"{segment.Length}:{segment}";
+    }
 
     /// <summary>
-    ///     Returns the two fingerprinted segments for a resource (type then ID), colon-delimited.
+    ///     Returns the two length-prefixed segments for a resource (type then ID), colon-delimited:
+    ///     <c>{typeLength}:{resourceType}:{idLength}:{resourceId}</c>.
     /// </summary>
     public static string BuildResourceSegment(string resourceType, string resourceId) =>
-        $"{FingerprintCacheKeyPart(resourceType)}:{FingerprintCacheKeyPart(resourceId)}";
+        $"{EncodeLengthPrefixedSegment(resourceType)}:{EncodeLengthPrefixedSegment(resourceId)}";
 
     /// <summary>
     ///     Builds the legacy user-based ACL cache key:
-    ///     <c>acl:{tenantId}:{userId}:{fingerprint(resourceType)}:{fingerprint(resourceId)}:tv..:uv..:gv..</c>.
+    ///     <c>acl:{tenantId}:{userId}:{len(resourceType)}:{resourceType}:{len(resourceId)}:{resourceId}:tv..:uv..:gv..</c>.
     /// </summary>
     public static string BuildUserCacheKey(
         Guid userId,
@@ -55,7 +61,7 @@ public static class AclCacheKeys
 
     /// <summary>
     ///     Builds the subject-based ACL cache key:
-    ///     <c>acl:subj:{tenantId}:{user|anon}:{roles|nr}:{groups|ng}:{fingerprint(resourceType)}:{fingerprint(resourceId)}:tv..:uv..:gv..</c>.
+    ///     <c>acl:subj:{tenantId}:{user|anon}:{roles|nr}:{groups|ng}:{len(resourceType)}:{resourceType}:{len(resourceId)}:{resourceId}:tv..:uv..:gv..</c>.
     /// </summary>
     public static string BuildSubjectCacheKey(
         AclSubject subject,

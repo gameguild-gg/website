@@ -7,7 +7,8 @@ namespace GameGuild.Identity.Authorization;
 /// </summary>
 public sealed class DatabaseAccessControlListService(
     IAccessControlListEntryRepository repository, 
-    ITenantSecurityVersionRepository versionRepository) : IAccessControlListService
+    ITenantSecurityVersionRepository versionRepository)
+    : IAccessControlListService, ITimeBoundAccessControlListEvaluation
 {
     /// <inheritdoc />
     public async Task<AccessLevel> EvaluateAccessAsync(
