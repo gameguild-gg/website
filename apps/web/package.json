@@ -30,6 +30,8 @@
     "test:browser:testing-lab": "node scripts/run-testing-lab-browser-e2e.mjs",
     "test:browser:testing-lab:existing": "node scripts/testing-lab-browser-e2e.mjs",
     "test:browser:coding-cycle": "node scripts/coding-cycle-browser-e2e.mjs",
+    "grading:scenario": "node scripts/quiz-grading-scenario/cli.mjs",
+    "test:grading:scenario": "node scripts/quiz-grading-scenario/support.test.mjs",
     "test:watch": "vitest",
     "test:e2e": "vitest run -c vitest.e2e.config.mts",
     "test:browser:learning": "pnpm run test:browser:learning-support && pnpm run test:browser:learning-checkout && pnpm run test:browser:learning-student && pnpm run test:browser:learning-professor"
