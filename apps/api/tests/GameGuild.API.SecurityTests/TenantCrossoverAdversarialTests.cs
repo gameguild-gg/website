@@ -83,9 +83,10 @@ public sealed class TenantCrossoverAdversarialTests(AdversarialSecurityFixture f
             $"tenant-B query parameter must be denied, got {(int)queryCrossover.StatusCode}");
 
         // Body crossover: attempt to grant permissions inside tenant B with a tenant-A token.
+        // (tenantId uses the endpoint's real value-object JSON shape: { value: <guid> }.)
         var grantBody = JsonSerializer.Serialize(new
         {
-            tenantId = accountB.TenantId,
+            tenantId = new { value = accountB.TenantId },
             userId = accountA.User.Id,
             permissions = new[] { "features:read" },
             grantedBy = accountA.User.Id,

@@ -42,9 +42,12 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
         await AssertDenialAsync(featureByKey, "feature-flag detail without grant");
 
         // Permissioned mutation family (tenant permission engine: tenant/system admin only).
+        // Bodies use the endpoint's real contract: TenantId is a value object, so its JSON
+        // shape is { value: <guid> } — a flat GUID string dies in model binding before the
+        // authorization guard is evaluated and would prove nothing about authorization.
         var grantBody = JsonSerializer.Serialize(new
         {
-            tenantId = account.TenantId,
+            tenantId = new { value = account.TenantId },
             userId = account.User.Id,
             permissions = new[] { "features:read", "TenantAdmin" },
             grantedBy = account.User.Id,
@@ -63,7 +66,7 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
 
         var denyBody = JsonSerializer.Serialize(new
         {
-            tenantId = account.TenantId,
+            tenantId = new { value = account.TenantId },
             userId = Guid.NewGuid(),
             permissions = new[] { "features:read" },
             deniedBy = account.User.Id,
@@ -107,7 +110,7 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
 
         var grantBody = JsonSerializer.Serialize(new
         {
-            tenantId = Guid.NewGuid(),
+            tenantId = new { value = Guid.NewGuid() },
             userId = Guid.NewGuid(),
             permissions = new[] { "features:read" },
             grantedBy = Guid.NewGuid(),
