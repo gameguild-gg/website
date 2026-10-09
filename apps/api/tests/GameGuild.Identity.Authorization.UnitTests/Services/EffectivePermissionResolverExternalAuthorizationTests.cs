@@ -40,6 +40,9 @@ public class EffectivePermissionResolverExternalAuthorizationTests
         _roleProvider
             .Setup(p => p.GetPermissionsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyCollection<string>)[]);
+        _resourceService
+            .Setup(s => s.GetUserResourcesAsync(It.IsAny<TenantId>(), It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<ResourceUserPermission>)[]);
     }
 
     private EffectivePermissionResolverService CreateSut(Guid? systemAccountId = null) =>
