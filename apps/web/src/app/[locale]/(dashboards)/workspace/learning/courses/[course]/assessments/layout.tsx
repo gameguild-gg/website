@@ -1,5 +1,5 @@
-import { getCourse, getCourseAssessments } from '@/lib/learning';
-import { notFound } from 'next/navigation';
+import { getCourse, getCourseAccessCapabilities, getCourseAssessments } from '@/lib/learning';
+import { forbidden, notFound } from 'next/navigation';
 import React from 'react';
 
 /**
@@ -17,10 +17,17 @@ export default async function AssessmentsLayout({
 }: LayoutProps<'/[locale]/workspace/learning/courses/[course]/assessments'>): Promise<React.JSX.Element> {
   const { course: courseId } = await params;
 
-  const course = await getCourse(courseId);
+  const [course, access] = await Promise.all([
+    getCourse(courseId),
+    getCourseAccessCapabilities(courseId),
+  ]);
 
   if (!course || !course.features.hasAssessments) {
     notFound();
+  }
+
+  if (!access.canEdit && !access.canReviewAsStaff) {
+    forbidden();
   }
 
   // Preload assessments

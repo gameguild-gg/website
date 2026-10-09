@@ -3,6 +3,7 @@ using GameGuild.Identity.Authorization;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Assets;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GameGuild.Learning.Courses;
 
@@ -24,6 +25,8 @@ public static class CoursesModule
         services.AddScoped<IProgramCrudService, ProgramCrudService>();
         services.AddScoped<IProgramLifecycleService, ProgramLifecycleService>();
         services.AddScoped<IProgramService, ProgramService>();
+        services.TryAddScoped<ICourseEnrollmentAccessReader, FailClosedCourseEnrollmentAccessReader>();
+        services.AddScoped<ICourseAccessEvaluator, CourseAccessEvaluator>();
 
         // Content services
         services.AddScoped<IProgramContentScheduleGuard, NullProgramContentScheduleGuard>();

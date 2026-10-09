@@ -42,9 +42,7 @@ public sealed class ControllerBranchCoverageTests
         var controller = new RubricsController(
             Mock.Of<IRubricService>(),
             Mock.Of<IAssessmentService>(),
-            Mock.Of<IActorContextAccessor>(),
-            Mock.Of<IProgramCrudService>(),
-            Mock.Of<IPermissionQueryService>(),
+            Mock.Of<ICourseAccessEvaluator>(),
             NullLogger<RubricsController>.Instance,
             Mock.Of<ISender>());
         var method = typeof(RubricsController)

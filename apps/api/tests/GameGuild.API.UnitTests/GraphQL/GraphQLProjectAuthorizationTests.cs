@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using FluentAssertions;
-using GameGuild.API.Projects;
+using GameGuild.API.Core.Security;
 using GameGuild.Compliance.Audit;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Authorization;
@@ -31,8 +31,8 @@ public sealed class GraphQLProjectAuthorizationTests
     {
         var authorization = new GraphQLProjectAuthorizationFake();
         var counters = new GraphQLProjectAuthorizationCounters();
-        var auditSink = new GraphQLProjectAuthorizationAuditSinkFake();
-        await using var app = await CreateApplicationAsync(authorization, counters, auditSink);
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake();
+        await using var app = await CreateApplicationAsync(authorization, counters, evaluationLog);
         using var client = app.GetTestClient();
 
         using var request = CreateRequest("{ guarded(projectId: \"b659b7bf-6281-42e6-a7ef-23d296cff5dd\") }");
@@ -49,20 +49,53 @@ public sealed class GraphQLProjectAuthorizationTests
         body.Should().NotContain("b659b7bf-6281-42e6-a7ef-23d296cff5dd");
         authorization.CheckCount.Should().Be(1);
         counters.ResolverCount.Should().Be(0);
-        auditSink.Denials.Should().ContainSingle().Which.Should().BeEquivalentTo(
-            new ProjectGraphQLAuthorizationDenial(
-                Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
-                Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
-                Guid.Parse("b659b7bf-6281-42e6-a7ef-23d296cff5dd"),
-                "guarded",
-                [PermissionType.Read.ToString()],
-                "permission_denied"));
+        evaluationLog.Records.Should().ContainSingle().Which.Should().Match<PermissionEvaluationRecord>(
+            record =>
+                record.UserId == Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6") &&
+                record.TenantId == Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85") &&
+                record.ResourceType == "Project" &&
+                record.ResourceId == "b659b7bf-6281-42e6-a7ef-23d296cff5dd" &&
+                record.RequiredPermissions.SequenceEqual(new[] { PermissionType.Read.ToString() }) &&
+                record.Outcome == PermissionEvaluationOutcome.Deny &&
+                record.Source == "graphql" &&
+                record.Operation == "guarded" &&
+                record.Reason == "permission_denied" &&
+                record.EvaluatedAtUtc != default);
     }
 
     [Fact]
-    public async Task PermissionDirective_StillDeniesWhenAuditSinkFails()
+    public async Task PermissionDirective_RecordsAllowedEvaluationsWithTheSameActorTenantResourceContext()
     {
-        var auditSink = new GraphQLProjectAuthorizationAuditSinkFake
+        var projectId = Guid.Parse("b659b7bf-6281-42e6-a7ef-23d296cff5dd");
+        var authorization = new GraphQLProjectAuthorizationFake((projectId, PermissionType.Read));
+        var counters = new GraphQLProjectAuthorizationCounters();
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake();
+        await using var app = await CreateApplicationAsync(authorization, counters, evaluationLog);
+        using var client = app.GetTestClient();
+
+        using var request = CreateRequest(
+            "{ guarded(projectId: \"b659b7bf-6281-42e6-a7ef-23d296cff5dd\") }");
+        using var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        evaluationLog.Records.Should().ContainSingle().Which.Should().Match<PermissionEvaluationRecord>(
+            record =>
+                record.UserId == Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6") &&
+                record.TenantId == Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85") &&
+                record.ResourceType == "Project" &&
+                record.ResourceId == projectId.ToString("D") &&
+                record.RequiredPermissions.SequenceEqual(new[] { PermissionType.Read.ToString() }) &&
+                record.Outcome == PermissionEvaluationOutcome.Allow &&
+                record.Source == "graphql" &&
+                record.Operation == "guarded" &&
+                record.Reason == null);
+        counters.ResolverCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task PermissionDirective_StillDeniesWhenEvaluationLoggingFails()
+    {
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake
         {
             ErrorToThrow = new InvalidOperationException("sensitive audit storage details"),
         };
@@ -70,7 +103,7 @@ public sealed class GraphQLProjectAuthorizationTests
         await using var app = await CreateApplicationAsync(
             new GraphQLProjectAuthorizationFake(),
             counters,
-            auditSink);
+            evaluationLog);
         using var client = app.GetTestClient();
 
         using var request = CreateRequest(
@@ -91,12 +124,12 @@ public sealed class GraphQLProjectAuthorizationTests
     [Fact]
     public async Task PermissionDirective_MasksUnauthorizedFieldsAsNullWithoutInvokingTheResolver()
     {
-        var auditSink = new GraphQLProjectAuthorizationAuditSinkFake();
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake();
         var counters = new GraphQLProjectAuthorizationCounters();
         await using var app = await CreateApplicationAsync(
             new GraphQLProjectAuthorizationFake(),
             counters,
-            auditSink);
+            evaluationLog);
         using var client = app.GetTestClient();
 
         using var request = CreateRequest(
@@ -111,7 +144,7 @@ public sealed class GraphQLProjectAuthorizationTests
         document.RootElement.TryGetProperty("errors", out _).Should().BeFalse();
         body.Should().NotContain("allowed");
         counters.ResolverCount.Should().Be(0);
-        auditSink.Denials.Should().ContainSingle().Which.Reason.Should().Be("permission_denied");
+        evaluationLog.Records.Should().ContainSingle().Which.Reason.Should().Be("permission_denied");
     }
 
     [Fact]
@@ -120,21 +153,25 @@ public sealed class GraphQLProjectAuthorizationTests
         CreateAuditLogRequest? recordedRequest = null;
         var auditService = new Mock<IAuditService>();
         auditService
-            .Setup(service => service.LogAsync(It.IsAny<CreateAuditLogRequest>()))
+            .Setup(service => service.TryLogAsync(It.IsAny<CreateAuditLogRequest>()))
             .Callback<CreateAuditLogRequest>(request => recordedRequest = request)
-            .Returns(Task.CompletedTask);
-        var sink = new ProjectGraphQLAuthorizationAuditSink(auditService.Object);
+            .ReturnsAsync(true);
+        var sink = new AuditPermissionEvaluationLogSink(auditService.Object);
 
-        await sink.RecordDeniedAsync(
-            new ProjectGraphQLAuthorizationDenial(
+        var persisted = await sink.TryRecordAsync(
+            new PermissionEvaluationRecord(
                 Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
                 Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
-                Guid.Parse("b659b7bf-6281-42e6-a7ef-23d296cff5dd"),
-                "guarded",
+                "Project",
+                "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
                 [PermissionType.Read.ToString(), PermissionType.Edit.ToString()],
+                PermissionEvaluationOutcome.Deny,
+                "graphql",
+                "guarded",
                 "permission_denied"),
             CancellationToken.None);
 
+        persisted.Should().BeTrue();
         recordedRequest.Should().NotBeNull();
         recordedRequest!.ActionType.Should().Be(AuditActionTypes.PermissionDenied);
         recordedRequest.ResourceType.Should().Be("Project");
@@ -146,10 +183,41 @@ public sealed class GraphQLProjectAuthorizationTests
         recordedRequest.Category.Should().Be(AuditCategory.Permission);
         using var metadataDocument = JsonDocument.Parse(JsonSerializer.Serialize(recordedRequest.Metadata));
         var metadata = metadataDocument.RootElement;
-        metadata.GetProperty("FieldName").GetString().Should().Be("guarded");
+        metadata.GetProperty("Outcome").GetString().Should().Be("Deny");
+        metadata.GetProperty("Operation").GetString().Should().Be("guarded");
+        metadata.GetProperty("Source").GetString().Should().Be("graphql");
         metadata.GetProperty("RequiredPermissions").EnumerateArray().Select(item => item.GetString())
             .Should().Equal("Read", "Edit");
         metadata.GetProperty("Reason").GetString().Should().Be("permission_denied");
+    }
+
+    [Fact]
+    public async Task AuditSink_MapsAllowedEvaluationsAsGrantedAndSurfacesDeliveryFailure()
+    {
+        CreateAuditLogRequest? recordedRequest = null;
+        var auditService = new Mock<IAuditService>();
+        auditService
+            .Setup(service => service.TryLogAsync(It.IsAny<CreateAuditLogRequest>()))
+            .Callback<CreateAuditLogRequest>(request => recordedRequest = request)
+            .ReturnsAsync(false);
+        var sink = new AuditPermissionEvaluationLogSink(auditService.Object);
+
+        var persisted = await sink.TryRecordAsync(
+            new PermissionEvaluationRecord(
+                Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
+                Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
+                "Project",
+                "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
+                [PermissionType.Read.ToString()],
+                PermissionEvaluationOutcome.Allow,
+                "graphql"),
+            CancellationToken.None);
+
+        persisted.Should().BeFalse("the durable audit write failed and the failure must stay observable");
+        recordedRequest!.ActionType.Should().Be(AuditActionTypes.PermissionGranted);
+        recordedRequest.Success.Should().BeTrue();
+        recordedRequest.RiskLevel.Should().Be(AuditRiskLevel.Medium);
+        recordedRequest.ErrorMessage.Should().BeNull();
     }
 
     [Fact]
@@ -161,7 +229,8 @@ public sealed class GraphQLProjectAuthorizationTests
                 ErrorBuilder.New().SetMessage("sensitive database and tenant details").Build()),
         };
         var counters = new GraphQLProjectAuthorizationCounters();
-        await using var app = await CreateApplicationAsync(authorization, counters);
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake();
+        await using var app = await CreateApplicationAsync(authorization, counters, evaluationLog);
         using var client = app.GetTestClient();
 
         using var request = CreateRequest(
@@ -177,6 +246,10 @@ public sealed class GraphQLProjectAuthorizationTests
         body.Should().NotContain("sensitive database and tenant details");
         body.Should().NotContain("b659b7bf-6281-42e6-a7ef-23d296cff5dd");
         counters.ResolverCount.Should().Be(0);
+        evaluationLog.Records.Should().ContainSingle().Which.Should().Match<PermissionEvaluationRecord>(
+            record =>
+                record.Outcome == PermissionEvaluationOutcome.Error &&
+                record.Reason == "authorization_evaluation_failed");
     }
 
     [Fact]
@@ -185,8 +258,8 @@ public sealed class GraphQLProjectAuthorizationTests
         var projectId = Guid.Parse("b659b7bf-6281-42e6-a7ef-23d296cff5dd");
         var authorization = new GraphQLProjectAuthorizationFake((projectId, PermissionType.Read));
         var counters = new GraphQLProjectAuthorizationCounters();
-        var auditSink = new GraphQLProjectAuthorizationAuditSinkFake();
-        await using var app = await CreateApplicationAsync(authorization, counters, auditSink);
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake();
+        await using var app = await CreateApplicationAsync(authorization, counters, evaluationLog);
         using var client = app.GetTestClient();
 
         using var request = CreateRequest(
@@ -201,7 +274,8 @@ public sealed class GraphQLProjectAuthorizationTests
         document.RootElement.GetProperty("data").GetProperty("second").GetString().Should().Be("allowed");
         authorization.CheckCount.Should().Be(1);
         counters.ResolverCount.Should().Be(2);
-        auditSink.Denials.Should().BeEmpty();
+        evaluationLog.Records.Should().OnlyContain(record => record.Outcome == PermissionEvaluationOutcome.Allow);
+        evaluationLog.Records.Should().HaveCount(2);
     }
 
     [Fact]
@@ -322,7 +396,7 @@ public sealed class GraphQLProjectAuthorizationTests
     private static async Task<WebApplication> CreateApplicationAsync(
         GraphQLProjectAuthorizationFake authorization,
         GraphQLProjectAuthorizationCounters counters,
-        GraphQLProjectAuthorizationAuditSinkFake? auditSink = null)
+        GraphQLPermissionEvaluationLogFake? evaluationLog = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
@@ -332,8 +406,14 @@ public sealed class GraphQLProjectAuthorizationTests
         builder.Services.AddSingleton<IProjectAuthorizationService>(authorization);
         builder.Services.AddSingleton(counters);
         builder.Services.AddSingleton<IActorContextAccessor>(new GraphQLTestActorContextAccessor());
-        builder.Services.AddSingleton<IProjectGraphQLAuthorizationAuditSink>(
-            auditSink ?? new GraphQLProjectAuthorizationAuditSinkFake());
+        // Route through the real log service so captured records get the same
+        // stamping and sink fan-out behavior as production; the fake only acts
+        // as the capture sink.
+        if (evaluationLog is not null)
+        {
+            builder.Services.AddSingleton<IPermissionEvaluationLogSink>(evaluationLog);
+        }
+        builder.Services.AddSingleton<IPermissionEvaluationLogService, PermissionEvaluationLogService>();
         builder.Services.AddGraphQLServer()
             .AddAuthorization()
             .AddDirectiveType<ProjectAuthorizationDirectiveType>()
@@ -363,30 +443,30 @@ public sealed class GraphQLProjectAuthorizationTests
         public void ClearActorContext() => _actorContext = GameGuild.Identity.Context.Actors.ActorContext.Anonymous;
     }
 
-    private sealed class GraphQLProjectAuthorizationAuditSinkFake : IProjectGraphQLAuthorizationAuditSink
+    private sealed class GraphQLPermissionEvaluationLogFake : IPermissionEvaluationLogSink
     {
-        private readonly ConcurrentQueue<ProjectGraphQLAuthorizationDenial> _denials = new();
+        private readonly ConcurrentQueue<PermissionEvaluationRecord> _records = new();
 
         public Exception? ErrorToThrow { get; init; }
 
-        public IReadOnlyCollection<ProjectGraphQLAuthorizationDenial> Denials => _denials.ToArray();
+        public IReadOnlyCollection<PermissionEvaluationRecord> Records => _records.ToArray();
 
-        public Task RecordDeniedAsync(
-            ProjectGraphQLAuthorizationDenial denial,
-            CancellationToken cancellationToken)
+        public Task<bool> TryRecordAsync(
+            PermissionEvaluationRecord record,
+            CancellationToken cancellationToken = default)
         {
             if (ErrorToThrow is { } exception)
             {
-                return Task.FromException(exception);
+                return Task.FromException<bool>(exception);
             }
 
             if (cancellationToken.IsCancellationRequested)
             {
-                return Task.FromCanceled(cancellationToken);
+                return Task.FromCanceled<bool>(cancellationToken);
             }
 
-            _denials.Enqueue(denial);
-            return Task.CompletedTask;
+            _records.Enqueue(record);
+            return Task.FromResult(true);
         }
     }
 
