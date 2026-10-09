@@ -37,6 +37,10 @@ public static class AuditModule
         IServiceCollection services,
         Action<AuditSigningOptions>? configureSigningOptions)
     {
+        // Fail fast when the pre-built retention policy templates are internally inconsistent
+        // or cannot produce a valid configuration request.
+        AuditRetentionPolicyTemplates.ValidateCatalog();
+
         services.AddOptions<AuditExportWebhookOptions>()
             .Configure<IConfiguration>((options, configuration) =>
             {
@@ -96,6 +100,7 @@ public static class AuditModule
         services.AddScoped<IAuditRetentionSimulationService, AuditRetentionSimulationService>();
         services.AddScoped<IAuditDataAccessRecorder, AuditDataAccessRecorder>();
         services.AddScoped<IAuthenticationAuditEventSink, CentralAuthenticationAuditEventSink>();
+        services.AddScoped<IApiKeyAuditEventSink, CentralApiKeyAuditEventSink>();
         services.AddScoped<IAuditActionTypeSearchService, AuditActionTypeSearchService>();
         services.AddSingleton<IAuditExportProgressTracker, DistributedAuditExportProgressTracker>();
         services.AddScoped<IAuditExportCronSchedule, AuditExportCronSchedule>();

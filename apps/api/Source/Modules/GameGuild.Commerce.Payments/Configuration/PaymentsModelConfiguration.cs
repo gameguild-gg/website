@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Commerce.Payments;
 
 /// <summary>
-///     EF Core model configuration for the Payments module (tax-related entities only).
-///     Additional payment entities are currently disabled.
+///     EF Core model configuration for the Payments module (tax-related and revenue
+///     auditing entities). Additional payment entities are currently disabled.
 /// </summary>
 public sealed class PaymentsModelConfiguration : IModelConfiguration
 {
@@ -53,5 +53,34 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
         modelBuilder.ApplyConfiguration(new TaxRateConfiguration());
         modelBuilder.ApplyConfiguration(new TaxRuleConfiguration());
         modelBuilder.ApplyConfiguration(new UserWalletConfiguration());
+
+        // Revenue auditing (issue #404): the audited revenue events themselves plus the
+        // reconciliation runs, their discrepancies and the anomaly alerts.
+        modelBuilder.Entity<RevenueEvent>(builder =>
+        {
+            builder.Property(revenueEvent => revenueEvent.EventType).HasConversion<string>().IsRequired();
+            builder.Property(revenueEvent => revenueEvent.Source).HasConversion<string>().IsRequired();
+            builder.Property(revenueEvent => revenueEvent.Status).HasConversion<string>().IsRequired();
+            // FinancialLedgerEntry is not part of the mapped model; the optional ledger
+            // link is preserved as the LedgerEntryId column instead of a navigation.
+            builder.Ignore(revenueEvent => revenueEvent.LedgerEntry);
+        });
+        modelBuilder.Entity<RevenueReconciliationRun>(builder =>
+        {
+            builder.Property(run => run.Status).HasConversion<string>().IsRequired();
+        });
+        modelBuilder.Entity<RevenueReconciliationDiscrepancy>(builder =>
+        {
+            builder.Property(discrepancy => discrepancy.Kind).HasConversion<string>().IsRequired();
+            builder.HasOne(discrepancy => discrepancy.Run)
+                .WithMany(run => run.Discrepancies)
+                .HasForeignKey(discrepancy => discrepancy.RunId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<RevenueAnomalyAlert>(builder =>
+        {
+            builder.Property(alert => alert.Kind).HasConversion<string>().IsRequired();
+            builder.Property(alert => alert.Status).HasConversion<string>().IsRequired();
+        });
     }
 }

@@ -17,6 +17,7 @@ public interface IDynamicRoleRepository
     Task UpdateAsync(DynamicRole role, CancellationToken ct = default);
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<DynamicRole>> GetRoleHierarchyAsync(Guid roleId, CancellationToken ct = default);
+    Task<IReadOnlyList<DynamicRole>> GetManyByIdAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -26,6 +27,14 @@ public interface IDynamicRoleAssignmentRepository
 {
     Task<IReadOnlyList<DynamicRoleAssignment>> GetByUserAsync(Guid userId, Guid? tenantId, CancellationToken ct = default);
     Task<IReadOnlyList<DynamicRoleAssignment>> GetValidByUserAsync(Guid userId, Guid? tenantId, CancellationToken ct = default);
+
+    /// <summary>
+    ///     Gets every role assignment stored in a tenant scope (null = global scope),
+    ///     regardless of validity. Used by read-only analysis such as the permission
+    ///     graph and impact simulation, which filter validity themselves.
+    /// </summary>
+    Task<IReadOnlyList<DynamicRoleAssignment>> GetByTenantAsync(Guid? tenantId, CancellationToken ct = default);
+
     Task<DynamicRoleAssignment> CreateAsync(DynamicRoleAssignment assignment, CancellationToken ct = default);
     Task DeleteAsync(Guid userId, Guid roleId, CancellationToken ct = default);
     Task<int> CountByRoleAsync(Guid roleId, CancellationToken ct = default);
@@ -125,7 +134,7 @@ public class DynamicRoleRepository(
     {
         var hierarchy = new List<DynamicRole>();
         var currentRole = await GetByIdAsync(roleId, ct).ConfigureAwait(false);
-        
+
         while (currentRole != null)
         {
             hierarchy.Add(currentRole);
@@ -137,12 +146,29 @@ public class DynamicRoleRepository(
             {
                 currentRole = null;
             }
-            
+
             // Prevent infinite loops
             if (hierarchy.Count > 20) break;
         }
-        
+
         return hierarchy;
+    }
+
+    /// <summary>
+    ///     Loads multiple roles by id in one query (multi-parent inheritance traversal).
+    ///     Unknown ids are simply absent from the result (fail-closed).
+    /// </summary>
+    public async Task<IReadOnlyList<DynamicRole>> GetManyByIdAsync(IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
+    {
+        if (ids.Count == 0)
+        {
+            return Array.Empty<DynamicRole>();
+        }
+
+        return await DbSet
+            .Where(r => ids.Contains(r.Id))
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
     }
 }
 
@@ -171,6 +197,13 @@ public class DynamicRoleAssignmentRepository(
             .Where(a => !a.ExpiresAt.HasValue || a.ExpiresAt.Value > now)
             .ToListAsync(ct).ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DynamicRoleAssignment>> GetByTenantAsync(Guid? tenantId, CancellationToken ct = default)
+        => await DbSet
+            .Include(a => a.Role)
+            .Where(a => a.TenantId == tenantId)
+            .ToListAsync(ct).ConfigureAwait(false);
 
     public async Task<DynamicRoleAssignment> CreateAsync(DynamicRoleAssignment assignment, CancellationToken ct = default)
     {
@@ -234,11 +267,13 @@ public sealed record RbacResolutionResult(
     IReadOnlyList<RoleContribution> RoleContributions);
 
 /// <summary>
-///     Implementation of RBAC permission resolver.
+///     Implementation of RBAC permission resolver. Uses <see cref="IRoleInheritanceEngine"/>
+///     for multi-parent hierarchy traversal with cycle detection and selective
+///     inheritance blocking (issue #358).
 /// </summary>
 public class RbacPermissionResolver(
-    IDynamicRoleRepository roleRepository,
     IDynamicRoleAssignmentRepository assignmentRepository,
+    IRoleInheritanceEngine inheritanceEngine,
     ILogger<RbacPermissionResolver> logger
 ) : IRbacPermissionResolver
 {
@@ -258,47 +293,68 @@ public class RbacPermissionResolver(
         {
             if (assignment.Role == null || !assignment.Role.IsActive) continue;
 
-            // Get role hierarchy (current role + all parent roles)
-            var hierarchy = await roleRepository.GetRoleHierarchyAsync(assignment.RoleId, ct).ConfigureAwait(false);
+            // Direct contribution of the assigned role (static + dynamic permissions).
+            var directPermissions = new List<string>();
+            directPermissions.AddRange(StaticRolePermissions.GetStaticPermissions(assignment.Role.Name));
+            directPermissions.AddRange(assignment.Role.Permissions);
 
-            foreach (var role in hierarchy)
+            foreach (var perm in directPermissions)
             {
-                var isInherited = role.Id != assignment.RoleId;
-                var rolePermissions = new List<string>();
-                var roleDenyPermissions = new List<string>();
+                allPermissions.Add(perm);
+            }
 
-                // Add static permissions for built-in roles
-                var staticPerms = StaticRolePermissions.GetStaticPermissions(role.Name);
-                rolePermissions.AddRange(staticPerms);
+            foreach (var perm in assignment.Role.DenyPermissions)
+            {
+                allDenyPermissions.Add(perm);
+            }
 
-                // Add dynamic permissions from database
-                rolePermissions.AddRange(role.Permissions);
-                roleDenyPermissions.AddRange(role.DenyPermissions);
+            contributions.Add(new RoleContribution(
+                assignment.Role.Id,
+                assignment.Role.Name,
+                directPermissions,
+                IsInherited: false,
+                InheritedFromRoleId: null));
 
-                // Add to total permissions
-                foreach (var perm in rolePermissions)
+            // Inherited contribution: multi-parent closure with cycle detection and
+            // selective blocking, computed by the inheritance engine (issue #358).
+            var closure = await inheritanceEngine.GetClosureAsync(assignment.RoleId, ct).ConfigureAwait(false);
+
+            foreach (var perm in closure.InheritedPermissions)
+            {
+                allPermissions.Add(perm);
+            }
+
+            // Ancestor denies always flow down unblocked (DENY-WINS is global).
+            foreach (var perm in closure.InheritedDenyPermissions)
+            {
+                allDenyPermissions.Add(perm);
+            }
+
+            foreach (var ancestor in closure.Ancestors)
+            {
+                if (ancestor.Permissions.Count == 0) continue;
+
+                foreach (var perm in ancestor.Permissions)
                 {
                     allPermissions.Add(perm);
                 }
-                
-                // Add to total deny permissions
-                foreach (var perm in roleDenyPermissions)
-                {
-                    allDenyPermissions.Add(perm);
-                }
 
-                // Track contribution
                 contributions.Add(new RoleContribution(
-                    role.Id,
-                    role.Name,
-                    rolePermissions,
-                    isInherited,
-                    isInherited ? assignment.RoleId : null));
-
-                logger.LogDebug(
-                    "Resolved {Count} permissions and {DenyCount} denies from role {RoleName} (inherited: {IsInherited}) for user {UserId}",
-                    rolePermissions.Count, roleDenyPermissions.Count, role.Name, isInherited, userId);
+                    ancestor.Role.Id,
+                    ancestor.Role.Name,
+                    ancestor.Permissions.ToList(),
+                    IsInherited: true,
+                    InheritedFromRoleId: assignment.RoleId));
             }
+
+            logger.LogDebug(
+                "Resolved {DirectCount} direct permissions, {InheritedCount} inherited permissions (from {AncestorCount} ancestors, {CyclesCut} cycle edges cut) and {DenyCount} denies from role {RoleName}",
+                directPermissions.Count,
+                closure.InheritedPermissions.Count,
+                closure.Ancestors.Count,
+                closure.CyclesCut,
+                closure.InheritedDenyPermissions.Count,
+                assignment.Role.Name);
         }
 
         return new RbacResolutionResult(allPermissions, allDenyPermissions, contributions);
