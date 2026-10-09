@@ -121,6 +121,9 @@ public sealed class ElevationSeamAdversarialTests(AdversarialSecurityFixture fix
             description = "created by the adversarial validation suite",
             managedResourceTypes = new[] { "FeatureFlag" },
             managedUserIds = new[] { account.User.Id },
+            // Required by GrantDelegatedAdminValidator; without it the request dies in
+            // input validation (400) before the authorization guard is ever exercised.
+            allowedOperations = new[] { "read" },
         });
         using var response = await client.PostAsync(
             "/v1/delegated-admin",

@@ -3,7 +3,7 @@
 **Issue:** [#327](https://github.com/gameguild-gg/gameguild/issues/327) — acceptance criterion "Penetration testing validates security model".
 **Scope:** HTTP-level adversarial validation of the deny-by-default authorization model of the GameGuild API (`apps/api`).
 **Suite:** `apps/api/tests/GameGuild.API.SecurityTests` (xUnit, real host, real PostgreSQL, production JWT pipeline).
-**Status:** PASS — all scenarios hold; see [Results](#results) and [Findings](#findings).
+**Status:** PASS after remediation — the exercise **found two real defects** (one of them a privilege-escalation path), both fixed in the same change; see [Results](#results) and [Findings](#findings).
 
 ## What this is — and what it is not
 
@@ -55,7 +55,7 @@ attempted-attack inventory.
 | d | Unguarded-endpoint sweep | `UnguardedRouteSweepTests.cs` | Reads the **running host's route table** (`EndpointDataSource`): every controller endpoint must carry `[Authorize]` or `[AllowAnonymous]` metadata; every anonymous endpoint must be registered in `AnonymousEndpointRegistry` with a justification; every registry entry must point at a real controller action (no stale allowlist rows). Then an anonymous HTTP walk over every materializable GET route: protected routes must answer 401/403 to anonymous callers (never 2xx); registered anonymous routes must not answer 401. |
 | e | TOCTOU / race | `GrantRevokeRaceAdversarialTests.cs` | 32 concurrent requests in flight while the grant is revoked through the production `IPermissionGrantService` (guarded, versioned, audited path); asserts no 5xx (fail closed, never open, under concurrency) and that after the revocation commits, a concurrent 32-request burst is denied with 403 — no stale-allow window. Control experiment: a committed grant is honored by a concurrent burst (proves denials are semantic, not a broken path). |
 | f | Cache poisoning / stale-allow | `RevocationCachePoisoningTests.cs` | Warms the decision caches with allowed requests, then revokes through the production mutation path (tenant security version bump — the #746 stale guard) and immediately re-requests: 5 grant/revoke cycles, deny-rule-after-warmed-allow, and pre-expired/inactive grants never authorizing. |
-| g | Elevation / impersonation seams | `ElevationSeamAdversarialTests.cs` | JIT elevation surface (`/v1/jit-elevations`): self-approval (entity guard), approval with a **spoofed reviewer id** (the reviewer arrives in the request body), elevation request forged with another user's requester id, and self-assigned delegated-admin scope. The invariant: no path leaves the attacker (or the named victim) holding an in-force elevation or the requested permission. |
+| g | Elevation / impersonation seams | `ElevationSeamAdversarialTests.cs` | JIT elevation surface (`/v1/jit-elevations`): self-approval (entity guard), approval with a **spoofed reviewer id** (the reviewer arrives in the request body), elevation request forged with another user's requester id, and self-assigned delegated-admin scope. The invariant: no path leaves the attacker (or the named victim) holding an in-force elevation or the requested permission. **This family found a real escalation (F-2) — fixed in the same PR; the scenarios now pin the remediated behavior.** |
 
 ### Denial semantics used by assertions
 
@@ -71,9 +71,16 @@ attempted-attack inventory.
 
 Run: `dotnet test apps/api/tests/GameGuild.API.SecurityTests` in PR verification (CI),
 triggered automatically because the project lives under `apps/api/tests/*Tests/` and the
-affected-test selector picks it up for any change inside it. See the PR checks and the
+affected-test selector picks this up for any change inside it. See the PR checks and the
 `affected-api-*` artifacts for the executed TRX evidence; the summary is reproduced in the
 issue close-out comment.
+
+The first full run of the suite **failed**: it exposed two real defects (findings F-2
+and F-3 below) plus three harness defects in the suite itself (HS512 forge key shorter
+than 512 bits; mutation endpoints probed with GET yielding 405 before authorization was
+evaluated; a delegated-admin probe body missing a validator-required field). The harness
+defects were corrected, the two product defects were fixed in the same change, and the
+suite now passes in full.
 
 | Family | Result |
 |--------|--------|
@@ -83,36 +90,67 @@ issue close-out comment.
 | (d) Unguarded-endpoint sweep | PASS — full route table guarded or allowlisted; anonymous walk clean |
 | (e) TOCTOU / race | PASS — fail-closed under race; no stale-allow window post-revocation |
 | (f) Cache poisoning / stale-allow | PASS — version-bumped invalidation observed over HTTP; deny-wins; lifecycle states dead |
-| (g) Elevation / impersonation seams | PASS — no in-force elevation or effective permission via any seam |
+| (g) Elevation / impersonation seams | PASS — **after fixing the F-2 escalation in this PR**; no in-force elevation or effective permission via any seam |
 
-**Overall: no authorization bypass found.** The deny-by-default model held against every
-attempted attack in the inventory above.
+**Overall: one exploitable privilege-escalation path (F-2) and one audit-integrity defect
+(F-3) were found by this exercise and are remediated in the same change; after
+remediation no authorization bypass remains** against every attempted attack in the
+inventory above.
 
 ## Findings
 
-No vulnerability (no privilege escalation, no cross-tenant access, no token-acceptance
-bypass, no stale-allow window) was found. Two non-exploitable observations:
+### F-1 (low, response hygiene): guard rejections surface as generic 500s
 
-- **F-1 (low, response hygiene): guard rejections surface as generic 500s.** Command
-  handlers enforce authorization by throwing `UnauthorizedAccessException`
-  (e.g. `GrantTenantPermissionCommandHandler`, `GrantDelegatedAdminHandler`,
-  `GetTenantPermissionsQueryHandler`); the global `ExceptionHandlingMiddleware` maps it
-  to a generic 500 problem+json rather than 403, while the OpenAPI annotations document
-  401/403 for those endpoints. The security property is intact (denied, no side effects,
-  no detail leakage), but the status code misleads API consumers and monitoring. Suggested
-  follow-up: map `UnauthorizedAccessException` → 403 in the exception middleware (a
-  one-line addition to its catch chain).
-- **F-2 (informational, audit integrity): reviewer/requester identities in the JIT
-  elevation surface arrive from the request body.**
-  `JitElevationsController.Approve` passes `request.ReviewerId` (body) into
-  `ApproveJitElevationCommand`, and `RequestElevation` passes `command.RequesterId`
-  (body). Self-approval is blocked by the entity (`reviewer == requester` throws), and
-  scenario (g) proves that an approval with a spoofed reviewer id does **not** leave the
-  attacker holding an effective permission, so this is not an escalation path today.
-  However, the architecture invariant "acting-user identity from
-  `IActorContextAccessor`, never from request body" is not enforced on these two
-  commands, and the reviewer attribution in the audit log can be spoofed. Suggested
-  follow-up: derive both identities from the actor context inside the handlers.
+Command handlers enforce authorization by throwing `UnauthorizedAccessException`
+(e.g. `GrantTenantPermissionCommandHandler`, `GrantDelegatedAdminHandler`); the global
+`ExceptionHandlingMiddleware` maps it to a generic 500 problem+json rather than 403,
+while the OpenAPI annotations document 401/403 for those endpoints. The security
+property is intact (denied, no side effects, no detail leakage), but the status code
+misleads API consumers and monitoring. Suggested follow-up: map
+`UnauthorizedAccessException` → 403 in the exception middleware (a one-line addition to
+its catch chain). Not fixed here to keep this change test-focused.
+
+### F-2 (critical, privilege escalation — FOUND AND FIXED): JIT elevation self-approval with a spoofed reviewer id
+
+Before this change, `POST /v1/jit-elevations/{id}:approve` trusted the reviewer identity
+from the request body, and the only guard was the entity-level check
+`reviewerId == requesterId` (self-approval). Naming **any other GUID** as the reviewer
+bypassed it: the elevation auto-activated, and `EffectivePermissionResolverService`
+(layer 7, in-force JIT grants) then contributed the requested permission to the
+attacker's allow set. Exploit chain exercised by scenario (g): authenticated member →
+request elevation for `features:read` → approve it themselves with a random reviewer id
+→ hold the permission for the requested duration. Discovery trail: the first CI run of
+the suite could not complete scenario (g) — every JIT request 500'd from finding F-3;
+tracing that failure exposed both F-3 and, behind it, the unguarded approval path
+(`ApproveJitElevationHandler` at the parent commit passes the body reviewer straight
+through — verifiable in the PR diff). Both were fixed before the suite was re-run.
+
+Remediation (same PR): all four JIT elevation command handlers now take the acting
+identity from `IActorContextAccessor` and reject a body-supplied identity that does not
+match the authenticated actor; approval additionally requires system-admin or
+same-tenant-admin authority (the elevation's tenant, from the stored request — never
+from the body; tenant-less/global elevations require system admin). Deny/revoke keep
+self-service semantics (privilege-reducing) but with actor-derived attribution. Pinned
+by `JitElevationActorIdentityGuardTests` (unit) and the scenario-(g) HTTP tests.
+
+### F-3 (high, audit integrity — FOUND AND FIXED): the permission audit log was never persisted
+
+`PermissionAuditLog` had no EF mapping, no `DbSet`, and no table in any migration —
+`PermissionAuditService.LogPermissionChangeAsync` (called by every guarded permission
+mutation: grant, revoke, deny, JIT elevation, delegated-admin scopes) threw
+`InvalidOperationException: Cannot create a DbSet for 'PermissionAuditLog' …` against a
+real database. Consequence: the architecture invariant "permission mutations are
+audited" was broken at runtime — the mutation itself committed (it is saved before the
+audit write) and the request then failed 500 with no audit row. Not an access bypass
+(deny-by-default still governed the mutation), but the audit trail required for
+security monitoring of exactly the operations this issue cares about silently did not
+exist. The suite's TOCTOU/cache scenarios (e), which drive the production
+grant/revoke services, failed on this and made the gap impossible to miss.
+
+Remediation (same PR): `PermissionAuditLogConfiguration` maps the entity (TenantId
+value conversion, enum-as-int, query indexes) and migration `AddPermissionAuditLog`
+creates the `PermissionAuditLogs` table; every permission mutation now writes its audit
+row through the same code path.
 
 ## Relationship to existing security testing
 

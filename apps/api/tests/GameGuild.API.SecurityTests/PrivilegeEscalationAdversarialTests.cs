@@ -36,10 +36,10 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
 
         // Permissioned read family (Features.Read policy: tenant/system admin or features:read).
         using var featuresList = await client.GetAsync("/v1/features");
-        AssertDenial(featuresList, "feature-flag list without grant");
+        await AssertDenialAsync(featuresList, "feature-flag list without grant");
 
         using var featureByKey = await client.GetAsync("/v1/features/probe-key");
-        AssertDenial(featureByKey, "feature-flag detail without grant");
+        await AssertDenialAsync(featureByKey, "feature-flag detail without grant");
 
         // Permissioned mutation family (tenant permission engine: tenant/system admin only).
         var grantBody = JsonSerializer.Serialize(new
@@ -51,7 +51,7 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
             reason = "adversarial self-grant attempt",
         });
         using var selfGrant = await client.PostAsync(GrantEndpoint, new StringContent(grantBody, Encoding.UTF8, "application/json"));
-        AssertDenial(selfGrant, "self-grant attempt");
+        await AssertDenialAsync(selfGrant, "self-grant attempt");
 
         var globalBody = JsonSerializer.Serialize(new
         {
@@ -59,7 +59,7 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
             setBy = account.User.Id,
         });
         using var globalDefaults = await client.PostAsync(GlobalDefaultsEndpoint, new StringContent(globalBody, Encoding.UTF8, "application/json"));
-        AssertDenial(globalDefaults, "global-default escalation attempt");
+        await AssertDenialAsync(globalDefaults, "global-default escalation attempt");
 
         var denyBody = JsonSerializer.Serialize(new
         {
@@ -69,12 +69,12 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
             deniedBy = account.User.Id,
         });
         using var denyOther = await client.PostAsync(DenyEndpoint, new StringContent(denyBody, Encoding.UTF8, "application/json"));
-        AssertDenial(denyOther, "deny-for-another-user attempt");
+        await AssertDenialAsync(denyOther, "deny-for-another-user attempt");
 
         // Reading another tenant member's permission inventory requires user-read rights.
         using var otherUserPermissions = await client.GetAsync(
             $"/api/v1/authorization/tenants/{account.TenantId}/permissions?userId={Guid.NewGuid()}");
-        AssertDenial(otherUserPermissions, "other-user permission inventory read");
+        await AssertDenialAsync(otherUserPermissions, "other-user permission inventory read");
 
         // Database-level assertion: none of the attempts may have left a grant behind.
         using (var scope = fixture.Factory.Services.CreateScope())
@@ -100,19 +100,37 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
     public async Task AnonymousRequestsToGuardedMutationSurfacesAreRejected()
     {
         // No token at all: the guarded surfaces must demand authentication first.
+        // Mutation endpoints are probed with their real verb + a JSON body so the
+        // request reaches the authentication layer instead of short-circuiting on
+        // method routing (405) before authorization is ever evaluated.
         using var client = fixture.Factory.CreateClient();
 
-        using var grant = await client.GetAsync(GrantEndpoint);
-        Assert.Equal(HttpStatusCode.Unauthorized, grant.StatusCode);
+        var grantBody = JsonSerializer.Serialize(new
+        {
+            tenantId = Guid.NewGuid(),
+            userId = Guid.NewGuid(),
+            permissions = new[] { "features:read" },
+            grantedBy = Guid.NewGuid(),
+        });
+        using var grant = await client.PostAsync(GrantEndpoint, new StringContent(grantBody, Encoding.UTF8, "application/json"));
+        Assert.True(grant.StatusCode is HttpStatusCode.Unauthorized,
+            $"anonymous grant attempt must demand authentication, got {(int)grant.StatusCode}");
 
-        using var globalDefaults = await client.GetAsync(GlobalDefaultsEndpoint);
-        Assert.Equal(HttpStatusCode.Unauthorized, globalDefaults.StatusCode);
+        var globalBody = JsonSerializer.Serialize(new
+        {
+            permissions = new[] { "features:read" },
+            setBy = Guid.NewGuid(),
+        });
+        using var globalDefaults = await client.PostAsync(
+            GlobalDefaultsEndpoint, new StringContent(globalBody, Encoding.UTF8, "application/json"));
+        Assert.True(globalDefaults.StatusCode is HttpStatusCode.Unauthorized,
+            $"anonymous global-default attempt must demand authentication, got {(int)globalDefaults.StatusCode}");
 
         using var features = await client.GetAsync("/v1/features");
         Assert.Equal(HttpStatusCode.Unauthorized, features.StatusCode);
     }
 
-    private static void AssertDenial(HttpResponseMessage response, string label)
+    private static async Task AssertDenialAsync(HttpResponseMessage response, string label)
     {
         // 401 = authentication-layer rejection; 403 = authorization-policy rejection.
         // Guards implemented as UnauthorizedAccessException in command handlers are
@@ -126,6 +144,20 @@ public sealed class PrivilegeEscalationAdversarialTests(AdversarialSecurityFixtu
                 is HttpStatusCode.Unauthorized
                 or HttpStatusCode.Forbidden
                 or HttpStatusCode.InternalServerError,
-            $"{label} must be denied (401/403/500-fail-closed), got {(int)response.StatusCode}");
+            $"{label} must be denied (401/403/500-fail-closed), got {(int)response.StatusCode}: {await DenialDiagnosticsAsync(response)}");
+    }
+
+    /// <summary>Returns a short response snippet for failure diagnostics (truncated; problem details carry no secrets).</summary>
+    private static async Task<string> DenialDiagnosticsAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            return body.Length <= 300 ? body : $"{body[..300]}…";
+        }
+        catch
+        {
+            return "<no body>";
+        }
     }
 }

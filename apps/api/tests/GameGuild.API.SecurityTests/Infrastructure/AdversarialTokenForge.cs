@@ -43,6 +43,34 @@ public sealed class AdversarialTokenForge(WebApplicationFactory<Program> factory
     {
         public SymmetricSecurityKey ProductionSigningKey => new(Encoding.UTF8.GetBytes(SecretKey));
 
+        /// <summary>
+        ///     The production signing material padded to at least 64 bytes (512 bits) so the
+        ///     forge can also mint tokens with longer-key algorithms (HS512) — the .NET crypto
+        ///     stack refuses to create an HS512 signature over a shorter key, which would fail
+        ///     the forge, not the host under attack. The server still validates HS256 only, so
+        ///     the scenario keeps testing the algorithm whitelist, not key length.
+        /// </summary>
+        public SymmetricSecurityKey ProductionSigningKeyPaddedForHs512
+        {
+            get
+            {
+                var bytes = Encoding.UTF8.GetBytes(SecretKey);
+                if (bytes.Length >= 64)
+                {
+                    return new SymmetricSecurityKey(bytes);
+                }
+
+                var padded = new byte[64];
+                bytes.CopyTo(padded, 0);
+                for (var index = bytes.Length; index < padded.Length; index++)
+                {
+                    padded[index] = 0x2d; // '-'
+                }
+
+                return new SymmetricSecurityKey(padded);
+            }
+        }
+
         public SymmetricSecurityKey AttackerSigningKey => new(Encoding.UTF8.GetBytes(
             "attacker-controlled-secret-key-with-at-least-thirty-two-characters"));
     }

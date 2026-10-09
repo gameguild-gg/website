@@ -98,7 +98,7 @@ public sealed class TenantCrossoverAdversarialTests(AdversarialSecurityFixture f
             bodyCrossover.StatusCode is HttpStatusCode.Forbidden
                 or HttpStatusCode.Unauthorized
                 or HttpStatusCode.InternalServerError,
-            $"cross-tenant grant must be denied, got {(int)bodyCrossover.StatusCode}");
+            $"cross-tenant grant must be denied, got {(int)bodyCrossover.StatusCode}: {await DenialDiagnosticsAsync(bodyCrossover)}");
 
         // Database-level assertion: no grant row may exist placing the tenant-A user in tenant B.
         using (var scope = fixture.Factory.Services.CreateScope())
@@ -114,5 +114,19 @@ public sealed class TenantCrossoverAdversarialTests(AdversarialSecurityFixture f
         Assert.Equal(HttpStatusCode.OK, ownAgain.StatusCode);
         var ownAgainBody = await ownAgain.Content.ReadAsStringAsync();
         Assert.DoesNotContain(accountB.User.Id.ToString(), ownAgainBody, StringComparison.Ordinal);
+    }
+
+    /// <summary>Returns a short response snippet for failure diagnostics (truncated; problem details carry no secrets).</summary>
+    private static async Task<string> DenialDiagnosticsAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            return body.Length <= 300 ? body : $"{body[..300]}…";
+        }
+        catch
+        {
+            return "<no body>";
+        }
     }
 }

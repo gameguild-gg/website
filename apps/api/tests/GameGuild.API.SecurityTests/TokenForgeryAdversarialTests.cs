@@ -67,7 +67,7 @@ public sealed class TokenForgeryAdversarialTests(AdversarialSecurityFixture fixt
                 presented = forge.Forge(forge.Material.ProductionSigningKey, "none", forge.StandardClaims(account), omitSignature: true);
                 break;
             case "wrong-algorithm-hs512":
-                presented = forge.Forge(forge.Material.ProductionSigningKey, SecurityAlgorithms.HmacSha512, forge.StandardClaims(account));
+                presented = forge.Forge(forge.Material.ProductionSigningKeyPaddedForHs512, SecurityAlgorithms.HmacSha512, forge.StandardClaims(account));
                 break;
             case "expired":
                 presented = forge.Forge(
