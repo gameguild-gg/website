@@ -91,9 +91,10 @@ public static class DataDependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
         // Sign-in compliance gate (issue #267): safe default is disabled; hosts register a
-        // real ISignInCompliancePolicy adapter to compose product compliance signals.
+        // real ISignInCompliancePolicy adapter to compose product compliance signals. The
+        // default policy is stateless, so the shared instance is served per scope.
         services.Configure<SignInComplianceGateOptions>(configuration.GetSection(SignInComplianceGateOptions.SectionName));
-        services.TryAddScoped<ISignInCompliancePolicy, AllowAllSignInCompliancePolicy>();
+        services.TryAddScoped<ISignInCompliancePolicy>(static _ => AllowAllSignInCompliancePolicy.Instance);
 
         // Register repositories
         // NOTE: IUserRepository is registered by the Users module - no need to register here
