@@ -77,10 +77,14 @@ public sealed class FeatureEvaluationContextHttpTests
     public static IEnumerable<object[]> MismatchedSelectors()
     {
         foreach (var endpoint in new[] { "evaluate", "bulk", "value", "enabled" })
-        foreach (var selector in new[] { "user", "tenant" })
-        foreach (var systemAdmin in new[] { false, true })
         {
-            yield return [endpoint, selector, systemAdmin];
+            foreach (var selector in new[] { "user", "tenant" })
+            {
+                foreach (var systemAdmin in new[] { false, true })
+                {
+                    yield return [endpoint, selector, systemAdmin];
+                }
+            }
         }
     }
 
@@ -123,9 +127,11 @@ public sealed class FeatureEvaluationContextHttpTests
     public static IEnumerable<object[]> InvalidSubjects()
     {
         foreach (var endpoint in new[] { "evaluate", "bulk", "value", "enabled" })
-        foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
         {
-            yield return [endpoint, subject];
+            foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
+            {
+                yield return [endpoint, subject];
+            }
         }
     }
 
@@ -306,9 +312,21 @@ public sealed class FeatureEvaluationContextHttpTests
             new("actor_type", actorType), new("permission", "features:read"),
             new("subscription_plan", "trusted-plan")
         };
-        if (subject != "missing") claims.Add(new Claim("sub", subject));
-        if (tenant.HasValue) claims.Add(new Claim("tenant_id", tenant.Value.ToString()));
-        if (systemAdmin) claims.Add(new Claim("role", "SystemAdmin"));
+        if (subject != "missing")
+        {
+            claims.Add(new Claim("sub", subject));
+        }
+
+        if (tenant.HasValue)
+        {
+            claims.Add(new Claim("tenant_id", tenant.Value.ToString()));
+        }
+
+        if (systemAdmin)
+        {
+            claims.Add(new Claim("role", "SystemAdmin"));
+        }
+
         var token = new JwtSecurityToken("feature-test-issuer", "feature-test-audience", claims,
             DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(5),
             new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret)), "HS256"));
@@ -321,8 +339,16 @@ public sealed class FeatureEvaluationContextHttpTests
     private static Task<HttpResponseMessage> SendAsync(HttpClient client, string endpoint, FeatureContext context)
     {
         var query = $"?environment={context.Environment}";
-        if (context.UserId.HasValue) query += $"&userId={context.UserId}";
-        if (context.TenantId.HasValue) query += $"&tenantId={context.TenantId}";
+        if (context.UserId.HasValue)
+        {
+            query += $"&userId={context.UserId}";
+        }
+
+        if (context.TenantId.HasValue)
+        {
+            query += $"&tenantId={context.TenantId}";
+        }
+
         return endpoint switch
         {
             "evaluate" => client.PostAsJsonAsync("/v1.0/features/:evaluate", new FeatureEvaluationRequest { FeatureKey = "flag", Context = context }),

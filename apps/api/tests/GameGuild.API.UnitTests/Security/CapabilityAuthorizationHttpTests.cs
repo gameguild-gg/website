@@ -42,22 +42,34 @@ public sealed class CapabilityAuthorizationHttpTests
     public static IEnumerable<object[]> CrossTenantCases()
     {
         foreach (var endpoint in Endpoints)
-        foreach (var role in new[] { "Member", "TenantAdmin" })
-            yield return [endpoint, role];
+        {
+            foreach (var role in new[] { "Member", "TenantAdmin" })
+            {
+                yield return [endpoint, role];
+            }
+        }
     }
 
     public static IEnumerable<object[]> InvalidSubjects()
     {
         foreach (var endpoint in Endpoints)
-        foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
-            yield return [endpoint, subject];
+        {
+            foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
+            {
+                yield return [endpoint, subject];
+            }
+        }
     }
 
     public static IEnumerable<object[]> Administrators()
     {
         foreach (var endpoint in Endpoints)
-        foreach (var role in new[] { "Owner", "TenantAdmin", "Admin", "SystemAdmin" })
-            yield return [endpoint, role];
+        {
+            foreach (var role in new[] { "Owner", "TenantAdmin", "Admin", "SystemAdmin" })
+            {
+                yield return [endpoint, role];
+            }
+        }
     }
 
     [Theory]
@@ -282,7 +294,11 @@ public sealed class CapabilityAuthorizationHttpTests
         });
         var app = builder.Build();
         app.UseAuthentication();
-        if (resolveActor) app.UseMiddleware<ActorContextMiddleware>();
+        if (resolveActor)
+        {
+            app.UseMiddleware<ActorContextMiddleware>();
+        }
+
         app.UseAuthorization();
         app.MapControllers();
         using (var scope = app.Services.CreateScope())
@@ -308,8 +324,16 @@ public sealed class CapabilityAuthorizationHttpTests
     private static HttpClient AuthenticatedClient(WebApplication app, string subject, Guid? tenant, string role)
     {
         var claims = new List<Claim> { new("actor_type", "user"), new("role", role), new("permission", "features:manage") };
-        if (subject != "missing") claims.Add(new Claim("sub", subject));
-        if (tenant.HasValue) claims.Add(new Claim("tenant_id", tenant.Value.ToString()));
+        if (subject != "missing")
+        {
+            claims.Add(new Claim("sub", subject));
+        }
+
+        if (tenant.HasValue)
+        {
+            claims.Add(new Claim("tenant_id", tenant.Value.ToString()));
+        }
+
         var token = new JwtSecurityToken("capability-test-issuer", "capability-test-audience", claims,
             DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(5),
             new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Secret)), "HS256"));

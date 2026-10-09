@@ -19,8 +19,12 @@ public sealed class CapabilityAuthorizationTests
     public static IEnumerable<object[]> DeniedActors()
     {
         foreach (var operation in new[] { "set", "remove", "sync", "audit" })
-        foreach (var actor in new[] { "member", "flag-manager", "other-admin", "no-tenant", "anonymous", "invalid-user", "empty-user", "unprivileged-system", "service-member" })
-            yield return [operation, actor];
+        {
+            foreach (var actor in new[] { "member", "flag-manager", "other-admin", "no-tenant", "anonymous", "invalid-user", "empty-user", "unprivileged-system", "service-member" })
+            {
+                yield return [operation, actor];
+            }
+        }
     }
 
     public static IEnumerable<object[]> DeniedHandlerActors() => DeniedActors().Where(value => (string)value[0] != "audit");
@@ -68,7 +72,11 @@ public sealed class CapabilityAuthorizationTests
         await CallServiceAsync(service, operation);
         var log = await db.Set<CapabilityAuditLog>().SingleAsync();
         Assert.Equal(UserId, log.ChangedByUserId);
-        if (operation == "set") Assert.Equal(UserId, (await db.Set<TenantCapability>().SingleAsync()).ModifiedByUserId);
+        if (operation == "set")
+        {
+            Assert.Equal(UserId, (await db.Set<TenantCapability>().SingleAsync()).ModifiedByUserId);
+        }
+
         accessor.ClearActorContext();
     }
 
@@ -83,9 +91,14 @@ public sealed class CapabilityAuthorizationTests
         var handler = CreateHandler(service.Object, accessor);
         await CallHandlerAsync(handler, operation);
         if (operation == "set")
+        {
             service.Verify(value => value.SetCapabilityOverrideAsync(TenantId, "branding.custom", true, "override:test", UserId, "native test", null, default), Times.Once);
+        }
         else
+        {
             service.Verify(value => value.RemoveCapabilityOverrideAsync(TenantId, "branding.custom", UserId, "native test", default), Times.Once);
+        }
+
         accessor.ClearActorContext();
     }
 
@@ -136,8 +149,16 @@ public sealed class CapabilityAuthorizationTests
 
     private static ActorContext Actor(string name)
     {
-        if (name == "anonymous") return ActorContext.Anonymous;
-        if (name == "trusted-system") return ActorContextBuilder.ForSystem("capability-sync").Build();
+        if (name == "anonymous")
+        {
+            return ActorContext.Anonymous;
+        }
+
+        if (name == "trusted-system")
+        {
+            return ActorContextBuilder.ForSystem("capability-sync").Build();
+        }
+
         var builder = ActorContextBuilder.ForUser(UserId).WithTenantId(TenantId);
         return name switch
         {

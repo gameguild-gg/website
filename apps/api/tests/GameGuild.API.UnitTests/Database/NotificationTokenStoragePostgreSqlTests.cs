@@ -150,7 +150,10 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         var migration = new ProtectNotificationCredentialMetadata();
         var generator = context.GetService<IMigrationsSqlGenerator>();
         foreach (var sql in generator.Generate(migration.UpOperations))
+        {
             await context.Database.ExecuteSqlRawAsync(sql.CommandText);
+        }
+
         var id = Guid.NewGuid();
         var value = new string('x', wide ? 5000 : 4000);
         await context.Database.ExecuteSqlRawAsync("INSERT INTO \"Notifications\" (\"Id\",\"Metadata\") VALUES ({0},{1})", id, value);
@@ -158,7 +161,9 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         async Task Down()
         {
             foreach (var sql in generator.Generate(migration.DownOperations))
+            {
                 await context.Database.ExecuteSqlRawAsync(sql.CommandText);
+            }
         }
         if (wide)
         {
@@ -188,7 +193,11 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
             var row = Notification.Create(user.Id, NotificationType.PasswordReset, NotificationChannel.InApp,
                 "Historical request", "Requested operation", metadata: metadata);
             context.Entry(row).Property(value => value.DeliveryStatus).CurrentValue = status;
-            if (status == NotificationDeliveryStatus.Sent) row.MarkAsSent();
+            if (status == NotificationDeliveryStatus.Sent)
+            {
+                row.MarkAsSent();
+            }
+
             row.DeletedAt = SystemClock.UtcNow;
             return row;
         }).ToList();
@@ -213,7 +222,11 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
             preferences.Object, sender.Object, Options.Create(new EmailDispatcherOptions { SweepBatchSize = 2 }),
             NullLogger<EmailDispatcherService>.Instance, MetadataProtector);
         // Repeated bounded passes cover the six lifecycle states without scheduling a second worker.
-        for (var index = 0; index < rows.Count; index++) await dispatcher.SweepOnceAsync();
+        for (var index = 0; index < rows.Count; index++)
+        {
+            await dispatcher.SweepOnceAsync();
+        }
+
         context.ChangeTracker.Clear();
         foreach (var id in states.Keys)
         {
@@ -304,6 +317,9 @@ public sealed class NotificationTokenStoragePostgreSqlFixture : IAsyncLifetime
     }
     public async Task DisposeAsync()
     {
-        if (_database is not null) await _database.DisposeAsync();
+        if (_database is not null)
+        {
+            await _database.DisposeAsync();
+        }
     }
 }

@@ -28,7 +28,11 @@ public class FeatureFlagsController(
     {
         var actor = actorContextAccessor.ActorContext;
         var error = ValidateEvaluationContext(actor, request.Context.UserId, request.Context.TenantId);
-        if (error is not null) return error;
+        if (error is not null)
+        {
+            return error;
+        }
+
         var context = CreateEvaluationContext(actor, request.Context);
 
         var result = await sender.Send(
@@ -53,7 +57,11 @@ public class FeatureFlagsController(
     {
         var actor = actorContextAccessor.ActorContext;
         var error = ValidateEvaluationContext(actor, userId, tenantId);
-        if (error is not null) return error;
+        if (error is not null)
+        {
+            return error;
+        }
+
         var context = CreateEvaluationContext(actor, new FeatureContext { Environment = environment });
 
         var result = await evaluationService.GetValueAsync(key, context, defaultValue, cancellationToken);
@@ -69,7 +77,11 @@ public class FeatureFlagsController(
     {
         var actor = actorContextAccessor.ActorContext;
         var error = ValidateEvaluationContext(actor, request.Context.UserId, request.Context.TenantId);
-        if (error is not null) return error;
+        if (error is not null)
+        {
+            return error;
+        }
+
         var context = CreateEvaluationContext(actor, request.Context);
         logger.LogDebug("Evaluating {FeatureCount} feature flags", request.FeatureKeys.Count);
 
@@ -87,7 +99,11 @@ public class FeatureFlagsController(
     {
         var actor = actorContextAccessor.ActorContext;
         var error = ValidateEvaluationContext(actor, userId, tenantId);
-        if (error is not null) return error;
+        if (error is not null)
+        {
+            return error;
+        }
+
         var context = CreateEvaluationContext(actor, new FeatureContext { Environment = environment });
 
         var result = await evaluationService.GetEnabledFeaturesAsync(context, cancellationToken).ConfigureAwait(false);

@@ -59,7 +59,11 @@ public sealed class NotificationMetadataProtectorTests
     public void Invalid_Envelope_Fails_Closed_With_No_Secret_In_The_Diagnostic(string attack)
     {
         var notification = Create();
-        if (attack != "plaintext") _protector.ProtectForStorage(notification);
+        if (attack != "plaintext")
+        {
+            _protector.ProtectForStorage(notification);
+        }
+
         if (attack == "copy")
         {
             var copy = Create();
@@ -137,7 +141,11 @@ public sealed class NotificationMetadataProtectorTests
         await using var context = Context();
         var notification = Create(channel: NotificationChannel.InApp);
         typeof(Notification).GetProperty(nameof(Notification.DeliveryStatus))!.SetValue(notification, status);
-        if (status == NotificationDeliveryStatus.Sent) notification.MarkAsSent();
+        if (status == NotificationDeliveryStatus.Sent)
+        {
+            notification.MarkAsSent();
+        }
+
         notification.Version = 1; // The InMemory test context does not perform production version stamping.
         notification.Delete();
         var state = (notification.IsSent, notification.SentAt, notification.UpdatedAt, notification.DeletedAt,
@@ -188,7 +196,11 @@ public sealed class NotificationMetadataProtectorTests
         await using var context = Context();
         var notification = Create();
         _protector.ProtectForStorage(notification);
-        if (corrupt) SetMetadata(notification, NotificationMetadataProtector.ProtectedPrefix + "invalid");
+        if (corrupt)
+        {
+            SetMetadata(notification, NotificationMetadataProtector.ProtectedPrefix + "invalid");
+        }
+
         context.Add(notification);
         await context.SaveChangesAsync();
         var sender = new Mock<GameGuild.Email.IEmailSender>();
