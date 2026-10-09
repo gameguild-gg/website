@@ -8,22 +8,42 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace GameGuild.Compliance.Audit;
 
-/// <summary>Tenant-admin retention what-if forecasts; no operation changes stored record retention.</summary>
+/// <summary>
+/// Tenant-admin retention policy configuration, pre-built compliance templates and what-if forecasts;
+/// no operation changes stored record retention.
+/// </summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/audit/retention-simulation")]
 [Route("api/audit/retention-simulation")]
+[Route("v{version:apiVersion}/audit/retention-policies")]
+[Route("api/audit/retention-policies")]
 [Tags("compliance/audit/retention-simulation")]
 [Authorize]
 [EnableRateLimiting(RateLimitPolicies.Api)]
 [ProducesResponseType(StatusCodes.Status403Forbidden)]
 public sealed class AuditRetentionSimulationController(IAuditRetentionSimulationService service, ISender sender) : ControllerBase
 {
+    /// <summary>
+    /// Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+    /// HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+    /// </summary>
+    [HttpGet("templates")]
+    [ProducesResponseType(typeof(IReadOnlyList<AuditRetentionPolicyTemplate>), StatusCodes.Status200OK)]
+    public Task<ActionResult<IReadOnlyList<AuditRetentionPolicyTemplate>>> GetPolicyTemplates(CancellationToken cancellationToken) =>
+        Execute(async () => await service.GetPolicyTemplatesAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>
+    /// Gets the tenant retention policy configuration. With <paramref name="includeInherited"/>, a tenant
+    /// without an explicit configuration receives the platform baseline template the policy tree inherits from.
+    /// </summary>
     [HttpGet("configuration")]
     [ProducesResponseType(typeof(AuditRetentionConfigurationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public Task<ActionResult<AuditRetentionConfigurationResponse>> GetConfiguration(CancellationToken cancellationToken) =>
-        Execute(async () => await service.GetConfigurationAsync(cancellationToken).ConfigureAwait(false));
+    public Task<ActionResult<AuditRetentionConfigurationResponse>> GetConfiguration(
+        [FromQuery(Name = "includeInherited")] bool includeInherited = false,
+        CancellationToken cancellationToken) =>
+        Execute(async () => await service.GetConfigurationAsync(includeInherited, cancellationToken).ConfigureAwait(false));
 
     [HttpPut("configuration")]
     [ProducesResponseType(typeof(AuditRetentionConfigurationResponse), StatusCodes.Status200OK)]
