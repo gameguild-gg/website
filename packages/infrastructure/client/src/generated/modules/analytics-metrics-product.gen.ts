@@ -16,6 +16,8 @@ export class AnalyticsMetricsProductModule {
   constructor(private readonly client: ApiClient) {}
 
   /**
+   * Product revenue/subscription metrics are business-intelligence data:
+   * access requires the monetization analytics permission (issue #346, ViewAnalytics).
    */
   async getApiMetricsProduct(query?: {
     startUtc?: string;
@@ -41,6 +43,8 @@ export class AnalyticsMetricsProductModule {
   }
 
   /**
+   * Exports of revenue/subscription metrics are business-intelligence data:
+   * access requires the monetization analytics permission (issue #346, ViewAnalytics).
    */
   async getApiMetricsProductExport(query?: {
     startUtc?: string;
