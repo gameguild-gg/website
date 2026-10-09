@@ -244,6 +244,52 @@ public class JwtTokenServiceTests
             Times.Once);
     }
 
+    [Theory]
+    [InlineData("device-123", "device-123")]
+    [InlineData("Device-AbC", "Device-AbC")]
+    [InlineData("device-秘密", "device-秘密")]
+    [InlineData("device-{UserId}", "device-{UserId}")]
+    [InlineData("", "")]
+    [InlineData("device\r\nFORGED EVENT", "device␀␀FORGED EVENT")]
+    [InlineData("device\rFORGED EVENT", "device␀FORGED EVENT")]
+    [InlineData("device\nFORGED EVENT", "device␀FORGED EVENT")]
+    [InlineData("device\u0000\u001FFORGED EVENT", "device␀␀FORGED EVENT")]
+    [InlineData("device\u007F\u0085\u009FFORGED EVENT", "device␀␀␀FORGED EVENT")]
+    [InlineData("device\u2028\u2029FORGED EVENT", "device␀␀FORGED EVENT")]
+    [InlineData("device\u001B[2J\nFORGED EVENT", "device␀[2J␀FORGED EVENT")]
+    public async Task GenerateRefreshTokenAsync_ShouldSanitizeOnlyTheLoggedDeviceId(string fingerprint, string expectedLoggedId)
+    {
+        var userId = Guid.NewGuid();
+        var deviceInfo = new DeviceInfo { Fingerprint = fingerprint, IpAddress = "127.0.0.1" };
+        const string storedHash = "hashed-refresh-token";
+        _refreshTokenHasherMock.Setup(hasher => hasher.HashToken(It.IsAny<string>())).Returns(storedHash);
+        _refreshTokenRepositoryMock
+            .Setup(repository => repository.CreateAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RefreshToken token, CancellationToken _) => token);
+
+        var rawToken = await _service.GenerateRefreshTokenAsync(userId, deviceInfo, CancellationToken.None);
+
+        const string template = "Generating refresh token for user: {UserId}, Device: {DeviceId}";
+        var log = _loggerMock.Invocations.Single(invocation =>
+            invocation.Method.Name == nameof(ILogger.Log) &&
+            invocation.Arguments[2] is IEnumerable<KeyValuePair<string, object?>> properties &&
+            properties.Any(property => property.Key == "{OriginalFormat}" && Equals(property.Value, template)));
+        var loggedProperties = (IEnumerable<KeyValuePair<string, object?>>)log.Arguments[2];
+        log.Arguments[0].Should().Be(LogLevel.Information);
+        log.Arguments[3].Should().BeNull();
+        loggedProperties.Single(property => property.Key == "UserId").Value.Should().Be(userId);
+        loggedProperties.Single(property => property.Key == "DeviceId").Value.Should().Be(expectedLoggedId);
+        log.Arguments[2].ToString().Should().Be($"Generating refresh token for user: {userId}, Device: {expectedLoggedId}");
+        deviceInfo.Fingerprint.Should().Be(fingerprint);
+        deviceInfo.DeviceId.Should().Be(fingerprint);
+        Convert.FromBase64String(rawToken).Should().NotBeEmpty();
+        rawToken.Should().NotBe(storedHash);
+        _refreshTokenHasherMock.Verify(hasher => hasher.HashToken(rawToken), Times.Once);
+        _refreshTokenRepositoryMock.Verify(repository => repository.CreateAsync(
+            It.Is<RefreshToken>(token => token.UserId == userId && token.Token == storedHash && !token.IsRevoked),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
     public async Task GenerateRefreshTokenAsync_WithNullDeviceInfo_ShouldThrowArgumentNullException()
     {
