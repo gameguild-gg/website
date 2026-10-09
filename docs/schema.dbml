@@ -1322,6 +1322,8 @@ Table "DynamicRole" {
   "Description" "character varying(2000)"
   "TenantId" uuid
   "ParentRoleId" uuid
+  "AdditionalParentRoleIds" "uuid[]" [not null]
+  "BlockedInheritedPermissions" "text[]" [not null]
   "Permissions" "text[]" [not null]
   "DenyPermissions" "text[]" [not null]
   "Priority" integer [not null]
@@ -3423,6 +3425,27 @@ Table "PermissionDelegation" {
     ExpiresAt [name: "IX_PermissionDelegation_ExpiresAt"]
     IsActive [name: "IX_PermissionDelegation_IsActive"]
     TenantId [name: "IX_PermissionDelegation_TenantId"]
+  }
+}
+
+Table "PermissionEvaluationLogs" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "UserId" uuid
+  "ResourceType" "character varying(200)" [not null]
+  "ResourceId" "character varying(200)"
+  "RequiredPermissions" "text[]" [not null]
+  "Outcome" integer [not null]
+  "Source" "character varying(100)" [not null]
+  "Operation" "character varying(200)"
+  "Reason" "character varying(200)"
+  "EvaluatedAtUtc" timestamp [not null]
+
+  Indexes {
+    Id [pk, name: "PK_PermissionEvaluationLogs"]
+    Outcome [name: "IX_PermissionEvaluationLogs_Outcome"]
+    (TenantId, EvaluatedAtUtc) [name: "IX_PermissionEvaluationLogs_Tenant_Time"]
+    EvaluatedAtUtc [name: "IX_PermissionEvaluationLogs_Time"]
   }
 }
 
@@ -11324,6 +11347,31 @@ Table "gameguild.authentication"."api_keys" {
     key_hash [unique, name: "ix_api_keys_key_hash"]
     tenant_id [name: "ix_api_keys_tenant_id"]
     user_id [name: "ix_api_keys_user_id"]
+  }
+}
+
+Table "gameguild.authentication"."authentication_flow_states" {
+  "flow_id" uuid [not null]
+  "user_id" uuid
+  "current_step" integer [not null]
+  "required_steps" text [not null]
+  "completed_steps" text [not null]
+  "is_complete" boolean [not null]
+  "risk_score" doubleprecision
+  "initiated_at" timestamp [not null]
+  "expires_at" timestamp [not null]
+  "ip_address" "character varying(64)"
+  "device_fingerprint" "character varying(128)"
+  "step_data" text
+  "abandoned_at" timestamp
+  "completed_at" timestamp
+  "created_at" timestamp [not null]
+  "updated_at" timestamp [not null]
+
+  Indexes {
+    flow_id [pk, name: "PK_authentication_flow_states"]
+    expires_at [name: "ix_authentication_flow_states_expires_at"]
+    user_id [name: "ix_authentication_flow_states_user_id"]
   }
 }
 
