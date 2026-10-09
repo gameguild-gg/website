@@ -294,7 +294,9 @@ public sealed class CacheInvalidationService : ICacheInvalidationService
         // entries are bypassed even when a Redis invalidation message cannot be delivered.
         await _versionStore.IncrementVersionAsync(tenantId.ToString(), cancellationToken).ConfigureAwait(false);
 
-        var keyPattern = $"acl:{tenantId}:*:{resourceType}:{resourceId}:";
+        // ACL keys length-prefix the free-form resource segments (see AclCacheKeys), so the
+        // pattern must match the length-prefixed type/ID pair rather than bare raw values.
+        var keyPattern = $"acl:{tenantId}:*:{AclCacheKeys.BuildResourceSegment(resourceType, resourceId)}:";
         await _hybridCache.InvalidatePatternAsync(keyPattern, "acl", cancellationToken).ConfigureAwait(false);
 
         await PublishInvalidationAsync(new CacheInvalidationEvent
@@ -444,7 +446,8 @@ public sealed class CacheInvalidationService : ICacheInvalidationService
             case CacheInvalidationType.Resource:
                 if (!string.IsNullOrEmpty(invalidationEvent.ResourceType) && !string.IsNullOrEmpty(invalidationEvent.ResourceId))
                 {
-                    var resourcePattern = $":{invalidationEvent.ResourceType}:{invalidationEvent.ResourceId}:";
+                    // ACL keys length-prefix the resource segments; match the encoded pair.
+                    var resourcePattern = $":{AclCacheKeys.BuildResourceSegment(invalidationEvent.ResourceType, invalidationEvent.ResourceId)}:";
                     ClearKeysMatchingPattern(invalidationEvent.TenantId, resourcePattern);
                 }
                 break;
@@ -523,7 +526,7 @@ public sealed class CacheInvalidationService : ICacheInvalidationService
                 cacheKey.StartsWith($"acl:{tenant}:{target.UserId}:", StringComparison.OrdinalIgnoreCase) ||
                 cacheKey.StartsWith($"acl:subj:{tenant}:{target.UserId}:", StringComparison.OrdinalIgnoreCase),
             CacheInvalidationTargetType.Resource when target.ResourceType is not null && target.ResourceId is not null =>
-                cacheKey.Contains($":{target.ResourceType}:{target.ResourceId}:", StringComparison.OrdinalIgnoreCase),
+                cacheKey.Contains($":{AclCacheKeys.BuildResourceSegment(target.ResourceType, target.ResourceId)}:", StringComparison.OrdinalIgnoreCase),
             CacheInvalidationTargetType.Policy => MatchesPolicy(cacheKey, tenant, target.PolicyName),
             CacheInvalidationTargetType.Dependency => MatchesAclDependency(cacheKey, tenant, target.DependencyKind, target.DependencyId),
             _ => false

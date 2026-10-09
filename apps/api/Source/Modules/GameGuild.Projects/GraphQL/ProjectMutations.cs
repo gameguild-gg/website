@@ -35,8 +35,12 @@ public class ProjectMutations {
     };
 
     var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
-    if (result.IsSuccess) return result.Value;
-    throw new GraphQLException(result.Error.Description);
+    if (result.IsSuccess)
+        {
+            return result.Value;
+        }
+
+        throw new GraphQLException(result.Error.Description);
   }
 
   /// <summary>
@@ -63,8 +67,12 @@ public class ProjectMutations {
     };
 
     var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
-    if (result.IsSuccess) return result.Value;
-    throw new GraphQLException(result.Error.Description);
+    if (result.IsSuccess)
+        {
+            return result.Value;
+        }
+
+        throw new GraphQLException(result.Error.Description);
   }
 
   /// <summary>
@@ -76,8 +84,12 @@ public class ProjectMutations {
     var command = new DeleteProjectCommand { ProjectId = projectId, DeletedBy = actor.SubjectIdAsGuid ?? Guid.Empty, SoftDelete = softDelete, Reason = reason };
 
     var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
-    if (result.IsSuccess) return result.Value;
-    throw new GraphQLException(result.Error.Description);
+    if (result.IsSuccess)
+        {
+            return result.Value;
+        }
+
+        throw new GraphQLException(result.Error.Description);
   }
 
   /// <summary>
@@ -89,8 +101,12 @@ public class ProjectMutations {
     var command = new PublishProjectCommand { ProjectId = projectId, PublishedBy = actor.SubjectIdAsGuid ?? Guid.Empty };
 
     var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
-    if (result.IsSuccess) return result.Value;
-    throw new GraphQLException(result.Error.Description);
+    if (result.IsSuccess)
+        {
+            return result.Value;
+        }
+
+        throw new GraphQLException(result.Error.Description);
   }
 
   /// <summary>
@@ -102,8 +118,12 @@ public class ProjectMutations {
     var command = new UnpublishProjectCommand { ProjectId = projectId, UnpublishedBy = actor.SubjectIdAsGuid ?? Guid.Empty };
 
     var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
-    if (result.IsSuccess) return result.Value;
-    throw new GraphQLException(result.Error.Description);
+    if (result.IsSuccess)
+        {
+            return result.Value;
+        }
+
+        throw new GraphQLException(result.Error.Description);
   }
 
   /// <summary>
@@ -115,7 +135,11 @@ public class ProjectMutations {
     var command = new ArchiveProjectCommand { ProjectId = projectId, ArchivedBy = actor.SubjectIdAsGuid ?? Guid.Empty };
 
     var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
-    if (result.IsSuccess) return result.Value;
-    throw new GraphQLException(result.Error.Description);
+    if (result.IsSuccess)
+        {
+            return result.Value;
+        }
+
+        throw new GraphQLException(result.Error.Description);
   }
 }

@@ -23,7 +23,11 @@ public sealed class TestingCommitteeMember : EntityBase
 
     public static TestingCommitteeMember Create(Guid eventId, Guid userId, bool isChair, Guid? tenantId)
     {
-        if (eventId == Guid.Empty || userId == Guid.Empty) throw new ArgumentException("Event and reviewer are required.");
+        if (eventId == Guid.Empty || userId == Guid.Empty)
+        {
+            throw new ArgumentException("Event and reviewer are required.");
+        }
+
         return new TestingCommitteeMember
         {
             Id = Guid.NewGuid(),
@@ -36,7 +40,11 @@ public sealed class TestingCommitteeMember : EntityBase
 
     public void Deactivate()
     {
-        if (!IsActive) return;
+        if (!IsActive)
+        {
+            return;
+        }
+
         IsActive = false;
         Touch();
     }

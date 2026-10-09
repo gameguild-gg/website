@@ -24,10 +24,10 @@ export function XMLSyntaxHighlighter({ monaco, editor }: XMLSyntaxHighlighterPro
       monaco.languages.setMonarchTokensProvider("xml", {
         tokenizer: {
           root: [
-            [/<\?xml.*\?>/, "metatag.xml"], // XML declaration
-            [/<!DOCTYPE.*?>/, "metatag.xml"], // DOCTYPE declaration
-            [/<!--(.*?)-->/, "comment"], // Comments
-            [/<!\[CDATA\[(.*?)\]\]>/, "comment"], // CDATA sections
+            [/<\?xml[^\n]*\?>/, "metatag.xml"], // XML declaration
+            [/<!DOCTYPE[^\n]*?>/, "metatag.xml"], // DOCTYPE declaration
+            [/<!--/, { token: "comment", next: "@comment" }],
+            [/<!\[CDATA\[/, { token: "comment", next: "@cdata" }], // CDATA sections (may span lines)
 
             [/<([a-zA-Z][a-zA-Z0-9:\-.]*)(\s+[^>]*)?>/, { token: "tag", bracket: "@open", next: "@tagContent" }], // Opening tags
             [/<\/([a-zA-Z][a-zA-Z0-9:\-.]*)>/, { token: "tag", bracket: "@close" }], // Closing tags
@@ -35,12 +35,25 @@ export function XMLSyntaxHighlighter({ monaco, editor }: XMLSyntaxHighlighterPro
             [/&[a-zA-Z0-9]+;/, "string.escape"], // Entity references
 
             [/=/, "operator"], // Operators
-            [/"[^"]*"/, "string"], // Double-quoted string
-            [/'[^']*'/, "string"], // Single-quoted string
+            [/"[^"\n]*"/, "string"], // Double-quoted string
+            [/'[^'\n]*'/, "string"], // Single-quoted string
 
             [/([a-zA-Z_][a-zA-Z0-9_\-:]*)/, "attribute.name"], // Attribute names
             [/[ \t\r\n]+/, "white"], // Whitespace
             [/[^<&\s=]+/, "attribute.value"], // Unquoted attribute values
+          ],
+
+          comment: [
+            // HTML spec: both `-->` and the error-tolerant `--!>` close a comment.
+            [/--!?>/, { token: "comment", next: "@pop" }],
+            [/[^-]+/, "comment"],
+            [/-/, "comment"],
+          ],
+
+          cdata: [
+            [/\]\]>/, { token: "comment", next: "@pop" }],
+            [/[^\]]+/, "comment"],
+            [/\]/, "comment"],
           ],
 
           tagContent: [

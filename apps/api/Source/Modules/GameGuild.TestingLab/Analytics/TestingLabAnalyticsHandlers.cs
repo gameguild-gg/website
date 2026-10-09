@@ -22,11 +22,15 @@ public sealed class TestingLabAnalyticsHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<TestingLabAnalyticsReportProjection>(actor.Error);
+        }
 
         var period = NormalizePeriod(request.FromDate, request.ToDate);
         if (period.Error != null)
+        {
             return Result.Failure<TestingLabAnalyticsReportProjection>(period.Error);
+        }
 
         var current = await LoadWindowAsync(
             actor.TenantId,
@@ -75,7 +79,9 @@ public sealed class TestingLabAnalyticsHandlers(
             new GetTestingLabAnalyticsReportQuery(request.FromDate, request.ToDate, IncludeComparison: false),
             cancellationToken).ConfigureAwait(false);
         if (report.IsFailure)
+        {
             return Result.Failure<TestingLabAnalyticsExportProjection>(report.Error);
+        }
 
         var value = report.Value;
         var builder = new StringBuilder();
@@ -179,7 +185,9 @@ public sealed class TestingLabAnalyticsHandlers(
 
         var summary = BuildSummary(events, applications, registrations, feedback, slots);
         if (!includeDetails)
+        {
             return new WindowData(summary, [], []);
+        }
 
         var eventRows = events.Select(item =>
         {
@@ -251,9 +259,11 @@ public sealed class TestingLabAnalyticsHandlers(
         var actor = actorContextAccessor.ActorContext;
         var userId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || userId == null || actor.TenantId == null)
+        {
             return new(Guid.Empty, Error.Unauthorized(
                 "TestingLab.Unauthenticated",
                 "An authenticated tenant actor is required."));
+        }
 
         var hasAccess = await TestingLabActorAccess.IsActiveTenantActorAsync(context, actor, cancellationToken).ConfigureAwait(false);
         return hasAccess
@@ -268,9 +278,12 @@ public sealed class TestingLabAnalyticsHandlers(
         var end = (toDate ?? SystemClock.UtcNow.Date.AddDays(1)).ToUniversalTime();
         var start = (fromDate ?? end.Subtract(DefaultPeriod)).ToUniversalTime();
         if (start >= end || end - start > MaximumPeriod)
+        {
             return new(default, default, Error.Validation(
                 "TestingLab.InvalidAnalyticsPeriod",
                 "Analytics period must be positive and no longer than 366 days."));
+        }
+
         return new(start, end, null);
     }
 

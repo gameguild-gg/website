@@ -1,5 +1,5 @@
 import { Link } from '@/i18n/navigation';
-import { listMyBlogPosts } from '@/lib/blogs/queries';
+import { listMyBlogPosts, type MyBlogPostRow } from '@/lib/blogs/queries';
 import { getWorkspaceMyTeamInvitations, getWorkspaceProjects, getWorkspaceTeams } from '@/lib/workspaces';
 import { Badge } from '@game-guild/ui/components/badge';
 import { buttonVariants } from '@game-guild/ui/components/button-variants';
@@ -22,13 +22,22 @@ function postEditedAt(post: { publishedAt: string | null; updatedAt: string }) {
   return new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+async function getWorkspaceBlogPosts(): Promise<{ available: boolean; posts: MyBlogPostRow[] }> {
+  try {
+    return { available: true, posts: await listMyBlogPosts() };
+  } catch {
+    return { available: false, posts: [] };
+  }
+}
+
 export async function WorkspaceHub(): Promise<React.JSX.Element> {
-  const [teams, projects, invitations, blogPosts] = await Promise.all([
+  const [teams, projects, invitations, blogResult] = await Promise.all([
     getWorkspaceTeams(),
     getWorkspaceProjects(),
     getWorkspaceMyTeamInvitations(),
-    listMyBlogPosts(),
+    getWorkspaceBlogPosts(),
   ]);
+  const { available: blogPostsAvailable, posts: blogPosts } = blogResult;
 
   return (
     <div className="space-y-6">
@@ -51,7 +60,11 @@ export async function WorkspaceHub(): Promise<React.JSX.Element> {
         <Metric icon={<Users className="size-4" />} label="Teams" value={teams.length} />
         <Metric icon={<FolderKanban className="size-4" />} label="Projects" value={projects.length} />
         <Metric icon={<Mail className="size-4" />} label="Invitations" value={invitations.length} />
-        <Metric icon={<FileText className="size-4" />} label="Blog posts" value={blogPosts.length} />
+        <Metric
+          icon={<FileText className="size-4" />}
+          label="Blog posts"
+          value={blogPostsAvailable ? blogPosts.length : 'Unavailable'}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -110,7 +123,8 @@ export async function WorkspaceHub(): Promise<React.JSX.Element> {
               );
             })}
           </div>
-          {blogPosts.length === 0 && (
+          {!blogPostsAvailable && <Empty message="Blog posts are temporarily unavailable." />}
+          {blogPostsAvailable && blogPosts.length === 0 && (
             <Empty message="No posts yet.">
               <Link href="/blog/new" className={buttonVariants({ variant: 'outline' })}><Plus className="size-4" />New post</Link>
             </Empty>
@@ -129,8 +143,8 @@ export async function WorkspaceHub(): Promise<React.JSX.Element> {
   );
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return <Card><CardHeader className="flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{label}</CardTitle>{icon}</CardHeader><CardContent><p className="text-2xl font-semibold">{value}</p></CardContent></Card>;
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+  return <Card><CardHeader className="flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{label}</CardTitle>{icon}</CardHeader><CardContent><p className={typeof value === 'number' ? 'text-2xl font-semibold' : 'text-sm font-medium text-muted-foreground'}>{value}</p></CardContent></Card>;
 }
 
 function Empty({ message, children }: { message: string; children?: React.ReactNode }) {

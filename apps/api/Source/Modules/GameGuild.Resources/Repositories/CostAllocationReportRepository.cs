@@ -20,9 +20,15 @@ public class CostAllocationReportRepository(IApplicationDbContext context) : ICo
     {
         var query = CostAllocationReports.Where(r => r.TenantId!.Value == tenantId);
 
-        if (fromDate.HasValue) query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(r => r.PeriodEnd <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodEnd <= toDate.Value);
+        }
 
         return await query.OrderByDescending(r => r.PeriodEnd).ToListAsync(cancellationToken);
     }
@@ -54,7 +60,10 @@ public class CostAllocationReportRepository(IApplicationDbContext context) : ICo
     {
         var report = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (report == null) return false;
+        if (report == null)
+        {
+            return false;
+        }
 
         CostAllocationReports.Remove(report);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

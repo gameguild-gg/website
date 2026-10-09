@@ -76,8 +76,16 @@ public abstract class Permission : IEquatable<Permission>
     /// <inheritdoc />
     public bool Equals(Permission? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
         return Key == other.Key;
     }
 

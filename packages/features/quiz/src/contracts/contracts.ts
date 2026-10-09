@@ -339,6 +339,19 @@ export function validateQuizAuthoringEntry(entry: QuizAuthoringEntry): QuizAutho
 
     case QuizEntryType.Essay:
       // Essays can be valid authoring entries without deterministic answer keys.
+      if (entry.minWordCount !== undefined && !isNonNegativeInteger(entry.minWordCount)) {
+        addIssue(issues, "invalid-question", "minWordCount", "Minimum word count must be a non-negative integer.")
+      }
+      if (entry.maxWordCount !== undefined && !isNonNegativeInteger(entry.maxWordCount)) {
+        addIssue(issues, "invalid-question", "maxWordCount", "Maximum word count must be a non-negative integer.")
+      }
+      if (
+        isNonNegativeInteger(entry.minWordCount) &&
+        isNonNegativeInteger(entry.maxWordCount) &&
+        entry.maxWordCount < entry.minWordCount
+      ) {
+        addIssue(issues, "invalid-question", "maxWordCount", "Maximum word count must be greater than or equal to the minimum.")
+      }
       break
 
     case QuizEntryType.Matching:
@@ -608,6 +621,10 @@ function isPositiveNumber(value: unknown): value is number {
 
 function isPositiveOrZero(value: unknown): value is number {
   return Number.isFinite(value) && Number(value) >= 0
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 0
 }
 
 function isFiniteInRange(value: unknown, min: number, max: number): value is number {

@@ -19,8 +19,15 @@ public sealed class LaunchPadSettingsController(
     public async Task<ActionResult<LaunchPadSettingsProjection>> GetSettings(CancellationToken cancellationToken)
     {
         var tenantId = requestContext.CurrentTenantId;
-        if (!tenantId.HasValue) return Unauthorized();
-        if (!await authorization.CanParticipateAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (!tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (!await authorization.CanParticipateAsync(tenantId.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var settings = await context.Set<LaunchPadSettings>()
             .SingleOrDefaultAsync(candidate => candidate.TenantId == tenantId && candidate.DeletedAt == null, cancellationToken)
@@ -36,8 +43,15 @@ public sealed class LaunchPadSettingsController(
         CancellationToken cancellationToken)
     {
         var tenantId = requestContext.CurrentTenantId;
-        if (!tenantId.HasValue) return Unauthorized();
-        if (!await authorization.CanManageSettingsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (!tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (!await authorization.CanManageSettingsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var settings = await sender.Send(new UpdateLaunchPadSettingsEndpointCommand(
             tenantId.Value, request.VersionSubmissionPolicy), cancellationToken).ConfigureAwait(false);

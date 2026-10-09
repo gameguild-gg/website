@@ -48,14 +48,29 @@ public class ResourcesOptions : ModuleOptions
     {
         base.Validate();
 
-        if (MaxFileSize <= 0) throw new InvalidOperationException("MaxFileSize must be greater than 0");
+        if (MaxFileSize <= 0)
+        {
+            throw new InvalidOperationException("MaxFileSize must be greater than 0");
+        }
 
-        if (string.IsNullOrWhiteSpace(BasePath)) throw new InvalidOperationException("BasePath cannot be empty");
+        if (string.IsNullOrWhiteSpace(BasePath))
+        {
+            throw new InvalidOperationException("BasePath cannot be empty");
+        }
 
-        if (AllowedFileExtensions.Length == 0) throw new InvalidOperationException("At least one file extension must be allowed");
+        if (AllowedFileExtensions.Length == 0)
+        {
+            throw new InvalidOperationException("At least one file extension must be allowed");
+        }
 
-        if (CostPerUnit == null || CostPerUnit.Count == 0) throw new InvalidOperationException("CostPerUnit configuration cannot be empty");
+        if (CostPerUnit == null || CostPerUnit.Count == 0)
+        {
+            throw new InvalidOperationException("CostPerUnit configuration cannot be empty");
+        }
 
-        if (DefaultCostPerUnit < 0) throw new InvalidOperationException("DefaultCostPerUnit must be non-negative");
+        if (DefaultCostPerUnit < 0)
+        {
+            throw new InvalidOperationException("DefaultCostPerUnit must be non-negative");
+        }
     }
 }

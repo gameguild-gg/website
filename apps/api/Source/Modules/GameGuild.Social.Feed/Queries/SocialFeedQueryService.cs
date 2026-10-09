@@ -51,14 +51,19 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
         CancellationToken cancellationToken = default)
     {
         if (viewerId == Guid.Empty)
+        {
             throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+        }
 
         take = Math.Clamp(take, 1, 30);
         FeedCursor? decodedCursor = null;
         if (!string.IsNullOrWhiteSpace(cursor))
         {
             if (!FeedCursor.TryDecode(cursor, out var parsed))
+            {
                 throw new InvalidFeedCursorException();
+            }
+
             decodedCursor = parsed;
         }
 
@@ -123,7 +128,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
         CancellationToken cancellationToken = default)
     {
         if (viewerId == Guid.Empty)
+        {
             throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+        }
 
         var excludedAuthors = await GetBlockedAuthorIdsAsync(viewerId, cancellationToken).ConfigureAwait(false);
         var mutedAuthorIds = await context.Set<Mute>()
@@ -144,11 +151,17 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
             .AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.Id == postId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (post is null || excludedAuthors.Contains(post.AuthorId)) return null;
+        if (post is null || excludedAuthors.Contains(post.AuthorId))
+        {
+            return null;
+        }
+
         if (post.AuthorId != viewerId &&
             post.Visibility != PostVisibility.Public &&
             !(post.Visibility == PostVisibility.Followers && followedAuthorIds.Contains(post.AuthorId)))
+        {
             return null;
+        }
 
         var items = await FeedProjection.ProjectAsync(
             context,
@@ -165,7 +178,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
         CancellationToken cancellationToken = default)
     {
         if (viewerId == Guid.Empty)
+        {
             throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+        }
 
         var profile = await context.Set<SocialProfile>()
             .AsNoTracking()
@@ -180,7 +195,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
         CancellationToken cancellationToken = default)
     {
         if (viewerId == Guid.Empty)
+        {
             throw new ArgumentException("An authenticated viewer is required.", nameof(viewerId));
+        }
 
         var normalizedHandle = SocialProfile.NormalizeHandle(handle);
         var profile = await context.Set<SocialProfile>()
@@ -197,7 +214,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
     {
         if (profile is null ||
             (profile.UserId != viewerId && profile.Visibility != ProfileVisibility.Public))
+        {
             return null;
+        }
 
         var isBlocked = await context.Set<Block>()
             .AsNoTracking()
@@ -205,7 +224,10 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
                 (block.BlockerId == viewerId && block.BlockedId == profile.UserId) ||
                 (block.BlockerId == profile.UserId && block.BlockedId == viewerId), cancellationToken)
             .ConfigureAwait(false);
-        if (isBlocked) return null;
+        if (isBlocked)
+        {
+            return null;
+        }
 
         var followerCount = await context.Set<Follow>()
             .AsNoTracking()
@@ -275,7 +297,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
                  (row.Post.Visibility == PostVisibility.Followers && followedAuthorIds.Contains(row.Post.AuthorId))));
 
             if (taggedPostIds is not null)
+            {
                 query = query.Where(row => taggedPostIds.Contains(row.Post.Id));
+            }
 
             if (cursor is { } savedCursor)
             {
@@ -301,7 +325,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
             .Where(post => post.DeletedAt == null && !excludedAuthors.Contains(post.AuthorId));
 
         if (scope == FeedScope.Following)
+        {
             posts = posts.Where(post => followedAuthorIds.Contains(post.AuthorId));
+        }
 
         posts = posts.Where(post =>
             post.AuthorId == viewerId ||
@@ -309,7 +335,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
             (post.Visibility == PostVisibility.Followers && followedAuthorIds.Contains(post.AuthorId)));
 
         if (taggedPostIds is not null)
+        {
             posts = posts.Where(post => taggedPostIds.Contains(post.Id));
+        }
 
         if (cursor is { } postCursor)
         {
@@ -362,7 +390,9 @@ public sealed class SocialFeedQueryService(IApplicationDbContext context) : ISoc
     {
         var normalized = NormalizeTag(tag);
         if (normalized is null)
+        {
             return null;
+        }
 
         var tagIds = await context.Set<PostTag>()
             .AsNoTracking()

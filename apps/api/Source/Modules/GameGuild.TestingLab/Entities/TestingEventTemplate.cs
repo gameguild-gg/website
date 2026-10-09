@@ -34,8 +34,14 @@ public sealed class TestingEventTemplate : EntityBase<Guid>
         string? description = null)
     {
         if (tenantId == Guid.Empty || createdByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant and creator are required.");
-        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Template name is required.", nameof(name));
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Template name is required.", nameof(name));
+        }
 
         var template = new TestingEventTemplate
         {
@@ -65,9 +71,21 @@ public sealed class TestingEventTemplate : EntityBase<Guid>
         string? name = null,
         string? description = null)
     {
-        if (ArchivedAt.HasValue) throw new InvalidOperationException("Archived templates cannot be revised.");
-        if (!string.IsNullOrWhiteSpace(name)) Name = name.Trim();
-        if (description != null) Description = Normalize(description);
+        if (ArchivedAt.HasValue)
+        {
+            throw new InvalidOperationException("Archived templates cannot be revised.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            Name = name.Trim();
+        }
+
+        if (description != null)
+        {
+            Description = Normalize(description);
+        }
+
         var revisionNumber = CurrentRevisionNumber + 1;
         var revision = TestingEventTemplateRevision.Create(
             Id, TenantId!.Value, revisionNumber, generalRules, candidateInstructions, testerInstructions,
@@ -81,7 +99,11 @@ public sealed class TestingEventTemplate : EntityBase<Guid>
 
     public void Archive()
     {
-        if (ArchivedAt.HasValue) return;
+        if (ArchivedAt.HasValue)
+        {
+            return;
+        }
+
         ArchivedAt = SystemClock.UtcNow;
         Touch();
     }
@@ -133,8 +155,15 @@ public sealed class TestingEventTemplateRevision : EntityBase<Guid>
         Guid createdByUserId)
     {
         if (new[] { templateId, tenantId, createdByUserId }.Any(id => id == Guid.Empty))
+        {
             throw new ArgumentException("Template, tenant and creator are required.");
-        if (revisionNumber < 1) throw new ArgumentOutOfRangeException(nameof(revisionNumber));
+        }
+
+        if (revisionNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(revisionNumber));
+        }
+
         EnsureContent(generalRules, candidateInstructions, testerInstructions);
         return new TestingEventTemplateRevision
         {
@@ -159,6 +188,8 @@ public sealed class TestingEventTemplateRevision : EntityBase<Guid>
         if (string.IsNullOrWhiteSpace(generalRules) ||
             string.IsNullOrWhiteSpace(candidateInstructions) ||
             string.IsNullOrWhiteSpace(testerInstructions))
+        {
             throw new ArgumentException("General rules and candidate/tester instructions are required.");
+        }
     }
 }

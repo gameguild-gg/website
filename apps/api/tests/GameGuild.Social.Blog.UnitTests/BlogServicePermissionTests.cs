@@ -284,6 +284,39 @@ public class BlogSlugEngineTests
         third.Slug.Should().Be("same-title-3");
     }
 
+    [Theory]
+    [InlineData(42)]
+    [InlineData(220)]
+    public async Task Create_ManyCollisions_PreservesTwoDigitSuffixesAndTheLengthLimit(int titleLength)
+    {
+        var title = new string('a', titleLength);
+        var slugs = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < 12; index++)
+        {
+            var post = await _h.CreatePostAsync(title: title);
+            slugs.Add(post.Slug).Should().BeTrue();
+            post.Slug.Length.Should().BeLessThanOrEqualTo(220);
+            if (index > 0)
+            {
+                post.Slug.Should().EndWith($"-{index + 1}");
+            }
+        }
+        slugs.Should().HaveCount(12);
+    }
+
+    [Fact]
+    public async Task GenerateUniqueSlug_CancelledRequest_DoesNotReturnASlug()
+    {
+        await _h.CreatePostAsync(title: "Cancellation");
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var service = new BlogSlugService(_h.Context);
+
+        var operation = () => service.GenerateUniqueSlugAsync(_h.Primary, "Cancellation", cancellation.Token);
+
+        await operation.Should().ThrowAsync<OperationCanceledException>();
+    }
+
     [Fact]
     public async Task Create_SameSlug_DifferentAuthors_NoSuffix()
     {

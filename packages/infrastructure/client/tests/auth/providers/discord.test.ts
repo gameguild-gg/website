@@ -70,6 +70,7 @@ describe('DiscordProvider', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:8080/v1/auth/discord:sign-in-authorize',
         {
+          redirect: 'error',
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

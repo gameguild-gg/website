@@ -28,7 +28,10 @@ public sealed class TransactionalPostingService
         return _store.Execute(transaction =>
         {
             if (transaction.LatestSource(command.SourceId) is not null)
+            {
                 throw new InvalidOperationException("Source evidence already exists.");
+            }
+
             var claim = HardCoinFundingClaim.Observe(
                 command.SourceId,
                 command.WalletId,
@@ -57,7 +60,10 @@ public sealed class TransactionalPostingService
         return _store.Execute(transaction =>
         {
             var duplicate = transaction.FindIdempotent(command.IdempotencyKey, commandHash);
-            if (duplicate is not null) return duplicate;
+            if (duplicate is not null)
+            {
+                return duplicate;
+            }
 
             var currentClaim = transaction.CurrentFundingClaim(command.SourceId);
             command.Authorization.EnsureMatches(
@@ -185,7 +191,9 @@ public sealed class TransactionalPostingService
             var heldUnits = transaction.ActiveHoldUnits(command.WalletId, CurrencyCode.HardCoin);
             var spendableUnits = Math.Max(0, availableUnits - heldUnits);
             if (totalHard.Units > spendableUnits)
+            {
                 throw new InsufficientFragmentsException(totalHard.Units - spendableUnits);
+            }
 
             var selected = FifoFragmentSelector.Select(available, totalHard);
             var outputAmounts = command.FeeHardCoinUnits == 0
@@ -313,9 +321,14 @@ public sealed class TransactionalPostingService
         {
             var duplicate = transaction.FindIdempotent(command.IdempotencyKey, commandHash);
             if (duplicate is not null)
+            {
                 return new SystemBackedGrantResult(duplicate, transaction.GetCreditLot(command.OutputLotId));
+            }
+
             if (transaction.LatestSource(command.SourceId) is not null)
+            {
                 throw new InvalidOperationException("Grant source evidence already exists.");
+            }
 
             var observed = SourceEvidence.Observe(
                 command.SourceId,
@@ -387,9 +400,14 @@ public sealed class TransactionalPostingService
         {
             var duplicate = transaction.FindIdempotent(command.IdempotencyKey, commandHash);
             if (duplicate is not null)
+            {
                 return new AdRewardIssuanceResult(duplicate, transaction.GetCreditLot(command.OutputLotId));
+            }
+
             if (transaction.LatestSource(command.SourceId) is not null)
+            {
                 throw new InvalidOperationException("Ad reward source evidence already exists.");
+            }
 
             var observed = SourceEvidence.Observe(
                 command.SourceId,
@@ -480,7 +498,10 @@ public sealed class TransactionalPostingService
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Evidence);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(command.CumulativeProviderHardUnits);
         if (!Enum.IsDefined(command.IrrecoverableDisposition))
+        {
             throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         return ComputeProviderReversalHash(command);
     }
 
@@ -491,22 +512,32 @@ public sealed class TransactionalPostingService
     {
             var duplicatePosting = transaction.FindIdempotent(command.IdempotencyKey, commandHash);
             if (duplicatePosting is not null)
-                return transaction.FindProviderReversalResult(command.IdempotencyKey)
+        {
+            return transaction.FindProviderReversalResult(command.IdempotencyKey)
                        ?? throw new InvalidOperationException("Provider reversal result was not committed atomically.");
+        }
 
-            var claim = transaction.CurrentFundingClaim(command.SourceId);
+        var claim = transaction.CurrentFundingClaim(command.SourceId);
             if (claim.State is not (SourceConfirmationState.Confirmed or SourceConfirmationState.Disputed))
-                throw new InvalidFundingStateTransitionException(claim.State, SourceConfirmationState.Disputed);
-            if (command.CumulativeProviderHardUnits > claim.Amount.Units)
-                throw new ProviderMonetaryTotalExceededException(
+        {
+            throw new InvalidFundingStateTransitionException(claim.State, SourceConfirmationState.Disputed);
+        }
+
+        if (command.CumulativeProviderHardUnits > claim.Amount.Units)
+        {
+            throw new ProviderMonetaryTotalExceededException(
                     "Cumulative provider reversal cannot exceed confirmed HardCoin units.");
-            var current = transaction.CurrentProviderReversalState(command.SourceId) ??
+        }
+
+        var current = transaction.CurrentProviderReversalState(command.SourceId) ??
                           new ProviderReversalState(command.SourceId, claim.Amount.Units, 0, 0, 0, 0, 0, []);
             if (command.CumulativeProviderHardUnits <= current.CumulativeProviderHardUnits)
-                throw new ProviderMonetaryTotalExceededException(
+        {
+            throw new ProviderMonetaryTotalExceededException(
                     "Cumulative provider reversal must increase monotonically.");
+        }
 
-            var available = transaction.GetAvailableRootLots(command.SourceId);
+        var available = transaction.GetAvailableRootLots(command.SourceId);
             var plan = ProviderReversalPlanner.Plan(
                 command.SourceId,
                 checked(command.CumulativeProviderHardUnits * CurrencyTraceScale.HardCoinTraceUnitsPerCoin),
@@ -547,9 +578,12 @@ public sealed class TransactionalPostingService
                 else
                 {
                     if (fragment.Amount.Units % Money.FixedParity.SoftCoinsPerHardCoin != 0)
-                        throw new UnrecoverableParityFractionException(
+                {
+                    throw new UnrecoverableParityFractionException(
                             "Converted-soft recovery must resolve to whole provider HardCoin units.");
-                    recoveredSoft = checked(recoveredSoft + fragment.Amount.Units);
+                }
+
+                recoveredSoft = checked(recoveredSoft + fragment.Amount.Units);
                     request = ProviderSoftReversalRequest(
                         command, source, fragment, postingId, postingIndex);
                 }
@@ -596,12 +630,18 @@ public sealed class TransactionalPostingService
                 checked(current.PlatformLossHardUnits + loss),
                 plan.AllReversedRanges);
             if (state.PartitionedHardEquivalentUnits != command.CumulativeProviderHardUnits)
-                throw new LineageConservationException(
+        {
+            throw new LineageConservationException(
                     "Provider reversal recovery, debt, and loss must exactly partition the cumulative provider total.");
-            var debtDelta = checked(state.ResponsibleDebtHardUnits - current.ResponsibleDebtHardUnits);
+        }
+
+        var debtDelta = checked(state.ResponsibleDebtHardUnits - current.ResponsibleDebtHardUnits);
             if (debtDelta > 0)
-                transaction.RecordDebt(claim.WalletId, command.SourceId, debtDelta, command.OccurredAt);
-            var result = new ProviderReversalResult(postings, state);
+        {
+            transaction.RecordDebt(claim.WalletId, command.SourceId, debtDelta, command.OccurredAt);
+        }
+
+        var result = new ProviderReversalResult(postings, state);
             transaction.SetProviderReversalState(state);
             transaction.AddIdempotency(new IdempotencyRecord(
                 command.IdempotencyKey, commandHash, postings[0]));
@@ -613,14 +653,19 @@ public sealed class TransactionalPostingService
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.SourceWalletId == command.DestinationWalletId)
+        {
             throw new ArgumentException("Source and destination wallets must differ.", nameof(command));
+        }
 
         var commandHash = ComputeTransferHash(command);
         var account = LiabilityAccount(command.Amount.Currency, command.Provenance);
         return _store.Execute(transaction =>
         {
             var duplicate = transaction.FindIdempotent(command.IdempotencyKey, commandHash);
-            if (duplicate is not null) return duplicate;
+            if (duplicate is not null)
+            {
+                return duplicate;
+            }
 
             transaction.EnsureWalletNotDebtRestricted(command.SourceWalletId);
             var available = transaction.GetAvailableLots(command.SourceWalletId, command.Amount.Currency)
@@ -630,7 +675,10 @@ public sealed class TransactionalPostingService
             var heldUnits = transaction.ActiveHoldUnits(command.SourceWalletId, command.Amount.Currency);
             var spendableUnits = Math.Max(0, availableUnits - heldUnits);
             if (command.Amount.Units > spendableUnits)
+            {
                 throw new InsufficientFragmentsException(command.Amount.Units - spendableUnits);
+            }
+
             var selected = FifoFragmentSelector.Select(available, command.Amount);
             var roots = selected.Selections.SelectMany(selection => selection.SelectedRanges).Select(range => range.Root).Distinct().ToArray();
             var snapshot = _fences.Capture(roots);

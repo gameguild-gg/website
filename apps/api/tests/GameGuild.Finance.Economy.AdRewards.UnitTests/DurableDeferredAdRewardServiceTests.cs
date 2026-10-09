@@ -99,8 +99,16 @@ public sealed class DurableDeferredAdRewardServiceTests
     {
         await using var fixture = await Fixture.CreateAsync("ad_deferred_binding");
         var request = fixture.Request();
-        if (scenario == "actor") request = request with { ActorId = Guid.NewGuid() };
-        if (scenario == "session") request = request with { SessionId = Guid.NewGuid() };
+        if (scenario == "actor")
+        {
+            request = request with { ActorId = Guid.NewGuid() };
+        }
+
+        if (scenario == "session")
+        {
+            request = request with { SessionId = Guid.NewGuid() };
+        }
+
         if (scenario == "claim")
         {
             fixture.Context.Remove(await fixture.Context.Set<AdRewardPendingClaimRow>().SingleAsync());
@@ -124,8 +132,14 @@ public sealed class DurableDeferredAdRewardServiceTests
         }
 
         Func<Task> action = () => fixture.Service(Policy()).ConfirmAsync(request).AsTask();
-        if (scenario == "actor") await action.Should().ThrowAsync<AdRewardRiskBindingException>();
-        else await action.Should().ThrowAsync<AdRewardReplayException>();
+        if (scenario == "actor")
+        {
+            await action.Should().ThrowAsync<AdRewardRiskBindingException>();
+        }
+        else
+        {
+            await action.Should().ThrowAsync<AdRewardReplayException>();
+        }
     }
 
     [Theory]

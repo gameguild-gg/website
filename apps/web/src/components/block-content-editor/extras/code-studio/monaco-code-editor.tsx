@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { IDisposable, editor } from "monaco-editor"
-import type { Monaco, OnMount } from "@monaco-editor/react"
 import { useTheme } from "next-themes"
 import type { SupportedLanguage } from "./types"
 import { isShikiActive } from "@/components/block-content-editor/lib/shiki/highlighter"
 import { BaseMonacoEditor } from "@/components/block-content-editor/lib/monaco"
 import { registerPathCompletionProvider } from "./monaco-file-system"
+import { getTypeScriptSupport, type MonacoRuntime } from "./monaco-runtime"
 import { LinkConfirmDialog } from "../dialogs/link-confirm-dialog"
 import type { MonacoOptionsPreferences } from "@/components/block-content-editor/lib/storage/editor/editor-preferences"
 
@@ -79,8 +79,8 @@ export function MonacoCodeEditor({
   const { resolvedTheme, theme: themeState } = useTheme()
   const isDarkMode = (resolvedTheme || themeState) === "dark"
 
-  const handleBeforeMount = useCallback(async (monaco: Monaco) => {
-    const ts = monaco?.languages?.typescript
+  const handleBeforeMount = useCallback((monaco: MonacoRuntime) => {
+    const ts = getTypeScriptSupport(monaco)
     if (ts) {
       ts.typescriptDefaults.setCompilerOptions({
         target: ts.ScriptTarget.ES2020,
@@ -131,7 +131,7 @@ export function MonacoCodeEditor({
     }
   }, [])
 
-  const handleMount: OnMount = (ed) => {
+  const handleMount = (ed: editor.IStandaloneCodeEditor) => {
     editorRef.current = ed
     const reportCursor = () => {
       const model = ed.getModel()

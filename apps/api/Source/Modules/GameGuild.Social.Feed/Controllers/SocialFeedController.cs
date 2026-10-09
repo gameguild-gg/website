@@ -18,7 +18,11 @@ public sealed class SocialFeedController(
     public async Task<ActionResult<SocialFeedProfileDto>> GetProfileByUser(Guid userId, CancellationToken cancellationToken)
     {
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue || actorId.Value == Guid.Empty) return Unauthorized();
+        if (!actorId.HasValue || actorId.Value == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
         var profile = await feed.GetProfileByUserAsync(actorId.Value, userId, cancellationToken).ConfigureAwait(false);
         return profile is null ? NotFound() : Ok(profile);
     }
@@ -29,7 +33,11 @@ public sealed class SocialFeedController(
     public async Task<ActionResult<SocialFeedProfileDto>> GetProfileByHandle(string handle, CancellationToken cancellationToken)
     {
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue || actorId.Value == Guid.Empty) return Unauthorized();
+        if (!actorId.HasValue || actorId.Value == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
         var profile = await feed.GetProfileByHandleAsync(actorId.Value, handle, cancellationToken).ConfigureAwait(false);
         return profile is null ? NotFound() : Ok(profile);
     }
@@ -41,7 +49,10 @@ public sealed class SocialFeedController(
     {
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorId.HasValue || actorId.Value == Guid.Empty)
+        {
             return Unauthorized();
+        }
+
         var item = await feed.GetPostAsync(actorId.Value, postId, cancellationToken).ConfigureAwait(false);
         return item is null ? NotFound() : Ok(item);
     }
@@ -59,15 +70,19 @@ public sealed class SocialFeedController(
     {
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorId.HasValue || actorId.Value == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         if (!TryParseScope(scope, out var parsedScope))
+        {
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid feed scope",
                 Detail = "Use for-you, following, community, or saved.",
                 Status = StatusCodes.Status400BadRequest
             });
+        }
 
         try
         {

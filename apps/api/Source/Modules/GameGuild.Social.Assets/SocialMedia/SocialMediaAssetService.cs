@@ -42,13 +42,19 @@ public static class SocialMediaAssetPolicy
         ArgumentNullException.ThrowIfNull(content);
         var normalizedMimeType = NormalizeMimeType(mimeType);
         if (!Limits.TryGetValue(normalizedMimeType, out var maximumSize))
+        {
             return new SocialMediaValidationResult(false, "Only JPEG, PNG, WebP, GIF, and MP4 files are supported.");
+        }
 
         if (declaredSize <= 0 || declaredSize > maximumSize)
+        {
             return new SocialMediaValidationResult(false, $"The file exceeds the {maximumSize} byte limit for {normalizedMimeType}.");
+        }
 
         if (!content.CanRead || !content.CanSeek)
+        {
             return new SocialMediaValidationResult(false, "The uploaded file cannot be inspected safely.");
+        }
 
         var originalPosition = content.Position;
         content.Position = 0;
@@ -74,7 +80,9 @@ public static class SocialMediaAssetPolicy
     {
         if (content.VirusScanStatus is VirusScanStatus.Infected or VirusScanStatus.ScanFailed ||
             content.ModerationStatus is ModerationStatus.Blocked or ModerationStatus.Rejected)
+        {
             return SocialMediaProcessingState.Rejected;
+        }
 
         return content.IsSafeToServe
             ? SocialMediaProcessingState.Ready
@@ -115,12 +123,16 @@ public sealed class SocialMediaAssetService(IAssetReferenceRepository references
         CancellationToken cancellationToken = default)
     {
         if (assetReferenceId == Guid.Empty || ownerId == Guid.Empty)
+        {
             return null;
+        }
 
         var reference = await references.GetByIdWithContentAsync(assetReferenceId, cancellationToken).ConfigureAwait(false);
         if (reference?.Content is null || reference.DeletedAt.HasValue || reference.CreatedByUserId != ownerId ||
             !SocialMediaAssetPolicy.IsSupported(reference.Content.MimeType, reference.Content.SizeBytes))
+        {
             return null;
+        }
 
         return new SocialMediaAssetDescriptor(
             reference.Id,

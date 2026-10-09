@@ -95,7 +95,9 @@ public sealed class BlogPublicController(
         CancellationToken cancellationToken = default)
     {
         if (!await sender.Send(new IsBlogPostPublishedQuery(id), cancellationToken).ConfigureAwait(false))
+        {
             return NotFound();
+        }
 
         var viewerId = ViewerIdOrNull();
         return Ok(await sender.Send(

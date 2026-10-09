@@ -118,7 +118,7 @@ export class SocialPostsCommentsModule {
   /**
    * Search posts by tags
    */
-  async getPostsTagsSearch(query?: { tags?: Array<string>; skip?: number; take?: number }): Promise<Result<void, ApiError>> {
+  async getPostsTagsSearch(query?: { tags?: string[]; skip?: number; take?: number }): Promise<Result<void, ApiError>> {
     const url = '/api/v1/posts/tags/search';
 
     const result = await this.client.request({

@@ -32,16 +32,23 @@ public sealed class CreateSetupIntentCommandHandler(
             .GetPaymentContextAsync(command.SubscriptionId, cancellationToken)
             .ConfigureAwait(false);
         if (subscription is null)
+        {
             return new(command.SubscriptionId, null, null, null, NotFound: true);
+        }
+
         if (subscription.TenantId != command.TenantId)
+        {
             return new(command.SubscriptionId, null, null, null, Error: "Subscription does not belong to the specified tenant.");
+        }
 
         var customerId = subscription.ExternalCustomerId;
         if (string.IsNullOrWhiteSpace(customerId))
         {
             if (string.IsNullOrWhiteSpace(command.CustomerEmail))
+            {
                 return new(command.SubscriptionId, null, null, null,
-                    Error: "CustomerEmail is required when the subscription does not yet have a Stripe customer.");
+                Error: "CustomerEmail is required when the subscription does not yet have a Stripe customer.");
+            }
 
             var customer = await stripeCustomerService.CreateCustomerAsync(
                 new GatewayCustomerRequest(
@@ -51,8 +58,10 @@ public sealed class CreateSetupIntentCommandHandler(
                     Metadata: Metadata(command)),
                 cancellationToken).ConfigureAwait(false);
             if (!customer.Success || string.IsNullOrWhiteSpace(customer.ExternalCustomerId))
+            {
                 return new(command.SubscriptionId, null, null, null,
-                    Error: customer.ErrorMessage ?? "Stripe could not create a customer for this subscription.");
+                Error: customer.ErrorMessage ?? "Stripe could not create a customer for this subscription.");
+            }
 
             customerId = customer.ExternalCustomerId;
             await subscriptionPaymentContextService.SetExternalCustomerIdAsync(
@@ -67,8 +76,10 @@ public sealed class CreateSetupIntentCommandHandler(
         if (!setupIntent.Success
             || string.IsNullOrWhiteSpace(setupIntent.ClientSecret)
             || string.IsNullOrWhiteSpace(setupIntent.ExternalSetupIntentId))
+        {
             return new(command.SubscriptionId, customerId, null, null,
-                Error: setupIntent.ErrorMessage ?? "Stripe could not create a setup intent for this subscription.");
+            Error: setupIntent.ErrorMessage ?? "Stripe could not create a setup intent for this subscription.");
+        }
 
         return new(
             subscription.SubscriptionId,

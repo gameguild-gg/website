@@ -49,7 +49,10 @@ public class ResourceMetadataRepository(IApplicationDbContext context) : IResour
     {
         var metadata = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (metadata == null) return false;
+        if (metadata == null)
+        {
+            return false;
+        }
 
         ResourceMetadataSet.Remove(metadata);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -61,7 +64,10 @@ public class ResourceMetadataRepository(IApplicationDbContext context) : IResour
     {
         var metadata = await GetByKeyAsync(tenantId, key, cancellationToken).ConfigureAwait(false);
 
-        if (metadata == null) return false;
+        if (metadata == null)
+        {
+            return false;
+        }
 
         ResourceMetadataSet.Remove(metadata);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

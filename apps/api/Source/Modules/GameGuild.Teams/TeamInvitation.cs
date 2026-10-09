@@ -37,7 +37,9 @@ public sealed class TeamInvitation : EntityBase
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
         if (invitedUserId == null && string.IsNullOrWhiteSpace(invitedEmail))
+        {
             throw new ArgumentException("An invited user or email is required.", nameof(invitedEmail));
+        }
 
         return new TeamInvitation
         {
@@ -55,7 +57,9 @@ public sealed class TeamInvitation : EntityBase
     public bool Accept(string token, Guid acceptedByUserId, DateTime now)
     {
         if (UsedAt.HasValue || RevokedAt.HasValue || ExpiresAt <= now || !Matches(token))
+        {
             return false;
+        }
 
         MarkAccepted(acceptedByUserId, now);
         return true;
@@ -64,7 +68,9 @@ public sealed class TeamInvitation : EntityBase
     public bool AcceptAuthenticated(Guid acceptedByUserId, DateTime now)
     {
         if (UsedAt.HasValue || RevokedAt.HasValue || ExpiresAt <= now)
+        {
             return false;
+        }
 
         MarkAccepted(acceptedByUserId, now);
         return true;
@@ -79,7 +85,11 @@ public sealed class TeamInvitation : EntityBase
 
     public void Revoke(DateTime now)
     {
-        if (!UsedAt.HasValue) RevokedAt = now;
+        if (!UsedAt.HasValue)
+        {
+            RevokedAt = now;
+        }
+
         Touch();
     }
 

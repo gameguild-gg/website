@@ -27,22 +27,33 @@ public sealed class LaunchPadHandlers(
     {
         await using var lockHandle = await _lifecycleLock.AcquireAsync(request.ProjectId, cancellationToken).ConfigureAwait(false);
         var actorError = await ValidateActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actorError != null) return Result.Failure<LaunchPlan>(actorError);
+        if (actorError != null)
+        {
+            return Result.Failure<LaunchPlan>(actorError);
+        }
 
         var actor = actorContextAccessor.ActorContext;
         var availability = await availabilityService
             .GetAsync(request.ProjectId, ProjectChannel.LaunchPad, actor.TenantId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!availability.IsAvailable)
+        {
             return Result.Failure<LaunchPlan>(AvailabilityError(availability));
+        }
+
         if (!await authorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<LaunchPlan>(Error.Forbidden("LaunchPad.ProjectForbidden", "Project Edit permission is required."));
+        }
 
         var existing = await context.Set<LaunchPlan>()
             .Include(plan => plan.ChecklistItems)
             .FirstOrDefaultAsync(plan => plan.ProjectId == request.ProjectId && plan.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (existing != null) return Result.Failure<LaunchPlan>(Error.Conflict("LaunchPad.PlanExists", "A launch plan already exists for this project."));
+        if (existing != null)
+        {
+            return Result.Failure<LaunchPlan>(Error.Conflict("LaunchPad.PlanExists", "A launch plan already exists for this project."));
+        }
 
         var plan = new LaunchPlan
         {
@@ -84,15 +95,28 @@ public sealed class LaunchPadHandlers(
     public async Task<Result<LaunchPlan>> Handle(CompleteLaunchChecklistItemCommand request, CancellationToken cancellationToken)
     {
         var actorError = await ValidateActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actorError != null) return Result.Failure<LaunchPlan>(actorError);
+        if (actorError != null)
+        {
+            return Result.Failure<LaunchPlan>(actorError);
+        }
+
         var plan = await LoadPlan(request.LaunchPlanId, cancellationToken).ConfigureAwait(false);
-        if (plan == null) return Result.Failure<LaunchPlan>(Error.NotFound("LaunchPad.PlanNotFound", "Launch plan not found."));
+        if (plan == null)
+        {
+            return Result.Failure<LaunchPlan>(Error.NotFound("LaunchPad.PlanNotFound", "Launch plan not found."));
+        }
 
         var accessError = await AuthorizePlanProjectAsync(plan, PermissionType.Edit, cancellationToken).ConfigureAwait(false);
-        if (accessError != null) return Result.Failure<LaunchPlan>(accessError);
+        if (accessError != null)
+        {
+            return Result.Failure<LaunchPlan>(accessError);
+        }
 
         var item = plan.ChecklistItems.FirstOrDefault(candidate => candidate.Id == request.ChecklistItemId);
-        if (item == null) return Result.Failure<LaunchPlan>(Error.NotFound("LaunchPad.ChecklistItemNotFound", "Checklist item not found."));
+        if (item == null)
+        {
+            return Result.Failure<LaunchPlan>(Error.NotFound("LaunchPad.ChecklistItemNotFound", "Checklist item not found."));
+        }
 
         item.Complete();
         plan.RecalculateStatus();
@@ -104,19 +128,31 @@ public sealed class LaunchPadHandlers(
     public async Task<Result<LaunchPlan>> Handle(PublishLaunchCommand request, CancellationToken cancellationToken)
     {
         var actorError = await ValidateActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actorError != null) return Result.Failure<LaunchPlan>(actorError);
+        if (actorError != null)
+        {
+            return Result.Failure<LaunchPlan>(actorError);
+        }
+
         var plan = await LoadPlan(request.LaunchPlanId, cancellationToken).ConfigureAwait(false);
-        if (plan == null) return Result.Failure<LaunchPlan>(Error.NotFound("LaunchPad.PlanNotFound", "Launch plan not found."));
+        if (plan == null)
+        {
+            return Result.Failure<LaunchPlan>(Error.NotFound("LaunchPad.PlanNotFound", "Launch plan not found."));
+        }
 
         var accessError = await AuthorizePlanProjectAsync(plan, PermissionType.Publish, cancellationToken).ConfigureAwait(false);
-        if (accessError != null) return Result.Failure<LaunchPlan>(accessError);
+        if (accessError != null)
+        {
+            return Result.Failure<LaunchPlan>(accessError);
+        }
 
         var actor = actorContextAccessor.ActorContext;
         var availability = await availabilityService
             .GetAsync(plan.ProjectId, ProjectChannel.LaunchPad, actor.TenantId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!availability.IsAvailable)
+        {
             return Result.Failure<LaunchPlan>(AvailabilityError(availability));
+        }
 
         try
         {
@@ -135,7 +171,9 @@ public sealed class LaunchPadHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (project == null)
+        {
             return Result.Failure<LaunchPlan>(Error.Validation("LaunchPad.ProjectUnavailable", ProjectChannelReasonCodes.ProjectNotFound));
+        }
 
         project.Status = ContentStatus.Published;
         project.Visibility = ContentVisibility.Public;
@@ -149,12 +187,22 @@ public sealed class LaunchPadHandlers(
     public async Task<Result<LaunchPlan?>> Handle(GetLaunchPlanQuery request, CancellationToken cancellationToken)
     {
         var actorError = await ValidateActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actorError != null) return Result.Failure<LaunchPlan?>(actorError);
+        if (actorError != null)
+        {
+            return Result.Failure<LaunchPlan?>(actorError);
+        }
+
         var plan = await LoadPlan(request.LaunchPlanId, cancellationToken).ConfigureAwait(false);
-        if (plan == null) return Result.Success<LaunchPlan?>(null);
+        if (plan == null)
+        {
+            return Result.Success<LaunchPlan?>(null);
+        }
 
         var accessError = await AuthorizePlanProjectAsync(plan, PermissionType.Read, cancellationToken).ConfigureAwait(false);
-        if (accessError != null) return Result.Failure<LaunchPlan?>(accessError);
+        if (accessError != null)
+        {
+            return Result.Failure<LaunchPlan?>(accessError);
+        }
 
         return Result.Success<LaunchPlan?>(plan);
     }
@@ -162,7 +210,11 @@ public sealed class LaunchPadHandlers(
     public async Task<Result<LaunchPlan?>> Handle(GetLaunchPlanByProjectQuery request, CancellationToken cancellationToken)
     {
         var actorError = await ValidateActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actorError != null) return Result.Failure<LaunchPlan?>(actorError);
+        if (actorError != null)
+        {
+            return Result.Failure<LaunchPlan?>(actorError);
+        }
+
         var plan = await context.Set<LaunchPlan>()
             .AsNoTracking()
             .Include(plan => plan.Project)
@@ -172,10 +224,16 @@ public sealed class LaunchPadHandlers(
                 plan.DeletedAt == null,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (plan == null) return Result.Success<LaunchPlan?>(null);
+        if (plan == null)
+        {
+            return Result.Success<LaunchPlan?>(null);
+        }
 
         var accessError = await AuthorizePlanProjectAsync(plan, PermissionType.Read, cancellationToken).ConfigureAwait(false);
-        if (accessError != null) return Result.Failure<LaunchPlan?>(accessError);
+        if (accessError != null)
+        {
+            return Result.Failure<LaunchPlan?>(accessError);
+        }
 
         return Result.Success<LaunchPlan?>(plan);
     }
@@ -183,7 +241,11 @@ public sealed class LaunchPadHandlers(
     public async Task<Result<IReadOnlyList<LaunchPlan>>> Handle(GetLaunchPadDashboardQuery request, CancellationToken cancellationToken)
     {
         var actorError = await ValidateActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actorError != null) return Result.Failure<IReadOnlyList<LaunchPlan>>(actorError);
+        if (actorError != null)
+        {
+            return Result.Failure<IReadOnlyList<LaunchPlan>>(actorError);
+        }
+
         var actor = actorContextAccessor.ActorContext;
         var actorId = actor.SubjectIdAsGuid!.Value;
         var tenantId = actor.TenantId!.Value;
@@ -198,7 +260,10 @@ public sealed class LaunchPadHandlers(
                 plan.Project.Status != ContentStatus.Archived &&
                 plan.Project.Status != ContentStatus.Deleted);
 
-        if (request.Status.HasValue) query = query.Where(plan => plan.Status == request.Status.Value);
+        if (request.Status.HasValue)
+        {
+            query = query.Where(plan => plan.Status == request.Status.Value);
+        }
 
         var plans = await query
             .OrderBy(plan => plan.TargetLaunchAt ?? DateTime.MaxValue)
@@ -206,7 +271,10 @@ public sealed class LaunchPadHandlers(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        if (plans.Count == 0) return Result.Success<IReadOnlyList<LaunchPlan>>(plans);
+        if (plans.Count == 0)
+        {
+            return Result.Success<IReadOnlyList<LaunchPlan>>(plans);
+        }
 
         var projectIds = plans.Select(plan => plan.ProjectId).Distinct().ToArray();
         var collaborators = await context.Set<ProjectCollaborator>()
@@ -249,7 +317,9 @@ public sealed class LaunchPadHandlers(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid == null || actor.TenantId == null)
+        {
             return Error.Unauthorized("LaunchPad.Unauthenticated", "An authenticated tenant actor is required.");
+        }
 
         return await authorizationService.IsActorActiveTenantMemberAsync(cancellationToken).ConfigureAwait(false)
             ? null
@@ -260,15 +330,22 @@ public sealed class LaunchPadHandlers(
     {
         var actor = actorContextAccessor.ActorContext;
         if (plan.Project.TenantId != actor.TenantId)
+        {
             return Error.Forbidden("LaunchPad.ProjectTenantMismatch", "Launch plan is outside the current tenant.");
+        }
 
         var availability = await availabilityService
             .GetAsync(plan.ProjectId, ProjectChannel.LaunchPad, actor.TenantId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!availability.IsAvailable)
+        {
             return AvailabilityError(availability);
+        }
+
         if (!await authorizationService.HasPermissionAsync(plan.ProjectId, permission, cancellationToken).ConfigureAwait(false))
+        {
             return Error.Forbidden("LaunchPad.ProjectForbidden", $"Project {permission} permission is required.");
+        }
 
         return null;
     }

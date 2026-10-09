@@ -6,6 +6,8 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 
+import { readPnpmSecurityConfig } from "../read-pnpm-config.mjs";
+
 const repositoryRoot = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../..",
@@ -151,15 +153,13 @@ for (const packageRoot of packageRoots) {
   });
 }
 
-test("the advisory exception is bound to an exact installed security patch", () => {
-  const manifest = JSON.parse(
-    readFileSync(join(repositoryRoot, "package.json"), "utf8"),
-  );
+test("the installed security patch is verified without suppressing scanner advisories", () => {
+  const pnpmConfig = readPnpmSecurityConfig(repositoryRoot);
   assert.equal(
-    manifest.pnpm.patchedDependencies?.["braces@3.0.3"],
+    pnpmConfig.patchedDependencies?.["braces@3.0.3"],
     "patches/braces@3.0.3.patch",
   );
-  assert.equal(manifest.pnpm.auditConfig, undefined);
+  assert.equal(pnpmConfig.auditConfig, undefined);
   const scannerExceptions = readFileSync(
     join(repositoryRoot, ".trivyignore"),
     "utf8",
@@ -167,7 +167,7 @@ test("the advisory exception is bound to an exact installed security patch", () 
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith("#"));
-  assert.deepEqual(scannerExceptions, ["CVE-2026-93687"]);
+  assert.deepEqual(scannerExceptions, []);
   const patch = readFileSync(
     join(repositoryRoot, "patches/braces@3.0.3.patch"),
     "utf8",

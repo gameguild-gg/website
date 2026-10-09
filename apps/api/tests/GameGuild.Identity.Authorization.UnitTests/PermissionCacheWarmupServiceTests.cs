@@ -66,14 +66,14 @@ public sealed class PermissionCacheWarmupServiceTests
 
         var hybridCache = new Mock<IHybridPermissionCache>(MockBehavior.Strict);
         hybridCache
-            .Setup(cache => cache.GetManyValuesAsync<AccessLevel>(
+            .Setup(cache => cache.GetManyValuesAsync<CachedAclDecision>(
                 It.Is<IReadOnlyCollection<string>>(keys => keys.Count == 2),
                 "acl",
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Dictionary<string, CacheResult<AccessLevel>>(StringComparer.Ordinal));
+            .ReturnsAsync(new Dictionary<string, CacheResult<CachedAclDecision>>(StringComparer.Ordinal));
         hybridCache
             .Setup(cache => cache.SetManyValuesAsync(
-                It.Is<IReadOnlyDictionary<string, AccessLevel>>(values => values.Count == 2),
+                It.Is<IReadOnlyDictionary<string, CachedAclDecision>>(values => values.Count == 2),
                 "acl",
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -111,9 +111,9 @@ public sealed class PermissionCacheWarmupServiceTests
             It.IsAny<AclSubject>(), tenantId, "Document", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         tenantVersionStore.Verify(store => store.GetTenantAndGlobalVersionsAsync(tenantId, It.IsAny<CancellationToken>()), Times.Once);
         userVersionStore.Verify(store => store.GetVersionAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
-        hybridCache.Verify(cache => cache.GetManyValuesAsync<AccessLevel>(
+        hybridCache.Verify(cache => cache.GetManyValuesAsync<CachedAclDecision>(
             It.Is<IReadOnlyCollection<string>>(keys => keys.Count == 2), "acl", It.IsAny<CancellationToken>()), Times.Once);
         hybridCache.Verify(cache => cache.SetManyValuesAsync(
-            It.Is<IReadOnlyDictionary<string, AccessLevel>>(values => values.Count == 2), "acl", It.IsAny<CancellationToken>()), Times.Once);
+            It.Is<IReadOnlyDictionary<string, CachedAclDecision>>(values => values.Count == 2), "acl", It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -46,15 +46,20 @@ internal static class EntityPropertyMapper
         {
             var propertyInfo = Array.Find(cachedProperties, p => p.Name == property.Key);
 
-            if (propertyInfo == null || !propertyInfo.CanWrite) continue;
+            if (propertyInfo == null || !propertyInfo.CanWrite)
+            {
+                continue;
+            }
 
             var value = property.Value;
 
             if (value is null)
             {
                 if (!IsNullableProperty(propertyInfo))
+                {
                     throw new InvalidOperationException(
                         $"Cannot set non-nullable property '{property.Key}' on {entityType.Name} to null.");
+                }
 
                 propertyInfo.SetValue(target, null, null);
                 onPropertySet?.Invoke(property.Key);
@@ -88,12 +93,17 @@ internal static class EntityPropertyMapper
     public static Dictionary<string, object?> ToDictionary(object source)
     {
         if (source is Dictionary<string, object?> existing)
+        {
             return existing;
+        }
 
         var properties = s_propertyCache.GetOrAdd(source.GetType(), t => t.GetProperties());
         var map = new Dictionary<string, object?>(properties.Length, StringComparer.Ordinal);
         foreach (var property in properties)
+        {
             map[property.Name] = property.GetValue(source);
+        }
+
         return map;
     }
 
@@ -110,7 +120,9 @@ internal static class EntityPropertyMapper
         foreach (var property in properties)
         {
             if (property.CanRead)
+            {
                 result[property.Name] = property.GetValue(target);
+            }
         }
 
         return result;
@@ -128,7 +140,10 @@ internal static class EntityPropertyMapper
         if (targetType == typeof(Guid) && value is string guidString)
         {
             if (!Guid.TryParse(guidString, out var guid))
+            {
                 throw new FormatException($"'{guidString}' is not a valid GUID.");
+            }
+
             return guid;
         }
 
@@ -146,7 +161,9 @@ internal static class EntityPropertyMapper
 
         // Same type — no conversion needed
         if (value.GetType() == targetType || targetType.IsAssignableFrom(value.GetType()))
+        {
             return value;
+        }
 
         return Convert.ChangeType(value, targetType);
     }
@@ -159,7 +176,9 @@ internal static class EntityPropertyMapper
     internal static bool IsNullableProperty(PropertyInfo propertyInfo)
     {
         if (!propertyInfo.PropertyType.IsValueType)
+        {
             return true; // Reference types are nullable
+        }
 
         return Nullable.GetUnderlyingType(propertyInfo.PropertyType) != null;
     }

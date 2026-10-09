@@ -17,5 +17,7 @@ public partial class HardenPayoutFifoEligibility : Migration
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
+        // Keep the hardened eligibility checks installed during rollback;
+        // restoring the previous function would weaken payout reservation rules.
     }
 }

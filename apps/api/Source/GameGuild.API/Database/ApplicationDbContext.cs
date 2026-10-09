@@ -614,7 +614,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProte
     {
         var referenceName = reference.Name!;
         if (assembliesByName.ContainsKey(referenceName))
+        {
             return;
+        }
 
         try
         {

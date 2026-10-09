@@ -335,7 +335,11 @@ public sealed class AdRewardCoordinatorTests
                 Now,
                 Now.AddMinutes(5));
             var signed = token ?? _tokens.Issue(claims, Now);
-            if (token is not null) claims = _tokens.Validate(token.Value, Now.AddSeconds(30));
+            if (token is not null)
+            {
+                claims = _tokens.Validate(token.Value, Now.AddSeconds(30));
+            }
+
             var sourceId = SourceStampId.New();
             var key = new IdempotencyKey(idempotency);
             var cluster = Cluster();
@@ -452,7 +456,10 @@ public sealed class AdRewardCoordinatorTests
                 Limit(RiskLimitDimension.SourceRoot, sourceId.Value.ToString("N"))
             };
             if (omitDimension.HasValue)
+            {
                 limits.RemoveAll(limit => limit.Key.Dimension == omitDimension.Value);
+            }
+
             return new ProtectedIssuanceAuthorizer(
                     reserve,
                     new CoreProtectedPostingGate(new RiskDecisionAuthorizer()),

@@ -9,9 +9,12 @@ internal static class ProgramPricingMetadata
 
   public static PricingDto Read(Program program)
   {
-    if (string.IsNullOrWhiteSpace(program.Metadata)) return Disabled();
+    if (string.IsNullOrWhiteSpace(program.Metadata))
+        {
+            return Disabled();
+        }
 
-    try
+        try
     {
       using var document = JsonDocument.Parse(program.Metadata);
       if (!document.RootElement.TryGetProperty(MetadataKey, out var pricing) || pricing.ValueKind != JsonValueKind.Object)

@@ -91,8 +91,15 @@ public class SlaImpactAnalysisService(
         {
             violations = await analysisRepository.GetByTenantAsync(tenantId, cancellationToken).ConfigureAwait(false);
 
-            if (fromDate.HasValue) violations = violations.Where(v => v.ViolationStartTime >= fromDate.Value);
-            if (toDate.HasValue) violations = violations.Where(v => v.ViolationStartTime <= toDate.Value);
+            if (fromDate.HasValue)
+            {
+                violations = violations.Where(v => v.ViolationStartTime >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                violations = violations.Where(v => v.ViolationStartTime <= toDate.Value);
+            }
         }
 
         if (minSeverity.HasValue) { violations = violations.Where(v => v.Severity >= minSeverity.Value); }
@@ -120,7 +127,10 @@ public class SlaImpactAnalysisService(
     {
         var violation = await analysisRepository.GetByIdAsync(violationId, cancellationToken).ConfigureAwait(false);
 
-        if (violation == null) return false;
+        if (violation == null)
+        {
+            return false;
+        }
 
         violation.Resolve(resolvedByUserId, mitigationActions);
 
@@ -135,13 +145,25 @@ public class SlaImpactAnalysisService(
     {
         var violation = await analysisRepository.GetByIdAsync(violationId, cancellationToken).ConfigureAwait(false);
 
-        if (violation == null) return false;
+        if (violation == null)
+        {
+            return false;
+        }
 
-        if (rootCause != null) violation.RootCause = rootCause;
+        if (rootCause != null)
+        {
+            violation.RootCause = rootCause;
+        }
 
-        if (businessImpact != null) violation.BusinessImpact = businessImpact;
+        if (businessImpact != null)
+        {
+            violation.BusinessImpact = businessImpact;
+        }
 
-        if (requiresEscalation.HasValue) violation.RequiresEscalation = requiresEscalation.Value;
+        if (requiresEscalation.HasValue)
+        {
+            violation.RequiresEscalation = requiresEscalation.Value;
+        }
 
         violation.Touch();
 

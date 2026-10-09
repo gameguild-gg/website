@@ -58,7 +58,12 @@ The API binds the `Mfa`, `Session`, and `ThreatIntelligence` sections when the A
 
 `RequireTrustedDeviceForSensitiveOps` is present in the options model but is not yet enforced by sensitive-operation authorization. Do not rely on it as a security control until that integration is implemented.
 
-This configuration documents the MFA and session runtime wiring only. It does not claim that the broader authentication-options issue is complete: cookie and Basic flows, complete ASP.NET Identity integration, end-to-end MFA enforcement during sign-in, and the remaining security and migration criteria still require reconciliation.
+This configuration documents the MFA and session runtime wiring only. Scheme registration, typed
+authentication options, and provider configuration are covered in
+[Authentication options configuration](../../../docs/api/authentication-options-configuration.md), and moving
+an existing authentication system onto this platform — service and endpoint mapping, account and
+credential migration, configuration relocation, and staged cutover — is covered in the
+[Authentication migration guide](../../../docs/api/authentication-migration-guide.md).
 
 ## Threat intelligence settings
 
@@ -111,4 +116,3 @@ The feed is a single JSON document with two optional arrays:
 - `breachedPasswordSha256`: **full** SHA-256 hex digests of known-breached passwords (for example from a licensed corpus export). Only full digests are supported — never plaintext passwords and never k-anonymized prefixes. Comparison is case-insensitive. The submitted password's digest is computed in memory for comparison only; it is never persisted or logged.
 
 Behavior when the feed is missing, unreadable, or unparseable: checks fail open (no match), the last successfully loaded feed keeps being served while retries fail, and one security event per outage is emitted through `Authentication.ThreatIntelligenceFeedUnavailable`. A feed outage never blocks or slows a decision to lock out users: this signal is defense-in-depth.
-

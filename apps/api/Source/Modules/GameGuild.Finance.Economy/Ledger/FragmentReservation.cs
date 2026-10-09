@@ -35,25 +35,52 @@ public sealed class ValueFragmentReservation
         DateTimeOffset reservedAt,
         DateTimeOffset? terminalAt)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Reservation ID is required.", nameof(id));
-        if (operationId == Guid.Empty) throw new ArgumentException("Operation ID is required.", nameof(operationId));
-        if (!Enum.IsDefined(purpose)) throw new ArgumentOutOfRangeException(nameof(purpose));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Reservation ID is required.", nameof(id));
+        }
+
+        if (operationId == Guid.Empty)
+        {
+            throw new ArgumentException("Operation ID is required.", nameof(operationId));
+        }
+
+        if (!Enum.IsDefined(purpose))
+        {
+            throw new ArgumentOutOfRangeException(nameof(purpose));
+        }
+
         ArgumentNullException.ThrowIfNull(ranges);
-        if (ranges.Count == 0) throw new ArgumentException("A reservation requires exact root ranges.", nameof(ranges));
+        if (ranges.Count == 0)
+        {
+            throw new ArgumentException("A reservation requires exact root ranges.", nameof(ranges));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(operationVersion);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fencingToken);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(killSwitchEpoch);
-        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
         var terminal = status is FragmentReservationStatus.Consumed or FragmentReservationStatus.Released;
         if (terminal != terminalAt.HasValue)
+        {
             throw new ArgumentException("Only terminal reservations require a terminal timestamp.", nameof(terminalAt));
+        }
+
         if (terminalAt < reservedAt)
+        {
             throw new ArgumentException("A reservation cannot terminate before it was created.", nameof(terminalAt));
+        }
 
         var traceUnits = ranges.Aggregate(0L, static (total, range) => checked(total + range.Length));
         var expected = checked(amount.Units * CurrencyTraceScale.For(amount.Currency));
         if (traceUnits != expected)
+        {
             throw new LineageConservationException("Reservation ranges must exactly conserve the reserved amount.");
+        }
 
         Id = id;
         OperationId = operationId;
@@ -92,7 +119,11 @@ public sealed class ValueFragmentReservation
             FragmentReservationStatus.Dispatching => next is FragmentReservationStatus.Consumed or FragmentReservationStatus.Released,
             _ => false
         };
-        if (!allowed) throw new InvalidOperationException($"Reservation cannot transition from {Status} to {next}.");
+        if (!allowed)
+        {
+            throw new InvalidOperationException($"Reservation cannot transition from {Status} to {next}.");
+        }
+
         return new ValueFragmentReservation(
             Id, OperationId, Purpose, LotId, WalletId, Amount, Ranges,
             checked(OperationVersion + 1), FencingToken, KillSwitchEpoch, next, ReservedAt,

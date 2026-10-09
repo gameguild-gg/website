@@ -59,22 +59,46 @@ public class FeatureContextFactory
         var builder = OpenFeature.Model.EvaluationContext.Builder();
 
         // Add core properties
-        if (context.UserId.HasValue) builder.Set("userId", context.UserId.Value.ToString());
+        if (context.UserId.HasValue)
+        {
+            builder.Set("userId", context.UserId.Value.ToString());
+        }
 
-        if (context.TenantId.HasValue) builder.Set("tenantId", context.TenantId.Value.ToString());
+        if (context.TenantId.HasValue)
+        {
+            builder.Set("tenantId", context.TenantId.Value.ToString());
+        }
 
-        if (!string.IsNullOrEmpty(context.Environment)) builder.Set("environment", context.Environment);
+        if (!string.IsNullOrEmpty(context.Environment))
+        {
+            builder.Set("environment", context.Environment);
+        }
 
-        if (!string.IsNullOrEmpty(context.IpAddress)) builder.Set("ipAddress", context.IpAddress);
+        if (!string.IsNullOrEmpty(context.IpAddress))
+        {
+            builder.Set("ipAddress", context.IpAddress);
+        }
 
-        if (!string.IsNullOrEmpty(context.UserAgent)) builder.Set("userAgent", context.UserAgent);
+        if (!string.IsNullOrEmpty(context.UserAgent))
+        {
+            builder.Set("userAgent", context.UserAgent);
+        }
 
-        if (!string.IsNullOrEmpty(context.Country)) builder.Set("country", context.Country);
+        if (!string.IsNullOrEmpty(context.Country))
+        {
+            builder.Set("country", context.Country);
+        }
 
-        if (!string.IsNullOrEmpty(context.SubscriptionPlanId)) builder.Set("subscriptionPlanId", context.SubscriptionPlanId);
+        if (!string.IsNullOrEmpty(context.SubscriptionPlanId))
+        {
+            builder.Set("subscriptionPlanId", context.SubscriptionPlanId);
+        }
 
         // Add user permissions as comma-separated string
-        if (context.Permissions.Count > 0) builder.Set("permissions", string.Join(",", context.Permissions));
+        if (context.Permissions.Count > 0)
+        {
+            builder.Set("permissions", string.Join(",", context.Permissions));
+        }
 
         // Add custom attributes
         foreach (var kvp in context.CustomAttributes)
@@ -141,7 +165,10 @@ public class FeatureContextFactory
         // Try CloudFlare header first
         var country = httpContext.Request.Headers["CF-IPCountry"].FirstOrDefault();
 
-        if (!string.IsNullOrEmpty(country)) return country;
+        if (!string.IsNullOrEmpty(country))
+        {
+            return country;
+        }
 
         // Try other common headers
         country = httpContext.Request.Headers["X-Country-Code"].FirstOrDefault();

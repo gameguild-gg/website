@@ -9,11 +9,9 @@ using GameGuild.Configuration.PresentationLayer.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using MockQueryable.Moq;
 using Moq;
 using Xunit;
 using AuthorizationOptions = Microsoft.AspNetCore.Authorization.AuthorizationOptions;
@@ -321,11 +319,13 @@ public sealed class ApiKeyRotationHandlerTests
     }
 
     private static RotateApiKeyHandler CreateHandler(
-        IApplicationDbContext dbContext,
+        IApiKeyRepository apiKeyRepository,
         IActorContextAccessor actorAccessor,
         IApiKeyAuditEventSink? auditSink = null,
         ApiKeyLifecycleOptions? options = null) =>
-        new(dbContext, actorAccessor, NullLogger<RotateApiKeyHandler>.Instance, options, auditSink);
+        new(apiKeyRepository, actorAccessor, NullLogger<RotateApiKeyHandler>.Instance, options, auditSink);
+
+    private static IApiKeyRepository CreateRepository(IApplicationDbContext dbContext) => new ApiKeyRepository(dbContext);
 
     [Fact]
     public async Task Rotate_ValidKey_IssuesReplacementLinkedToOldKey_WithDefaultGrace()
@@ -338,7 +338,7 @@ public sealed class ApiKeyRotationHandlerTests
         dbContext.ApiKeys.Add(oldKey);
         await dbContext.SaveChangesAsync();
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
         var before = SystemClock.UtcNow;
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = oldKey.Id }, CancellationToken.None);
@@ -373,7 +373,7 @@ public sealed class ApiKeyRotationHandlerTests
         dbContext.ApiKeys.Add(oldKey);
         await dbContext.SaveChangesAsync();
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
 
         var result = await handler.Handle(
             new RotateApiKeyCommand { KeyId = oldKey.Id, GracePeriod = TimeSpan.Zero }, CancellationToken.None);
@@ -401,7 +401,7 @@ public sealed class ApiKeyRotationHandlerTests
         var options = new ApiKeyLifecycleOptions { RotationGracePeriodMinutes = 10 };
         var before = SystemClock.UtcNow;
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object, options: options);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object, options: options);
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = oldKey.Id }, CancellationToken.None);
 
@@ -422,7 +422,7 @@ public sealed class ApiKeyRotationHandlerTests
         await dbContext.SaveChangesAsync();
         var before = SystemClock.UtcNow;
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
 
         var result = await handler.Handle(
             new RotateApiKeyCommand { KeyId = oldKey.Id, GracePeriod = TimeSpan.FromDays(60) }, CancellationToken.None);
@@ -448,7 +448,7 @@ public sealed class ApiKeyRotationHandlerTests
         await dbContext.SaveChangesAsync();
         var newExpiry = SystemClock.UtcNow.AddMonths(6);
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
 
         var result = await handler.Handle(new RotateApiKeyCommand
         {
@@ -478,7 +478,7 @@ public sealed class ApiKeyRotationHandlerTests
         dbContext.ApiKeys.Add(oldKey);
         await dbContext.SaveChangesAsync();
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = oldKey.Id }, CancellationToken.None);
 
@@ -497,7 +497,7 @@ public sealed class ApiKeyRotationHandlerTests
         dbContext.ApiKeys.Add(otherKey);
         await dbContext.SaveChangesAsync();
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = otherKey.Id }, CancellationToken.None);
 
@@ -512,7 +512,7 @@ public sealed class ApiKeyRotationHandlerTests
         actorAccessor.Setup(a => a.ActorContext).Returns(ActorContext.Anonymous);
         await using var dbContext = await CreateContextAsync();
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object);
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = Guid.NewGuid() }, CancellationToken.None);
 
@@ -533,7 +533,7 @@ public sealed class ApiKeyRotationHandlerTests
         await dbContext.SaveChangesAsync();
         var auditSink = new Mock<IApiKeyAuditEventSink>();
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object, auditSink.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object, auditSink.Object);
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = oldKey.Id }, CancellationToken.None);
 
@@ -564,7 +564,7 @@ public sealed class ApiKeyRotationHandlerTests
             .Setup(sink => sink.RecordAsync(It.IsAny<ApiKeyAuditEvent>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("audit transport down"));
 
-        var handler = CreateHandler(dbContext, actorAccessor.Object, auditSink.Object);
+        var handler = CreateHandler(CreateRepository(dbContext), actorAccessor.Object, auditSink.Object);
 
         var result = await handler.Handle(new RotateApiKeyCommand { KeyId = oldKey.Id }, CancellationToken.None);
 
@@ -599,14 +599,14 @@ public sealed class ApiKeyRotationAuthenticationTests
         // Within the grace window the old key still authenticates.
         oldKey.BeginRotationGrace(SystemClock.UtcNow.AddHours(1));
         await dbContext.SaveChangesAsync();
-        var withinGrace = await AuthenticateAsync(dbContext, oldPlaintext).ConfigureAwait(false);
+        var withinGrace = await AuthenticateAsync(dbContext, oldPlaintext);
         withinGrace.Succeeded.Should().BeTrue();
 
         // Grace expires: authentication fails closed and the revocation is recorded lazily.
         oldKey.BeginRotationGrace(SystemClock.UtcNow.AddMinutes(-1));
         await dbContext.SaveChangesAsync();
 
-        var afterGrace = await AuthenticateAsync(dbContext, oldPlaintext).ConfigureAwait(false);
+        var afterGrace = await AuthenticateAsync(dbContext, oldPlaintext);
         afterGrace.Succeeded.Should().BeFalse();
 
         var reloaded = await dbContext.ApiKeys.SingleAsync(k => k.Id == oldKey.Id);
@@ -623,7 +623,7 @@ public sealed class ApiKeyRotationAuthenticationTests
             options.Object,
             NullLoggerFactory.Instance,
             System.Text.Encodings.Web.UrlEncoder.Default,
-            dbContext);
+            new ApiKeyRepository(dbContext));
         var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
         context.Request.Headers["X-API-Key"] = plaintext;
         await handler.InitializeAsync(
@@ -663,15 +663,15 @@ public sealed class ApiKeyLifecycleAuditTests
         var userId = Guid.NewGuid();
         var actorAccessor = new Mock<IActorContextAccessor>();
         actorAccessor.Setup(a => a.ActorContext).Returns(AuthenticatedActor(userId));
-        var dbContext = new Mock<IApplicationDbContext>();
+        var repository = new Mock<IApiKeyRepository>();
         ApiKey? added = null;
-        var set = new Mock<DbSet<ApiKey>>();
-        set.Setup(s => s.Add(It.IsAny<ApiKey>())).Callback<ApiKey>(key => added = key);
-        dbContext.Setup(x => x.Set<ApiKey>()).Returns(set.Object);
-        dbContext.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        repository
+            .Setup(r => r.AddAsync(It.IsAny<ApiKey>(), It.IsAny<CancellationToken>()))
+            .Callback<ApiKey, CancellationToken>((key, _) => added = key)
+            .ReturnsAsync((ApiKey key, CancellationToken _) => key);
         var auditSink = new Mock<IApiKeyAuditEventSink>();
 
-        var handler = new CreateApiKeyHandler(dbContext.Object, actorAccessor.Object,
+        var handler = new CreateApiKeyHandler(repository.Object, actorAccessor.Object,
             NullLogger<CreateApiKeyHandler>.Instance, auditSink.Object);
 
         var result = await handler.Handle(
@@ -695,13 +695,13 @@ public sealed class ApiKeyLifecycleAuditTests
         var actorAccessor = new Mock<IActorContextAccessor>();
         actorAccessor.Setup(a => a.ActorContext).Returns(AuthenticatedActor(userId));
         var (key, _) = ApiKey.Create(userId, Guid.NewGuid(), "integration", ["read"]);
-        var keys = new List<ApiKey> { key }.AsQueryable().BuildMockDbSet();
-        var dbContext = new Mock<IApplicationDbContext>();
-        dbContext.Setup(x => x.Set<ApiKey>()).Returns(keys.Object);
-        dbContext.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var repository = new Mock<IApiKeyRepository>();
+        repository
+            .Setup(r => r.RevokeAsync(key.Id, userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(key);
         var auditSink = new Mock<IApiKeyAuditEventSink>();
 
-        var handler = new RevokeApiKeyHandler(dbContext.Object, actorAccessor.Object,
+        var handler = new RevokeApiKeyHandler(repository.Object, actorAccessor.Object,
             NullLogger<RevokeApiKeyHandler>.Instance, auditSink.Object);
 
         var result = await handler.Handle(

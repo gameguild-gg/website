@@ -35,10 +35,21 @@ public sealed class ProtectedChangeCooldownRegistry
         DateTimeOffset changedAt,
         TimeSpan cooldown)
     {
-        if (subjectId == Guid.Empty) throw new ArgumentException("Subject ID cannot be empty.", nameof(subjectId));
-        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+        if (subjectId == Guid.Empty)
+        {
+            throw new ArgumentException("Subject ID cannot be empty.", nameof(subjectId));
+        }
+
+        if (!Enum.IsDefined(kind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(valueHash);
-        if (cooldown <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(cooldown));
+        if (cooldown <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(cooldown));
+        }
 
         lock (_gate)
         {
@@ -59,14 +70,21 @@ public sealed class ProtectedChangeCooldownRegistry
         lock (_gate)
         {
             if (!_changes.TryGetValue((subjectId, kind), out var change))
+            {
                 throw new KeyNotFoundException("No protected change is registered for this subject.");
+            }
+
             return new ProtectedChangeEvaluation(change, now >= change.AvailableAt);
         }
     }
 
     public IReadOnlyList<ProtectedChangeCooldown> ForSubject(Guid subjectId)
     {
-        if (subjectId == Guid.Empty) throw new ArgumentException("Subject ID cannot be empty.", nameof(subjectId));
+        if (subjectId == Guid.Empty)
+        {
+            throw new ArgumentException("Subject ID cannot be empty.", nameof(subjectId));
+        }
+
         lock (_gate)
         {
             return [.. _changes.Values

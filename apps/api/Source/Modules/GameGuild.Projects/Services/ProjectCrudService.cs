@@ -201,18 +201,26 @@ public class ProjectCrudService(
         if (!await authorizationService.IsActorActiveTenantMemberAsync().ConfigureAwait(false) ||
             actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId ||
             project.TenantId != tenantId || project.CreatedById != actorId)
+        {
             throw new UnauthorizedAccessException("An active tenant member may only create their own Project in the selected tenant.");
+        }
 
         project.Touch();
 
         if (string.IsNullOrEmpty(project.Slug))
+        {
             project.Slug = Project.GenerateSlug(project.Title);
+        }
 
         if (project.Status == default(ContentStatus))
+        {
             project.Status = ContentStatus.Draft;
+        }
 
         if (project.Visibility == default(ContentVisibility))
+        {
             project.Visibility = ContentVisibility.Private;
+        }
 
         context.Set<Project>().Add(project);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -223,11 +231,16 @@ public class ProjectCrudService(
     public async Task<Project> UpdateProjectAsync(Project project)
     {
         if (!await authorizationService.HasPermissionAsync(project.Id, PermissionType.Edit).ConfigureAwait(false))
+        {
             throw new UnauthorizedAccessException("Project edit permission is required.");
+        }
+
         var existingProject = await GetProjectByIdAsync(project.Id).ConfigureAwait(false);
 
         if (existingProject == null)
+        {
             throw new InvalidOperationException($"Project with ID {project.Id} not found");
+        }
 
         existingProject.Title = project.Title;
         existingProject.Description = project.Description;
@@ -253,10 +266,16 @@ public class ProjectCrudService(
     public async Task<bool> DeleteProjectAsync(Guid id)
     {
         if (!await authorizationService.HasPermissionAsync(id, PermissionType.Delete).ConfigureAwait(false))
+        {
             return false;
+        }
+
         var project = await GetProjectByIdAsync(id).ConfigureAwait(false);
 
-        if (project == null) return false;
+        if (project == null)
+        {
+            return false;
+        }
 
         return await _lifecycleCoordinator.DeleteAsync(id, softDelete: true).ConfigureAwait(false);
     }
@@ -264,12 +283,18 @@ public class ProjectCrudService(
     public async Task<bool> RestoreProjectAsync(Guid id)
     {
         if (!await authorizationService.HasPermissionIncludingDeletedAsync(id, PermissionType.Restore).ConfigureAwait(false))
+        {
             return false;
+        }
+
         var project = await context.Set<Project>()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt != null);
 
-        if (project == null) return false;
+        if (project == null)
+        {
+            return false;
+        }
 
         project.Restore();
         project.Touch();
@@ -286,7 +311,10 @@ public class ProjectCrudService(
     public async Task<IEnumerable<Project>> GetProjectsByTenantAsync(Guid tenantId, int skip = 0, int take = 50)
     {
         if (actorContextAccessor.ActorContext.TenantId != tenantId)
+        {
             return [];
+        }
+
         return await authorizationService.ApplyReadAccess(context.Set<Project>())
             .Include(p => p.CreatedBy)
             .Include(p => p.Category)
@@ -302,11 +330,16 @@ public class ProjectCrudService(
         var actor = actorContextAccessor.ActorContext;
         if (!tenantId.HasValue || actor.TenantId != tenantId ||
             !await authorizationService.HasPermissionAsync(projectId, PermissionType.Manage).ConfigureAwait(false))
+        {
             return false;
+        }
 
         var project = await context.Set<Project>().FirstOrDefaultAsync(candidate => candidate.Id == projectId && candidate.DeletedAt == null).ConfigureAwait(false);
 
-        if (project == null) return false;
+        if (project == null)
+        {
+            return false;
+        }
 
         project.SetTenantId(tenantId.Value);
         project.Touch();

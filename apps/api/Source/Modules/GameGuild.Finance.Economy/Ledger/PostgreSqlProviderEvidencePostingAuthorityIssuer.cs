@@ -81,8 +81,10 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
                 .ConfigureAwait(false);
             if (capability is null || !capability.IsEnabled || capability.RevokedAt.HasValue ||
                 !Allows(capability.AllowedTemplateKinds, request.TemplateKind))
+            {
                 throw new RegisteredPostingCapabilityUnavailableException(
                     $"Registered economy capability '{capabilityName}' is unavailable for provider evidence.");
+            }
 
             var walletBelongsToTenant = await _db.Set<EconomyWalletRow>().AsNoTracking()
                 .AnyAsync(row => row.Id == request.TenantWalletId.Value &&
@@ -90,8 +92,10 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
                                  row.State == WalletLifecycleState.Active,
                     cancellationToken).ConfigureAwait(false);
             if (!walletBelongsToTenant)
+            {
                 throw new RegisteredPostingCapabilityUnavailableException(
                     "Provider evidence is not bound to an active wallet in the operation tenant.");
+            }
 
             var existing = await _db.Set<EconomyRiskDecisionRow>()
                 .SingleOrDefaultAsync(row => row.Id == riskDecisionId, cancellationToken)
@@ -186,8 +190,10 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
                                      row.AmountUnits == request.Amount.Units,
                         cancellationToken).ConfigureAwait(false);
                 if (!reservationExists)
+                {
                     throw new RegisteredPostingCapabilityUnavailableException(
                         "Provider evidence authority has no durable aggregate-counter reservation.");
+                }
             }
 
             return new RegisteredPostingAuthority(
@@ -207,20 +213,30 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
     {
         ArgumentNullException.ThrowIfNull(authority);
         if (authority.RiskDecisionId == Guid.Empty)
+        {
             throw new ArgumentException("Provider evidence authority requires a risk decision.", nameof(authority));
+        }
 
         var rows = await _db.Set<EconomyRiskCounterReservationRow>().AsNoTracking()
             .Where(row => row.RiskDecisionId == authority.RiskDecisionId)
             .ToArrayAsync(cancellationToken).ConfigureAwait(false);
         if (rows.Length == 0)
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 "Provider evidence authority has no durable aggregate-counter reservation.");
+        }
+
         if (rows.Any(row => row.Status != RiskCounterReservationStatus.Reserved))
+        {
             throw new RiskDecisionReuseException(
                 "Provider evidence authority was already consumed or released.");
+        }
+
         if (rows.Any(row => consumedAt < row.ReservedAt || consumedAt >= row.ExpiresAt))
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 "Provider evidence authority is outside its valid lifetime.");
+        }
 
         var reservationGroupId = rows.Select(row => row.ReservationGroupId).Distinct().Single();
         var status = await _db.Database.SqlQuery<int>($"""
@@ -229,8 +245,10 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
                 """)
             .SingleAsync(cancellationToken).ConfigureAwait(false);
         if (status != (int)RiskCounterReservationStatus.Consumed)
+        {
             throw new RegisteredPostingCapabilityUnavailableException(
                 "Provider evidence authority expired before it could be consumed.");
+        }
     }
 
     private static void Validate(ProviderEvidencePostingAuthorityRequest request)
@@ -239,21 +257,35 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
         ArgumentException.ThrowIfNullOrWhiteSpace(request.CapabilityName);
         if (request.TenantId == Guid.Empty || request.ActorId == Guid.Empty ||
             request.TenantWalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("Provider evidence tenant, actor, and wallet are required.", nameof(request));
+        }
+
         if (request.TemplateKind is not (PostingTemplateKind.PayoutSuccess or
             PostingTemplateKind.PayoutFailure or PostingTemplateKind.AdminWithdrawalSuccess or
             PostingTemplateKind.AdminWithdrawalFailure))
+        {
             throw new ArgumentOutOfRangeException(nameof(request),
                 "Only payout and administrative-withdrawal terminal templates accept provider evidence authority.");
+        }
+
         if (request.Amount.Currency != CurrencyCode.HardCoin || request.Amount.Units <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request),
                 "Provider evidence authority requires a positive hard-coin amount.");
+        }
+
         if (request.PolicyVersion.Value <= 0 || request.ReserveVersion.Value <= 0 ||
             request.ReserveAuthorizationEpoch <= 0 || request.KillSwitchEpoch < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request),
                 "Provider evidence control-plane versions are invalid.");
+        }
+
         if (request.ExpiresAt <= request.IssuedAt)
+        {
             throw new ArgumentException("Provider evidence authority expiry must follow issuance.", nameof(request));
+        }
     }
 
     private static bool Allows(string json, PostingTemplateKind templateKind)
@@ -290,8 +322,10 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
             existing.CounterVersion != CounterVersion ||
             existing.IssuedAt != request.IssuedAt ||
             existing.ExpiresAt != request.ExpiresAt)
+        {
             throw new RiskDecisionReuseException(
                 "Provider evidence operation fingerprint is bound to a different terminal result.");
+        }
     }
 
     private static string NormalizeHash(string value, string parameterName)
@@ -299,7 +333,10 @@ public sealed class PostgreSqlProviderEvidencePostingAuthorityIssuer :
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
         var normalized = value.Trim().ToLowerInvariant();
         if (normalized.Length > 128)
+        {
             throw new ArgumentOutOfRangeException(parameterName, "Evidence hashes cannot exceed 128 characters.");
+        }
+
         return normalized;
     }
 

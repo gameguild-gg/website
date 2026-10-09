@@ -107,7 +107,9 @@ public class AccessReviewsController(ISender sender) : BaseApiController
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         if (!result)
+        {
             return NotFound();
+        }
 
         return NoContent();
     });

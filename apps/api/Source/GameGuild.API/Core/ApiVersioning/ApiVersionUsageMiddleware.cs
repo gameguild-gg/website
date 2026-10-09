@@ -74,9 +74,9 @@ public sealed class ApiVersionUsageMiddleware(
                 {
                     logger.LogInformation(
                         "API request used version {ApiVersion} for {Route} ({Method}) and returned {StatusCode} in {DurationMilliseconds} ms",
-                        version,
-                        route,
-                        context.Request.Method,
+                        LogRedaction.Sanitize(version),
+                        LogRedaction.Sanitize(route),
+                        LogRedaction.Sanitize(context.Request.Method),
                         statusCode,
                         durationMilliseconds);
                 }

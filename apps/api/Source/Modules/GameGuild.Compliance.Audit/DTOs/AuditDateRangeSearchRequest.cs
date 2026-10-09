@@ -175,6 +175,8 @@ public static class AuditDateRangeResolver
             case "lastmonth":
                 startUtc = nowUtc.AddDays(-30);
                 return true;
+            default:
+                break;
         }
 
         var localNow = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, timeZone);

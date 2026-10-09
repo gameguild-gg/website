@@ -23,18 +23,57 @@ public sealed class UpdateProgramCommandHandler(IApplicationDbContext context, I
       program.Slug = request.Title.ToSlugCase();
     }
 
-    if (request.Description != null) program.Description = request.Description;
-    if (request.Thumbnail != null) program.Thumbnail = request.Thumbnail;
-    if (request.VideoShowcaseUrl != null) program.VideoShowcaseUrl = request.VideoShowcaseUrl;
-    if (request.EstimatedHours.HasValue) program.EstimatedHours = (int?)request.EstimatedHours;
-    if (request.Category.HasValue) program.Category = request.Category.Value;
-    if (request.Difficulty.HasValue) program.Difficulty = request.Difficulty.Value;
-    if (request.EnrollmentStatus.HasValue) program.EnrollmentStatus = request.EnrollmentStatus.Value;
-    if (request.MaxEnrollments.HasValue) program.MaxEnrollments = request.MaxEnrollments;
-    if (request.EnrollmentDeadline.HasValue) program.EnrollmentDeadline = request.EnrollmentDeadline;
-    if (request.PassingScore.HasValue) program.PassingScore = request.PassingScore.Value;
+    if (request.Description != null)
+        {
+            program.Description = request.Description;
+        }
 
-    program.Touch();
+        if (request.Thumbnail != null)
+        {
+            program.Thumbnail = request.Thumbnail;
+        }
+
+        if (request.VideoShowcaseUrl != null)
+        {
+            program.VideoShowcaseUrl = request.VideoShowcaseUrl;
+        }
+
+        if (request.EstimatedHours.HasValue)
+        {
+            program.EstimatedHours = (int?)request.EstimatedHours;
+        }
+
+        if (request.Category.HasValue)
+        {
+            program.Category = request.Category.Value;
+        }
+
+        if (request.Difficulty.HasValue)
+        {
+            program.Difficulty = request.Difficulty.Value;
+        }
+
+        if (request.EnrollmentStatus.HasValue)
+        {
+            program.EnrollmentStatus = request.EnrollmentStatus.Value;
+        }
+
+        if (request.MaxEnrollments.HasValue)
+        {
+            program.MaxEnrollments = request.MaxEnrollments;
+        }
+
+        if (request.EnrollmentDeadline.HasValue)
+        {
+            program.EnrollmentDeadline = request.EnrollmentDeadline;
+        }
+
+        if (request.PassingScore.HasValue)
+        {
+            program.PassingScore = request.PassingScore.Value;
+        }
+
+        program.Touch();
 
     await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

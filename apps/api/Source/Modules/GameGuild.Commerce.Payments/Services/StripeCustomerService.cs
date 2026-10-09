@@ -17,6 +17,18 @@ public class StripeCustomerService(
     private readonly SetupIntentService _setupIntentService = new();
     private readonly SubscriptionService _subscriptionService = new();
 
+    internal StripeCustomerService(
+        IOptions<StripeGatewayOptions> options,
+        ILogger<StripeCustomerService> logger,
+        IStripeClient client) : this(options, logger)
+    {
+        ArgumentNullException.ThrowIfNull(client);
+        _customerService = new CustomerService(client);
+        _paymentMethodService = new PaymentMethodService(client);
+        _setupIntentService = new SetupIntentService(client);
+        _subscriptionService = new SubscriptionService(client);
+    }
+
     private static StripeGatewayOptions InitializeOptions(IOptions<StripeGatewayOptions> options)
     {
         var stripeOptions = options.Value;
@@ -30,7 +42,7 @@ public class StripeCustomerService(
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Creating Stripe customer for email {Email} (Simulation: {IsSimulation})",
-            request.Email, _options.UseSimulation);
+            LogRedaction.MaskEmail(request.Email), _options.UseSimulation);
 
         if (_options.UseSimulation)
         {
@@ -51,7 +63,7 @@ public class StripeCustomerService(
             var customer = await _customerService.CreateAsync(
                 createOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            logger.LogInformation("Stripe customer created: {CustomerId}", customer.Id);
+            logger.LogInformation("Stripe customer created: {CustomerId}", LogRedaction.RedactId(customer.Id, "cus"));
 
             return new GatewayCustomerResult(
                 Success: true,
@@ -61,8 +73,8 @@ public class StripeCustomerService(
         }
         catch (StripeException ex)
         {
-            logger.LogError(ex, "Stripe customer creation failed for email {Email}: {ErrorCode}",
-                request.Email, ex.StripeError?.Code);
+            logger.LogError("Stripe customer creation failed for email {Email}: {ErrorCode} ({ErrorType})",
+                LogRedaction.MaskEmail(request.Email), LogRedaction.Sanitize(ex.StripeError?.Code), ex.GetType().FullName);
 
             return new GatewayCustomerResult(
                 Success: false,
@@ -72,7 +84,8 @@ public class StripeCustomerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during Stripe customer creation for email {Email}", request.Email);
+            logger.LogError("Unexpected error during Stripe customer creation for email {Email}: {ErrorType}",
+                LogRedaction.MaskEmail(request.Email), ex.GetType().FullName);
             return SimulatedPaymentResultFactory.CustomerFailure(ex.Message, "unexpected_error");
         }
     }
@@ -83,7 +96,7 @@ public class StripeCustomerService(
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Attaching payment method to Stripe customer {CustomerId} (Simulation: {IsSimulation})",
-            request.CustomerId, _options.UseSimulation);
+            LogRedaction.RedactId(request.CustomerId, "cus"), _options.UseSimulation);
 
         if (_options.UseSimulation)
         {
@@ -104,7 +117,7 @@ public class StripeCustomerService(
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             logger.LogInformation("Payment method {PaymentMethodId} attached to customer {CustomerId}",
-                paymentMethod.Id, request.CustomerId);
+                LogRedaction.RedactId(paymentMethod.Id, "pm"), LogRedaction.RedactId(request.CustomerId, "cus"));
 
             if (request.SetAsDefault)
             {
@@ -132,8 +145,8 @@ public class StripeCustomerService(
         }
         catch (StripeException ex)
         {
-            logger.LogError(ex, "Stripe payment method attachment failed for customer {CustomerId}: {ErrorCode}",
-                request.CustomerId, ex.StripeError?.Code);
+            logger.LogError("Stripe payment method attachment failed for customer {CustomerId}: {ErrorCode} ({ErrorType})",
+                LogRedaction.RedactId(request.CustomerId, "cus"), LogRedaction.Sanitize(ex.StripeError?.Code), ex.GetType().FullName);
 
             return new GatewayPaymentMethodResult(
                 Success: false,
@@ -147,8 +160,8 @@ public class StripeCustomerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during payment method attachment for customer {CustomerId}",
-                request.CustomerId);
+            logger.LogError("Unexpected error during payment method attachment for customer {CustomerId}: {ErrorType}",
+                LogRedaction.RedactId(request.CustomerId, "cus"), ex.GetType().FullName);
             return SimulatedPaymentResultFactory.PaymentMethodFailure(ex.Message, "unexpected_error");
         }
     }
@@ -159,7 +172,7 @@ public class StripeCustomerService(
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Creating Stripe setup intent for customer {CustomerId} (Simulation: {IsSimulation})",
-            request.CustomerId, _options.UseSimulation);
+            LogRedaction.RedactId(request.CustomerId, "cus"), _options.UseSimulation);
 
         if (_options.UseSimulation)
         {
@@ -185,7 +198,7 @@ public class StripeCustomerService(
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             logger.LogInformation("Stripe setup intent created: {SetupIntentId} for customer {CustomerId}",
-                setupIntent.Id, request.CustomerId);
+                LogRedaction.RedactId(setupIntent.Id, "seti"), LogRedaction.RedactId(request.CustomerId, "cus"));
 
             return new GatewaySetupIntentResult(
                 Success: true,
@@ -197,8 +210,8 @@ public class StripeCustomerService(
         }
         catch (StripeException ex)
         {
-            logger.LogError(ex, "Stripe setup intent creation failed for customer {CustomerId}: {ErrorCode}",
-                request.CustomerId, ex.StripeError?.Code);
+            logger.LogError("Stripe setup intent creation failed for customer {CustomerId}: {ErrorCode} ({ErrorType})",
+                LogRedaction.RedactId(request.CustomerId, "cus"), LogRedaction.Sanitize(ex.StripeError?.Code), ex.GetType().FullName);
 
             return new GatewaySetupIntentResult(
                 Success: false,
@@ -210,8 +223,8 @@ public class StripeCustomerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during setup intent creation for customer {CustomerId}",
-                request.CustomerId);
+            logger.LogError("Unexpected error during setup intent creation for customer {CustomerId}: {ErrorType}",
+                LogRedaction.RedactId(request.CustomerId, "cus"), ex.GetType().FullName);
             return SimulatedPaymentResultFactory.SetupIntentFailure(ex.Message, "unexpected_error");
         }
     }
@@ -223,8 +236,8 @@ public class StripeCustomerService(
     {
         logger.LogInformation(
             "Setting Stripe default payment method {PaymentMethodId} for customer {CustomerId} (Simulation: {IsSimulation})",
-            request.PaymentMethodId,
-            request.CustomerId,
+            LogRedaction.RedactId(request.PaymentMethodId, "pm"),
+            LogRedaction.RedactId(request.CustomerId, "cus"),
             _options.UseSimulation);
 
         if (_options.UseSimulation)
@@ -248,8 +261,8 @@ public class StripeCustomerService(
 
             logger.LogInformation(
                 "Stripe customer {CustomerId} default payment method updated to {PaymentMethodId}",
-                request.CustomerId,
-                request.PaymentMethodId);
+                LogRedaction.RedactId(request.CustomerId, "cus"),
+                LogRedaction.RedactId(request.PaymentMethodId, "pm"));
 
             return new GatewayDefaultPaymentMethodResult(
                 Success: true,
@@ -258,10 +271,10 @@ public class StripeCustomerService(
         }
         catch (StripeException ex)
         {
-            logger.LogError(ex,
-                "Stripe default payment method update failed for customer {CustomerId}: {ErrorCode}",
-                request.CustomerId,
-                ex.StripeError?.Code);
+            logger.LogError(
+                "Stripe default payment method update failed for customer {CustomerId}: {ErrorCode} ({ErrorType})",
+                LogRedaction.RedactId(request.CustomerId, "cus"),
+                LogRedaction.Sanitize(ex.StripeError?.Code), ex.GetType().FullName);
 
             return new GatewayDefaultPaymentMethodResult(
                 Success: false,
@@ -270,8 +283,8 @@ public class StripeCustomerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error while updating default payment method for customer {CustomerId}",
-                request.CustomerId);
+            logger.LogError("Unexpected error while updating default payment method for customer {CustomerId}: {ErrorType}",
+                LogRedaction.RedactId(request.CustomerId, "cus"), ex.GetType().FullName);
             return SimulatedPaymentResultFactory.DefaultPaymentMethodFailure(ex.Message, "unexpected_error");
         }
     }
@@ -282,7 +295,7 @@ public class StripeCustomerService(
         CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Cancelling Stripe subscription {SubscriptionId} (Simulation: {IsSimulation})",
-            externalSubscriptionId, _options.UseSimulation);
+            LogRedaction.RedactId(externalSubscriptionId, "sub"), _options.UseSimulation);
 
         if (_options.UseSimulation)
         {
@@ -297,7 +310,7 @@ public class StripeCustomerService(
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             logger.LogInformation("Stripe subscription {SubscriptionId} cancelled with status {Status}",
-                subscription.Id, subscription.Status);
+                LogRedaction.RedactId(subscription.Id, "sub"), LogRedaction.Sanitize(subscription.Status));
 
             return new GatewayCancellationResult(
                 Success: subscription.Status == "canceled",
@@ -307,8 +320,8 @@ public class StripeCustomerService(
         }
         catch (StripeException ex)
         {
-            logger.LogError(ex, "Stripe subscription cancellation failed for {SubscriptionId}: {ErrorCode}",
-                externalSubscriptionId, ex.StripeError?.Code);
+            logger.LogError("Stripe subscription cancellation failed for {SubscriptionId}: {ErrorCode} ({ErrorType})",
+                LogRedaction.RedactId(externalSubscriptionId, "sub"), LogRedaction.Sanitize(ex.StripeError?.Code), ex.GetType().FullName);
 
             return new GatewayCancellationResult(
                 Success: false,
@@ -318,8 +331,8 @@ public class StripeCustomerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during subscription cancellation for {SubscriptionId}",
-                externalSubscriptionId);
+            logger.LogError("Unexpected error during subscription cancellation for {SubscriptionId}: {ErrorType}",
+                LogRedaction.RedactId(externalSubscriptionId, "sub"), ex.GetType().FullName);
             return SimulatedPaymentResultFactory.CancellationFailure(ex.Message, "unexpected_error");
         }
     }

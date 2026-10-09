@@ -43,7 +43,9 @@ public sealed class BlogAiConversation : EntityBase
     {
         ValidateActor(tenantId, authorId);
         if (blogPostId == Guid.Empty)
+        {
             throw new ArgumentException("Blog post ID is required.");
+        }
 
         return new BlogAiConversation
         {
@@ -66,7 +68,9 @@ public sealed class BlogAiConversation : EntityBase
     private static void ValidateActor(Guid tenantId, Guid authorId)
     {
         if (tenantId == Guid.Empty || authorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI authoring requires a tenant-scoped user actor.");
+        }
     }
 }
 
@@ -84,9 +88,15 @@ public sealed class BlogAiMessage
     public static BlogAiMessage Create(Guid conversationId, Guid? runId, string role, string content, DateTimeOffset now)
     {
         if (conversationId == Guid.Empty)
+        {
             throw new ArgumentException("Conversation ID is required.", nameof(conversationId));
+        }
+
         if (role is not ("user" or "assistant"))
+        {
             throw new ArgumentOutOfRangeException(nameof(role), "Only user and assistant messages are supported.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(content);
 
         return new BlogAiMessage
@@ -146,9 +156,15 @@ public sealed class BlogAiRun : EntityBase
         DateTimeOffset now)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI authoring requires a tenant-scoped user actor.");
+        }
+
         if (blogPostId == Guid.Empty || conversationId == Guid.Empty)
+        {
             throw new ArgumentException("Blog post and conversation IDs are required.");
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(basePostRevision);
         ArgumentException.ThrowIfNullOrWhiteSpace(instruction);
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
@@ -223,7 +239,10 @@ public sealed class BlogAiRun : EntityBase
     public void Fail(string code, string message, long releasedAmount, DateTimeOffset now)
     {
         if (Status is BlogAiRunStatus.Completed or BlogAiRunStatus.Cancelled)
+        {
             throw new InvalidOperationException("A terminal AI run cannot fail.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ErrorCode = code.Trim();
         ErrorMessage = message;
@@ -236,7 +255,10 @@ public sealed class BlogAiRun : EntityBase
     public void RequestCancellation(DateTimeOffset now)
     {
         if (Status == BlogAiRunStatus.Cancelled)
+        {
             return;
+        }
+
         EnsureStatus(BlogAiRunStatus.Running);
         ErrorCode = "AI_CANCEL_REQUESTED";
         ErrorMessage = "Cancellation requested by the author.";
@@ -246,9 +268,15 @@ public sealed class BlogAiRun : EntityBase
     public void Cancel(long releasedAmount, DateTimeOffset now)
     {
         if (Status == BlogAiRunStatus.Cancelled)
+        {
             return;
+        }
+
         if (Status is not (BlogAiRunStatus.Reserved or BlogAiRunStatus.Running))
+        {
             throw new InvalidOperationException("Only a reserved or running AI run can be cancelled.");
+        }
+
         ReleasedAmount = Math.Max(0, releasedAmount);
         ErrorCode = "AI_CANCELLED";
         ErrorMessage = "AI generation was cancelled by the author.";
@@ -260,7 +288,9 @@ public sealed class BlogAiRun : EntityBase
     private void EnsureStatus(BlogAiRunStatus expected)
     {
         if (Status != expected)
+        {
             throw new InvalidOperationException($"AI run must be {expected} but is {Status}.");
+        }
     }
 }
 
@@ -289,7 +319,10 @@ public sealed class BlogAiProposal : EntityBase
         DateTimeOffset now)
     {
         if (runId == Guid.Empty || blogPostId == Guid.Empty)
+        {
             throw new ArgumentException("Run and blog post IDs are required.");
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(basePostRevision);
         ArgumentException.ThrowIfNullOrWhiteSpace(proposedContent);
 
@@ -312,9 +345,14 @@ public sealed class BlogAiProposal : EntityBase
     public void EnsureApplicableTo(int currentPostRevision)
     {
         if (BasePostRevision != currentPostRevision)
+        {
             throw new BlogRevisionConflictException(BasePostRevision, currentPostRevision);
+        }
+
         if (Status != BlogAiProposalStatus.Pending)
+        {
             throw new BlogAiProposalStateConflictException(Status);
+        }
     }
 
     public void MarkApplied(Guid actorId, DateTimeOffset now)
@@ -330,9 +368,15 @@ public sealed class BlogAiProposal : EntityBase
     private void Resolve(BlogAiProposalStatus status, Guid actorId, DateTimeOffset now)
     {
         if (Status != BlogAiProposalStatus.Pending)
+        {
             throw new BlogAiProposalStateConflictException(Status);
+        }
+
         if (actorId == Guid.Empty)
+        {
             throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
         Status = status;
         ResolvedBy = actorId;
         ResolvedAt = now;
@@ -369,7 +413,10 @@ public sealed class BlogAiStreamEvent
         DateTimeOffset now)
     {
         if (runId == Guid.Empty)
+        {
             throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sequence);
         ArgumentException.ThrowIfNullOrWhiteSpace(type);
         ArgumentException.ThrowIfNullOrWhiteSpace(status);

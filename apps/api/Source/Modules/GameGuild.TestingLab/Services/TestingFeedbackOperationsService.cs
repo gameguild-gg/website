@@ -90,15 +90,29 @@ public class TestingFeedbackOperationsService(
             _ => feedback,
         };
         if (query.EventId.HasValue)
+        {
             feedback = feedback.Where(item => item.EventId == query.EventId);
+        }
+
         if (query.RequestId.HasValue)
+        {
             feedback = feedback.Where(item => item.TestingRequestId == query.RequestId);
+        }
+
         if (query.UserId.HasValue)
+        {
             feedback = feedback.Where(item => item.UserId == query.UserId);
+        }
+
         if (query.Reported.HasValue)
+        {
             feedback = feedback.Where(item => item.IsReported == query.Reported);
+        }
+
         if (query.Quality.HasValue)
+        {
             feedback = feedback.Where(item => item.QualityRating == query.Quality);
+        }
 
         var search = query.Search?.Trim();
         if (!string.IsNullOrWhiteSpace(search))
@@ -279,14 +293,18 @@ public class TestingFeedbackOperationsService(
         var tenantId = TenantId;
         var requests = context.Set<TestingRequest>().AsQueryable();
         if (includeArchived)
+        {
             requests = requests.IgnoreQueryFilters();
+        }
 
         var exists = await requests.AnyAsync(request =>
             request.Id == testingRequestId &&
             request.TenantId == tenantId &&
             (includeArchived || request.DeletedAt == null)).ConfigureAwait(false);
         if (!exists)
+        {
             throw new ArgumentException("Testing request not found.", nameof(testingRequestId));
+        }
     }
 
     private async Task EnsureParticipantCanSubmitAsync(Guid testingRequestId, Guid userId)
@@ -300,7 +318,9 @@ public class TestingFeedbackOperationsService(
             participant.DeletedAt == null &&
             participant.Status == ParticipationStatus.Active).ConfigureAwait(false);
         if (!isParticipant)
+        {
             throw new UnauthorizedAccessException("Only an active request participant can submit feedback.");
+        }
     }
 
     #endregion

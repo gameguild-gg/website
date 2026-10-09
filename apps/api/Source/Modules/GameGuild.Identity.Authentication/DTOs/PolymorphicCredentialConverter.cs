@@ -31,15 +31,30 @@ public class PolymorphicCredentialConverter : JsonConverter<ICredentialData>
         }
 
         // Attempt auto-detection based on properties
-        if (root.TryGetProperty("email", out _)) return JsonSerializer.Deserialize<EmailCredentialData>(root.GetRawText(), options);
+        if (root.TryGetProperty("email", out _))
+        {
+            return JsonSerializer.Deserialize<EmailCredentialData>(root.GetRawText(), options);
+        }
 
-        if (root.TryGetProperty("phoneNumber", out _)) return JsonSerializer.Deserialize<PhoneCredentialData>(root.GetRawText(), options);
+        if (root.TryGetProperty("phoneNumber", out _))
+        {
+            return JsonSerializer.Deserialize<PhoneCredentialData>(root.GetRawText(), options);
+        }
 
-        if (root.TryGetProperty("username", out _)) return JsonSerializer.Deserialize<UsernameCredentialData>(root.GetRawText(), options);
+        if (root.TryGetProperty("username", out _))
+        {
+            return JsonSerializer.Deserialize<UsernameCredentialData>(root.GetRawText(), options);
+        }
 
-        if (root.TryGetProperty("provider", out _)) return JsonSerializer.Deserialize<OAuthCredentialData>(root.GetRawText(), options);
+        if (root.TryGetProperty("provider", out _))
+        {
+            return JsonSerializer.Deserialize<OAuthCredentialData>(root.GetRawText(), options);
+        }
 
-        if (root.TryGetProperty("walletAddress", out _)) return JsonSerializer.Deserialize<Web3CredentialData>(root.GetRawText(), options);
+        if (root.TryGetProperty("walletAddress", out _))
+        {
+            return JsonSerializer.Deserialize<Web3CredentialData>(root.GetRawText(), options);
+        }
 
         if (root.TryGetProperty("thumbprint", out _)) return JsonSerializer.Deserialize<CertificateCredentialData>(root.GetRawText(), options);
 

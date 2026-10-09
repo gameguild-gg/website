@@ -22,7 +22,9 @@ internal sealed class LegacyProgramContentTypeSchemaFilter : ISchemaFilter
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
         if (context.Type != typeof(ProgramContentType) || schema.Enum is null)
+        {
             return;
+        }
 
         schema.Enum = schema.Enum
             .Where(value => value is not OpenApiString text || !LegacyValues.Contains(text.Value))
@@ -54,7 +56,9 @@ internal sealed class LearningContractSchemaFilter : ISchemaFilter
         }
 
         if (context.Type != typeof(ScoreValue) && context.Type != typeof(PercentValue))
+        {
             return;
+        }
 
         schema.Type = "integer";
         schema.Format = "int32";
@@ -141,20 +145,26 @@ internal sealed class LearningContractSchemaFilter : ISchemaFilter
     private static void ApplyNullableValueTypeProperties(OpenApiSchema schema, Type contractType)
     {
         if (schema.Properties is null || schema.Properties.Count == 0)
+        {
             return;
+        }
 
         foreach (var property in contractType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             var valueType = Nullable.GetUnderlyingType(property.PropertyType);
             if (valueType?.Namespace != typeof(ScoreValue).Namespace &&
                 valueType?.Namespace != typeof(AttemptContributionMode).Namespace)
+            {
                 continue;
+            }
 
             var jsonName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
                 ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
 
             if (!schema.Properties.TryGetValue(jsonName, out var propertySchema) || propertySchema.Reference is null)
+            {
                 continue;
+            }
 
             var reference = propertySchema.Reference;
             propertySchema.Reference = null;

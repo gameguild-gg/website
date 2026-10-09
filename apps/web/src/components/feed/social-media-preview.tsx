@@ -5,6 +5,15 @@ import { Button } from "@game-guild/ui/components/button";
 import { FileVideo2, ImageIcon, X } from "lucide-react";
 import Image from "next/image";
 
+function safeMediaSrc(value: string): string {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" || url.protocol === "blob:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
 export function SocialMediaPreview({
   media,
   disabled = false,
@@ -14,13 +23,14 @@ export function SocialMediaPreview({
   disabled?: boolean;
   onRemove: () => void;
 }): React.JSX.Element {
+  const previewUrl = safeMediaSrc(media.previewUrl);
   return (
     <div className="relative overflow-hidden rounded-xl bg-accent/50">
       {media.kind === "video" ? (
-        <video src={media.previewUrl} aria-label="Selected media preview" controls className="max-h-80 w-full object-contain" />
+        <video src={previewUrl} aria-label="Selected media preview" controls className="max-h-80 w-full object-contain" />
       ) : (
         <div className="relative h-80 w-full">
-          <Image src={media.previewUrl} alt="Selected media preview" fill sizes="100vw" unoptimized className="object-contain" />
+          <Image src={previewUrl} alt="Selected media preview" fill sizes="100vw" unoptimized className="object-contain" />
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-background/85 px-3 py-2 text-xs backdrop-blur">

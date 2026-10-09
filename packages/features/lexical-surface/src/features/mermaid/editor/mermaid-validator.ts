@@ -87,14 +87,6 @@ export class MermaidValidator {
         message:
           "Missing diagram type declaration (e.g., flowchart TD, sequenceDiagram, etc.)",
       },
-      {
-        pattern: /-->\s*$/m,
-        message: "Arrow connection is incomplete - missing target node",
-      },
-      {
-        pattern: /^\s*[A-Za-z0-9]+\s*-->\s*$/m,
-        message: "Incomplete connection - specify target node after arrow",
-      },
     ];
   }
 
@@ -104,6 +96,16 @@ export class MermaidValidator {
     for (const { pattern, message } of commonErrors) {
       if (pattern.test(code)) {
         return { isValid: false, error: message };
+      }
+    }
+
+    for (const line of code.split("\n")) {
+      const trimmed = line.trimEnd();
+      if (trimmed.endsWith("-->")) {
+        return {
+          isValid: false,
+          error: "Arrow connection is incomplete - missing target node",
+        };
       }
     }
 

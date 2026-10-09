@@ -16,7 +16,6 @@ public class AssetAccessServiceTests
     private readonly Mock<IAssetParentAuthorizationResolver> _parentAuthorizationResolverMock;
     private readonly Mock<IAssetFolderAuthorizationService> _folderAuthorizationServiceMock;
     private readonly Mock<IAssetScopedAccessService> _scopedAccessServiceMock;
-    private readonly Mock<ILogger<AssetAccessService>> _loggerMock;
     private readonly AssetAccessOptions _options;
     private readonly AssetAccessService _service;
 
@@ -34,7 +33,7 @@ public class AssetAccessServiceTests
         _folderAuthorizationServiceMock
             .Setup(x => x.CanReadAsync(It.IsAny<AssetReference>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _loggerMock = new Mock<ILogger<AssetAccessService>>();
+        Mock<ILogger<AssetAccessService>> loggerMock = new Mock<ILogger<AssetAccessService>>();
         _options = new AssetAccessOptions
         {
             BaseUrl = "https://cdn.example.com",
@@ -53,7 +52,7 @@ public class AssetAccessServiceTests
             _folderAuthorizationServiceMock.Object,
             _scopedAccessServiceMock.Object,
             Options.Create(_options),
-            _loggerMock.Object);
+            loggerMock.Object);
     }
 
     #region ValidateAccessAsync Tests

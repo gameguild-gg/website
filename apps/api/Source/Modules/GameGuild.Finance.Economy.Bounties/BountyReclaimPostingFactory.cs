@@ -20,22 +20,41 @@ public static class BountyReclaimPostingFactory
         ArgumentNullException.ThrowIfNull(escrow);
         ArgumentNullException.ThrowIfNull(request);
         if (escrow.Id != request.BountyId)
+        {
             throw new ArgumentException("The bounty reclaim must target the persisted escrow.", nameof(request));
+        }
+
         if (escrow.Status != BountyStatus.Open)
+        {
             throw new BountyTerminalConflictException("Only an open bounty can be reclaimed.");
+        }
+
         if (request.PosterId != escrow.PosterId || request.PosterWalletId != escrow.PosterWalletId)
+        {
             throw new BountyOwnershipException("Only the poster can reclaim this bounty.");
+        }
+
         if (request.Authority.ActorId != request.PosterId)
+        {
             throw new ArgumentException("The bounty reclaim authority must be the poster.", nameof(request));
+        }
+
         if (request.ReclaimedAt < escrow.ExpiresAt)
+        {
             throw new BountyNotExpiredException("The bounty cannot be reclaimed before expiry.");
+        }
 
         var fragments = escrow.Fragments.OrderBy(EscrowLotSortKey, StringComparer.Ordinal).ToArray();
         if (fragments.Length == 0 || fragments.Any(fragment => fragment.EscrowLotId is null))
+        {
             throw new InvalidOperationException("A bounty reclaim requires every materialized escrow lot.");
+        }
+
         if (fragments.Any(fragment => fragment.Amount.Currency != escrow.Amount.Currency) ||
             fragments.Sum(fragment => fragment.Amount.Units) != escrow.Amount.Units)
+        {
             throw new InvalidOperationException("Bounty escrow fragments do not conserve the reclaim amount.");
+        }
 
         var feeUnits = BountyFeePolicy.Calculate(escrow.Amount.Units, escrow.ReclaimFeePpm);
         var remainingReturn = checked(escrow.Amount.Units - feeUnits);
@@ -175,7 +194,9 @@ public static class BountyReclaimPostingFactory
         if (observedTraceUnits != expectedTraceUnits || remainingReturnedTraceUnits != 0 ||
             (returnedUnits > 0 && returned.Count == 0) ||
             (returnedUnits < fragment.Amount.Units && fee.Count == 0))
+        {
             throw new InvalidOperationException("Bounty reclaim root ranges do not conserve the escrow fragment.");
+        }
 
         return (returned, fee);
     }
@@ -187,7 +208,9 @@ public static class BountyReclaimPostingFactory
         long escrowUnits)
     {
         if (remainingReturn != 0 || lineCount == 0 || allocatedUnits != escrowUnits)
+        {
             throw new InvalidOperationException("Bounty reclaim fragment partition is incomplete.");
+        }
     }
 
     private static PostingId DeterministicPostingId(BountyId bountyId, IdempotencyKey idempotencyKey)

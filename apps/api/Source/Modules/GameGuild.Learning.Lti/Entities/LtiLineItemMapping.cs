@@ -24,9 +24,20 @@ public class LtiLineItemMapping : EntityBase
         string lineItemUrl,
         ScoreValue maxScore)
     {
-        if (string.IsNullOrWhiteSpace(lineItemId)) throw new ArgumentException("LineItemId is required.", nameof(lineItemId));
-        if (string.IsNullOrWhiteSpace(lineItemUrl)) throw new ArgumentException("LineItemUrl is required.", nameof(lineItemUrl));
-        if (maxScore.CompareTo(ScoreValue.Zero) <= 0) throw new ArgumentException("MaxScore must be positive.", nameof(maxScore));
+        if (string.IsNullOrWhiteSpace(lineItemId))
+        {
+            throw new ArgumentException("LineItemId is required.", nameof(lineItemId));
+        }
+
+        if (string.IsNullOrWhiteSpace(lineItemUrl))
+        {
+            throw new ArgumentException("LineItemUrl is required.", nameof(lineItemUrl));
+        }
+
+        if (maxScore.CompareTo(ScoreValue.Zero) <= 0)
+        {
+            throw new ArgumentException("MaxScore must be positive.", nameof(maxScore));
+        }
 
         return new LtiLineItemMapping
         {

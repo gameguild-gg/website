@@ -12,7 +12,10 @@ public sealed class SendCourseStudentMessageCommandHandler(
     public async Task<int> Handle(SendCourseStudentMessageCommand request, CancellationToken cancellationToken)
     {
         var requestedUserIds = request.UserIds.Distinct().ToArray();
-        if (requestedUserIds.Length == 0) return 0;
+        if (requestedUserIds.Length == 0)
+        {
+            return 0;
+        }
 
         var enrolledUserIds = await context.Set<ProgramUser>()
             .Where(enrollment =>
@@ -25,7 +28,10 @@ public sealed class SendCourseStudentMessageCommandHandler(
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        if (enrolledUserIds.Length == 0) return 0;
+        if (enrolledUserIds.Length == 0)
+        {
+            return 0;
+        }
 
         var result = await notifications.SendBulkAsync(
                 enrolledUserIds,

@@ -152,7 +152,9 @@ public class RolloutHashCalculatorTests
         for (var i = 0; i < totalUsers; i++)
         {
             if (RolloutHashCalculator.IsInRollout($"user-{i}", percentage))
+            {
                 inRollout++;
+            }
         }
 
         // Should be roughly 50% (within 10% tolerance)

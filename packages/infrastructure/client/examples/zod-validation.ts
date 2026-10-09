@@ -6,11 +6,11 @@
 
 import { z } from 'zod';
 import {
-  Commerce_Payments_TaxJurisdictionDto,
-  Commerce_Payments_TaxJurisdictionDtoSchema,
+  type CommercePaymentsTaxJurisdictionDto as Commerce_Payments_TaxJurisdictionDto,
+  CommercePaymentsTaxJurisdictionDtoSchema as Commerce_Payments_TaxJurisdictionDtoSchema,
   APIControllersHealthinessOutput,
   APIControllersHealthinessOutputSchema,
-} from '../src/generated/types.gen';
+} from '../src/generated/types.gen.js';
 
 /**
  * Example 1: Validate data from external API
@@ -30,7 +30,7 @@ export function safeParseTaxJurisdiction(data: unknown) {
     console.log('Valid data:', result.data);
     return result.data;
   } else {
-    console.error('Validation errors:', result.error.errors);
+    console.error('Validation errors:', result.error.issues);
     return null;
   }
 }
@@ -46,6 +46,9 @@ export function validateHealthStatus(data: unknown): APIControllersHealthinessOu
  * Example 4: Partial validation - validate only specific fields
  */
 export function validateTaxJurisdictionPartial(data: unknown) {
+  if (!(Commerce_Payments_TaxJurisdictionDtoSchema instanceof z.ZodObject)) {
+    throw new Error('Tax jurisdiction partial validation requires an object schema');
+  }
   const PartialSchema = Commerce_Payments_TaxJurisdictionDtoSchema.partial();
   return PartialSchema.parse(data);
 }
@@ -80,7 +83,7 @@ export const CustomTaxJurisdictionSchema = Commerce_Payments_TaxJurisdictionDtoS
   })
   .refine((data) => {
     // Custom validation: default rate must be between 0 and 100
-    if (data.defaultRate !== undefined && (data.defaultRate < 0 || data.defaultRate > 100)) {
+    if (data.defaultRate != null && (data.defaultRate < 0 || data.defaultRate > 100)) {
       return false;
     }
     return true;

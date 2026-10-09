@@ -159,7 +159,9 @@ public class ServiceAccount
     public IReadOnlySet<string> GetScopesSet()
     {
         if (string.IsNullOrWhiteSpace(Scopes))
+        {
             return new HashSet<string>();
+        }
 
         return Scopes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
