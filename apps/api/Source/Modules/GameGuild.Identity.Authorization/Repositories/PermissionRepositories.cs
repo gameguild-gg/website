@@ -103,6 +103,43 @@ public class TenantPermissionRepository(IApplicationDbContext context) : ITenant
             .Where(p => p.DeletedAt == null && p.ExpiresAt.HasValue && p.ExpiresAt < SystemClock.UtcNow)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task<List<TenantPermission>> GetExpiringBeforeAsync(
+        DateTime cutoff,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var now = SystemClock.UtcNow;
+
+        return await TenantPermissions
+            .AsNoTracking()
+            .Where(p => p.DeletedAt == null
+                && p.IsActive
+                && p.ExpiresAt.HasValue
+                && p.ExpiresAt.Value > now
+                && p.ExpiresAt.Value <= cutoff)
+            .OrderBy(p => p.ExpiresAt.Value)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<List<TenantPermission>> GetByIdsInTenantAsync(
+        Guid tenantId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+
+        if (ids.Count == 0)
+        {
+            return new List<TenantPermission>();
+        }
+
+        return await TenantPermissions
+            .AsNoTracking()
+            .Where(p => p.DeletedAt == null && p.TenantId == tenantId && ids.Contains(p.Id))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
 }
 
 /// <summary>

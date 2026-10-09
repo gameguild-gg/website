@@ -40,6 +40,9 @@ public static class AuthorizationModuleExtensions
         services.Configure<PolicyBundleSigningOptions>(
             configuration.GetSection(PolicyBundleSigningOptions.SectionName));
 
+        services.Configure<PermissionExpirationOptions>(
+            configuration.GetSection(PermissionExpirationOptions.SectionName));
+
         return services;
     }
 
@@ -265,7 +268,12 @@ public static class AuthorizationModuleExtensions
         services.AddScoped<IPermissionGrantService, PermissionGrantService>();
         services.AddScoped<IPermissionQueryService, PermissionQueryService>();
         services.AddScoped<IPermissionBulkService, PermissionBulkService>();
-        
+
+        // Permission expiration lifecycle (issue #331): automatic expirations,
+        // upcoming-expiration notifications, and bulk administrative management.
+        services.AddScoped<IPermissionExpirationService, PermissionExpirationService>();
+        services.AddHostedService<PermissionExpirationWorker>();
+
         // Tenant membership checker - default fail-closed implementation
         // The Tenants module should override this with an actual implementation
         // Using TryAddScoped so the actual implementation from Tenants module takes precedence
