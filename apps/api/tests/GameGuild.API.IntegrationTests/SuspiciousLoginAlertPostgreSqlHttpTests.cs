@@ -248,7 +248,13 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         });
         if (bruteForceHistory)
         {
-            for (var index = 0; index < 5; index++)
+            // Seed exactly four failures so the request under test is the fifth failed attempt.
+            // The lockout action filter (MaxFailedAttemptsPerHour = 5) counts stored failures
+            // BEFORE the sign-in action runs, while the brute-force detector also counts the
+            // attempt the failing request itself records: seeding five would engage the lockout
+            // short-circuit and the action - and its owner alert - would never run. In
+            // production the alert therefore fires on the attempt that reaches the threshold.
+            for (var index = 0; index < 4; index++)
             {
                 db.Set<AuthenticationAttempt>().Add(new AuthenticationAttempt
                 {
