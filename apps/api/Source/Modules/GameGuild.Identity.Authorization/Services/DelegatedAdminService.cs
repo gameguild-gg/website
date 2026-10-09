@@ -61,8 +61,16 @@ public class DelegatedAdminService(
         {
             // Only currently-valid scopes (active and inside their validity window)
             // delegate administrative authority over managed users.
-            if (!scope.IsValid()) continue;
-            if (string.IsNullOrEmpty(scope.AllowedUserIds)) continue;
+            if (!scope.IsValid())
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(scope.AllowedUserIds))
+            {
+                continue;
+            }
+
             try
             {
                 var userIds = System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(scope.AllowedUserIds);
@@ -93,8 +101,16 @@ public class DelegatedAdminService(
         {
             // Only currently-valid scopes (active and inside their validity window)
             // delegate administrative authority over managed resource types.
-            if (!scope.IsValid()) continue;
-            if (string.IsNullOrEmpty(scope.AllowedResourceTypes)) continue;
+            if (!scope.IsValid())
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(scope.AllowedResourceTypes))
+            {
+                continue;
+            }
+
             try
             {
                 var types = System.Text.Json.JsonSerializer.Deserialize<List<string>>(scope.AllowedResourceTypes);

@@ -43,8 +43,15 @@ public class SignPolicyBundleCommandHandlerTests
         Guid? subjectId = null)
     {
         var roles = new List<string>();
-        if (isSystemAdmin) roles.Add("SystemAdmin");
-        if (isTenantAdmin) roles.Add("TenantAdmin");
+        if (isSystemAdmin)
+        {
+            roles.Add("SystemAdmin");
+        }
+
+        if (isTenantAdmin)
+        {
+            roles.Add("TenantAdmin");
+        }
 
         return new ActorContext
         {

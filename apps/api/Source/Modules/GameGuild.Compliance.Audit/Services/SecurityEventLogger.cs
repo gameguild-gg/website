@@ -251,7 +251,10 @@ internal static class AuditLogEntryFactory
 
     private static string? GetClientIpAddress(HttpContext? httpContext)
     {
-        if (httpContext == null) return null;
+        if (httpContext == null)
+        {
+            return null;
+        }
 
         var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
         if (!string.IsNullOrEmpty(forwardedFor)) { return forwardedFor.Split(',')[0].Trim(); }

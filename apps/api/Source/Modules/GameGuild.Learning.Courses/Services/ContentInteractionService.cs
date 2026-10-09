@@ -293,7 +293,9 @@ public class ContentInteractionService(
         }
 
     if (!await HasProgramReviewAccessAsync(program).ConfigureAwait(false))
-      throw new RequestValidationException("Program review permission is required.");
+        {
+            throw new RequestValidationException("Program review permission is required.");
+        }
 
         var interactions = await context.Set<ContentInteraction>()
       .Where(item => item.ContentId == contentId && item.SubmittedAt != null && item.DeletedAt == null)
@@ -361,11 +363,17 @@ public class ContentInteractionService(
   public async Task<IEnumerable<ReflectionResponseResultDto>> GetReflectionResponsesAsync(Guid expectedProgramId, Guid contentId) {
     var actorId = requestContextAccessor.CurrentUserId;
     if (!requestContextAccessor.IsAuthenticated || !actorId.HasValue)
-      throw new RequestValidationException("Program management permission is required.");
-    var program = await GetTenantScopedProgramAsync(expectedProgramId, "Program management permission is required.").ConfigureAwait(false);
+        {
+            throw new RequestValidationException("Program management permission is required.");
+        }
+
+        var program = await GetTenantScopedProgramAsync(expectedProgramId, "Program management permission is required.").ConfigureAwait(false);
     if (!await HasProgramReviewAccessAsync(program).ConfigureAwait(false))
-      throw new RequestValidationException("Program review permission is required.");
-    var content = await GetReflectionContentAsync(program.Id, contentId).ConfigureAwait(false);
+        {
+            throw new RequestValidationException("Program review permission is required.");
+        }
+
+        var content = await GetReflectionContentAsync(program.Id, contentId).ConfigureAwait(false);
     var interactions = await SubmittedInteractionsAsync(content.Id).ConfigureAwait(false);
     return interactions.Select(interaction => ReflectionResponseResultDto.FromInteraction(interaction, true)).ToList();
   }

@@ -278,10 +278,17 @@ public class ProgramCrudController(
 
     if (program.Status != ContentStatus.Published || program.Visibility != ContentVisibility.Public)
     {
-      if (!isAuthenticated) return NotFound();
-      var access = await courseAccessEvaluator.GetCapabilitiesAsync(program).ConfigureAwait(false);
-      if (!access.CanAccessWorkspace) return NotFound();
-    }
+      if (!isAuthenticated)
+            {
+                return NotFound();
+            }
+
+            var access = await courseAccessEvaluator.GetCapabilitiesAsync(program).ConfigureAwait(false);
+      if (!access.CanAccessWorkspace)
+            {
+                return NotFound();
+            }
+        }
 
     return Ok(program.ToDto());
   }

@@ -157,10 +157,26 @@ public class ApiKey : EntityBase
     /// </summary>
     public bool IsValid()
     {
-        if (!IsActive) return false;
-        if (RevokedAt.HasValue) return false;
-        if (IsRotationGraceExpired()) return false;
-        if (ExpiresAt.HasValue && ExpiresAt.Value < SystemClock.UtcNow) return false;
+        if (!IsActive)
+        {
+            return false;
+        }
+
+        if (RevokedAt.HasValue)
+        {
+            return false;
+        }
+
+        if (IsRotationGraceExpired())
+        {
+            return false;
+        }
+
+        if (ExpiresAt.HasValue && ExpiresAt.Value < SystemClock.UtcNow)
+        {
+            return false;
+        }
+
         return true;
     }
 

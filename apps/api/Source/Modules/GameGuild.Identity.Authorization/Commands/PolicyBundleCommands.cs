@@ -81,8 +81,10 @@ public sealed class CreatePolicyBundleCommandHandler(
         // Fail closed on invalid inputs before anything is persisted.
         var errors = signatureService.ValidateBundleInputs(bundle);
         if (errors.Count > 0)
+        {
             throw new PolicyBundleSignatureException(
-                $"Policy bundle '{request.Name}' rejected: {string.Join(" ", errors)}");
+            $"Policy bundle '{request.Name}' rejected: {string.Join(" ", errors)}");
+        }
 
         await bundleRepository.CreateAsync(bundle, cancellationToken).ConfigureAwait(false);
 
@@ -167,8 +169,10 @@ public sealed class SignPolicyBundleCommandHandler(
             ?? throw new InvalidOperationException($"Policy bundle {request.BundleId} does not exist.");
 
         if (bundle.Status is PolicyBundleStatus.Deprecated or PolicyBundleStatus.Revoked)
+        {
             throw new InvalidOperationException(
-                $"Policy bundle {request.BundleId} is {bundle.Status} and can no longer be signed.");
+            $"Policy bundle {request.BundleId} is {bundle.Status} and can no longer be signed.");
+        }
 
         signatureService.SignBundle(bundle, actorId);
         await bundleRepository.UpdateAsync(bundle, cancellationToken).ConfigureAwait(false);
@@ -236,8 +240,10 @@ public sealed class ApprovePolicyBundleCommandHandler(
         // FAIL CLOSED: an approved bundle must carry a valid signature from a trusted key.
         var verification = signatureService.VerifyBundle(bundle);
         if (!verification.IsValid)
+        {
             throw new PolicyBundleSignatureException(
-                $"Policy bundle {request.BundleId} cannot be approved: signature verification failed ({verification.Reason}).");
+            $"Policy bundle {request.BundleId} cannot be approved: signature verification failed ({verification.Reason}).");
+        }
 
         bundle.Status = PolicyBundleStatus.Approved;
         bundle.ApprovedBy = actorId;
@@ -313,8 +319,10 @@ public sealed class DeployPolicyBundleCommandHandler(
             .ConfigureAwait(false);
 
         if (bundle.Status != PolicyBundleStatus.Approved)
+        {
             throw new InvalidOperationException(
-                $"Policy bundle {request.BundleId} is {bundle.Status}; only approved bundles can be deployed.");
+            $"Policy bundle {request.BundleId} is {bundle.Status}; only approved bundles can be deployed.");
+        }
 
         var deployment = new PolicyBundleDeployment
         {
@@ -419,8 +427,10 @@ public sealed class RollbackPolicyBundleDeploymentCommandHandler(
             ?? throw new InvalidOperationException($"Policy bundle deployment {request.DeploymentId} does not exist.");
 
         if (deployment.Status != PolicyDeploymentStatus.Active)
+        {
             throw new InvalidOperationException(
-                $"Deployment {request.DeploymentId} is {deployment.Status}; only active deployments can be rolled back.");
+            $"Deployment {request.DeploymentId} is {deployment.Status}; only active deployments can be rolled back.");
+        }
 
         var bundle = await bundleRepository
             .GetByIdAsync(deployment.BundleId, cancellationToken)
@@ -560,10 +570,14 @@ internal static class PolicyBundleRegistryGuards
         string operation)
     {
         if (!actor.IsAuthenticated)
+        {
             throw new UnauthorizedAccessException("User is not authenticated.");
+        }
 
         if (actor.IsSystemAdmin)
+        {
             return;
+        }
 
         if (tenantId is null)
         {
@@ -589,10 +603,14 @@ internal static class PolicyBundleRegistryGuards
     public static void EnsureCanViewBundles(ActorContext actor, Guid? tenantId, ILogger logger)
     {
         if (!actor.IsAuthenticated)
+        {
             throw new UnauthorizedAccessException("User is not authenticated.");
+        }
 
         if (actor.IsSystemAdmin)
+        {
             return;
+        }
 
         if ((tenantId ?? actor.TenantId) != actor.TenantId || !actor.IsTenantAdmin)
         {

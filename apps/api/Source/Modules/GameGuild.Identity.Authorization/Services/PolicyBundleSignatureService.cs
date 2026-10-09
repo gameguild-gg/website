@@ -54,10 +54,14 @@ public sealed class PolicyBundleSignatureService(
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(bundle.Name))
+        {
             errors.Add("Bundle name is required.");
+        }
 
         if (string.IsNullOrWhiteSpace(bundle.Version))
+        {
             errors.Add("Bundle semantic version is required.");
+        }
 
         if (string.IsNullOrWhiteSpace(bundle.PolicyData))
         {
@@ -76,9 +80,14 @@ public sealed class PolicyBundleSignatureService(
 
         // Scope consistency: a bundle is either global (IsGlobal, no tenant) or tenant-scoped.
         if (bundle.IsGlobal && bundle.TenantId is not null)
+        {
             errors.Add("A global bundle must not carry a tenant id.");
+        }
+
         if (!bundle.IsGlobal && bundle.TenantId is null)
+        {
             errors.Add("A tenant-scoped bundle must carry a tenant id.");
+        }
 
         if (bundle.EffectiveFrom.HasValue && bundle.EffectiveUntil.HasValue
             && bundle.EffectiveFrom.Value >= bundle.EffectiveUntil.Value)
@@ -89,11 +98,15 @@ public sealed class PolicyBundleSignatureService(
         var combinedBytes = Encoding.UTF8.GetByteCount(bundle.PolicyData ?? string.Empty)
             + Encoding.UTF8.GetByteCount(bundle.Metadata ?? string.Empty);
         if (combinedBytes > _options.MaxBundleSizeBytes)
+        {
             errors.Add(
-                $"Combined PolicyData and Metadata size ({combinedBytes} bytes) exceeds the limit of {_options.MaxBundleSizeBytes} bytes.");
+            $"Combined PolicyData and Metadata size ({combinedBytes} bytes) exceeds the limit of {_options.MaxBundleSizeBytes} bytes.");
+        }
 
         if (bundle.CreatedBy == Guid.Empty)
+        {
             errors.Add("CreatedBy is required.");
+        }
 
         return errors;
     }
@@ -105,8 +118,10 @@ public sealed class PolicyBundleSignatureService(
 
         var errors = ValidateBundleInputs(bundle);
         if (errors.Count > 0)
+        {
             throw new PolicyBundleSignatureException(
-                $"Policy bundle '{bundle.Name}' failed signing validation: {string.Join(" ", errors)}");
+            $"Policy bundle '{bundle.Name}' failed signing validation: {string.Join(" ", errors)}");
+        }
 
         var activeKey = _options.ActiveKey
             ?? throw new PolicyBundleSignatureException(
@@ -114,14 +129,18 @@ public sealed class PolicyBundleSignatureService(
 
         var trustedKey = FindTrustedKeyForPrivateKey(activeKey);
         if (trustedKey is null)
+        {
             throw new PolicyBundleSignatureException(
-                $"Active signing key '{activeKey.KeyId}' does not match any trusted public key; refusing to sign (fail closed).");
+            $"Active signing key '{activeKey.KeyId}' does not match any trusted public key; refusing to sign (fail closed).");
+        }
 
         var signedAt = DateTimeOffset.UtcNow;
 
         if (!trustedKey.IsTrustedForVerification(signedAt: signedAt, verifiedAt: signedAt))
+        {
             throw new PolicyBundleSignatureException(
-                $"Active signing key '{trustedKey.KeyId}' is expired or revoked; refusing to sign (fail closed).");
+            $"Active signing key '{trustedKey.KeyId}' is expired or revoked; refusing to sign (fail closed).");
+        }
 
         using var privateKey = ImportPrivateKey(activeKey.PrivateKeyPem);
         var payload = BuildCanonicalPayload(bundle);
@@ -161,14 +180,18 @@ public sealed class PolicyBundleSignatureService(
         ArgumentNullException.ThrowIfNull(bundle);
 
         if (!_options.EnforceSignatureVerification)
+        {
             return new PolicyBundleVerificationResult
             {
                 IsValid = true,
                 Reason = "signature-enforcement-disabled"
             };
+        }
 
         if (string.IsNullOrWhiteSpace(bundle.DigitalSignature))
+        {
             return PolicyBundleVerificationResult.Invalid("Bundle carries no signature.");
+        }
 
         PolicyBundleSignatureEnvelope envelope;
         try
@@ -183,33 +206,45 @@ public sealed class PolicyBundleSignatureService(
         }
 
         if (!string.Equals(envelope.Version, EnvelopeVersion, StringComparison.Ordinal))
+        {
             return PolicyBundleVerificationResult.Invalid(
-                $"Unsupported signature envelope version '{envelope.Version}' (expected '{EnvelopeVersion}').");
+            $"Unsupported signature envelope version '{envelope.Version}' (expected '{EnvelopeVersion}').");
+        }
 
         if (!string.Equals(envelope.Algorithm, AlgorithmIdentifier, StringComparison.Ordinal))
+        {
             return PolicyBundleVerificationResult.Invalid(
-                $"Unsupported signature algorithm '{envelope.Algorithm}' (expected '{AlgorithmIdentifier}').");
+            $"Unsupported signature algorithm '{envelope.Algorithm}' (expected '{AlgorithmIdentifier}').");
+        }
 
         var trustedKey = _options.TrustedKeys.FirstOrDefault(k =>
             string.Equals(k.KeyId, envelope.KeyId, StringComparison.Ordinal));
         if (trustedKey is null)
+        {
             return PolicyBundleVerificationResult.Invalid($"Signature key '{envelope.KeyId}' is not trusted.");
+        }
 
         var signedAt = new DateTimeOffset(envelope.SignedAt, TimeSpan.Zero);
         if (!trustedKey.IsTrustedForVerification(signedAt, DateTimeOffset.UtcNow))
+        {
             return PolicyBundleVerificationResult.Invalid(
-                $"Signature key '{envelope.KeyId}' is expired or revoked; signing time {signedAt:O}.");
+            $"Signature key '{envelope.KeyId}' is expired or revoked; signing time {signedAt:O}.");
+        }
 
         var errors = ValidateBundleInputs(bundle);
         if (errors.Count > 0)
+        {
             return PolicyBundleVerificationResult.Invalid(
-                $"Bundle content failed signing-contract validation: {string.Join(" ", errors)}");
+            $"Bundle content failed signing-contract validation: {string.Join(" ", errors)}");
+        }
 
         var payloadJson = JsonSerializer.Serialize(BuildCanonicalPayload(bundle), CanonicalJsonOptions);
         var contentHash = ComputeContentHash(payloadJson);
         if (!string.Equals(contentHash, envelope.ContentHash, StringComparison.Ordinal))
+        {
             return PolicyBundleVerificationResult.Invalid(
-                "Content hash mismatch: bundle content changed after signing.");
+            "Content hash mismatch: bundle content changed after signing.");
+        }
 
         byte[] signatureBytes;
         try
@@ -252,13 +287,17 @@ public sealed class PolicyBundleSignatureService(
         foreach (var candidate in _options.TrustedKeys)
         {
             if (candidate.RevokedAt is not null)
+            {
                 continue;
+            }
 
             try
             {
                 using var candidateKey = ImportPublicKey(candidate.PublicKeyPem);
                 if (candidateKey.ExportSubjectPublicKeyInfo().AsSpan().SequenceEqual(publicSpki))
+                {
                     return candidate;
+                }
             }
             catch (ArgumentException)
             {
@@ -345,10 +384,15 @@ public sealed class PolicyBundleSignatureService(
                 foreach (var property in element.EnumerateObject())
                 {
                     if (!seen.Add(property.Name))
-                        return true;
-                    if (ContainsDuplicateProperties(property.Value))
-                        return true;
-                }
+                        {
+                            return true;
+                        }
+
+                        if (ContainsDuplicateProperties(property.Value))
+                        {
+                            return true;
+                        }
+                    }
 
                 return false;
             }

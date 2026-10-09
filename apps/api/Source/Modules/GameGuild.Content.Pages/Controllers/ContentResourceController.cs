@@ -64,7 +64,10 @@ public class ContentResourceController(
     public async Task<ActionResult<ContentResourceDto>> GetById(Guid id)
     {
         var resource = await resourceService.GetByIdAsync(id).ConfigureAwait(false);
-        if (resource is null) return NotFound();
+        if (resource is null)
+        {
+            return NotFound();
+        }
 
         // Get-by-id must not leak drafts: unpublished resources require a content permission.
         if (resource.Status != ContentResourceStatus.Published && !CanViewUnpublished)
@@ -84,7 +87,10 @@ public class ContentResourceController(
         // published resources keeps drafts and in-review items unlisted.
         var publishedOnly = !CanViewUnpublished;
         var resource = await resourceService.GetBySlugAsync(slug, publishedOnly).ConfigureAwait(false);
-        if (resource is null) return NotFound();
+        if (resource is null)
+        {
+            return NotFound();
+        }
 
         // The service is scoped to this request and shares its DbContext. Await the
         // update so the request scope cannot dispose the PostgreSQL connection while
@@ -98,7 +104,11 @@ public class ContentResourceController(
     [HttpPost]
     public async Task<ActionResult<ContentResourceDto>> Create([FromBody] CreateContentResourceDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var resource = await sender.Send(new CreateContentResourceCommand(dto)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetById), new { id = resource.Id }, resource.ToDto());
     }
@@ -109,10 +119,22 @@ public class ContentResourceController(
     [ProducesResponseType(403)]
     public async Task<ActionResult<ContentResourceDto>> Update(Guid id, [FromBody] UpdateContentResourceDto dto)
     {
-        if (!CanEditContent) return Forbid();
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!CanEditContent)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var resource = await sender.Send(new UpdateContentResourceCommand(id, dto)).ConfigureAwait(false);
-        if (resource is null) return NotFound();
+        if (resource is null)
+        {
+            return NotFound();
+        }
+
         return Ok(resource.ToDto());
     }
 
@@ -121,7 +143,11 @@ public class ContentResourceController(
     public async Task<ActionResult> Delete(Guid id)
     {
         var deleted = await sender.Send(new DeleteContentResourceCommand(id)).ConfigureAwait(false);
-        if (!deleted) return NotFound();
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -130,10 +156,17 @@ public class ContentResourceController(
     public async Task<ActionResult<ContentResourceDto>> Publish(Guid id)
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!userId.HasValue) return Unauthorized();
+        if (!userId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var resource = await sender.Send(new PublishContentResourceCommand(id, userId.Value)).ConfigureAwait(false);
-        if (resource is null) return NotFound();
+        if (resource is null)
+        {
+            return NotFound();
+        }
+
         return Ok(resource);
     }
 
