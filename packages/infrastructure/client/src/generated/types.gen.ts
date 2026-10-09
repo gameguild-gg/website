@@ -7071,6 +7071,10 @@ export interface IdentityAuthenticationApiKeyDto {
   keyPrefix?: string | null;
   lastUsedAt?: string | null;
   name?: string | null;
+  /** Key replaced by this key (set when this key was issued by a rotation) */
+  replacesKeyId?: string | null;
+  /** When the rotation overlap window for this key ends (rotated keys only) */
+  rotationGraceEndsAt?: string | null;
   scopes?: Array<string> | null;
   usageCount?: number;
 }
@@ -7637,6 +7641,30 @@ export interface IdentityAuthenticationRevokeRefreshTokenInput {
 
 /** Risk level for session security and anomaly detection */
 export type IdentityAuthenticationRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** Data model for Identity Authentication Rotate Api Key Request. */
+export interface IdentityAuthenticationRotateApiKeyInput {
+  /** Optional absolute expiry for the replacement key; defaults to preserving the old key's expiry. */
+  expiresAt?: string | null;
+  /** Optional overlap window, in minutes, during which the old key keeps working;
+defaults to the configured rotation grace period. Zero revokes the old key immediately. */
+  gracePeriodMinutes?: number | null;
+  /** Optional display name for the replacement key; defaults to the old key's name. */
+  name?: string | null;
+  /** Optional scopes for the replacement key; defaults to the old key's scopes. */
+  scopes?: Array<string> | null;
+}
+
+/** Data model for Identity Authentication Rotate Api Key Response. */
+export interface IdentityAuthenticationRotateApiKeyOutput {
+  newKey?: IdentityAuthenticationCreateApiKeyOutput;
+  /** When the old key stops being honored (null when it was revoked immediately) */
+  oldKeyGraceEndsAt?: string | null;
+  /** The key that was rotated (now superseded) */
+  oldKeyId?: string;
+  /** Whether the old key was revoked immediately instead of getting an overlap window */
+  oldKeyRevoked?: boolean;
+}
 
 /** Request to manually rotate signing key */
 export interface IdentityAuthenticationRotateKeyInput {
@@ -20204,6 +20232,8 @@ export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<Iden
 export let IdentityAuthenticationRevokeApiKeyInputSchema: z.ZodType<IdentityAuthenticationRevokeApiKeyInput>;
 export let IdentityAuthenticationRevokeRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRevokeRefreshTokenInput>;
 export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticationRiskLevel>;
+export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
+export let IdentityAuthenticationRotateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyOutput>;
 export let IdentityAuthenticationRotateKeyInputSchema: z.ZodType<IdentityAuthenticationRotateKeyInput>;
 export let IdentityAuthenticationSecretRotationOutputSchema: z.ZodType<IdentityAuthenticationSecretRotationOutput>;
 export let IdentityAuthenticationSendEmailVerificationInputSchema: z.ZodType<IdentityAuthenticationSendEmailVerificationInput>;
@@ -28256,6 +28286,8 @@ IdentityAuthenticationApiKeyDtoSchema = z.object({
   keyPrefix: z.string().nullable().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   name: z.string().nullable().optional(),
+  replacesKeyId: z.string().uuid().nullable().optional(),
+  rotationGraceEndsAt: z.string().datetime().nullable().optional(),
   scopes: z.array(z.string()).nullable().optional(),
   usageCount: z.number().int().optional(),
 });
@@ -28725,6 +28757,22 @@ IdentityAuthenticationRevokeRefreshTokenInputSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationRiskLevel. Risk level for session security and anomaly detection */
 IdentityAuthenticationRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthenticationRotateApiKeyInput. Data model for Identity Authentication Rotate Api Key Request. */
+IdentityAuthenticationRotateApiKeyInputSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  gracePeriodMinutes: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRotateApiKeyOutput. Data model for Identity Authentication Rotate Api Key Response. */
+IdentityAuthenticationRotateApiKeyOutputSchema = z.object({
+  newKey: z.lazy(() => IdentityAuthenticationCreateApiKeyOutputSchema).optional(),
+  oldKeyGraceEndsAt: z.string().datetime().nullable().optional(),
+  oldKeyId: z.string().uuid().optional(),
+  oldKeyRevoked: z.boolean().optional(),
+});
 
 /** Zod schema for IdentityAuthenticationRotateKeyInput. Request to manually rotate signing key */
 IdentityAuthenticationRotateKeyInputSchema = z.object({

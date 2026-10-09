@@ -74,6 +74,19 @@ public static class DataDependencyInjection
         services.AddSingleton(mfaOptions);
         services.AddSingleton(sessionOptions);
 
+        var apiKeyLifecycleOptions = OptionBuilderUtilities.CreateAndBind(
+            configuration,
+            ApiKeyLifecycleOptions.SectionName,
+            static () => new ApiKeyLifecycleOptions());
+        var apiKeyLifecycleValidation = apiKeyLifecycleOptions.Validate();
+        if (!apiKeyLifecycleValidation.IsValid)
+        {
+            throw new InvalidOperationException(
+                $"Invalid {ApiKeyLifecycleOptions.SectionName} configuration: {string.Join("; ", apiKeyLifecycleValidation.Errors)}");
+        }
+
+        services.AddSingleton(apiKeyLifecycleOptions);
+
         // Configure JWT options from configuration
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
