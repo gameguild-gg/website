@@ -47,8 +47,16 @@ public sealed class EconomyTreasuryAdministrationController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult List([FromQuery] int limit = 100)
     {
-        if (!TryActor(out var tenantId, out _)) return Forbid();
-        if (limit is <= 0 or > 500) return BadRequest("Limit must be between 1 and 500.");
+        if (!TryActor(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
+        if (limit is <= 0 or > 500)
+        {
+            return BadRequest("Limit must be between 1 and 500.");
+        }
+
         return Ok(withdrawals.List(tenantId, limit));
     }
 
@@ -58,7 +66,11 @@ public sealed class EconomyTreasuryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Get(Guid runId)
     {
-        if (!TryActor(out var tenantId, out _)) return Forbid();
+        if (!TryActor(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         try { return Ok(withdrawals.Get(tenantId, runId)); }
         catch (KeyNotFoundException) { return NotFound(); }
     }
@@ -69,7 +81,11 @@ public sealed class EconomyTreasuryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Audit(Guid runId)
     {
-        if (!TryActor(out var tenantId, out _)) return Forbid();
+        if (!TryActor(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         try { return Ok(withdrawals.Audit(tenantId, runId)); }
         catch (KeyNotFoundException) { return NotFound(); }
     }
@@ -84,7 +100,11 @@ public sealed class EconomyTreasuryAdministrationController(
         [FromBody] ProposeTreasuryWithdrawalRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var transactionBinding = TreasuryProtectedOperationBinding.Proposal(
             request.PeriodStart, request.AmountUnits, request.DestinationHash, request.IdempotencyKey);
@@ -115,7 +135,11 @@ public sealed class EconomyTreasuryAdministrationController(
         [FromBody] ApproveTreasuryWithdrawalRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var operation = EconomyStepUpOperation.Create(
             "economy.treasury.approve",
@@ -141,7 +165,11 @@ public sealed class EconomyTreasuryAdministrationController(
         [FromBody] DispatchTreasuryWithdrawalRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var transactionBinding = TreasuryProtectedOperationBinding.Dispatch(
             runId, request.ExpectedVersion);
@@ -167,7 +195,11 @@ public sealed class EconomyTreasuryAdministrationController(
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Reconcile(Guid runId, CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         return await ExecuteAsync(() => sender.Send(new ReconcileTreasuryWithdrawalEndpointCommand(
             new ReconcileAdminWithdrawalCommand(tenantId, actorId, runId)), cancellationToken))
             .ConfigureAwait(false);

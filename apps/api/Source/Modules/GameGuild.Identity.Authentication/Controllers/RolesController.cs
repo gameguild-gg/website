@@ -54,7 +54,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetById(Guid roleId, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Getting role by ID: {RoleId}", roleId);
+        logger.LogInformation("Getting role by ID: {RoleId}", LogRedaction.Sanitize(roleId.ToString()));
 
         var query = new GetRoleByIdQuery { RoleId = roleId };
         var role = await sender.Send(query, cancellationToken).ConfigureAwait(false);
@@ -79,7 +79,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create([FromBody] CreateRoleRequest request, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Creating new role: {RoleName}", request.Name);
+        logger.LogInformation("Creating new role: {RoleName}", LogRedaction.Sanitize(request.Name));
 
         var command = new CreateRoleCommand
         {
@@ -106,7 +106,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Update(Guid roleId, [FromBody] UpdateRoleRequest request, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Updating role: {RoleId}", roleId);
+        logger.LogInformation("Updating role: {RoleId}", LogRedaction.Sanitize(roleId.ToString()));
 
         var command = new UpdateRoleCommand
         {
@@ -133,7 +133,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Delete(Guid roleId, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Deleting role: {RoleId}", roleId);
+        logger.LogInformation("Deleting role: {RoleId}", LogRedaction.Sanitize(roleId.ToString()));
 
         var command = new DeleteRoleCommand { RoleId = roleId };
         await sender.Send(command, cancellationToken).ConfigureAwait(false);
@@ -152,7 +152,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetUserRoles(Guid userId, [FromQuery] bool includeExpired = false, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Getting roles for user: {UserId}", userId);
+        logger.LogInformation("Getting roles for user: {UserId}", LogRedaction.Sanitize(userId.ToString()));
 
         var query = new GetUserRolesQuery
         {
@@ -176,7 +176,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> AssignRoleToUser([FromBody] AssignRoleToUserRequest request, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Assigning role {RoleId} to user {UserId}", request.RoleId, request.UserId);
+        logger.LogInformation("Assigning role {RoleId} to user {UserId}", LogRedaction.Sanitize(request.RoleId.ToString()), LogRedaction.Sanitize(request.UserId.ToString()));
 
         var command = new AssignRoleToUserCommand
         {
@@ -219,7 +219,7 @@ public class RolesController(ILogger<RolesController> logger, ISender sender) : 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RemoveRoleFromUser([FromBody] RemoveRoleFromUserRequest request, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Removing role {RoleId} from user {UserId}", request.RoleId, request.UserId);
+        logger.LogInformation("Removing role {RoleId} from user {UserId}", LogRedaction.Sanitize(request.RoleId.ToString()), LogRedaction.Sanitize(request.UserId.ToString()));
 
         var command = new RemoveRoleFromUserCommand
         {

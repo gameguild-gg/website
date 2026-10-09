@@ -220,7 +220,9 @@ public class BillingWebhookRepositoryTests
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             if (SqlStateOnNextSave is null)
+            {
                 return await base.SaveChangesAsync(cancellationToken);
+            }
 
             var sqlState = SqlStateOnNextSave;
             SqlStateOnNextSave = null;

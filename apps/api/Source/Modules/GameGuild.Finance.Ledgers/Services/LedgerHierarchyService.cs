@@ -34,7 +34,9 @@ public class LedgerHierarchyService : ILedgerHierarchyService
     {
         // Validate code uniqueness
         if (await _ledgerRepository.ExistsAsync(tenantId, code, ct))
+        {
             throw new InvalidOperationException($"Ledger code '{code}' already exists.");
+        }
 
         // Create root ledger
         var ledger = Ledger.CreateRoot(tenantId, code, name, currencyCode, createdByUserId, description);
@@ -64,7 +66,9 @@ public class LedgerHierarchyService : ILedgerHierarchyService
 
         // Validate code uniqueness
         if (await _ledgerRepository.ExistsAsync(parent.TenantId, code, ct))
+        {
             throw new InvalidOperationException($"Ledger code '{code}' already exists.");
+        }
 
         // Create child ledger
         var child = Ledger.CreateChild(parent, type, code, name, createdByUserId, description, currencyCode);
@@ -89,7 +93,9 @@ public class LedgerHierarchyService : ILedgerHierarchyService
     {
         // Validate move is allowed
         if (!await CanMoveToParentAsync(ledgerId, newParentLedgerId, ct))
+        {
             throw new InvalidOperationException("Cannot move ledger to the specified parent.");
+        }
 
         var ledger = await _ledgerRepository.GetByIdAsync(ledgerId, ct)
             ?? throw new InvalidOperationException($"Ledger '{ledgerId}' not found.");
@@ -186,30 +192,42 @@ public class LedgerHierarchyService : ILedgerHierarchyService
     {
         // Cannot move to self
         if (ledgerId == newParentLedgerId)
+        {
             return false;
+        }
 
         // Cannot move to own descendant (would create cycle)
         var isDescendant = await _closureRepository.IsAncestorOfAsync(ledgerId, newParentLedgerId, ct);
         if (isDescendant)
+        {
             return false;
+        }
 
         var ledger = await _ledgerRepository.GetByIdAsync(ledgerId, ct);
         var newParent = await _ledgerRepository.GetByIdAsync(newParentLedgerId, ct);
 
         if (ledger == null || newParent == null)
+        {
             return false;
+        }
 
         // Must be same tenant
         if (ledger.TenantId != newParent.TenantId)
+        {
             return false;
+        }
 
         // Root ledgers cannot be moved
         if (ledger.Type == LedgerType.Root)
+        {
             return false;
+        }
 
         // Cannot move under virtual ledger
         if (newParent.Type == LedgerType.Virtual)
+        {
             return false;
+        }
 
         return true;
     }

@@ -22,7 +22,6 @@ public class AuthenticationPerformanceTests : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly TestApplicationDbContext _context;
     private readonly Mock<IAuthService> _mockAuthService;
-    private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
     private readonly Mock<ILogger<LocalSignInHandler>> _mockLogger;
     private readonly Mock<IValidator<LocalSignInCommand>> _mockValidator;
@@ -38,14 +37,14 @@ public class AuthenticationPerformanceTests : IDisposable
 
         _context = new TestApplicationDbContext(options);
         _mockAuthService = new Mock<IAuthService>();
-        _mockUserRepository = new Mock<IUserRepository>();
+        Mock<IUserRepository> mockUserRepository = new Mock<IUserRepository>();
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
         _mockLogger = new Mock<ILogger<LocalSignInHandler>>();
         _mockValidator = new Mock<IValidator<LocalSignInCommand>>();
 
         _handler = new LocalSignInHandler(
             _mockAuthService.Object,
-            _mockUserRepository.Object,
+            mockUserRepository.Object,
             _mockHttpContextAccessor.Object,
             _mockLogger.Object,
             _mockValidator.Object

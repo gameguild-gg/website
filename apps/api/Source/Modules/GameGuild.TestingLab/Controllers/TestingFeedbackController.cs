@@ -36,7 +36,9 @@ public class TestingFeedbackController(
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         var feedback = await sender.Send(new AddTestingFeedbackEndpointCommand(
             requestId,
@@ -71,11 +73,16 @@ public class TestingFeedbackController(
     [HttpPost("feedback")]
     public async Task<ActionResult> SubmitFeedback(SubmitFeedbackDto feedbackDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         await sender.Send(new SubmitTestingFeedbackEndpointCommand(feedbackDto, userId.Value)).ConfigureAwait(false);
 
@@ -88,7 +95,9 @@ public class TestingFeedbackController(
     {
         var currentUserId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (currentUserId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         await sender.Send(new ReportTestingFeedbackEndpointCommand(feedbackId, reportDto.Reason, currentUserId.Value)).ConfigureAwait(false);
 
@@ -102,7 +111,9 @@ public class TestingFeedbackController(
     {
         var currentUserId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (currentUserId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         await sender.Send(new RateTestingFeedbackQualityEndpointCommand(feedbackId, qualityDto.Quality, currentUserId.Value)).ConfigureAwait(false);
 

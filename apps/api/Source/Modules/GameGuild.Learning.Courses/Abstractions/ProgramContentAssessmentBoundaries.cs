@@ -70,7 +70,10 @@ public static class ProgramContentAcademicMutationGuard
         foreach (var guard in guards)
         {
             var rejection = guard.GetRejection(content, mutation);
-            if (rejection is not null) throw new InvalidOperationException(rejection);
+            if (rejection is not null)
+            {
+                throw new InvalidOperationException(rejection);
+            }
         }
     }
 }

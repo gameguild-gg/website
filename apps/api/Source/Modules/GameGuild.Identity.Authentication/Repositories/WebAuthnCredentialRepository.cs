@@ -67,7 +67,10 @@ public class WebAuthnCredentialRepository(IApplicationDbContext context) : IWebA
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (credential == null) return false;
+        if (credential == null)
+        {
+            return false;
+        }
 
         Credentials.Remove(credential);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -91,7 +94,10 @@ public class WebAuthnCredentialRepository(IApplicationDbContext context) : IWebA
     public async Task<bool> RevokeAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var credential = await Credentials.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-        if (credential == null) return false;
+        if (credential == null)
+        {
+            return false;
+        }
 
         // Revocation is terminal but idempotent for already-revoked credentials.
         if (!credential.IsRevoked)

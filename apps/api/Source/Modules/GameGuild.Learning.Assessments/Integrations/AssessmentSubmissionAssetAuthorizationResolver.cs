@@ -24,12 +24,22 @@ public sealed class AssessmentSubmissionAssetAuthorizationResolver(
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (!HasAuthoritativeActor(userId, tenantId)) return false;
+        if (!HasAuthoritativeActor(userId, tenantId))
+        {
+            return false;
+        }
 
         var authorization = await ResolveAsync(parentResourceId, tenantId!.Value, cancellationToken)
             .ConfigureAwait(false);
-        if (authorization is null) return false;
-        if (authorization.OwnerId == userId) return true;
+        if (authorization is null)
+        {
+            return false;
+        }
+
+        if (authorization.OwnerId == userId)
+        {
+            return true;
+        }
 
         if (await HasPermissionAsync(
                 authorization.ProgramId, userId, tenantId.Value, "Review", cancellationToken)
@@ -56,7 +66,10 @@ public sealed class AssessmentSubmissionAssetAuthorizationResolver(
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (!HasAuthoritativeActor(userId, tenantId)) return false;
+        if (!HasAuthoritativeActor(userId, tenantId))
+        {
+            return false;
+        }
 
         var authorization = await ResolveAsync(parentResourceId, tenantId!.Value, cancellationToken)
             .ConfigureAwait(false);
@@ -68,12 +81,32 @@ public sealed class AssessmentSubmissionAssetAuthorizationResolver(
     private bool HasAuthoritativeActor(Guid userId, Guid? tenantId)
     {
         var actor = actorContextAccessor.ActorContext;
-        if (!actor.IsAuthenticated) return false;
+        if (!actor.IsAuthenticated)
+        {
+            return false;
+        }
+
         var actorUserId = actor.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return false;
-        if (actorUserId.Value != userId) return false;
-        if (!tenantId.HasValue) return false;
-        if (!actor.TenantId.HasValue) return false;
+        if (!actorUserId.HasValue)
+        {
+            return false;
+        }
+
+        if (actorUserId.Value != userId)
+        {
+            return false;
+        }
+
+        if (!tenantId.HasValue)
+        {
+            return false;
+        }
+
+        if (!actor.TenantId.HasValue)
+        {
+            return false;
+        }
+
         return actor.TenantId.Value == tenantId.Value;
     }
 

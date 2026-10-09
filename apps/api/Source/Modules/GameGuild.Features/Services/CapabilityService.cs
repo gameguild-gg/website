@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using GameGuild.Identity.Context.Actors;
 using CommerceSubscription = GameGuild.Commerce.Subscriptions.Subscription;
 using CommerceSubscriptionPlan = GameGuild.Commerce.Subscriptions.SubscriptionPlan;
 using CommerceSubscriptionStatus = GameGuild.Commerce.Subscriptions.SubscriptionStatus;
@@ -18,6 +19,7 @@ public class CapabilityService : ICapabilityService
     private readonly IApplicationDbContext _context;
     private readonly IMemoryCache _cache;
     private readonly ILogger<CapabilityService> _logger;
+    private readonly IActorContextAccessor _actorContextAccessor;
 
     private const string CapabilitiesCacheKeyPrefix = "TenantCapabilities:";
     [ExcludeFromCodeCoverage]
@@ -103,11 +105,13 @@ public class CapabilityService : ICapabilityService
     public CapabilityService(
         IApplicationDbContext context,
         IMemoryCache cache,
-        ILogger<CapabilityService> logger)
+        ILogger<CapabilityService> logger,
+        IActorContextAccessor actorContextAccessor)
     {
         _context = context;
         _cache = cache;
         _logger = logger;
+        _actorContextAccessor = actorContextAccessor;
     }
 
     /// <inheritdoc />
@@ -131,7 +135,7 @@ public class CapabilityService : ICapabilityService
                 {
                     _logger.LogInformation(
                         "Capability {Capability} override for tenant {TenantId} has expired, falling back to plan",
-                        capability, tenantId);
+                        LogRedaction.Sanitize(capability), LogRedaction.Sanitize(tenantId.ToString()));
                 }
                 else
                 {
@@ -149,7 +153,7 @@ public class CapabilityService : ICapabilityService
             {
                 _logger.LogWarning(
                     "No active subscription found for tenant {TenantId}, capability {Capability} denied (fail-closed)",
-                    tenantId, capability);
+                    LogRedaction.Sanitize(tenantId.ToString()), LogRedaction.Sanitize(capability));
                 return false; // Fail-closed
             }
 
@@ -161,7 +165,7 @@ public class CapabilityService : ICapabilityService
         {
             _logger.LogError(ex,
                 "Capability check failed for {TenantId}/{Capability}, defaulting to false (fail-closed)",
-                tenantId, capability);
+                LogRedaction.Sanitize(tenantId.ToString()), LogRedaction.Sanitize(capability));
             return false; // Fail-closed
         }
     }
@@ -242,6 +246,9 @@ public class CapabilityService : ICapabilityService
         DateTimeOffset? expiresAt = null,
         CancellationToken cancellationToken = default)
     {
+        // The acting administrator always comes from the resolved actor context
+        // (AGENTS.md invariant 8), never from the caller-supplied parameter.
+        var actingUserId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
         var existing = await _context.Set<TenantCapability>()
             .FirstOrDefaultAsync(tc => tc.TenantId == tenantId && tc.CapabilityKey == capability, cancellationToken).ConfigureAwait(false);
 
@@ -253,7 +260,7 @@ public class CapabilityService : ICapabilityService
             existing.IsEnabled = isEnabled;
             existing.Source = source;
             existing.ExpiresAt = expiresAt;
-            existing.ModifiedByUserId = userId;
+            existing.ModifiedByUserId = actingUserId;
             existing.ModificationReason = reason;
             existing.Priority = source.StartsWith("override:", StringComparison.OrdinalIgnoreCase) ? 1000 : 0;
         }
@@ -266,7 +273,7 @@ public class CapabilityService : ICapabilityService
                 IsEnabled = isEnabled,
                 Source = source,
                 ExpiresAt = expiresAt,
-                ModifiedByUserId = userId,
+                ModifiedByUserId = actingUserId,
                 ModificationReason = reason,
                 Priority = source.StartsWith("override:", StringComparison.OrdinalIgnoreCase) ? 1000 : 0
             };
@@ -282,7 +289,7 @@ public class CapabilityService : ICapabilityService
             NewValue = isEnabled,
             OldSource = oldSource,
             NewSource = source,
-            ChangedByUserId = userId,
+            ChangedByUserId = actingUserId,
             ChangeReason = reason,
             ChangeType = oldValue == null ? CapabilityChangeType.Granted :
                          (isEnabled && !oldValue.Value) ? CapabilityChangeType.Restored :
@@ -310,6 +317,7 @@ public class CapabilityService : ICapabilityService
         string? reason,
         CancellationToken cancellationToken = default)
     {
+        userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
         var existing = await _context.Set<TenantCapability>()
             .FirstOrDefaultAsync(tc => tc.TenantId == tenantId && tc.CapabilityKey == capability, cancellationToken).ConfigureAwait(false);
 
@@ -351,6 +359,7 @@ public class CapabilityService : ICapabilityService
     /// <inheritdoc />
     public async Task SyncCapabilitiesFromPlanAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
+        var userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
         var subscription = await _context.Set<CommerceSubscription>()
             .Include(s => s.Plan)
             .Where(s => s.TenantId == tenantId && s.Status == CommerceSubscriptionStatus.Active)
@@ -363,55 +372,65 @@ public class CapabilityService : ICapabilityService
         }
 
         var planSlug = subscription.Plan.Slug?.ToLowerInvariant() ?? "free";
+        var planSource = $"plan:{planSlug}";
         var planCapabilities = GetPlanCapabilities(planSlug);
 
-        // Get existing plan-sourced capabilities (not overrides)
-        var existingPlanCapabilities = await _context.Set<TenantCapability>()
-            .Where(tc => tc.TenantId == tenantId && tc.Source != null && tc.Source.StartsWith("plan:"))
+        // One row owns each tenant/key. Preserve explicit decisions, including expired
+        // overrides whose effective value falls back to the current subscription plan.
+        var existingCapabilities = await _context.Set<TenantCapability>()
+            .Where(tc => tc.TenantId == tenantId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         // Update capabilities based on plan
         foreach (var capability in AllCapabilities)
         {
             var shouldBeEnabled = planCapabilities.Contains(capability);
-            var existing = existingPlanCapabilities.FirstOrDefault(c =>
+            var existing = existingCapabilities.FirstOrDefault(c =>
                 c.CapabilityKey.Equals(capability, StringComparison.OrdinalIgnoreCase));
 
-            if (existing != null)
+            if (existing != null &&
+                existing.Source?.StartsWith("plan:", StringComparison.OrdinalIgnoreCase) != true)
             {
-                if (existing.IsEnabled != shouldBeEnabled)
-                {
-                    var auditLog = new CapabilityAuditLog
-                    {
-                        TenantId = tenantId,
-                        CapabilityKey = capability,
-                        OldValue = existing.IsEnabled,
-                        NewValue = shouldBeEnabled,
-                        OldSource = existing.Source,
-                        NewSource = $"plan:{planSlug}",
-                        ChangeReason = $"Plan sync from {existing.Source} to plan:{planSlug}",
-                        ChangeType = CapabilityChangeType.PlanChange,
-                        ChangedAt = DateTimeOffset.UtcNow
-                    };
-                    _context.Set<CapabilityAuditLog>().Add(auditLog);
-
-                    existing.IsEnabled = shouldBeEnabled;
-                    existing.Source = $"plan:{planSlug}";
-                }
+                continue;
             }
-            else
+
+            if (existing != null && existing.IsEnabled == shouldBeEnabled && existing.Source == planSource)
             {
-                // Create new plan-based capability
-                var newCapability = new TenantCapability
+                continue;
+            }
+
+            var oldValue = existing?.IsEnabled;
+            var oldSource = existing?.Source;
+            var reason = $"Plan sync from {oldSource ?? "none"} to {planSource}";
+
+            if (existing == null)
+            {
+                existing = new TenantCapability
                 {
                     TenantId = tenantId,
                     CapabilityKey = capability,
-                    IsEnabled = shouldBeEnabled,
-                    Source = $"plan:{planSlug}",
                     Priority = 0
                 };
-                _context.Set<TenantCapability>().Add(newCapability);
+                _context.Set<TenantCapability>().Add(existing);
             }
+
+            existing.IsEnabled = shouldBeEnabled;
+            existing.Source = planSource;
+            existing.ModifiedByUserId = userId;
+            existing.ModificationReason = reason;
+            _context.Set<CapabilityAuditLog>().Add(new CapabilityAuditLog
+            {
+                TenantId = tenantId,
+                CapabilityKey = capability,
+                OldValue = oldValue,
+                NewValue = shouldBeEnabled,
+                OldSource = oldSource,
+                NewSource = planSource,
+                ChangedByUserId = userId,
+                ChangeReason = reason,
+                ChangeType = CapabilityChangeType.PlanChange,
+                ChangedAt = DateTimeOffset.UtcNow
+            });
         }
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -430,6 +449,7 @@ public class CapabilityService : ICapabilityService
         DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default)
     {
+        CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
         var query = _context.Set<CapabilityAuditLog>()
             .Where(log => log.TenantId == tenantId);
 

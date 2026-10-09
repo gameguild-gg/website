@@ -12,10 +12,10 @@ public sealed class UserSignedInEventHandler(ILogger<UserSignedInEventHandler> l
     {
         logger.LogInformation(
             "User {UserId} ({Email}) signed in via {AuthMethod} from {IpAddress} at {Timestamp}",
-            notification.UserId,
-            notification.Email,
-            notification.AuthMethod,
-            notification.IpAddress ?? "Unknown",
+            LogRedaction.RedactId(notification.UserId, "uid"),
+            LogRedaction.MaskEmail(notification.Email),
+            LogRedaction.Sanitize(notification.AuthMethod),
+            notification.IpAddress is null ? "Unknown" : LogRedaction.RedactId(notification.IpAddress, "ip"),
             notification.Timestamp
         );
 

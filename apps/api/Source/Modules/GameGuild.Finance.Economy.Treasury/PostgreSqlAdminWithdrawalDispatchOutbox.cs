@@ -85,24 +85,41 @@ public sealed class PostgreSqlAdminWithdrawalDispatchOutboxProcessor :
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workerId);
-        if (workerId.Trim().Length > 200) throw new ArgumentOutOfRangeException(nameof(workerId));
+        if (workerId.Trim().Length > 200)
+        {
+            throw new ArgumentOutOfRangeException(nameof(workerId));
+        }
+
         var lease = await ClaimAsync(workerId.Trim(), now, cancellationToken);
-        if (lease is null) return null;
+        if (lease is null)
+        {
+            return null;
+        }
+
         try
         {
             if (!string.Equals(Hash(lease.Payload), lease.PayloadHash, StringComparison.Ordinal))
+            {
                 throw new AdminWithdrawalEvidenceException(
-                    "The durable Treasury dispatch payload hash is invalid.");
+                "The durable Treasury dispatch payload hash is invalid.");
+            }
+
             var command = JsonSerializer.Deserialize<AdminWithdrawalDispatchCommand>(lease.Payload, JsonOptions)
                 ?? throw new AdminWithdrawalEvidenceException(
                     "The durable Treasury dispatch payload is invalid.");
             if (command.TenantId == Guid.Empty || lease.TenantId != command.TenantId || lease.RunId != command.RunId)
+            {
                 throw new AdminWithdrawalEvidenceException(
-                    "The durable Treasury dispatch payload is not bound to its tenant outbox row.");
+                "The durable Treasury dispatch payload is not bound to its tenant outbox row.");
+            }
+
             var receipt = await _provider.DispatchAsync(command, cancellationToken);
             if (!_evidence.Verify(receipt))
+            {
                 throw new AdminWithdrawalEvidenceException(
-                    "The Treasury provider dispatch receipt is invalid.");
+                "The Treasury provider dispatch receipt is invalid.");
+            }
+
             ValidateBinding(command, receipt);
 
             return await PostgreSqlTransactionExecutor.ExecuteAsync(
@@ -111,14 +128,19 @@ public sealed class PostgreSqlAdminWithdrawalDispatchOutboxProcessor :
             var currentOutbox = await _db.Set<AdminWithdrawalDispatchOutboxRow>()
                 .SingleAsync(row => row.Id == lease.Id, cancellationToken);
             if (currentOutbox.CompletedAt.HasValue)
-                return new AdminWithdrawalDispatchOutboxResult(
+                {
+                    return new AdminWithdrawalDispatchOutboxResult(
                     command.TenantId, command.RunId, receipt.Outcome, false, currentOutbox.AttemptCount);
-            if (!string.Equals(currentOutbox.LeaseOwner, workerId.Trim(), StringComparison.Ordinal) ||
-                !currentOutbox.LeaseExpiresAt.HasValue || currentOutbox.LeaseExpiresAt.Value < now)
-                throw new AdminWithdrawalStaleCommandException(
-                    "The Treasury dispatch outbox lease is stale.");
+                }
 
-            var run = _runs.Get(command.TenantId, command.RunId);
+                if (!string.Equals(currentOutbox.LeaseOwner, workerId.Trim(), StringComparison.Ordinal) ||
+                !currentOutbox.LeaseExpiresAt.HasValue || currentOutbox.LeaseExpiresAt.Value < now)
+                {
+                    throw new AdminWithdrawalStaleCommandException(
+                    "The Treasury dispatch outbox lease is stale.");
+                }
+
+                var run = _runs.Get(command.TenantId, command.RunId);
             if (run.State == AdminWithdrawalRunState.Dispatching)
             {
                 var changed = run with
@@ -180,8 +202,11 @@ public sealed class PostgreSqlAdminWithdrawalDispatchOutboxProcessor :
                 """)
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null)
-            return null;
-        row.LeaseOwner = workerId;
+            {
+                return null;
+            }
+
+            row.LeaseOwner = workerId;
         row.LeaseExpiresAt = now.AddMinutes(2);
         row.AttemptCount = checked(row.AttemptCount + 1);
         await _db.SaveChangesAsync(cancellationToken);
@@ -212,8 +237,10 @@ public sealed class PostgreSqlAdminWithdrawalDispatchOutboxProcessor :
             !string.Equals(receipt.SourceAssetKey, command.SourceAssetKey, StringComparison.Ordinal) ||
             !string.Equals(receipt.DestinationHash, command.DestinationHash, StringComparison.Ordinal) ||
             receipt.ObservedAt < command.RequestedAt)
+        {
             throw new AdminWithdrawalEvidenceException(
-                "The Treasury dispatch receipt is not bound to the durable outbox command.");
+            "The Treasury dispatch receipt is not bound to the durable outbox command.");
+        }
     }
 
     private static string Hash(string value) => Convert.ToHexStringLower(

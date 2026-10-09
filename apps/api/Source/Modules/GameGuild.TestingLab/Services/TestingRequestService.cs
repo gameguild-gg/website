@@ -48,15 +48,26 @@ public sealed class TestingRequestService(
     public async Task<bool> CanUserJoinTestingAsync(Guid userId, Guid testingRequestId)
     {
         var request = await requests.GetTestingRequestByIdAsync(testingRequestId).ConfigureAwait(false);
-        if (request == null || request.Status != TestingRequestStatus.Open) return false;
-        if (await participants.IsUserParticipantAsync(testingRequestId, userId).ConfigureAwait(false)) return false;
+        if (request == null || request.Status != TestingRequestStatus.Open)
+        {
+            return false;
+        }
+
+        if (await participants.IsUserParticipantAsync(testingRequestId, userId).ConfigureAwait(false))
+        {
+            return false;
+        }
+
         return !request.MaxTesters.HasValue || request.CurrentTesterCount < request.MaxTesters.Value;
     }
 
     public async Task<TestingRequest> JoinTestingAsync(Guid userId, Guid testingRequestId)
     {
         if (!await CanUserJoinTestingAsync(userId, testingRequestId).ConfigureAwait(false))
+        {
             throw new InvalidOperationException("Testing request is unavailable, full, or already joined.");
+        }
+
         var request = await requests.GetTestingRequestByIdAsync(testingRequestId).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Testing request not found.");
         await participants.AddParticipantAsync(testingRequestId, userId).ConfigureAwait(false);
@@ -69,7 +80,10 @@ public sealed class TestingRequestService(
         var request = await requests.GetTestingRequestByIdAsync(testingRequestId).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Testing request not found.");
         if (!await participants.RemoveParticipantAsync(testingRequestId, userId).ConfigureAwait(false))
+        {
             throw new InvalidOperationException("User is not participating in this testing request.");
+        }
+
         request.CurrentTesterCount = Math.Max(0, request.CurrentTesterCount - 1);
         return await requests.UpdateTestingRequestAsync(request).ConfigureAwait(false);
     }

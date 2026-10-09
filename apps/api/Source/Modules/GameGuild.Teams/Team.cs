@@ -32,7 +32,10 @@ public sealed class Team : EntityBase
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
-        if (ownerUserId == Guid.Empty) throw new ArgumentException("An owner is required.", nameof(ownerUserId));
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new ArgumentException("An owner is required.", nameof(ownerUserId));
+        }
 
         var team = new Team
         {
@@ -47,7 +50,11 @@ public sealed class Team : EntityBase
 
     public TeamMember AddMember(Guid userId, TeamMemberAuthority authority, string? professionalTitle = null)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("A user is required.", nameof(userId));
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException("A user is required.", nameof(userId));
+        }
+
         var current = Members.SingleOrDefault(member => member.UserId == userId && member.DeletedAt == null);
         if (current != null)
         {
@@ -64,7 +71,10 @@ public sealed class Team : EntityBase
     {
         var member = GetActiveMember(userId);
         if (member.Authority == TeamMemberAuthority.Owner && authority != TeamMemberAuthority.Owner)
+        {
             EnsureAnotherActiveOwner(member.UserId);
+        }
+
         member.ChangeAuthority(authority);
     }
 
@@ -72,7 +82,10 @@ public sealed class Team : EntityBase
     {
         var member = GetActiveMember(userId);
         if (member.Authority == TeamMemberAuthority.Owner)
+        {
             EnsureAnotherActiveOwner(member.UserId);
+        }
+
         member.Deactivate();
     }
 
@@ -86,7 +99,9 @@ public sealed class Team : EntityBase
     public new void Restore()
     {
         if (Status != TeamStatus.Archived)
+        {
             throw new InvalidOperationException("Only an archived Team can be restored.");
+        }
 
         Status = TeamStatus.Active;
         IsActive = true;
@@ -104,6 +119,8 @@ public sealed class Team : EntityBase
                 member.Authority == TeamMemberAuthority.Owner &&
                 member.IsActive &&
                 member.DeletedAt == null))
+        {
             throw new InvalidOperationException("A team cannot lose its last active owner.");
+        }
     }
 }

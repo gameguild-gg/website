@@ -10,17 +10,16 @@ namespace GameGuild.Assets.UnitTests.Services;
 public class DeduplicationServiceTests
 {
     private readonly Mock<IAssetContentRepository> _contentRepositoryMock;
-    private readonly Mock<ILogger<DeduplicationService>> _loggerMock;
     private readonly DeduplicationOptions _options;
     private readonly DeduplicationService _service;
 
     public DeduplicationServiceTests()
     {
         _contentRepositoryMock = new Mock<IAssetContentRepository>();
-        _loggerMock = new Mock<ILogger<DeduplicationService>>();
+        Mock<ILogger<DeduplicationService>> loggerMock = new Mock<ILogger<DeduplicationService>>();
         _options = new DeduplicationOptions { Enabled = true, EnablePerceptualHashing = true };
         var optionsMock = Options.Create(_options);
-        _service = new DeduplicationService(_contentRepositoryMock.Object, optionsMock, _loggerMock.Object);
+        _service = new DeduplicationService(_contentRepositoryMock.Object, optionsMock, loggerMock.Object);
     }
 
     [Fact]

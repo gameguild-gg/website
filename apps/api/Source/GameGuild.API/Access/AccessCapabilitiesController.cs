@@ -29,9 +29,14 @@ public sealed class AccessCapabilitiesController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || actor.TenantId is not { } tenantId)
+        {
             return Unauthorized();
+        }
+
         if (!await tenantMembershipChecker.IsUserMemberOfTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false))
+        {
             return Forbid();
+        }
 
         var testingPermissions = await testingLabPermissionService
             .GetUserPermissionsAsync(userId, tenantId)
@@ -46,7 +51,10 @@ public sealed class AccessCapabilitiesController(
             member.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (isActiveCommitteeReviewer)
+        {
             capabilities.Add(DashboardCapabilities.TestingLabReviewApplications);
+        }
+
         return Ok(new AccessCapabilitiesResponse(
             capabilities.Order(StringComparer.Ordinal).ToArray()));
     }

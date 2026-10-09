@@ -15,22 +15,41 @@ public sealed class BillingConfigurationProductionValidator(
         ArgumentNullException.ThrowIfNull(options);
 
         if (!RequiresProviderConfiguration(environment.EnvironmentName))
+        {
             return ValidateOptionsResult.Success;
+        }
 
         var warnings = new List<string>();
         var stripe = options.Stripe;
         if (string.IsNullOrWhiteSpace(stripe.WebhookSecret))
+        {
             warnings.Add($"Stripe.{nameof(StripeSettings.WebhookSecret)} is not set.");
+        }
+
         if (string.IsNullOrWhiteSpace(stripe.WebhookEndpointId))
+        {
             warnings.Add($"Stripe.{nameof(StripeSettings.WebhookEndpointId)} is not set.");
+        }
+
         if (string.IsNullOrWhiteSpace(stripe.AccountId))
+        {
             warnings.Add($"Stripe.{nameof(StripeSettings.AccountId)} is not set.");
+        }
+
         if (string.IsNullOrWhiteSpace(stripe.ApiVersion))
+        {
             warnings.Add($"Stripe.{nameof(StripeSettings.ApiVersion)} is not set.");
+        }
+
         if (!options.Webhook.VerifySignatures)
+        {
             warnings.Add($"Webhook.{nameof(WebhookSettings.VerifySignatures)} signature verification is disabled.");
+        }
+
         if (string.Equals(environment.EnvironmentName, Environments.Production, StringComparison.OrdinalIgnoreCase) && !stripe.LiveMode)
+        {
             warnings.Add($"Stripe.{nameof(StripeSettings.LiveMode)} is disabled in Production.");
+        }
 
         if (warnings.Count != 0)
         {

@@ -104,11 +104,31 @@ public class UserLearningProfile : EntityBase
         string? learningGoals = null,
         string? skills = null)
     {
-        if (preferredCategories != null) PreferredCategories = preferredCategories;
-        if (preferredDifficulty != null) PreferredDifficulty = preferredDifficulty;
-        if (preferredDuration != null) PreferredDuration = preferredDuration;
-        if (learningGoals != null) LearningGoals = learningGoals;
-        if (skills != null) Skills = skills;
+        if (preferredCategories != null)
+        {
+            PreferredCategories = preferredCategories;
+        }
+
+        if (preferredDifficulty != null)
+        {
+            PreferredDifficulty = preferredDifficulty;
+        }
+
+        if (preferredDuration != null)
+        {
+            PreferredDuration = preferredDuration;
+        }
+
+        if (learningGoals != null)
+        {
+            LearningGoals = learningGoals;
+        }
+
+        if (skills != null)
+        {
+            Skills = skills;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 
@@ -128,8 +148,11 @@ public class UserLearningProfile : EntityBase
 
     public void RemoveSkill(string skill)
     {
-        if (string.IsNullOrEmpty(Skills)) return;
-        
+        if (string.IsNullOrEmpty(Skills))
+        {
+            return;
+        }
+
         var currentSkills = ParseSkills(Skills);
         currentSkills.RemoveAll(s => s.Equals(skill, StringComparison.OrdinalIgnoreCase));
         Skills = currentSkills.Count > 0 ? System.Text.Json.JsonSerializer.Serialize(currentSkills) : null;

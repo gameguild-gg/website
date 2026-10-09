@@ -14,16 +14,30 @@ public sealed class BountyEligibilityPolicy
         ArgumentNullException.ThrowIfNull(requirements);
         ArgumentNullException.ThrowIfNull(snapshot);
         if (claimantId == Guid.Empty || snapshot.ClaimantId != claimantId)
+        {
             throw new BountyClaimIneligibleException("Eligibility evidence is not bound to the claimant.");
+        }
+
         if (snapshot.ObservedAt > claimedAt || snapshot.ExpiresAt <= claimedAt ||
             snapshot.ExpiresAt <= snapshot.ObservedAt)
+        {
             throw new BountyClaimIneligibleException("Eligibility evidence is unavailable or stale.");
+        }
+
         if (requirements.RequiresPrerequisite && !snapshot.PrerequisiteCompleted)
+        {
             throw new BountyClaimIneligibleException("The claimant has not completed the required prerequisite.");
+        }
+
         if (snapshot.Reputation < requirements.MinimumReputation)
+        {
             throw new BountyClaimIneligibleException("The claimant does not meet the reputation threshold.");
+        }
+
         if (requirements.RequiresInstructorVerification && !snapshot.InstructorVerified)
+        {
             throw new BountyClaimIneligibleException("The claimant is not instructor verified.");
+        }
     }
 }
 
@@ -104,22 +118,30 @@ public sealed class BountyClaimRiskGate
             !string.Equals(context.ProviderReferenceHash, ProviderReference(bounty.Id), StringComparison.Ordinal) ||
             context.EntityGraphVersion != approval.EntityCluster.Version ||
             !string.Equals(context.EntityGraphEvidenceHash, approval.EntityCluster.EvidenceHash, StringComparison.Ordinal))
+        {
             throw new BountyRiskExposureException("The risk decision is not bound to the final bounty claim.");
+        }
 
         var presentTypes = approval.EntityCluster.Nodes.Select(node => node.Type).ToHashSet();
         if (EntityTypes.Any(type => !presentTypes.Contains(type)))
+        {
             throw new BountyRiskExposureException("Bounty claim entity-graph exposure is incomplete.");
+        }
 
         var presentDimensions = approval.Limits.Select(limit => limit.Key.Dimension).ToHashSet();
         if (LimitDimensions.Any(dimension => !presentDimensions.Contains(dimension)))
+        {
             throw new BountyRiskExposureException("Bounty claim aggregate-limit exposure is incomplete.");
+        }
 
         var rootSubjects = approval.Limits
             .Where(limit => limit.Key.Dimension == RiskLimitDimension.SourceRoot)
             .Select(limit => limit.Key.SubjectHash)
             .ToHashSet(StringComparer.Ordinal);
         if (roots.Any(root => !rootSubjects.Contains(root.Value.ToString("N"))))
+        {
             throw new BountyRiskExposureException("Every bounty source root requires an aggregate limit.");
+        }
 
         if (!approval.Limits.Any(limit =>
                 limit.Key.Dimension == RiskLimitDimension.Destination &&
@@ -127,7 +149,9 @@ public sealed class BountyClaimRiskGate
             !approval.Limits.Any(limit =>
                 limit.Key.Dimension == RiskLimitDimension.CounterpartyPair &&
                 string.Equals(limit.Key.SubjectHash, CounterpartyPair(bounty.PosterId, claimantId), StringComparison.Ordinal)))
+        {
             throw new BountyRiskExposureException("Destination and counterparty-pair limits must bind the claim.");
+        }
 
         var decision = _decisions.AuthorizeValueMovement(approval.Decision, context, claimedAt);
         var counters = _counters.Reserve(
@@ -144,8 +168,16 @@ public sealed class BountyClaimRiskGate
 
     public static string CounterpartyPair(Guid posterId, Guid claimantId)
     {
-        if (posterId == Guid.Empty) throw new ArgumentException("Poster ID cannot be empty.", nameof(posterId));
-        if (claimantId == Guid.Empty) throw new ArgumentException("Claimant ID cannot be empty.", nameof(claimantId));
+        if (posterId == Guid.Empty)
+        {
+            throw new ArgumentException("Poster ID cannot be empty.", nameof(posterId));
+        }
+
+        if (claimantId == Guid.Empty)
+        {
+            throw new ArgumentException("Claimant ID cannot be empty.", nameof(claimantId));
+        }
+
         return $"{posterId:N}:{claimantId:N}";
     }
 }

@@ -49,7 +49,10 @@ public class ResourceSettingsRepository(IApplicationDbContext context) : IResour
     {
         var settings = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (settings == null) return false;
+        if (settings == null)
+        {
+            return false;
+        }
 
         ResourceSettingsSet.Remove(settings);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -61,7 +64,10 @@ public class ResourceSettingsRepository(IApplicationDbContext context) : IResour
     {
         var settings = await GetByKeyAsync(tenantId, key, cancellationToken).ConfigureAwait(false);
 
-        if (settings == null) return false;
+        if (settings == null)
+        {
+            return false;
+        }
 
         ResourceSettingsSet.Remove(settings);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -86,7 +92,10 @@ public class ResourceSettingsRepository(IApplicationDbContext context) : IResour
         {
             var userSetting = await GetByUserKeyAsync(userId.Value, key, cancellationToken).ConfigureAwait(false);
 
-            if (userSetting != null) return userSetting.GetEffectiveValue();
+            if (userSetting != null)
+            {
+                return userSetting.GetEffectiveValue();
+            }
         }
 
         // Fall back to tenant-level setting

@@ -62,7 +62,11 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         Guid payeeId,
         CancellationToken cancellationToken = default)
     {
-        if (payeeId == Guid.Empty) throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        if (payeeId == Guid.Empty)
+        {
+            throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        }
+
         EnsureConfigured();
         var binding = await _db.Set<PayoutConnectAccountRow>().SingleOrDefaultAsync(
             row => row.PayeeId == payeeId, cancellationToken);
@@ -108,7 +112,11 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         Guid payeeId,
         CancellationToken cancellationToken = default)
     {
-        if (payeeId == Guid.Empty) throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        if (payeeId == Guid.Empty)
+        {
+            throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        }
+
         EnsureConfigured();
         var binding = await _db.Set<PayoutConnectAccountRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.PayeeId == payeeId, cancellationToken)
@@ -124,8 +132,11 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         EnsureConfigured();
         if (command.OperationId == Guid.Empty || command.Amount.Units <= 0 ||
             command.Amount.Units % HardUnitsPerUsdMinor != 0)
+        {
             throw new PayoutEligibilityException(
-                "Stripe dispatch requires a positive amount aligned to the fixed 1:1000 hard-unit scale.");
+            "Stripe dispatch requires a positive amount aligned to the fixed 1:1000 hard-unit scale.");
+        }
+
         var amount = command.Amount.Units / HardUnitsPerUsdMinor;
         try
         {
@@ -144,7 +155,10 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
                 cancellationToken);
             var raw = await response.Content.ReadAsStringAsync(cancellationToken);
             if ((int)response.StatusCode >= 500)
+            {
                 return CreateAmbiguousReceipt(command, Hash(raw), _time.GetUtcNow());
+            }
+
             response.EnsureSuccessStatusCode();
             using var document = JsonDocument.Parse(raw);
             var payoutId = RequireString(document.RootElement, "id");
@@ -170,7 +184,11 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         string providerPayoutId,
         CancellationToken cancellationToken = default)
     {
-        if (operationId == Guid.Empty) throw new ArgumentException("Operation ID is required.", nameof(operationId));
+        if (operationId == Guid.Empty)
+        {
+            throw new ArgumentException("Operation ID is required.", nameof(operationId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(providerPayoutId);
         EnsureConfigured();
         var operation = await _db.Set<PayoutOperationRow>().AsNoTracking()
@@ -210,7 +228,10 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         EnsureConfigured();
         if (!StripeSignature.Verify(rawPayload.Span, signatureHeader, _options.WebhookSecret,
                 receivedAt, _options.WebhookTolerance))
+        {
             throw new PayoutEvidenceException("Stripe Connect webhook signature or timestamp is invalid.");
+        }
+
         using var document = JsonDocument.Parse(rawPayload);
         var root = document.RootElement;
         var eventId = RequireString(root, "id");
@@ -220,14 +241,20 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         var payoutId = RequireString(payout, "id");
         var metadata = payout.GetProperty("metadata");
         if (!Guid.TryParseExact(RequireString(metadata, "operation_id"), "N", out var operationId))
+        {
             throw new PayoutEvidenceException("Stripe payout webhook has no valid operation binding.");
+        }
+
         var destinationHash = RequireString(metadata, "destination_hash");
         var operation = await _db.Set<PayoutOperationRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.Id == operationId, cancellationToken)
             ?? throw new PayoutEvidenceException("Stripe payout webhook references an unknown operation.");
         if (!string.Equals(operation.ProviderAccountId, accountId, StringComparison.Ordinal) ||
             !string.Equals(operation.DestinationHash, destinationHash, StringComparison.Ordinal))
+        {
             throw new PayoutProviderBindingException("Stripe payout webhook binding does not match the operation.");
+        }
+
         var outcome = type switch
         {
             "payout.paid" => PayoutProviderOutcome.Succeeded,
@@ -314,9 +341,14 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
         response.EnsureSuccessStatusCode();
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
         foreach (var item in document.RootElement.GetProperty("data").EnumerateArray())
+        {
             if (item.TryGetProperty("metadata", out var metadata) &&
-                OptionalString(metadata, "operation_id") == operation.Id.ToString("N"))
+            OptionalString(metadata, "operation_id") == operation.Id.ToString("N"))
+            {
                 return RequireString(item, "id");
+            }
+        }
+
         throw new PayoutEvidenceException("Stripe reconciliation found no payout for the operation.");
     }
 
@@ -330,9 +362,21 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
     {
         var request = new HttpRequestMessage(method, new Uri(new Uri(_options.ApiBaseUrl), path));
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _options.SecretKey);
-        if (!string.IsNullOrWhiteSpace(idempotencyKey)) request.Headers.Add("Idempotency-Key", idempotencyKey.Trim());
-        if (!string.IsNullOrWhiteSpace(connectedAccount)) request.Headers.Add("Stripe-Account", connectedAccount.Trim());
-        if (fields.Count > 0) request.Content = new FormUrlEncodedContent(fields);
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            request.Headers.Add("Idempotency-Key", idempotencyKey.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(connectedAccount))
+        {
+            request.Headers.Add("Stripe-Account", connectedAccount.Trim());
+        }
+
+        if (fields.Count > 0)
+        {
+            request.Content = new FormUrlEncodedContent(fields);
+        }
+
         return await _http.SendAsync(request, cancellationToken);
     }
 
@@ -368,8 +412,10 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
             !Uri.TryCreate(_options.ReturnUrl, UriKind.Absolute, out _) ||
             !Uri.TryCreate(_options.RefreshUrl, UriKind.Absolute, out _) ||
             _options.WebhookTolerance <= TimeSpan.Zero || _options.AccountEvidenceLifetime <= TimeSpan.Zero)
+        {
             throw new PayoutExecutionDisabledException(
-                "Stripe Connect remains disabled until endpoint, credentials, URLs and evidence policies are configured.");
+            "Stripe Connect remains disabled until endpoint, credentials, URLs and evidence policies are configured.");
+        }
     }
 
     private static PayoutProviderOutcome MapPayoutOutcome(string? status) => status switch
@@ -384,10 +430,17 @@ public sealed class StripeConnectPayoutProvider : IConnectPayoutProvider, IStrip
     {
         if (!account.TryGetProperty("external_accounts", out var external) ||
             !external.TryGetProperty("data", out var data) || data.GetArrayLength() == 0)
+        {
             return null;
+        }
+
         var destination = data[0];
         var fingerprint = OptionalString(destination, "fingerprint");
-        if (string.IsNullOrWhiteSpace(fingerprint)) return null;
+        if (string.IsNullOrWhiteSpace(fingerprint))
+        {
+            return null;
+        }
+
         return Hash(string.Join('|',
             fingerprint,
             OptionalString(destination, "currency") ?? string.Empty,
@@ -452,7 +505,11 @@ public static class StripePayoutEvidenceSigning
 
     private static string Sign(string payload, string secret)
     {
-        if (Encoding.UTF8.GetByteCount(secret) < 32) return string.Empty;
+        if (Encoding.UTF8.GetByteCount(secret) < 32)
+        {
+            return string.Empty;
+        }
+
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
         return Convert.ToHexStringLower(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)));
     }
@@ -476,19 +533,41 @@ public static class StripeSignature
         TimeSpan tolerance)
     {
         if (string.IsNullOrWhiteSpace(header) || string.IsNullOrWhiteSpace(secret) || tolerance <= TimeSpan.Zero)
+        {
             return false;
+        }
+
         long timestamp = 0;
         var signatures = new List<string>();
         foreach (var part in header.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var separator = part.IndexOf('=');
-            if (separator <= 0) continue;
-            if (part[..separator] == "t") long.TryParse(part[(separator + 1)..], out timestamp);
-            if (part[..separator] == "v1") signatures.Add(part[(separator + 1)..]);
+            if (separator <= 0)
+            {
+                continue;
+            }
+
+            if (part[..separator] == "t")
+            {
+                long.TryParse(part[(separator + 1)..], out timestamp);
+            }
+
+            if (part[..separator] == "v1")
+            {
+                signatures.Add(part[(separator + 1)..]);
+            }
         }
-        if (timestamp <= 0 || signatures.Count == 0) return false;
+        if (timestamp <= 0 || signatures.Count == 0)
+        {
+            return false;
+        }
+
         var issuedAt = DateTimeOffset.FromUnixTimeSeconds(timestamp);
-        if (issuedAt > receivedAt || receivedAt - issuedAt > tolerance) return false;
+        if (issuedAt > receivedAt || receivedAt - issuedAt > tolerance)
+        {
+            return false;
+        }
+
         var signed = Encoding.UTF8.GetBytes(timestamp.ToString(CultureInfo.InvariantCulture) + ".")
             .Concat(payload.ToArray()).ToArray();
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));

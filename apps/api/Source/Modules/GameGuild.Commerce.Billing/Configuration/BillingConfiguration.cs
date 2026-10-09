@@ -45,13 +45,19 @@ public class BillingConfiguration : IValidatableObject
     public IEnumerable<string> GetEnabledProviders()
     {
         if (!string.IsNullOrEmpty(Stripe.SecretKey))
+        {
             yield return PaymentProviders.Stripe;
+        }
 
         if (!string.IsNullOrEmpty(PayPal.ClientId))
+        {
             yield return PaymentProviders.PayPal;
+        }
 
         if (!string.IsNullOrEmpty(ApplePay.BundleId))
+        {
             yield return PaymentProviders.AppleAppStore;
+        }
     }
 
     /// <summary>
@@ -230,19 +236,25 @@ public class BillingConfiguration : IValidatableObject
         if (provider == null || provider == PaymentProviders.Stripe)
         {
             if (!string.IsNullOrEmpty(Stripe.SecretKey) && string.IsNullOrEmpty(Stripe.PublishableKey))
+            {
                 errors.Add("Stripe: PublishableKey is required when SecretKey is set");
+            }
         }
 
         if (provider == null || provider == PaymentProviders.PayPal)
         {
             if (!string.IsNullOrEmpty(PayPal.ClientId) && string.IsNullOrEmpty(PayPal.ClientSecret))
+            {
                 errors.Add("PayPal: ClientSecret is required when ClientId is set");
+            }
         }
 
         if (provider == null || provider == PaymentProviders.AppleAppStore)
         {
             if (!string.IsNullOrEmpty(ApplePay.BundleId) && string.IsNullOrEmpty(ApplePay.SharedSecret))
+            {
                 errors.Add("ApplePay: SharedSecret is required when BundleId is set");
+            }
         }
 
         return new BillingConfigurationValidationResult(errors.Count == 0, errors);

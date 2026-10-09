@@ -84,7 +84,7 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
                 return BadRequest(new { error = "Missing project ID header" });
             }
 
-            logger.LogInformation("Processing Google Pay webhook for project: {ProjectId}", projectId);
+            logger.LogInformation("Processing Google Pay webhook for project: {ProjectId}", LogRedaction.Sanitize(projectId));
 
             var result = await sender.Send(new ProcessGooglePayWebhookCommand(payload, authHeader, projectId), ct).ConfigureAwait(false);
 
@@ -92,7 +92,7 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
         }
         catch (InvalidWebhookSignatureException ex)
         {
-            logger.LogWarning("Invalid Google Pay webhook signature: {Message}", ex.Message);
+            logger.LogWarning("Invalid Google Pay webhook signature: {Message}", LogRedaction.Sanitize(ex.Message));
 
             return Unauthorized(new { error = "Invalid signature" });
         }
@@ -139,7 +139,7 @@ public sealed class BillingWebhooksController(ISender sender, ILogger<BillingWeb
             return BadRequest(new { error = "Missing signature header" });
         }
 
-        logger.LogInformation("Processing Apple Pay webhook for merchant: {MerchantId}", merchantId);
+        logger.LogInformation("Processing Apple Pay webhook for merchant: {MerchantId}", LogRedaction.Sanitize(merchantId));
 
         var result = await sender.Send(
             new ProcessApplePayWebhookCommand(payload, merchantId, signature), ct).ConfigureAwait(false);

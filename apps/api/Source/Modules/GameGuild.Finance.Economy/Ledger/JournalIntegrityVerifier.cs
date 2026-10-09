@@ -72,11 +72,19 @@ public sealed class JournalIntegrityVerifier : IJournalIntegrityVerifier
         foreach (var entry in entries.OrderBy(item => item.Sequence))
         {
             if (entry.Sequence != expectedSequence)
+            {
                 return Failed(JournalIntegrityFailureCode.SequenceGap, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!string.Equals(entry.PreviousHash, previousHash, StringComparison.Ordinal))
+            {
                 return Failed(JournalIntegrityFailureCode.PreviousHashMismatch, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (entry.HashAlgorithmVersion is not (1 or 2) || string.IsNullOrWhiteSpace(entry.CanonicalPayloadHash))
+            {
                 return Failed(JournalIntegrityFailureCode.CanonicalPayloadMissing, fromSequence, lastVerifiedSequence, previousHash);
+            }
 
             var expectedHash = entry.HashAlgorithmVersion == 1
                 ? JournalChain.ComputeVerificationHash(
@@ -90,27 +98,52 @@ public sealed class JournalIntegrityVerifier : IJournalIntegrityVerifier
                     entry.PostingGroupId,
                     entry.CanonicalPayloadHash);
             if (!string.Equals(entry.Hash, expectedHash, StringComparison.Ordinal))
+            {
                 return Failed(JournalIntegrityFailureCode.EntryHashMismatch, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!entry.PostingContractValid)
+            {
                 return Failed(JournalIntegrityFailureCode.PostingContractInvalid, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (entry.Lines.Any(line => line.AmountUnits <= 0))
+            {
                 return Failed(JournalIntegrityFailureCode.InvalidLineAmount, fromSequence, lastVerifiedSequence, previousHash);
+            }
 
             var parityValid = entry.Lines
                 .GroupBy(line => line.Currency)
                 .All(group => group.Sum(line => line.Side == EntrySide.Debit ? line.AmountUnits : -line.AmountUnits) == 0);
             if (!parityValid)
+            {
                 return Failed(JournalIntegrityFailureCode.CurrencyParityMismatch, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!entry.SourceStampValid)
+            {
                 return Failed(JournalIntegrityFailureCode.SourceStampInvalid, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!entry.AllocationsValid)
+            {
                 return Failed(JournalIntegrityFailureCode.AllocationInvalid, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!entry.LineageValid)
+            {
                 return Failed(JournalIntegrityFailureCode.LineageInvalid, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!entry.RootRangesValid)
+            {
                 return Failed(JournalIntegrityFailureCode.RootRangeInvalid, fromSequence, lastVerifiedSequence, previousHash);
+            }
+
             if (!entry.CumulativeReversalsValid)
+            {
                 return Failed(JournalIntegrityFailureCode.CumulativeReversalInvalid, fromSequence, lastVerifiedSequence, previousHash);
+            }
 
             previousHash = entry.Hash;
             lastVerifiedSequence = entry.Sequence;
@@ -138,7 +171,11 @@ public sealed class JournalIntegrityVerifier : IJournalIntegrityVerifier
         Guid postingGroupId,
         string requestHash)
     {
-        if (postingGroupId == Guid.Empty) return string.Empty;
+        if (postingGroupId == Guid.Empty)
+        {
+            return string.Empty;
+        }
+
         var canonical = string.Join('|', previousHash, postingGroupId.ToString(),
             sequence.ToString(System.Globalization.CultureInfo.InvariantCulture), requestHash);
         return Convert.ToHexStringLower(

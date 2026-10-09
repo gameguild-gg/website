@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 
 namespace GameGuild.Features;
 
@@ -27,7 +28,8 @@ public sealed record SyncCapabilitiesFromPlanCommand(Guid TenantId) : ICommand;
 public sealed class FeatureOperationCommandHandler(
     IFeatureFlagEvaluationService evaluationService,
     ICapabilityService capabilityService,
-    ILogger<FeatureOperationCommandHandler> logger) :
+    ILogger<FeatureOperationCommandHandler> logger,
+    IActorContextAccessor actorContextAccessor) :
     ICommandHandler<EvaluateFeatureOperationCommand, FeatureEvaluationResult>,
     ICommandHandler<BulkEvaluateFeatureOperationCommand, BulkEvaluateFeaturesResponse>,
     ICommandHandler<SetCapabilityOverrideCommand>,
@@ -68,12 +70,13 @@ public sealed class FeatureOperationCommandHandler(
 
     public async Task<Unit> Handle(SetCapabilityOverrideCommand command, CancellationToken cancellationToken)
     {
+        var userId = CapabilityAccessGuard.RequireAdministrator(actorContextAccessor.ActorContext, command.TenantId);
         await capabilityService.SetCapabilityOverrideAsync(
             command.TenantId,
             command.Capability,
             command.IsEnabled,
             command.Source,
-            command.UserId,
+            userId,
             command.Reason,
             command.ExpiresAt,
             cancellationToken).ConfigureAwait(false);
@@ -82,10 +85,11 @@ public sealed class FeatureOperationCommandHandler(
 
     public async Task<Unit> Handle(RemoveCapabilityOverrideCommand command, CancellationToken cancellationToken)
     {
+        var userId = CapabilityAccessGuard.RequireAdministrator(actorContextAccessor.ActorContext, command.TenantId);
         await capabilityService.RemoveCapabilityOverrideAsync(
             command.TenantId,
             command.Capability,
-            command.UserId,
+            userId,
             command.Reason,
             cancellationToken).ConfigureAwait(false);
         return Unit.Value;
@@ -93,6 +97,7 @@ public sealed class FeatureOperationCommandHandler(
 
     public async Task<Unit> Handle(SyncCapabilitiesFromPlanCommand command, CancellationToken cancellationToken)
     {
+        CapabilityAccessGuard.RequireAdministrator(actorContextAccessor.ActorContext, command.TenantId);
         await capabilityService.SyncCapabilitiesFromPlanAsync(command.TenantId, cancellationToken).ConfigureAwait(false);
         return Unit.Value;
     }

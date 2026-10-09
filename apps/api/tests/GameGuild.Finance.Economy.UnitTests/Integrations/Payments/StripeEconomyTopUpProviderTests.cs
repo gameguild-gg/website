@@ -97,8 +97,11 @@ public sealed class StripeEconomyTopUpProviderTests
             valid with { IdempotencyKey = "" }
         ];
         foreach (var request in invalid)
+        {
             FluentActions.Invoking(() => StripeEconomyTopUpProvider.Validate(request))
-                .Should().Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
+        }
+
         _ = new EconomyTopUpProviderUnavailableException("unavailable", new Exception());
         _ = new EconomyTopUpProviderAmbiguousException("ambiguous", new Exception());
     }

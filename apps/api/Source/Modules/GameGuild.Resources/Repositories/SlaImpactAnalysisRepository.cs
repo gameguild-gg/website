@@ -45,7 +45,10 @@ public class SlaImpactAnalysisRepository(IApplicationDbContext context) : ISlaIm
     {
         var analysis = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (analysis == null) return false;
+        if (analysis == null)
+        {
+            return false;
+        }
 
         SlaImpactAnalyses.Remove(analysis);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -99,9 +102,15 @@ public class SlaImpactAnalysisRepository(IApplicationDbContext context) : ISlaIm
         // Optionally filter by ResourceQuota type if needed
         query = query.Where(a => a.ResourceQuota!.Type == type);
 
-        if (fromDate.HasValue) query = query.Where(a => a.ViolationStartTime >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(a => a.ViolationStartTime >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(a => a.ViolationStartTime <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(a => a.ViolationStartTime <= toDate.Value);
+        }
 
         return await query.OrderByDescending(a => a.ViolationStartTime).ToListAsync(cancellationToken);
     }

@@ -102,8 +102,8 @@ public static class RateLimitingServiceCollectionExtensions
                     context.HttpContext.RequestServices.GetService<ILoggerFactory>()?
                         .CreateLogger("GameGuild.API.RateLimiting")
                         .LogWarning("Rate limit exceeded for {Path} using policy {Policy}",
-                            context.HttpContext.Request.Path,
-                            policy);
+                            LogRedaction.Sanitize(context.HttpContext.Request.Path),
+                            LogRedaction.Sanitize(policy));
 
                     var problemDetails = new ProblemDetails
                     {

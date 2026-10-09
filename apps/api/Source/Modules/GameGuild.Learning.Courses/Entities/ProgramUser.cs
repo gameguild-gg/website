@@ -163,7 +163,9 @@ public class ProgramUser : EntityBase
     public void Complete(PercentValue? finalGrade = null)
     {
         if (CompletedAt.HasValue)
+        {
             return; // Already completed
+        }
 
         CompletedAt = SystemClock.UtcNow;
         CompletionPercentage = PercentValue.Hundred;
@@ -235,7 +237,9 @@ public class ProgramUser : EntityBase
             .Select(value => value!.Value)
             .ToArray();
         if (grades is not { Length: > 0 })
+        {
             return null;
+        }
 
         return PercentValue.Average(grades);
     }
@@ -246,11 +250,15 @@ public class ProgramUser : EntityBase
     public bool CanAccessContent(Guid contentId)
     {
         if (!IsActive)
+        {
             return false;
+        }
 
         var content = Program.ProgramContents?.FirstOrDefault(pc => pc.Id == contentId);
         if (content == null)
+        {
             return false;
+        }
 
         // Basic access check - can be extended with prerequisites logic
         return content.IsAccessibleBy(UserId);

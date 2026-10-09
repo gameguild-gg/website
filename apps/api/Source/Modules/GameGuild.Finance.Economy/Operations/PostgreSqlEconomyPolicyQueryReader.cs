@@ -62,11 +62,18 @@ public sealed class PostgreSqlEconomyPolicyQueryReader : IEconomyPolicyQueryRead
     {
         ValidateTenantAndLimit(tenantId, limit);
         if (capability is not null && !Enum.IsDefined(capability.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(capability));
+        }
+
         var position = DecodeCursor(cursor);
         var query = _db.Set<EconomyCapabilityPolicyRow>().AsNoTracking()
             .Where(row => row.TenantId == null || row.TenantId == tenantId);
-        if (capability is not null) query = query.Where(row => row.Capability == capability.Value);
+        if (capability is not null)
+        {
+            query = query.Where(row => row.Capability == capability.Value);
+        }
+
         if (position is not null)
         {
             var proposedAt = position.Value.ProposedAt;
@@ -114,7 +121,11 @@ public sealed class PostgreSqlEconomyPolicyQueryReader : IEconomyPolicyQueryRead
             .SingleOrDefaultAsync(item => item.Id == policyId &&
                                           (item.TenantId == null || item.TenantId == tenantId),
                 cancellationToken);
-        if (policy is null) return Array.Empty<EconomyPolicyAuditEntry>();
+        if (policy is null)
+        {
+            return Array.Empty<EconomyPolicyAuditEntry>();
+        }
+
         var approvals = await _db.Set<EconomyCapabilityPolicyApprovalRow>().AsNoTracking()
             .Where(item => item.PolicyId == policyId)
             .OrderBy(item => item.ApprovedAt)
@@ -134,13 +145,20 @@ public sealed class PostgreSqlEconomyPolicyQueryReader : IEconomyPolicyQueryRead
 
     internal static (DateTimeOffset ProposedAt, Guid Id)? DecodeCursor(string? cursor)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var ticks) ||
             !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException("Economy policy cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 
@@ -167,13 +185,27 @@ public sealed class PostgreSqlEconomyPolicyQueryReader : IEconomyPolicyQueryRead
 
     private static void ValidateTenantAndLimit(Guid tenantId, int limit)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
     }
 
     private static void ValidateTenantAndPolicy(Guid tenantId, Guid policyId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (policyId == Guid.Empty) throw new ArgumentException("Policy ID cannot be empty.", nameof(policyId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (policyId == Guid.Empty)
+        {
+            throw new ArgumentException("Policy ID cannot be empty.", nameof(policyId));
+        }
     }
 }

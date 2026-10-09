@@ -17,6 +17,8 @@ public class NotificationConfigurationTests
         entityType.FindProperty(nameof(Notification.Type))!.GetMaxLength().Should().Be(50);
         entityType.FindProperty(nameof(Notification.Channel))!.GetMaxLength().Should().Be(50);
         entityType.FindProperty(nameof(Notification.Priority))!.GetMaxLength().Should().Be(20);
+        entityType.FindProperty(nameof(Notification.Metadata))!.GetMaxLength().Should().BeNull();
+        entityType.FindProperty(nameof(Notification.Metadata))!.FindAnnotation("Relational:ColumnType")!.Value.Should().Be("text");
         entityType.FindNavigation(nameof(Notification.Template)).Should().NotBeNull();
     }
 

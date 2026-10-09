@@ -119,11 +119,15 @@ public class ConditionalPolicyEvaluator(
     {
         // Check permission type filter
         if (!policy.AppliesTo(context.Action))
+        {
             return false;
+        }
 
         // Check resource type filter
         if (!policy.AppliesToResourceType(context.ResourceType))
+        {
             return false;
+        }
 
         return true;
     }
@@ -134,35 +138,45 @@ public class ConditionalPolicyEvaluator(
         if (!string.IsNullOrEmpty(policy.TimeConditions))
         {
             if (!EvaluateTimeConditions(policy.TimeConditions))
+            {
                 return false;
+            }
         }
 
         // Evaluate environment conditions
         if (!string.IsNullOrEmpty(policy.EnvironmentConditions))
         {
             if (!EvaluateEnvironmentConditions(policy.EnvironmentConditions, context))
+            {
                 return false;
+            }
         }
 
         // Evaluate location conditions
         if (!string.IsNullOrEmpty(policy.LocationConditions))
         {
             if (!EvaluateLocationConditions(policy.LocationConditions, context))
+            {
                 return false;
+            }
         }
 
         // Evaluate device conditions
         if (!string.IsNullOrEmpty(policy.DeviceConditions))
         {
             if (!EvaluateDeviceConditions(policy.DeviceConditions, context))
+            {
                 return false;
+            }
         }
 
         // Evaluate custom conditions
         if (!string.IsNullOrEmpty(policy.CustomConditions))
         {
             if (!EvaluateCustomConditions(policy.CustomConditions, context))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -173,7 +187,10 @@ public class ConditionalPolicyEvaluator(
         try
         {
             var conditions = JsonSerializer.Deserialize<TimeConditions>(timeConditionsJson);
-            if (conditions == null) return true;
+            if (conditions == null)
+            {
+                return true;
+            }
 
             var now = SystemClock.UtcNow;
 
@@ -181,7 +198,9 @@ public class ConditionalPolicyEvaluator(
             if (conditions.DaysOfWeek?.Length > 0)
             {
                 if (!conditions.DaysOfWeek.Contains(now.DayOfWeek))
+                {
                     return false;
+                }
             }
 
             // Check time range
@@ -194,13 +213,17 @@ public class ConditionalPolicyEvaluator(
                     if (start <= end)
                     {
                         if (currentTime < start || currentTime > end)
+                        {
                             return false;
+                        }
                     }
                     else
                     {
                         // Overnight window
                         if (currentTime < start && currentTime > end)
+                        {
                             return false;
+                        }
                     }
                 }
             }
@@ -219,22 +242,31 @@ public class ConditionalPolicyEvaluator(
         try
         {
             var conditions = JsonSerializer.Deserialize<EnvironmentConditions>(conditionsJson);
-            if (conditions == null) return true;
+            if (conditions == null)
+            {
+                return true;
+            }
 
             // Check MFA requirement
             if (conditions.RequireMfa == true && context.IsMfaVerified != true)
+            {
                 return false;
+            }
 
             // Check risk score
             if (conditions.MaxRiskScore.HasValue && context.RiskScore > conditions.MaxRiskScore.Value)
+            {
                 return false;
+            }
 
             // Check session age
             if (conditions.MaxSessionAgeMinutes.HasValue && context.AuthenticationTime.HasValue)
             {
                 var sessionAge = SystemClock.UtcNow - context.AuthenticationTime.Value;
                 if (sessionAge.TotalMinutes > conditions.MaxSessionAgeMinutes.Value)
+                {
                     return false;
+                }
             }
 
             return true;
@@ -251,14 +283,19 @@ public class ConditionalPolicyEvaluator(
         try
         {
             var conditions = JsonSerializer.Deserialize<LocationConditions>(conditionsJson);
-            if (conditions == null) return true;
+            if (conditions == null)
+            {
+                return true;
+            }
 
             // Check allowed countries
             if (conditions.AllowedCountries?.Length > 0)
             {
                 if (string.IsNullOrEmpty(context.GeoCountry) ||
                     !conditions.AllowedCountries.Contains(context.GeoCountry, StringComparer.OrdinalIgnoreCase))
+                {
                     return false;
+                }
             }
 
             // Check blocked countries
@@ -266,7 +303,9 @@ public class ConditionalPolicyEvaluator(
             {
                 if (!string.IsNullOrEmpty(context.GeoCountry) &&
                     conditions.BlockedCountries.Contains(context.GeoCountry, StringComparer.OrdinalIgnoreCase))
+                {
                     return false;
+                }
             }
 
             // Check IP ranges
@@ -281,7 +320,10 @@ public class ConditionalPolicyEvaluator(
                         break;
                     }
                 }
-                if (!ipAllowed) return false;
+                if (!ipAllowed)
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -308,20 +350,29 @@ public class ConditionalPolicyEvaluator(
                 var networkBytes = networkAddress.GetAddressBytes();
                 var ipBytes = ip.GetAddressBytes();
 
-                if (networkBytes.Length != ipBytes.Length) return false;
+                if (networkBytes.Length != ipBytes.Length)
+                {
+                    return false;
+                }
 
                 var fullBytes = prefixLength / 8;
                 var remainingBits = prefixLength % 8;
 
                 for (var i = 0; i < fullBytes; i++)
                 {
-                    if (networkBytes[i] != ipBytes[i]) return false;
+                    if (networkBytes[i] != ipBytes[i])
+                    {
+                        return false;
+                    }
                 }
 
                 if (remainingBits > 0 && fullBytes < networkBytes.Length)
                 {
                     var mask = (byte)(0xFF << (8 - remainingBits));
-                    if ((networkBytes[fullBytes] & mask) != (ipBytes[fullBytes] & mask)) return false;
+                    if ((networkBytes[fullBytes] & mask) != (ipBytes[fullBytes] & mask))
+                    {
+                        return false;
+                    }
                 }
 
                 return true;
@@ -341,14 +392,19 @@ public class ConditionalPolicyEvaluator(
         try
         {
             var conditions = JsonSerializer.Deserialize<DeviceConditions>(conditionsJson);
-            if (conditions == null) return true;
+            if (conditions == null)
+            {
+                return true;
+            }
 
             // Check required device fingerprints
             if (conditions.AllowedFingerprints?.Length > 0)
             {
                 if (string.IsNullOrEmpty(context.DeviceFingerprint) ||
                     !conditions.AllowedFingerprints.Contains(context.DeviceFingerprint))
+                {
                     return false;
+                }
             }
 
             // Check blocked user agents
@@ -357,7 +413,9 @@ public class ConditionalPolicyEvaluator(
                 foreach (var pattern in conditions.BlockedUserAgents)
                 {
                     if (context.UserAgent.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                    {
                         return false;
+                    }
                 }
             }
 
@@ -375,15 +433,22 @@ public class ConditionalPolicyEvaluator(
         try
         {
             var conditions = JsonSerializer.Deserialize<Dictionary<string, string>>(conditionsJson);
-            if (conditions == null || context.CustomAttributes == null) return true;
+            if (conditions == null || context.CustomAttributes == null)
+            {
+                return true;
+            }
 
             foreach (var (key, expectedValue) in conditions)
             {
                 if (!context.CustomAttributes.TryGetValue(key, out var actualValue))
+                {
                     return false;
+                }
 
                 if (!actualValue.Equals(expectedValue, StringComparison.OrdinalIgnoreCase))
+                {
                     return false;
+                }
             }
 
             return true;

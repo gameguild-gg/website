@@ -17,5 +17,7 @@ public partial class PreserveImmutableFundingProvenance : Migration
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
+        // Keep the funding provenance guards installed during rollback;
+        // reverting them would allow mutation of authoritative funding evidence.
     }
 }

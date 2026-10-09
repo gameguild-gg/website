@@ -10,7 +10,6 @@ public class SlaImpactAnalysisServiceTests
     private readonly Mock<ISlaImpactAnalysisRepository> _analysisRepositoryMock;
     private readonly Mock<IResourceQuotaRepository> _quotaRepositoryMock;
     private readonly Mock<ISlaIncidentEscalationService> _escalationServiceMock;
-    private readonly Mock<IIncidentTicketProvider> _incidentTicketProviderMock;
     private readonly Mock<ILogger<SlaImpactAnalysisService>> _loggerMock;
     private readonly SlaImpactAnalysisService _service;
 
@@ -19,14 +18,14 @@ public class SlaImpactAnalysisServiceTests
         _analysisRepositoryMock = new Mock<ISlaImpactAnalysisRepository>();
         _quotaRepositoryMock = new Mock<IResourceQuotaRepository>();
         _escalationServiceMock = new Mock<ISlaIncidentEscalationService>();
-        _incidentTicketProviderMock = new Mock<IIncidentTicketProvider>();
+        Mock<IIncidentTicketProvider> incidentTicketProviderMock = new Mock<IIncidentTicketProvider>();
         _loggerMock = new Mock<ILogger<SlaImpactAnalysisService>>();
 
         _service = new SlaImpactAnalysisService(
             _analysisRepositoryMock.Object,
             _quotaRepositoryMock.Object,
             _escalationServiceMock.Object,
-            _incidentTicketProviderMock.Object,
+            incidentTicketProviderMock.Object,
             _loggerMock.Object
         );
     }

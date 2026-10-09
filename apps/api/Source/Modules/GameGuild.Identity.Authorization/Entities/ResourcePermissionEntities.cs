@@ -5,8 +5,13 @@ namespace GameGuild.Identity.Authorization;
 /// <summary>
 ///     Represents a user's direct permissions on a specific resource.
 ///     Tracks who granted the permissions, when they were granted, and when they expire.
+///     Inherits the shared permission-grant contract from <see cref="PermissionBase"/> (#352):
+///     expiration, grant metadata, validation, audit and tenant-isolation behaviors come
+///     from the base; the required (non-nullable) subject and computed activity state hide
+///     their optional base equivalents, mirroring the tenant-column pattern already used
+///     by this entity.
 /// </summary>
-public class ResourceUserPermission : EntityBase<Guid>
+public class ResourceUserPermission : PermissionBase
 {
     /// <summary>
     ///     Gets or sets the tenant ID this permission belongs to.
@@ -15,8 +20,9 @@ public class ResourceUserPermission : EntityBase<Guid>
 
     /// <summary>
     ///     Gets or sets the ID of the user who has these permissions.
+    ///     Hides the optional base property with a required (non-nullable) equivalent.
     /// </summary>
-    public required Guid UserId { get; set; }
+    public new required Guid UserId { get; set; }
 
     /// <summary>
     ///     Gets or sets the type of resource.
@@ -36,11 +42,6 @@ public class ResourceUserPermission : EntityBase<Guid>
     public required string[] Permissions { get; set; }
 
     /// <summary>
-    ///     Gets or sets the date and time the permissions were granted.
-    /// </summary>
-    public DateTime GrantedAt { get; set; } = SystemClock.UtcNow;
-
-    /// <summary>
     ///     Gets or sets the ID of the user who granted these permissions.
     /// </summary>
     public required Guid GrantedByUserId { get; set; }
@@ -49,12 +50,6 @@ public class ResourceUserPermission : EntityBase<Guid>
     ///     Gets or sets the name of the user who granted these permissions (for display).
     /// </summary>
     public string? GrantedByUserName { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the optional expiration date for these permissions.
-    ///     If null, permissions don't expire.
-    /// </summary>
-    public DateTime? ExpiresAt { get; set; }
 
     /// <summary>
     ///     Gets or sets the date and time the permissions were revoked.
@@ -89,18 +84,61 @@ public class ResourceUserPermission : EntityBase<Guid>
 
     /// <summary>
     ///     Gets whether these permissions are currently active.
+    ///     Computed from the revocation state; hides the optional stored base property.
     /// </summary>
-    public bool IsActive => RevokedAt == null && !IsExpired;
+    public new bool IsActive => RevokedAt == null && !IsExpired;
 
     /// <summary>
     ///     Gets whether these permissions have expired.
+    ///     Computed equivalent of the base expiration check (inclusive boundary); hides the
+    ///     base method so existing property-style call sites keep compiling.
     /// </summary>
-    public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= SystemClock.UtcNow;
+    public new bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= SystemClock.UtcNow;
 
     /// <summary>
     ///     Gets whether the user can access the resource.
     /// </summary>
     public bool CanAccess => IsActive;
+
+    /// <summary>
+    ///     Unified audit view: who granted this permission.
+    /// </summary>
+    public override Guid? CreatedBy => GrantedByUserId;
+
+    /// <summary>
+    ///     Unified audit view: tenant scope of this permission grant.
+    /// </summary>
+    public override Guid? PermissionTenantId => TenantId.Value;
+
+    /// <summary>
+    ///     Fail-closed mapping of the stored permission strings to defined permission types.
+    ///     Strings that do not map to a defined <see cref="PermissionType"/> are dropped.
+    /// </summary>
+    public override IReadOnlyList<PermissionType> GetGrantedPermissionTypes() { return ParsePermissionTypes(Permissions).ToList(); }
+
+    /// <summary>
+    ///     Effective-activity contract override: because this entity computes activity from
+    ///     its revocation state (hiding the optional stored base property), the shared base
+    ///     logic must observe the computed value, not the hidden storage.
+    /// </summary>
+    public override bool IsEffective() { return IsActive && !IsExpired; }
+
+    /// <summary>
+    ///     Expiration/lifecycle override: expiring a direct resource permission revokes it
+    ///     (there is no stored activation flag on this entity).
+    /// </summary>
+    public override void Expire()
+    {
+        if (RevokedAt.HasValue) { return; }
+
+        RevokedAt = SystemClock.UtcNow;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Common validation override: additionally rejects an empty required subject.
+    /// </summary>
+    public override bool IsValid() { return base.IsValid() && UserId != Guid.Empty; }
 
     /// <summary>
     ///     Revokes the permissions for the user.

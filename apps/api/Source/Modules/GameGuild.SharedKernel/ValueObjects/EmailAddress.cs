@@ -9,12 +9,18 @@ public record EmailAddress
 {
     public EmailAddress(string email)
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email address cannot be null or empty.", nameof(email));
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email address cannot be null or empty.", nameof(email));
+        }
 
         // Trim first, then validate on the trimmed value to avoid rejecting valid emails with surrounding whitespace
         var trimmed = email.Trim();
 
-        if (!IsValidEmail(trimmed)) throw new ArgumentException("Invalid email address format.", nameof(email));
+        if (!IsValidEmail(trimmed))
+        {
+            throw new ArgumentException("Invalid email address format.", nameof(email));
+        }
 
         Value = trimmed.ToLowerInvariant();
     }

@@ -53,7 +53,17 @@ services:
   redis:
     image: redis:7-alpine
     container_name: game-guild-redis
-    command: ["redis-server", "--appendonly", "yes"]
+    # Authorization-cache backup/DR (docs/api/authorization-cache-configuration.md,
+    # section "Redis cache backup and disaster recovery"):
+    # - AOF (`--appendonly yes` + the redis-data volume) bounds write loss to ~1s
+    #   (appendfsync everysec, the Redis default).
+    # - `--save 900 1` additionally keeps periodic RDB snapshots as the cold-backup
+    #   artifact; copy them offsite with BGSAVE (commands in the doc).
+    # - The cache is derived and rebuildable: restoring a dump is safe because cache
+    #   keys embed security versions (old-version entries are unreachable), and the
+    #   correct recovery after any permission incident is an EMPTY cache refilled
+    #   from PostgreSQL (flush with SCAN+UNLINK on the gg:auth:* prefix, never FLUSHALL).
+    command: ["redis-server", "--appendonly", "yes", "--save", "900", "1"]
     ports:
       - "${REDIS_HOST_PORT:-6379}:6379"
     volumes:

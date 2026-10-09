@@ -35,16 +35,36 @@ public sealed record AdNetworkPolicy
         int ranking)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(network);
-        if (expiresAt <= effectiveAt) throw new ArgumentException("Policy expiry must follow its effective time.", nameof(expiresAt));
-        if (!Enum.IsDefined(issuanceMode)) throw new ArgumentOutOfRangeException(nameof(issuanceMode));
-        if (!Enum.IsDefined(yieldState)) throw new ArgumentOutOfRangeException(nameof(yieldState));
+        if (expiresAt <= effectiveAt)
+        {
+            throw new ArgumentException("Policy expiry must follow its effective time.", nameof(expiresAt));
+        }
+
+        if (!Enum.IsDefined(issuanceMode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(issuanceMode));
+        }
+
+        if (!Enum.IsDefined(yieldState))
+        {
+            throw new ArgumentOutOfRangeException(nameof(yieldState));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(estimatedNetEcpmUsdNanos);
         ValidatePpm(contractedRevenueSharePpm, nameof(contractedRevenueSharePpm), allowOneMillion: true);
         ValidatePpm(safetyBufferPpm, nameof(safetyBufferPpm), allowOneMillion: false);
         ValidatePpm(minimumVisiblePpm, nameof(minimumVisiblePpm), allowOneMillion: true);
-        if (maximumFocusLoss < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(maximumFocusLoss));
+        if (maximumFocusLoss < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumFocusLoss));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumRewardSoftUnits);
-        if (reportStaleAfter <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(reportStaleAfter));
+        if (reportStaleAfter <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(reportStaleAfter));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(ranking);
 
         Network = network.Trim();
@@ -86,7 +106,10 @@ public sealed record AdNetworkPolicy
     private static void ValidatePpm(int value, string parameterName, bool allowOneMillion)
     {
         var maximum = allowOneMillion ? 1_000_000 : 999_999;
-        if (value is < 0 || value > maximum) throw new ArgumentOutOfRangeException(parameterName);
+        if (value is < 0 || value > maximum)
+        {
+            throw new ArgumentOutOfRangeException(parameterName);
+        }
     }
 }
 
@@ -109,7 +132,10 @@ public sealed class AdNetworkPolicyStore
             var latest = versions.OrderByDescending(item => item.Version.Value).FirstOrDefault();
             if (latest is not null &&
                 (policy.Version.Value <= latest.Version.Value || policy.EffectiveAt < latest.ExpiresAt))
+            {
                 throw new AdNetworkPolicyConflictException("Ad network policy versions must increase without overlapping.");
+            }
+
             versions.Add(policy);
         }
     }
@@ -185,7 +211,11 @@ public sealed class AdRewardControlState
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
         lock (_gate)
         {
-            if (epoch <= _globalEpoch) throw new AdRewardControlConflictException("Global control epochs must increase.");
+            if (epoch <= _globalEpoch)
+            {
+                throw new AdRewardControlConflictException("Global control epochs must increase.");
+            }
+
             _globalEpoch = epoch;
             _globalEnabled = false;
         }
@@ -196,7 +226,11 @@ public sealed class AdRewardControlState
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(epoch);
         lock (_gate)
         {
-            if (epoch <= _globalEpoch) throw new AdRewardControlConflictException("Global control epochs must increase.");
+            if (epoch <= _globalEpoch)
+            {
+                throw new AdRewardControlConflictException("Global control epochs must increase.");
+            }
+
             _globalEpoch = epoch;
             _globalEnabled = true;
         }
@@ -208,7 +242,9 @@ public sealed class AdRewardControlState
         lock (_gate)
         {
             if (!_globalEnabled || _disabledNetworks.ContainsKey(network.Trim()))
+            {
                 throw new AdRewardIssuanceDisabledException("Ad reward issuance is disabled by an active control.");
+            }
         }
     }
 
@@ -222,7 +258,10 @@ public sealed class AdRewardControlState
     private void EnsureNetworkEpoch(string network, long epoch)
     {
         var previous = _disabledNetworks.GetValueOrDefault(network.Trim());
-        if (epoch <= previous) throw new AdRewardControlConflictException("Network control epochs must increase.");
+        if (epoch <= previous)
+        {
+            throw new AdRewardControlConflictException("Network control epochs must increase.");
+        }
     }
 }
 

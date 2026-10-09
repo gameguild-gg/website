@@ -16,7 +16,9 @@ public static class TreasuryReservePlanner
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(signer);
         if (request.BufferPolicy.Version != request.PolicyVersion)
+        {
             throw new ReserveInputUnknownException("The Treasury buffer policy version does not match the proposal.");
+        }
 
         var liabilities = TreasuryLiabilityCalculator.Calculate(
             request.Ledger,
@@ -58,7 +60,10 @@ public sealed class TreasuryProposalSigner
     {
         ArgumentNullException.ThrowIfNull(secret);
         if (secret.Length < 32)
+        {
             throw new ArgumentException("Treasury signing secret must contain at least 32 bytes.", nameof(secret));
+        }
+
         _secret = [.. secret];
     }
 
@@ -73,7 +78,11 @@ public sealed class TreasuryProposalSigner
     public bool Verify(ReserveProposal proposal, string signature)
     {
         ArgumentNullException.ThrowIfNull(proposal);
-        if (string.IsNullOrWhiteSpace(signature)) return false;
+        if (string.IsNullOrWhiteSpace(signature))
+        {
+            return false;
+        }
+
         byte[] supplied;
         try { supplied = Convert.FromBase64String(signature); }
         catch (FormatException) { return false; }
@@ -101,7 +110,10 @@ public sealed class TreasuryCoreActivationGateway
                 Encoding.ASCII.GetBytes(manifestHash),
                 Encoding.ASCII.GetBytes(envelope.Proposal.EvidenceHash)) ||
             !_signer.Verify(envelope.Proposal, envelope.Signature))
+        {
             throw new TreasurySignatureException("Treasury reserve proposal signature is invalid.");
+        }
+
         return _authority.ValidateAndActivate(envelope.Proposal, now);
     }
 }

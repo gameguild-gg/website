@@ -48,9 +48,12 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
     var exists = await context.Set<GameGuild.Identity.Authorization.PermissionTemplate>()
       .AnyAsync(template => template.Name == normalizedName)
       .ConfigureAwait(false);
-    if (exists) throw new InvalidOperationException($"Role template '{normalizedName}' already exists.");
+    if (exists)
+        {
+            throw new InvalidOperationException($"Role template '{normalizedName}' already exists.");
+        }
 
-    var template = new GameGuild.Identity.Authorization.PermissionTemplate {
+        var template = new GameGuild.Identity.Authorization.PermissionTemplate {
       Name = normalizedName,
       Description = description.Trim(),
       Category = TemplateCategory,
@@ -67,16 +70,27 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
 
   public async Task<RoleTemplate?> UpdateRoleTemplateAsync(string idOrName, string? name, string description, IReadOnlyCollection<PermissionTemplate> permissionTemplates) {
     var template = await FindRoleTemplateAsync(idOrName).ConfigureAwait(false);
-    if (template == null) return null;
-    if (template.IsSystemTemplate) throw new InvalidOperationException($"System role template '{template.Name}' cannot be modified.");
+    if (template == null)
+        {
+            return null;
+        }
 
-    if (!string.IsNullOrWhiteSpace(name) && !string.Equals(template.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)) {
+        if (template.IsSystemTemplate)
+        {
+            throw new InvalidOperationException($"System role template '{template.Name}' cannot be modified.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(name) && !string.Equals(template.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)) {
       var normalizedName = name.Trim();
       var duplicate = await context.Set<GameGuild.Identity.Authorization.PermissionTemplate>()
         .AnyAsync(candidate => candidate.Id != template.Id && candidate.Name == normalizedName)
         .ConfigureAwait(false);
-      if (duplicate) throw new InvalidOperationException($"Role template '{normalizedName}' already exists.");
-      template.Name = normalizedName;
+      if (duplicate)
+            {
+                throw new InvalidOperationException($"Role template '{normalizedName}' already exists.");
+            }
+
+            template.Name = normalizedName;
     }
 
     template.Description = description.Trim();
@@ -90,18 +104,27 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
 
   public async Task<bool> DeleteRoleTemplateAsync(string idOrName) {
     var template = await FindRoleTemplateAsync(idOrName).ConfigureAwait(false);
-    if (template == null) return false;
-    if (template.IsSystemTemplate) throw new InvalidOperationException($"System role template '{template.Name}' cannot be deleted.");
+    if (template == null)
+        {
+            return false;
+        }
 
-    var assignment = $"role:{template.Name}";
+        if (template.IsSystemTemplate)
+        {
+            throw new InvalidOperationException($"System role template '{template.Name}' cannot be deleted.");
+        }
+
+        var assignment = $"role:{template.Name}";
     var assignedRecords = await context.Set<TenantPermission>()
       .Where(permission => permission.DeletedAt == null && permission.IsActive)
       .ToListAsync()
       .ConfigureAwait(false);
     if (assignedRecords.Any(permission => permission.Permissions.Contains(assignment, StringComparer.OrdinalIgnoreCase)))
-      throw new InvalidOperationException($"Role template '{template.Name}' is assigned to one or more members and cannot be deleted.");
+        {
+            throw new InvalidOperationException($"Role template '{template.Name}' is assigned to one or more members and cannot be deleted.");
+        }
 
-    context.Set<GameGuild.Identity.Authorization.PermissionTemplate>().Remove(template);
+        context.Set<GameGuild.Identity.Authorization.PermissionTemplate>().Remove(template);
     await context.SaveChangesAsync().ConfigureAwait(false);
 
     return true;
@@ -109,9 +132,12 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
 
   public async Task<IReadOnlyList<TestingLabAssignedRole>> GetUserRolesAsync(Guid userId, Guid? tenantId) {
     var permissions = await FindTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false);
-    if (permissions == null || !permissions.IsActive || permissions.IsExpired()) return [];
+    if (permissions == null || !permissions.IsActive || permissions.IsExpired())
+        {
+            return [];
+        }
 
-    return permissions.Permissions
+        return permissions.Permissions
       .Where(permission => permission.StartsWith("role:", StringComparison.OrdinalIgnoreCase))
       .Select(permission => new TestingLabAssignedRole { RoleName = permission["role:".Length..] })
       .ToList();
@@ -185,22 +211,31 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
 
   public async Task AssignRoleToUserAsync(Guid userId, Guid? tenantId, string roleName, DateTime? expiresAt = null) {
     if (expiresAt.HasValue)
-      throw new InvalidOperationException("Role expiration is not supported. Use a temporary resource exception instead.");
-    await EnsureActiveTargetTenantMembershipAsync(userId, tenantId).ConfigureAwait(false);
+        {
+            throw new InvalidOperationException("Role expiration is not supported. Use a temporary resource exception instead.");
+        }
+
+        await EnsureActiveTargetTenantMembershipAsync(userId, tenantId).ConfigureAwait(false);
 
     var template = await FindRoleTemplateAsync(roleName).ConfigureAwait(false);
-    if (template == null) throw new InvalidOperationException($"Role template '{roleName}' was not found.");
+    if (template == null)
+        {
+            throw new InvalidOperationException($"Role template '{roleName}' was not found.");
+        }
 
-    var permissions = await GetOrCreateTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false);
+        var permissions = await GetOrCreateTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false);
     permissions.AddPermissions($"role:{template.Name}");
     await context.SaveChangesAsync().ConfigureAwait(false);
   }
 
   public async Task RevokeRoleFromUserAsync(Guid userId, Guid? tenantId, string roleName) {
     var permissions = await FindTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false);
-    if (permissions == null) return;
+    if (permissions == null)
+        {
+            return;
+        }
 
-    permissions.Permissions = permissions.Permissions
+        permissions.Permissions = permissions.Permissions
       .Where(permission => !string.Equals(permission, $"role:{roleName}", StringComparison.OrdinalIgnoreCase))
       .ToArray();
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -258,8 +293,12 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
     string resourceType,
     Guid resourceId,
     Guid? revokedByUserId = null) {
-    if (!tenantId.HasValue) return;
-    ValidateResourcePermission(action, resourceType);
+    if (!tenantId.HasValue)
+        {
+            return;
+        }
+
+        ValidateResourcePermission(action, resourceType);
     var resourceTenantId = new TenantId(tenantId.Value);
 
     var permission = await context.Set<ResourceUserPermission>()
@@ -270,14 +309,20 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
         candidate.ResourceId == resourceId.ToString() &&
         candidate.RevokedAt == null)
       .ConfigureAwait(false);
-    if (permission == null) return;
+    if (permission == null)
+        {
+            return;
+        }
 
-    permission.Permissions = permission.Permissions
+        permission.Permissions = permission.Permissions
       .Where(candidate => !string.Equals(candidate, action, StringComparison.OrdinalIgnoreCase))
       .ToArray();
-    if (permission.Permissions.Length == 0) permission.Revoke(revokedByUserId ?? userId, "Testing Lab resource exception revoked.");
+    if (permission.Permissions.Length == 0)
+        {
+            permission.Revoke(revokedByUserId ?? userId, "Testing Lab resource exception revoked.");
+        }
 
-    await context.SaveChangesAsync().ConfigureAwait(false);
+        await context.SaveChangesAsync().ConfigureAwait(false);
   }
 
   public async Task<bool> HasPermissionAsync(Guid userId, Guid? tenantId, string action, string resourceType, Guid? resourceId = null) {
@@ -295,9 +340,12 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
       .FirstOrDefaultAsync(tp => tp.UserId == userId && tp.TenantId == tenantId && tp.DeletedAt == null)
       .ConfigureAwait(false);
 
-    if (permission != null) return permission;
+    if (permission != null)
+        {
+            return permission;
+        }
 
-    permission = new TenantPermission {
+        permission = new TenantPermission {
       UserId = userId,
       TenantId = tenantId,
       Permissions = [],
@@ -309,9 +357,11 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
 
   private async Task<Guid> EnsureActiveTargetTenantMembershipAsync(Guid userId, Guid? tenantId) {
     if (!tenantId.HasValue)
-      throw new InvalidOperationException("A target tenant is required to manage Testing Lab access.");
+        {
+            throw new InvalidOperationException("A target tenant is required to manage Testing Lab access.");
+        }
 
-    var isActiveMember = await context.Set<TenantMember>()
+        var isActiveMember = await context.Set<TenantMember>()
       .AsNoTracking()
       .AnyAsync(member =>
         member.UserId == userId &&
@@ -320,8 +370,11 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
         member.DeletedAt == null)
       .ConfigureAwait(false);
     if (!isActiveMember)
-      throw new InvalidOperationException("The user must be an active member of the target tenant.");
-    return tenantId.Value;
+        {
+            throw new InvalidOperationException("The user must be an active member of the target tenant.");
+        }
+
+        return tenantId.Value;
   }
 
   private async Task<TenantPermission?> FindTenantPermissionsAsync(Guid userId, Guid? tenantId) {
@@ -335,10 +388,15 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
 
   private static void ValidateResourcePermission(string action, string resourceType) {
     if (!TestingLabResourceTypes.IsValid(resourceType))
-      throw new InvalidOperationException($"'{resourceType}' is not a valid Testing Lab resource type.");
-    if (!TestingLabActions.All.Contains(action, StringComparer.OrdinalIgnoreCase))
-      throw new InvalidOperationException($"'{action}' is not a valid Testing Lab action.");
-  }
+        {
+            throw new InvalidOperationException($"'{resourceType}' is not a valid Testing Lab resource type.");
+        }
+
+        if (!TestingLabActions.All.Contains(action, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"'{action}' is not a valid Testing Lab action.");
+        }
+    }
 
   private async Task<GameGuild.Identity.Authorization.PermissionTemplate?> FindRoleTemplateAsync(string idOrName) {
     if (Guid.TryParse(idOrName, out var id)) {
@@ -380,17 +438,30 @@ public sealed class TestingLabPermissionService(IApplicationDbContext context) :
   }
 
   private static void ValidateTemplateName(string name) {
-    if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("Role template name is required.");
-    if (name.Trim().Length > 100) throw new InvalidOperationException("Role template name cannot exceed 100 characters.");
-  }
+    if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new InvalidOperationException("Role template name is required.");
+        }
+
+        if (name.Trim().Length > 100)
+        {
+            throw new InvalidOperationException("Role template name cannot exceed 100 characters.");
+        }
+    }
 
   private static TestingLabUserPermission? ParsePermission(string permission) {
-    if (permission.StartsWith("role:", StringComparison.OrdinalIgnoreCase)) return null;
+    if (permission.StartsWith("role:", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
 
-    var parts = permission.Split(':', StringSplitOptions.RemoveEmptyEntries);
-    if (parts.Length < 2) return null;
+        var parts = permission.Split(':', StringSplitOptions.RemoveEmptyEntries);
+    if (parts.Length < 2)
+        {
+            return null;
+        }
 
-    return new TestingLabUserPermission {
+        return new TestingLabUserPermission {
       ResourceType = parts[0],
       Action = parts[1],
       ResourceId = parts.Length > 2 && Guid.TryParse(parts[2], out var resourceId) ? resourceId : null,

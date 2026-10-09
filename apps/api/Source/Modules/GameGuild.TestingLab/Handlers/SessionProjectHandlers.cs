@@ -26,16 +26,23 @@ public sealed class SessionProjectHandlers(
         await using var lockHandle = await _lifecycleLock.AcquireAsync(request.ProjectId, cancellationToken).ConfigureAwait(false);
         var authorization = await AuthorizeSessionAsync(request.SessionId, cancellationToken).ConfigureAwait(false);
         if (authorization.Error != null)
+        {
             return Result.Failure<SessionProjectProjection>(authorization.Error);
+        }
 
         var actor = actorContextAccessor.ActorContext;
         if (!await authorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<SessionProjectProjection>(Error.NotFound("TestingLab.ProjectNotFound", "Project not found."));
+        }
+
         var availability = await availabilityService
             .GetAsync(request.ProjectId, ProjectChannel.TestingLab, actor.TenantId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         if (!availability.IsAvailable)
+        {
             return Result.Failure<SessionProjectProjection>(Error.Validation("TestingLab.ProjectUnavailable", availability.Reason));
+        }
 
         if (request.ProjectVersionId.HasValue)
         {
@@ -48,7 +55,9 @@ public sealed class SessionProjectHandlers(
                     cancellationToken)
                 .ConfigureAwait(false);
             if (!validVersion)
+            {
                 return Result.Failure<SessionProjectProjection>(Error.Validation("TestingLab.ProjectVersionMismatch", "Project version must be active and belong to the linked project."));
+            }
         }
 
         var duplicate = await context.Set<SessionProject>()
@@ -60,7 +69,9 @@ public sealed class SessionProjectHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (duplicate)
+        {
             return Result.Failure<SessionProjectProjection>(Error.Conflict("TestingLab.SessionProjectExists", "An active session-project link already exists."));
+        }
 
         var link = new SessionProject
         {
@@ -87,9 +98,14 @@ public sealed class SessionProjectHandlers(
     {
         var authorization = await AuthorizeSessionAsync(request.SessionId, cancellationToken).ConfigureAwait(false);
         if (authorization.Error != null)
+        {
             return Result.Failure<bool>(authorization.Error);
+        }
+
         if (!await authorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<bool>(Error.NotFound("TestingLab.ProjectNotFound", "Project not found."));
+        }
 
         var link = await context.Set<SessionProject>()
             .FirstOrDefaultAsync(candidate =>
@@ -100,7 +116,9 @@ public sealed class SessionProjectHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (link == null)
+        {
             return Result.Failure<bool>(Error.NotFound("TestingLab.SessionProjectNotFound", "Active session-project link not found."));
+        }
 
         link.IsActive = false;
         link.DeletedAt = SystemClock.UtcNow;
@@ -115,7 +133,9 @@ public sealed class SessionProjectHandlers(
     {
         var authorization = await AuthorizeSessionAsync(request.SessionId, cancellationToken).ConfigureAwait(false);
         if (authorization.Error != null)
+        {
             return Result.Failure<IReadOnlyList<SessionProjectProjection>>(authorization.Error);
+        }
 
         var tenantId = actorContextAccessor.ActorContext.TenantId!.Value;
         var query = context.Set<SessionProject>()
@@ -135,7 +155,9 @@ public sealed class SessionProjectHandlers(
                     link.ProjectVersion.TenantId == tenantId &&
                     link.ProjectVersion.DeletedAt == null)))));
         if (!request.IncludeInactive)
+        {
             query = query.Where(link => link.IsActive && link.DeletedAt == null);
+        }
 
         var links = await query
             .OrderBy(link => link.RegisteredAt)
@@ -150,17 +172,27 @@ public sealed class SessionProjectHandlers(
         var actor = actorContextAccessor.ActorContext;
         var actorId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || actorId == null || actor.TenantId == null)
+        {
             return new(null, Error.Unauthorized("TestingLab.Unauthenticated", "An authenticated tenant actor is required."));
+        }
+
         if (!await authorizationService.IsActorActiveTenantMemberAsync(cancellationToken).ConfigureAwait(false))
+        {
             return new(null, Error.Unauthorized("TestingLab.InactiveActor", "An active user and tenant membership are required."));
+        }
 
         var session = await context.Set<TestingSession>()
             .FirstOrDefaultAsync(candidate => candidate.Id == sessionId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
         if (session == null)
+        {
             return new(null, Error.NotFound("TestingLab.SessionNotFound", "Testing session not found."));
+        }
+
         if (session.TenantId != actor.TenantId)
+        {
             return new(null, Error.Forbidden("TestingLab.SessionTenantMismatch", "Testing session is outside the current tenant."));
+        }
 
         var tenantRole = await context.Set<TenantMember>()
             .AsNoTracking()
@@ -175,7 +207,9 @@ public sealed class SessionProjectHandlers(
         var isSessionTenantAdmin = tenantRole != null && TenantRole.FromString(tenantRole).IsAdmin;
         if (session.ManagerId != actorId && session.CreatedById != actorId &&
             !isSessionTenantAdmin && !actor.IsSystemAdmin)
+        {
             return new(null, Error.Forbidden("TestingLab.SessionForbidden", "Session manager or creator access is required."));
+        }
 
         return new(session, null);
     }

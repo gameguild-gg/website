@@ -213,15 +213,22 @@ public sealed class MemoryPolicyCache : IPolicyCache
         try
         {
             var dto = JsonSerializer.Deserialize<CachedPolicyDto>(data);
-            if (dto is null) return null;
+            if (dto is null)
+            {
+                return null;
+            }
 
             var builder = new AuthorizationPolicyBuilder();
 
             if (dto.AuthenticationSchemes.Count > 0)
+            {
                 builder.AddAuthenticationSchemes(dto.AuthenticationSchemes.ToArray());
+            }
 
             if (dto.RequireAuthenticatedUser)
+            {
                 builder.RequireAuthenticatedUser();
+            }
 
             return builder.Build();
         }

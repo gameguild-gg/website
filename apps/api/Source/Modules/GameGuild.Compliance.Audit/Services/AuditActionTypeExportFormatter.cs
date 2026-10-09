@@ -49,10 +49,7 @@ public static class AuditActionTypeExportFormatter
 
     private static void AppendRow(StringBuilder csv, IEnumerable<string?> fields)
     {
-        csv.AppendJoin(',', fields.Select(EscapeCsv));
+        csv.AppendJoin(',', fields.Select(AuditCsvExporter.EscapeField));
         csv.Append("\r\n");
     }
-
-    private static string EscapeCsv(string? value) =>
-        $"\"{(value ?? string.Empty).Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
 }

@@ -28,7 +28,10 @@ public sealed class PostgreSqlBountyPostableLotReader : IBountyPostableLotReader
 
     public IReadOnlyList<CreditLot> Read(WalletId walletId, CurrencyCode currency, DateTimeOffset asOf)
     {
-        if (!Enum.IsDefined(currency)) throw new ArgumentOutOfRangeException(nameof(currency));
+        if (!Enum.IsDefined(currency))
+        {
+            throw new ArgumentOutOfRangeException(nameof(currency));
+        }
 
         return _db.Database.SqlQuery<BountyPostableLotProjection>($"""
             WITH available_ranges AS (
@@ -100,11 +103,16 @@ public sealed class PostgreSqlBountyPostableLotReader : IBountyPostableLotReader
         var currency = (CurrencyCode)row.Currency;
         var provenance = (ProvenanceKind)row.Provenance;
         if (!Enum.IsDefined(currency) || !Enum.IsDefined(provenance))
+        {
             throw new InvalidOperationException("Bounty lot has an unknown currency or provenance.");
+        }
+
         var scale = CurrencyTraceScale.For(currency);
         if (row.AmountUnits <= 0 || ranges.Length == 0 ||
             ranges.Sum(range => checked(range.EndExclusive - range.StartInclusive)) != checked(row.AmountUnits * scale))
+        {
             throw new InvalidOperationException("Bounty lot root ranges do not conserve the available amount.");
+        }
 
         return new CreditLot(
             new CreditLotId(row.Id),

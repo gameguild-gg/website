@@ -41,7 +41,10 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
     {
         var quota = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return false;
+        if (quota == null)
+        {
+            return false;
+        }
 
         ResourceQuotas.Remove(quota);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -119,7 +122,10 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
     {
         var quota = await GetByUserAndTypeAsync(userId, type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return false;
+        if (quota == null)
+        {
+            return false;
+        }
 
         ResourceQuotas.Remove(quota);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -135,10 +141,14 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
         CancellationToken cancellationToken = default)
     {
         if (amount <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(amount), amount, "Usage amount must be greater than zero.");
+        }
 
         if (context is not DbContext dbContext || !dbContext.Database.IsRelational())
+        {
             return await TryIncrementTrackedAsync(tenantId, type, amount, cancellationToken).ConfigureAwait(false);
+        }
 
         var maximumStartingUsage = long.MaxValue - amount;
 
@@ -152,10 +162,14 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
                 .ConfigureAwait(false);
 
             if (quota == null)
+            {
                 return (true, null);
+            }
 
             if (!quota.IsActive)
+            {
                 return (true, quota);
+            }
 
             var observedLastReset = quota.LastReset;
             var observedVersion = quota.Version;
@@ -169,7 +183,9 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
             if (quota.ShouldReset())
             {
                 if (quota.HardLimit.HasValue && amount > quota.HardLimit.Value)
+                {
                     return (false, quota);
+                }
 
                 affectedRows = await ResourceQuotas
                     .Where(candidate =>
@@ -194,11 +210,15 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
             else
             {
                 if (quota.CurrentUsage > maximumStartingUsage)
+                {
                     throw new OverflowException("Resource quota usage cannot exceed Int64.MaxValue.");
+                }
 
                 if (quota.HardLimit.HasValue &&
                     (amount > quota.HardLimit.Value || quota.CurrentUsage > quota.HardLimit.Value - amount))
+                {
                     return (false, quota);
+                }
 
                 // Do not compare Version here: every successful consumer increments it.
                 // PostgreSQL serializes writers and re-evaluates these live limit and
@@ -240,19 +260,27 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
             .ConfigureAwait(false);
 
         if (latestQuota == null)
+        {
             return (true, null);
+        }
 
         if (!latestQuota.IsActive)
+        {
             return (true, latestQuota);
+        }
 
         if (!latestQuota.ShouldReset() && latestQuota.HardLimit.HasValue &&
             (amount > latestQuota.HardLimit.Value || latestQuota.CurrentUsage > latestQuota.HardLimit.Value - amount))
+        {
             return (false, latestQuota);
+        }
 
         if (!latestQuota.ShouldReset() &&
             !latestQuota.HardLimit.HasValue &&
             latestQuota.CurrentUsage > maximumStartingUsage)
+        {
             throw new OverflowException("Resource quota usage cannot exceed Int64.MaxValue.");
+        }
 
         throw new DbUpdateConcurrencyException(
             $"Resource quota changed repeatedly while consuming usage. Tenant: {tenantId}, Type: {type}.");
@@ -269,17 +297,25 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
             .ConfigureAwait(false);
 
         if (quota == null)
+        {
             return (true, null);
+        }
 
         if (!quota.IsActive)
+        {
             return (true, quota);
+        }
 
         if (quota.ShouldReset())
+        {
             quota.ResetUsage();
+        }
 
         var projectedUsage = checked(quota.CurrentUsage + amount);
         if (quota.HardLimit.HasValue && projectedUsage > quota.HardLimit.Value)
+        {
             return (false, quota);
+        }
 
         quota.CurrentUsage = projectedUsage;
         quota.Touch();
@@ -299,7 +335,9 @@ public class ResourceQuotaRepository(IApplicationDbContext context) : IResourceQ
             .FirstOrDefaultAsync(q => q.TenantId!.Value == tenantId && q.Type == type, cancellationToken).ConfigureAwait(false);
 
         if (quota == null)
+        {
             return false;
+        }
 
         // Use entity method to ensure usage never goes negative
         quota.RemoveUsage(amount);

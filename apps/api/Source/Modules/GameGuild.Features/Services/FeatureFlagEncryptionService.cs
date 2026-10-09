@@ -13,18 +13,30 @@ public class FeatureFlagEncryptionService : IFeatureFlagEncryptionService
 
     public FeatureFlagEncryptionService(string encryptionKey)
     {
-        if (string.IsNullOrEmpty(encryptionKey)) throw new ArgumentException("Encryption key cannot be null or empty", nameof(encryptionKey));
+        if (string.IsNullOrEmpty(encryptionKey))
+        {
+            throw new ArgumentException("Encryption key cannot be null or empty", nameof(encryptionKey));
+        }
 
         _encryptionKey = Convert.FromBase64String(encryptionKey);
 
-        if (_encryptionKey.Length != 32) throw new ArgumentException("Encryption key must be 256 bits (32 bytes)", nameof(encryptionKey));
+        if (_encryptionKey.Length != 32)
+        {
+            throw new ArgumentException("Encryption key must be 256 bits (32 bytes)", nameof(encryptionKey));
+        }
     }
 
     public async Task<string> EncryptAsync(string plainText)
     {
-        if (string.IsNullOrEmpty(plainText)) return plainText;
+        if (string.IsNullOrEmpty(plainText))
+        {
+            return plainText;
+        }
 
-        if (IsEncrypted(plainText)) return plainText;
+        if (IsEncrypted(plainText))
+        {
+            return plainText;
+        }
 
         return await Task.Run(() =>
             {
@@ -41,7 +53,9 @@ public class FeatureFlagEncryptionService : IFeatureFlagEncryptionService
                 msEncrypt.Write(aes.IV, 0, aes.IV.Length);
 
                 using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                using (var swEncrypt = new StreamWriter(csEncrypt)) { swEncrypt.Write(plainText); }
+                {
+                    using (var swEncrypt = new StreamWriter(csEncrypt)) { swEncrypt.Write(plainText); }
+                }
 
                 var encrypted = Convert.ToBase64String(msEncrypt.ToArray());
 
@@ -52,9 +66,15 @@ public class FeatureFlagEncryptionService : IFeatureFlagEncryptionService
 
     public async Task<string> DecryptAsync(string cipherText)
     {
-        if (string.IsNullOrEmpty(cipherText)) return cipherText;
+        if (string.IsNullOrEmpty(cipherText))
+        {
+            return cipherText;
+        }
 
-        if (!IsEncrypted(cipherText)) return cipherText;
+        if (!IsEncrypted(cipherText))
+        {
+            return cipherText;
+        }
 
         return await Task.Run(() =>
             {

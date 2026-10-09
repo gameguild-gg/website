@@ -47,7 +47,11 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
         DateTimeOffset startedAt,
         CancellationToken cancellationToken)
     {
-        if (proposedBy == Guid.Empty) throw new ArgumentException("A proposer is required.", nameof(proposedBy));
+        if (proposedBy == Guid.Empty)
+        {
+            throw new ArgumentException("A proposer is required.", nameof(proposedBy));
+        }
+
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async _ =>
         {
@@ -58,8 +62,11 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
             .AnyAsync(row => row.IsValid && row.ToSequence == head.Sequence && row.CurrentHash == head.Hash,
                 cancellationToken);
         if (!verified)
-            throw new ProjectionGenerationException("Projection rebuild requires a verified journal head.");
-        var generation = (await _db.Set<EconomyProjectionGenerationRow>()
+            {
+                throw new ProjectionGenerationException("Projection rebuild requires a verified journal head.");
+            }
+
+            var generation = (await _db.Set<EconomyProjectionGenerationRow>()
             .Select(row => (long?)row.Generation).MaxAsync(cancellationToken) ?? 0) + 1;
 
         var rebuilt = await RebuildWalletsAsync(generation, head, startedAt, cancellationToken);
@@ -96,8 +103,16 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
         DateTimeOffset approvedAt,
         CancellationToken cancellationToken)
     {
-        if (generation <= 0) throw new ArgumentOutOfRangeException(nameof(generation));
-        if (actorId == Guid.Empty) throw new ArgumentException("An approver is required.", nameof(actorId));
+        if (generation <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(generation));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("An approver is required.", nameof(actorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(reauthenticationHash);
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async _ =>
@@ -105,20 +120,36 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
         var row = await _db.Set<EconomyProjectionGenerationRow>()
             .SingleOrDefaultAsync(item => item.Generation == generation, cancellationToken)
             ?? throw new KeyNotFoundException("Projection generation not found.");
-        if (row.IsActive) throw new ProjectionGenerationException("The projection generation is already active.");
-        if (row.ProposedBy == actorId)
-            throw new ProjectionGenerationException("The projection proposer cannot approve the cutover.");
-        if (approvedAt < row.StartedAt)
-            throw new ArgumentException("Approval cannot predate the rebuild.", nameof(approvedAt));
-        var approvals = await _db.Set<EconomyProjectionGenerationApprovalRow>()
+        if (row.IsActive)
+            {
+                throw new ProjectionGenerationException("The projection generation is already active.");
+            }
+
+            if (row.ProposedBy == actorId)
+            {
+                throw new ProjectionGenerationException("The projection proposer cannot approve the cutover.");
+            }
+
+            if (approvedAt < row.StartedAt)
+            {
+                throw new ArgumentException("Approval cannot predate the rebuild.", nameof(approvedAt));
+            }
+
+            var approvals = await _db.Set<EconomyProjectionGenerationApprovalRow>()
             .Where(item => item.Generation == generation)
             .OrderBy(item => item.ApprovedAt)
             .ToArrayAsync(cancellationToken);
         if (approvals.Any(item => item.ActorId == actorId))
-            throw new ProjectionGenerationException("An administrator cannot approve the same cutover twice.");
-        if (approvals.Length >= 2)
-            throw new ProjectionGenerationException("The projection cutover already has two approvals.");
-        var approval = new EconomyProjectionGenerationApprovalRow
+            {
+                throw new ProjectionGenerationException("An administrator cannot approve the same cutover twice.");
+            }
+
+            if (approvals.Length >= 2)
+            {
+                throw new ProjectionGenerationException("The projection cutover already has two approvals.");
+            }
+
+            var approval = new EconomyProjectionGenerationApprovalRow
         {
             Id = Guid.NewGuid(), Generation = generation, ActorId = actorId,
             ReauthenticationHash = reauthenticationHash.Trim(), ApprovedAt = approvedAt
@@ -177,12 +208,24 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
                     continue;
                 }
                 var provenance = line.Provenance ?? accounts.GetValueOrDefault(line.AccountId)?.Provenance;
-                if (provenance == ProvenanceKind.PurchasedHard) purchased = checked(purchased + delta);
-                else if (provenance == ProvenanceKind.EarnedHard) earned = checked(earned + delta);
-                else restricted = checked(restricted + delta);
+                if (provenance == ProvenanceKind.PurchasedHard)
+                {
+                    purchased = checked(purchased + delta);
+                }
+                else if (provenance == ProvenanceKind.EarnedHard)
+                {
+                    earned = checked(earned + delta);
+                }
+                else
+                {
+                    restricted = checked(restricted + delta);
+                }
             }
             if (purchased < 0 || earned < 0 || restricted < 0 || soft < 0)
+            {
                 throw new ProjectionGenerationException("Journal recomputation produced a negative wallet component.");
+            }
+
             var pendingHard = claims.Where(row => row.WalletId == wallet.Id && row.State == SourceConfirmationState.Observed)
                 .Aggregate(0L, (total, row) => checked(total + row.AuthoritativeUsdMinorUnits));
             var heldHard = holds.Where(row => row.WalletId == wallet.Id && row.Currency == CurrencyCode.HardCoin)
@@ -238,7 +281,11 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
         var live = await _db.Set<EconomyWalletBalanceProjectionRow>().ToDictionaryAsync(row => row.WalletId, cancellationToken);
         foreach (var snapshot in rebuilt.Where(row => !row.MatchesLive))
         {
-            if (!live.TryGetValue(snapshot.WalletId, out var current)) continue;
+            if (!live.TryGetValue(snapshot.WalletId, out var current))
+            {
+                continue;
+            }
+
             _db.Set<EconomyProjectionReconciliationEventRow>().Add(new EconomyProjectionReconciliationEventRow
             {
                 Id = Guid.NewGuid(), WalletId = snapshot.WalletId, PreviousHash = current.ProjectionHash,
@@ -259,7 +306,10 @@ public sealed class PostgreSqlProjectionGenerationService : IEconomyProjectionGe
     {
         var head = await _db.Set<EconomyChainHeadRow>().AsNoTracking().SingleAsync(row => row.Id == 1, cancellationToken);
         if (head.Sequence != generation.ToSequence || head.Hash != generation.JournalHash)
+        {
             throw new ProjectionGenerationException("The journal advanced after the projection rebuild; rebuild again before cutover.");
+        }
+
         var snapshots = await _db.Set<EconomyWalletProjectionGenerationRow>()
             .Where(row => row.Generation == generation.Generation).ToArrayAsync(cancellationToken);
         var live = await _db.Set<EconomyWalletBalanceProjectionRow>().ToDictionaryAsync(row => row.WalletId, cancellationToken);

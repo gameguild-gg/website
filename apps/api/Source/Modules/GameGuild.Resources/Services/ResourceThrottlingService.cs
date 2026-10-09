@@ -52,7 +52,10 @@ public class ResourceThrottlingService(IResourceThrottlingPolicyRepository polic
     {
         var policy = await policyRepository.GetByTenantAndTypeAsync(tenantId, type, cancellationToken).ConfigureAwait(false);
 
-        if (policy == null) return false;
+        if (policy == null)
+        {
+            return false;
+        }
 
         var deleted = await policyRepository.DeleteAsync(policy.Id, cancellationToken).ConfigureAwait(false);
 
@@ -65,7 +68,10 @@ public class ResourceThrottlingService(IResourceThrottlingPolicyRepository polic
     {
         var policy = await GetPolicyAsync(tenantId, type, cancellationToken).ConfigureAwait(false);
 
-        if (policy is not { IsActive: true }) return (false, 0);
+        if (policy is not { IsActive: true })
+        {
+            return (false, 0);
+        }
 
         var shouldBlock = policy.ShouldBlock(currentUsage);
         var delayMs = policy.CalculateDelayMs(currentUsage);

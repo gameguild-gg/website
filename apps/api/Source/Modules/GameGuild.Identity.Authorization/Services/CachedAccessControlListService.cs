@@ -178,22 +178,24 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
                 versions.GlobalVersion);
         }
 
-        IReadOnlyDictionary<string, CacheResult<AccessLevel>>? cachedResults = null;
+        IReadOnlyDictionary<string, CacheResult<CachedAclDecision>>? cachedResults = null;
         if (_hybridCache is not null)
         {
             cachedResults = await _hybridCache
-                .GetManyValuesAsync<AccessLevel>(cacheKeys, CacheType, cancellationToken)
+                .GetManyValuesAsync<CachedAclDecision>(cacheKeys, CacheType, cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        var valuesToWrite = new Dictionary<string, AccessLevel>(StringComparer.Ordinal);
+        var valuesToWrite = new Dictionary<string, CachedAclDecision>(StringComparer.Ordinal);
+        var clampedWrites = new List<(string Key, CachedAclDecision Decision, int TtlSeconds)>();
         for (var index = 0; index < normalizedRequests.Length; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var request = normalizedRequests[index];
             var cacheKey = cacheKeys[index];
 
-            if (cachedResults is not null && cachedResults.TryGetValue(cacheKey, out var cached) && cached.Found)
+            if (cachedResults is not null && cachedResults.TryGetValue(cacheKey, out var cached) && cached.Found &&
+                IsDecisionServable(cached.Value))
             {
                 // Register the entry with this wrapper's tenant index as well as promoting it to L1.
                 CacheAccessLevel(cacheKey, request.TenantId.ToString(), cached.Value, l1Only: true);
@@ -201,7 +203,8 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
             }
 
             var l1LookupStartedAt = cachedResults is null ? Stopwatch.GetTimestamp() : 0;
-            if (cachedResults is null && _l1Cache.TryGetValue(cacheKey, out AccessLevel l1Value))
+            if (cachedResults is null && _l1Cache.TryGetValue(cacheKey, out CachedAclDecision l1Value) &&
+                IsDecisionServable(l1Value))
             {
                 _metrics?.RecordLookupDuration(Stopwatch.GetElapsedTime(l1LookupStartedAt), CacheType);
                 _metrics?.RecordHit(CacheLevel.L1, CacheType);
@@ -216,22 +219,40 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
             }
 
             // Database-backed ACL services can share a scoped DbContext, so evaluate misses sequentially.
-            var accessLevel = await _innerService
-                .EvaluateAccessAsync(
-                    request.Subject,
-                    request.TenantId,
-                    request.ResourceType,
-                    request.ResourceId,
-                    cancellationToken)
+            var evaluation = await EvaluateFromSourceAsync(
+                request.Subject,
+                request.TenantId,
+                request.ResourceType,
+                request.ResourceId,
+                cancellationToken)
                 .ConfigureAwait(false);
 
-            CacheAccessLevel(cacheKey, request.TenantId.ToString(), accessLevel, l1Only: true);
-            valuesToWrite[cacheKey] = accessLevel;
+            var decision = new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc);
+            if (TryComputeClampedTtlSeconds(decision.EffectiveUntilUtc, out var clampedTtlSeconds))
+            {
+                CacheAccessLevel(cacheKey, request.TenantId.ToString(), decision, l1Only: true);
+                if (clampedTtlSeconds.HasValue)
+                {
+                    clampedWrites.Add((cacheKey, decision, clampedTtlSeconds.Value));
+                }
+                else
+                {
+                    valuesToWrite[cacheKey] = decision;
+                }
+            }
         }
 
         if (_hybridCache is not null && valuesToWrite.Count > 0)
         {
             await _hybridCache.SetManyValuesAsync(valuesToWrite, CacheType, cancellationToken).ConfigureAwait(false);
+        }
+
+        foreach (var (key, decision, ttlSeconds) in clampedWrites)
+        {
+            if (_hybridCache is not null)
+            {
+                await _hybridCache.SetValueAsync(key, decision, CacheType, ttlSeconds, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 
@@ -264,7 +285,8 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
 
             // The cache key is scoped to the current tenant/global/user version snapshot.
             var l1LookupStartedAt = Stopwatch.GetTimestamp();
-            if (_l1Cache.TryGetValue(cacheKey, out AccessLevel cachedLevel))
+            if (_l1Cache.TryGetValue(cacheKey, out CachedAclDecision cachedDecision) &&
+                TryServeDecision(cacheKey, cachedDecision, out var cachedLevel))
             {
                 _metrics?.RecordLookupDuration(Stopwatch.GetElapsedTime(l1LookupStartedAt), CacheType);
                 _metrics?.RecordHit(CacheLevel.L1, CacheType);
@@ -279,22 +301,21 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
             if (_hybridCache != null)
             {
                 var hybridResult = await _hybridCache
-                    .GetValueAsync<AccessLevel>(cacheKey, CacheType, cancellationToken)
+                    .GetValueAsync<CachedAclDecision>(cacheKey, CacheType, cancellationToken)
                     .ConfigureAwait(false);
-                if (hybridResult.Found)
+                if (hybridResult.Found && TryServeDecision(cacheKey, hybridResult.Value, out cachedLevel))
                 {
                     // The version was read before this key lookup, so a permission mutation
                     // completed before that read cannot reuse an entry from its prior version.
                     CacheAccessLevel(cacheKey, tenantId.ToString(), hybridResult.Value, l1Only: true);
-                    return hybridResult.Value;
+                    return cachedLevel;
                 }
             }
 
             // Cache miss - fetch from underlying service.
             _metrics?.RecordMiss(CacheType);
-            var level = await _innerService
-                .EvaluateAccessAsync(subject, tenantId, resourceType, resourceId, cancellationToken)
-                .ConfigureAwait(false);
+            var evaluation = await EvaluateFromSourceAsync(
+                subject, tenantId, resourceType, resourceId, cancellationToken).ConfigureAwait(false);
 
             if (!await IsSecurityVersionCurrentAsync(
                     tenantId,
@@ -307,8 +328,12 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
                 continue;
             }
 
-            await CacheAccessLevelAsync(cacheKey, tenantId.ToString(), level, cancellationToken).ConfigureAwait(false);
-            return level;
+            await CacheAccessLevelAsync(
+                cacheKey,
+                tenantId.ToString(),
+                new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc),
+                cancellationToken).ConfigureAwait(false);
+            return evaluation.AccessLevel;
         }
 
         throw new InvalidOperationException(
@@ -419,44 +444,91 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         string resourceId,
         CancellationToken cancellationToken = default)
     {
-        // Include the shared global version so global role changes invalidate every tenant's ACL keys.
-        var (tenantVersion, globalVersion) = await _tenantVersionStore
-            .GetTenantAndGlobalVersionsAsync(tenantId, cancellationToken).ConfigureAwait(false);
-        var userVersion = await _userVersionStore.GetVersionAsync(userId, cancellationToken).ConfigureAwait(false);
-        var cacheKey = BuildCacheKey(userId, tenantId, resourceType, resourceId, tenantVersion, userVersion, globalVersion);
+        for (var attempt = 0; attempt < MaxSecurityVersionRetries; attempt++)
+        {
+            // Include the shared global version so global role changes invalidate every tenant's ACL keys.
+            var (tenantVersion, globalVersion) = await _tenantVersionStore
+                .GetTenantAndGlobalVersionsAsync(tenantId, cancellationToken).ConfigureAwait(false);
+            var userVersion = await _userVersionStore.GetVersionAsync(userId, cancellationToken).ConfigureAwait(false);
+            var cacheKey = BuildCacheKey(userId, tenantId, resourceType, resourceId, tenantVersion, userVersion, globalVersion);
 
-        // Try L1 cache first
-        var l1LookupStartedAt = Stopwatch.GetTimestamp();
-        if (_l1Cache.TryGetValue(cacheKey, out AccessLevel cachedLevel))
-        {
-            _metrics?.RecordLookupDuration(Stopwatch.GetElapsedTime(l1LookupStartedAt), CacheType);
-            _metrics?.RecordHit(CacheLevel.L1, CacheType);
-            return cachedLevel;
-        }
-        if (_hybridCache is null)
-        {
-            _metrics?.RecordLookupDuration(Stopwatch.GetElapsedTime(l1LookupStartedAt), CacheType);
-        }
-
-        // Try L2 (hybrid) cache if available
-        if (_hybridCache != null)
-        {
-            var hybridResult = await _hybridCache.GetValueAsync<AccessLevel>(cacheKey, CacheType, cancellationToken).ConfigureAwait(false);
-            if (hybridResult.Found)
+            // Try L1 cache first
+            var l1LookupStartedAt = Stopwatch.GetTimestamp();
+            if (_l1Cache.TryGetValue(cacheKey, out CachedAclDecision cachedDecision) &&
+                TryServeDecision(cacheKey, cachedDecision, out var cachedLevel))
             {
-                // Promote to L1
-                CacheAccessLevel(cacheKey, tenantId.ToString(), hybridResult.Value, l1Only: true);
-                return hybridResult.Value;
+                _metrics?.RecordLookupDuration(Stopwatch.GetElapsedTime(l1LookupStartedAt), CacheType);
+                _metrics?.RecordHit(CacheLevel.L1, CacheType);
+                return cachedLevel;
             }
+            if (_hybridCache is null)
+            {
+                _metrics?.RecordLookupDuration(Stopwatch.GetElapsedTime(l1LookupStartedAt), CacheType);
+            }
+
+            // Try L2 (hybrid) cache if available
+            if (_hybridCache != null)
+            {
+                var hybridResult = await _hybridCache.GetValueAsync<CachedAclDecision>(cacheKey, CacheType, cancellationToken).ConfigureAwait(false);
+                if (hybridResult.Found && TryServeDecision(cacheKey, hybridResult.Value, out var promotedLevel))
+                {
+                    // Promote to L1
+                    CacheAccessLevel(cacheKey, tenantId.ToString(), hybridResult.Value, l1Only: true);
+                    return promotedLevel;
+                }
+            }
+
+            // Cache miss - fetch from underlying service
+            _metrics?.RecordMiss(CacheType);
+            var evaluation = await EvaluateLegacyFromSourceAsync(userId, tenantId, resourceType, resourceId, cancellationToken)
+                .ConfigureAwait(false);
+
+            // Re-validate the security versions after the database read, mirroring the preferred
+            // EvaluateAccessAsync path: a decision evaluated across a concurrent permission mutation
+            // is discarded and retried instead of being cached (under the old-version key) or returned.
+            if (!await IsSecurityVersionCurrentAsync(
+                    tenantId,
+                    userId,
+                    tenantVersion,
+                    userVersion,
+                    globalVersion,
+                    cancellationToken).ConfigureAwait(false))
+            {
+                continue;
+            }
+
+            await CacheAccessLevelAsync(
+                cacheKey,
+                tenantId.ToString(),
+                new CachedAclDecision(evaluation.AccessLevel, evaluation.EarliestEffectiveExpirationUtc),
+                cancellationToken).ConfigureAwait(false);
+
+            return evaluation.AccessLevel;
         }
 
-        // Cache miss - fetch from underlying service
-        _metrics?.RecordMiss(CacheType);
-        var level = await _innerService.GetAccessLevelAsync(userId, tenantId, resourceType, resourceId, cancellationToken).ConfigureAwait(false);
+        throw new InvalidOperationException(
+            $"Could not obtain a stable ACL decision for user '{userId}' in tenant '{tenantId}' after {MaxSecurityVersionRetries} attempts because its security version kept changing.");
+    }
 
-        await CacheAccessLevelAsync(cacheKey, tenantId.ToString(), level, cancellationToken).ConfigureAwait(false);
+    private async Task<TimeBoundAccessEvaluation> EvaluateLegacyFromSourceAsync(
+        Guid userId,
+        Guid tenantId,
+        string resourceType,
+        string resourceId,
+        CancellationToken cancellationToken)
+    {
+        if (_innerService is ITimeBoundAccessControlListEvaluation timeBound)
+        {
+            // The database-backed legacy overload evaluates exactly this user subject; use the
+            // time-bound evaluation so the cached copy can be bounded by grant expiration.
+            return await timeBound.EvaluateAccessTimeBoundAsync(
+                AclSubject.ForUser(userId), tenantId, resourceType, resourceId, cancellationToken).ConfigureAwait(false);
+        }
 
-        return level;
+        var level = await _innerService
+            .GetAccessLevelAsync(userId, tenantId, resourceType, resourceId, cancellationToken)
+            .ConfigureAwait(false);
+        return new TimeBoundAccessEvaluation(level, EarliestEffectiveExpirationUtc: null);
     }
 
     /// <inheritdoc />
@@ -517,7 +589,9 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         {
             string[] keySnapshot;
             lock (keys)
+            {
                 keySnapshot = keys.ToArray();
+            }
 
             foreach (var key in keySnapshot)
             {
@@ -567,7 +641,8 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         long userVersion,
         long globalVersion)
     {
-        return $"acl:{tenantId}:{userId}:{resourceType}:{resourceId}:tv{tenantVersion}:uv{userVersion}:gv{globalVersion}";
+        // Free-form resource segments are length-prefixed so delimiter-bearing values cannot collide.
+        return AclCacheKeys.BuildUserCacheKey(userId, tenantId, resourceType, resourceId, tenantVersion, userVersion, globalVersion);
     }
 
     private static string BuildSubjectCacheKey(
@@ -581,42 +656,147 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
     {
         // Build a stable cache key from subject principals
         // Includes both tenant version (for tenant-wide changes) and user version (for user-specific changes)
-        var userPart = subject.UserId?.ToString() ?? "anon";
-        var rolesPart = subject.RoleIds.Count > 0 ? string.Join(",", subject.RoleIds.OrderBy(r => r)) : "nr";
-        var groupsPart = subject.GroupIds.Count > 0 ? string.Join(",", subject.GroupIds.OrderBy(g => g)) : "ng";
-        return $"acl:subj:{tenantId}:{userPart}:{rolesPart}:{groupsPart}:{resourceType}:{resourceId}:tv{tenantVersion}:uv{userVersion}:gv{globalVersion}";
+        return AclCacheKeys.BuildSubjectCacheKey(subject, tenantId, resourceType, resourceId, tenantVersion, userVersion, globalVersion);
     }
 
     /// <summary>
-    ///     Caches an access level in L1 cache only (used for L2 → L1 promotion).
+    ///     Caches an access decision in L1 cache only (used for L2 → L1 promotion).
     /// </summary>
-    private void CacheAccessLevel(string cacheKey, string tenantId, AccessLevel level, bool l1Only)
+    private void CacheAccessLevel(string cacheKey, string tenantId, CachedAclDecision decision, bool l1Only)
     {
+        if (!TryComputeClampedTtlSeconds(decision.EffectiveUntilUtc, out var ttlSeconds))
+        {
+            // The decision's time-bound grants already lapsed while it was being evaluated; a stale
+            // allow must not be cached under any TTL.
+            return;
+        }
+
+        var effectiveTtlSeconds = ttlSeconds ?? _options.AccessControlListTtlSeconds;
         var cacheOptions = new MemoryCacheEntryOptions()
-            .SetAbsoluteExpiration(TimeSpan.FromSeconds(_options.AccessControlListTtlSeconds))
-            .SetSlidingExpiration(TimeSpan.FromSeconds(_options.AccessControlListTtlSeconds / 2))
+            .SetAbsoluteExpiration(TimeSpan.FromSeconds(effectiveTtlSeconds))
             .SetSize(1);
+        if (effectiveTtlSeconds >= 2)
+        {
+            cacheOptions.SetSlidingExpiration(TimeSpan.FromSeconds(effectiveTtlSeconds / 2));
+        }
 
         _keyTracker?.Track(cacheKey, CacheType, cacheOptions);
-        _l1Cache.Set(cacheKey, level, cacheOptions);
+        _l1Cache.Set(cacheKey, decision, cacheOptions);
 
         // Track cache key for tenant invalidation
         TrackCacheKey(tenantId, cacheKey);
     }
 
     /// <summary>
-    ///     Caches an access level in both L1 and L2 caches asynchronously.
+    ///     Caches an access decision in both L1 and L2 caches asynchronously.
     /// </summary>
-    private async Task CacheAccessLevelAsync(string cacheKey, string tenantId, AccessLevel level, CancellationToken cancellationToken)
+    private async Task CacheAccessLevelAsync(
+        string cacheKey,
+        string tenantId,
+        CachedAclDecision decision,
+        CancellationToken cancellationToken)
     {
+        if (!TryComputeClampedTtlSeconds(decision.EffectiveUntilUtc, out var ttlSeconds))
+        {
+            // Expired decisions are cached in neither level.
+            return;
+        }
+
         // Cache in L1
-        CacheAccessLevel(cacheKey, tenantId, level, l1Only: true);
+        CacheAccessLevel(cacheKey, tenantId, decision, l1Only: true);
 
         // Cache in L2 if available
         if (_hybridCache != null)
         {
-            await _hybridCache.SetValueAsync(cacheKey, level, CacheType, cancellationToken).ConfigureAwait(false);
+            if (ttlSeconds is { } clampedTtlSeconds)
+            {
+                // Clamp the L2 lifetime to the earliest effective grant expiration as well, so a
+                // time-lapsed grant cannot keep serving its cached allow from Redis either.
+                await _hybridCache.SetValueAsync(cacheKey, decision, CacheType, clampedTtlSeconds, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await _hybridCache.SetValueAsync(cacheKey, decision, CacheType, cancellationToken).ConfigureAwait(false);
+            }
         }
+    }
+
+    /// <summary>
+    ///     Returns true when the cached decision may still be served; false once its earliest effective
+    ///     grant expiration has passed (time-based expiry advances no security version, so the cached
+    ///     copy has to police its own boundary).
+    /// </summary>
+    private static bool IsDecisionServable(CachedAclDecision decision) =>
+        decision.EffectiveUntilUtc is not { } effectiveUntil || effectiveUntil > SystemClock.UtcNow;
+
+    /// <summary>
+    ///     Validates a cached decision on read: servable decisions pass through, lapsed ones are
+    ///     dropped from L1 and reported as a miss so the authoritative source is re-evaluated.
+    /// </summary>
+    private bool TryServeDecision(string cacheKey, CachedAclDecision decision, out AccessLevel level)
+    {
+        if (IsDecisionServable(decision))
+        {
+            level = decision.AccessLevel;
+            return true;
+        }
+
+        _l1Cache.Remove(cacheKey);
+        _metrics?.RecordEviction(CacheLevel.L1, CacheType);
+        level = AccessLevel.None;
+        return false;
+    }
+
+    /// <summary>
+    ///     Computes the cache TTL for a decision. Returns <c>false</c> when the decision must not be
+    ///     cached at all because its grants already expired. Returns <c>true</c> with a non-null TTL
+    ///     clamped to the seconds remaining before the earliest effective grant expiration (never
+    ///     above the configured ACL TTL), or <c>null</c> to use the configured TTL when the decision
+    ///     is not time-bound.
+    /// </summary>
+    private bool TryComputeClampedTtlSeconds(DateTime? effectiveUntilUtc, out int? ttlSeconds)
+    {
+        if (effectiveUntilUtc is not { } expiresAt)
+        {
+            ttlSeconds = null;
+            return true;
+        }
+
+        // Floor the remaining time so the cached copy never outlives the grant, and treat anything
+        // already at or past the boundary as uncacheable.
+        var remainingSeconds = Math.Floor((expiresAt - SystemClock.UtcNow).TotalSeconds);
+        if (remainingSeconds <= 0)
+        {
+            ttlSeconds = null;
+            return false;
+        }
+
+        ttlSeconds = (int)Math.Min(_options.AccessControlListTtlSeconds, remainingSeconds);
+        return true;
+    }
+
+    /// <summary>
+    ///     Evaluates a decision from the underlying service, preferring the time-bound evaluation so
+    ///     the cached copy can carry and be bounded by the earliest effective grant expiration.
+    /// </summary>
+    private async Task<TimeBoundAccessEvaluation> EvaluateFromSourceAsync(
+        AclSubject subject,
+        Guid tenantId,
+        string resourceType,
+        string resourceId,
+        CancellationToken cancellationToken)
+    {
+        if (_innerService is ITimeBoundAccessControlListEvaluation timeBound)
+        {
+            return await timeBound
+                .EvaluateAccessTimeBoundAsync(subject, tenantId, resourceType, resourceId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        var level = await _innerService
+            .EvaluateAccessAsync(subject, tenantId, resourceType, resourceId, cancellationToken)
+            .ConfigureAwait(false);
+        return new TimeBoundAccessEvaluation(level, EarliestEffectiveExpirationUtc: null);
     }
 
     private void TrackCacheKey(string tenantId, string cacheKey)
@@ -671,21 +851,20 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         }
         else
         {
-            InvalidatePrincipalResourceCache(principalType, principalId, tenantId, resourceType, resourceId);
+            InvalidatePrincipalResourceCache(tenantId, resourceType, resourceId);
         }
     }
 
-    // ReSharper disable UnusedParameter.Local - Parameters reserved for future fine-grained cache invalidation
-    private void InvalidatePrincipalResourceCache(AclPrincipalType principalType, Guid? principalId, Guid tenantId, string resourceType, string resourceId)
-    // ReSharper restore UnusedParameter.Local
+    private void InvalidatePrincipalResourceCache(Guid tenantId, string resourceType, string resourceId)
     {
         // When a principal's access changes, we need to invalidate any subject cache that might include this principal.
         // Since subject cache keys include multiple principals, we use a more aggressive invalidation strategy.
         var tenantIdString = tenantId.ToString();
         if (_tenantCacheKeys.TryGetValue(tenantIdString, out var keys))
         {
-            // Look for any cache key containing this resource and potentially this principal
-            var resourcePattern = $":{resourceType}:{resourceId}:";
+            // Look for any cache key containing this resource and potentially this principal.
+            // The resource segments are length-prefixed, so match the encoded segment pair.
+            var resourcePattern = $":{AclCacheKeys.BuildResourceSegment(resourceType, resourceId)}:";
             var keysToRemove = keys.Where(k => k.Contains(resourcePattern, StringComparison.OrdinalIgnoreCase)).ToList();
 
             lock (keys)
@@ -708,7 +887,8 @@ public sealed class CachedAccessControlListService : IAccessControlListService, 
         var tenantIdString = tenantId.ToString();
         if (_tenantCacheKeys.TryGetValue(tenantIdString, out var keys))
         {
-            var pattern = $"acl:{tenantId}:{userId}:{resourceType}:{resourceId}:";
+            // Cache keys length-prefix the resource segments, so match the encoded segment pair.
+            var pattern = $"acl:{tenantId}:{userId}:{AclCacheKeys.BuildResourceSegment(resourceType, resourceId)}:";
             var keysToRemove = keys.Where(k => k.StartsWith(pattern, StringComparison.OrdinalIgnoreCase)).ToList();
 
             lock (keys)

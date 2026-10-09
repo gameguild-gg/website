@@ -26,8 +26,11 @@ public sealed class PostgreSqlAdminWithdrawalFencingTokenAllocator :
                 $"SELECT economy_private.next_admin_withdrawal_fencing_token_v1() AS \"Value\"")
             .SingleAsync(cancellationToken).ConfigureAwait(false);
         if (token <= 0)
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "The durable administrative-withdrawal fencing token is invalid.");
+            "The durable administrative-withdrawal fencing token is invalid.");
+        }
+
         return token;
     }
 }

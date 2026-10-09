@@ -305,7 +305,9 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     private static string MaskPhoneNumber(string phoneNumber)
     {
         if (string.IsNullOrEmpty(phoneNumber) || phoneNumber.Length < 4)
+        {
             return "****";
+        }
 
         return $"***-***-{phoneNumber[^4..]}";
     }

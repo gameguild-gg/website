@@ -19,7 +19,9 @@ public sealed class AdRewardRequestRiskContextResolver(
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new AdRewardRiskContextUnavailableException("Authenticated tenant and actor are required.");
+        }
 
         var key = ReadKey();
         try
@@ -31,8 +33,10 @@ public sealed class AdRewardRequestRiskContextResolver(
             var asn = context.Items[VerifiedAsnItemKey] as string;
             if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(ipAddress) ||
                 string.IsNullOrWhiteSpace(asn))
+            {
                 throw new AdRewardRiskContextUnavailableException(
-                    "A signed session, resolved client address, and verified ASN are required.");
+                "A signed session, resolved client address, and verified ASN are required.");
+            }
 
             return ValueTask.FromResult(new AdRewardRequestRiskContext(
                 Hash(key, $"device|{tenantId:N}|{actorId:N}|{sessionId}"),

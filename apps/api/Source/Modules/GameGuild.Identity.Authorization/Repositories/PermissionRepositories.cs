@@ -39,7 +39,10 @@ public class TenantPermissionRepository(IApplicationDbContext context) : ITenant
         var permission = await TenantPermissions
             .FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
-        if (permission == null) return false;
+        if (permission == null)
+        {
+            return false;
+        }
 
         permission.SoftDelete();
         TenantPermissions.Update(permission);

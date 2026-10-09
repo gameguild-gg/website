@@ -68,7 +68,7 @@ internal static class PlatformIdentitySeeder
             adminUser.VerifyEmail();
             dbContext.Set<AppUser>().Add(adminUser);
             await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            logger?.LogInformation("Created application administrator: {Email}", normalizedEmail);
+            logger?.LogInformation("Created application administrator: {Email}", LogRedaction.MaskEmail(normalizedEmail));
             return adminUser;
         }
 
@@ -119,7 +119,7 @@ internal static class PlatformIdentitySeeder
         if (changed)
         {
             await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            logger?.LogInformation("Repaired application administrator: {Email}", normalizedEmail);
+            logger?.LogInformation("Repaired application administrator: {Email}", LogRedaction.MaskEmail(normalizedEmail));
         }
 
         return adminUser;

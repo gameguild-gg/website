@@ -1,3 +1,4 @@
+import { assertSafeServiceUrl } from "@/lib/security/safe-remote-url"
 import { syncConfig } from "../../sync/editor/sync-config"
 import type { ProjectData, ProjectMetadataRecord } from "../../storage/editor/project-data"
 
@@ -81,8 +82,9 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout)
 
     try {
-      const response = await fetch(`${this.config.baseUrl}${url}`, {
+      const response = await fetch(assertSafeServiceUrl(`${this.config.baseUrl}${url}`, this.config.baseUrl), {
         ...options,
+        redirect: "error",
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",

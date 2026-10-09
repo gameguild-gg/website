@@ -22,7 +22,9 @@ public sealed class HardCoinFundingPostgreSqlRaceTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         if (_database is not null)
+        {
             await _database.DisposeAsync();
+        }
     }
 
     [Fact]
@@ -201,13 +203,17 @@ public sealed class HardCoinFundingPostgreSqlRaceTests : IAsyncLifetime
         for (var current = exception; current is not null; current = current.InnerException)
         {
             if (current is DbUpdateConcurrencyException)
+            {
                 return true;
+            }
 
             if (current is PostgresException postgresException && postgresException.SqlState is
                     PostgresErrorCodes.UniqueViolation or
                     PostgresErrorCodes.DeadlockDetected or
                     PostgresErrorCodes.SerializationFailure)
+            {
                 return true;
+            }
         }
 
         return false;

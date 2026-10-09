@@ -27,7 +27,11 @@ public readonly record struct RiskEntityNode
 {
     public RiskEntityNode(RiskEntityType type, string identifierHash)
     {
-        if (!Enum.IsDefined(type)) throw new ArgumentOutOfRangeException(nameof(type));
+        if (!Enum.IsDefined(type))
+        {
+            throw new ArgumentOutOfRangeException(nameof(type));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(identifierHash);
         Type = type;
         IdentifierHash = identifierHash.Trim();
@@ -40,7 +44,11 @@ public readonly record struct RiskEntityNode
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
         ArgumentNullException.ThrowIfNull(secret);
-        if (secret.Length == 0) throw new ArgumentException("HMAC secret cannot be empty.", nameof(secret));
+        if (secret.Length == 0)
+        {
+            throw new ArgumentException("HMAC secret cannot be empty.", nameof(secret));
+        }
+
         var digest = HMACSHA256.HashData(secret, Encoding.UTF8.GetBytes(identifier));
         return new RiskEntityNode(type, Convert.ToHexString(digest));
     }
@@ -61,7 +69,11 @@ public sealed class EntityRiskGraph
 
     public void Link(RiskEntityNode left, RiskEntityNode right, string evidenceHash, DateTimeOffset observedAt)
     {
-        if (left == right) throw new ArgumentException("A risk entity cannot link to itself.", nameof(right));
+        if (left == right)
+        {
+            throw new ArgumentException("A risk entity cannot link to itself.", nameof(right));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
         lock (_gate)
         {
@@ -81,9 +93,18 @@ public sealed class EntityRiskGraph
             pending.Enqueue(seed);
             while (pending.TryDequeue(out var current))
             {
-                if (!_edges.TryGetValue(current, out var neighbors)) continue;
+                if (!_edges.TryGetValue(current, out var neighbors))
+                {
+                    continue;
+                }
+
                 foreach (var neighbor in neighbors)
-                    if (visited.Add(neighbor)) pending.Enqueue(neighbor);
+                {
+                    if (visited.Add(neighbor))
+                    {
+                        pending.Enqueue(neighbor);
+                    }
+                }
             }
 
             var nodes = visited.OrderBy(node => node.Type).ThenBy(node => node.IdentifierHash, StringComparer.Ordinal).ToArray();

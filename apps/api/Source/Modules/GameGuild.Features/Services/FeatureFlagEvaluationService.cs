@@ -42,7 +42,7 @@ public class FeatureFlagEvaluationService(
             _logger.LogDebug(
                 "Feature flag '{FeatureKey}' evaluated without TenantId context. " +
                 "Tenant-targeting handlers will apply fail-closed policy if tenant rules exist.",
-                featureKey);
+                LogRedaction.Sanitize(featureKey));
         }
 
         try
@@ -52,7 +52,7 @@ public class FeatureFlagEvaluationService(
 
             if (featureFlag == null)
             {
-                _logger.LogWarning("Feature flag '{FeatureKey}' not found", featureKey);
+                _logger.LogWarning("Feature flag '{FeatureKey}' not found", LogRedaction.Sanitize(featureKey));
 
                 return CreateNotFoundResult(featureKey, startTime);
             }
@@ -91,7 +91,7 @@ public class FeatureFlagEvaluationService(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error evaluating feature flag '{FeatureKey}'", featureKey);
+            _logger.LogError(ex, "Error evaluating feature flag '{FeatureKey}'", LogRedaction.Sanitize(featureKey));
 
             return CreateErrorResult(featureKey, ex.Message, startTime);
         }

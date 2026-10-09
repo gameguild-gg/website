@@ -20,7 +20,9 @@ public sealed class SendWelcomeEmailHandler(
         // The durable payload contains IDs only; personal data is loaded inside the listener.
         var user = await userRepository.GetByIdAsync(@event.UserId, cancellationToken).ConfigureAwait(false);
         if (user is null || user.IsDeleted)
+        {
             return; // A deleted account must not receive a delayed welcome email.
+        }
 
         await Handle(new UserSignedUpNotification
         {
@@ -54,13 +56,17 @@ public sealed class SendWelcomeEmailHandler(
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (result is null || result.IsFailure)
+            {
                 throw new InvalidOperationException("Welcome notification was not durably queued.");
+            }
 
-            logger.LogInformation("Welcome email queued for {Email} (ID: {UserId})", notification.Email, notification.UserId);
+            logger.LogInformation("Welcome email queued for {Email} (ID: {UserId})",
+                LogRedaction.MaskEmail(notification.Email), LogRedaction.RedactId(notification.UserId, "uid"));
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Welcome email queueing failed for user {Email} (ID: {UserId})", notification.Email, notification.UserId);
+            logger.LogWarning("Welcome email queueing failed for user {Email} (ID: {UserId}): {ErrorType}",
+                LogRedaction.MaskEmail(notification.Email), LogRedaction.RedactId(notification.UserId, "uid"), ex.GetType().Name);
             throw; // The asynchronous outbox retries; never acknowledge a lost queue write.
         }
     }

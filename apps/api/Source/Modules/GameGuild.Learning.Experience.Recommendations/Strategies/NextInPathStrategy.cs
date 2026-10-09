@@ -47,7 +47,9 @@ public class NextInPathStrategy(IApplicationDbContext context) : IRecommendation
         {
             var learningPath = learningPaths.FirstOrDefault(lp => lp.Id == enrollment.LearningPathId);
             if (learningPath?.Courses == null || !learningPath.Courses.Any())
+            {
                 continue;
+            }
 
             // Find the next incomplete course in the path
             var orderedCourses = learningPath.Courses.OrderBy(c => c.Order).ToList();
@@ -56,7 +58,9 @@ public class NextInPathStrategy(IApplicationDbContext context) : IRecommendation
             {
                 // Skip if already excluded (completed/enrolled)
                 if (excludeSet.Contains(pathCourse.CourseId))
+                {
                     continue;
+                }
 
                 // This is the next course to recommend
                 var position = orderedCourses.IndexOf(pathCourse) + 1;
@@ -66,20 +70,22 @@ public class NextInPathStrategy(IApplicationDbContext context) : IRecommendation
                 recommendations.Add(new RecommendationCandidate(
                     CourseId: pathCourse.CourseId,
                     Type: Type,
-                    Score: CalculatePathScore(position, totalCourses, pathCourse.IsRequired),
+                    Score: CalculatePathScore(position, pathCourse.IsRequired),
                     Reason: $"Next in '{learningPath.Title}' ({progressPercent}% complete)"));
 
                 break; // Only recommend one course per path
             }
 
             if (recommendations.Count >= maxResults)
+            {
                 break;
+            }
         }
 
         return recommendations.Take(maxResults);
     }
 
-    private static double CalculatePathScore(int position, int totalCourses, bool isRequired)
+    private static double CalculatePathScore(int position, bool isRequired)
     {
         // Base score: 0.9 (high because user is committed to the path)
         // Bonus for required courses

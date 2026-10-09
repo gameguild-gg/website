@@ -16,7 +16,11 @@ public readonly record struct UsdNanoAmount : IComparable<UsdNanoAmount>
 
     public static UsdNanoAmount operator -(UsdNanoAmount left, UsdNanoAmount right)
     {
-        if (right.Nanos > left.Nanos) throw new InvalidOperationException("USD nano amounts cannot underflow.");
+        if (right.Nanos > left.Nanos)
+        {
+            throw new InvalidOperationException("USD nano amounts cannot underflow.");
+        }
+
         return new UsdNanoAmount(left.Nanos - right.Nanos);
     }
 

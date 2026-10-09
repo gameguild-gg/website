@@ -24,7 +24,9 @@ public sealed class RootReversalFenceRegistry
         {
             var current = CurrentState(root);
             if (current.IsReversalActive)
+            {
                 throw new InvalidOperationException("A reversal is already active for this root.");
+            }
 
             var next = new RootFenceState(checked(current.Epoch + 1), true);
             _states[root] = next;
@@ -38,8 +40,16 @@ public sealed class RootReversalFenceRegistry
         lock (_gate)
         {
             var current = CurrentState(root);
-            if (current.Epoch != epoch) throw new StaleRootFenceException(root, epoch, current.Epoch);
-            if (!current.IsReversalActive) throw new InvalidOperationException("No reversal is active for this root.");
+            if (current.Epoch != epoch)
+            {
+                throw new StaleRootFenceException(root, epoch, current.Epoch);
+            }
+
+            if (!current.IsReversalActive)
+            {
+                throw new InvalidOperationException("No reversal is active for this root.");
+            }
+
             _states[root] = current with { IsReversalActive = false };
         }
     }
@@ -54,9 +64,14 @@ public sealed class RootReversalFenceRegistry
             {
                 var current = CurrentState(root);
                 if (!snapshot.TryGet(root, out var captured) || captured.Epoch != current.Epoch)
+                {
                     throw new StaleRootFenceException(root, captured.Epoch, current.Epoch);
+                }
+
                 if (current.IsReversalActive)
+                {
                     throw new RootReversalInProgressException(root, current.Epoch);
+                }
             }
         }
     }

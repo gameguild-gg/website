@@ -72,14 +72,25 @@ public sealed class PostgreSqlBountyTerminalClaimWriter : IBountyTerminalClaimWr
     private static void Validate(BountyClaimTerminalWriteCommand command)
     {
         if (command.ClaimantId == Guid.Empty)
+        {
             throw new ArgumentException("Claimant ID is required.", nameof(command));
+        }
+
         if (command.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(command));
+        }
+
         if (command.RiskDecisionId == Guid.Empty)
+        {
             throw new ArgumentException("Claim risk decision is required.", nameof(command));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.EvidenceHash);
         if (command.EvidenceHash.Trim().Length > 128)
+        {
             throw new ArgumentException("Claim evidence hashes cannot exceed 128 characters.", nameof(command));
+        }
     }
 
     private static bool IsDatabaseFailure(Exception exception) =>
@@ -128,11 +139,19 @@ public sealed class PostgreSqlBountyTerminalReclaimWriter : IBountyTerminalRecla
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.PosterId == Guid.Empty)
+        {
             throw new ArgumentException("Poster ID is required.", nameof(command));
+        }
+
         if (command.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(command));
+        }
+
         if (command.RiskDecisionId == Guid.Empty)
+        {
             throw new ArgumentException("Reclaim risk decision is required.", nameof(command));
+        }
 
         try
         {
@@ -214,7 +233,9 @@ public sealed class PostgreSqlDurableBountyReclaimWorkflow : IDurableBountyRecla
         ValidateRequest(request);
         var replay = _terminals.FindByIdempotency(request.Authority.TenantId, request.IdempotencyKey);
         if (replay is not null)
+        {
             return EnsureReplayMatches(replay, request);
+        }
 
         var initialEscrow = _escrows.Get(request.Authority.TenantId, request.BountyId);
         EnsureReclaimable(initialEscrow, request);
@@ -223,12 +244,16 @@ public sealed class PostgreSqlDurableBountyReclaimWorkflow : IDurableBountyRecla
         {
             replay = _terminals.FindByIdempotency(request.Authority.TenantId, request.IdempotencyKey);
             if (replay is not null)
+            {
                 return EnsureReplayMatches(replay, request);
+            }
 
             if (initialEscrow.Status == BountyStatus.Expired &&
                 !await _expiration.PrepareForReclaimAsync(
                     request.BountyId, request.ReclaimedAt, cancellationToken).ConfigureAwait(false))
+            {
                 throw new BountyTerminalConflictException("The expired bounty could not be locked for reclaim.");
+            }
 
             var escrow = _escrows.Get(request.Authority.TenantId, request.BountyId);
             EnsureReclaimable(escrow, request);
@@ -257,34 +282,59 @@ public sealed class PostgreSqlDurableBountyReclaimWorkflow : IDurableBountyRecla
             replay.BountyId != request.BountyId || replay.Status != BountyStatus.Reclaimed ||
             replay.ActorId != request.PosterId || replay.DestinationWalletId != request.PosterWalletId ||
             replay.RiskDecisionId != request.Authority.RiskDecisionId)
+        {
             throw new BountyIdempotencyConflictException(
-                "Bounty reclaim idempotency key is bound to another terminal outcome.");
+            "Bounty reclaim idempotency key is bound to another terminal outcome.");
+        }
+
         return replay;
     }
 
     private static void EnsureReclaimable(PersistedBountyEscrow escrow, DurableBountyReclaimRequest request)
     {
         if (escrow.TenantId != request.Authority.TenantId)
+        {
             throw new BountyOwnershipException("The bounty does not belong to the actor tenant.");
+        }
+
         if (escrow.Status is not (BountyStatus.Open or BountyStatus.Expired))
+        {
             throw new BountyTerminalConflictException("The bounty already has a terminal outcome.");
+        }
+
         if (request.ReclaimedAt < escrow.ExpiresAt)
+        {
             throw new BountyNotExpiredException("The bounty cannot be reclaimed before expiry.");
+        }
+
         if (request.PosterId != escrow.PosterId || request.PosterWalletId != escrow.PosterWalletId)
+        {
             throw new BountyOwnershipException("Only the poster can reclaim this bounty.");
+        }
+
         if (escrow.Fragments.Count == 0 || escrow.Fragments.Any(fragment => fragment.EscrowLotId is null))
+        {
             throw new RegisteredPostingRejectedException("Bounty escrow lots are not fully materialized.");
+        }
     }
 
     private static void ValidateRequest(DurableBountyReclaimRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.PosterId == Guid.Empty)
+        {
             throw new ArgumentException("Poster ID is required.", nameof(request));
+        }
+
         if (request.Authority.ActorId != request.PosterId)
+        {
             throw new ArgumentException("The bounty reclaim authority must be the poster.", nameof(request));
+        }
+
         if (request.Authority.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("The bounty reclaim authority must be tenant scoped.", nameof(request));
+        }
     }
 }
 
@@ -306,7 +356,9 @@ public sealed class PostgreSqlDurableBountyClaimWorkflow(
         ValidateRequest(request);
         var replay = terminals.FindByIdempotency(request.Authority.TenantId, request.IdempotencyKey);
         if (replay is not null)
+        {
             return EnsureReplayMatches(replay, request);
+        }
 
         var initialEscrow = escrows.Get(request.Authority.TenantId, request.BountyId);
         EnsureClaimable(initialEscrow, request);
@@ -315,7 +367,9 @@ public sealed class PostgreSqlDurableBountyClaimWorkflow(
         {
             replay = terminals.FindByIdempotency(request.Authority.TenantId, request.IdempotencyKey);
             if (replay is not null)
+            {
                 return EnsureReplayMatches(replay, request);
+            }
 
             var escrow = escrows.Get(request.Authority.TenantId, request.BountyId);
             EnsureClaimable(escrow, request);
@@ -346,37 +400,65 @@ public sealed class PostgreSqlDurableBountyClaimWorkflow(
             replay.BountyId != request.BountyId || replay.Status != BountyStatus.Claimed ||
             replay.ActorId != request.ClaimantId || replay.DestinationWalletId != request.ClaimantWalletId ||
             replay.RiskDecisionId != request.Authority.RiskDecisionId)
+        {
             throw new BountyIdempotencyConflictException(
-                "Bounty claim idempotency key is bound to another terminal outcome.");
+            "Bounty claim idempotency key is bound to another terminal outcome.");
+        }
+
         return replay;
     }
 
     private static void EnsureClaimable(PersistedBountyEscrow escrow, DurableBountyClaimRequest request)
     {
         if (escrow.TenantId != request.Authority.TenantId)
+        {
             throw new BountyClaimIneligibleException("The bounty does not belong to the actor tenant.");
+        }
+
         if (escrow.Status != BountyStatus.Open)
+        {
             throw new BountyTerminalConflictException("The bounty already has a terminal outcome.");
+        }
+
         if (request.ClaimedAt >= escrow.ExpiresAt)
+        {
             throw new BountyExpiredException("The bounty can no longer be claimed.");
+        }
+
         if (request.ClaimantId == escrow.PosterId || request.ClaimantWalletId == escrow.PosterWalletId ||
             request.ClaimantWalletId == escrow.EscrowWalletId)
+        {
             throw new BountyClaimIneligibleException("A poster cannot claim their own bounty.");
+        }
+
         if (escrow.Fragments.Count == 0 || escrow.Fragments.Any(fragment => fragment.EscrowLotId is null))
+        {
             throw new RegisteredPostingRejectedException("Bounty escrow lots are not fully materialized.");
+        }
     }
 
     private static void ValidateRequest(DurableBountyClaimRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.ClaimantId == Guid.Empty)
+        {
             throw new ArgumentException("Claimant ID is required.", nameof(request));
+        }
+
         if (request.Authority.ActorId != request.ClaimantId)
+        {
             throw new ArgumentException("The bounty claim authority must be the claimant.", nameof(request));
+        }
+
         if (request.Authority.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("The bounty claim authority must be tenant scoped.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.EvidenceHash);
         if (request.EvidenceHash.Trim().Length > 128)
+        {
             throw new ArgumentException("Claim evidence hashes cannot exceed 128 characters.", nameof(request));
+        }
     }
 }

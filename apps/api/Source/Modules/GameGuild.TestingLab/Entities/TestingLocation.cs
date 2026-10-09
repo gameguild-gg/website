@@ -165,7 +165,9 @@ public class TestingLocation : EntityBase
     public void SetCapacity(int capacity)
     {
         if (capacity < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity cannot be negative");
+        }
 
         Capacity = capacity;
         UpdatedAt = SystemClock.UtcNow;

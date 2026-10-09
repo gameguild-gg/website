@@ -396,7 +396,9 @@ public sealed class UserPreferencesController(ISender sender) : BaseApiControlle
         var result = await sender.Send(query, ct).ConfigureAwait(false);
 
         if (result == null)
+        {
             return NotFound();
+        }
 
         // Extract localization preferences from the preferences
         var localizationPrefs = result.LocalizationPreferences;

@@ -15,12 +15,18 @@ public sealed class AssetScopedAccessService(IApplicationDbContext context) : IA
         CancellationToken cancellationToken = default)
     {
         var referenceIds = assetReferenceIds.Where(id => id != Guid.Empty).Distinct().ToArray();
-        if (referenceIds.Length == 0) return;
+        if (referenceIds.Length == 0)
+        {
+            return;
+        }
+
         var validReferenceIds = await context.Set<AssetReference>().AsNoTracking()
             .Where(reference => referenceIds.Contains(reference.Id) && reference.TenantId == tenantId && reference.DeletedAt == null)
             .Select(reference => reference.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
         if (validReferenceIds.Count != referenceIds.Length)
+        {
             throw new InvalidOperationException("One or more submitted assets do not belong to the application tenant.");
+        }
 
         var now = SystemClock.UtcNow;
         var existing = await context.Set<AssetScopedAccessGrant>()
@@ -29,8 +35,11 @@ public sealed class AssetScopedAccessService(IApplicationDbContext context) : IA
                             grant.ExpiresAt > now && grant.DeletedAt == null)
             .Select(grant => grant.AssetReferenceId).ToListAsync(cancellationToken).ConfigureAwait(false);
         foreach (var referenceId in validReferenceIds.Except(existing))
+        {
             context.Set<AssetScopedAccessGrant>().Add(AssetScopedAccessGrant.Create(
-                referenceId, userId, tenantId, scopeType, scopeId, expiresAt, grantedByUserId));
+            referenceId, userId, tenantId, scopeType, scopeId, expiresAt, grantedByUserId));
+        }
+
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -40,7 +49,11 @@ public sealed class AssetScopedAccessService(IApplicationDbContext context) : IA
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == null) return Task.FromResult(false);
+        if (tenantId == null)
+        {
+            return Task.FromResult(false);
+        }
+
         var now = SystemClock.UtcNow;
         return context.Set<AssetScopedAccessGrant>().AsNoTracking().AnyAsync(grant =>
             grant.AssetReferenceId == assetReferenceId && grant.UserId == userId && grant.TenantId == tenantId &&
@@ -53,7 +66,11 @@ public sealed class AssetScopedAccessService(IApplicationDbContext context) : IA
         var grants = await context.Set<AssetScopedAccessGrant>()
             .Where(grant => grant.ScopeType == scopeType && grant.ScopeId == scopeId && grant.RevokedAt == null)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
-        foreach (var grant in grants) grant.Revoke();
+        foreach (var grant in grants)
+        {
+            grant.Revoke();
+        }
+
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -24,7 +24,9 @@ public sealed class OfficialGradingFinalizationSink(
             throw new InvalidOperationException("Only an official submission can produce academic effects.");
         }
         if (!execution.TenantId.HasValue)
+        {
             throw new InvalidOperationException("Official grading requires a tenant-scoped execution.");
+        }
 
         var submission = await context.Set<AssessmentSubmission>()
             .SingleAsync(value => value.Id == execution.AssessmentSubmissionId.Value, cancellationToken)
@@ -33,7 +35,9 @@ public sealed class OfficialGradingFinalizationSink(
             .SingleAsync(value => value.Id == submission.AssessmentId, cancellationToken)
             .ConfigureAwait(false);
         if (!result.Score.HasValue)
+        {
             throw new InvalidOperationException("An official finalized result requires a score.");
+        }
 
         var passingScore = snapshot.AuthoringSource.Policy.PassingScore ?? ScoreValue.Zero;
         submission.ApplyRuntimeGrade(result.Score.Value, passingScore, result.MaxScore, result.Feedback);
@@ -93,7 +97,11 @@ public sealed class OfficialGradingFinalizationSink(
         string transition,
         CancellationToken cancellationToken)
     {
-        if (!assessment.ContentId.HasValue) return;
+        if (!assessment.ContentId.HasValue)
+        {
+            return;
+        }
+
         var existing = await context.Set<AssessmentContentCompletionProjection>()
             .Where(value => value.AssessmentId == assessment.Id &&
                             value.ContentId == assessment.ContentId.Value &&
@@ -120,7 +128,11 @@ public sealed class OfficialGradingFinalizationSink(
         AssessmentSubmission submission,
         CancellationToken cancellationToken)
     {
-        if (submission.EnrollmentId.HasValue) return [submission.EnrollmentId.Value];
+        if (submission.EnrollmentId.HasValue)
+        {
+            return [submission.EnrollmentId.Value];
+        }
+
         return await context.Set<AssessmentSubmissionParticipant>()
             .AsNoTracking()
             .Where(value => value.SubmissionId == submission.Id)

@@ -1150,15 +1150,21 @@ public class PermissionHandlerTests
         var claims = new List<Claim>();
 
         if (userId.HasValue)
+        {
             claims.Add(new Claim(ClaimTypes.NameIdentifier, userId.Value.ToString()));
+        }
 
         if (tenantId.HasValue)
+        {
             claims.Add(new Claim("tenant_id", tenantId.Value.ToString()));
+        }
 
         if (permissions != null)
         {
             foreach (var p in permissions)
+            {
                 claims.Add(new Claim("perm", p));
+            }
         }
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
@@ -1397,7 +1403,10 @@ public class TenantMatchHandlerTests
     {
         var claims = new List<Claim>();
         if (tenantClaim != null)
+        {
             claims.Add(new Claim("tenant_id", tenantClaim));
+        }
+
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
     }
 

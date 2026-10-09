@@ -60,7 +60,9 @@ public class SoDController(ISender sender) : BaseApiController
 
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
         if (result == null)
+        {
             return NotFound();
+        }
 
         return Ok(result);
     }
@@ -77,7 +79,9 @@ public class SoDController(ISender sender) : BaseApiController
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         if (!result)
+        {
             return NotFound();
+        }
 
         return NoContent();
     }
@@ -94,7 +98,9 @@ public class SoDController(ISender sender) : BaseApiController
         var result = await sender.Send(query, cancellationToken).ConfigureAwait(false);
 
         if (result == null)
+        {
             return NotFound();
+        }
 
         return Ok(result);
     }

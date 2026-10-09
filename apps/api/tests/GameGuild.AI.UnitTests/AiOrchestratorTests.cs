@@ -574,7 +574,9 @@ public class AiOrchestratorTests
             .ReturnsAsync((AiResolvedRequest request, CancellationToken _) =>
             {
                 if (expectedApiKey is not null)
+                {
                     request.ApiKey.Should().Be(expectedApiKey);
+                }
 
                 return Result.Success(new AiProviderExecutionResult(
                     responseModel ?? request.Model,
@@ -592,7 +594,10 @@ public class AiOrchestratorTests
             .Returns(async (AiResolvedRequest request, Func<string, CancellationToken, ValueTask> onDelta, CancellationToken token) =>
             {
                 if (expectedApiKey is not null)
+                {
                     request.ApiKey.Should().Be(expectedApiKey);
+                }
+
                 await onDelta("ok", token);
                 return Result.Success(new AiProviderExecutionResult(
                     responseModel ?? request.Model,

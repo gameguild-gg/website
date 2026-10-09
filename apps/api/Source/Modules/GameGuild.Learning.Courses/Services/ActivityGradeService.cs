@@ -16,18 +16,28 @@ public class ActivityGradeService(
     // Validate the content interaction exists and get the program context
     var contentInteraction = await context.Set<ContentInteraction>().Include(ci => ci.Content).ThenInclude(c => c.Program).Include(ci => ci.ProgramUser).FirstOrDefaultAsync(ci => ci.Id == contentInteractionId);
 
-    if (contentInteraction == null) throw new ArgumentException("Content interaction not found", nameof(contentInteractionId));
-    if (contentInteraction.Content.Type == ProgramContentType.Survey)
-      throw new InvalidOperationException("Surveys cannot be graded.");
-    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, contentInteraction.Content, ProgramContentAcademicMutation.Grade);
+    if (contentInteraction == null)
+        {
+            throw new ArgumentException("Content interaction not found", nameof(contentInteractionId));
+        }
+
+        if (contentInteraction.Content.Type == ProgramContentType.Survey)
+        {
+            throw new InvalidOperationException("Surveys cannot be graded.");
+        }
+
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, contentInteraction.Content, ProgramContentAcademicMutation.Grade);
 
     // Validate the grader is part of the same program
     var graderProgramUser = await context.Set<ProgramUser>().FirstOrDefaultAsync(pu => pu.Id == graderProgramUserId && pu.ProgramId == contentInteraction.Content.ProgramId);
 
-    if (graderProgramUser == null) throw new ArgumentException("Grader is not a member of this program", nameof(graderProgramUserId));
+    if (graderProgramUser == null)
+        {
+            throw new ArgumentException("Grader is not a member of this program", nameof(graderProgramUserId));
+        }
 
-    // Check if a grade already exists for this interaction
-    var existingGrade = await context.Set<ActivityGrade>().FirstOrDefaultAsync(ag => ag.ContentInteractionId == contentInteractionId);
+        // Check if a grade already exists for this interaction
+        var existingGrade = await context.Set<ActivityGrade>().FirstOrDefaultAsync(ag => ag.ContentInteractionId == contentInteractionId);
 
     if (existingGrade != null) {
       // Update existing grade
@@ -105,15 +115,34 @@ public class ActivityGradeService(
       .ThenInclude(interaction => interaction.Content)
       .FirstOrDefaultAsync(ag => ag.Id == gradeId);
 
-    if (grade == null) return null;
-    if (grade.ContentInteraction.Content.Type == ProgramContentType.Survey)
-      throw new InvalidOperationException("Surveys cannot be graded.");
-    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, grade.ContentInteraction.Content, ProgramContentAcademicMutation.Grade);
+    if (grade == null)
+        {
+            return null;
+        }
 
-    if (newPoints.HasValue) grade.AssignPoints(newPoints.Value, newMaxPoints ?? grade.MaxPoints);
-    if (newFeedback != null) grade.Feedback = newFeedback;
-    if (newGradingDetails != null) grade.GradingDetails = newGradingDetails;
-    grade.GradedAt = SystemClock.UtcNow;
+        if (grade.ContentInteraction.Content.Type == ProgramContentType.Survey)
+        {
+            throw new InvalidOperationException("Surveys cannot be graded.");
+        }
+
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, grade.ContentInteraction.Content, ProgramContentAcademicMutation.Grade);
+
+    if (newPoints.HasValue)
+        {
+            grade.AssignPoints(newPoints.Value, newMaxPoints ?? grade.MaxPoints);
+        }
+
+        if (newFeedback != null)
+        {
+            grade.Feedback = newFeedback;
+        }
+
+        if (newGradingDetails != null)
+        {
+            grade.GradingDetails = newGradingDetails;
+        }
+
+        grade.GradedAt = SystemClock.UtcNow;
     grade.Touch();
 
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -128,8 +157,12 @@ public class ActivityGradeService(
       .ThenInclude(interaction => interaction.Content)
       .FirstOrDefaultAsync(ag => ag.Id == gradeId);
 
-    if (grade == null) return false;
-    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, grade.ContentInteraction.Content, ProgramContentAcademicMutation.Grade);
+    if (grade == null)
+        {
+            return false;
+        }
+
+        ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, grade.ContentInteraction.Content, ProgramContentAcademicMutation.Grade);
 
     context.Set<ActivityGrade>().Remove(grade);
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -160,9 +193,12 @@ public class ActivityGradeService(
       .ToListAsync();
 
     var percentages = grades.Select(value => value.PercentageScore).Where(value => value.HasValue).Select(value => value!.Value).ToArray();
-    if (percentages.Length == 0) return new GradeStatistics { TotalGrades = 0 };
+    if (percentages.Length == 0)
+        {
+            return new GradeStatistics { TotalGrades = 0 };
+        }
 
-    return new GradeStatistics {
+        return new GradeStatistics {
       TotalGrades = percentages.Length,
       AverageGrade = PercentValue.Average(percentages),
       MinGrade = percentages.MinBy(value => value.Units),

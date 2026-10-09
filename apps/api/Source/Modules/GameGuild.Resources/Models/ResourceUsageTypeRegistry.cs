@@ -65,8 +65,10 @@ public sealed record ResourceUsageTypeInfo
     public ResourceUsageType ToEnum()
     {
         if (!IsBuiltIn)
+        {
             throw new InvalidOperationException($"Custom resource type '{Key}' cannot be converted to enum.");
-        
+        }
+
         return (ResourceUsageType)Id;
     }
 
@@ -125,17 +127,23 @@ public static class ResourceUsageTypeRegistry
         ArgumentNullException.ThrowIfNull(info);
 
         if (_isSealed)
+        {
             throw new InvalidOperationException(
                 "ResourceUsageTypeRegistry is sealed. Register types during application startup.");
+        }
 
         if (info.Id < CustomTypeIdStart && !info.IsBuiltIn)
+        {
             throw new ArgumentException(
                 $"Custom resource type IDs must be >= {CustomTypeIdStart}. Got: {info.Id}",
                 nameof(info));
+        }
 
         if (!_typesById.TryAdd(info.Id, info))
+        {
             throw new InvalidOperationException(
                 $"Resource usage type with ID {info.Id} is already registered.");
+        }
 
         if (!_typesByKey.TryAdd(info.Key, info))
         {
@@ -151,8 +159,11 @@ public static class ResourceUsageTypeRegistry
     /// </summary>
     public static void Seal()
     {
-        if (_isSealed) return;
-        
+        if (_isSealed)
+        {
+            return;
+        }
+
         _frozenById = _typesById.ToFrozenDictionary();
         _frozenByKey = _typesByKey.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
         _isSealed = true;
@@ -172,7 +183,9 @@ public static class ResourceUsageTypeRegistry
         var dict = _frozenById ?? (IReadOnlyDictionary<int, ResourceUsageTypeInfo>)_typesById;
         
         if (dict.TryGetValue(id, out var info))
+        {
             return info;
+        }
 
         throw new KeyNotFoundException($"Resource usage type with ID {id} is not registered.");
     }
@@ -187,7 +200,9 @@ public static class ResourceUsageTypeRegistry
         var dict = _frozenByKey ?? (IReadOnlyDictionary<string, ResourceUsageTypeInfo>)_typesByKey;
         
         if (dict.TryGetValue(key, out var info))
+        {
             return info;
+        }
 
         throw new KeyNotFoundException($"Resource usage type with key '{key}' is not registered.");
     }

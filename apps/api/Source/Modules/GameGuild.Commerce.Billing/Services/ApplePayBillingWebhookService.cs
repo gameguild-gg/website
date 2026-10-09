@@ -243,7 +243,7 @@ public class ApplePayBillingWebhookService : BillingWebhookService
     /// <summary>
     ///     Routes an Apple Pay event to the appropriate handler based on event type.
     /// </summary>
-    private async Task RouteApplePayEventAsync(string eventType, string payload, CancellationToken cancellationToken)
+    private async Task RouteApplePayEventAsync(string eventType, string payload)
     {
         var webhookPayload = ParseApplePayPayloadData(payload);
 

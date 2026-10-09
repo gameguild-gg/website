@@ -314,41 +314,61 @@ public class StripeBillingWebhookService : BillingWebhookService
             {
                 // Extract subscription-related fields
                 if (objectElement.TryGetProperty("id", out var idElement))
+                {
                     result.ExternalSubscriptionId = idElement.GetString();
+                }
 
                 if (objectElement.TryGetProperty("customer", out var customerElement))
+                {
                     result.CustomerId = customerElement.GetString();
+                }
 
                 if (objectElement.TryGetProperty("status", out var statusElement))
+                {
                     result.Status = statusElement.GetString();
+                }
 
                 // Extract metadata for TenantId and PlanId
                 if (objectElement.TryGetProperty("metadata", out var metadataElement))
                 {
                     if (metadataElement.TryGetProperty("tenant_id", out var tenantIdElement) &&
                         Guid.TryParse(tenantIdElement.GetString(), out var tenantId))
+                    {
                         result.TenantId = tenantId;
+                    }
 
                     if (metadataElement.TryGetProperty("plan_id", out var planIdElement) &&
                         Guid.TryParse(planIdElement.GetString(), out var planId))
+                    {
                         result.PlanId = planId;
+                    }
                 }
 
                 // Extract subscription/invoice specific fields
                 if (objectElement.TryGetProperty("subscription", out var subscriptionElement))
+                {
                     result.ExternalSubscriptionId = subscriptionElement.GetString();
+                }
 
                 if (objectElement.TryGetProperty("amount_paid", out var amountPaidElement))
+                {
                     result.Amount = amountPaidElement.GetDecimal() / 100m; // Stripe uses cents
+                }
 
                 if (objectElement.TryGetProperty("amount_due", out var amountDueElement) && !result.Amount.HasValue)
+                {
                     result.Amount = amountDueElement.GetDecimal() / 100m;
+                }
 
                 if (objectElement.TryGetProperty("currency", out var currencyElement))
+                {
                     result.Currency = currencyElement.GetString()?.ToUpperInvariant();
+                }
 
                 if (objectElement.TryGetProperty("invoice", out var invoiceElement))
+                {
                     result.InvoiceId = invoiceElement.GetString();
+                }
 
                 // Extract plan/price info
                 if (objectElement.TryGetProperty("items", out var itemsElement) &&
@@ -359,22 +379,32 @@ public class StripeBillingWebhookService : BillingWebhookService
                     if (firstItem.TryGetProperty("price", out var priceElement))
                     {
                         if (priceElement.TryGetProperty("id", out var priceIdElement))
+                        {
                             result.PriceId = priceIdElement.GetString();
+                        }
 
                         if (priceElement.TryGetProperty("product", out var productElement))
+                        {
                             result.ProductId = productElement.GetString();
+                        }
                     }
                 }
 
                 // Extract dates
                 if (objectElement.TryGetProperty("current_period_start", out var periodStartElement))
+                {
                     result.StartDate = DateTimeOffset.FromUnixTimeSeconds(periodStartElement.GetInt64()).UtcDateTime;
+                }
 
                 if (objectElement.TryGetProperty("current_period_end", out var periodEndElement))
+                {
                     result.EndDate = DateTimeOffset.FromUnixTimeSeconds(periodEndElement.GetInt64()).UtcDateTime;
+                }
 
                 if (objectElement.TryGetProperty("billing_cycle_anchor", out var anchorElement))
+                {
                     result.NextBillingDate = DateTimeOffset.FromUnixTimeSeconds(anchorElement.GetInt64()).UtcDateTime;
+                }
             }
         }
         catch (System.Text.Json.JsonException)

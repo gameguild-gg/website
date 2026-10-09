@@ -103,7 +103,9 @@ public class PostAnnouncementService : IPostAnnouncementService
         {
             var tags = new List<string> { "community", "update" };
             if (targetAudience != "all")
+            {
                 tags.Add(targetAudience.ToLowerInvariant());
+            }
 
             await _postService.AddTagsToPostAsync(result.Value.Id, tags.ToArray(), cancellationToken).ConfigureAwait(false);
 

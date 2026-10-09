@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using GameGuild.CQRS;
 using GameGuild.Identity.Users;
 using Microsoft.Extensions.Caching.Memory;
@@ -40,7 +42,7 @@ public class EmailVerificationService(
     {
         try
         {
-            var token = Guid.NewGuid().ToString("N");
+            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
             var tokenInfo = new TokenInfo
             {
                 UserId = userId,
@@ -49,17 +51,18 @@ public class EmailVerificationService(
                 ExpiresAt = SystemClock.UtcNow.Add(lifetime)
             };
 
-            memoryCache.Set(TokenKeyPrefix + token, tokenInfo, new MemoryCacheEntryOptions
+            memoryCache.Set(GetTokenCacheKey(token), tokenInfo, new MemoryCacheEntryOptions
             {
                 AbsoluteExpiration = tokenInfo.ExpiresAt
             }.SetSize(1));
 
-            logger.LogInformation("Generated {TokenType} token for user {UserId}", tokenType, userId);
+            logger.LogInformation("Generated {TokenType} token for user {UserId}", tokenType, LogRedaction.RedactId(userId, "uid"));
             return Task.FromResult(token);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error generating {TokenType} token for user {UserId}", tokenType, userId);
+            logger.LogError("Error generating {TokenType} token for user {UserId}: {ErrorType}",
+                tokenType, LogRedaction.RedactId(userId, "uid"), ex.GetType().FullName);
             throw;
         }
     }
@@ -76,11 +79,12 @@ public class EmailVerificationService(
                     UserName = userName
                 }).ConfigureAwait(false);
 
-            logger.LogInformation("Verification email queued for {Email}", email);
+            logger.LogInformation("Verification email queued for {Email}", LogRedaction.MaskEmail(email));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error sending verification email to {Email}", email);
+            logger.LogError("Error sending verification email to {Email}: {ErrorType}",
+                LogRedaction.MaskEmail(email), ex.GetType().FullName);
             throw;
         }
     }
@@ -137,7 +141,8 @@ public class EmailVerificationService(
                 return Task.FromResult(TokenValidationResult.Failed("Token is required"));
             }
 
-            if (!memoryCache.TryGetValue(TokenKeyPrefix + token, out TokenInfo? tokenInfo) || tokenInfo == null)
+            var tokenKey = GetTokenCacheKey(token);
+            if (!memoryCache.TryGetValue(tokenKey, out TokenInfo? tokenInfo) || tokenInfo == null)
             {
                 logger.LogWarning("Invalid {TokenType} token used", expectedType);
                 return Task.FromResult(TokenValidationResult.Failed("Invalid token"));
@@ -147,16 +152,16 @@ public class EmailVerificationService(
             {
                 logger.LogWarning(
                     "Token user ID mismatch. Expected {ExpectedUserId}, got {ActualUserId}",
-                    tokenInfo.UserId,
-                    expectedUserId);
+                    LogRedaction.RedactId(expectedUserId, "uid"),
+                    LogRedaction.RedactId(tokenInfo.UserId, "uid"));
 
                 return Task.FromResult(TokenValidationResult.Failed("Token does not belong to the requested user"));
             }
 
             if (tokenInfo.ExpiresAt < SystemClock.UtcNow)
             {
-                memoryCache.Remove(TokenKeyPrefix + token);
-                logger.LogWarning("Expired {TokenType} token used for user {UserId}", expectedType, tokenInfo.UserId);
+                memoryCache.Remove(tokenKey);
+                logger.LogWarning("Expired {TokenType} token used for user {UserId}", expectedType, LogRedaction.RedactId(tokenInfo.UserId, "uid"));
                 return Task.FromResult(TokenValidationResult.Failed("Expired token"));
             }
 
@@ -170,19 +175,25 @@ public class EmailVerificationService(
                 return Task.FromResult(TokenValidationResult.Failed("Invalid token type"));
             }
 
+            if (!tokenInfo.TryConsume())
+            {
+                logger.LogWarning("Already consumed {TokenType} token used", expectedType);
+                return Task.FromResult(TokenValidationResult.Failed("Invalid token"));
+            }
+
             if (markEmailVerified)
             {
                 memoryCache.Set(VerifiedKeyPrefix + tokenInfo.UserId, true, new MemoryCacheEntryOptions().SetSize(1));
             }
 
-            memoryCache.Remove(TokenKeyPrefix + token);
+            memoryCache.Remove(tokenKey);
 
-            logger.LogInformation("{TokenType} token consumed successfully for user {UserId}", expectedType, tokenInfo.UserId);
+            logger.LogInformation("{TokenType} token consumed successfully for user {UserId}", expectedType, LogRedaction.RedactId(tokenInfo.UserId, "uid"));
             return Task.FromResult(new TokenValidationResult(true, tokenInfo.UserId, tokenInfo.Email));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error verifying {TokenType} token", expectedType);
+            logger.LogError("Error verifying {TokenType} token: {ErrorType}", expectedType, ex.GetType().FullName);
             return Task.FromResult(TokenValidationResult.Failed("Token verification failed"));
         }
     }
@@ -204,7 +215,8 @@ public class EmailVerificationService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error checking email verification status for user {UserId}", userId);
+            logger.LogError("Error checking email verification status for user {UserId}: {ErrorType}",
+                LogRedaction.RedactId(userId, "uid"), ex.GetType().FullName);
             return false;
         }
     }
@@ -213,7 +225,11 @@ public class EmailVerificationService(
     {
         try
         {
-            var rateLimitKey = RateLimitKeyPrefix + $"{userId}:{email.ToLowerInvariant()}";
+            // Cache identity needs a distinct key per address; log redaction deliberately emits a constant marker.
+            // Normalize before hashing so case variants of the same address share one rate-limit bucket,
+            // and use the complete digest to avoid truncation collisions and keep raw emails out of cache keys.
+            var emailDigest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant())));
+            var rateLimitKey = RateLimitKeyPrefix + $"{userId}:{emailDigest}";
 
             if (memoryCache.TryGetValue(rateLimitKey, out DateTime lastSent))
             {
@@ -223,7 +239,7 @@ public class EmailVerificationService(
                 {
                     logger.LogWarning(
                         "Rate limit exceeded for resending verification email to user {UserId}. Last sent {Seconds} seconds ago",
-                        userId,
+                        LogRedaction.RedactId(userId, "uid"),
                         timeSinceLastSent.TotalSeconds);
 
                     return false;
@@ -238,12 +254,13 @@ public class EmailVerificationService(
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2)
             }.SetSize(1));
 
-            logger.LogInformation("Resent verification email to user {UserId}", userId);
+            logger.LogInformation("Resent verification email to user {UserId}", LogRedaction.RedactId(userId, "uid"));
             return true;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error resending verification email for user {UserId}", userId);
+            logger.LogError("Error resending verification email for user {UserId}: {ErrorType}",
+                LogRedaction.RedactId(userId, "uid"), ex.GetType().FullName);
             return false;
         }
     }
@@ -252,12 +269,13 @@ public class EmailVerificationService(
     {
         try
         {
-            if (!memoryCache.TryGetValue(TokenKeyPrefix + token, out TokenInfo? tokenInfo) || tokenInfo == null)
+            if (string.IsNullOrWhiteSpace(token) ||
+                !memoryCache.TryGetValue(GetTokenCacheKey(token), out TokenInfo? tokenInfo) || tokenInfo == null)
             {
                 return Task.FromResult(false);
             }
 
-            var isValid = tokenInfo.ExpiresAt >= SystemClock.UtcNow &&
+            var isValid = !tokenInfo.IsConsumed && tokenInfo.ExpiresAt >= SystemClock.UtcNow &&
                 (tokenInfo.Type == EmailVerificationTokenType ||
                  tokenInfo.Type == PasswordResetTokenType ||
                  tokenInfo.Type == MagicLinkTokenType);
@@ -266,8 +284,11 @@ public class EmailVerificationService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error checking token validity");
+            logger.LogError("Error checking token validity: {ErrorType}", ex.GetType().FullName);
             return Task.FromResult(false);
         }
     }
+
+    private static string GetTokenCacheKey(string token) =>
+        TokenKeyPrefix + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }

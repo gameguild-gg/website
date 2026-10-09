@@ -314,8 +314,8 @@ public sealed class RedisEndpointRateLimitingMiddleware(RequestDelegate next)
             .CreateLogger("GameGuild.API.RateLimiting")
             .LogWarning(
                 "Distributed rate limit exceeded for {Path} under policy {Policy}",
-                context.Request.Path,
-                policyName);
+                LogRedaction.Sanitize(context.Request.Path),
+                LogRedaction.Sanitize(policyName));
 
         await RateLimitProblemDetailsWriter.WriteAsync(
             context,
