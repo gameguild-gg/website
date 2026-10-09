@@ -119,9 +119,9 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         var account = await SeedAsync(factory);
 
         Guid eventId;
-        await using (var scope = factory.Services.CreateAsyncScope())
+        await using (var recordScope = factory.Services.CreateAsyncScope())
         {
-            var producer = scope.ServiceProvider.GetRequiredService<IDurableEventProducer>();
+            var producer = recordScope.ServiceProvider.GetRequiredService<IDurableEventProducer>();
             var @event = new SuspiciousLoginDetectedV1(
                 account.UserId, SecurityAlertKinds.ImpossibleTravel, nameof(RiskLevel.High), 75)
             {
