@@ -44,13 +44,18 @@ public enum PermissionOperationType
     Review = 7,
     Deny = 8,
 
+    /// <summary>A previously removed permission state was restored (issue #358).</summary>
+    Restore = 9,
+    /// <summary>Permissions were changed by an external-system synchronization import (issue #358).</summary>
+    SyncImport = 10,
+
     /// <summary>
     ///     A permission evaluation/decision (as opposed to a permission mutation).
     ///     Recorded when an endpoint-level permission attribute is checked, so that
     ///     sensitive permission-gated operations (e.g. monetization) leave a durable
     ///     decision trail (issue #346).
     /// </summary>
-    Check = 9
+    Check = 11
 }
 
 /// <summary>

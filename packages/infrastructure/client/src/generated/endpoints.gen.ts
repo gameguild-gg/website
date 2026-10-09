@@ -392,6 +392,89 @@ export const postApiAuditExportJsonEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesOutput = Array<Types.ComplianceAuditAuditRetentionSimulationSummary>;
+export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditRetentionPoliciesInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostApiAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postApiAuditRetentionPoliciesEndpoint = {
+  operationId: 'postApiAuditRetentionPolicies' as const,
+  method: 'POST' as const,
+  path: '/api/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdInput {
+  id: string;
+}
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetApiAuditRetentionPoliciesConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetApiAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getApiAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesConfiguration' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiAuditRetentionPoliciesConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutApiAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putApiAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'putApiAuditRetentionPoliciesConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetApiAuditRetentionPoliciesTemplatesInput = void;
+export type GetApiAuditRetentionPoliciesTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getApiAuditRetentionPoliciesTemplatesEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAuditRetentionSimulationForGetApiAuditRetentionSimulationInput {
   query?: {
     skip?: number;
@@ -431,7 +514,15 @@ export const getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById
   requiresAuth: true,
 } as const;
 
-export type GetApiAuditRetentionSimulationConfigurationInput = void;
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetApiAuditRetentionSimulationConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
 export type GetApiAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
 export const getApiAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'getApiAuditRetentionSimulationConfiguration' as const,
@@ -449,6 +540,20 @@ export const putApiAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'putApiAuditRetentionSimulationConfiguration' as const,
   method: 'PUT' as const,
   path: '/api/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetApiAuditRetentionSimulationTemplatesInput = void;
+export type GetApiAuditRetentionSimulationTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getApiAuditRetentionSimulationTemplatesEndpoint = {
+  operationId: 'getApiAuditRetentionSimulationTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-simulation/templates' as const,
   tags: ['ComplianceAuditRetentionSimulation'] as const,
   requiresAuth: true,
 } as const;
@@ -5539,6 +5644,26 @@ export const postAdminEconomyTreasuryWithdrawalsReconcileEndpoint = {
 } as const;
 
 /**
+ * Builds the permission effectiveness compliance report (overall and per
+ * permission / evaluation surface / operation allow-deny rates) for a time range.
+ */
+export interface GetAuthorizationComplianceReportInput {
+  query?: {
+    tenantId?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetAuthorizationComplianceReportOutput = Types.IdentityAuthorizationPermissionComplianceReport;
+export const getAuthorizationComplianceReportEndpoint = {
+  operationId: 'getAuthorizationComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/compliance/report' as const,
+  tags: ['AccessControlPermissionCompliance'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific permission on a resource.
  */
 export interface GetAuthorizationResourcesHasPermissionInput {
@@ -5716,6 +5841,72 @@ export const putAuthorizationResourcesUsersPermissionsEndpoint = {
   method: 'PUT' as const,
   path: '/api/v1/authorization/resources/users/permissions' as const,
   tags: ['AccessControlResourcePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Restores a soft-deleted tenant permission row inside the retention window.
+ */
+export interface PostAuthorizationRestorationsDeletedInput {
+  permissionId: string;
+}
+export type PostAuthorizationRestorationsDeletedOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsDeletedEndpoint = {
+  operationId: 'postAuthorizationRestorationsDeleted' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/deleted/{permissionId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverses a Grant/Revoke/Deny audit-log entry inside the retention window.
+ */
+export interface PostAuthorizationRestorationsUndoInput {
+  auditLogId: string;
+}
+export type PostAuthorizationRestorationsUndoOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsUndoEndpoint = {
+  operationId: 'postAuthorizationRestorationsUndo' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/undo/{auditLogId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Exports the permission state (roles, tenant defaults, user grants) of a tenant
+ * as a synchronization document. Omit tenantId for the global
+ * scope (system admins only).
+ */
+export interface GetAuthorizationSyncExportInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAuthorizationSyncExportOutput = Types.IdentityAuthorizationExternalPermissionSyncDocument;
+export const getAuthorizationSyncExportEndpoint = {
+  operationId: 'getAuthorizationSyncExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/sync/export' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Imports (or dry-runs) an external permission synchronization document. Invalid
+ * documents are rejected in full with their validation errors; nothing is
+ * partially applied.
+ */
+export interface PostAuthorizationSyncImportInput {
+  body?: Types.IdentityAuthorizationImportPermissionSyncInput;
+}
+export type PostAuthorizationSyncImportOutput = Types.IdentityAuthorizationPermissionSyncImportResult;
+export const postAuthorizationSyncImportEndpoint = {
+  operationId: 'postAuthorizationSyncImport' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/sync/import' as const,
+  tags: ['AccessControlPermissionSync'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11679,6 +11870,89 @@ export const getAuditCompliancePackagingTemplatesEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesOutput = Array<Types.ComplianceAuditAuditRetentionSimulationSummary>;
+export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint = {
+  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPolicies' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditRetentionPoliciesInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postAuditRetentionPoliciesEndpoint = {
+  operationId: 'postAuditRetentionPolicies' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdInput {
+  id: string;
+}
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint = {
+  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPoliciesById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetAuditRetentionPoliciesConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'getAuditRetentionPoliciesConfiguration' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAuditRetentionPoliciesConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'putAuditRetentionPoliciesConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetAuditRetentionPoliciesTemplatesInput = void;
+export type GetAuditRetentionPoliciesTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getAuditRetentionPoliciesTemplatesEndpoint = {
+  operationId: 'getAuditRetentionPoliciesTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAuditRetentionSimulationForGetAuditRetentionSimulationInput {
   query?: {
     skip?: number;
@@ -11718,7 +11992,15 @@ export const getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoi
   requiresAuth: true,
 } as const;
 
-export type GetAuditRetentionSimulationConfigurationInput = void;
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetAuditRetentionSimulationConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
 export type GetAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
 export const getAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'getAuditRetentionSimulationConfiguration' as const,
@@ -11736,6 +12018,20 @@ export const putAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'putAuditRetentionSimulationConfiguration' as const,
   method: 'PUT' as const,
   path: '/v1/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetAuditRetentionSimulationTemplatesInput = void;
+export type GetAuditRetentionSimulationTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getAuditRetentionSimulationTemplatesEndpoint = {
+  operationId: 'getAuditRetentionSimulationTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-simulation/templates' as const,
   tags: ['ComplianceAuditRetentionSimulation'] as const,
   requiresAuth: true,
 } as const;
@@ -25247,11 +25543,18 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
+  postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
+  getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
+  getApiAuditRetentionPoliciesConfiguration: getApiAuditRetentionPoliciesConfigurationEndpoint,
+  putApiAuditRetentionPoliciesConfiguration: putApiAuditRetentionPoliciesConfigurationEndpoint,
+  getApiAuditRetentionPoliciesTemplates: getApiAuditRetentionPoliciesTemplatesEndpoint,
   getApiAuditRetentionSimulationForGetApiAuditRetentionSimulation: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationEndpoint,
   postApiAuditRetentionSimulation: postApiAuditRetentionSimulationEndpoint,
   getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdEndpoint,
   getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
+  getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
@@ -25619,6 +25922,7 @@ export const endpoints = {
   getAdminEconomyTreasuryWithdrawalsAudit: getAdminEconomyTreasuryWithdrawalsAuditEndpoint,
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
+  getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -25630,6 +25934,10 @@ export const endpoints = {
   postAuthorizationResourcesShare: postAuthorizationResourcesShareEndpoint,
   deleteAuthorizationResourcesUsersAccess: deleteAuthorizationResourcesUsersAccessEndpoint,
   putAuthorizationResourcesUsersPermissions: putAuthorizationResourcesUsersPermissionsEndpoint,
+  postAuthorizationRestorationsDeleted: postAuthorizationRestorationsDeletedEndpoint,
+  postAuthorizationRestorationsUndo: postAuthorizationRestorationsUndoEndpoint,
+  getAuthorizationSyncExport: getAuthorizationSyncExportEndpoint,
+  postAuthorizationSyncImport: postAuthorizationSyncImportEndpoint,
   getAuthorizationTenantsHasPermission: getAuthorizationTenantsHasPermissionEndpoint,
   getAuthorizationTenantsPermissions: getAuthorizationTenantsPermissionsEndpoint,
   postAuthorizationTenantsDefaults: postAuthorizationTenantsDefaultsEndpoint,
@@ -25990,11 +26298,18 @@ export const endpoints = {
     getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint,
   postAuditCompliancePackagingDocumentsReview: postAuditCompliancePackagingDocumentsReviewEndpoint,
   getAuditCompliancePackagingTemplates: getAuditCompliancePackagingTemplatesEndpoint,
+  getAuditRetentionPoliciesForGetAuditRetentionPolicies: getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint,
+  postAuditRetentionPolicies: postAuditRetentionPoliciesEndpoint,
+  getAuditRetentionPoliciesForGetAuditRetentionPoliciesById: getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint,
+  getAuditRetentionPoliciesConfiguration: getAuditRetentionPoliciesConfigurationEndpoint,
+  putAuditRetentionPoliciesConfiguration: putAuditRetentionPoliciesConfigurationEndpoint,
+  getAuditRetentionPoliciesTemplates: getAuditRetentionPoliciesTemplatesEndpoint,
   getAuditRetentionSimulationForGetAuditRetentionSimulation: getAuditRetentionSimulationForGetAuditRetentionSimulationEndpoint,
   postAuditRetentionSimulation: postAuditRetentionSimulationEndpoint,
   getAuditRetentionSimulationForGetAuditRetentionSimulationById: getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoint,
   getAuditRetentionSimulationConfiguration: getAuditRetentionSimulationConfigurationEndpoint,
   putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
+  getAuditRetentionSimulationTemplates: getAuditRetentionSimulationTemplatesEndpoint,
   getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
   postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
