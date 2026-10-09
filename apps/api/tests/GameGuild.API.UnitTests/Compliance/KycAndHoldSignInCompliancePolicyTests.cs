@@ -50,12 +50,12 @@ public sealed class KycAndHoldSignInCompliancePolicyTests
     {
         _kycServiceMock
             .Setup(service => service.GetLatestVerificationAsync(_userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<UserKycVerification?>.Success(new UserKycVerification
+            .Returns(Task.FromResult(Result.Success<UserKycVerification?>(new UserKycVerification
             {
                 UserId = _userId,
                 Status = status,
                 SubmittedAt = Now.UtcDateTime.AddDays(-1)
-            }));
+            })));
     }
 
     private void SetupVerified(bool isVerified)
@@ -96,7 +96,7 @@ public sealed class KycAndHoldSignInCompliancePolicyTests
         {
             _kycServiceMock
                 .Setup(service => service.GetLatestVerificationAsync(_userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Result.Success<UserKycVerification?>(null));
+                .Returns(Task.FromResult(Result.Success<UserKycVerification?>(null)));
         }
 
         if (status == KycVerificationStatus.Approved)
@@ -139,7 +139,7 @@ public sealed class KycAndHoldSignInCompliancePolicyTests
             .ReturnsAsync(false);
         _kycServiceMock
             .Setup(service => service.GetLatestVerificationAsync(_userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Success<UserKycVerification?>(null));
+            .Returns(Task.FromResult(Result.Success<UserKycVerification?>(null)));
 
         await _sut.EvaluateAsync(
             new SignInComplianceContext(_userId, _tenantId, "198.51.100.7", "fingerprint-1"));
@@ -157,7 +157,7 @@ public sealed class KycAndHoldSignInCompliancePolicyTests
     {
         _kycServiceMock
             .Setup(service => service.GetLatestVerificationAsync(_userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Success<UserKycVerification?>(null));
+            .Returns(Task.FromResult(Result.Success<UserKycVerification?>(null)));
 
         var decision = await _sut.EvaluateAsync(
             new SignInComplianceContext(_userId, TenantId: null, IpAddress: null, DeviceFingerprint: null));
@@ -175,7 +175,7 @@ public sealed class KycAndHoldSignInCompliancePolicyTests
         SetupNoActiveHold();
         _kycServiceMock
             .Setup(service => service.GetLatestVerificationAsync(_userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Failure<UserKycVerification?>(Error.Failure("KYC.GetFailed", "store unavailable")));
+            .Returns(Task.FromResult(Result.Failure<UserKycVerification?>(Error.Failure("KYC.GetFailed", "store unavailable"))));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await _sut.EvaluateAsync(
             new SignInComplianceContext(_userId, _tenantId, "198.51.100.7", "fingerprint-1")));
