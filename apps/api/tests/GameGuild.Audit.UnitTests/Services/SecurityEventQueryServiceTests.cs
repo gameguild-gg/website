@@ -167,4 +167,115 @@ public sealed class SecurityEventQueryServiceTests : IDisposable
 
         acknowledged.Should().BeNull();
     }
+
+    // ── Incident lifecycle: resolution ──────────────────────────────────
+
+    [Fact]
+    public async Task ResolveAlertAsync_ResolvesAnOpenAlertWithActingAdministratorAndAuditEvent()
+    {
+        var alert = SecurityAlert.Raise(_tenant, SecurityAlertRules.FailedAuthenticationBurst,
+            SecurityEventKind.Authentication, AuditRiskLevel.High, "Burst", "desc", AuditActionTypes.LoginFailed,
+            Guid.NewGuid(), Guid.NewGuid(), "192.0.2.1", SystemClock.UtcNow);
+        _context.Set<SecurityAlert>().Add(alert);
+        await _context.SaveChangesAsync();
+
+        var resolved = await CreateService().ResolveAlertAsync(alert.Id, "contained; password rotated", CancellationToken.None);
+
+        resolved.Should().NotBeNull();
+        resolved!.Status.Should().Be(SecurityAlertStatus.Resolved);
+        resolved.ResolvedByUserId.Should().Be(_admin);
+        resolved.ResolvedAtUtc.Should().NotBeNull();
+        resolved.ResolutionNotes.Should().Be("contained; password rotated");
+
+        // The resolution is audited in the same save as the transition.
+        _context.Set<AuditLog>().Should().Contain(log =>
+            log.ActionType == AuditActionTypes.SecurityAlertResolved
+            && log.ResourceType == "SecurityAlert"
+            && log.ResourceId == alert.Id.ToString()
+            && log.TenantId == _tenant
+            && log.UserId == _admin);
+    }
+
+    [Fact]
+    public async Task ResolveAlertAsync_ResolvesAnAcknowledgedAlert()
+    {
+        var alert = SecurityAlert.Raise(_tenant, SecurityAlertRules.CriticalEvent, SecurityEventKind.ThreatDetection,
+            AuditRiskLevel.Critical, "Critical", "desc", AuditActionTypes.SecurityViolation, Guid.NewGuid(), null, null,
+            SystemClock.UtcNow);
+        alert.Acknowledge(_admin, "investigating", SystemClock.UtcNow);
+        _context.Set<SecurityAlert>().Add(alert);
+        await _context.SaveChangesAsync();
+
+        var resolved = await CreateService().ResolveAlertAsync(alert.Id, notes: null, CancellationToken.None);
+
+        resolved.Should().NotBeNull();
+        resolved!.Status.Should().Be(SecurityAlertStatus.Resolved);
+        resolved.AcknowledgedByUserId.Should().Be(_admin);
+        resolved.ResolvedByUserId.Should().Be(_admin);
+    }
+
+    [Fact]
+    public async Task ResolveAlertAsync_RejectsResolvingAnAlreadyResolvedAlert()
+    {
+        var alert = SecurityAlert.Raise(_tenant, SecurityAlertRules.FailedAuthenticationBurst,
+            SecurityEventKind.Authentication, AuditRiskLevel.High, "Burst", "desc", AuditActionTypes.LoginFailed,
+            Guid.NewGuid(), null, null, SystemClock.UtcNow);
+        alert.Resolve(_admin, "done", SystemClock.UtcNow);
+        _context.Set<SecurityAlert>().Add(alert);
+        await _context.SaveChangesAsync();
+
+        var act = () => CreateService().ResolveAlertAsync(alert.Id, "again", CancellationToken.None);
+
+        (await act.Should().ThrowAsync<SecurityAlertTransitionException>())
+            .Which.CurrentStatus.Should().Be(SecurityAlertStatus.Resolved);
+    }
+
+    [Fact]
+    public async Task ResolveAlertAsync_AcknowledgingAResolvedAlertIsATransitionViolation()
+    {
+        var alert = SecurityAlert.Raise(_tenant, SecurityAlertRules.FailedAuthenticationBurst,
+            SecurityEventKind.Authentication, AuditRiskLevel.High, "Burst", "desc", AuditActionTypes.LoginFailed,
+            Guid.NewGuid(), null, null, SystemClock.UtcNow);
+        alert.Resolve(_admin, "done", SystemClock.UtcNow);
+        _context.Set<SecurityAlert>().Add(alert);
+        await _context.SaveChangesAsync();
+
+        var act = () => CreateService().AcknowledgeAlertAsync(alert.Id, "late ack", CancellationToken.None);
+
+        await act.Should().ThrowAsync<SecurityAlertTransitionException>();
+    }
+
+    [Fact]
+    public async Task ResolveAlertAsync_ReturnsNullForAlertsOfOtherTenants()
+    {
+        var alert = SecurityAlert.Raise(Guid.NewGuid(), SecurityAlertRules.FailedAuthenticationBurst,
+            SecurityEventKind.Authentication, AuditRiskLevel.High, "Burst", "desc", AuditActionTypes.LoginFailed,
+            Guid.NewGuid(), null, null, SystemClock.UtcNow);
+        _context.Set<SecurityAlert>().Add(alert);
+        await _context.SaveChangesAsync();
+
+        var resolved = await CreateService().ResolveAlertAsync(alert.Id, notes: null, CancellationToken.None);
+
+        resolved.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ResolveAlertAsync_RequiresAnAuthenticatedTenantAdministrator()
+    {
+        SetAdminActor(authenticated: false);
+
+        var act = () => CreateService().ResolveAlertAsync(Guid.NewGuid(), notes: null, CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task ResolveAlertAsync_RequiresATenantAdministratorRole()
+    {
+        SetAdminActor(role: "Member");
+
+        var act = () => CreateService().ResolveAlertAsync(Guid.NewGuid(), notes: null, CancellationToken.None);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
 }

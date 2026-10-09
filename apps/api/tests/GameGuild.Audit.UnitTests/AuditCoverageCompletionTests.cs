@@ -70,40 +70,39 @@ public class AuditDomainCoverageCompletionTests
     }
 
     [Fact]
-    public void AuditAnomaly_ShouldExerciseInvestigationLifecycle()
+    public void SecurityAlert_ShouldExerciseInvestigationLifecycle()
     {
-        var anomaly = AuditAnomaly.Create(
+        var alert = SecurityAlert.Raise(
             Guid.NewGuid(),
-            Guid.NewGuid(),
-            AnomalyType.PrivilegedOperationSpike,
-            AnomalySeverity.Critical,
+            SecurityAlertRules.CriticalEvent,
+            SecurityEventKind.ThreatDetection,
+            AuditRiskLevel.Critical,
             "Spike",
             "Many privileged operations",
-            "Rules",
-            0.99,
+            AuditActionTypes.SecurityViolation,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
             "203.0.113.10",
-            "{}");
-        var firstEvent = SystemClock.UtcNow.AddMinutes(-10);
-        var lastEvent = SystemClock.UtcNow;
+            SystemClock.UtcNow);
+        var firstSeen = alert.FirstSeenAtUtc;
+        var admin = Guid.NewGuid();
 
-        anomaly.SetRelatedEvents("a,b", 2, firstEvent, lastEvent);
-        anomaly.AssignTo("security@example.com");
-        anomaly.MarkAsInvestigating();
-        anomaly.Resolve("Resolved", "Rotated credentials");
-        anomaly.MarkAsFalsePositive("Validated exception");
-        anomaly.MarkNotificationSent("email");
+        alert.RecordOccurrence(firstSeen.AddMinutes(1), Guid.NewGuid());
+        alert.Acknowledge(admin, "investigating", firstSeen.AddMinutes(2));
+        alert.Resolve(admin, "Rotated credentials", firstSeen.AddMinutes(3));
 
-        anomaly.RelatedAuditLogIds.Should().Be("a,b");
-        anomaly.RelatedEventCount.Should().Be(2);
-        anomaly.FirstRelatedEventAt.Should().Be(firstEvent);
-        anomaly.LastRelatedEventAt.Should().Be(lastEvent);
-        anomaly.AssignedTo.Should().Be("security@example.com");
-        anomaly.InvestigatedAt.Should().NotBeNull();
-        anomaly.Status.Should().Be(AnomalyStatus.FalsePositive);
-        anomaly.ResolutionNotes.Should().Be("Validated exception");
-        anomaly.MitigationActions.Should().Be("Rotated credentials");
-        anomaly.NotificationSent.Should().BeTrue();
-        anomaly.NotificationChannel.Should().Be("email");
+        alert.OccurrenceCount.Should().Be(2);
+        alert.LastSeenAtUtc.Should().BeAfter(firstSeen);
+        alert.Status.Should().Be(SecurityAlertStatus.Resolved);
+        alert.AcknowledgedByUserId.Should().Be(admin);
+        alert.ResolvedByUserId.Should().Be(admin);
+        alert.ResolutionNotes.Should().Be("Rotated credentials");
+
+        // Terminal state: neither acknowledgement nor resolution may follow a resolution.
+        var act = () => alert.Acknowledge(admin, "late", firstSeen.AddMinutes(4));
+        act.Should().Throw<SecurityAlertTransitionException>();
+        var resolveAgain = () => alert.Resolve(admin, "again", firstSeen.AddMinutes(5));
+        resolveAgain.Should().Throw<SecurityAlertTransitionException>();
     }
 
     [Fact]
@@ -455,33 +454,14 @@ public class AuditServiceCoverageCompletionTests : IDisposable
 public class AdvancedAuditFeatureServiceCoverageTests
 {
     [Fact]
-    public void AdvancedAuditResultModels_ShouldExposeMutableState()
+    public void AdvancedAuditResultModels_ShouldExposeState()
     {
-        var anomaly = AuditAnomaly.Create(
-            Guid.NewGuid(),
-            null,
-            AnomalyType.Other,
-            AnomalySeverity.Low,
-            "Detected",
-            "Detected by unit test",
-            "Rule",
-            0.5,
-            "127.0.0.1",
-            "{}");
-
         var verification = new ChainVerificationResult(true, 3, 3, 0, []);
-        var detection = new AnomalyDetectionResult
-        {
-            IsAnomaly = true,
-            ConfidenceScore = 0.75,
-            DetectedAnomalies = [anomaly]
-        };
 
         verification.IsValid.Should().BeTrue();
         verification.TotalLogs.Should().Be(3);
-        detection.IsAnomaly.Should().BeTrue();
-        detection.ConfidenceScore.Should().Be(0.75);
-        detection.DetectedAnomalies.Should().ContainSingle().Which.Should().BeSameAs(anomaly);
+        verification.VerifiedLogs.Should().Be(3);
+        verification.FailedLogs.Should().Be(0);
     }
 
     [Fact]

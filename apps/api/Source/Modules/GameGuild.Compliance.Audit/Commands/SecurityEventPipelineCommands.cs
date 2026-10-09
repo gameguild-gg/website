@@ -8,12 +8,15 @@ public sealed record EnforceSecurityLogRetentionCommand(EnforceSecurityLogRetent
 
 public sealed record AcknowledgeSecurityAlertCommand(Guid AlertId, string? Notes) : ICommand<SecurityAlertResponse?>;
 
+public sealed record ResolveSecurityAlertCommand(Guid AlertId, string? Notes) : ICommand<SecurityAlertResponse?>;
+
 public sealed class SecurityEventPipelineCommandHandler(
     ISecurityLogRetentionService retentionService,
     ISecurityEventQueryService queryService) :
     ICommandHandler<ConfigureSecurityLogRetentionCommand, SecurityLogRetentionPolicyResponse>,
     ICommandHandler<EnforceSecurityLogRetentionCommand, SecurityLogRetentionExecutionResponse?>,
-    ICommandHandler<AcknowledgeSecurityAlertCommand, SecurityAlertResponse?>
+    ICommandHandler<AcknowledgeSecurityAlertCommand, SecurityAlertResponse?>,
+    ICommandHandler<ResolveSecurityAlertCommand, SecurityAlertResponse?>
 {
     public Task<SecurityLogRetentionPolicyResponse> Handle(ConfigureSecurityLogRetentionCommand command, CancellationToken cancellationToken) =>
         retentionService.ConfigureAsync(command.Request, cancellationToken);
@@ -23,4 +26,7 @@ public sealed class SecurityEventPipelineCommandHandler(
 
     public async Task<SecurityAlertResponse?> Handle(AcknowledgeSecurityAlertCommand command, CancellationToken cancellationToken) =>
         await queryService.AcknowledgeAlertAsync(command.AlertId, command.Notes, cancellationToken).ConfigureAwait(false);
+
+    public async Task<SecurityAlertResponse?> Handle(ResolveSecurityAlertCommand command, CancellationToken cancellationToken) =>
+        await queryService.ResolveAlertAsync(command.AlertId, command.Notes, cancellationToken).ConfigureAwait(false);
 }

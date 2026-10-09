@@ -55,6 +55,15 @@ public sealed class SecurityAlert : EntityBase
 
     public string? AcknowledgementNotes { get; private set; }
 
+    /// <summary>Administrator that resolved the alert; set when the alert reaches <see cref="SecurityAlertStatus.Resolved" />.</summary>
+    public Guid? ResolvedByUserId { get; private set; }
+
+    /// <summary>UTC instant at which the alert was resolved.</summary>
+    public DateTime? ResolvedAtUtc { get; private set; }
+
+    /// <summary>Resolution note recorded by the resolving administrator.</summary>
+    public string? ResolutionNotes { get; private set; }
+
     private SecurityAlert() { }
 
     public static SecurityAlert Raise(
@@ -104,6 +113,12 @@ public sealed class SecurityAlert : EntityBase
 
     public void Acknowledge(Guid acknowledgedByUserId, string? notes, DateTime acknowledgedAtUtc)
     {
+        if (Status == SecurityAlertStatus.Resolved)
+        {
+            throw new SecurityAlertTransitionException(Id, Status, SecurityAlertStatus.Acknowledged,
+                "A resolved alert can no longer be acknowledged.");
+        }
+
         Status = SecurityAlertStatus.Acknowledged;
         AcknowledgedByUserId = acknowledgedByUserId;
         AcknowledgedAtUtc = acknowledgedAtUtc;
@@ -111,8 +126,50 @@ public sealed class SecurityAlert : EntityBase
         UpdatedAt = acknowledgedAtUtc;
     }
 
+    /// <summary>
+    ///     Resolves the alert (terminal lifecycle step). Valid from <see cref="SecurityAlertStatus.Open" />
+    ///     and <see cref="SecurityAlertStatus.Acknowledged" />; resolving an already resolved alert is a
+    ///     transition violation.
+    /// </summary>
+    public void Resolve(Guid resolvedByUserId, string? notes, DateTime resolvedAtUtc)
+    {
+        if (Status == SecurityAlertStatus.Resolved)
+        {
+            throw new SecurityAlertTransitionException(Id, Status, SecurityAlertStatus.Resolved,
+                "The alert is already resolved.");
+        }
+
+        Status = SecurityAlertStatus.Resolved;
+        ResolvedByUserId = resolvedByUserId;
+        ResolvedAtUtc = resolvedAtUtc;
+        ResolutionNotes = notes;
+        UpdatedAt = resolvedAtUtc;
+    }
+
     public static string BuildDeduplicationKey(string ruleId, Guid? tenantId, Guid? subjectUserId, string? ipAddress) =>
         $"{ruleId}|{tenantId?.ToString() ?? "-"}|{subjectUserId?.ToString() ?? "-"}|{ipAddress ?? "-"}";
+}
+
+/// <summary>
+///     Raised when a security alert lifecycle transition is invalid (for example resolving an
+///     already resolved alert). Mapped to HTTP 409 Conflict by the security event controller.
+/// </summary>
+public sealed class SecurityAlertTransitionException(
+    Guid alertId,
+    SecurityAlertStatus currentStatus,
+    SecurityAlertStatus requestedStatus,
+    string message) : InvalidOperationException(message)
+{
+    public Guid AlertId { get; } = alertId;
+
+    public SecurityAlertStatus CurrentStatus { get; } = currentStatus;
+
+    public SecurityAlertStatus RequestedStatus { get; } = requestedStatus;
+
+    public IReadOnlyDictionary<string, string[]> Errors { get; } = new Dictionary<string, string[]>
+    {
+        ["Transition"] = [$"Cannot move alert {alertId} from {currentStatus} to {requestedStatus}: {message}"]
+    };
 }
 
 /// <summary>

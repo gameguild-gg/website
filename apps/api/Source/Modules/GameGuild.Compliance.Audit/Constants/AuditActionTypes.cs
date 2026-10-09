@@ -77,6 +77,8 @@ public static class AuditActionTypes
     // Security Events
     public const string SecurityViolation = "SecurityViolation";
 
+    public const string SecurityAlertResolved = "SecurityAlertResolved";
+
     public const string RateLimitExceeded = "RateLimitExceeded";
 
     public const string SuspiciousActivity = "SuspiciousActivity";

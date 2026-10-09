@@ -4625,6 +4625,16 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<int>("OccurrenceCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ResolutionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("RuleId")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -13642,6 +13652,79 @@ namespace GameGuild.API.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("game_jam_submissions", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.AdaptiveBehaviorBaseline", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<double>("CadenceLogSecondsMean")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("CadenceLogSecondsMeanSquaredDeviation")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("CadenceObservationCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("HourMeanSquaredDeviation")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("HourMeanX")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("HourMeanY")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("IpSurpriseMean")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("IpSurpriseMeanSquaredDeviation")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("IpWeightsJson")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("LastObservedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ObservationCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SubjectKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastObservedAtUtc")
+                        .HasDatabaseName("ix_adaptivebehaviorbaseline_last_observed_at");
+
+                    b.HasIndex("SubjectKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_adaptivebehaviorbaseline_subject_key");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_adaptivebehaviorbaseline_tenant_id");
+
+                    b.ToTable("adaptivebehaviorbaseline", "gameguild.authentication");
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authentication.ApiKey", b =>
