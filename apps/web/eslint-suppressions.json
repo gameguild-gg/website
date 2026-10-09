@@ -2857,11 +2857,6 @@
       "count": 1
     }
   },
-  "src/components/feed/post-card.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 6
-    }
-  },
   "src/components/feed/post-comments.tsx": {
     "@typescript-eslint/no-misused-promises": {
       "count": 1

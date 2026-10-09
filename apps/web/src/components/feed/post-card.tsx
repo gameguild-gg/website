@@ -71,9 +71,9 @@ function parseTestingEventAnnouncement(content: string) {
   if (!match) return null;
   return {
     kind: "games-wanted" as const,
-    name: match[1]!.trim(),
-    startsLabel: match[2]!.trim(),
-    href: match[3]!,
+    name: match[1].trim(),
+    startsLabel: match[2].trim(),
+    href: match[3],
   };
 }
 
@@ -82,9 +82,9 @@ function parseTestingGameJoinedAnnouncement(content: string) {
   if (!match) return null;
   return {
     kind: "game-joined" as const,
-    gameTitle: match[1]!.trim(),
-    name: match[2]!.trim(),
-    href: match[3]!,
+    gameTitle: match[1].trim(),
+    name: match[2].trim(),
+    href: match[3],
   };
 }
 
@@ -94,9 +94,9 @@ function parseBlogPostAnnouncement(content: string) {
   const excerpt = match[2]?.trim();
   return {
     kind: "blog-post" as const,
-    title: match[1]!.trim(),
+    title: match[1].trim(),
     excerpt: excerpt ? excerpt : null,
-    href: match[3]!,
+    href: match[3],
   };
 }
 
