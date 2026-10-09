@@ -43,7 +43,9 @@ public sealed record UseCaseOperationContext(
     public void RecordProducedEvents(IEnumerable<IDurableIntegrationEvent> events)
     {
         foreach (var integrationEvent in events)
+        {
             _producedEventTypes.Add(integrationEvent.GetType());
+        }
     }
 }
 

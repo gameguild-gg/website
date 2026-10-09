@@ -49,7 +49,10 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<TestingSlotRegistrationProjection>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<TestingSlotRegistrationProjection>(actor.Error);
+        }
 
         await using var lockHandle = await _capacityLock.AcquireAsync(request.SlotId, cancellationToken).ConfigureAwait(false);
         var slot = await context.Set<TestingEventSlot>()
@@ -61,21 +64,36 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (slot == null)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(
                 Error.NotFound("TestingLab.EventSlotNotFound", "Testing event slot not found."));
+        }
+
         if (slot.Event.Status is not (
                 TestingEventStatus.ApplicationsClosed or
                 TestingEventStatus.Scheduled or
                 TestingEventStatus.Active))
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(
                 Validation("Tester registration is not open for this event."));
+        }
+
         if (!request.AcceptedRules)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(Validation("The event rules must be accepted before registration."));
+        }
+
         if (request.RegistrationResponse == null)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(Validation("Tester registration responses are required."));
+        }
+
         var registrationSchema = slot.Event.TesterRegistrationSchema;
         if (registrationSchema == null || !slot.Event.ConfigurationFrozenAt.HasValue)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(Validation("The event registration configuration is not frozen."));
+        }
+
         try
         {
             QuestionnaireResponseValidator.EnsureValid(registrationSchema, request.RegistrationResponse);
@@ -96,7 +114,9 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (existing != null)
+        {
             return Result.Success(await ToProjectionAsync(existing, cancellationToken).ConfigureAwait(false));
+        }
 
         var capacityCount = await context.Set<TestingSlotRegistration>().CountAsync(candidate =>
             candidate.SlotId == slot.Id &&
@@ -148,7 +168,11 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadRegistrationAsync(request.RegistrationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingSlotRegistrationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingSlotRegistrationProjection>(loaded.Error);
+        }
+
         var managerOverride = loaded.Registration!.Event.ManagerUserId == loaded.Actor!.UserId ||
                               IsTenantAdmin ||
                               await HasTestingLabPermissionAsync(
@@ -156,8 +180,10 @@ public sealed class TestingParticipationHandlers(
                                   TestingLabActions.Manage,
                                   TestingLabResourceTypes.Participant).ConfigureAwait(false);
         if (!managerOverride && loaded.Registration.UserId != loaded.Actor.UserId)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(
                 Error.Forbidden("TestingLab.RegistrationOwnerRequired", "Only the tester or event manager can cancel this registration."));
+        }
 
         await using var lockHandle = await _capacityLock.AcquireAsync(loaded.Registration.SlotId, cancellationToken).ConfigureAwait(false);
         var releasedCapacity = loaded.Registration.ConsumesCapacity;
@@ -165,9 +191,14 @@ public sealed class TestingParticipationHandlers(
         {
             loaded.Registration.Cancel(loaded.Actor.UserId, managerOverride);
             if (releasedCapacity)
+            {
                 await PromoteWaitlistAsync(loaded.Registration.SlotId, loaded.Actor.TenantId, cancellationToken).ConfigureAwait(false);
+            }
             else
+            {
                 await ReindexWaitlistAsync(loaded.Registration.SlotId, loaded.Actor.TenantId, cancellationToken).ConfigureAwait(false);
+            }
+
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             await lockHandle.CommitAsync(cancellationToken).ConfigureAwait(false);
             return Result.Success(await ToProjectionAsync(loaded.Registration, cancellationToken).ConfigureAwait(false));
@@ -198,12 +229,18 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadManagedRegistrationAsync(request.RegistrationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingFeedbackObligationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingFeedbackObligationProjection>(loaded.Error);
+        }
+
         if (loaded.Registration!.Status is not (
                 TestingSlotRegistrationStatus.CheckedIn or
                 TestingSlotRegistrationStatus.Attended))
+        {
             return Result.Failure<TestingFeedbackObligationProjection>(
                 Validation("The tester must attend the slot before a tested project can be assigned."));
+        }
 
         var application = await context.Set<TestingProjectApplication>()
             .FirstOrDefaultAsync(candidate =>
@@ -215,8 +252,10 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (application == null)
+        {
             return Result.Failure<TestingFeedbackObligationProjection>(
                 Error.NotFound("TestingLab.ApprovedApplicationNotFound", "An approved project application was not found in this slot."));
+        }
 
         var testerUserId = loaded.Registration.UserId;
         var actorTenantId = loaded.Actor!.TenantId;
@@ -254,10 +293,12 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (ownsOrCollaborates)
+        {
             return Result.Failure<TestingFeedbackObligationProjection>(
                 Error.Conflict(
                     "TestingLab.ProjectTesterConflict",
                     "A project owner or active team member cannot test their own project."));
+        }
 
         var existing = await context.Set<TestingFeedbackObligation>()
             .FirstOrDefaultAsync(candidate =>
@@ -268,7 +309,10 @@ public sealed class TestingParticipationHandlers(
                 candidate.DeletedAt == null,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (existing != null) return Result.Success(ToProjection(existing));
+        if (existing != null)
+        {
+            return Result.Success(ToProjection(existing));
+        }
 
         var obligation = TestingFeedbackObligation.Create(
             loaded.Registration.EventId,
@@ -277,7 +321,11 @@ public sealed class TestingParticipationHandlers(
             loaded.Registration.UserId,
             loaded.Actor!.TenantId,
             application.CurrentQuestionnaireRevisionId);
-        if (!loaded.Registration.Event.RequiresFeedback) obligation.Waive();
+        if (!loaded.Registration.Event.RequiresFeedback)
+        {
+            obligation.Waive();
+        }
+
         context.Set<TestingFeedbackObligation>().Add(obligation);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Result.Success(ToProjection(obligation));
@@ -288,7 +336,11 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<TestingEventFeedbackProjection>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<TestingEventFeedbackProjection>(actor.Error);
+        }
+
         var obligation = await context.Set<TestingFeedbackObligation>()
             .FirstOrDefaultAsync(candidate =>
                 candidate.Id == request.ObligationId &&
@@ -298,10 +350,15 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (obligation == null)
+        {
             return Result.Failure<TestingEventFeedbackProjection>(
                 Error.NotFound("TestingLab.FeedbackObligationNotFound", "Feedback obligation not found."));
+        }
+
         if (obligation.IsFulfilled)
+        {
             return Result.Failure<TestingEventFeedbackProjection>(Validation("The feedback obligation is already complete."));
+        }
 
         var registration = await context.Set<TestingSlotRegistration>()
             .FirstOrDefaultAsync(candidate =>
@@ -316,8 +373,11 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (registration == null)
+        {
             return Result.Failure<TestingEventFeedbackProjection>(
                 Error.Forbidden("TestingLab.AttendanceRequired", "Attendance is required before feedback can be submitted."));
+        }
+
         var slotMode = await context.Set<TestingEventSlot>()
             .Where(candidate => candidate.Id == obligation.SlotId && candidate.TenantId == actor.TenantId && candidate.DeletedAt == null)
             .Select(candidate => candidate.Mode)
@@ -333,7 +393,10 @@ public sealed class TestingParticipationHandlers(
             if (obligation.QuestionnaireRevisionId.HasValue)
             {
                 if (request.QuestionnaireRevisionId != obligation.QuestionnaireRevisionId || request.Responses == null)
+                {
                     throw new ArgumentException("Responses for the assigned questionnaire revision are required.");
+                }
+
                 var revision = await context.Set<TestingQuestionnaireRevision>().AsNoTracking()
                     .FirstOrDefaultAsync(candidate =>
                         candidate.Id == obligation.QuestionnaireRevisionId &&
@@ -384,12 +447,19 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadRegistrationAsync(request.RegistrationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingSlotRegistrationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingSlotRegistrationProjection>(loaded.Error);
+        }
+
         if (loaded.Registration!.UserId != loaded.Actor!.UserId &&
             loaded.Registration.Event.ManagerUserId != loaded.Actor.UserId &&
             !IsTenantAdmin)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(
                 Error.Forbidden("TestingLab.RegistrationOwnerRequired", "Only the tester or event manager can complete participation."));
+        }
+
         var pending = await context.Set<TestingFeedbackObligation>().AnyAsync(candidate =>
             candidate.SlotId == loaded.Registration.SlotId &&
             candidate.TesterUserId == loaded.Registration.UserId &&
@@ -398,8 +468,11 @@ public sealed class TestingParticipationHandlers(
             candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (pending)
+        {
             return Result.Failure<TestingSlotRegistrationProjection>(
                 Validation("All required feedback must be submitted before participation can be completed."));
+        }
+
         try
         {
             if (loaded.Registration.Status != TestingSlotRegistrationStatus.Completed)
@@ -428,7 +501,10 @@ public sealed class TestingParticipationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingSlotRegistrationProjection>>(actor.Error);
+        }
+
         var slot = await context.Set<TestingEventSlot>()
             .Include(candidate => candidate.Event)
             .FirstOrDefaultAsync(candidate =>
@@ -438,15 +514,20 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (slot == null)
+        {
             return Result.Failure<IReadOnlyList<TestingSlotRegistrationProjection>>(
                 Error.NotFound("TestingLab.EventSlotNotFound", "Testing event slot not found."));
+        }
+
         var canManageParticipants = await HasTestingLabPermissionAsync(
             actor,
             TestingLabActions.Manage,
             TestingLabResourceTypes.Participant).ConfigureAwait(false);
         if (slot.Event.ManagerUserId != actor.UserId && !IsTenantAdmin && !canManageParticipants)
+        {
             return Result.Failure<IReadOnlyList<TestingSlotRegistrationProjection>>(
                 Error.Forbidden("TestingLab.EventManagerRequired", "Only the event manager can list slot registrations."));
+        }
 
         var query = context.Set<TestingSlotRegistration>()
             .AsNoTracking()
@@ -454,7 +535,11 @@ public sealed class TestingParticipationHandlers(
                 candidate.SlotId == request.SlotId &&
                 candidate.TenantId == actor.TenantId &&
                 candidate.DeletedAt == null);
-        if (request.Status.HasValue) query = query.Where(candidate => candidate.Status == request.Status.Value);
+        if (request.Status.HasValue)
+        {
+            query = query.Where(candidate => candidate.Status == request.Status.Value);
+        }
+
         var registrations = await query
             .OrderBy(candidate => candidate.Status == TestingSlotRegistrationStatus.Waitlisted
                 ? candidate.WaitlistPosition
@@ -465,7 +550,10 @@ public sealed class TestingParticipationHandlers(
             .ConfigureAwait(false);
         var result = new List<TestingSlotRegistrationProjection>(registrations.Count);
         foreach (var registration in registrations)
+        {
             result.Add(await ToProjectionAsync(registration, cancellationToken).ConfigureAwait(false));
+        }
+
         return Result.Success<IReadOnlyList<TestingSlotRegistrationProjection>>(result);
     }
 
@@ -475,7 +563,9 @@ public sealed class TestingParticipationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<TestingParticipantDirectoryProjection>(actor.Error);
+        }
 
         var query = context.Set<TestingSlotRegistration>()
             .AsNoTracking()
@@ -498,14 +588,19 @@ public sealed class TestingParticipationHandlers(
 
         var search = request.Search?.Trim().ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(search))
+        {
             query = query.Where(registration =>
                 registration.User.Name.ToLower().Contains(search) ||
                 registration.User.Email.ToLower().Contains(search) ||
                 registration.Event.Name.ToLower().Contains(search) ||
                 (registration.Slot.CampusName != null && registration.Slot.CampusName.ToLower().Contains(search)) ||
                 (registration.Slot.RoomName != null && registration.Slot.RoomName.ToLower().Contains(search)));
+        }
+
         if (request.Status.HasValue)
+        {
             query = query.Where(registration => registration.Status == request.Status.Value);
+        }
 
         var statusCounts = await query
             .GroupBy(registration => registration.Status)
@@ -571,12 +666,19 @@ public sealed class TestingParticipationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingFeedbackObligationProjection>>(actor.Error);
+        }
+
         var query = context.Set<TestingFeedbackObligation>().AsNoTracking().Where(candidate =>
             candidate.TesterUserId == actor.UserId &&
             candidate.TenantId == actor.TenantId &&
             candidate.DeletedAt == null);
-        if (request.EventId.HasValue) query = query.Where(candidate => candidate.EventId == request.EventId.Value);
+        if (request.EventId.HasValue)
+        {
+            query = query.Where(candidate => candidate.EventId == request.EventId.Value);
+        }
+
         var obligations = await query
             .OrderBy(candidate => candidate.Status)
             .ThenBy(candidate => candidate.CreatedAt)
@@ -592,7 +694,10 @@ public sealed class TestingParticipationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingSlotRegistrationProjection>>(actor.Error);
+        }
+
         var query = context.Set<TestingSlotRegistration>()
             .AsNoTracking()
             .Where(registration =>
@@ -600,14 +705,20 @@ public sealed class TestingParticipationHandlers(
                 registration.TenantId == actor.TenantId &&
                 registration.DeletedAt == null);
         if (request.EventId.HasValue)
+        {
             query = query.Where(registration => registration.EventId == request.EventId.Value);
+        }
+
         var registrations = await query
             .OrderByDescending(registration => registration.RegisteredAt)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         var projections = new List<TestingSlotRegistrationProjection>(registrations.Count);
         foreach (var registration in registrations)
+        {
             projections.Add(await ToProjectionAsync(registration, cancellationToken).ConfigureAwait(false));
+        }
+
         return Result.Success<IReadOnlyList<TestingSlotRegistrationProjection>>(projections);
     }
 
@@ -617,14 +728,21 @@ public sealed class TestingParticipationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingEventFeedbackProjection>>(actor.Error);
+        }
+
         var query = context.Set<TestingFeedback>().AsNoTracking().Where(feedback =>
             feedback.UserId == actor.UserId &&
             feedback.TenantId == actor.TenantId &&
             feedback.EventId.HasValue &&
             feedback.ApplicationId.HasValue &&
             feedback.DeletedAt == null);
-        if (request.EventId.HasValue) query = query.Where(feedback => feedback.EventId == request.EventId.Value);
+        if (request.EventId.HasValue)
+        {
+            query = query.Where(feedback => feedback.EventId == request.EventId.Value);
+        }
+
         var feedback = await query
             .OrderByDescending(candidate => candidate.CreatedAt)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -637,7 +755,9 @@ public sealed class TestingParticipationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingEventFeedbackReviewProjection>>(actor.Error);
+        }
 
         var testingEvent = await context.Set<TestingEvent>()
             .AsNoTracking()
@@ -648,8 +768,11 @@ public sealed class TestingParticipationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return Result.Failure<IReadOnlyList<TestingEventFeedbackReviewProjection>>(
                 Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
+
         var canReadFeedback = await HasTestingLabPermissionAsync(
             actor,
             TestingLabActions.Read,
@@ -659,8 +782,11 @@ public sealed class TestingParticipationHandlers(
         if (!canReadAllFeedback)
         {
             if (projectAuthorizationService == null)
+            {
                 return Result.Failure<IReadOnlyList<TestingEventFeedbackReviewProjection>>(
                     Error.Forbidden("TestingLab.FeedbackForbidden", "Feedback access is not available."));
+            }
+
             var eventApplications = await context.Set<TestingProjectApplication>().AsNoTracking()
                 .Where(application =>
                     application.EventId == request.EventId &&
@@ -675,7 +801,9 @@ public sealed class TestingParticipationHandlers(
                         application.ProjectId,
                         PermissionType.Edit,
                         cancellationToken).ConfigureAwait(false))
+                {
                     projectEditorApplicationIds.Add(application.Id);
+                }
             }
         }
 
@@ -686,7 +814,10 @@ public sealed class TestingParticipationHandlers(
                 candidate.TenantId == actor.TenantId &&
                 candidate.DeletedAt == null);
         if (!canReadAllFeedback)
+        {
             obligationsQuery = obligationsQuery.Where(candidate => projectEditorApplicationIds!.Contains(candidate.ApplicationId));
+        }
+
         var obligations = await obligationsQuery
             .OrderBy(candidate => candidate.Status)
             .ThenBy(candidate => candidate.CreatedAt)
@@ -728,7 +859,11 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadManagedRegistrationAsync(registrationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingSlotRegistrationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingSlotRegistrationProjection>(loaded.Error);
+        }
+
         try
         {
             transition(loaded.Registration!);
@@ -783,7 +918,9 @@ public sealed class TestingParticipationHandlers(
         {
             var expectedPosition = index + 1;
             if (waitlist[index].WaitlistPosition != expectedPosition)
+            {
                 waitlist[index].Reposition(expectedPosition);
+            }
         }
     }
 
@@ -792,7 +929,11 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return new(null, null, actor.Error);
+        if (actor.Error != null)
+        {
+            return new(null, null, actor.Error);
+        }
+
         var registration = await context.Set<TestingSlotRegistration>()
             .Include(candidate => candidate.Event)
             .FirstOrDefaultAsync(candidate =>
@@ -811,7 +952,11 @@ public sealed class TestingParticipationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadRegistrationAsync(registrationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return loaded;
+        if (loaded.Error != null)
+        {
+            return loaded;
+        }
+
         var canManageParticipants = await HasTestingLabPermissionAsync(
             loaded.Actor!,
             TestingLabActions.Manage,
@@ -838,9 +983,12 @@ public sealed class TestingParticipationHandlers(
         var actor = actorContextAccessor.ActorContext;
         var userId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || userId == null || actor.TenantId == null)
+        {
             return new(Guid.Empty, Guid.Empty, Error.Unauthorized(
                 "TestingLab.Unauthenticated",
                 "An authenticated tenant actor is required."));
+        }
+
         var hasAccess = await TestingLabActorAccess.IsActiveTenantActorAsync(context, actor, cancellationToken).ConfigureAwait(false);
         return hasAccess
             ? new(userId.Value, actor.TenantId.Value, null)

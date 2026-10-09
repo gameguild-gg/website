@@ -60,12 +60,25 @@ public class ProgramContentService(
     await using var lifecycleTransaction = await ProgramContentLifecycleDatabaseLock
       .AcquireAsync(context, [content.Id])
       .ConfigureAwait(false);
+    // A caller may already have mutated the tracked entity. Read the persisted
+    // state independently before checking the proposed replacement below.
+    var persistedContent = await context.Set<ProgramContent>().AsNoTracking()
+      .FirstOrDefaultAsync(pc => pc.Id == content.Id && pc.DeletedAt == null)
+      .ConfigureAwait(false);
+        if (persistedContent == null)
+        {
+            throw new InvalidOperationException($"ProgramContent with ID {content.Id} not found or has been deleted");
+        }
+    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, persistedContent, ProgramContentAcademicMutation.Authoring);
     var existingContent = await context.Set<ProgramContent>().FirstOrDefaultAsync(pc => pc.Id == content.Id && pc.DeletedAt == null);
 
-    if (existingContent == null) throw new InvalidOperationException($"ProgramContent with ID {content.Id} not found or has been deleted");
+    if (existingContent == null)
+      {
+          throw new InvalidOperationException($"ProgramContent with ID {content.Id} not found or has been deleted");
+      }
 
-    // Update properties
-    content.NormalizeLearningContract();
+      // Update properties
+      content.NormalizeLearningContract();
     ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
     if (await lifecycleGuard.HasBlockingIncompatibleUpdateReference(
             existingContent.Id,
@@ -95,9 +108,12 @@ public class ProgramContentService(
   public async Task<bool> DeleteContentAsync(Guid id) => await ExecuteInContentLifecycleStrategyAsync(async () => {
     var content = await context.Set<ProgramContent>().FirstOrDefaultAsync(pc => pc.Id == id && pc.DeletedAt == null);
 
-    if (content == null) return false;
+    if (content == null)
+      {
+          return false;
+      }
 
-    var contents = await context.Set<ProgramContent>().Where(pc => pc.ProgramId == content.ProgramId && pc.DeletedAt == null).ToListAsync();
+      var contents = await context.Set<ProgramContent>().Where(pc => pc.ProgramId == content.ProgramId && pc.DeletedAt == null).ToListAsync();
     var contentTreeIds = ProgramContentTree.GetIds(id, contents);
     await using var lifecycleTransaction = await ProgramContentLifecycleDatabaseLock
       .AcquireAsync(context, contentTreeIds)
@@ -118,8 +134,12 @@ public class ProgramContentService(
 
     var contentById = contents.ToDictionary(item => item.Id);
     foreach (var contentId in contentTreeIds) {
-      if (!contentById.TryGetValue(contentId, out var contentToDelete)) continue;
-      foreach (var participant in contentDeleteParticipants.Where(value => value.CanHandle(contentToDelete))) {
+      if (!contentById.TryGetValue(contentId, out var contentToDelete))
+          {
+              continue;
+          }
+
+          foreach (var participant in contentDeleteParticipants.Where(value => value.CanHandle(contentToDelete))) {
         await participant.PrepareDeleteAsync(contentToDelete).ConfigureAwait(false);
       }
     }
@@ -156,13 +176,23 @@ public class ProgramContentService(
     pending.Push(rootId);
     while (pending.Count > 0) {
       var contentId = pending.Pop();
-      if (!visited.Add(contentId) || !contentById.TryGetValue(contentId, out var content)) continue;
+      if (!visited.Add(contentId) || !contentById.TryGetValue(contentId, out var content))
+            {
+                continue;
+            }
 
-      content.SoftDelete();
+            content.SoftDelete();
 
-      if (!childrenByParentId.TryGetValue(contentId, out var children)) continue;
-      foreach (var child in children) pending.Push(child.Id);
-    }
+      if (!childrenByParentId.TryGetValue(contentId, out var children))
+            {
+                continue;
+            }
+
+            foreach (var child in children)
+            {
+                pending.Push(child.Id);
+            }
+        }
   }
 
   public async Task<bool> ReorderContentAsync(Guid programId, List<(Guid contentId, int sortOrder)> newOrder) {
@@ -170,10 +200,13 @@ public class ProgramContentService(
     var contentIds = newOrder.Select(x => x.contentId).ToList();
     var contentItems = await context.Set<ProgramContent>().Where(pc => contentIds.Contains(pc.Id) && pc.ProgramId == programId && pc.DeletedAt == null).ToListAsync();
 
-    if (contentItems.Count != newOrder.Count) return false; // Some content items not found
+    if (contentItems.Count != newOrder.Count)
+        {
+            return false; // Some content items not found
+        }
 
-    // Update sort orders
-    foreach (var (contentId, sortOrder) in newOrder) {
+        // Update sort orders
+        foreach (var (contentId, sortOrder) in newOrder) {
       var content = contentItems.First(c => c.Id == contentId);
       content.SortOrder = sortOrder;
       content.Touch();
@@ -199,10 +232,13 @@ public class ProgramContentService(
   public async Task<bool> MoveContentAsync(Guid contentId, Guid? newParentId, int newSortOrder) {
     var content = await context.Set<ProgramContent>().FirstOrDefaultAsync(pc => pc.Id == contentId && pc.DeletedAt == null);
 
-    if (content == null) return false;
+    if (content == null)
+        {
+            return false;
+        }
 
-    // Update parent and sort order
-    content.ParentId = newParentId;
+        // Update parent and sort order
+        content.ParentId = newParentId;
     content.SortOrder = newSortOrder;
     content.Touch();
 

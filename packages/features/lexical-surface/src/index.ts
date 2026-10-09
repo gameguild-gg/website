@@ -17,3 +17,7 @@ export { MermaidViewer } from "./features/mermaid/rendering/mermaid-viewer";
 export { VegaLiteEditor } from "./features/vega-lite/editor/vega-lite-editor";
 export { VegaLiteViewer } from "./features/vega-lite/rendering/vega-lite-viewer";
 export { getThemePair as getVegaLiteThemePair } from "./features/vega-lite/theme/vega-theme-helper";
+export type {
+  ThemeMode as VegaLiteThemeMode,
+  VegaThemeBase,
+} from "./features/vega-lite/theme/vega-theme-helper";

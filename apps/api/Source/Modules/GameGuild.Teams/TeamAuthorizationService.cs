@@ -23,7 +23,10 @@ public sealed class TeamAuthorizationService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || actor.TenantId is not { } tenantId)
+        {
             return false;
+        }
+
         return await IsActiveUserAsync(userId, cancellationToken).ConfigureAwait(false) &&
                await context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
                    member.UserId == userId &&
@@ -40,24 +43,45 @@ public sealed class TeamAuthorizationService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId)
+        {
             return false;
+        }
 
         var team = await context.Set<Team>().AsNoTracking()
             .Where(candidate => candidate.Id == teamId && candidate.IsActive && candidate.DeletedAt == null)
             .Select(candidate => new { candidate.TenantId, candidate.Visibility })
             .SingleOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (team == null) return false;
-        if (actor.TenantId == null || team.TenantId != actor.TenantId) return false;
-        if (!await IsActiveUserAsync(userId, cancellationToken).ConfigureAwait(false)) return false;
+        if (team == null)
+        {
+            return false;
+        }
+
+        if (actor.TenantId == null || team.TenantId != actor.TenantId)
+        {
+            return false;
+        }
+
+        if (!await IsActiveUserAsync(userId, cancellationToken).ConfigureAwait(false))
+        {
+            return false;
+        }
+
         var activeTenantMember = await context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
             member.UserId == userId &&
             member.TenantId == actor.TenantId &&
             member.IsActive &&
             member.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (!activeTenantMember) return false;
-        if (CanManageTeams(actor)) return true;
+        if (!activeTenantMember)
+        {
+            return false;
+        }
+
+        if (CanManageTeams(actor))
+        {
+            return true;
+        }
 
         var authority = await context.Set<TeamMember>().AsNoTracking()
             .Where(member =>
@@ -77,7 +101,9 @@ public sealed class TeamAuthorizationService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || actor.TenantId is not { } tenantId)
+        {
             return false;
+        }
 
         var teamTenantId = await context.Set<Team>().IgnoreQueryFilters().AsNoTracking()
             .Where(candidate => candidate.Id == teamId && candidate.DeletedAt == null)
@@ -85,12 +111,21 @@ public sealed class TeamAuthorizationService(
             .SingleOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (teamTenantId != tenantId || !await IsActiveUserAsync(userId, cancellationToken).ConfigureAwait(false))
+        {
             return false;
+        }
+
         if (!await context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
                 member.UserId == userId && member.TenantId == tenantId && member.IsActive && member.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false))
+        {
             return false;
-        if (CanManageTeams(actor)) return true;
+        }
+
+        if (CanManageTeams(actor))
+        {
+            return true;
+        }
 
         return await context.Set<TeamMember>().AsNoTracking().AnyAsync(member =>
             member.TeamId == teamId &&
@@ -106,9 +141,15 @@ public sealed class TeamAuthorizationService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId)
+        {
             return query.Where(team => team.Visibility == TeamVisibility.Public && (includeArchived || team.IsActive));
+        }
+
         if (actor.TenantId is not { } tenantId)
+        {
             return query.Where(team => team.Visibility == TeamVisibility.Public && (includeArchived || team.IsActive));
+        }
+
         return query.Where(team =>
             team.TenantId == tenantId &&
             (includeArchived || team.IsActive) &&
@@ -125,9 +166,14 @@ public sealed class TeamAuthorizationService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || actor.TenantId is not { } tenantId)
+        {
             return ApplyPersonalAccess(query, includeArchived);
+        }
+
         if (!CanManageTeams(actor))
+        {
             return ApplyPersonalAccess(query, includeArchived);
+        }
 
         return query.Where(team =>
             team.TenantId == tenantId &&

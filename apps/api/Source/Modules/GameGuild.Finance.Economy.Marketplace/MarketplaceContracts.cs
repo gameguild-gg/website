@@ -8,7 +8,11 @@ public readonly record struct MarketplaceSettlementId
 {
     public MarketplaceSettlementId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Settlement ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Settlement ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -45,7 +49,9 @@ public sealed class MarketplaceFundingFragment
         if (parentLot.Id != selection.ParentLotId ||
             parentLot.Amount.Currency != selection.Amount.Currency ||
             parentLot.TraceUnitsPerCoinUnit != selection.TraceUnitsPerCoinUnit)
+        {
             throw new ArgumentException("Funding selection is not bound to its parent lot.", nameof(selection));
+        }
 
         ParentLot = parentLot;
         Selection = selection;
@@ -188,8 +194,11 @@ public sealed class MarketplaceSettlementResult
     internal void ApplyRefund(IReadOnlyList<CoinAmount> legs, bool isFull)
     {
         foreach (var leg in legs)
+        {
             _refundedUnits[leg.Currency] =
-                checked(_refundedUnits.GetValueOrDefault(leg.Currency) + leg.Units);
+            checked(_refundedUnits.GetValueOrDefault(leg.Currency) + leg.Units);
+        }
+
         Status = isFull
             ? MarketplaceSettlementStatus.Refunded
             : MarketplaceSettlementStatus.PartiallyRefunded;

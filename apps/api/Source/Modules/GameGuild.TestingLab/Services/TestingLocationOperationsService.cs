@@ -23,7 +23,10 @@ public class TestingLocationOperationsService(
     {
         var tenantId = RequireTenantId();
         var query = context.Set<TestingLocation>().AsQueryable();
-        if (includeArchived) query = query.IgnoreQueryFilters();
+        if (includeArchived)
+        {
+            query = query.IgnoreQueryFilters();
+        }
 
         return await query
             .Where(tl => tl.TenantId == tenantId && (includeArchived || tl.DeletedAt == null))
@@ -60,7 +63,9 @@ public class TestingLocationOperationsService(
             .FirstOrDefaultAsync(tl => tl.Id == location.Id && tl.TenantId == tenantId && tl.DeletedAt == null);
 
         if (existingLocation == null)
+        {
             throw new InvalidOperationException($"Testing location with ID {location.Id} not found");
+        }
 
         existingLocation.Name = location.Name;
         existingLocation.Description = location.Description;
@@ -90,7 +95,10 @@ public class TestingLocationOperationsService(
         var location = await context.Set<TestingLocation>()
             .FirstOrDefaultAsync(tl => tl.Id == id && tl.TenantId == tenantId && tl.DeletedAt == null);
 
-        if (location == null) return false;
+        if (location == null)
+        {
+            return false;
+        }
 
         var hasUpcomingSessions = await context.Set<TestingSession>()
             .AnyAsync(session =>
@@ -101,7 +109,9 @@ public class TestingLocationOperationsService(
                 session.Status != SessionStatus.Completed &&
                 session.EndTime >= SystemClock.UtcNow);
         if (hasUpcomingSessions)
+        {
             throw new InvalidOperationException("Move or cancel upcoming sessions before archiving this location.");
+        }
 
         location.SoftDelete();
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -116,7 +126,10 @@ public class TestingLocationOperationsService(
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(tl => tl.Id == id && tl.TenantId == tenantId && tl.DeletedAt != null);
 
-        if (location == null) return false;
+        if (location == null)
+        {
+            return false;
+        }
 
         location.Restore();
         location.Touch();
@@ -129,10 +142,14 @@ public class TestingLocationOperationsService(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid == null)
+        {
             throw new AuthenticationRequiredException("Testing Lab location access requires an authenticated actor.");
+        }
 
         if (actor.TenantId == null)
+        {
             throw new AccessDeniedException("Testing Lab location access requires an active tenant membership.");
+        }
 
         return actor.TenantId.Value;
     }

@@ -47,12 +47,19 @@ public sealed class PostgreSqlTrustSafetyRiskInputSource : ITrustSafetyRiskInput
         DateTimeOffset observedAt,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(opaqueSubjectReference);
         var current = await _evidence.ReadLatestAsync(
             tenantId, opaqueSubjectReference, ComplianceEvidenceKinds.TrustSafety, cancellationToken);
         if (current is null)
+        {
             return Unavailable(observedAt, "trust-safety-evidence-unavailable");
+        }
+
         return new TrustSafetyRiskInput(
             current.Version,
             current.IssuedAt,

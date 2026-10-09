@@ -84,7 +84,10 @@ public sealed class TestingProjectApplication : EntityBase
         Guid? tenantId)
     {
         if (eventId == Guid.Empty || projectId == Guid.Empty || submittedByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Event, project, and applicant are required.");
+        }
+
         return new TestingProjectApplication
         {
             Id = Guid.NewGuid(),
@@ -107,7 +110,9 @@ public sealed class TestingProjectApplication : EntityBase
         VersionSubmissionPolicy submissionVersionPolicy = VersionSubmissionPolicy.ReadyMutableUntilReview)
     {
         if (eventId == Guid.Empty || projectId == Guid.Empty || submittedByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Event, project, and applicant are required.");
+        }
 
         return new TestingProjectApplication
         {
@@ -138,16 +143,41 @@ public sealed class TestingProjectApplication : EntityBase
         string? preferredAvailability = null)
     {
         if (Status is not (TestingApplicationStatus.Draft or TestingApplicationStatus.Pending))
+        {
             throw new InvalidOperationException("The application package is frozen.");
-        if (projectVersionId == Guid.Empty) throw new ArgumentException("Project version is invalid.", nameof(projectVersionId));
+        }
+
+        if (projectVersionId == Guid.Empty)
+        {
+            throw new ArgumentException("Project version is invalid.", nameof(projectVersionId));
+        }
+
         if (Status == TestingApplicationStatus.Pending && projectVersionId.HasValue && projectVersionId.Value != ProjectVersionId.GetValueOrDefault() &&
             !ProjectVersionEligibility.CanReplaceAfterSubmission(SubmissionVersionPolicy))
+        {
             throw new InvalidOperationException("The submitted project version is immutable under this application's policy.");
-        if (projectVersionId.HasValue) ProjectVersionId = projectVersionId;
-        if (brief != null) BriefJson = JsonSerializer.Serialize(brief, QuestionnaireResponse.SerializerOptions);
-        if (eventApplicationResponse != null) EventApplicationResponseJson = eventApplicationResponse.ToJson();
+        }
+
+        if (projectVersionId.HasValue)
+        {
+            ProjectVersionId = projectVersionId;
+        }
+
+        if (brief != null)
+        {
+            BriefJson = JsonSerializer.Serialize(brief, QuestionnaireResponse.SerializerOptions);
+        }
+
+        if (eventApplicationResponse != null)
+        {
+            EventApplicationResponseJson = eventApplicationResponse.ToJson();
+        }
+
         if (acceptedRules.HasValue)
+        {
             RulesAcceptedAt = acceptedRules.Value ? RulesAcceptedAt ?? SystemClock.UtcNow : null;
+        }
+
         SubmittedAssetReferenceIdsJson = SerializeAssetIds(submittedAssetReferenceIds);
         PreferredAvailability = string.IsNullOrWhiteSpace(preferredAvailability) ? null : preferredAvailability.Trim();
         Touch();
@@ -157,10 +187,20 @@ public sealed class TestingProjectApplication : EntityBase
     {
         ArgumentNullException.ThrowIfNull(revision);
         if (Status is not (TestingApplicationStatus.Draft or TestingApplicationStatus.Pending))
+        {
             throw new InvalidOperationException("The application package is frozen.");
+        }
+
         if (revision.ApplicationId != Id || revision.TenantId != TenantId)
+        {
             throw new InvalidOperationException("Questionnaire revision must belong to this application.");
-        if (QuestionnaireRevisions.All(candidate => candidate.Id != revision.Id)) QuestionnaireRevisions.Add(revision);
+        }
+
+        if (QuestionnaireRevisions.All(candidate => candidate.Id != revision.Id))
+        {
+            QuestionnaireRevisions.Add(revision);
+        }
+
         CurrentQuestionnaireRevisionId = revision.Id;
         Touch();
     }
@@ -168,10 +208,16 @@ public sealed class TestingProjectApplication : EntityBase
     public void SubmitDraft(VersionSubmissionPolicy submissionVersionPolicy)
     {
         if (Status != TestingApplicationStatus.Draft)
+        {
             throw new InvalidOperationException("Only draft applications can be submitted.");
+        }
+
         if (!ProjectVersionId.HasValue || Brief == null || EventApplicationResponse == null ||
             !RulesAcceptedAt.HasValue || !CurrentQuestionnaireRevisionId.HasValue)
+        {
             throw new InvalidOperationException("Version, test brief, feedback questionnaire, event responses, and rules acceptance are required.");
+        }
+
         SubmissionVersionPolicy = submissionVersionPolicy;
         Status = TestingApplicationStatus.Pending;
         Touch();
@@ -183,12 +229,20 @@ public sealed class TestingProjectApplication : EntityBase
         IReadOnlyCollection<Guid>? submittedAssetReferenceIds = null)
     {
         if (Status != TestingApplicationStatus.Pending)
+        {
             throw new InvalidOperationException("Only pending applications can be updated.");
+        }
+
         if (projectVersionId == Guid.Empty)
+        {
             throw new ArgumentException("Project version is required.", nameof(projectVersionId));
+        }
+
         if (projectVersionId != ProjectVersionId &&
             !ProjectVersionEligibility.CanReplaceAfterSubmission(SubmissionVersionPolicy))
+        {
             throw new InvalidOperationException("The submitted project version is immutable under this application's policy.");
+        }
 
         ProjectVersionId = projectVersionId;
         PreferredAvailability = string.IsNullOrWhiteSpace(preferredAvailability) ? null : preferredAvailability.Trim();
@@ -198,7 +252,11 @@ public sealed class TestingProjectApplication : EntityBase
 
     public void BeginReview()
     {
-        if (Status != TestingApplicationStatus.Pending) throw new InvalidOperationException("Only pending applications can enter review.");
+        if (Status != TestingApplicationStatus.Pending)
+        {
+            throw new InvalidOperationException("Only pending applications can enter review.");
+        }
+
         Status = TestingApplicationStatus.UnderReview;
         Touch();
     }
@@ -206,10 +264,19 @@ public sealed class TestingProjectApplication : EntityBase
     public void Approve(Guid decidedByUserId, Guid slotId, string? rationale)
     {
         if (Status is not (TestingApplicationStatus.Pending or TestingApplicationStatus.UnderReview or TestingApplicationStatus.Waitlisted))
+        {
             throw new InvalidOperationException("Only active applications can be approved.");
+        }
+
         if (decidedByUserId == Guid.Empty || slotId == Guid.Empty)
+        {
             throw new ArgumentException("Decision actor and slot are required.");
-        if (AssignedSlotId.HasValue) throw new InvalidOperationException("The application already has an assigned slot.");
+        }
+
+        if (AssignedSlotId.HasValue)
+        {
+            throw new InvalidOperationException("The application already has an assigned slot.");
+        }
 
         Status = TestingApplicationStatus.Approved;
         AssignedSlotId = slotId;
@@ -222,9 +289,19 @@ public sealed class TestingProjectApplication : EntityBase
     public void Reject(Guid decidedByUserId, string rationale)
     {
         if (Status is not (TestingApplicationStatus.Pending or TestingApplicationStatus.UnderReview or TestingApplicationStatus.Waitlisted))
+        {
             throw new InvalidOperationException("Only active applications can be rejected.");
-        if (decidedByUserId == Guid.Empty) throw new ArgumentException("Decision actor is required.", nameof(decidedByUserId));
-        if (string.IsNullOrWhiteSpace(rationale)) throw new ArgumentException("A rejection rationale is required.", nameof(rationale));
+        }
+
+        if (decidedByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Decision actor is required.", nameof(decidedByUserId));
+        }
+
+        if (string.IsNullOrWhiteSpace(rationale))
+        {
+            throw new ArgumentException("A rejection rationale is required.", nameof(rationale));
+        }
 
         Status = TestingApplicationStatus.Rejected;
         AssignedSlotId = null;
@@ -237,7 +314,10 @@ public sealed class TestingProjectApplication : EntityBase
     public void PlaceOnWaitlist(Guid decidedByUserId, string? rationale)
     {
         if (Status is not (TestingApplicationStatus.Pending or TestingApplicationStatus.UnderReview))
+        {
             throw new InvalidOperationException("Only active applications can be waitlisted.");
+        }
+
         Status = TestingApplicationStatus.Waitlisted;
         DecidedByUserId = decidedByUserId;
         DecisionRationale = string.IsNullOrWhiteSpace(rationale) ? null : rationale.Trim();
@@ -248,15 +328,25 @@ public sealed class TestingProjectApplication : EntityBase
     public void ReassignSlot(Guid slotId)
     {
         if (Status != TestingApplicationStatus.Approved)
+        {
             throw new InvalidOperationException("Only approved applications can be reassigned.");
-        if (slotId == Guid.Empty) throw new ArgumentException("Slot is required.", nameof(slotId));
+        }
+
+        if (slotId == Guid.Empty)
+        {
+            throw new ArgumentException("Slot is required.", nameof(slotId));
+        }
+
         AssignedSlotId = slotId;
         Touch();
     }
     public void Withdraw()
     {
         if (Status is TestingApplicationStatus.Approved or TestingApplicationStatus.Rejected)
+        {
             throw new InvalidOperationException("A decided application cannot be withdrawn.");
+        }
+
         Status = TestingApplicationStatus.Withdrawn;
         Touch();
     }

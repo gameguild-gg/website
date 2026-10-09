@@ -68,11 +68,17 @@ public static class PermissionRegistry
     /// <returns>True if the permission is registered; otherwise, false.</returns>
     public static bool IsValidKey(string key)
     {
-        if (string.IsNullOrEmpty(key)) return false;
-        
+        if (string.IsNullOrEmpty(key))
+        {
+            return false;
+        }
+
         // Check exact match
-        if (AllKeys.Value.Contains(key)) return true;
-        
+        if (AllKeys.Value.Contains(key))
+        {
+            return true;
+        }
+
         // Check if it's a wildcard that matches a registered resource
         if (key.EndsWith(":*"))
         {

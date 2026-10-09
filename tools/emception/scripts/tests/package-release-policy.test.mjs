@@ -173,6 +173,48 @@ test('Emception versioning rejects package manifests outside the seven-package r
   );
 });
 
+test('release versioning refreshes internal peers while preserving external peers and other manifest fields', async (context) => {
+  const { EMCEPTION_PACKAGE_DIRECTORIES, synchronizeEmceptionPeerVersions } = await import(
+    '../../../../scripts/devops/emception-release-policy.mjs'
+  );
+  const root = await mkdtemp(path.join(tmpdir(), 'emception-peer-policy-'));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const originals = [];
+  for (const [index, directory] of EMCEPTION_PACKAGE_DIRECTORIES.entries()) {
+    const filename = path.join(root, directory, 'package.json');
+    await mkdir(path.dirname(filename), { recursive: true });
+    const manifest = {
+      name: `@fixture/package-${index}`, version: '1.2.3', description: 'preserved',
+      dependencies: { '@fixture/package-0': '1.2.3' },
+      ...(index === 4 ? {
+        peerDependencies: { '@fixture/package-3': '^1.0.0', react: '^19.0.0' },
+        peerDependenciesMeta: { '@fixture/package-3': { optional: true } },
+      } : {}),
+    };
+    const content = `${JSON.stringify(manifest)}\n`;
+    await writeFile(filename, content);
+    originals.push({ filename, manifest, content });
+  }
+
+  assert.equal(await synchronizeEmceptionPeerVersions(root), '1.2.3');
+  for (const [index, original] of originals.entries()) {
+    const content = await readFile(original.filename, 'utf8');
+    const expected = structuredClone(original.manifest);
+    if (index === 4) expected.peerDependencies['@fixture/package-3'] = '^1.2.3';
+    else assert.equal(content, original.content);
+    assert.deepEqual(JSON.parse(content), expected);
+  }
+  const first = await Promise.all(originals.map(({ filename }) => readFile(filename, 'utf8')));
+  await synchronizeEmceptionPeerVersions(root);
+  assert.deepEqual(await Promise.all(originals.map(({ filename }) => readFile(filename, 'utf8'))), first);
+
+  const mismatched = { ...originals[0].manifest, version: '1.2.4' };
+  await writeFile(originals[0].filename, JSON.stringify(mismatched));
+  const beforeRejection = await Promise.all(originals.map(({ filename }) => readFile(filename, 'utf8')));
+  await assert.rejects(synchronizeEmceptionPeerVersions(root), /package versions differ/);
+  assert.deepEqual(await Promise.all(originals.map(({ filename }) => readFile(filename, 'utf8'))), beforeRejection);
+});
+
 test('publication packs Toolchain first and waits for the registry before consumers', async (context) => {
   const { EMCEPTION_PUBLISH_ORDER, publishEmception } = await import(
     '../../../../scripts/devops/publish-emception.mjs'

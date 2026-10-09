@@ -102,7 +102,9 @@ internal sealed class BlogAuthoringAiService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         if (conversations.Count == 0)
+        {
             return [];
+        }
 
         var ids = conversations.Select(item => item.Id).ToArray();
         var messages = await db.Set<BlogAiMessage>()
@@ -142,14 +144,20 @@ internal sealed class BlogAuthoringAiService(
                 duplicate.ProposalKind != request.ProposalKind ||
                 !string.Equals(duplicate.Instruction, request.Instruction.Trim(), StringComparison.Ordinal) ||
                 !string.Equals(duplicate.Selection, NormalizeOptional(request.Selection), StringComparison.Ordinal))
+            {
                 throw new BlogAiIdempotencyConflictException(
                     "The AI idempotency key is already bound to another authoring request.");
+            }
+
             return await ToDto(duplicate, cancellationToken).ConfigureAwait(false);
         }
 
         var post = await FindOwnedPost(postId, actorId, cancellationToken).ConfigureAwait(false);
         if (post.Revision != request.PostRevision)
+        {
             throw new BlogRevisionConflictException(request.PostRevision, post.Revision);
+        }
+
         EnsureProposalKindAllowed(post.Format, request.ProposalKind);
 
         var generationRequest = BuildGenerationRequest(
@@ -160,7 +168,9 @@ internal sealed class BlogAuthoringAiService(
             maximumOutputTokens: null);
         var resolved = await ai.DescribeGenerateAsync(new AiExecutionActor(tenantId, actorId), generationRequest, cancellationToken).ConfigureAwait(false);
         if (resolved.IsFailure)
+        {
             throw new BlogAiExecutionException(resolved.Error.Code, resolved.Error.Description);
+        }
 
         var maximumInputTokens = EstimateInputTokens(generationRequest);
         var quote = await credits.QuoteAsync(
@@ -228,7 +238,10 @@ internal sealed class BlogAuthoringAiService(
         catch
         {
             if (!creditsReserved)
+            {
                 await ReleaseQuota(tenantId, actorId, maximumQuotaTokens, releaseRequest: true, CancellationToken.None).ConfigureAwait(false);
+            }
+
             throw;
         }
     }
@@ -253,7 +266,9 @@ internal sealed class BlogAuthoringAiService(
     {
         var run = await FindOwnedRun(tenantId, actorId, postId, runId, cancellationToken).ConfigureAwait(false);
         if (run.Status is BlogAiRunStatus.Completed or BlogAiRunStatus.Failed or BlogAiRunStatus.Cancelled)
+        {
             return await ToDto(run, cancellationToken).ConfigureAwait(false);
+        }
 
         if (run.Status == BlogAiRunStatus.Running)
         {
@@ -300,7 +315,10 @@ internal sealed class BlogAuthoringAiService(
                 .SingleAsync(cancellationToken)
                 .ConfigureAwait(false);
             if (status is BlogAiRunStatus.Completed or BlogAiRunStatus.Failed or BlogAiRunStatus.Cancelled)
+            {
                 yield break;
+            }
+
             await Task.Delay(TimeSpan.FromMilliseconds(300), timeProvider, cancellationToken).ConfigureAwait(false);
         }
     }
@@ -321,7 +339,10 @@ internal sealed class BlogAuthoringAiService(
         _ = await FindOwnedRun(tenantId, actorId, postId, proposal.RunId, cancellationToken).ConfigureAwait(false);
         var post = await FindOwnedPost(postId, actorId, cancellationToken).ConfigureAwait(false);
         if (post.Revision != request.PostRevision)
+        {
             throw new BlogRevisionConflictException(request.PostRevision, post.Revision);
+        }
+
         proposal.EnsureApplicableTo(post.Revision);
 
         ApplyProposedContent(post, proposal, request.CursorOffset, actorId);
@@ -340,7 +361,10 @@ internal sealed class BlogAuthoringAiService(
                 .ConfigureAwait(false)
                 ?? throw new KeyNotFoundException("Blog post was not found.");
             if (currentRevision != request.PostRevision)
+            {
                 throw new BlogRevisionConflictException(request.PostRevision, currentRevision);
+            }
+
             throw await ProposalConflict(proposalId, cancellationToken).ConfigureAwait(false);
         }
         return ToPostDto(post);
@@ -377,7 +401,9 @@ internal sealed class BlogAuthoringAiService(
             .SingleOrDefaultAsync(item => item.Id == runId, cancellationToken)
             .ConfigureAwait(false);
         if (run is null || run.Status is BlogAiRunStatus.Completed or BlogAiRunStatus.Failed or BlogAiRunStatus.Cancelled)
+        {
             return;
+        }
 
         var nextSequence = await NextSequence(runId, cancellationToken).ConfigureAwait(false);
         if (run.Status == BlogAiRunStatus.Running)
@@ -413,31 +439,48 @@ internal sealed class BlogAuthoringAiService(
         try
         {
             if (await IsCancellationRequested(run.Id, cancellationToken).ConfigureAwait(false))
+            {
                 throw new OperationCanceledException("AI generation was cancelled by the author.");
+            }
+
             var completion = await ai.GenerateForActorStreamingWithReservedQuotaAsync(
                 new AiExecutionActor(run.TenantId!.Value, run.ActorId),
                 BuildGenerationRequest(run, post),
                 async (delta, streamCancellationToken) =>
                 {
                     if (string.IsNullOrEmpty(delta))
+                    {
                         return;
+                    }
+
                     if (await IsCancellationRequested(run.Id, streamCancellationToken).ConfigureAwait(false))
+                    {
                         throw new OperationCanceledException("AI generation was cancelled by the author.");
+                    }
+
                     AddEvent(run.Id, nextSequence++, "delta", BlogAiRunStatus.Running.ToString(), delta, null, timeProvider.GetUtcNow());
                     await db.SaveChangesAsync(streamCancellationToken).ConfigureAwait(false);
                 },
                 cancellationToken).ConfigureAwait(false);
             if (completion.IsFailure)
+            {
                 throw new BlogAiExecutionException(completion.Error.Code, completion.Error.Description);
+            }
+
             if (await IsCancellationRequested(run.Id, cancellationToken).ConfigureAwait(false))
+            {
                 throw new OperationCanceledException("AI generation was cancelled by the author.");
+            }
 
             var inputTokens = completion.Value.Usage.InputTokens ?? 0;
             var outputTokens = completion.Value.Usage.OutputTokens ?? 0;
             var actualQuotaTokens = checked(inputTokens + outputTokens);
             var reservedQuotaTokens = checked(run.MaximumInputTokens + run.MaximumOutputTokens);
             if (actualQuotaTokens > reservedQuotaTokens)
+            {
                 throw new BlogAiExecutionException("AI_USAGE_EXCEEDED_RESERVATION", "Provider usage exceeded the reserved token envelope.");
+            }
+
             var originalContent = OriginalContent(post, run.ProposalKind);
             var proposedContent = MaterializeProposedContent(run.ProposalKind, originalContent, completion.Value.Text);
             var relationalContext = db as DbContext;
@@ -492,7 +535,9 @@ internal sealed class BlogAuthoringAiService(
                 AddEvent(run.Id, nextSequence, "completed", run.Status.ToString(), null, JsonSerializer.Serialize(completedEvent, JsonOptions), timeProvider.GetUtcNow());
                 await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 if (finalizationTransaction is not null)
+                {
                     await finalizationTransaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                }
             }
             catch
             {
@@ -607,7 +652,9 @@ internal sealed class BlogAuthoringAiService(
             1,
             cancellationToken).ConfigureAwait(false);
         if (!request.Success)
+        {
             throw new BlogAiExecutionException("AI_QUOTA_EXCEEDED", "The AI request quota has been exceeded.");
+        }
 
         var tokens = await quotaEnforcer.TryAtomicConsumeAsync(
             tenantId,
@@ -615,7 +662,9 @@ internal sealed class BlogAuthoringAiService(
             maximumTokens,
             cancellationToken).ConfigureAwait(false);
         if (tokens.Success)
+        {
             return;
+        }
 
         await ReleaseQuota(tenantId, actorId, 0, releaseRequest: true, CancellationToken.None).ConfigureAwait(false);
         throw new BlogAiExecutionException("AI_QUOTA_EXCEEDED", "The AI token quota has been exceeded.");
@@ -631,6 +680,7 @@ internal sealed class BlogAuthoringAiService(
         try
         {
             if (tokens > 0)
+            {
                 _ = await quotaEnforcer.DecrementUsageAsync(
                     tenantId,
                     ResourceUsageType.AiTokens,
@@ -638,7 +688,10 @@ internal sealed class BlogAuthoringAiService(
                     actorId,
                     ServiceCode,
                     cancellationToken).ConfigureAwait(false);
+            }
+
             if (releaseRequest)
+            {
                 _ = await quotaEnforcer.DecrementUsageAsync(
                     tenantId,
                     ResourceUsageType.AiRequests,
@@ -646,6 +699,7 @@ internal sealed class BlogAuthoringAiService(
                     actorId,
                     ServiceCode,
                     cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (Exception exception)
         {
@@ -674,7 +728,9 @@ internal sealed class BlogAuthoringAiService(
         {
             conversation = await query.SingleOrDefaultAsync(item => item.Id == requestedId.Value, cancellationToken).ConfigureAwait(false);
             if (conversation is null)
+            {
                 throw new KeyNotFoundException("AI conversation was not found.");
+            }
         }
         else
         {
@@ -698,7 +754,10 @@ internal sealed class BlogAuthoringAiService(
         var isAuthor = post.PrimaryAuthorId == actorId ||
                        await db.Set<BlogPostAuthor>().AnyAsync(author => author.BlogPostId == postId && author.UserId == actorId, cancellationToken).ConfigureAwait(false);
         if (!isAuthor)
+        {
             throw new KeyNotFoundException("Blog post was not found.");
+        }
+
         return post;
     }
 
@@ -772,8 +831,11 @@ internal sealed class BlogAuthoringAiService(
     private static BlogAiStreamEventDto DeserializeEvent(BlogAiStreamEvent item)
     {
         if (!string.IsNullOrWhiteSpace(item.PayloadJson))
+        {
             return JsonSerializer.Deserialize<BlogAiStreamEventDto>(item.PayloadJson, JsonOptions)
                    ?? throw new InvalidOperationException("Persisted AI stream event is invalid.");
+        }
+
         return new BlogAiStreamEventDto(item.Sequence, item.Type, item.Delta, item.RunId, item.Status);
     }
 
@@ -982,9 +1044,11 @@ internal sealed class BlogAuthoringAiService(
         };
 
         if (!allowed)
+        {
             throw new BlogAiProposalKindNotAllowedException(
                 kind,
                 "The requested AI proposal kind cannot safely modify this post format.");
+        }
     }
 
     private static string Insert(string source, string value, int? cursorOffset)
@@ -1040,7 +1104,9 @@ internal sealed class BlogAuthoringAiService(
     private static void ValidateActor(Guid tenantId, Guid actorId)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI authoring requires a tenant-scoped user actor.");
+        }
     }
 }
 
@@ -1146,7 +1212,9 @@ public static class BlogStructuredPatch
         var operations = patch["operations"] as JsonArray
                          ?? throw new ArgumentException("The AI patch must contain an operations array.", nameof(patchJson));
         if (operations.Count is 0 or > 100)
+        {
             throw new ArgumentException("The AI patch must contain between 1 and 100 operations.", nameof(patchJson));
+        }
 
         foreach (var node in operations)
         {
@@ -1167,9 +1235,14 @@ public static class BlogStructuredPatch
                       ?? throw new ArgumentException("Every AI patch operation requires a path value.", nameof(operation));
         var segments = ParsePointer(pointer);
         if (segments.Count == 0)
+        {
             throw new ArgumentException("Replacing the structured document root is not allowed.", nameof(operation));
+        }
+
         if (segments.Any(IsProtectedLexicalProperty))
+        {
             throw new ArgumentException("Lexical node identity and type metadata cannot be changed by AI.", nameof(operation));
+        }
 
         var (parent, leaf) = ResolveParent(document, segments);
         switch (op)
@@ -1262,18 +1335,29 @@ public static class BlogStructuredPatch
     private static void EnsureRemovalAllowed(JsonNode? target)
     {
         if (target is not JsonObject obj)
+        {
             return;
+        }
+
         var type = obj["type"]?.GetValue<string>();
         if (!string.IsNullOrWhiteSpace(type) && type is not ("text" or "paragraph" or "heading" or "quote" or "listitem"))
+        {
             throw new ArgumentException($"AI cannot remove the interactive or unknown Lexical node type '{type}'.");
+        }
     }
 
     private static IReadOnlyList<string> ParsePointer(string pointer)
     {
         if (pointer.Length == 0)
+        {
             return [];
+        }
+
         if (!pointer.StartsWith("/", StringComparison.Ordinal))
+        {
             throw new ArgumentException("AI patch paths must use JSON Pointer syntax.", nameof(pointer));
+        }
+
         return pointer.Split('/').Skip(1)
             .Select(static segment => segment.Replace("~1", "/", StringComparison.Ordinal).Replace("~0", "~", StringComparison.Ordinal))
             .ToArray();
@@ -1282,7 +1366,10 @@ public static class BlogStructuredPatch
     private static int ParseArrayIndex(string value, int count, bool allowAppend)
     {
         if (!int.TryParse(value, out var index) || index < 0 || index > count || (!allowAppend && index == count))
+        {
             throw new ArgumentException($"'{value}' is not a valid array index.");
+        }
+
         return index;
     }
 
@@ -1331,6 +1418,8 @@ internal sealed class BlogAuthoringAiBackgroundService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         foreach (var id in ids)
+        {
             await queue.Enqueue(id, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

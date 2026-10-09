@@ -15,7 +15,9 @@ public static class StringExtensions
     public static string ToSlugCase(this string value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return string.Empty;
+        }
 
         // Convert to lowercase
         value = value.ToLowerInvariant();

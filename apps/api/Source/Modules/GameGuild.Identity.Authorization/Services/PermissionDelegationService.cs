@@ -53,7 +53,10 @@ public class PermissionDelegationService(
     {
         var delegation = await _repository.GetByIdAsync(delegationId, cancellationToken).ConfigureAwait(false);
 
-        if (delegation == null) return false;
+        if (delegation == null)
+        {
+            return false;
+        }
 
         delegation.Deactivate();
         await _repository.UpdateAsync(delegation, cancellationToken).ConfigureAwait(false);
@@ -102,7 +105,10 @@ public class PermissionDelegationService(
     {
         var delegation = await _repository.GetByIdAsync(delegationId, cancellationToken).ConfigureAwait(false);
 
-        if (delegation == null) return false;
+        if (delegation == null)
+        {
+            return false;
+        }
 
         delegation.RecordUsage();
         await _repository.UpdateAsync(delegation, cancellationToken).ConfigureAwait(false);

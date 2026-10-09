@@ -61,7 +61,11 @@ public sealed class TestingLocationEndpointCommandHandler(ITestingLocationOperat
     public async Task<TestingLocation?> Handle(UpdateTestingLocationEndpointCommand request, CancellationToken cancellationToken)
     {
         var location = await service.GetTestingLocationByIdAsync(request.LocationId).ConfigureAwait(false);
-        if (location is null) return null;
+        if (location is null)
+        {
+            return null;
+        }
+
         request.Location.UpdateTestingLocation(location);
         return await service.UpdateTestingLocationAsync(location).ConfigureAwait(false);
     }
@@ -158,7 +162,11 @@ public sealed class TestingRequestEndpointCommandHandler(ITestingRequestOperatio
     public async Task<TestingRequest?> Handle(UpdateTestingRequestEndpointCommand request, CancellationToken cancellationToken)
     {
         var entity = await service.GetTestingRequestByIdAsync(request.RequestId).ConfigureAwait(false);
-        if (entity is null) return null;
+        if (entity is null)
+        {
+            return null;
+        }
+
         request.Request.UpdateTestingRequest(entity);
         return await service.UpdateTestingRequestAsync(entity).ConfigureAwait(false);
     }
@@ -285,7 +293,11 @@ public sealed class TestingEventTemplateEndpointCommandHandler(IApplicationDbCon
     public async Task<TestingEventTemplate?> Handle(CreateTestingEventTemplateRevisionEndpointCommand request, CancellationToken cancellationToken)
     {
         var template = await LoadTemplateAsync(request.TemplateId, request.TenantId, cancellationToken).ConfigureAwait(false);
-        if (template is null) return null;
+        if (template is null)
+        {
+            return null;
+        }
+
         var input = request.Request;
         var revision = template.CreateRevision(
             input.GeneralRules,
@@ -307,8 +319,20 @@ public sealed class TestingEventTemplateEndpointCommandHandler(IApplicationDbCon
     public async Task<TestingEventTemplate?> Handle(SetTestingEventTemplateArchivedEndpointCommand request, CancellationToken cancellationToken)
     {
         var template = await LoadTemplateAsync(request.TemplateId, request.TenantId, cancellationToken).ConfigureAwait(false);
-        if (template is null) return null;
-        if (request.Archived) template.Archive(); else template.RestoreArchivedTemplate();
+        if (template is null)
+        {
+            return null;
+        }
+
+        if (request.Archived)
+        {
+            template.Archive();
+        }
+        else
+        {
+            template.RestoreArchivedTemplate();
+        }
+
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return template;
     }

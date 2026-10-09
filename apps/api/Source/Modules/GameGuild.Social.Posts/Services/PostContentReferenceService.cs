@@ -35,7 +35,9 @@ public class PostContentReferenceService : IPostContentReferenceService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<PostContentReference>(PostErrors.NotFound);
+        }
 
         var order = await _context.Set<PostContentReference>()
             .CountAsync(r => r.PostId == postId, cancellationToken).ConfigureAwait(false);
@@ -53,7 +55,9 @@ public class PostContentReferenceService : IPostContentReferenceService
             .FirstOrDefaultAsync(r => r.Id == referenceId, cancellationToken).ConfigureAwait(false);
 
         if (reference is null)
+        {
             return Result.Failure(PostErrors.ReferenceNotFound);
+        }
 
         _context.Set<PostContentReference>().Remove(reference);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

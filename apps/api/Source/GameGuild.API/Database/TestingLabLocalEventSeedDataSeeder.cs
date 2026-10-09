@@ -19,7 +19,9 @@ public static class TestingLabLocalEventSeedDataSeeder
     {
         ArgumentNullException.ThrowIfNull(context);
         if (managerUserId == Guid.Empty)
+        {
             throw new ArgumentException("A local seed event manager is required.", nameof(managerUserId));
+        }
 
         var now = SystemClock.UtcNow;
         var historicalStart = new DateTime(2026, 9, 22, 2, 43, 0, DateTimeKind.Utc);
@@ -42,7 +44,9 @@ public static class TestingLabLocalEventSeedDataSeeder
                 .ConfigureAwait(false);
 
             if (existing is not null)
+            {
                 continue;
+            }
 
             context.Set<TestingEvent>().Add(candidate);
             context.Set<TestingEventSlot>().Add(CreateSlot(candidate, maxTesters: 20, maxProjects: 3));

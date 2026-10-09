@@ -148,7 +148,9 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
         ArgumentNullException.ThrowIfNull(webhookEvent);
 
         if (!webhookEvent.TryBeginProcessing(staleBefore))
+        {
             return false;
+        }
 
         Entities.Update(webhookEvent);
         try
@@ -204,7 +206,9 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
         for (var current = exception.InnerException; current is not null; current = current.InnerException)
         {
             if (current is not DbException { SqlState: "23505" } databaseException)
+            {
                 continue;
+            }
 
             var constraintName = databaseException.GetType()
                 .GetProperty("ConstraintName")

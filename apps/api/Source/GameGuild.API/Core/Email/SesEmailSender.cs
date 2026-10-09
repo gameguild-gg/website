@@ -47,7 +47,7 @@ public sealed class SesEmailSender : IConfirmedEmailSender
         var currentOptions = options.Value;
         if (!currentOptions.Enabled)
         {
-            logger.LogInformation("Email delivery is disabled. Skipping email to {RecipientEmail}.", message.ToEmail);
+            logger.LogInformation("Email delivery is disabled. Skipping email to {RecipientEmail}.", LogRedaction.MaskEmail(message.ToEmail));
             return new EmailDeliveryReceipt(false, null);
         }
 
@@ -65,7 +65,10 @@ public sealed class SesEmailSender : IConfirmedEmailSender
         cancellationToken.ThrowIfCancellationRequested();
 
         foreach (var value in new[] { currentOptions.FromEmail, currentOptions.FromName, message.ToEmail, message.ToName, message.Subject })
+        {
             ValidateHeaderValue(value);
+        }
+
         foreach (var attachment in message.Attachments ?? [])
         {
             ValidateHeaderValue(attachment.FileName);
@@ -100,7 +103,7 @@ public sealed class SesEmailSender : IConfirmedEmailSender
 
         logger.LogInformation(
             "Delivered email to {RecipientEmail} with {AttachmentCount} attachments.",
-            message.ToEmail,
+            LogRedaction.MaskEmail(message.ToEmail),
             message.Attachments?.Count ?? 0);
 
         return new EmailDeliveryReceipt(true, response.MessageId);
@@ -201,6 +204,8 @@ public sealed class SesEmailSender : IConfirmedEmailSender
     private static void ValidateHeaderValue(string? value)
     {
         if (value?.Any(character => char.IsControl(character)) == true)
+        {
             throw new ArgumentException("Email headers must not contain control characters.");
+        }
     }
 }

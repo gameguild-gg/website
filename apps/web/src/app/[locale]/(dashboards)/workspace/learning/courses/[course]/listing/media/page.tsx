@@ -9,6 +9,15 @@ import { Loader2, Save, Image as ImageIcon, Video } from 'lucide-react';
 import { updateCourse, fetchCourse } from '@/lib/learning/actions';
 import type { CourseDetails } from '@/lib/learning/types';
 
+function safePreviewUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
 export default function ListingMediaPage({ params }: { params: Promise<{ locale: string; course: string }> }) {
   const [isPending, startTransition] = useTransition();
   const [course, setCourse] = useState<CourseDetails | null>(null);
@@ -86,7 +95,12 @@ export default function ListingMediaPage({ params }: { params: Promise<{ locale:
           {thumbnail && (
             <div className="overflow-hidden rounded-lg border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={thumbnail} alt="Course thumbnail preview" className="h-48 w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+              <img
+                src={safePreviewUrl(thumbnail)}
+                alt="Course thumbnail preview"
+                className="h-48 w-full object-cover"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
             </div>
           )}
         </CardContent>

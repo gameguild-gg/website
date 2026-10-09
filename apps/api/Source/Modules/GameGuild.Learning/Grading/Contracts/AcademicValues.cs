@@ -23,7 +23,11 @@ public readonly record struct ScoreValue : IComparable<ScoreValue>
 
     public static ScoreValue FromUnits(int units)
     {
-        if (units < 0) throw new ArgumentOutOfRangeException(nameof(units), "ScoreValue cannot be negative.");
+        if (units < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(units), "ScoreValue cannot be negative.");
+        }
+
         return new ScoreValue(units);
     }
 
@@ -44,7 +48,11 @@ public readonly record struct ScoreValue : IComparable<ScoreValue>
     public static ScoreValue Average(IEnumerable<ScoreValue> values)
     {
         var materialized = values.ToArray();
-        if (materialized.Length == 0) return Zero;
+        if (materialized.Length == 0)
+        {
+            return Zero;
+        }
+
         var total = materialized.Aggregate(0L, (sum, value) => checked(sum + value.Units));
         return FromWideUnits(DivideRoundHalfUp(total, materialized.Length), nameof(values));
     }
@@ -173,7 +181,11 @@ public readonly record struct PercentValue : IComparable<PercentValue>
     public static PercentValue Average(IEnumerable<PercentValue> values)
     {
         var materialized = values.ToArray();
-        if (materialized.Length == 0) return Zero;
+        if (materialized.Length == 0)
+        {
+            return Zero;
+        }
+
         var total = materialized.Aggregate(0L, (sum, value) => checked(sum + value.Units));
         var rounded = checked((total + materialized.Length / 2) / materialized.Length);
         return FromUnits(checked((int)rounded));

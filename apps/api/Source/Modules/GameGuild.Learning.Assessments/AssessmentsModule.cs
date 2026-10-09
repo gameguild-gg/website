@@ -95,7 +95,10 @@ public static class AssessmentsModule
 
     private static void ConfigureReviewMethodsJson(JsonSerializerOptions options)
     {
-        if (options.Converters.Any(static converter => converter is ReviewMethodsJsonConverter)) return;
+        if (options.Converters.Any(static converter => converter is ReviewMethodsJsonConverter))
+        {
+            return;
+        }
 
         // ReviewMethods is a numeric bitmask. It must precede the API-wide
         // JsonStringEnumConverter so responses match the generated contract.

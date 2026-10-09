@@ -77,10 +77,14 @@ public sealed class UploadAssetHandler : ICommandHandler<UploadAssetCommand, Upl
                 request.UserId,
                 request.TenantId,
                 ct).ConfigureAwait(false))
+        {
             return new UploadAssetResponse(Guid.Empty, Guid.Empty, string.Empty, false, "Forbidden");
+        }
 
         if (!request.TenantId.HasValue)
+        {
             return new UploadAssetResponse(Guid.Empty, Guid.Empty, string.Empty, false, "Tenant context is required");
+        }
 
         var options = new UploadAssetOptions(
             request.DisplayName ?? request.FileName,

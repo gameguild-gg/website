@@ -258,8 +258,16 @@ public sealed partial class AdminWithdrawalWorkflowTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             DispatchCalls++;
-            if (TimeoutOnDispatch) throw new TimeoutException("provider timeout");
-            if (ReceiptFactory is not null) return ValueTask.FromResult(ReceiptFactory(command));
+            if (TimeoutOnDispatch)
+            {
+                throw new TimeoutException("provider timeout");
+            }
+
+            if (ReceiptFactory is not null)
+            {
+                return ValueTask.FromResult(ReceiptFactory(command));
+            }
+
             return ValueTask.FromResult(new AdminWithdrawalProviderReceipt(
                 command.RunId, command.TenantId, DispatchOutcome, "transfer-1", command.FencingToken,
                 command.ExecutionEpoch, command.Amount, command.SourceAssetKey,
@@ -275,7 +283,10 @@ public sealed partial class AdminWithdrawalWorkflowTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (EventFactory is not null)
+            {
                 return ValueTask.FromResult(EventFactory(runId, idempotencyKey, providerTransferId));
+            }
+
             return ValueTask.FromResult(new AdminWithdrawalProviderEvent(
                 "event-1", runId, tenantId, ReconcileOutcome, providerTransferId ?? "transfer-1",
                 1, 1, new CoinAmount(CurrencyCode.HardCoin, 50),

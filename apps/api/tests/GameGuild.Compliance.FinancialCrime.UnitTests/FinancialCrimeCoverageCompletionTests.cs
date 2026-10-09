@@ -80,7 +80,9 @@ public sealed class FinancialCrimeCoverageCompletionTests
                      screening with { ExpiresAt = Now }, screening with { NextScreenAt = Now },
                      screening with { ReceivedAt = Now.AddSeconds(-1) }
                  })
+        {
             Capture(screeningValidator, invalid).Should().BeOfType<ArgumentException>();
+        }
 
         var signalValidator = Private("ValidateSignal", typeof(FinancialCrimeTransactionSignal));
         Capture(signalValidator, (object?)null).Should().BeOfType<ArgumentNullException>();
@@ -94,7 +96,9 @@ public sealed class FinancialCrimeCoverageCompletionTests
                      signal with { IdempotencyKey = " " }, signal with { Score = -1 },
                      signal with { Score = 1_000_001 }, signal with { HoldExpiresAt = Now }
                  })
+        {
             Capture(signalValidator, invalid).Should().BeOfType<ArgumentException>();
+        }
 
         var decisionValidator = Private("ValidateDecision", typeof(FinancialCrimeCaseDecision));
         Capture(decisionValidator, (object?)null).Should().BeOfType<ArgumentNullException>();
@@ -109,7 +113,9 @@ public sealed class FinancialCrimeCoverageCompletionTests
                      decision with { Version = 0 }, decision with { PolicyVersion = 0 },
                      decision with { ExpiresAt = Now }
                  })
+        {
             Capture(decisionValidator, invalid).Should().BeOfType<ArgumentException>();
+        }
 
         var tenantActor = Private("ValidateTenantActor", typeof(Guid), typeof(Guid));
         Capture(tenantActor, Guid.Empty, ActorId).Should().BeOfType<ArgumentException>();
@@ -117,7 +123,11 @@ public sealed class FinancialCrimeCoverageCompletionTests
         tenantActor.Invoke(null, [TenantId, ActorId]);
 
         var map = Private("Map", typeof(FinancialCrimeOutcome));
-        foreach (var outcome in Enum.GetValues<FinancialCrimeOutcome>()) map.Invoke(null, [outcome]).Should().NotBeNull();
+        foreach (var outcome in Enum.GetValues<FinancialCrimeOutcome>())
+        {
+            map.Invoke(null, [outcome]).Should().NotBeNull();
+        }
+
         var reference = new FinancialCrimeRegulatoryReference(
             Guid.NewGuid(), Guid.NewGuid(), "SAR", "BR", "hash", ActorId, Now);
         reference.Id.Should().NotBeEmpty();

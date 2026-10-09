@@ -100,7 +100,9 @@ export class ArrayTypeMapper implements SchemaTypeMapper {
 
     if (schemaObj.items) {
       const itemType = this.typeMapperChain.map(schemaObj.items as OpenAPIV3.SchemaObject);
-      return `Array<${itemType}>${nullable}`;
+      // Keep unions and intersections inside the array rather than outside it.
+      const arrayItem = itemType.includes(' | ') || itemType.includes(' & ') ? `(${itemType})` : itemType;
+      return `${arrayItem}[]${nullable}`;
     }
 
     return `unknown[]${nullable}`;

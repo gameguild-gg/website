@@ -13,9 +13,14 @@ public static class EconomySubjectReference
     public static string ForUser(Guid tenantId, Guid actorId)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        }
+
         if (actorId == Guid.Empty)
+        {
             throw new ArgumentException("An actor is required.", nameof(actorId));
+        }
 
         var canonical = $"economy-subject-v1|{tenantId:N}|{actorId:N}";
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));

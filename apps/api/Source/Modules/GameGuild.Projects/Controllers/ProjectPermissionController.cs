@@ -76,15 +76,21 @@ public class ProjectPermissionController : BaseApiController {
     // Validate that user can grant the requested permissions
     var canGrantPermissions = await _permissionResolver.CanGrantPermissionsAsync(userId, GetCurrentTenantId(), request.Permissions, projectId).ConfigureAwait(false);
 
-    if (!canGrantPermissions) return Forbid("You don't have permission to grant some of the requested permissions");
+    if (!canGrantPermissions)
+        {
+            return Forbid("You don't have permission to grant some of the requested permissions");
+        }
 
-    var inviteRequest = new InviteUserRequest { Email = request.Email, Permissions = request.Permissions, ExpiresAt = request.ExpiresAt, Message = request.Message, RequireAcceptance = request.RequireAcceptance };
+        var inviteRequest = new InviteUserRequest { Email = request.Email, Permissions = request.Permissions, ExpiresAt = request.ExpiresAt, Message = request.Message, RequireAcceptance = request.RequireAcceptance };
 
     var result = await _sender.Send(new AddProjectPermissionCollaboratorCommand(projectId, inviteRequest, userId)).ConfigureAwait(false);
 
-    if (!result.Success) return BadRequest(result.ErrorMessage);
+    if (!result.Success)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
 
-    return Ok(result);
+        return Ok(result);
   }
 
   /// <summary> Update collaborator permissions </summary>
@@ -96,18 +102,24 @@ public class ProjectPermissionController : BaseApiController {
     // Validate that user can grant the requested permissions
     var canGrantPermissions = await _permissionResolver.CanGrantPermissionsAsync(userId, GetCurrentTenantId(), request.Permissions, projectId).ConfigureAwait(false);
 
-    if (!canGrantPermissions) return Forbid("You don't have permission to grant some of the requested permissions");
+    if (!canGrantPermissions)
+        {
+            return Forbid("You don't have permission to grant some of the requested permissions");
+        }
 
-    var result = await _sender.Send(new UpdateProjectPermissionCollaboratorCommand(
+        var result = await _sender.Send(new UpdateProjectPermissionCollaboratorCommand(
       projectId,
       collaboratorUserId,
       request.Permissions,
       userId,
       request.ExpiresAt)).ConfigureAwait(false);
 
-    if (!result.Success) return BadRequest(result.ErrorMessage);
+    if (!result.Success)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
 
-    return Ok(result);
+        return Ok(result);
   }
 
   /// <summary> Remove a collaborator from the project </summary>
@@ -118,9 +130,12 @@ public class ProjectPermissionController : BaseApiController {
 
     var result = await _sender.Send(new RemoveProjectPermissionCollaboratorCommand(projectId, collaboratorUserId, userId)).ConfigureAwait(false);
 
-    if (!result.Success) return BadRequest(result.ErrorMessage);
+    if (!result.Success)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
 
-    return Ok(result);
+        return Ok(result);
   }
 
   /// <summary> Get project permission templates for common roles </summary>
@@ -171,14 +186,20 @@ public class ProjectPermissionController : BaseApiController {
     // Get permissions for the specified role
     var roleTemplate = GetRoleTemplate(request.RoleName);
 
-    if (roleTemplate == null) return BadRequest($"Unknown role template: {request.RoleName}");
+    if (roleTemplate == null)
+        {
+            return BadRequest($"Unknown role template: {request.RoleName}");
+        }
 
-    // Validate that user can grant the role permissions
-    var canGrantPermissions = await _permissionResolver.CanGrantPermissionsAsync(userId, GetCurrentTenantId(), roleTemplate.Permissions, projectId).ConfigureAwait(false);
+        // Validate that user can grant the role permissions
+        var canGrantPermissions = await _permissionResolver.CanGrantPermissionsAsync(userId, GetCurrentTenantId(), roleTemplate.Permissions, projectId).ConfigureAwait(false);
 
-    if (!canGrantPermissions) return Forbid($"You don't have permission to grant {request.RoleName} role");
+    if (!canGrantPermissions)
+        {
+            return Forbid($"You don't have permission to grant {request.RoleName} role");
+        }
 
-    var shareRequest = new ShareResourceRequest {
+        var shareRequest = new ShareResourceRequest {
       UserEmails = request.UserEmails,
       UserIds = request.UserIds,
       Permissions = roleTemplate.Permissions,
@@ -190,9 +211,12 @@ public class ProjectPermissionController : BaseApiController {
 
     var result = await _sender.Send(new ShareProjectWithRoleCommand(projectId, shareRequest, userId)).ConfigureAwait(false);
 
-    if (!result.Success) return BadRequest(result.ErrorMessage);
+    if (!result.Success)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
 
-    return Ok(result);
+        return Ok(result);
   }
 
   #region Private Helper Methods
@@ -208,15 +232,27 @@ public class ProjectPermissionController : BaseApiController {
   private static string DetermineProjectRole(PermissionType[] permissions) {
     var permissionSet = permissions.ToHashSet();
 
-    if (permissionSet.Contains(PermissionType.Delete) && permissionSet.Contains(PermissionType.Archive)) return "Admin";
+    if (permissionSet.Contains(PermissionType.Delete) && permissionSet.Contains(PermissionType.Archive))
+        {
+            return "Admin";
+        }
 
-    if (permissionSet.Contains(PermissionType.Publish) && permissionSet.Contains(PermissionType.Review)) return "Editor";
+        if (permissionSet.Contains(PermissionType.Publish) && permissionSet.Contains(PermissionType.Review))
+        {
+            return "Editor";
+        }
 
-    if (permissionSet.Contains(PermissionType.Edit) && permissionSet.Contains(PermissionType.Create)) return "Collaborator";
+        if (permissionSet.Contains(PermissionType.Edit) && permissionSet.Contains(PermissionType.Create))
+        {
+            return "Collaborator";
+        }
 
-    if (permissionSet.Contains(PermissionType.Read)) return "Viewer";
+        if (permissionSet.Contains(PermissionType.Read))
+        {
+            return "Viewer";
+        }
 
-    return "Custom";
+        return "Custom";
   }
 
   private static ProjectRoleTemplate? GetRoleTemplate(string roleName) {

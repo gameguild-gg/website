@@ -183,7 +183,11 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
 
     public AdminWithdrawalRun? FindReplay(Guid tenantId, string key, string requestHash)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return FindReplayCore(tenantId, key, requestHash);
     }
 
@@ -193,12 +197,23 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
         ArgumentException.ThrowIfNullOrWhiteSpace(requestHash);
         var query = _db.Set<AdminWithdrawalRunRow>().AsNoTracking()
             .Where(row => row.IdempotencyKey == key.Trim());
-        if (tenantId.HasValue) query = query.Where(row => row.TenantId == tenantId.Value);
+        if (tenantId.HasValue)
+        {
+            query = query.Where(row => row.TenantId == tenantId.Value);
+        }
+
         var row = query.SingleOrDefault();
-        if (row is null) return null;
+        if (row is null)
+        {
+            return null;
+        }
+
         if (!string.Equals(row.RequestHash, requestHash, StringComparison.Ordinal))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "The withdrawal idempotency key is bound to a different request.");
+            "The withdrawal idempotency key is bound to a different request.");
+        }
+
         return ToContract(row);
     }
 
@@ -207,7 +222,11 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
 
     public AdminWithdrawalRun? FindPeriod(Guid tenantId, DateOnly periodStart)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return FindPeriodCore(tenantId, periodStart);
     }
 
@@ -217,7 +236,11 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
             .Where(row => row.PeriodStart == periodStart &&
                           row.State != AdminWithdrawalRunState.Failed &&
                           row.State != AdminWithdrawalRunState.Cancelled);
-        if (tenantId.HasValue) query = query.Where(row => row.TenantId == tenantId.Value);
+        if (tenantId.HasValue)
+        {
+            query = query.Where(row => row.TenantId == tenantId.Value);
+        }
+
         var row = query.SingleOrDefault();
         return row is null ? null : ToContract(row);
     }
@@ -257,15 +280,27 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
 
     public AdminWithdrawalRun Get(Guid tenantId, Guid runId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return GetCore(tenantId, runId);
     }
 
     private AdminWithdrawalRun GetCore(Guid? tenantId, Guid runId)
     {
-        if (runId == Guid.Empty) throw new ArgumentException("Run ID is required.", nameof(runId));
+        if (runId == Guid.Empty)
+        {
+            throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         var query = _db.Set<AdminWithdrawalRunRow>().AsNoTracking().Where(row => row.Id == runId);
-        if (tenantId.HasValue) query = query.Where(row => row.TenantId == tenantId.Value);
+        if (tenantId.HasValue)
+        {
+            query = query.Where(row => row.TenantId == tenantId.Value);
+        }
+
         var row = query.SingleOrDefault();
         return row is null
             ? throw new KeyNotFoundException("Admin withdrawal run was not found.")
@@ -295,14 +330,26 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
 
     public Guid? FindProviderEvent(Guid tenantId, string eventId, string eventHash)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return FindProviderEventCore(tenantId, eventId, eventHash);
     }
 
     public IReadOnlyList<AdminWithdrawalRun> List(Guid tenantId, int limit = 100)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (limit is <= 0 or > 500) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (limit is <= 0 or > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
         return _db.Set<AdminWithdrawalRunRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId)
             .OrderByDescending(row => row.CreatedAt).ThenBy(row => row.Id)
@@ -318,15 +365,29 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
         ArgumentException.ThrowIfNullOrWhiteSpace(eventHash);
         var query = _db.Set<AdminWithdrawalProviderEventRow>().AsNoTracking()
             .Where(row => row.EventId == eventId.Trim());
-        if (tenantId.HasValue) query = query.Where(row => row.TenantId == tenantId.Value);
+        if (tenantId.HasValue)
+        {
+            query = query.Where(row => row.TenantId == tenantId.Value);
+        }
+
         var row = query.SingleOrDefault();
-        if (row is null) return null;
+        if (row is null)
+        {
+            return null;
+        }
+
         if (!string.Equals(row.EventHash, eventHash, StringComparison.Ordinal))
+        {
             throw new AdminWithdrawalEvidenceException(
-                "The provider event ID is bound to different evidence.");
+            "The provider event ID is bound to different evidence.");
+        }
+
         if (row.RecordedAt == default)
+        {
             throw new AdminWithdrawalEvidenceException(
-                "The provider event has an invalid recorded timestamp.");
+            "The provider event has an invalid recorded timestamp.");
+        }
+
         return row.RunId;
     }
 
@@ -357,7 +418,10 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
         long expectedVersion)
     {
         if (tenantId == Guid.Empty || run.TenantId != tenantId)
+        {
             throw new ArgumentException("The run must belong to the actor tenant.", nameof(tenantId));
+        }
+
         RecordProviderEvent(eventId, eventHash, run, expectedVersion);
     }
 
@@ -378,9 +442,15 @@ public sealed class PostgreSqlAdminWithdrawalStore : IAdminWithdrawalStore
     {
         var message = exception.Message;
         if (message.Contains("overlap", StringComparison.OrdinalIgnoreCase))
+        {
             return new AdminWithdrawalOverlapException(message);
+        }
+
         if (message.Contains("evidence", StringComparison.OrdinalIgnoreCase))
+        {
             return new AdminWithdrawalEvidenceException(message);
+        }
+
         return new AdminWithdrawalStaleCommandException(message);
     }
 
@@ -429,7 +499,11 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
         string evidence,
         DateTimeOffset occurredAt)
     {
-        if (runId == Guid.Empty) throw new ArgumentException("Run ID is required.", nameof(runId));
+        if (runId == Guid.Empty)
+        {
+            throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(kind);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidence);
         var tenantId = _db.Set<AdminWithdrawalRunRow>().AsNoTracking()
@@ -437,7 +511,10 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
             .Select(row => row.TenantId)
             .SingleOrDefault();
         if (tenantId == Guid.Empty)
+        {
             throw new KeyNotFoundException("Admin withdrawal run was not found.");
+        }
+
         return Append(tenantId, runId, kind, actorId, evidence, occurredAt);
     }
 
@@ -449,8 +526,16 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
         string evidence,
         DateTimeOffset occurredAt)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (runId == Guid.Empty) throw new ArgumentException("Run ID is required.", nameof(runId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (runId == Guid.Empty)
+        {
+            throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(kind);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidence);
 
@@ -465,7 +550,11 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
 
     public IReadOnlyList<AdminWithdrawalAuditEvent> Events(Guid runId)
     {
-        if (runId == Guid.Empty) return [];
+        if (runId == Guid.Empty)
+        {
+            return [];
+        }
+
         var tenantId = _db.Set<AdminWithdrawalRunRow>().AsNoTracking()
             .Where(row => row.Id == runId)
             .Select(row => row.TenantId)
@@ -475,7 +564,11 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
 
     public IReadOnlyList<AdminWithdrawalAuditEvent> Events(Guid tenantId, Guid runId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         return _db.Set<AdminWithdrawalAuditEventRow>()
             .AsNoTracking()
             .Where(item => item.TenantId == tenantId && item.RunId == runId)
@@ -502,14 +595,22 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
 
     public bool Verify(Guid tenantId, Guid runId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var events = Events(tenantId, runId);
         return VerifyEvents(runId, events);
     }
 
     private static bool VerifyEvents(Guid runId, IReadOnlyList<AdminWithdrawalAuditEvent> events)
     {
-        if (events.Count == 0) return false;
+        if (events.Count == 0)
+        {
+            return false;
+        }
+
         var previousHash = new string('0', 64);
         for (var index = 0; index < events.Count; index++)
         {
@@ -520,7 +621,10 @@ public sealed class PostgreSqlAdminWithdrawalAuditTrail : IAdminWithdrawalAuditT
             if (item.RunId != runId || item.Sequence != index + 1L ||
                 !string.Equals(item.PreviousHash, previousHash, StringComparison.Ordinal) ||
                 !string.Equals(item.Hash, expected, StringComparison.Ordinal))
+            {
                 return false;
+            }
+
             previousHash = item.Hash;
         }
         return true;

@@ -17,7 +17,8 @@ public sealed class EmailDispatcherService(
     INotificationPreferenceService preferenceService,
     IEmailSender emailSender,
     IOptions<EmailDispatcherOptions> options,
-    ILogger<EmailDispatcherService> logger)
+    ILogger<EmailDispatcherService> logger,
+    NotificationMetadataProtector metadataProtector)
 {
     /// <summary>Rows stuck in Sending longer than this are reclaimed by the sweep (crash between claim and send).</summary>
     private static readonly TimeSpan SendingReclaimWindow = TimeSpan.FromMinutes(10);
@@ -40,6 +41,7 @@ public sealed class EmailDispatcherService(
     public async Task<int> SweepOnceAsync(CancellationToken cancellationToken = default)
     {
         var opts = options.Value;
+        await ProtectLegacyMetadataAsync(opts.SweepBatchSize, cancellationToken).ConfigureAwait(false);
         var now = SystemClock.UtcNow;
         var reclaimCutoff = now.Subtract(SendingReclaimWindow);
 
@@ -90,6 +92,10 @@ public sealed class EmailDispatcherService(
 
     private async Task DispatchAsync(Notification notification, EmailDispatcherOptions opts, CancellationToken cancellationToken)
     {
+        // A due row can fall outside this sweep's history backfill batch.
+        // Protect it before any lifecycle write, including staleness and preference holds.
+        metadataProtector.ProtectForStorage(notification);
+
         // 1. Staleness: transactional emails older than the TTL are deadlettered without rendering.
         if (TransactionalTypes.Contains(notification.Type)
             && notification.CreatedAt < SystemClock.UtcNow.Subtract(opts.TransactionalStalenessTtl))
@@ -159,7 +165,7 @@ public sealed class EmailDispatcherService(
             notification.MarkDeadLettered($"suppressed: {activeSuppression.Reason}");
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             logger.LogWarning("Deadlettered notification to suppressed address. NotificationId: {NotificationId}, Recipient: {RecipientEmail}, Reason: {Reason}",
-                notification.Id, toEmail, activeSuppression.Reason);
+                notification.Id, LogRedaction.MaskEmail(toEmail), activeSuppression.Reason);
             return;
         }
 
@@ -200,7 +206,36 @@ public sealed class EmailDispatcherService(
         notification.MarkDeliverySent(providerMessageId);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         logger.LogInformation("Email delivered. NotificationId: {NotificationId}, Type: {Type}, Recipient: {RecipientEmail}",
-            notification.Id, notification.Type, toEmail);
+            notification.Id, notification.Type, LogRedaction.MaskEmail(toEmail));
+    }
+
+    private async Task ProtectLegacyMetadataAsync(int batchSize, CancellationToken cancellationToken)
+    {
+        // Hosted maintenance includes sent, dead-lettered and soft-deleted history in every tenant.
+        // It changes metadata only; delivery state, timestamps and retry counters remain intact.
+        var legacy = await context.Set<Notification>()
+            .IgnoreQueryFilters()
+            .Where(n => (n.Type == NotificationType.EmailVerification
+                    || n.Type == NotificationType.PasswordReset
+                    || n.Type == NotificationType.MagicLink)
+                && n.Metadata != null && n.Metadata.Trim() != ""
+                && !n.Metadata.StartsWith(NotificationMetadataProtector.ProtectedPrefix))
+            .OrderBy(n => n.CreatedAt)
+            .ThenBy(n => n.Id)
+            .Take(Math.Clamp(batchSize, 1, 1000))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var changed = false;
+        foreach (var notification in legacy)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            changed |= metadataProtector.ProtectForStorage(notification);
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

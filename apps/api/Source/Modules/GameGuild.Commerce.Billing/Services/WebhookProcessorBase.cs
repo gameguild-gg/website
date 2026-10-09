@@ -148,7 +148,9 @@ public abstract class WebhookProcessorBase
     protected virtual Guid? ExtractTenantIdFromMetadata(IDictionary<string, string>? metadata)
     {
         if (metadata == null)
+        {
             return null;
+        }
 
         // Common metadata key patterns across providers
         var tenantIdKeys = new[] { "tenant_id", "tenantId", "TenantId", "tenant-id" };

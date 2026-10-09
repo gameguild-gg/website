@@ -5,6 +5,7 @@ import {
   buildContentActivityPayload,
   type LearnerContentActivityKind,
 } from "@/lib/learner/activity-contracts";
+import { assertSafeServiceUrl } from "@/lib/security/safe-remote-url";
 import {
   createServerClient,
   GeneratedApi,
@@ -63,12 +64,20 @@ async function uploadAssessmentFile(
   if (file.size === 0) throw new Error("Choose a file before submitting.");
   const upload = new FormData();
   upload.set("file", file, file.name);
-  const endpoint = new URL("/v1/assets", getApiUrl());
+  const apiUrl = getApiUrl();
+  let endpoint: URL;
+  try {
+    endpoint = new URL("/v1/assets", apiUrl);
+    assertSafeServiceUrl(endpoint, apiUrl);
+  } catch {
+    throw new Error("The file could not be uploaded.");
+  }
   endpoint.searchParams.set("accessPolicy", "Private");
   endpoint.searchParams.set("parentResourceType", "AssessmentSubmission");
   endpoint.searchParams.set("parentResourceId", submissionId);
   const response = await fetch(endpoint, {
     method: "POST",
+    redirect: "error",
     headers: { Authorization: `Bearer ${token}` },
     body: upload,
     cache: "no-store",
@@ -103,7 +112,8 @@ export async function submitAssessment(
     if (modality === "None" || modality === "StructuredAnswer")
       return {
         success: false,
-        error: "Quiz attempts are unavailable through the generic assessment form.",
+        error:
+          "Quiz attempts are unavailable through the generic assessment form.",
       };
 
     const authenticated = await authenticatedClient();

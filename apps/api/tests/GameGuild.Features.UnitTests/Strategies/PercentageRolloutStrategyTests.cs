@@ -103,7 +103,10 @@ public class PercentageRolloutStrategyTests
         {
             var context = new FeatureContext { UserId = Guid.NewGuid(), TenantId = Guid.NewGuid() };
             var result = await _strategy.EvaluateAsync(featureFlag, context);
-            if (!result.IsEnabled) allEnabled = false;
+            if (!result.IsEnabled)
+            {
+                allEnabled = false;
+            }
         }
 
         // Assert
@@ -122,7 +125,10 @@ public class PercentageRolloutStrategyTests
         {
             var context = new FeatureContext { UserId = Guid.NewGuid(), TenantId = Guid.NewGuid() };
             var result = await _strategy.EvaluateAsync(featureFlag, context);
-            if (result.IsEnabled) allDisabled = false;
+            if (result.IsEnabled)
+            {
+                allDisabled = false;
+            }
         }
 
         // Assert

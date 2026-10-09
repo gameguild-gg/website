@@ -11,6 +11,7 @@ using GameGuild.Learning.Grading.Contracts;
 using GameGuild.Learning.Lti;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
@@ -65,6 +66,42 @@ public class LtiLaunchValidationTests
     }
 
     // ===== helpers =====
+
+    [Theory]
+    [InlineData("login", "application/json")]
+    [InlineData("login", "text/plain")]
+    [InlineData("login", "")]
+    [InlineData("launch", "application/json")]
+    [InlineData("launch", "text/plain")]
+    [InlineData("launch", "")]
+    public async Task NonFormContentType_CannotBypassAuthenticationOrMintSession(string endpoint, string contentType)
+    {
+        var (state, nonce) = LoginForState();
+        var token = BuildIdToken(sub: "user-abc", email: "student@test.com", nonce);
+        var form = new Dictionary<string, string>
+        {
+            ["iss"] = Issuer,
+            ["client_id"] = ClientId,
+            ["deployment_id"] = "deployment-1",
+            ["login_hint"] = "student-777",
+            ["state"] = state,
+            ["id_token"] = token
+        };
+        using var body = new FormUrlEncodedContent(form);
+        var http = new DefaultHttpContext();
+        http.Request.Method = "POST";
+        http.Request.ContentType = contentType;
+        http.Request.Body = new MemoryStream(await body.ReadAsByteArrayAsync());
+        var controller = CreateController(http);
+
+        var result = endpoint == "login" ? await controller.Login() : await controller.Launch();
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        http.Response.Headers.Should().NotContainKey("Set-Cookie");
+        _jwtTokenService.Invocations.Should().BeEmpty();
+        _stateStore.TryConsume(state, nonce, _deployment.Id).Should().BeTrue("the rejected request never reached launch validation");
+        (await _db.Set<LtiUserMapping>().CountAsync()).Should().Be(0);
+    }
 
     private LtiController CreateController(HttpContext? http = null, IActorContextAccessor? actor = null)
     {
@@ -154,10 +191,8 @@ public class LtiLaunchValidationTests
 
     private static Dictionary<string, string> ParseQuery(string url)
     {
-        var query = new Uri(url).Query.TrimStart('?');
-        return query.Split('&', StringSplitOptions.RemoveEmptyEntries)
-            .Select(pair => pair.Split('=', 2))
-            .ToDictionary(kv => Uri.UnescapeDataString(kv[0]), kv => Uri.UnescapeDataString(kv.Length > 1 ? kv[1] : ""));
+        return QueryHelpers.ParseQuery(new Uri(url).Query)
+            .ToDictionary(pair => pair.Key, pair => pair.Value.ToString());
     }
 
     private string BuildIdToken(string? sub, string? email, string nonce, string? issuerOverride = null, DateTime? expiresOverride = null)
@@ -231,6 +266,30 @@ public class LtiLaunchValidationTests
         query["state"].Should().NotBeNullOrEmpty();
         query["nonce"].Should().NotBeNullOrEmpty();
         query["state"].Should().NotBe(query["nonce"]);
+    }
+
+    [Theory]
+    [InlineData("//attacker.test/authorize")]
+    [InlineData("student&client_id=attacker&scope=changed")]
+    [InlineData("student\r\nLocation: https://attacker.test/")]
+    public async Task Login_UntrustedHintCannotChangeAuthorizationOriginOrParameters(string loginHint)
+    {
+        var http = FormPost(new Dictionary<string, string>
+        {
+            ["iss"] = Issuer,
+            ["client_id"] = ClientId,
+            ["deployment_id"] = "deployment-1",
+            ["login_hint"] = loginHint,
+        });
+
+        var redirect = (await CreateController(http).Login()).Should().BeOfType<RedirectResult>().Which;
+        var destination = new Uri(redirect.Url!);
+        destination.GetLeftPart(UriPartial.Path).Should().Be("https://canvas.test/api/lti/authorize_redirect");
+        destination.Query.Should().NotStartWith("??");
+        var query = ParseQuery(redirect.Url!);
+        query["login_hint"].Should().Be(loginHint);
+        query["scope"].Should().Be("openid");
+        query["client_id"].Should().Be(ClientId);
     }
 
     [Fact]

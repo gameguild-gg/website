@@ -93,7 +93,11 @@ public class FeaturesCoverageCompletionTests
         evaluation.Setup(x => x.GetEnabledFeaturesAsync(It.IsAny<FeatureContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { "flag" });
 
-        var controller = new FeatureFlagsController(evaluation.Object, NullLogger<FeatureFlagsController>.Instance, new CommandHandlerSender(evaluation.Object, Mock.Of<ICapabilityService>()))
+        var actor = GameGuild.Identity.Context.Actors.ActorContextBuilder.ForUser(Guid.NewGuid()).Build();
+        var actorAccessor = new Mock<GameGuild.Identity.Context.Actors.IActorContextAccessor>();
+        actorAccessor.Setup(accessor => accessor.ActorContext).Returns(actor);
+        var controller = new FeatureFlagsController(evaluation.Object, NullLogger<FeatureFlagsController>.Instance,
+            actorAccessor.Object, new CommandHandlerSender(evaluation.Object, Mock.Of<ICapabilityService>(), actorAccessor.Object))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
@@ -113,6 +117,50 @@ public class FeaturesCoverageCompletionTests
         }, CancellationToken.None);
 
         bulk.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task FeatureFlagsController_BulkEvaluation_CopiesContextWithoutMutatingRequestOrActor()
+    {
+        var actor = GameGuild.Identity.Context.Actors.ActorContextBuilder.ForUser(Guid.NewGuid())
+            .WithTenantId(Guid.NewGuid()).WithPermission("features:read").Build();
+        var accessor = new Mock<GameGuild.Identity.Context.Actors.IActorContextAccessor>();
+        accessor.Setup(value => value.ActorContext).Returns(actor);
+        FeatureContext? evaluatedContext = null;
+        var evaluation = new Mock<IFeatureFlagEvaluationService>();
+        evaluation.Setup(service => service.EvaluateAsync("flag", It.IsAny<FeatureContext>(), It.IsAny<CancellationToken>()))
+            .Callback<string, FeatureContext, CancellationToken>((_, context, _) => evaluatedContext = context)
+            .ReturnsAsync(new FeatureEvaluationResult { FeatureKey = "flag" });
+        var request = new BulkEvaluationRequest
+        {
+            FeatureKeys = ["flag"],
+            Context = new FeatureContext
+            {
+                Permissions = ["admin:*"], IpAddress = "198.51.100.99", UserAgent = "body-agent",
+                CustomAttributes = new Dictionary<string, object> { ["theme"] = "dark" }
+            }
+        };
+        var controller = new FeatureFlagsController(evaluation.Object, NullLogger<FeatureFlagsController>.Instance,
+            accessor.Object, new CommandHandlerSender(evaluation.Object, Mock.Of<ICapabilityService>(), accessor.Object))
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+
+        var result = await controller.BulkEvaluateFeatures(request, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        evaluatedContext.Should().NotBeNull().And.NotBeSameAs(request.Context);
+        evaluatedContext!.CustomAttributes.Should().NotBeSameAs(request.Context.CustomAttributes);
+        evaluatedContext.Permissions.Should().Equal("features:read");
+        evaluatedContext.CustomAttributes["theme"] = "light";
+        evaluatedContext.Permissions.Add("extra");
+        request.Context.UserId.Should().BeNull();
+        request.Context.TenantId.Should().BeNull();
+        request.Context.Permissions.Should().Equal("admin:*");
+        request.Context.IpAddress.Should().Be("198.51.100.99");
+        request.Context.UserAgent.Should().Be("body-agent");
+        request.Context.CustomAttributes["theme"].Should().Be("dark");
+        actor.Permissions.Should().Equal("features:read");
     }
 
     [Fact]
@@ -154,7 +202,11 @@ public class FeaturesCoverageCompletionTests
         db.Set<Subscription>().Add(subscription);
         await db.SaveChangesAsync();
 
-        var service = new CapabilityService(db, new MemoryCache(new MemoryCacheOptions()), NullLogger<CapabilityService>.Instance);
+        var actor = GameGuild.Identity.Context.Actors.ActorContextBuilder.ForUser(Guid.NewGuid())
+            .WithTenantId(tenantId).WithRole("TenantAdmin").Build();
+        var actorAccessor = new Mock<GameGuild.Identity.Context.Actors.IActorContextAccessor>();
+        actorAccessor.SetupGet(value => value.ActorContext).Returns(actor);
+        var service = new CapabilityService(db, new MemoryCache(new MemoryCacheOptions()), NullLogger<CapabilityService>.Instance, actorAccessor.Object);
 
         (await service.IsCapabilityEnabledAsync(tenantId, "lms.courses.basic")).Should().BeTrue();
         (await service.IsCapabilityEnabledAsync(tenantId, "branding.custom")).Should().BeFalse();

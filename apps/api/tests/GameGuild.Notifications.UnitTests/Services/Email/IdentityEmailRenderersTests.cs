@@ -11,6 +11,7 @@ namespace GameGuild.Notifications.UnitTests.Services.Email;
 public sealed class IdentityEmailRenderersTests
 {
     private static readonly Guid UserId = Guid.NewGuid();
+    private static readonly NotificationMetadataProtector MetadataProtector = new(new EphemeralDataProtectionProvider());
 
     private static IEmailFooterService CreateFooterService() =>
         new EmailFooterService(
@@ -22,14 +23,18 @@ public sealed class IdentityEmailRenderersTests
         new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?> { ["App:BaseUrl"] = "https://app.example.com" }).Build();
 
-    private static Notification CreateNotification(NotificationType type, string metadata, Guid? recipientId = null) =>
-        Notification.Create(
+    private static Notification CreateNotification(NotificationType type, string metadata, Guid? recipientId = null)
+    {
+        var notification = Notification.Create(
             recipientId ?? UserId,
             type,
             NotificationChannel.Email,
             "Title",
             "Message",
             metadata: metadata);
+        MetadataProtector.ProtectForStorage(notification);
+        return notification;
+    }
 
     private static string Metadata(object value) => JsonSerializer.Serialize(value);
 
@@ -67,7 +72,7 @@ public sealed class IdentityEmailRenderersTests
     [Fact]
     public async Task EmailVerification_Renders_Link_From_Token_Metadata()
     {
-        var renderer = new EmailVerificationRenderer(CreateFooterService(), CreateConfiguration());
+        var renderer = new EmailVerificationRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.EmailVerification,
             Metadata(new { token = "tok-1", email = "user@example.com", userName = "Alice" }));
@@ -83,7 +88,7 @@ public sealed class IdentityEmailRenderersTests
     [Fact]
     public async Task EmailVerification_Is_Transactional_And_Has_No_Footer()
     {
-        var renderer = new EmailVerificationRenderer(CreateFooterService(), CreateConfiguration());
+        var renderer = new EmailVerificationRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.EmailVerification,
             Metadata(new { token = "tok-1", email = "user@example.com", userName = "Alice" }));
@@ -97,7 +102,7 @@ public sealed class IdentityEmailRenderersTests
     [Fact]
     public async Task PasswordReset_Renders_Link_From_Token_Metadata()
     {
-        var renderer = new PasswordResetRenderer(CreateFooterService(), CreateConfiguration());
+        var renderer = new PasswordResetRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.PasswordReset,
             Metadata(new { token = "reset-1", email = "user@example.com", userName = "Alice" }));
@@ -113,7 +118,7 @@ public sealed class IdentityEmailRenderersTests
     [Fact]
     public async Task PasswordReset_Is_Transactional_And_Has_No_Footer()
     {
-        var renderer = new PasswordResetRenderer(CreateFooterService(), CreateConfiguration());
+        var renderer = new PasswordResetRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.PasswordReset,
             Metadata(new { token = "reset-1", email = "user@example.com", userName = "Alice" }));
@@ -127,7 +132,7 @@ public sealed class IdentityEmailRenderersTests
     [Fact]
     public async Task MagicLink_Renders_Link_From_Token_Metadata()
     {
-        var renderer = new MagicLinkRenderer(CreateFooterService(), CreateConfiguration());
+        var renderer = new MagicLinkRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.MagicLink,
             Metadata(new { token = "magic-1", email = "user@example.com", userName = "Alice" }));
@@ -143,7 +148,7 @@ public sealed class IdentityEmailRenderersTests
     [Fact]
     public async Task MagicLink_Is_Transactional_And_Has_No_Footer()
     {
-        var renderer = new MagicLinkRenderer(CreateFooterService(), CreateConfiguration());
+        var renderer = new MagicLinkRenderer(CreateFooterService(), CreateConfiguration(), MetadataProtector);
         var notification = CreateNotification(
             NotificationType.MagicLink,
             Metadata(new { token = "magic-1", email = "user@example.com", userName = "Alice" }));

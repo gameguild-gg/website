@@ -38,14 +38,41 @@ public sealed record TransformationSpec
     {
         var parts = new List<string>();
         
-        if (Width.HasValue) parts.Add($"w={Width}");
-        if (Height.HasValue) parts.Add($"h={Height}");
-        if (Fit.HasValue) parts.Add($"fit={Fit.ToString()!.ToLowerInvariant()}");
-        if (Quality.HasValue) parts.Add($"q={Quality}");
-        if (Format.HasValue) parts.Add($"f={Format.ToString()!.ToLowerInvariant()}");
-        if (Blur == true) parts.Add($"blur={BlurRadius ?? 10}");
-        if (Grayscale == true) parts.Add("gray=1");
-        
+        if (Width.HasValue)
+        {
+            parts.Add($"w={Width}");
+        }
+
+        if (Height.HasValue)
+        {
+            parts.Add($"h={Height}");
+        }
+
+        if (Fit.HasValue)
+        {
+            parts.Add($"fit={Fit.ToString()!.ToLowerInvariant()}");
+        }
+
+        if (Quality.HasValue)
+        {
+            parts.Add($"q={Quality}");
+        }
+
+        if (Format.HasValue)
+        {
+            parts.Add($"f={Format.ToString()!.ToLowerInvariant()}");
+        }
+
+        if (Blur == true)
+        {
+            parts.Add($"blur={BlurRadius ?? 10}");
+        }
+
+        if (Grayscale == true)
+        {
+            parts.Add("gray=1");
+        }
+
         parts.Sort(StringComparer.Ordinal);
         return string.Join(",", parts);
     }
@@ -58,7 +85,9 @@ public sealed record TransformationSpec
     public static TransformationSpec Parse(string spec)
     {
         if (string.IsNullOrWhiteSpace(spec))
+        {
             return new TransformationSpec();
+        }
 
         int? width = null, height = null, quality = null, blurRadius = null;
         ImageFit? fit = null;
@@ -69,7 +98,10 @@ public sealed record TransformationSpec
         foreach (var part in parts)
         {
             var keyValue = part.Split('=', 2);
-            if (keyValue.Length != 2) continue;
+            if (keyValue.Length != 2)
+            {
+                continue;
+            }
 
             var key = keyValue[0].Trim().ToLowerInvariant();
             var value = keyValue[1].Trim();
@@ -77,23 +109,47 @@ public sealed record TransformationSpec
             switch (key)
             {
                 case "w":
-                    if (int.TryParse(value, out var w)) width = w;
+                    if (int.TryParse(value, out var w))
+                    {
+                        width = w;
+                    }
+
                     break;
                 case "h":
-                    if (int.TryParse(value, out var h)) height = h;
+                    if (int.TryParse(value, out var h))
+                    {
+                        height = h;
+                    }
+
                     break;
                 case "fit":
-                    if (Enum.TryParse<ImageFit>(value, ignoreCase: true, out var f)) fit = f;
+                    if (Enum.TryParse<ImageFit>(value, ignoreCase: true, out var f))
+                    {
+                        fit = f;
+                    }
+
                     break;
                 case "q":
-                    if (int.TryParse(value, out var q)) quality = Math.Clamp(q, 1, 100);
+                    if (int.TryParse(value, out var q))
+                    {
+                        quality = Math.Clamp(q, 1, 100);
+                    }
+
                     break;
                 case "f":
-                    if (Enum.TryParse<ImageFormat>(value, ignoreCase: true, out var fmt)) format = fmt;
+                    if (Enum.TryParse<ImageFormat>(value, ignoreCase: true, out var fmt))
+                    {
+                        format = fmt;
+                    }
+
                     break;
                 case "blur":
                     blur = true;
-                    if (int.TryParse(value, out var br)) blurRadius = br;
+                    if (int.TryParse(value, out var br))
+                    {
+                        blurRadius = br;
+                    }
+
                     break;
                 case "gray":
                     grayscale = value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase);
@@ -131,8 +187,16 @@ public sealed record TransformationSpec
     /// </summary>
     public bool IsWithinLimits(int maxDimension)
     {
-        if (Width.HasValue && Width.Value > maxDimension) return false;
-        if (Height.HasValue && Height.Value > maxDimension) return false;
+        if (Width.HasValue && Width.Value > maxDimension)
+        {
+            return false;
+        }
+
+        if (Height.HasValue && Height.Value > maxDimension)
+        {
+            return false;
+        }
+
         return true;
     }
 }

@@ -52,7 +52,11 @@ public sealed class HmacAdProviderReportService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(network);
         ArgumentNullException.ThrowIfNull(secret);
-        if (secret.Length < 32) throw new ArgumentException("Provider report secret must contain at least 32 bytes.", nameof(secret));
+        if (secret.Length < 32)
+        {
+            throw new ArgumentException("Provider report secret must contain at least 32 bytes.", nameof(secret));
+        }
+
         _network = network.Trim();
         _secret = [.. secret];
     }
@@ -72,12 +76,18 @@ public sealed class HmacAdProviderReportService
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(batchId);
         if (periodEnd <= periodStart || importedAt < periodEnd)
+        {
             throw new ArgumentException("Provider report timing is invalid.", nameof(periodEnd));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(actualRevenueUsdNanos);
         ArgumentNullException.ThrowIfNull(verifiedSessionIds);
         if (verifiedSessionIds.Count == 0 || verifiedSessionIds.Any(id => id == Guid.Empty) ||
             verifiedSessionIds.Distinct().Count() != verifiedSessionIds.Count)
+        {
             throw new ArgumentException("Provider report sessions must be unique and non-empty.", nameof(verifiedSessionIds));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
         var sessions = verifiedSessionIds.Order().ToArray();
         var unsigned = new AdProviderReport(
@@ -95,7 +105,10 @@ public sealed class HmacAdProviderReportService
             report.ActualRevenueUsdNanos < 0 || report.VerifiedSessionIds.Count == 0 ||
             report.VerifiedSessionIds.Any(id => id == Guid.Empty) ||
             report.VerifiedSessionIds.Distinct().Count() != report.VerifiedSessionIds.Count)
+        {
             return false;
+        }
+
         byte[] supplied;
         try { supplied = Convert.FromBase64String(report.Signature); }
         catch (FormatException) { return false; }
@@ -153,7 +166,11 @@ public sealed class AdRewardReconciler
 
     public IReadOnlyList<AdRewardReconciliation> Reconciliations
     {
-        get { lock (_gate) return [.. _imports.Values.Select(item => item.Reconciliation)]; }
+        get { lock (_gate)
+            {
+                return [.. _imports.Values.Select(item => item.Reconciliation)];
+            }
+        }
     }
 
     public AdProviderReportImportResult Import(
@@ -164,14 +181,20 @@ public sealed class AdRewardReconciler
         ArgumentNullException.ThrowIfNull(report);
         ArgumentNullException.ThrowIfNull(attributions);
         if (!_reports.Verify(report, now))
+        {
             throw new AdProviderReportVerificationException("Provider report signature or timing is invalid.");
+        }
 
         lock (_gate)
         {
             var key = (report.Network, report.ReportId, report.Version);
             if (_imports.TryGetValue(key, out var duplicate))
             {
-                if (duplicate.VerifiedReport.Report == report) return duplicate;
+                if (duplicate.VerifiedReport.Report == report)
+                {
+                    return duplicate;
+                }
+
                 throw new AdProviderReportConflictException("Provider report version has conflicting content.");
             }
 
@@ -181,10 +204,15 @@ public sealed class AdRewardReconciler
                 .FirstOrDefault();
             var expectedVersion = previous is null ? 1 : previous.VerifiedReport.Version + 1;
             if (report.Version != expectedVersion)
+            {
                 throw new AdProviderReportConflictException("Provider report versions must be contiguous and forward-only.");
+            }
+
             var batchKey = (report.Network, report.BatchId, report.Version);
             if (_batchClaims.TryGetValue(batchKey, out var claimedBy) && claimedBy != report.ReportId)
+            {
                 throw new AdProviderReportConflictException("Provider batch version was already reconciled by another report.");
+            }
 
             var sessions = report.VerifiedSessionIds.ToHashSet();
             var matched = attributions.Where(item =>
@@ -227,12 +255,19 @@ public sealed class AdRewardReconciler
     {
         long ecpm;
         if (estimated > 0 && report.ActualRevenueUsdNanos < estimated)
+        {
             ecpm = checked((long)((Int128)current.EstimatedNetEcpmUsdNanos *
-                                  report.ActualRevenueUsdNanos / estimated));
+                              report.ActualRevenueUsdNanos / estimated));
+        }
         else if (sessionCount > 0)
+        {
             ecpm = checked((long)((Int128)report.ActualRevenueUsdNanos * 1_000 / sessionCount));
+        }
         else
+        {
             ecpm = current.EstimatedNetEcpmUsdNanos;
+        }
+
         ecpm = Math.Max(1, ecpm);
         var buffer = variance switch
         {

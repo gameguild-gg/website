@@ -728,6 +728,7 @@ describe("learner assessment file action", () => {
         method: "POST",
         headers: { Authorization: "Bearer access-token" },
         cache: "no-store",
+        redirect: "error",
       }),
     );
     expect(mocks.submitSubmission).toHaveBeenCalledWith("submission-1", {

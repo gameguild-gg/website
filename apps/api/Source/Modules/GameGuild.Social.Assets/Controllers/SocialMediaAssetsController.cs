@@ -27,7 +27,9 @@ public sealed class SocialMediaAssetsController(
     {
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var descriptor = await assets.InspectOwnedAsync(
             assetReferenceId,
@@ -47,10 +49,14 @@ public sealed class SocialMediaAssetsController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue || !actor.TenantId.HasValue)
+        {
             return Unauthorized();
+        }
 
         if (file is null || file.Length <= 0)
+        {
             return BadRequest(new ProblemDetails { Title = "A media file is required." });
+        }
 
         await using var stream = file.OpenReadStream();
         var validation = await SocialMediaAssetPolicy.ValidateAsync(
@@ -59,7 +65,9 @@ public sealed class SocialMediaAssetsController(
             file.Length,
             cancellationToken).ConfigureAwait(false);
         if (!validation.IsValid)
+        {
             return BadRequest(new ProblemDetails { Title = "Invalid social media upload", Detail = validation.Error });
+        }
 
         var result = await sender.Send(new UploadAssetCommand(
             stream,
@@ -71,16 +79,20 @@ public sealed class SocialMediaAssetsController(
             AssetAccessPolicy.Authenticated), cancellationToken).ConfigureAwait(false);
 
         if (result.Error is not null)
+        {
             return result.Error == "Forbidden"
-                ? Forbid()
-                : BadRequest(new ProblemDetails { Title = "Media upload failed", Detail = result.Error });
+            ? Forbid()
+            : BadRequest(new ProblemDetails { Title = "Media upload failed", Detail = result.Error });
+        }
 
         var descriptor = await assets.InspectOwnedAsync(
             result.AssetReferenceId,
             actor.SubjectIdAsGuid.Value,
             cancellationToken).ConfigureAwait(false);
         if (descriptor is null)
+        {
             return Problem("The uploaded asset could not be inspected.");
+        }
 
         return Created($"/v1/assets/{descriptor.AssetReferenceId}", descriptor);
     }

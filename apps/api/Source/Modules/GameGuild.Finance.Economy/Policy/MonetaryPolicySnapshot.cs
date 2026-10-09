@@ -20,7 +20,9 @@ public sealed record AdRewardPolicy
     internal static void EnsurePpm(int value, string parameterName)
     {
         if (value is < 0 or >= MonetaryPolicySnapshot.PpmScale)
+        {
             throw new ArgumentOutOfRangeException(parameterName);
+        }
     }
 }
 
@@ -76,7 +78,11 @@ public sealed record MonetaryPolicySnapshot
         EconomyOperationLimits limits,
         IReadOnlyCollection<ServicePricePolicy> servicePrices)
     {
-        if (endsAt <= effectiveAt) throw new ArgumentException("Policy end must follow its effective time.", nameof(endsAt));
+        if (endsAt <= effectiveAt)
+        {
+            throw new ArgumentException("Policy end must follow its effective time.", nameof(endsAt));
+        }
+
         AdRewardPolicy.EnsurePpm(conversionFeePpm, nameof(conversionFeePpm));
         AdRewardPolicy.EnsurePpm(minimumServiceMarginPpm, nameof(minimumServiceMarginPpm));
         ArgumentNullException.ThrowIfNull(adRewards);
@@ -88,11 +94,16 @@ public sealed record MonetaryPolicySnapshot
         {
             ArgumentNullException.ThrowIfNull(price);
             if (!MeetsMinimumMargin(price, minimumServiceMarginPpm))
+            {
                 throw new ArgumentException(
                     $"Service price {price.ServiceCode} does not meet the minimum gross margin.",
                     nameof(servicePrices));
+            }
+
             if (!prices.TryAdd(price.ServiceCode, price))
+            {
                 throw new ArgumentException($"Service price {price.ServiceCode} is duplicated.", nameof(servicePrices));
+            }
         }
 
         Version = version;
@@ -140,7 +151,10 @@ public sealed record MonetaryPolicySnapshot
     private static long ToLong(BigInteger value)
     {
         if (value > long.MaxValue)
+        {
             throw new OverflowException("Policy arithmetic exceeded the supported unit range.");
+        }
+
         return (long)value;
     }
 }
@@ -154,7 +168,10 @@ public sealed class MonetaryPolicyCatalog
     {
         get
         {
-            lock (_gate) return _policies.OrderBy(policy => policy.EffectiveAt).ToArray();
+            lock (_gate)
+            {
+                return _policies.OrderBy(policy => policy.EffectiveAt).ToArray();
+            }
         }
     }
 
@@ -164,9 +181,15 @@ public sealed class MonetaryPolicyCatalog
         lock (_gate)
         {
             if (_policies.Any(existing => existing.Version == policy.Version))
+            {
                 throw new InvalidOperationException($"Policy version {policy.Version.Value} already exists.");
+            }
+
             if (_policies.Any(existing => Overlaps(existing, policy)))
+            {
                 throw new InvalidOperationException("Monetary policy effective windows cannot overlap.");
+            }
+
             _policies.Add(policy);
         }
     }

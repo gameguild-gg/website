@@ -38,7 +38,10 @@ public static class TreasuryLiabilityCalculator
                 string.IsNullOrWhiteSpace(authorization.ServiceCode) || authorization.ReservedSoftUnits < 0 ||
                 authorization.IrreversibleProviderCostUsdNanos < 0 ||
                 !keys.Add(authorization.AuthorizationKey.Trim()))
+            {
                 throw new ReserveInputUnknownException("Open service authorization evidence is invalid or duplicated.");
+            }
+
             var serviceCode = authorization.ServiceCode.Trim();
             reservedByService[serviceCode] = checked(
                 reservedByService.GetValueOrDefault(serviceCode) + authorization.ReservedSoftUnits);
@@ -47,11 +50,17 @@ public static class TreasuryLiabilityCalculator
 
         var reserved = Sum(reservedByService.Values);
         if (reserved > soft)
+        {
             throw new ReserveInputUnknownException("Open service authorizations exceed outstanding soft liability.");
+        }
 
         var services = serviceCosts.Select(cost =>
         {
-            if (cost is null) throw new ReserveInputUnknownException("Service cost evidence is missing.");
+            if (cost is null)
+            {
+                throw new ReserveInputUnknownException("Service cost evidence is missing.");
+            }
+
             var code = cost.ServiceCode?.Trim() ?? string.Empty;
             return new ReserveServiceObservation(
                 code,
@@ -65,7 +74,9 @@ public static class TreasuryLiabilityCalculator
                 cost.ExpiresAt);
         }).OrderBy(service => service.ServiceCode, StringComparer.Ordinal).ToArray();
         if (reservedByService.Keys.Except(services.Select(service => service.ServiceCode), StringComparer.Ordinal).Any())
+        {
             throw new ReserveInputUnknownException("An open authorization has no service cost observation.");
+        }
 
         return new TreasuryLiabilityCalculation(
             new ReserveLiabilityPosition(hard, soft, soft - reserved, ToLong(irreversible)),
@@ -92,7 +103,11 @@ public static class TreasuryLiabilityCalculator
             long consumedLength = 0;
             foreach (var overlap in overlaps)
             {
-                if (overlap.End <= cursor) continue;
+                if (overlap.End <= cursor)
+                {
+                    continue;
+                }
+
                 var start = Math.Max(cursor, overlap.Start);
                 consumedLength = checked(consumedLength + overlap.End - start);
                 cursor = overlap.End;
@@ -101,7 +116,10 @@ public static class TreasuryLiabilityCalculator
         }
 
         if (remainingTraceUnits % lot.TraceUnitsPerCoinUnit != 0)
+        {
             throw new ReserveInputUnknownException("Outstanding liability does not resolve to whole coin units.");
+        }
+
         return new TreasuryLotLiability(
             lot.Id,
             lot.WalletId,
@@ -119,7 +137,10 @@ public static class TreasuryLiabilityCalculator
     private static long ToLong(BigInteger value)
     {
         if (value > long.MaxValue || value < long.MinValue)
+        {
             throw new OverflowException("Treasury liability arithmetic exceeded the supported range.");
+        }
+
         return (long)value;
     }
 }

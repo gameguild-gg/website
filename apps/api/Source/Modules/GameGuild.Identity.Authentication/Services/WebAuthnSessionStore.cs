@@ -29,14 +29,18 @@ internal static class WebAuthnSessionStore
     {
         var key = PendingSessions.FirstOrDefault(p => p.Value.UserId == userId).Key;
         if (key != null)
+        {
             PendingSessions.TryRemove(key, out _);
+        }
     }
 
     public static void RemoveFirst(Func<WebAuthnSession, bool> predicate)
     {
         var key = PendingSessions.FirstOrDefault(p => predicate(p.Value)).Key;
         if (key != null)
+        {
             PendingSessions.TryRemove(key, out _);
+        }
     }
 
     private static void CleanupExpiredSessions()
@@ -47,7 +51,9 @@ internal static class WebAuthnSessionStore
             .ToList();
 
         foreach (var key in expiredKeys)
+        {
             PendingSessions.TryRemove(key, out _);
+        }
     }
 
     internal sealed class WebAuthnSession

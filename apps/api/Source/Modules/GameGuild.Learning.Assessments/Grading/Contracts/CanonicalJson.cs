@@ -41,7 +41,11 @@ public static class CanonicalJson
                 var firstProperty = true;
                 foreach (var property in value.EnumerateObject().OrderBy(property => property.Name, StringComparer.Ordinal))
                 {
-                    if (!firstProperty) output.Append(',');
+                    if (!firstProperty)
+                    {
+                        output.Append(',');
+                    }
+
                     firstProperty = false;
                     output.Append(JsonSerializer.Serialize(property.Name, StringOptions));
                     output.Append(':');
@@ -54,7 +58,11 @@ public static class CanonicalJson
                 var firstItem = true;
                 foreach (var item in value.EnumerateArray())
                 {
-                    if (!firstItem) output.Append(',');
+                    if (!firstItem)
+                    {
+                        output.Append(',');
+                    }
+
                     firstItem = false;
                     Write(item, output);
                 }
@@ -82,8 +90,15 @@ public static class CanonicalJson
 
     private static string FormatEcmaScriptNumber(double value)
     {
-        if (!double.IsFinite(value)) throw new JsonException("JCS does not support non-finite numbers.");
-        if (value == 0d) return "0";
+        if (!double.IsFinite(value))
+        {
+            throw new JsonException("JCS does not support non-finite numbers.");
+        }
+
+        if (value == 0d)
+        {
+            return "0";
+        }
 
         var negative = value < 0d;
         var raw = Math.Abs(value).ToString("R", CultureInfo.InvariantCulture);
@@ -95,7 +110,10 @@ public static class CanonicalJson
         var decimalSeparator = mantissa.IndexOf('.');
         var fractionDigits = decimalSeparator < 0 ? 0 : mantissa.Length - decimalSeparator - 1;
         var digits = mantissa.Replace(".", string.Empty, StringComparison.Ordinal).TrimStart('0');
-        if (digits.Length == 0) return "0";
+        if (digits.Length == 0)
+        {
+            return "0";
+        }
 
         var decimalExponent = explicitExponent - fractionDigits;
         var absolute = Math.Abs(value);

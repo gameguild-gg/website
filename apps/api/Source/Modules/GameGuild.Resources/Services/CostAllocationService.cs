@@ -130,7 +130,10 @@ public class CostAllocationService(
     {
         var report = await reportRepository.GetByIdAsync(reportId, cancellationToken).ConfigureAwait(false);
 
-        if (report == null) return false;
+        if (report == null)
+        {
+            return false;
+        }
 
         report.IsExported = true;
         report.ExportedAt = SystemClock.UtcNow;
@@ -150,7 +153,10 @@ public class CostAllocationService(
     {
         var report = await reportRepository.GetByIdAsync(reportId, cancellationToken).ConfigureAwait(false);
 
-        if (report == null) return false;
+        if (report == null)
+        {
+            return false;
+        }
 
         report.AllocationTags = JsonSerializer.Serialize(tags);
         report.CostCenter = tags.GetValueOrDefault("CostCenter");

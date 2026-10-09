@@ -73,7 +73,9 @@ public class ConditionalPolicy
     public void SetPriority(int priority)
     {
         if (priority < 0)
+        {
             throw new ArgumentException("Priority must be non-negative", nameof(priority));
+        }
 
         Priority = priority;
         UpdatedAt = SystemClock.UtcNow;

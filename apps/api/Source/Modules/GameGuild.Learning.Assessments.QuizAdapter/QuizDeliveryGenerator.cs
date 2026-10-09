@@ -119,7 +119,11 @@ public sealed class QuizDeliveryGenerator
     private static JsonArray ProjectArray(JsonElement source, IReadOnlyList<string> fields)
     {
         var result = new JsonArray();
-        foreach (var item in source.EnumerateArray()) result.Add(CopyFields(item, fields));
+        foreach (var item in source.EnumerateArray())
+        {
+            result.Add(CopyFields(item, fields));
+        }
+
         return result;
     }
 
@@ -134,21 +138,32 @@ public sealed class QuizDeliveryGenerator
     {
         foreach (var field in fields)
         {
-            if (source.TryGetProperty(field, out var value)) target[field] = JsonNode.Parse(value.GetRawText());
+            if (source.TryGetProperty(field, out var value))
+            {
+                target[field] = JsonNode.Parse(value.GetRawText());
+            }
         }
     }
 
     private static void CopyFeedback(JsonElement entry, JsonObject learner)
     {
         if (!entry.TryGetProperty("feedback", out var feedback) ||
-            !feedback.TryGetProperty("general", out var general)) return;
+            !feedback.TryGetProperty("general", out var general))
+        {
+            return;
+        }
+
         learner["feedback"] = new JsonObject { ["general"] = JsonNode.Parse(general.GetRawText()) };
     }
 
     private static void CopyAttachments(JsonElement entry, JsonObject learner)
     {
         if (!entry.TryGetProperty("attachments", out var attachments) ||
-            !attachments.TryGetProperty("learnerVisible", out var visible)) return;
+            !attachments.TryGetProperty("learnerVisible", out var visible))
+        {
+            return;
+        }
+
         learner["attachments"] = new JsonObject { ["learnerVisible"] = JsonNode.Parse(visible.GetRawText()) };
     }
 }

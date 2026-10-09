@@ -199,7 +199,7 @@ public class AssetRateLimitService : IAssetRateLimitService
 
             _logger.LogWarning(
                 "IP {IpAddress} blocked due to excessive 403 responses: {Count}/{Limit}",
-                ipAddress, newCount, _options.Max403PerIpPerHour);
+                LogRedaction.Sanitize(ipAddress), newCount, _options.Max403PerIpPerHour);
 
             return new RateLimitResult(
                 false,

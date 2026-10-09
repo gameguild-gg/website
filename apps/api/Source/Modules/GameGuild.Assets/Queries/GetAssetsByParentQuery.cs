@@ -54,7 +54,9 @@ public sealed class GetAssetsByParentHandler : IRequestHandler<GetAssetsByParent
                 ct).ConfigureAwait(false);
 
             if (!validation.IsValid)
+            {
                 continue;
+            }
 
             AssetContentDto? contentDto = null;
             if (reference.Content != null)

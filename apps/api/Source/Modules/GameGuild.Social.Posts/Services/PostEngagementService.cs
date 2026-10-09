@@ -34,7 +34,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<bool>(PostErrors.NotFound);
+        }
 
         var existingLike = await _context.Set<PostLike>()
             .FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId, cancellationToken).ConfigureAwait(false);
@@ -62,15 +64,23 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<bool>(PostErrors.NotFound);
+        }
 
         if (post.AuthorId != actorId)
+        {
             return Result.Failure<bool>(PostErrors.Forbidden);
+        }
 
         if (post.IsPinned)
+        {
             post.Unpin();
+        }
         else
+        {
             post.Pin();
+        }
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -90,7 +100,9 @@ public class PostEngagementService : IPostEngagementService
             .ConfigureAwait(false);
 
         if (source is null)
+        {
             return Result.Failure<Post>(PostErrors.NotFound);
+        }
 
         var existing = await _context.Set<Post>()
             .FirstOrDefaultAsync(
@@ -99,7 +111,9 @@ public class PostEngagementService : IPostEngagementService
             .ConfigureAwait(false);
 
         if (existing is not null)
+        {
             return Result.Success(existing);
+        }
 
         var repost = Post.CreateRepost(actorId, source, content);
         _context.Set<Post>().Add(repost);
@@ -117,7 +131,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure(PostErrors.NotFound);
+        }
 
         post.IncrementShares();
 
@@ -153,7 +169,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure(PostErrors.NotFound);
+        }
 
         bool isUnique;
         if (userId.HasValue)
@@ -188,7 +206,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(v => v.Id == viewId, cancellationToken).ConfigureAwait(false);
 
         if (view is null)
+        {
             return Result.Failure(PostErrors.ViewNotFound);
+        }
 
         view.UpdateDuration(durationSeconds, engaged);
 
@@ -212,7 +232,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure(PostErrors.NotFound);
+        }
 
         var statistics = await _context.Set<PostStatistics>()
             .FirstOrDefaultAsync(s => s.PostId == postId, cancellationToken).ConfigureAwait(false);
@@ -281,13 +303,17 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<PostFollower>(PostErrors.NotFound);
+        }
 
         var existingFollow = await _context.Set<PostFollower>()
             .FirstOrDefaultAsync(f => f.PostId == postId && f.UserId == userId, cancellationToken).ConfigureAwait(false);
 
         if (existingFollow is not null)
+        {
             return Result.Success(existingFollow);
+        }
 
         var follower = PostFollower.Create(postId, userId, notifyOnComments, notifyOnLikes, notifyOnShares, notifyOnUpdates);
         _context.Set<PostFollower>().Add(follower);
@@ -302,7 +328,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(f => f.PostId == postId && f.UserId == userId, cancellationToken).ConfigureAwait(false);
 
         if (follow is null)
+        {
             return Result.Failure(PostErrors.NotFollowing);
+        }
 
         _context.Set<PostFollower>().Remove(follow);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -323,7 +351,9 @@ public class PostEngagementService : IPostEngagementService
             .FirstOrDefaultAsync(f => f.PostId == postId && f.UserId == userId, cancellationToken).ConfigureAwait(false);
 
         if (follow is null)
+        {
             return Result.Failure(PostErrors.NotFollowing);
+        }
 
         follow.UpdatePreferences(notifyOnComments, notifyOnLikes, notifyOnShares, notifyOnUpdates);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

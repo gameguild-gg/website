@@ -21,9 +21,12 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> SubmitProgram(Guid id) {
     var program = await sender.Send(new SubmitProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Approve a program (resource-level approve permission) </summary>
@@ -32,22 +35,31 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> ApproveProgram(Guid id) {
     var program = await sender.Send(new ApproveProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Reject a program (resource-level reject permission) </summary>
   [HttpPost("{id}:reject")]
   [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> RejectProgram(Guid id, [FromBody] RejectProgramDto rejectDto) {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var program = await sender.Send(new RejectProgramLifecycleCommand(id, rejectDto.Reason)).ConfigureAwait(false);
+        var program = await sender.Send(new RejectProgramLifecycleCommand(id, rejectDto.Reason)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Withdraw a program from review (resource-level withdraw permission) </summary>
@@ -56,9 +68,12 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> WithdrawProgram(Guid id) {
     var program = await sender.Send(new WithdrawProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Archive a program (resource-level archive permission) </summary>
@@ -67,9 +82,12 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> ArchiveProgram(Guid id) {
     var program = await sender.Send(new ArchiveProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Restore an archived program (resource-level restore permission) </summary>
@@ -78,9 +96,12 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> RestoreProgram(Guid id) {
     var program = await sender.Send(new RestoreProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Publish a program (resource-level publish permission) </summary>
@@ -89,9 +110,12 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> PublishProgram(Guid id) {
     var program = await sender.Send(new PublishProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Unpublish a program (resource-level unpublish permission) </summary>
@@ -100,21 +124,30 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
   public async Task<ActionResult<ProgramDto>> UnpublishProgram(Guid id) {
     var program = await sender.Send(new UnpublishProgramLifecycleCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Schedule a program for publishing (resource-level schedule permission) </summary>
   [HttpPost("{id}:schedule")]
   [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> ScheduleProgram(Guid id, [FromBody] ScheduleProgramDto scheduleDto) {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var program = await sender.Send(new ScheduleProgramLifecycleCommand(id, scheduleDto.PublishAt)).ConfigureAwait(false);
+        var program = await sender.Send(new ScheduleProgramLifecycleCommand(id, scheduleDto.PublishAt)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 }

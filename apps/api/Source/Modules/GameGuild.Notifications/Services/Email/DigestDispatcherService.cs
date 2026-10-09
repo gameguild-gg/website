@@ -117,7 +117,7 @@ public sealed class DigestDispatcherService(
             }
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             logger.LogWarning("Deadlettered {Count} digest row(s) to suppressed address. UserId: {UserId}, Recipient: {RecipientEmail}, Reason: {Reason}",
-                claimed.Count, userId, toEmail, activeSuppression.Reason);
+                claimed.Count, LogRedaction.Sanitize(userId.ToString()), LogRedaction.MaskEmail(toEmail), activeSuppression.Reason);
             return false;
         }
 
@@ -146,7 +146,7 @@ public sealed class DigestDispatcherService(
         }
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         logger.LogInformation("Digest delivered. UserId: {UserId}, Rows: {RowCount}, Recipient: {RecipientEmail}",
-            userId, claimed.Count, toEmail);
+            LogRedaction.Sanitize(userId.ToString()), claimed.Count, LogRedaction.MaskEmail(toEmail));
         return true;
     }
 

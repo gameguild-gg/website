@@ -33,7 +33,11 @@ internal static class AssessmentSubmissionDatabaseLock
         }
         catch
         {
-            if (transaction is not null) await transaction.DisposeAsync().ConfigureAwait(false);
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync().ConfigureAwait(false);
+            }
+
             throw;
         }
     }

@@ -70,7 +70,8 @@ public sealed class WelcomeEmailRenderer(
 /// </summary>
 public sealed class EmailVerificationRenderer(
     IEmailFooterService footerService,
-    IConfiguration configuration) : EmailRendererBase, IEmailRenderer
+    IConfiguration configuration,
+    NotificationMetadataProtector metadataProtector) : EmailRendererBase, IEmailRenderer
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -78,7 +79,11 @@ public sealed class EmailVerificationRenderer(
 
     public Task<EmailMessage?> RenderAsync(Notification notification, CancellationToken cancellationToken = default)
     {
-        var meta = Deserialize(notification.Metadata);
+        var meta = Deserialize(metadataProtector.GetForRendering(notification, Type));
+        if (string.IsNullOrWhiteSpace(meta.Token) || string.IsNullOrWhiteSpace(meta.Email))
+        {
+            throw new InvalidOperationException("Notification credential metadata is invalid or unavailable.");
+        }
         var appBaseUrl = ResolveBaseUrl();
         var verificationLink = $"{appBaseUrl}/verify-email?token={meta.Token}";
         var recipientName = string.IsNullOrWhiteSpace(meta.UserName) ? meta.Email : meta.UserName;
@@ -128,7 +133,8 @@ public sealed class EmailVerificationRenderer(
 /// </summary>
 public sealed class PasswordResetRenderer(
     IEmailFooterService footerService,
-    IConfiguration configuration) : EmailRendererBase, IEmailRenderer
+    IConfiguration configuration,
+    NotificationMetadataProtector metadataProtector) : EmailRendererBase, IEmailRenderer
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -136,7 +142,11 @@ public sealed class PasswordResetRenderer(
 
     public Task<EmailMessage?> RenderAsync(Notification notification, CancellationToken cancellationToken = default)
     {
-        var meta = Deserialize(notification.Metadata);
+        var meta = Deserialize(metadataProtector.GetForRendering(notification, Type));
+        if (string.IsNullOrWhiteSpace(meta.Token) || string.IsNullOrWhiteSpace(meta.Email))
+        {
+            throw new InvalidOperationException("Notification credential metadata is invalid or unavailable.");
+        }
         var appBaseUrl = ResolveBaseUrl();
         var resetLink = $"{appBaseUrl}/reset-password?token={meta.Token}";
         var recipientName = string.IsNullOrWhiteSpace(meta.UserName) ? meta.Email : meta.UserName;
@@ -188,7 +198,8 @@ public sealed class PasswordResetRenderer(
 /// </summary>
 public sealed class MagicLinkRenderer(
     IEmailFooterService footerService,
-    IConfiguration configuration) : EmailRendererBase, IEmailRenderer
+    IConfiguration configuration,
+    NotificationMetadataProtector metadataProtector) : EmailRendererBase, IEmailRenderer
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -196,7 +207,11 @@ public sealed class MagicLinkRenderer(
 
     public Task<EmailMessage?> RenderAsync(Notification notification, CancellationToken cancellationToken = default)
     {
-        var meta = Deserialize(notification.Metadata);
+        var meta = Deserialize(metadataProtector.GetForRendering(notification, Type));
+        if (string.IsNullOrWhiteSpace(meta.Token) || string.IsNullOrWhiteSpace(meta.Email))
+        {
+            throw new InvalidOperationException("Notification credential metadata is invalid or unavailable.");
+        }
         var appBaseUrl = ResolveBaseUrl();
         var magicLink = $"{appBaseUrl}/magic-link?token={meta.Token}";
         var recipientName = string.IsNullOrWhiteSpace(meta.UserName) ? meta.Email : meta.UserName;

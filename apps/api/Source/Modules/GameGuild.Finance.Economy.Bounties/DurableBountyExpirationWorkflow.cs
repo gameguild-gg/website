@@ -45,7 +45,9 @@ public sealed class PostgreSqlBountyExpirationWorkflow :
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(batchSize);
         if (batchSize > 1_000)
+        {
             throw new ArgumentOutOfRangeException(nameof(batchSize), "A bounty expiration batch cannot exceed 1,000 rows.");
+        }
 
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.ReadCommitted, async _ =>

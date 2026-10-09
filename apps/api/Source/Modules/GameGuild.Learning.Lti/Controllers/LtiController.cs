@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using GameGuild.CQRS;
@@ -83,8 +84,8 @@ public sealed class LtiController(
         var clientId = form["client_id"].ToString();
         var deploymentId = form["deployment_id"].ToString();
 
-        var deployment = await FindActiveDeploymentAsync(issuer, clientId).ConfigureAwait(false);
-        if (deployment is null || !string.Equals(deployment.DeploymentId, deploymentId, StringComparison.Ordinal))
+        var deployment = await FindActiveDeploymentAsync(issuer, clientId, deploymentId).ConfigureAwait(false);
+        if (deployment is null)
         {
             return Unauthorized("Unknown LTI platform.");
         }
@@ -115,8 +116,12 @@ public sealed class LtiController(
             query["lti_message_hint"] = messageHint;
         }
 
-        var separator = deployment.AuthorizationUrl.Contains('?') ? '&' : '?';
-        return Redirect(deployment.AuthorizationUrl + separator + QueryString.Create(query).Value);
+        if (!TryBuildAuthorizationRedirect(deployment.AuthorizationUrl, query, out var authorizationUri))
+        {
+            return BadRequest("LTI platform authorization URL is misconfigured.");
+        }
+
+        return Redirect(authorizationUri);
     }
 
     /// <summary>
@@ -127,7 +132,7 @@ public sealed class LtiController(
     [HttpPost("lti/launch")]
     public async Task<IActionResult> Launch()
     {
-        if (Request.Query.ContainsKey("id_token"))
+        if (Request.Query.Count > 0 && Request.Query.Keys.Contains("id_token"))
         {
             return BadRequest("id_token must be delivered in the POST body.");
         }
@@ -237,16 +242,40 @@ public sealed class LtiController(
         }
     }
 
-    private async Task<LtiDeployment?> FindActiveDeploymentAsync(string issuer, string clientId)
+    private async Task<LtiDeployment?> FindActiveDeploymentAsync(string issuer, string clientId, string deploymentId)
     {
-        if (string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(clientId))
+        if (string.IsNullOrEmpty(issuer) || string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(deploymentId))
         {
             return null;
         }
 
         return await context.Set<LtiDeployment>()
-            .FirstOrDefaultAsync(d => d.Issuer == issuer && d.ClientId == clientId && d.Active && d.DeletedAt == null)
+            .FirstOrDefaultAsync(d => d.Issuer == issuer && d.ClientId == clientId
+                && d.DeploymentId == deploymentId && d.Active && d.DeletedAt == null)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Fails closed unless the configured platform authorization URL is an absolute
+    /// https URL without embedded credentials; the query is appended server-side.
+    /// </summary>
+    private static bool TryBuildAuthorizationRedirect(string authorizationUrl, IReadOnlyDictionary<string, string?> query, [NotNullWhen(true)] out string? redirectUrl)
+    {
+        if (!Uri.TryCreate(authorizationUrl, UriKind.Absolute, out var baseUri) ||
+            baseUri.Scheme != Uri.UriSchemeHttps ||
+            !string.IsNullOrEmpty(baseUri.UserInfo))
+        {
+            redirectUrl = null;
+            return false;
+        }
+
+        var authorizationUri = new UriBuilder(baseUri)
+        {
+            Query = QueryString.FromUriComponent(baseUri.Query).Add(QueryString.Create(query)).Value,
+            Fragment = string.Empty,
+        };
+        redirectUrl = authorizationUri.Uri.AbsoluteUri;
+        return true;
     }
 
 }

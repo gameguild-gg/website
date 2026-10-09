@@ -35,7 +35,9 @@ public static class BlogReadTimeEstimator
     public static int EstimateFromLexicalJson(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
+        {
             return 1;
+        }
 
         var texts = new List<string>();
         using (var document = System.Text.Json.JsonDocument.Parse(json))
@@ -81,7 +83,9 @@ public static class BlogReadTimeEstimator
     private static int EstimateFromPlainText(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
+        {
             return 1;
+        }
 
         var wordCount = 0;
         var inWord = false;
@@ -117,21 +121,31 @@ public sealed class BlogSlugService(IApplicationDbContext context) : IBlogSlugSe
         {
             var category = CharUnicodeInfo.GetUnicodeCategory(ch);
             if (category == UnicodeCategory.NonSpacingMark)
+            {
                 continue; // diacritic stripper
+            }
 
             var lower = char.ToLowerInvariant(ch);
             if (lower is (>= 'a' and <= 'z') or (>= '0' and <= '9'))
+            {
                 builder.Append(lower);
+            }
             else if (ch is ' ' or '_' or '/' or '.' or '-' or '+' or '&' || char.IsWhiteSpace(ch))
+            {
                 builder.Append('-');
+            }
         }
 
         var slug = builder.ToString().Trim('-').Replace("--", "-", StringComparison.Ordinal);
         while (slug.Contains("--", StringComparison.Ordinal))
+        {
             slug = slug.Replace("--", "-", StringComparison.Ordinal);
+        }
 
         if (slug.Length == 0)
+        {
             slug = "post";
+        }
 
         return slug.Length > MaxSlugLength ? slug[..MaxSlugLength].Trim('-') : slug;
     }
@@ -140,20 +154,32 @@ public sealed class BlogSlugService(IApplicationDbContext context) : IBlogSlugSe
     {
         var baseSlug = Normalize(title);
         if (await IsSlugAvailableAsync(primaryAuthorId, baseSlug, ct).ConfigureAwait(false))
+        {
             return baseSlug;
+        }
 
         // Suffix budget: keep "base-suffix" within max length.
         var suffixRoom = Math.Max(1, MaxSlugLength - baseSlug.Length - 1);
         if (suffixRoom < 2)
+        {
             baseSlug = baseSlug[..(MaxSlugLength - 2)].Trim('-');
+        }
 
-        for (var attempt = 2; ; attempt++)
+        var attempt = 2;
+        while (true)
         {
             var candidate = $"{baseSlug}-{attempt}";
             if (candidate.Length > MaxSlugLength)
+            {
                 candidate = $"{baseSlug[..(MaxSlugLength - attempt.ToString().Length - 1)].Trim('-')}-{attempt}";
+            }
+
             if (await IsSlugAvailableAsync(primaryAuthorId, candidate, ct).ConfigureAwait(false))
+            {
                 return candidate;
+            }
+
+            attempt++;
         }
     }
 

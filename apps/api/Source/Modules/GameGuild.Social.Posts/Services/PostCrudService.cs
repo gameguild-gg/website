@@ -85,10 +85,14 @@ public class PostCrudService : IPostCrudService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<Post>(PostErrors.NotFound);
+        }
 
         if (post.AuthorId != actorId)
+        {
             return Result.Failure<Post>(PostErrors.Forbidden);
+        }
 
         post.Edit(content);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -104,10 +108,14 @@ public class PostCrudService : IPostCrudService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure(PostErrors.NotFound);
+        }
 
         if (post.AuthorId != actorId)
+        {
             return Result.Failure(PostErrors.Forbidden);
+        }
 
         if (post.RepostOfPostId is Guid sourcePostId)
         {
@@ -132,7 +140,9 @@ public class PostCrudService : IPostCrudService
             .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure(PostErrors.NotFound);
+        }
 
         post.Restore();
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -176,7 +186,9 @@ public class PostCrudService : IPostCrudService
             .Where(p => p.IsPinned && p.DeletedAt == null);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(p => p.TenantId == tenantId.Value);
+        }
 
         var posts = await query
             .OrderByDescending(p => p.CreatedAt)
@@ -294,10 +306,14 @@ public class PostCrudService : IPostCrudService
             .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<bool>(PostErrors.NotFound);
+        }
 
         if (post.AuthorId == userId)
+        {
             return Result.Success(true);
+        }
 
         return action.ToLowerInvariant() switch
         {

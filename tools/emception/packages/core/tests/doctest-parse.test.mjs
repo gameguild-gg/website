@@ -134,3 +134,49 @@ test('empty stdout returns crash + zeroed counts', () => {
     assert.equal(r.cases.total, 0);
     assert.deepEqual(r.failures, []);
 });
+
+test('digits glued to the filename are not a line number', () => {
+    // No `:<digits>` separator: `fileX12` is the whole file name and the
+    // failure must not be misparsed as file='file', line=12.
+    const out = [
+        'TEST CASE:  glued',
+        'fileX12: ERROR: CHECK( x ) is NOT correct!',
+        '',
+        '[doctest] test cases:      1 |      0 passed |      1 failed | 0 skipped',
+        '[doctest] assertions:      1 |      0 passed |      1 failed |',
+        '[doctest] Status: FAILURE!',
+    ].join('\n');
+    const r = parseDoctestConsole(out);
+    assert.equal(r.failures.length, 1);
+    assert.equal(r.failures[0].file, 'fileX12');
+    assert.equal(r.failures[0].line, undefined);
+    assert.equal(r.failures[0].expression, 'CHECK( x )');
+});
+
+test('canonical <file>:<line>: prefix still parses file and line', () => {
+    const out = [
+        'TEST CASE:  canonical',
+        'src/main.ts:42: ERROR: REQUIRE( ok() ) is NOT correct!',
+        '',
+        '[doctest] test cases:      1 |      0 passed |      1 failed | 0 skipped',
+        '[doctest] assertions:      1 |      0 passed |      1 failed |',
+        '[doctest] Status: FAILURE!',
+    ].join('\n');
+    const r = parseDoctestConsole(out);
+    assert.equal(r.failures.length, 1);
+    assert.equal(r.failures[0].file, 'src/main.ts');
+    assert.equal(r.failures[0].line, 42);
+});
+
+test('head that is only digits or only a colon is not a file:line prefix', () => {
+    const out = [
+        'TEST CASE:  degenerate',
+        '123: ERROR: CHECK( x ) is NOT correct!',
+        '',
+    ].join('\n');
+    const r = parseDoctestConsole(out);
+    // `123` parses as a file name with no line — no crash, no bogus split.
+    assert.equal(r.failures.length, 1);
+    assert.equal(r.failures[0].file, '123');
+    assert.equal(r.failures[0].line, undefined);
+});

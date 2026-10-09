@@ -57,7 +57,9 @@ public class PostsCrudController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await postService.GetFeedPostsAsync(userId, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
@@ -93,7 +95,9 @@ public class PostsCrudController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await postService.GetPostsByAuthorAsync(userId, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
@@ -107,7 +111,9 @@ public class PostsCrudController(
     public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(q))
+        {
             return BadRequest("Search query is required");
+        }
 
         var result = await postService.SearchPostsAsync(q, skip, take, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
@@ -125,7 +131,9 @@ public class PostsCrudController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         SocialMediaAssetDescriptor? media = null;
         if (request.AssetReferenceId.HasValue)
@@ -135,11 +143,13 @@ public class PostsCrudController(
                 userId,
                 cancellationToken).ConfigureAwait(false);
             if (media is null)
+            {
                 return BadRequest(new ProblemDetails
                 {
                     Title = "Media is unavailable",
                     Detail = "The asset must belong to the current user and finish security processing before it can be attached."
                 });
+            }
         }
 
         var result = await sender.Send(new CreatePostEndpointCommand(
@@ -164,7 +174,9 @@ public class PostsCrudController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new UpdatePostEndpointCommand(postId, userId, request.Content),
@@ -180,7 +192,9 @@ public class PostsCrudController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new DeletePostEndpointCommand(postId, userId),

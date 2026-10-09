@@ -64,11 +64,16 @@ public static class ProviderReversalPlanner
         ArgumentNullException.ThrowIfNull(availableLots);
         var history = alreadyReversed.OrderBy(range => range.Start).ToArray();
         if (history.Any(range => range.Root != root))
+        {
             throw new LineageConservationException("Reversal history must belong to the selected root.");
+        }
+
         LineageAllocator.EnsureNonOverlapping(history);
         var reversed = history.Sum(range => range.Length);
         if (cumulativeTargetTraceUnits < reversed)
+        {
             throw new ArgumentOutOfRangeException(nameof(cumulativeTargetTraceUnits));
+        }
 
         var remaining = cumulativeTargetTraceUnits - reversed;
         var fragments = new List<ProviderReversalFragment>();
@@ -78,25 +83,44 @@ public static class ProviderReversalPlanner
                      .ThenBy(lot => lot.ConfirmedAt)
                      .ThenBy(lot => lot.JournalSequence))
         {
-            if (remaining == 0) break;
+            if (remaining == 0)
+            {
+                break;
+            }
+
             var selectedRanges = new List<RootTraceRange>();
             foreach (var range in lot.Ranges.Where(range => range.Root == root).OrderBy(range => range.Start))
             {
-                if (remaining == 0) break;
+                if (remaining == 0)
+                {
+                    break;
+                }
+
                 foreach (var available in Subtract(range, history))
                 {
                     var coinUnits = Math.Min(
                         remaining / lot.TraceUnitsPerCoinUnit,
                         available.Length / lot.TraceUnitsPerCoinUnit);
-                    if (coinUnits == 0) continue;
+                    if (coinUnits == 0)
+                    {
+                        continue;
+                    }
+
                     var traceUnits = checked(coinUnits * lot.TraceUnitsPerCoinUnit);
                     selectedRanges.Add(available.Take(traceUnits).Selected);
                     remaining -= traceUnits;
-                    if (remaining == 0) break;
+                    if (remaining == 0)
+                    {
+                        break;
+                    }
                 }
             }
 
-            if (selectedRanges.Count == 0) continue;
+            if (selectedRanges.Count == 0)
+            {
+                continue;
+            }
+
             var selectedTrace = selectedRanges.Sum(range => range.Length);
             fragments.Add(new ProviderReversalFragment(
                 lot,
@@ -105,8 +129,11 @@ public static class ProviderReversalPlanner
         }
 
         if (remaining % CurrencyTraceScale.HardCoinTraceUnitsPerCoin != 0)
+        {
             throw new UnrecoverableParityFractionException(
                 "Provider reversal remainder cannot be represented as whole HardCoin units.");
+        }
+
         var all = history.Concat(fragments.SelectMany(fragment => fragment.Ranges))
             .OrderBy(range => range.Start)
             .ToArray();
@@ -125,13 +152,22 @@ public static class ProviderReversalPlanner
                      .OrderBy(range => range.Start))
         {
             if (exclusion.Start > cursor)
+            {
                 result.Add(new RootTraceRange(source.Root, cursor, exclusion.Start - cursor, source.Epoch));
+            }
+
             cursor = Math.Max(cursor, exclusion.EndExclusive);
-            if (cursor >= source.EndExclusive) break;
+            if (cursor >= source.EndExclusive)
+            {
+                break;
+            }
         }
 
         if (cursor < source.EndExclusive)
+        {
             result.Add(new RootTraceRange(source.Root, cursor, source.EndExclusive - cursor, source.Epoch));
+        }
+
         return result;
     }
 }

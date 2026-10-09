@@ -580,7 +580,11 @@ public sealed partial class MarketplaceSettlementCoordinatorTests
 
         public MarketplaceEntitlementReceipt Grant(MarketplaceEntitlementGrantRequest request)
         {
-            if (FailGrant) throw new MarketplaceEntitlementException("grant failed");
+            if (FailGrant)
+            {
+                throw new MarketplaceEntitlementException("grant failed");
+            }
+
             GrantCount++;
             var receipt = new MarketplaceEntitlementReceipt(
                 Guid.NewGuid(), request.SettlementId, request.OrderId,
@@ -590,7 +594,11 @@ public sealed partial class MarketplaceSettlementCoordinatorTests
 
         public void Revoke(MarketplaceEntitlementReceipt receipt, DateTimeOffset revokedAt)
         {
-            if (FailRevoke) throw new MarketplaceEntitlementException("revoke failed");
+            if (FailRevoke)
+            {
+                throw new MarketplaceEntitlementException("revoke failed");
+            }
+
             RevokeCount++;
         }
     }

@@ -28,7 +28,11 @@ public readonly record struct RiskCurrencyLeg
 {
     public RiskCurrencyLeg(CurrencyCode currency, long units)
     {
-        if (!Enum.IsDefined(currency)) throw new ArgumentOutOfRangeException(nameof(currency));
+        if (!Enum.IsDefined(currency))
+        {
+            throw new ArgumentOutOfRangeException(nameof(currency));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(units);
         Currency = currency;
         Units = units;
@@ -101,13 +105,27 @@ public sealed record RiskDecisionSnapshot(
         DateTimeOffset expiresAt,
         IReadOnlyList<RiskReasonCode> reasonCodes)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Risk decision ID cannot be empty.", nameof(id));
-        if (!Enum.IsDefined(outcome)) throw new ArgumentOutOfRangeException(nameof(outcome));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Risk decision ID cannot be empty.", nameof(id));
+        }
+
+        if (!Enum.IsDefined(outcome))
+        {
+            throw new ArgumentOutOfRangeException(nameof(outcome));
+        }
+
         ArgumentNullException.ThrowIfNull(context);
-        if (expiresAt <= issuedAt) throw new ArgumentException("Risk decision expiry must follow issuance.", nameof(expiresAt));
+        if (expiresAt <= issuedAt)
+        {
+            throw new ArgumentException("Risk decision expiry must follow issuance.", nameof(expiresAt));
+        }
+
         ArgumentNullException.ThrowIfNull(reasonCodes);
         if (reasonCodes.Count == 0 || reasonCodes.Any(code => !Enum.IsDefined(code)))
+        {
             throw new ArgumentException("At least one valid risk reason code is required.", nameof(reasonCodes));
+        }
 
         return new RiskDecisionSnapshot(
             id, outcome, context.Fingerprint(), issuedAt, expiresAt, [.. reasonCodes]);

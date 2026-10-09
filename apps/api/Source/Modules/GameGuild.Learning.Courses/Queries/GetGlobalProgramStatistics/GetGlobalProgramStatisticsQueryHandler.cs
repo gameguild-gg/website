@@ -25,9 +25,14 @@ public sealed class GetGlobalProgramStatisticsQueryHandler(
             .Where(p => p.DeletedAt == null);
 
         if (request.FromDate.HasValue)
+        {
             programsQuery = programsQuery.Where(p => p.CreatedAt >= request.FromDate.Value);
+        }
+
         if (request.ToDate.HasValue)
+        {
             programsQuery = programsQuery.Where(p => p.CreatedAt <= request.ToDate.Value);
+        }
 
         var totalPrograms = await programsQuery.CountAsync(cancellationToken).ConfigureAwait(false);
         var publishedPrograms = await programsQuery
@@ -39,9 +44,14 @@ public sealed class GetGlobalProgramStatisticsQueryHandler(
             .Where(e => e.DeletedAt == null);
 
         if (request.FromDate.HasValue)
+        {
             enrollmentsQuery = enrollmentsQuery.Where(e => e.EnrolledAt >= request.FromDate.Value);
+        }
+
         if (request.ToDate.HasValue)
+        {
             enrollmentsQuery = enrollmentsQuery.Where(e => e.EnrolledAt <= request.ToDate.Value);
+        }
 
         var totalEnrollments = await enrollmentsQuery.CountAsync(cancellationToken).ConfigureAwait(false);
         var activeEnrollments = await enrollmentsQuery

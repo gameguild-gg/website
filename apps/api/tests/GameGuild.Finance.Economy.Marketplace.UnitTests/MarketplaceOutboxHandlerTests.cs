@@ -19,8 +19,15 @@ public sealed class MarketplaceOutboxHandlerTests
     public async Task Grant_ProjectsEntitlementAndCompletesCommerceOrder(string initialState)
     {
         await using var fixture = await Fixture.CreateAsync();
-        if (initialState == "processing") fixture.Order.StartPaymentProcessing();
-        if (initialState == "completed") fixture.Order.MarkAsPaid();
+        if (initialState == "processing")
+        {
+            fixture.Order.StartPaymentProcessing();
+        }
+
+        if (initialState == "completed")
+        {
+            fixture.Order.MarkAsPaid();
+        }
 
         await fixture.Handler.HandleAsync(fixture.Message(CommerceMarketplaceOutboxHandler.GrantMessageType),
             CancellationToken.None);
@@ -60,10 +67,26 @@ public sealed class MarketplaceOutboxHandlerTests
     public async Task Handler_FailsClosedWhenCommerceRejectsProjection(string failure)
     {
         await using var fixture = await Fixture.CreateAsync();
-        if (failure == "entitlement-error") fixture.Entitlements.GrantResult = EntitlementResult.Failed("denied");
-        if (failure == "entitlement-default") fixture.Entitlements.GrantResult = new EntitlementResult();
-        if (failure == "revoke") fixture.Entitlements.RevokeResult = false;
-        if (failure == "order-state") fixture.Order.PlaceOnHold("review");
+        if (failure == "entitlement-error")
+        {
+            fixture.Entitlements.GrantResult = EntitlementResult.Failed("denied");
+        }
+
+        if (failure == "entitlement-default")
+        {
+            fixture.Entitlements.GrantResult = new EntitlementResult();
+        }
+
+        if (failure == "revoke")
+        {
+            fixture.Entitlements.RevokeResult = false;
+        }
+
+        if (failure == "order-state")
+        {
+            fixture.Order.PlaceOnHold("review");
+        }
+
         var type = failure == "revoke"
             ? CommerceMarketplaceOutboxHandler.RevokeMessageType
             : CommerceMarketplaceOutboxHandler.GrantMessageType;
@@ -83,13 +106,37 @@ public sealed class MarketplaceOutboxHandlerTests
     public async Task Handler_RejectsCommerceOrderThatNoLongerMatchesSnapshot(string mismatch)
     {
         await using var fixture = await Fixture.CreateAsync();
-        if (mismatch == "tenant") fixture.Settlement.TenantId = Guid.NewGuid();
-        if (mismatch == "tenant-null") fixture.Order.TenantId = null;
-        if (mismatch == "buyer") fixture.Settlement.BuyerId = Guid.NewGuid();
-        if (mismatch == "line-count") fixture.Orders.Order = Order.Create(
+        if (mismatch == "tenant")
+        {
+            fixture.Settlement.TenantId = Guid.NewGuid();
+        }
+
+        if (mismatch == "tenant-null")
+        {
+            fixture.Order.TenantId = null;
+        }
+
+        if (mismatch == "buyer")
+        {
+            fixture.Settlement.BuyerId = Guid.NewGuid();
+        }
+
+        if (mismatch == "line-count")
+        {
+            fixture.Orders.Order = Order.Create(
             fixture.Settlement.BuyerId, "empty-order", fixture.Settlement.TenantId);
-        if (mismatch == "line-id") fixture.Settlement.OrderLineItemId = Guid.NewGuid();
-        if (mismatch == "product") fixture.Settlement.ProductId = Guid.NewGuid();
+        }
+
+        if (mismatch == "line-id")
+        {
+            fixture.Settlement.OrderLineItemId = Guid.NewGuid();
+        }
+
+        if (mismatch == "product")
+        {
+            fixture.Settlement.ProductId = Guid.NewGuid();
+        }
+
         await fixture.Context.SaveChangesAsync();
 
         await FluentActions.Awaiting(() => fixture.Handler.HandleAsync(
@@ -138,9 +185,19 @@ public sealed class MarketplaceOutboxHandlerTests
             ["buyerId"] = fixture.Settlement.BuyerId
         };
         var property = invalid.Split('-')[0] + "Id";
-        if (invalid.EndsWith("missing", StringComparison.Ordinal)) values.Remove(property);
-        else if (invalid.EndsWith("format", StringComparison.Ordinal)) values[property] = "not-a-guid";
-        else values[property] = Guid.NewGuid();
+        if (invalid.EndsWith("missing", StringComparison.Ordinal))
+        {
+            values.Remove(property);
+        }
+        else if (invalid.EndsWith("format", StringComparison.Ordinal))
+        {
+            values[property] = "not-a-guid";
+        }
+        else
+        {
+            values[property] = Guid.NewGuid();
+        }
+
         var message = fixture.Message(CommerceMarketplaceOutboxHandler.GrantMessageType) with
         {
             Payload = JsonSerializer.SerializeToElement(values)

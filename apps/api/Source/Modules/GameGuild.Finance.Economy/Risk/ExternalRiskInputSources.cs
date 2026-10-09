@@ -13,7 +13,11 @@ public interface IFinancialCrimeRiskInputSource
         DateTimeOffset observedAt,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        }
+
         return ReadAsync(opaqueSubjectReference, observedAt, cancellationToken);
     }
 }
@@ -31,7 +35,11 @@ public interface ITrustSafetyRiskInputSource
         DateTimeOffset observedAt,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        }
+
         return ReadAsync(opaqueSubjectReference, observedAt, cancellationToken);
     }
 }

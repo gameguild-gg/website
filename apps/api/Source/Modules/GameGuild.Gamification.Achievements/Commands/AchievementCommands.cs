@@ -59,8 +59,16 @@ public sealed class CreateAchievementCommandHandler(
             request.Description,
             actorContextAccessor.ActorContext.TenantId);
 
-        if (!string.IsNullOrEmpty(request.IconUrl)) achievement.IconUrl = request.IconUrl;
-        if (!string.IsNullOrEmpty(request.Color)) achievement.Color = request.Color;
+        if (!string.IsNullOrEmpty(request.IconUrl))
+        {
+            achievement.IconUrl = request.IconUrl;
+        }
+
+        if (!string.IsNullOrEmpty(request.Color))
+        {
+            achievement.Color = request.Color;
+        }
+
         achievement.IsSecret = request.IsSecret;
         achievement.IsRepeatable = request.IsRepeatable;
         achievement.DisplayOrder = request.DisplayOrder;
@@ -79,7 +87,9 @@ public sealed class UpdateAchievementCommandHandler(IAchievementService achievem
         var achievement = await achievementService.GetAchievementByIdAsync(request.AchievementId)
             .ConfigureAwait(false);
         if (achievement is null)
+        {
             return Result.Failure<Achievement>(Error.NotFound("NotFound", "Achievement not found"));
+        }
 
         achievement.Name = request.Name ?? achievement.Name;
         achievement.Description = request.Description ?? achievement.Description;
@@ -87,15 +97,36 @@ public sealed class UpdateAchievementCommandHandler(IAchievementService achievem
         achievement.IconUrl = request.IconUrl ?? achievement.IconUrl;
         achievement.Color = request.Color ?? achievement.Color;
 
-        if (request.Points.HasValue) achievement.UpdatePoints(request.Points.Value);
+        if (request.Points.HasValue)
+        {
+            achievement.UpdatePoints(request.Points.Value);
+        }
+
         if (request.IsActive.HasValue)
         {
-            if (request.IsActive.Value) achievement.Activate();
-            else achievement.Deactivate();
+            if (request.IsActive.Value)
+            {
+                achievement.Activate();
+            }
+            else
+            {
+                achievement.Deactivate();
+            }
         }
-        if (request.IsSecret.HasValue) achievement.IsSecret = request.IsSecret.Value;
-        if (request.IsRepeatable.HasValue) achievement.IsRepeatable = request.IsRepeatable.Value;
-        if (request.DisplayOrder.HasValue) achievement.DisplayOrder = request.DisplayOrder.Value;
+        if (request.IsSecret.HasValue)
+        {
+            achievement.IsSecret = request.IsSecret.Value;
+        }
+
+        if (request.IsRepeatable.HasValue)
+        {
+            achievement.IsRepeatable = request.IsRepeatable.Value;
+        }
+
+        if (request.DisplayOrder.HasValue)
+        {
+            achievement.DisplayOrder = request.DisplayOrder.Value;
+        }
 
         return await achievementService.UpdateAchievementAsync(achievement).ConfigureAwait(false);
     }

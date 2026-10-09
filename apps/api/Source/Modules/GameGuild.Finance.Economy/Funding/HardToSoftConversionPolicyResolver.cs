@@ -71,11 +71,16 @@ public sealed class HardToSoftConversionPolicyResolver(
             var maximum = root.GetProperty("maximumHardCoinUnitsPerDay").GetInt64();
             var lifetime = root.GetProperty("decisionLifetimeSeconds").GetInt32();
             if (feePpm is < 0 or >= PpmScale || maximum <= 0 || lifetime is < 30 or > 900)
+            {
                 throw new JsonException("Conversion policy values are outside their safe ranges.");
+            }
 
             var fee = ToLongCeiling((BigInteger)principalHardCoinUnits * feePpm, PpmScale);
             if ((BigInteger)principalHardCoinUnits + fee > maximum)
+            {
                 throw Disabled("The requested conversion exceeds the signed daily limit.");
+            }
+
             return new HardToSoftConversionPolicyAuthorization(
                 jurisdiction.JurisdictionCode,
                 policy.Version,
@@ -98,7 +103,11 @@ public sealed class HardToSoftConversionPolicyResolver(
     internal static long ToLongCeiling(BigInteger numerator, int denominator)
     {
         var value = (numerator + denominator - 1) / denominator;
-        if (value > long.MaxValue) throw new OverflowException();
+        if (value > long.MaxValue)
+        {
+            throw new OverflowException();
+        }
+
         return (long)value;
     }
 

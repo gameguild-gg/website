@@ -90,7 +90,9 @@ public sealed class TestingLabPermissionAuthorizationFilter(
         }
 
         if (actor.IsSystemAdmin || actor.IsTenantAdmin || isResourceOwner)
+        {
             return;
+        }
 
         var allowed = await permissionService.HasPermissionAsync(
                 actor.SubjectIdAsGuid.Value,
@@ -100,7 +102,9 @@ public sealed class TestingLabPermissionAuthorizationFilter(
                 resourceId)
             .ConfigureAwait(false);
         if (!allowed)
+        {
             context.Result = new ForbidResult();
+        }
     }
 
     private async Task<ResourceScope> ResolveResourceScopeAsync(
@@ -124,7 +128,11 @@ public sealed class TestingLabPermissionAuthorizationFilter(
                 .Where(item => item.Id == resourceId && item.TenantId == tenantId)
                 .Select(item => new { item.ProjectId })
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-            if (resource == null) return new(false, false);
+            if (resource == null)
+            {
+                return new(false, false);
+            }
+
             var requiredPermission = action == TestingLabActions.Read ? PermissionType.Read : PermissionType.Edit;
             var projectAccess = await projectAuthorizationService.HasPermissionAsync(
                 resource.ProjectId,
@@ -149,9 +157,12 @@ public sealed class TestingLabPermissionAuthorizationFilter(
             return new(resource != null, resource?.ManagerId == actorId || resource?.CreatedById == actorId);
         }
         if (type == TestingLabResourceTypes.Location)
+        {
             return new(await dbContext.Set<TestingLocation>().IgnoreQueryFilters().AnyAsync(
                 item => item.Id == resourceId && item.TenantId == tenantId,
                 cancellationToken).ConfigureAwait(false), false);
+        }
+
         if (type == TestingLabResourceTypes.Feedback)
         {
             var resource = await dbContext.Set<TestingFeedback>().IgnoreQueryFilters().AsNoTracking()
@@ -176,11 +187,15 @@ public sealed class TestingLabPermissionAuthorizationFilter(
     {
         if (context.RouteData.Values.TryGetValue(parameterName, out var routeValue) &&
             Guid.TryParse(routeValue?.ToString(), out var routeId))
+        {
             return routeId;
+        }
 
         if (context.HttpContext.Request.Query.TryGetValue(parameterName, out var queryValue) &&
             Guid.TryParse(queryValue.FirstOrDefault(), out var queryId))
+        {
             return queryId;
+        }
 
         return null;
     }

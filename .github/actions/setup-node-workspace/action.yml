@@ -4,14 +4,14 @@ description: Install the pinned Node and pnpm workspace dependencies
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v6
+    - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
       with:
-        version: 10.0.0
-    - uses: actions/setup-node@v7
+        version: 10.34.6
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       with:
         node-version: "22"
         cache: pnpm
         cache-dependency-path: pnpm-lock.yaml
     - name: Install workspace dependencies
       shell: bash
-      run: pnpm install --frozen-lockfile --ignore-scripts
+      run: bash scripts/ci/install-and-audit-pnpm.sh

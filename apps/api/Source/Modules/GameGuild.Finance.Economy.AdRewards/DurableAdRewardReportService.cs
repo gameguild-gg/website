@@ -33,8 +33,11 @@ public sealed class DurableAdRewardReportService : IDurableAdRewardReportService
         Validate(request);
         var report = request.Report;
         if (!await _providerAdapters.Resolve(report.Network).VerifyReportAsync(report, cancellationToken))
+        {
             throw new AdProviderReportVerificationException(
-                "Provider report signature or timing is invalid.");
+            "Provider report signature or timing is invalid.");
+        }
+
         var payloadHash = Hash(Canonicalize(report));
 
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
@@ -51,9 +54,12 @@ public sealed class DurableAdRewardReportService : IDurableAdRewardReportService
         if (existing is not null)
         {
             if (!string.Equals(existing.PayloadHash, payloadHash, StringComparison.Ordinal))
-                throw new AdProviderReportConflictException(
+                {
+                    throw new AdProviderReportConflictException(
                     "Provider report version has conflicting content.");
-            return await MapResultAsync(existing, true, cancellationToken);
+                }
+
+                return await MapResultAsync(existing, true, cancellationToken);
         }
 
         var previous = await _db.Set<AdProviderReportRow>()
@@ -65,20 +71,24 @@ public sealed class DurableAdRewardReportService : IDurableAdRewardReportService
             .FirstOrDefaultAsync(cancellationToken);
         var expectedVersion = previous is null ? 1 : previous.Version + 1;
         if (report.Version != expectedVersion)
-            throw new AdProviderReportConflictException(
+            {
+                throw new AdProviderReportConflictException(
                 "Provider report versions must be contiguous and forward-only.");
+            }
 
-        var sessionIds = report.VerifiedSessionIds.Distinct().ToArray();
+            var sessionIds = report.VerifiedSessionIds.Distinct().ToArray();
         var sessions = await _db.Set<AdRewardSessionRow>()
             .Where(row => row.TenantId == request.TenantId &&
                           row.Network == report.Network &&
                           sessionIds.Contains(row.Id))
             .ToArrayAsync(cancellationToken);
         if (sessions.Length != sessionIds.Length)
-            throw new AdProviderReportVerificationException(
+            {
+                throw new AdProviderReportVerificationException(
                 "Provider report references sessions outside its tenant or network.");
+            }
 
-        var reportId = Guid.NewGuid();
+            var reportId = Guid.NewGuid();
         var row = new AdProviderReportRow
         {
             Id = reportId,
@@ -226,7 +236,10 @@ public sealed class DurableAdRewardReportService : IDurableAdRewardReportService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Report);
         if (request.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(request));
+        }
+
         var report = request.Report;
         ArgumentException.ThrowIfNullOrWhiteSpace(report.Network);
         ArgumentException.ThrowIfNullOrWhiteSpace(report.ReportId);
@@ -238,7 +251,9 @@ public sealed class DurableAdRewardReportService : IDurableAdRewardReportService
             report.ActualRevenueUsdNanos < 0 || report.VerifiedSessionIds.Count == 0 ||
             report.VerifiedSessionIds.Any(id => id == Guid.Empty) ||
             report.VerifiedSessionIds.Distinct().Count() != report.VerifiedSessionIds.Count)
+        {
             throw new AdProviderReportVerificationException("Provider report payload is invalid.");
+        }
     }
 
     private static string Canonicalize(AdProviderReport report) => string.Join('|',

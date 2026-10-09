@@ -11,14 +11,13 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Commands;
 public class PauseSubscriptionHandlerTests
 {
     private readonly Mock<IApplicationDbContext> _mockContext;
-    private readonly Mock<DbSet<Subscription>> _mockDbSet;
     private readonly PauseSubscriptionHandler _handler;
 
     public PauseSubscriptionHandlerTests()
     {
         _mockContext = new Mock<IApplicationDbContext>();
-        _mockDbSet = new Mock<DbSet<Subscription>>();
-        _mockContext.Setup(c => c.Set<Subscription>()).Returns(_mockDbSet.Object);
+        Mock<DbSet<Subscription>> mockDbSet = new Mock<DbSet<Subscription>>();
+        _mockContext.Setup(c => c.Set<Subscription>()).Returns(mockDbSet.Object);
         _handler = new PauseSubscriptionHandler(_mockContext.Object);
     }
 

@@ -24,7 +24,7 @@ public class PermissionExpirationServiceTests
     private readonly Mock<IPublisher> _publisherMock = new();
     private readonly Mock<IActorContextAccessor> _actorAccessorMock = new();
     private readonly PermissionExpirationOptions _options = new();
-    private PermissionExpirationService _sut = null!;
+    private readonly PermissionExpirationService _sut;
 
     public PermissionExpirationServiceTests()
     {

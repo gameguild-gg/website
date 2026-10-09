@@ -29,7 +29,21 @@ const config = [
     eslint.configs.recommended, // eslint recommended rules
     eslintConfigPrettier,
     eslintPluginPrettierRecommended, // prettier recommended rules
-    typescriptEslint.configs.recommended, // typescript-eslint recommended rules
+    typescriptEslint.configs.recommendedTypeChecked, // typescript-eslint type-checked rules (Codacy parity: no-unsafe-*)
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+    },
+    // Plain JS files are rarely in a tsconfig project; drop type-aware linting there
+    // (resets projectService:false) so config files don't fail the project service lookup.
+    {
+        files: ['**/*.{js,mjs,cjs}'],
+        ...typescriptEslint.configs.disableTypeChecked,
+    },
     {
         ...reactPlugin.configs.flat.recommended,
         languageOptions: {

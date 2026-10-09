@@ -156,10 +156,15 @@ public sealed class Project : EntityBase {
 
     public ProjectTeam SetOwnerTeam(Guid teamId)
     {
-        if (teamId == Guid.Empty) throw new ArgumentException("An owner team is required.", nameof(teamId));
+        if (teamId == Guid.Empty)
+        {
+            throw new ArgumentException("An owner team is required.", nameof(teamId));
+        }
 
         foreach (var owner in Teams.Where(team => team.IsActive && team.Role == ProjectTeamRole.Owner && team.TeamId != teamId))
+        {
             owner.Role = ProjectTeamRole.CoOwner;
+        }
 
         var projectTeam = Teams.SingleOrDefault(team => team.TeamId == teamId && team.DeletedAt == null);
         if (projectTeam == null)
@@ -184,9 +189,14 @@ public sealed class Project : EntityBase {
     public ProjectTeam AddParticipatingTeam(Guid teamId, ProjectTeamRole role)
     {
         if (role == ProjectTeamRole.Owner)
+        {
             throw new ArgumentException("Use SetOwnerTeam to transfer ownership.", nameof(role));
+        }
+
         if (Teams.Any(team => team.TeamId == teamId && team.IsActive && team.DeletedAt == null))
+        {
             throw new InvalidOperationException("This team already participates in the project.");
+        }
 
         var projectTeam = new ProjectTeam
         {
@@ -210,12 +220,17 @@ public sealed class Project : EntityBase {
         DateTime? endsAt = null)
     {
         if (capacityPercentage is <= 0 or > 100)
+        {
             throw new ArgumentOutOfRangeException(nameof(capacityPercentage));
+        }
+
         var projectTeam = Teams.SingleOrDefault(team => team.Id == projectTeamId && team.IsActive && team.DeletedAt == null)
             ?? throw new InvalidOperationException("The project team is not active.");
         var start = startsAt ?? SystemClock.UtcNow;
         if (endsAt.HasValue && endsAt <= start)
+        {
             throw new ArgumentException("Allocation end must be after its start.", nameof(endsAt));
+        }
 
         var allocation = new ProjectMemberAllocation
         {
@@ -236,7 +251,10 @@ public sealed class Project : EntityBase {
 
     /// <summary> Generate URL-friendly slug from title </summary>
     public static string GenerateSlug(string title) {
-        if (string.IsNullOrWhiteSpace(title)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return string.Empty;
+        }
 
         return title.ToLowerInvariant()
                     .Replace(" ", "-")

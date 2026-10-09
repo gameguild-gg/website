@@ -15,9 +15,12 @@ public class ActivityGradeController(IActivityGradeService activityGradeService,
   [HttpPost]
   [RequireCourseCapability(CourseCapability.StaffReview, "programId")]
   public async Task<ActionResult<ActivityGradeDto>> GradeActivity(Guid programId, [FromBody] CreateActivityGradeDto gradeDto) {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    try {
+        try {
       var grade = await sender.Send(new GradeActivityEndpointCommand(
         gradeDto.ContentInteractionId,
         gradeDto.GraderProgramUserId,
@@ -41,10 +44,13 @@ public class ActivityGradeController(IActivityGradeService activityGradeService,
   public async Task<ActionResult<ActivityGradeDto>> GetGrade(Guid programId, Guid contentInteractionId) {
     var grade = await activityGradeService.GetGradeAsync(contentInteractionId).ConfigureAwait(false);
 
-    if (grade == null) return NotFound("Grade not found for this content interaction");
+    if (grade == null)
+        {
+            return NotFound("Grade not found for this content interaction");
+        }
 
-    // Verify the grade belongs to the specified program
-    await ValidateGradeBelongsToProgram(grade.Id, programId).ConfigureAwait(false);
+        // Verify the grade belongs to the specified program
+        await ValidateGradeBelongsToProgram(grade.Id, programId).ConfigureAwait(false);
 
     return Ok(grade.ToDto());
   }
@@ -77,10 +83,13 @@ public class ActivityGradeController(IActivityGradeService activityGradeService,
   [HttpPut("{gradeId}")]
   [RequireCourseCapability(CourseCapability.StaffReview, "programId")]
   public async Task<ActionResult<ActivityGradeDto>> UpdateGrade(Guid programId, Guid gradeId, [FromBody] UpdateActivityGradeDto updateDto) {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    // Verify the grade belongs to the specified program
-    await ValidateGradeBelongsToProgram(gradeId, programId).ConfigureAwait(false);
+        // Verify the grade belongs to the specified program
+        await ValidateGradeBelongsToProgram(gradeId, programId).ConfigureAwait(false);
 
     var updatedGrade = await sender.Send(new UpdateActivityGradeEndpointCommand(
       gradeId,
@@ -89,9 +98,12 @@ public class ActivityGradeController(IActivityGradeService activityGradeService,
       updateDto.Feedback,
       updateDto.GradingDetails)).ConfigureAwait(false);
 
-    if (updatedGrade == null) return NotFound("Grade not found");
+    if (updatedGrade == null)
+        {
+            return NotFound("Grade not found");
+        }
 
-    return Ok(updatedGrade.ToDto());
+        return Ok(updatedGrade.ToDto());
   }
 
   /// <summary> Delete a grade (Program-level Delete permission required) </summary>
@@ -103,9 +115,12 @@ public class ActivityGradeController(IActivityGradeService activityGradeService,
 
     var deleted = await sender.Send(new DeleteActivityGradeEndpointCommand(gradeId)).ConfigureAwait(false);
 
-    if (!deleted) return NotFound("Grade not found");
+    if (!deleted)
+        {
+            return NotFound("Grade not found");
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Get pending grades for a program (content interactions needing grading) (Program-level Read permission required) </summary>
@@ -142,6 +157,9 @@ public class ActivityGradeController(IActivityGradeService activityGradeService,
   private async Task ValidateGradeBelongsToProgram(Guid gradeId, Guid programId) {
     var grade = await activityGradeService.GetGradeByIdAsync(gradeId).ConfigureAwait(false);
 
-    if (grade?.ContentInteraction?.Content?.ProgramId != programId) throw new UnauthorizedAccessException($"Grade {gradeId} does not belong to program {programId}");
-  }
+    if (grade?.ContentInteraction?.Content?.ProgramId != programId)
+        {
+            throw new UnauthorizedAccessException($"Grade {gradeId} does not belong to program {programId}");
+        }
+    }
 }

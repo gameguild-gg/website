@@ -6,9 +6,21 @@ public sealed record WalletContract
 {
     public WalletContract(WalletId id, Guid ownerId, Guid tenantId, WalletLifecycleState state, DateTimeOffset createdAt)
     {
-        if (ownerId == Guid.Empty) throw new ArgumentException("Wallet owner ID cannot be empty.", nameof(ownerId));
-        if (tenantId == Guid.Empty) throw new ArgumentException("Wallet tenant ID cannot be empty.", nameof(tenantId));
-        if (!Enum.IsDefined(state)) throw new ArgumentOutOfRangeException(nameof(state));
+        if (ownerId == Guid.Empty)
+        {
+            throw new ArgumentException("Wallet owner ID cannot be empty.", nameof(ownerId));
+        }
+
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Wallet tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (!Enum.IsDefined(state))
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+
         Id = id;
         OwnerId = ownerId;
         TenantId = tenantId;
@@ -33,7 +45,11 @@ public sealed record ReserveSnapshotContract
         SoftCoinAmount softHeadroom,
         string evidenceHash)
     {
-        if (expiresAt <= observedAt) throw new ArgumentException("Reserve expiry must follow observation.", nameof(expiresAt));
+        if (expiresAt <= observedAt)
+        {
+            throw new ArgumentException("Reserve expiry must follow observation.", nameof(expiresAt));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
         Version = version;
         ObservedAt = observedAt;
@@ -60,9 +76,21 @@ public sealed record MonetaryPolicyContract
         int conversionFeePpm,
         int minimumMarginPpm)
     {
-        if (endsAt <= effectiveAt) throw new ArgumentException("Policy end must follow its effective time.", nameof(endsAt));
-        if (conversionFeePpm is < 0 or >= 1_000_000) throw new ArgumentOutOfRangeException(nameof(conversionFeePpm));
-        if (minimumMarginPpm is < 0 or >= 1_000_000) throw new ArgumentOutOfRangeException(nameof(minimumMarginPpm));
+        if (endsAt <= effectiveAt)
+        {
+            throw new ArgumentException("Policy end must follow its effective time.", nameof(endsAt));
+        }
+
+        if (conversionFeePpm is < 0 or >= 1_000_000)
+        {
+            throw new ArgumentOutOfRangeException(nameof(conversionFeePpm));
+        }
+
+        if (minimumMarginPpm is < 0 or >= 1_000_000)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minimumMarginPpm));
+        }
+
         Version = version;
         EffectiveAt = effectiveAt;
         EndsAt = endsAt;
