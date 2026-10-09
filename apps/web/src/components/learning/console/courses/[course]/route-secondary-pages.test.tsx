@@ -36,6 +36,7 @@ const mocks = vi.hoisted(() => ({
   getCertificateTemplate: vi.fn(),
   getCourseGroupSets: vi.fn(),
   getAssessmentRubric: vi.fn(),
+  getCourseAccessCapabilities: vi.fn(),
   canManageCourse: vi.fn(),
 }));
 
@@ -91,6 +92,7 @@ vi.mock("@/lib/learning", () => ({
   getCertificateTemplate: mocks.getCertificateTemplate,
   getCourseGroupSets: mocks.getCourseGroupSets,
   getAssessmentRubric: mocks.getAssessmentRubric,
+  getCourseAccessCapabilities: mocks.getCourseAccessCapabilities,
   canManageCourse: mocks.canManageCourse,
 }));
 
@@ -232,6 +234,18 @@ describe("course-management secondary route pages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCourse.mockResolvedValue(course);
+    mocks.getCourseAccessCapabilities.mockResolvedValue({
+      courseId: course.id,
+      courseExists: true,
+      isTenantMember: true,
+      isOwner: true,
+      hasActiveEnrollment: false,
+      canLearn: false,
+      canEdit: true,
+      canPublish: true,
+      canReviewAsStaff: true,
+      canAccessWorkspace: true,
+    });
     mocks.getCourseAnalytics.mockResolvedValue({
       totalUsers: 20,
       completedUsers: 8,
