@@ -548,3 +548,241 @@ public sealed class RemoveDenyPermissionsCommandHandler(
         return success;
     }
 }
+
+// ========================================================================
+// PERMISSION EXPIRATION COMMANDS (issue #331)
+// ========================================================================
+
+/// <summary>
+///     Command to bulk-set an absolute expiration for permission grants in one tenant.
+///     A <c>null</c> <see cref="ExpiresAt"/> clears the expiration.
+/// </summary>
+/// <remarks>
+///     <para><b>SECURITY:</b> Requires tenant admin for the target tenant or system admin.
+///     For global defaults (tenantId=Empty), requires <c>system:manage-global-defaults</c> permission.</para>
+/// </remarks>
+public sealed record SetTenantPermissionExpirationCommand : ICommand<int>
+{
+    /// <summary>
+    ///     Gets the tenant ID that owns the grants.
+    /// </summary>
+    public required TenantId TenantId { get; init; }
+
+    /// <summary>
+    ///     Gets the IDs of the permission grants to update.
+    /// </summary>
+    public required Guid[] PermissionIds { get; init; }
+
+    /// <summary>
+    ///     Gets the new expiration instant (null = permanent).
+    /// </summary>
+    public DateTime? ExpiresAt { get; init; }
+
+    /// <summary>
+    ///     Gets the optional reason recorded in the audit log.
+    /// </summary>
+    public string? Reason { get; init; }
+}
+
+/// <summary>
+///     Handler for SetTenantPermissionExpirationCommand.
+/// </summary>
+public sealed class SetTenantPermissionExpirationCommandHandler(
+    IPermissionExpirationService expirationService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<SetTenantPermissionExpirationCommandHandler> logger)
+    : ICommandHandler<SetTenantPermissionExpirationCommand, int>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public async Task<int> Handle(SetTenantPermissionExpirationCommand request, CancellationToken cancellationToken)
+    {
+        PermissionExpirationCommandGuards.EnsureCanManageTenant(Actor, request.TenantId.Value, "set permission expirations");
+
+        logger.LogInformation(
+            "Setting expiration {ExpiresAt} for {Count} permission grants in tenant {TenantId}",
+            request.ExpiresAt,
+            request.PermissionIds.Length,
+            request.TenantId);
+
+        var updated = await expirationService.SetExpirationAsync(
+                request.TenantId.Value,
+                request.PermissionIds,
+                request.ExpiresAt,
+                request.Reason,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return updated.Count;
+    }
+}
+
+/// <summary>
+///     Command to bulk-extend the expiration of permission grants in one tenant by a
+///     positive time period.
+/// </summary>
+/// <remarks>
+///     <para><b>SECURITY:</b> Requires tenant admin for the target tenant or system admin.
+///     For global defaults (tenantId=Empty), requires <c>system:manage-global-defaults</c> permission.</para>
+/// </remarks>
+public sealed record ExtendTenantPermissionExpirationCommand : ICommand<int>
+{
+    /// <summary>
+    ///     Gets the tenant ID that owns the grants.
+    /// </summary>
+    public required TenantId TenantId { get; init; }
+
+    /// <summary>
+    ///     Gets the IDs of the permission grants to extend.
+    /// </summary>
+    public required Guid[] PermissionIds { get; init; }
+
+    /// <summary>
+    ///     Gets the positive extension period.
+    /// </summary>
+    public required TimeSpan Extension { get; init; }
+
+    /// <summary>
+    ///     Gets the optional reason recorded in the audit log.
+    /// </summary>
+    public string? Reason { get; init; }
+}
+
+/// <summary>
+///     Handler for ExtendTenantPermissionExpirationCommand.
+/// </summary>
+public sealed class ExtendTenantPermissionExpirationCommandHandler(
+    IPermissionExpirationService expirationService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<ExtendTenantPermissionExpirationCommandHandler> logger)
+    : ICommandHandler<ExtendTenantPermissionExpirationCommand, int>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public async Task<int> Handle(ExtendTenantPermissionExpirationCommand request, CancellationToken cancellationToken)
+    {
+        PermissionExpirationCommandGuards.EnsureCanManageTenant(Actor, request.TenantId.Value, "extend permission expirations");
+
+        logger.LogInformation(
+            "Extending expiration by {Extension} for {Count} permission grants in tenant {TenantId}",
+            request.Extension,
+            request.PermissionIds.Length,
+            request.TenantId);
+
+        var updated = await expirationService.ExtendExpirationAsync(
+                request.TenantId.Value,
+                request.PermissionIds,
+                request.Extension,
+                request.Reason,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return updated.Count;
+    }
+}
+
+/// <summary>
+///     Command to immediately process (deactivate, audit, notify) all expired
+///     permission grants, without waiting for the background worker cycle.
+/// </summary>
+/// <remarks>
+///     <para><b>SECURITY:</b> Requires system admin privileges (operates across tenants).</para>
+/// </remarks>
+public sealed record ProcessExpiredPermissionsCommand : ICommand<int>;
+
+/// <summary>
+///     Handler for ProcessExpiredPermissionsCommand.
+/// </summary>
+public sealed class ProcessExpiredPermissionsCommandHandler(
+    IPermissionExpirationService expirationService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<ProcessExpiredPermissionsCommandHandler> logger)
+    : ICommandHandler<ProcessExpiredPermissionsCommand, int>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public async Task<int> Handle(ProcessExpiredPermissionsCommand request, CancellationToken cancellationToken)
+    {
+        if (!Actor.IsAuthenticated || !Actor.IsSystemAdmin)
+        {
+            throw new UnauthorizedAccessException(
+                "Processing expired permissions across tenants requires system administrator privileges");
+        }
+
+        var processed = await expirationService.ProcessExpiredAsync(cancellationToken).ConfigureAwait(false);
+
+        logger.LogInformation("Manually processed {Count} expired permission grants.", processed);
+
+        return processed;
+    }
+}
+
+/// <summary>
+///     Command to immediately publish upcoming-expiration notifications for grants
+///     expiring within the configured window, without waiting for the background
+///     worker cycle.
+/// </summary>
+/// <remarks>
+///     <para><b>SECURITY:</b> Requires system admin privileges (operates across tenants).</para>
+/// </remarks>
+public sealed record SendExpirationRemindersCommand : ICommand<int>;
+
+/// <summary>
+///     Handler for SendExpirationRemindersCommand.
+/// </summary>
+public sealed class SendExpirationRemindersCommandHandler(
+    IPermissionExpirationService expirationService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<SendExpirationRemindersCommandHandler> logger)
+    : ICommandHandler<SendExpirationRemindersCommand, int>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public async Task<int> Handle(SendExpirationRemindersCommand request, CancellationToken cancellationToken)
+    {
+        if (!Actor.IsAuthenticated || !Actor.IsSystemAdmin)
+        {
+            throw new UnauthorizedAccessException(
+                "Sending expiration reminders across tenants requires system administrator privileges");
+        }
+
+        var published = await expirationService
+            .SendUpcomingExpirationRemindersAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        logger.LogInformation("Manually published {Count} expiration reminders.", published);
+
+        return published;
+    }
+}
+
+/// <summary>
+///     Shared authorization guard for the bulk expiration command handlers: mirrors the
+///     Grant/Revoke guard (global defaults require ManageGlobalDefaults; tenant grants
+///     require same-tenant admin or system admin).
+/// </summary>
+internal static class PermissionExpirationCommandGuards
+{
+    public static void EnsureCanManageTenant(ActorContext actor, Guid tenantId, string operation)
+    {
+        var isGlobalDefault = tenantId == Guid.Empty;
+        if (isGlobalDefault)
+        {
+            if (!actor.IsAuthenticated ||
+                (!actor.HasPermission(SystemPermission.Keys.ManageGlobalDefaults) && !actor.IsSystemAdmin))
+            {
+                throw new UnauthorizedAccessException(
+                    $"Modifying global default permissions requires '{SystemPermission.Keys.ManageGlobalDefaults}' permission. Attempted operation: {operation}");
+            }
+
+            return;
+        }
+
+        if (!actor.IsAuthenticated ||
+            (!actor.IsSystemAdmin && (!actor.IsTenantAdmin || actor.TenantId != tenantId)))
+        {
+            throw new UnauthorizedAccessException(
+                $"Only tenant or system administrators can {operation} for the target tenant");
+        }
+    }
+}
