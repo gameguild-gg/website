@@ -211,8 +211,11 @@ public static class AuthorizationModuleExtensions
         services.AddResourcePermissionAuthorization();
 
         // Dynamic policy provider (Singleton - required by ASP.NET Core MVC infrastructure)
-        // Uses IServiceScopeFactory to resolve scoped services when needed
-        services.AddSingleton<IAuthorizationPolicyProvider, DbAuthorizationPolicyProvider>();
+        // Uses IServiceScopeFactory to resolve scoped services when needed.
+        // Also registered as its concrete type so composition roots can wrap it
+        // (e.g. with the API-key scope policy provider) without a second instance.
+        services.AddSingleton<DbAuthorizationPolicyProvider>();
+        services.AddSingleton<IAuthorizationPolicyProvider>(sp => sp.GetRequiredService<DbAuthorizationPolicyProvider>());
 
         // Register TimeProvider for environment handler
         services.AddSingleton(TimeProvider.System);
