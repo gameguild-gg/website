@@ -62,11 +62,15 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
 
         var validation = ValidateRequired(request.Key, request.Name, request.Prompt);
         if (validation.IsFailure)
+        {
             return Result.Failure<AiPromptTemplateDto>(validation.Error);
+        }
 
         var key = NormalizeKey(request.Key);
         if (string.IsNullOrWhiteSpace(key))
+        {
             return Result.Failure<AiPromptTemplateDto>(Error.Validation("AI.PromptTemplateKeyInvalid", "Prompt template key must contain at least one letter or number."));
+        }
 
         if (await TenantTemplateKeyExistsAsync(tenantId, key, null, cancellationToken).ConfigureAwait(false))
         {
@@ -107,14 +111,18 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
 
         var template = await EditableTemplateAsync(tenantId, id, cancellationToken).ConfigureAwait(false);
         if (template.IsFailure)
+        {
             return Result.Failure<AiPromptTemplateDto>(template.Error);
+        }
 
         var current = template.Value;
 
         if (request.Name is not null)
         {
             if (string.IsNullOrWhiteSpace(request.Name))
+            {
                 return Result.Failure<AiPromptTemplateDto>(Error.Validation("AI.PromptTemplateNameRequired", "Prompt template name is required."));
+            }
 
             current.Name = request.Name.Trim();
         }
@@ -122,22 +130,32 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
         if (request.Prompt is not null)
         {
             if (string.IsNullOrWhiteSpace(request.Prompt))
+            {
                 return Result.Failure<AiPromptTemplateDto>(Error.Validation("AI.PromptTemplatePromptRequired", "Prompt template text is required."));
+            }
 
             current.Prompt = request.Prompt.Trim();
         }
 
         if (request.Description is not null)
+        {
             current.Description = NormalizeOptional(request.Description);
+        }
 
         if (request.Category is not null)
+        {
             current.Category = NormalizeCategory(request.Category);
+        }
 
         if (request.SystemPrompt is not null)
+        {
             current.SystemPrompt = NormalizeOptional(request.SystemPrompt);
+        }
 
         if (request.IsActive.HasValue)
+        {
             current.IsActive = request.IsActive.Value;
+        }
 
         current.UpdatedByUserId = userId;
         current.Touch();
@@ -155,7 +173,9 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
     {
         var template = await EditableTemplateAsync(tenantId, id, cancellationToken).ConfigureAwait(false);
         if (template.IsFailure)
+        {
             return Result.Failure(template.Error);
+        }
 
         var current = template.Value;
         current.UpdatedByUserId = userId;
@@ -179,10 +199,14 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
             .ConfigureAwait(false);
 
         if (template is null)
+        {
             return Result.Failure<AiPromptTemplateRenderResponse>(Error.NotFound("AI.PromptTemplateNotFound", "AI prompt template was not found."));
+        }
 
         if (!template.IsActive)
+        {
             return Result.Failure<AiPromptTemplateRenderResponse>(Error.Forbidden("AI.PromptTemplateInactive", "AI prompt template is inactive."));
+        }
 
         var normalizedVariables = NormalizeVariables(variables);
 
@@ -208,10 +232,14 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
             .ConfigureAwait(false);
 
         if (template is null)
+        {
             return Result.Failure<AiPromptTemplate>(Error.NotFound("AI.PromptTemplateNotFound", "AI prompt template was not found."));
+        }
 
         if (template.IsSystemTemplate)
+        {
             return Result.Failure<AiPromptTemplate>(Error.Forbidden("AI.SystemPromptTemplateReadOnly", "System prompt templates cannot be modified from this endpoint."));
+        }
 
         return Result.Success(template);
     }
@@ -227,7 +255,9 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
             .Where(template => template.TenantId == tenantId && template.Key == key);
 
         if (exceptId.HasValue)
+        {
             query = query.Where(template => template.Id != exceptId.Value);
+        }
 
         return await query.AnyAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -235,13 +265,19 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
     private static Result ValidateRequired(string key, string name, string prompt)
     {
         if (string.IsNullOrWhiteSpace(key))
+        {
             return Result.Failure(Error.Validation("AI.PromptTemplateKeyRequired", "Prompt template key is required."));
+        }
 
         if (string.IsNullOrWhiteSpace(name))
+        {
             return Result.Failure(Error.Validation("AI.PromptTemplateNameRequired", "Prompt template name is required."));
+        }
 
         if (string.IsNullOrWhiteSpace(prompt))
+        {
             return Result.Failure(Error.Validation("AI.PromptTemplatePromptRequired", "Prompt template text is required."));
+        }
 
         return Result.Success();
     }
@@ -266,7 +302,9 @@ internal sealed class AiPromptTemplateService(IApplicationDbContext db) : IAiPro
     private static string? Render(string? template, IReadOnlyDictionary<string, string?> variables)
     {
         if (string.IsNullOrWhiteSpace(template))
+        {
             return null;
+        }
 
         return PlaceholderRegex.Replace(template, match =>
         {

@@ -603,7 +603,9 @@ public sealed class ProjectChannelPostgreSqlRaceTests : IAsyncLifetime
             actorAccessor,
             new ProjectLifecycleLock(context));
         if (!useCommandHandler)
+        {
             return await operations.CreateTestingRequestAsync(NewTestingRequest(projectVersionId));
+        }
 
         var mediator = new Mock<IMediator>();
         mediator.Setup(candidate => candidate.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()))
@@ -738,7 +740,11 @@ public sealed class ProjectChannelPostgreSqlRaceTests : IAsyncLifetime
             await using var command = new NpgsqlCommand(
                 "SELECT COUNT(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted AND database = (SELECT oid FROM pg_database WHERE datname = current_database())",
                 connection);
-            if (Convert.ToInt32(await command.ExecuteScalarAsync()) >= minimumCount) return;
+            if (Convert.ToInt32(await command.ExecuteScalarAsync()) >= minimumCount)
+            {
+                return;
+            }
+
             await Task.Delay(25);
         }
 

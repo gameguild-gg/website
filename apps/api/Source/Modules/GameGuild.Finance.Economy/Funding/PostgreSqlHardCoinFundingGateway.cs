@@ -52,9 +52,20 @@ public sealed class PostgreSqlHardCoinFundingGateway : IHardCoinFundingGateway
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Command);
-        if (request.ActorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(request));
-        if (request.TenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(request));
-        if (request.PolicyVersion.Value <= 0) throw new ArgumentOutOfRangeException(nameof(request));
+        if (request.ActorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(request));
+        }
+
+        if (request.TenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(request));
+        }
+
+        if (request.PolicyVersion.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(request));
+        }
 
         var command = request.Command;
         var claim = HardCoinFundingClaim.Observe(
@@ -155,8 +166,10 @@ public sealed class PostgreSqlHardCoinFundingGateway : IHardCoinFundingGateway
             !string.Equals(request.Receipt.OperationFingerprint,
                 request.Authority.RiskOperationFingerprint, StringComparison.Ordinal) ||
             request.Receipt.IssuedAt > request.ConfirmedAt || request.Receipt.ExpiresAt <= request.ConfirmedAt)
+        {
             throw new RegisteredPostingRejectedException(
                 "The durable funding receipt does not authorize this confirmation.");
+        }
 
         var source = _db.Set<EconomySourceStampRow>()
             .AsNoTracking()
@@ -299,8 +312,11 @@ public sealed class PostgreSqlHardCoinFundingGateway : IHardCoinFundingGateway
                 .SingleOrDefault();
 
             if (accountId == Guid.Empty)
+            {
                 throw new RegisteredPostingRejectedException(
                     "The funding posting references an economy account that is not provisioned.");
+            }
+
             accountIds.Add(line.Sequence, accountId);
         }
 

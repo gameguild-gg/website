@@ -52,7 +52,10 @@ internal sealed class ScriptedRelationalInterceptor : DbCommandInterceptor
     {
         Commands.Add(command.CommandText);
         if (_readers.Count == 0)
+        {
             throw new InvalidOperationException("No scripted reader was provided for the relational command.");
+        }
+
         return InterceptionResult<DbDataReader>.SuppressWithResult(_readers.Dequeue()(command));
     }
 
@@ -63,7 +66,10 @@ internal sealed class ScriptedRelationalInterceptor : DbCommandInterceptor
     {
         Commands.Add(command.CommandText);
         if (_nonQueries.Count == 0)
+        {
             throw new InvalidOperationException("No scripted result was provided for the relational command.");
+        }
+
         return InterceptionResult<int>.SuppressWithResult(_nonQueries.Dequeue()(command));
     }
 
@@ -76,11 +82,16 @@ internal sealed class ScriptedRelationalInterceptor : DbCommandInterceptor
             .ToArray();
         if (projectedColumns.Length == 0 ||
             projectedColumns.Any(column => !source.Columns.Contains(column)))
+        {
             return source;
+        }
 
         var reordered = new DataTable();
         foreach (var column in projectedColumns)
+        {
             reordered.Columns.Add(column, source.Columns[column]!.DataType);
+        }
+
         foreach (DataRow row in source.Rows)
         {
             var values = projectedColumns.Select(column => row[column]).ToArray();
@@ -97,7 +108,9 @@ internal sealed class TestDataTable
     public TestDataTable(params (string Name, Type Type)[] columns)
     {
         foreach (var (name, type) in columns)
+        {
             _table.Columns.Add(name, type);
+        }
     }
 
     public TestDataTable AddRow(params object?[] values)

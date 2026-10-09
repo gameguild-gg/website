@@ -111,13 +111,19 @@ public class AccessControlListEntry : EntityBase
         get
         {
             if (!IsActive)
+            {
                 return false;
+            }
 
             if (ExpiresAt is null)
+            {
                 return true;
+            }
 
             if (ExpiresAt.Value <= SystemClock.UtcNow)
+            {
                 return false;
+            }
 
             return true;
         }

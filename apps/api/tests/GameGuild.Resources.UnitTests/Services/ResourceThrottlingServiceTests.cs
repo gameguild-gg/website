@@ -12,19 +12,18 @@ public class ResourceThrottlingServiceTests
 {
     private readonly Mock<IResourceThrottlingPolicyRepository> _policyRepositoryMock;
     private readonly Mock<IResourceQuotaRepository> _quotaRepositoryMock;
-    private readonly Mock<ILogger<ResourceThrottlingService>> _loggerMock;
     private readonly ResourceThrottlingService _service;
 
     public ResourceThrottlingServiceTests()
     {
         _policyRepositoryMock = new Mock<IResourceThrottlingPolicyRepository>();
         _quotaRepositoryMock = new Mock<IResourceQuotaRepository>();
-        _loggerMock = new Mock<ILogger<ResourceThrottlingService>>();
+        Mock<ILogger<ResourceThrottlingService>> loggerMock = new Mock<ILogger<ResourceThrottlingService>>();
 
         _service = new ResourceThrottlingService(
             _policyRepositoryMock.Object,
             _quotaRepositoryMock.Object,
-            _loggerMock.Object);
+            loggerMock.Object);
     }
 
     #region SetPolicyAsync Tests

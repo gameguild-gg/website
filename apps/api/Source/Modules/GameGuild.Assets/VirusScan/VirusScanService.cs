@@ -264,11 +264,7 @@ public class VirusScanService : IVirusScanService
 
             return localResult with { ScanDuration = duration };
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Virus scan failed for {FileName}", fileName);
             return new VirusScanResult(
@@ -342,10 +338,14 @@ public class VirusScanService : IVirusScanService
     public bool RequiresSyncScan(string mimeType)
     {
         if (_options.Mode == VirusScanMode.Sync)
+        {
             return true;
+        }
 
         if (_options.Mode == VirusScanMode.Async)
+        {
             return false;
+        }
 
         // Hybrid mode: check high-risk MIME types
         return _options.SyncScanMimeTypes.Contains(mimeType, StringComparer.OrdinalIgnoreCase);

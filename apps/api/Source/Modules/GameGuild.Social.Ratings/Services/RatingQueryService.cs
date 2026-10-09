@@ -26,7 +26,7 @@ public class RatingQueryService(
         int take = 20,
         CancellationToken ct = default)
     {
-        _logger.LogDebug("Querying ratings: EntityId={EntityId}, EntityType={EntityType}, SortOrder={SortOrder}", entityId, entityType, sortOrder);
+        _logger.LogDebug("Querying ratings: EntityId={EntityId}, EntityType={EntityType}, SortOrder={SortOrder}", entityId, LogRedaction.Sanitize(entityType), sortOrder);
 
         var query = db.Set<Rating>()
             .Where(r => r.EntityId == entityId && r.EntityType == entityType && !r.IsDeleted)

@@ -27,20 +27,35 @@ public sealed class CreditLot
         long traceUnitsPerCoinUnit = 1)
     {
         ArgumentNullException.ThrowIfNull(ranges);
-        if (!Enum.IsDefined(provenance)) throw new ArgumentOutOfRangeException(nameof(provenance));
-        if (!Enum.IsDefined(state)) throw new ArgumentOutOfRangeException(nameof(state));
+        if (!Enum.IsDefined(provenance))
+        {
+            throw new ArgumentOutOfRangeException(nameof(provenance));
+        }
+
+        if (!Enum.IsDefined(state))
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount.Units);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(journalSequence);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(traceUnitsPerCoinUnit);
         if (originalMaturesAt < confirmedAt)
+        {
             throw new ArgumentException("Original maturity cannot precede confirmation.", nameof(originalMaturesAt));
+        }
 
         _ranges = Array.AsReadOnly(ranges.ToArray());
-        if (_ranges.Count == 0) throw new ArgumentException("At least one root trace range is required.", nameof(ranges));
+        if (_ranges.Count == 0)
+        {
+            throw new ArgumentException("At least one root trace range is required.", nameof(ranges));
+        }
 
         var tracedUnits = _ranges.Aggregate(0L, static (total, range) => checked(total + range.Length));
         if (tracedUnits != checked(amount.Units * traceUnitsPerCoinUnit))
+        {
             throw new ArgumentException("Root trace ranges must conserve the credit lot amount exactly.", nameof(ranges));
+        }
 
         Id = id;
         WalletId = walletId;

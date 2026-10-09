@@ -58,14 +58,22 @@ public sealed class AdRewardRequestRiskContextResolverTests
         context.Connection.RemoteIpAddress = address;
         context.User = new ClaimsPrincipal(new ClaimsIdentity(
             sessionId is null ? [] : [new Claim("sid", sessionId)], "test"));
-        if (asn is not null) context.Items[AdRewardRequestRiskContextResolver.VerifiedAsnItemKey] = asn;
+        if (asn is not null)
+        {
+            context.Items[AdRewardRequestRiskContextResolver.VerifiedAsnItemKey] = asn;
+        }
+
         return context;
     }
 
     private static AdRewardRequestRiskContextResolver CreateResolver(HttpContext context, string? key)
     {
         var values = new Dictionary<string, string?>();
-        if (key is not null) values[AdRewardRequestRiskContextResolver.HmacKeyConfiguration] = key;
+        if (key is not null)
+        {
+            values[AdRewardRequestRiskContextResolver.HmacKeyConfiguration] = key;
+        }
+
         return new AdRewardRequestRiskContextResolver(
             new HttpContextAccessor { HttpContext = context },
             new ConfigurationBuilder().AddInMemoryCollection(values).Build());

@@ -13,7 +13,6 @@ public class RoleRepositoryTests
 {
     private readonly Mock<IApplicationDbContext> _mockContext;
     private readonly Mock<DbSet<Role>> _mockRoleSet;
-    private readonly Mock<DbSet<UserRole>> _mockUserRoleSet;
     private readonly RoleRepository _repository;
     private readonly Fixture _fixture;
 
@@ -21,11 +20,11 @@ public class RoleRepositoryTests
     {
         _mockContext = new Mock<IApplicationDbContext>();
         _mockRoleSet = new Mock<DbSet<Role>>();
-        _mockUserRoleSet = new Mock<DbSet<UserRole>>();
+        Mock<DbSet<UserRole>> mockUserRoleSet = new Mock<DbSet<UserRole>>();
         _fixture = new Fixture();
 
         _mockContext.Setup(c => c.Set<Role>()).Returns(_mockRoleSet.Object);
-        _mockContext.Setup(c => c.Set<UserRole>()).Returns(_mockUserRoleSet.Object);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockUserRoleSet.Object);
 
         _repository = new RoleRepository(_mockContext.Object);
     }
@@ -493,6 +492,131 @@ public class RoleRepositoryTests
 
         // Assert
         result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RemoveRoleFromUserAsync_WhenAssignmentExists_SoftDeletesInsteadOfPhysicalDelete()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+        var userRole = new UserRole(userId, roleId, Guid.NewGuid()) { Version = 1 };
+        var userRoles = new List<UserRole> { userRole }.AsQueryable();
+
+        var mockSet = CreateMockDbSet(userRoles);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockSet.Object);
+
+        var repository = new RoleRepository(_mockContext.Object);
+
+        // Act
+        await repository.RemoveRoleFromUserAsync(userId, roleId);
+
+        // Assert - the row is soft-deleted (history preserved per #357), never removed.
+        userRole.DeletedAt.Should().NotBeNull();
+        userRole.IsDeleted.Should().BeTrue();
+        mockSet.Verify(s => s.Remove(It.IsAny<UserRole>()), Times.Never);
+        mockSet.Verify(s => s.Update(userRole), Times.Once);
+        _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RemoveRoleFromUserAsync_WhenAssignmentAlreadySoftDeleted_IsANoOp()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+        var userRole = new UserRole(userId, roleId, Guid.NewGuid()) { Version = 1 };
+        userRole.SoftDelete();
+        var userRoles = new List<UserRole> { userRole }.AsQueryable();
+
+        var mockSet = CreateMockDbSet(userRoles);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockSet.Object);
+
+        var repository = new RoleRepository(_mockContext.Object);
+
+        // Act
+        await repository.RemoveRoleFromUserAsync(userId, roleId);
+
+        // Assert - the query excludes soft-deleted rows, so nothing is touched.
+        mockSet.Verify(s => s.Update(It.IsAny<UserRole>()), Times.Never);
+        mockSet.Verify(s => s.Remove(It.IsAny<UserRole>()), Times.Never);
+        _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UserHasRoleAsync_WhenAssignmentIsSoftDeleted_ReturnsFalse_FailClosed()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+        var userRole = new UserRole(userId, roleId, null) { Version = 1 };
+        userRole.SoftDelete();
+        var userRoles = new List<UserRole> { userRole }.AsQueryable();
+
+        var mockSet = CreateMockDbSet(userRoles);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockSet.Object);
+
+        var repository = new RoleRepository(_mockContext.Object);
+
+        // Act
+        var result = await repository.UserHasRoleAsync(userId, roleId);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetUserRolesAsync_ExcludesSoftDeletedAssignments_FailClosed()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var role = new Role("KeptRole", "kept", null) { Id = Guid.NewGuid(), IsActive = true };
+        var removedRole = new Role("RemovedRole", "removed", null) { Id = Guid.NewGuid(), IsActive = true };
+
+        var activeAssignment = new UserRole(userId, role.Id, null) { Version = 1, Role = role };
+        var softDeletedAssignment = new UserRole(userId, removedRole.Id, null) { Version = 1, Role = removedRole };
+        softDeletedAssignment.SoftDelete();
+
+        var userRoles = new List<UserRole> { activeAssignment, softDeletedAssignment }.AsQueryable();
+
+        var mockSet = CreateMockDbSet(userRoles);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockSet.Object);
+
+        var repository = new RoleRepository(_mockContext.Object);
+
+        // Act
+        var result = await repository.GetUserRolesAsync(userId);
+
+        // Assert
+        result.Should().ContainSingle(r => r.Id == role.Id);
+    }
+
+    [Fact]
+    public async Task AssignRoleToUserAsync_WhenAssignmentIsSoftDeleted_RestoresIt()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var roleId = Guid.NewGuid();
+        var assignedBy = Guid.NewGuid();
+        var existing = new UserRole(userId, roleId, null) { Version = 1 };
+        existing.SoftDelete();
+        var userRoles = new List<UserRole> { existing }.AsQueryable();
+
+        var mockSet = CreateMockDbSet(userRoles);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockSet.Object);
+
+        var repository = new RoleRepository(_mockContext.Object);
+
+        // Act
+        await repository.AssignRoleToUserAsync(new UserRole(userId, roleId, assignedBy));
+
+        // Assert - the soft-deleted assignment is restored, not duplicated
+        // (protecting the unique (UserId, RoleId) index).
+        existing.IsDeleted.Should().BeFalse();
+        existing.DeletedAt.Should().BeNull();
+        existing.AssignedBy.Should().Be(assignedBy);
+        mockSet.Verify(s => s.Add(It.IsAny<UserRole>()), Times.Never);
+        _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // Helper method to create mock DbSet with async support

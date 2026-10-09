@@ -38,13 +38,17 @@ public sealed class DatabaseAccessControlListService(
             tenantId, resourceType, resourceId, principals, cancellationToken).ConfigureAwait(false);
 
         if (entries.Count == 0)
+        {
             return new TimeBoundAccessEvaluation(AccessLevel.None, EarliestEffectiveExpirationUtc: null);
+        }
 
         // Filter to only effective (active and not expired) entries
         var effectiveEntries = entries.Where(e => e.IsEffective).ToList();
 
         if (effectiveEntries.Count == 0)
+        {
             return new TimeBoundAccessEvaluation(AccessLevel.None, EarliestEffectiveExpirationUtc: null);
+        }
 
         // DENY-FIRST ALGORITHM:
         // 1. Find the highest deny level - if any deny matches, that's the ceiling
@@ -69,11 +73,15 @@ public sealed class DatabaseAccessControlListService(
 
             // If denied at None level (explicit block), no access at all
             if (highestDeny == AccessLevel.None)
+            {
                 return new TimeBoundAccessEvaluation(AccessLevel.None, earliestExpiration);
+            }
 
             // Find highest allowed level that's below the deny threshold
             if (allowEntries.Count == 0)
+            {
                 return new TimeBoundAccessEvaluation(AccessLevel.None, earliestExpiration);
+            }
 
             var highestAllow = allowEntries.Max(e => e.AccessLevel);
 

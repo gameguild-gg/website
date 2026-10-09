@@ -18,7 +18,9 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     public PayoutOperation Get(Guid operationId)
     {
         if (operationId == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation ID is required.", nameof(operationId));
+        }
 
         var row = ReadOperations($"""
             SELECT * FROM economy_private.read_payout_operation_by_id_v1({operationId})
@@ -32,9 +34,14 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     public PayoutOperation GetForTenant(Guid tenantId, Guid operationId)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (operationId == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation ID is required.", nameof(operationId));
+        }
 
         var row = ReadOperations($"""
             SELECT * FROM economy_private.read_payout_operation_for_tenant_v2({tenantId}, {operationId})
@@ -47,7 +54,10 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     public IReadOnlyList<PayoutOperation> ListForTenant(Guid tenantId, int take)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         ValidateTake(take);
         return ReadOperations($"""
             SELECT * FROM economy_private.read_payout_operations_for_tenant_v2({tenantId}, {take})
@@ -57,9 +67,15 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     public IReadOnlyList<PayoutOperation> ListForPayee(Guid tenantId, Guid payeeId, int take)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (payeeId == Guid.Empty)
+        {
             throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        }
+
         ValidateTake(take);
 
         return ReadOperations($"""
@@ -74,7 +90,10 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     public PayoutOperation? FindReplay(Guid tenantId, string idempotencyKey, string requestHash)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(requestHash);
 
@@ -83,10 +102,15 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
             """).SingleOrDefault();
 
         if (row is null)
+        {
             return null;
+        }
+
         if (!string.Equals(row.RequestHash, requestHash, StringComparison.Ordinal))
+        {
             throw new PayoutReplayConflictException(
-                "Payout idempotency key was reused with different inputs.");
+            "Payout idempotency key was reused with different inputs.");
+        }
 
         return ToContract(row);
     }
@@ -95,7 +119,9 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     {
         ArgumentNullException.ThrowIfNull(operation);
         if (operation.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(operation));
+        }
 
         Execute($"""
             SELECT economy_private.create_payout_operation_v2(
@@ -155,10 +181,15 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
             .SingleOrDefault();
 
         if (row is null)
+        {
             return null;
+        }
+
         if (!string.Equals(row.EventHash, eventHash, StringComparison.Ordinal))
+        {
             throw new PayoutReplayConflictException(
-                "Provider event ID was replayed with different evidence.");
+            "Provider event ID was replayed with different evidence.");
+        }
 
         return new PayoutProviderEventRecord(
             row.EventId,
@@ -252,6 +283,8 @@ public sealed class PostgreSqlPayoutOperationStore : IPayoutOperationStore
     private static void ValidateTake(int take)
     {
         if (take is < 1 or > 100)
+        {
             throw new ArgumentOutOfRangeException(nameof(take), "Take must be between 1 and 100.");
+        }
     }
 }

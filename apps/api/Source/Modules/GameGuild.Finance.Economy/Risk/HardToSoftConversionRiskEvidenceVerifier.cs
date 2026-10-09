@@ -22,9 +22,14 @@ public sealed class HardToSoftConversionRiskEvidenceVerifier(
         CancellationToken cancellationToken)
     {
         if (actorId == Guid.Empty)
+        {
             throw new ArgumentException("An actor is required.", nameof(actorId));
+        }
+
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
         var observedAt = DateTimeOffset.UtcNow;

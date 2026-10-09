@@ -275,7 +275,10 @@ public sealed class OutboxDispatcher(
                     return false;
                 }
             }).ConfigureAwait(false);
-            if (completed) return;
+            if (completed)
+            {
+                return;
+            }
         }
 
         await using var failureScope = scopeFactory.CreateAsyncScope();

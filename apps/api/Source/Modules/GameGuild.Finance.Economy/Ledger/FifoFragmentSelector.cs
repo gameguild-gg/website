@@ -18,14 +18,19 @@ public static class FifoFragmentSelector
 
         var available = eligible.Aggregate(0L, static (total, lot) => checked(total + lot.Amount.Units));
         if (available < requested.Units)
+        {
             throw new InsufficientFragmentsException(requested.Units - available);
+        }
 
         var remainingRequest = requested.Units;
         var selections = new List<FragmentSelection>();
 
         foreach (var lot in eligible)
         {
-            if (remainingRequest == 0) break;
+            if (remainingRequest == 0)
+            {
+                break;
+            }
 
             var unitsFromLot = Math.Min(remainingRequest, lot.Amount.Units);
             var split = SplitRanges(lot.Ranges, checked(unitsFromLot * lot.TraceUnitsPerCoinUnit));
@@ -58,7 +63,11 @@ public static class FifoFragmentSelector
             var unitsFromRange = Math.Min(unitsLeft, range.Length);
             var split = range.Take(unitsFromRange);
             selected.Add(split.Selected);
-            if (split.Remaining is { } remainder) remaining.Add(remainder);
+            if (split.Remaining is { } remainder)
+            {
+                remaining.Add(remainder);
+            }
+
             unitsLeft -= unitsFromRange;
         }
 

@@ -22,7 +22,8 @@ public class AuditReportService(
         Guid? tenantId = null,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Generating security dashboard for period {StartDate} to {EndDate}, TenantId={TenantId}", startDate, endDate, tenantId);
+        _logger.LogInformation("Generating security dashboard for period {StartDate} to {EndDate}, TenantId={TenantId}",
+            startDate, endDate, LogRedaction.RedactId(tenantId, "tid"));
 
         // Authentication statistics
         var authQuery = context.Set<AuthenticationAttempt>().AsNoTracking()

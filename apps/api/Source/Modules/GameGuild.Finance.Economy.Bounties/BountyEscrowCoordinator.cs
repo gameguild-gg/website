@@ -14,7 +14,10 @@ public static class BountyFeePolicy
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(units);
         if (feePpm is < 0 or >= PartsPerMillion)
+        {
             throw new ArgumentOutOfRangeException(nameof(feePpm));
+        }
+
         return (long)(new BigInteger(units) * feePpm / PartsPerMillion);
     }
 }
@@ -49,13 +52,20 @@ public sealed class BountyEscrowCoordinator
         {
             if (_postIdempotency.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.Id == command.Id) return duplicate;
+                if (duplicate.Id == command.Id)
+                {
+                    return duplicate;
+                }
+
                 throw new BountyIdempotencyConflictException(
                     "A bounty post idempotency key cannot identify another bounty.");
             }
 
             if (_bounties.ContainsKey(position.Id))
+            {
                 throw new BountyIdempotencyConflictException("The bounty ID already exists.");
+            }
+
             var roots = position.EscrowFragments.SelectMany(fragment => fragment.SelectedRanges)
                 .Select(range => range.Root).Distinct().ToArray();
             var fence = _fences.Capture(roots);
@@ -80,16 +90,23 @@ public sealed class BountyEscrowCoordinator
         {
             if (TryGetTerminal<BountyClaimResult>(
                     command.IdempotencyKey, command.BountyId, out var duplicate))
+            {
                 return duplicate;
+            }
 
             var bounty = Find(command.BountyId);
             EnsureOpen(bounty);
             if (command.ClaimedAt >= bounty.ExpiresAt)
+            {
                 throw new BountyExpiredException("The bounty can no longer be claimed.");
+            }
+
             if (command.ClaimantId == bounty.PosterId ||
                 command.ClaimantWalletId == bounty.PosterWalletId ||
                 command.ClaimantWalletId == bounty.EscrowWalletId)
+            {
                 throw new BountyClaimIneligibleException("A poster cannot claim their own bounty.");
+            }
 
             _eligibility.EnsureEligible(
                 bounty.Eligibility, command.Eligibility, command.ClaimantId, command.ClaimedAt);
@@ -151,14 +168,21 @@ public sealed class BountyEscrowCoordinator
         {
             if (TryGetTerminal<BountyReclaimResult>(
                     command.IdempotencyKey, command.BountyId, out var duplicate))
+            {
                 return duplicate;
+            }
 
             var bounty = Find(command.BountyId);
             EnsureOpen(bounty);
             if (command.PosterId != bounty.PosterId || command.PosterWalletId != bounty.PosterWalletId)
+            {
                 throw new BountyOwnershipException("Only the poster can reclaim this bounty.");
+            }
+
             if (command.ReclaimedAt < bounty.ExpiresAt)
+            {
                 throw new BountyNotExpiredException("The bounty cannot be reclaimed before expiry.");
+            }
 
             var roots = bounty.EscrowFragments.SelectMany(fragment => fragment.SelectedRanges)
                 .Select(range => range.Root).Distinct().ToArray();
@@ -195,7 +219,10 @@ public sealed class BountyEscrowCoordinator
 
     public BountyEscrowPosition Get(BountyId id)
     {
-        lock (_gate) return Find(id);
+        lock (_gate)
+        {
+            return Find(id);
+        }
     }
 
     public BountyStatus GetStatus(BountyId id, DateTimeOffset asOf)
@@ -293,7 +320,9 @@ public sealed class BountyEscrowCoordinator
     private static void EnsureOpen(BountyEscrowPosition bounty)
     {
         if (bounty.Status != BountyStatus.Open)
+        {
             throw new BountyTerminalConflictException("The bounty already has a terminal outcome.");
+        }
     }
 
     private static string ClaimEvidenceHash(BountyEscrowPosition bounty, ClaimBountyCommand command)

@@ -13,7 +13,9 @@ public sealed class OrderPaymentIntentService(
         var idempotencyKey = OrderPaymentService.CreateIdempotencyKey(intent.TenantId, intent.OrderId);
         var existing = await payments.GetByIdempotencyKeyAsync(idempotencyKey, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
+        {
             return await ReplayAsync(existing, intent, cancellationToken).ConfigureAwait(false);
+        }
 
         var proposed = Payment.Create(
             intent.TenantId,
@@ -24,7 +26,9 @@ public sealed class OrderPaymentIntentService(
             description: $"Payment for order {intent.OrderId}");
         var payment = await payments.AddAsync(proposed, cancellationToken).ConfigureAwait(false);
         if (payment.Id != proposed.Id)
+        {
             return await ReplayAsync(payment, intent, cancellationToken).ConfigureAwait(false);
+        }
 
         var setup = await stripe.CreatePaymentIntentAsync(new GatewayPaymentIntentSetupRequest(
             idempotencyKey,
@@ -42,7 +46,10 @@ public sealed class OrderPaymentIntentService(
         {
             payment.MarkAsProcessing(setup.TransactionId);
             if (!setup.OutcomeUnknown)
+            {
                 payment.MarkAsFailed(setup.ErrorMessage ?? "Stripe PaymentIntent setup failed.", setup.ErrorCode);
+            }
+
             await payments.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
             return new OrderPaymentIntentPreparation(
                 false,
@@ -72,10 +79,14 @@ public sealed class OrderPaymentIntentService(
     {
         if (payment.OrderId != intent.OrderId || payment.TenantId != intent.TenantId ||
             payment.Amount != intent.Amount || !string.Equals(payment.Currency, intent.Currency, StringComparison.Ordinal))
+        {
             return new OrderPaymentIntentPreparation(false, payment.Id, null, "Existing payment does not match the order.", OrderChargeState.Failed);
+        }
 
         if (string.IsNullOrWhiteSpace(payment.ExternalTransactionId))
+        {
             return new OrderPaymentIntentPreparation(false, payment.Id, null, "PaymentIntent creation requires reconciliation.", OrderChargeState.RequiresReconciliation);
+        }
 
         var provider = await stripe.GetPaymentAsync(payment.ExternalTransactionId, cancellationToken).ConfigureAwait(false);
         var state = provider.Status switch

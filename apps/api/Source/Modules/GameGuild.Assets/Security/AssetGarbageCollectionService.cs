@@ -207,7 +207,6 @@ public class AssetGarbageCollectionService : IAssetGarbageCollectionService
                 }
                 catch (Exception ex)
                 {
-                    errors++;
                     _logger.LogError(ex, "Error deleting content {ContentId}", content.Id);
                     messages.Add($"Error deleting {content.Id}: {ex.Message}");
                     throw;
@@ -221,7 +220,6 @@ public class AssetGarbageCollectionService : IAssetGarbageCollectionService
         }
         catch (Exception ex)
         {
-            errors++;
             _logger.LogError(ex, "Garbage collection failed");
             messages.Add($"GC error: {ex.Message}");
             throw;
@@ -241,7 +239,9 @@ public class AssetGarbageCollectionService : IAssetGarbageCollectionService
     {
         var content = await _contentRepository.GetByIdAsync(contentId, ct).ConfigureAwait(false);
         if (content == null)
+        {
             return;
+        }
 
         // Only mark if not already marked and reference count is 0
         if (content.MarkedForDeletionAt == null && content.ReferenceCount <= 0)
@@ -259,7 +259,9 @@ public class AssetGarbageCollectionService : IAssetGarbageCollectionService
     {
         var content = await _contentRepository.GetByIdAsync(contentId, ct).ConfigureAwait(false);
         if (content == null)
+        {
             return;
+        }
 
         if (content.MarkedForDeletionAt != null)
         {

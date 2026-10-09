@@ -17,7 +17,10 @@ public sealed class DeleteResourceQuotaCommandHandler(
 
         var quota = await resourceQuotaRepository.GetByTenantAndTypeAsync(request.TenantId, request.Type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return Unit.Value;
+        if (quota == null)
+        {
+            return Unit.Value;
+        }
 
         var previousUsage = quota.CurrentUsage;
         var softLimit = quota.SoftLimit;

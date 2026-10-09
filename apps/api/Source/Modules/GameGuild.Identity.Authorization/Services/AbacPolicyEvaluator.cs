@@ -86,7 +86,10 @@ public class AbacPolicyEvaluator(
 
         foreach (var policy in policies.OrderByDescending(p => p.Priority))
         {
-            if (!policy.IsEffective()) continue;
+            if (!policy.IsEffective())
+            {
+                continue;
+            }
 
             // Check if policy target matches
             var matches = EvaluatePolicy(policy, context);
@@ -141,28 +144,36 @@ public class AbacPolicyEvaluator(
         if (!string.IsNullOrEmpty(policy.SubjectConditions))
         {
             if (!EvaluateJsonConditions(policy.SubjectConditions, context.SubjectAttributes))
+            {
                 return false;
+            }
         }
 
         // Evaluate resource conditions
         if (!string.IsNullOrEmpty(policy.ResourceConditions))
         {
             if (!EvaluateJsonConditions(policy.ResourceConditions, context.ResourceAttributes))
+            {
                 return false;
+            }
         }
 
         // Evaluate environment conditions
         if (!string.IsNullOrEmpty(policy.EnvironmentConditions))
         {
             if (!EvaluateJsonConditions(policy.EnvironmentConditions, context.EnvironmentAttributes))
+            {
                 return false;
+            }
         }
 
         // Evaluate action conditions
         if (!string.IsNullOrEmpty(policy.ActionConditions))
         {
             if (!EvaluateJsonConditions(policy.ActionConditions, context.ActionAttributes))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -173,15 +184,22 @@ public class AbacPolicyEvaluator(
         try
         {
             var conditions = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonConditions);
-            if (conditions == null) return true;
+            if (conditions == null)
+            {
+                return true;
+            }
 
             foreach (var (key, expectedValue) in conditions)
             {
                 if (!attributes.TryGetValue(key, out var actualValue))
+                {
                     return false;
+                }
 
                 if (!CompareValues(actualValue, expectedValue))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -214,9 +232,11 @@ public class AbacPolicyEvaluator(
             case JsonValueKind.Array:
             {
                 if (actual is not IEnumerable<string> actualValues)
-                    return false;
+                    {
+                        return false;
+                    }
 
-                return expected
+                    return expected
                     .EnumerateArray()
                     .Any(e => actualValues.Contains(e.GetString() ?? string.Empty, StringComparer.OrdinalIgnoreCase));
             }
@@ -240,7 +260,10 @@ public class AbacRequestContextBuilder
     {
         _subjectAttributes["subject.user-id"] = userId;
         if (tenantId.HasValue)
+        {
             _subjectAttributes["subject.tenant-id"] = tenantId.Value;
+        }
+
         _subjectAttributes["subject.roles"] = roles.ToList();
         return this;
     }
@@ -255,9 +278,15 @@ public class AbacRequestContextBuilder
     {
         _resourceAttributes["resource.type"] = type;
         if (id.HasValue)
+        {
             _resourceAttributes["resource.id"] = id.Value;
+        }
+
         if (ownerId.HasValue)
+        {
             _resourceAttributes["resource.owner-id"] = ownerId.Value;
+        }
+
         return this;
     }
 
@@ -288,12 +317,20 @@ public class AbacRequestContextBuilder
         _environmentAttributes["environment.current-date"] = DateOnly.FromDateTime(SystemClock.UtcNow);
         
         if (!string.IsNullOrEmpty(ipAddress))
+        {
             _environmentAttributes["environment.ip-address"] = ipAddress;
+        }
+
         if (!string.IsNullOrEmpty(userAgent))
+        {
             _environmentAttributes["environment.user-agent"] = userAgent;
+        }
+
         if (!string.IsNullOrEmpty(geoCountry))
+        {
             _environmentAttributes["environment.geo-country"] = geoCountry;
-        
+        }
+
         return this;
     }
 

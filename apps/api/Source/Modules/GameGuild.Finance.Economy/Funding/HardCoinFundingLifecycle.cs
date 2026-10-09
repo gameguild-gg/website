@@ -98,7 +98,9 @@ public sealed record ProviderMonetaryLeg
         MonetaryLeg = Normalize(monetaryLeg, nameof(monetaryLeg));
         Key = string.Join(Separator, Provider, Environment, ConnectedAccount, ProviderObject, MonetaryLeg);
         if (Key.Length > MaximumPersistentSourceReferenceLength)
+        {
             throw new ArgumentOutOfRangeException(nameof(provider), "Provider monetary leg identity exceeds the persistent source reference limit.");
+        }
     }
 
     public string Provider { get; }
@@ -110,7 +112,11 @@ public sealed record ProviderMonetaryLeg
 
     private static string Normalize(string value, string parameterName)
     {
-        if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("Provider identity values are required.", parameterName);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Provider identity values are required.", parameterName);
+        }
+
         return value.Trim();
     }
 }
@@ -202,11 +208,16 @@ public sealed class HardCoinFundingClaim
         if (!CanTransition(State, target))
         {
             if (State != SourceConfirmationState.Observed)
+            {
                 throw new FundingTerminalStateConflictException(State, target);
+            }
+
             throw new InvalidFundingStateTransitionException(State, target);
         }
         if (occurredAt < Events[^1].OccurredAt)
+        {
             throw new ArgumentException("Funding evidence cannot be backdated.", nameof(occurredAt));
+        }
 
         var nextEvent = Event(
             SourceId,

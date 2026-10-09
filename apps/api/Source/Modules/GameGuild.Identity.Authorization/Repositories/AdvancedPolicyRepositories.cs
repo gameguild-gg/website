@@ -66,7 +66,9 @@ public class AbacPolicyRepository(DbContext context) : IAbacPolicyRepository
         var query = DbSet.Where(p => p.IsEnabled);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(p => p.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.OrderBy(p => p.Priority).ToListAsync(cancellationToken);
     }
@@ -135,7 +137,9 @@ public class ConditionalPolicyRepository(DbContext context) : IConditionalPolicy
         var query = DbSet.Where(p => p.IsEnabled);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(p => p.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.OrderBy(p => p.Priority).ToListAsync(cancellationToken);
     }
@@ -204,7 +208,9 @@ public class DataMaskingRuleRepository(DbContext context) : IDataMaskingRuleRepo
         var query = DbSet.Where(r => r.IsEnabled);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.ToListAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -289,7 +295,9 @@ public class PolicyBundleRepository(DbContext context) : IPolicyBundleRepository
         var query = DbSet.Where(b => b.Name == name && b.Status == PolicyBundleStatus.Active);
 
         if (tenantId.HasValue)
+        {
             query = query.Where(b => b.TenantId == new TenantId(tenantId.Value));
+        }
 
         return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -469,10 +477,14 @@ public class PolicyRegistryAuditLogRepository(DbContext context) : IPolicyRegist
         var query = DbSet.Where(l => l.PerformedBy == actorId);
 
         if (from.HasValue)
+        {
             query = query.Where(l => l.PerformedAt >= from.Value);
+        }
 
         if (to.HasValue)
+        {
             query = query.Where(l => l.PerformedAt <= to.Value);
+        }
 
         return await query.OrderByDescending(l => l.PerformedAt).ToListAsync(cancellationToken);
     }
@@ -487,10 +499,14 @@ public class PolicyRegistryAuditLogRepository(DbContext context) : IPolicyRegist
         var query = DbSet.Where(l => l.Action == action);
 
         if (from.HasValue)
+        {
             query = query.Where(l => l.PerformedAt >= from.Value);
+        }
 
         if (to.HasValue)
+        {
             query = query.Where(l => l.PerformedAt <= to.Value);
+        }
 
         return await query.OrderByDescending(l => l.PerformedAt).ToListAsync(cancellationToken);
     }

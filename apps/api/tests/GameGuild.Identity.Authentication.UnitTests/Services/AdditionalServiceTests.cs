@@ -380,18 +380,17 @@ public class PermissionServiceTests
 public class Web3ServiceTests
 {
     private readonly Web3Service _service;
-    private readonly IMemoryCache _memoryCache;
 
     public Web3ServiceTests()
     {
-        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        IMemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Authentication:Web3:Siwe:Origin"] = "https://localhost"
             })
             .Build();
-        _service = new Web3Service(NullLogger<Web3Service>.Instance, _memoryCache, configuration);
+        _service = new Web3Service(NullLogger<Web3Service>.Instance, memoryCache, configuration);
     }
 
     [Theory]

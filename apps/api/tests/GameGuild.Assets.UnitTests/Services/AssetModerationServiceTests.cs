@@ -6,19 +6,18 @@ public class AssetModerationServiceTests
 {
     private readonly Mock<IAssetContentRepository> _contentRepositoryMock;
     private readonly Mock<IAssetReportRepository> _reportRepositoryMock;
-    private readonly Mock<ILogger<AssetModerationService>> _loggerMock;
     private readonly AssetModerationService _service;
 
     public AssetModerationServiceTests()
     {
         _contentRepositoryMock = new Mock<IAssetContentRepository>();
         _reportRepositoryMock = new Mock<IAssetReportRepository>();
-        _loggerMock = new Mock<ILogger<AssetModerationService>>();
+        Mock<ILogger<AssetModerationService>> loggerMock = new Mock<ILogger<AssetModerationService>>();
 
         _service = new AssetModerationService(
             _contentRepositoryMock.Object,
             _reportRepositoryMock.Object,
-            _loggerMock.Object);
+            loggerMock.Object);
     }
 
     #region ModerateAsync Tests

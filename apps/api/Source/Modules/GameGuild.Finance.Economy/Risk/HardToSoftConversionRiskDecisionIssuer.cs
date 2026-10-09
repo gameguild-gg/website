@@ -48,21 +48,36 @@ public sealed class PostgreSqlHardToSoftConversionRiskDecisionIssuer(IApplicatio
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.ExternalEvidence);
         if (request.ActorId == Guid.Empty || request.TenantId == Guid.Empty || request.ReservationOperationId == Guid.Empty)
+        {
             throw new ArgumentException("The actor, tenant, and reservation operation are required.", nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(request.FeeHardCoinUnits);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.TotalHardCoinUnits);
         if (request.MaximumHardCoinUnitsPerDay <= 0)
+        {
             throw new EconomySelfServiceCommandRejectedException(
                 "HardCoin conversion requires a positive signed daily risk limit before rollout.");
+        }
+
         if (request.DecisionLifetimeSeconds is < 30 or > 900)
+        {
             throw new EconomySelfServiceCommandRejectedException(
                 "HardCoin conversion decision lifetime must be between 30 and 900 seconds.");
+        }
+
         if (request.TotalHardCoinUnits > request.MaximumHardCoinUnitsPerDay)
+        {
             throw new EconomySelfServiceCommandRejectedException(
                 "The requested conversion exceeds the signed daily HardCoin risk limit.");
+        }
+
         var jurisdiction = EconomyJurisdictionCode.Require(request.JurisdictionCode, nameof(request));
         if (request.PolicyVersion <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request), "The signed policy version must be positive.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.PolicyHash);
 
         var evidence = ExternalRiskEvidenceValidator.RequireFreshAllow(request.ExternalEvidence, request.RequestedAt);

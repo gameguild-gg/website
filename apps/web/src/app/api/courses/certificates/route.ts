@@ -1,4 +1,5 @@
 import { getToken } from '@/auth';
+import { assertSafeServiceUrl } from '@/lib/security/safe-remote-url';
 import { NextRequest, NextResponse } from 'next/server';
 
 const DEFAULT_API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -34,7 +35,8 @@ async function getAuthHeader(): Promise<Record<string, string> | NextResponse> {
 }
 
 async function getJson<T>(path: string, authHeader?: Record<string, string>): Promise<T | null> {
-  const response = await fetch(`${getApiUrl()}${path}`, {
+  const response = await fetch(assertSafeServiceUrl(`${getApiUrl()}${path}`, getApiUrl()), {
+    redirect: 'error',
     method: 'GET',
     headers: authHeader,
     cache: 'no-store',
@@ -169,7 +171,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return jsonError('templateId, enrollmentId, userId, and courseId are required to issue a certificate.', 400);
   }
 
-  const response = await fetch(`${getApiUrl()}/api/certificates/issue`, {
+  const response = await fetch(assertSafeServiceUrl(`${getApiUrl()}/api/certificates/issue`, getApiUrl()), {
+    redirect: 'error',
     method: 'POST',
     headers: {
       ...authHeader,

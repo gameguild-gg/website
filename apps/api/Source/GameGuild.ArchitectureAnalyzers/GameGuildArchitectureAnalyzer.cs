@@ -106,7 +106,9 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
         {
             var type = (INamedTypeSymbol)symbolContext.Symbol;
             if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct) || type.IsAbstract)
+            {
                 return;
+            }
 
             if (type.AllInterfaces.Any(IsCommandInterface))
             {
@@ -115,11 +117,13 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                     .SelectMany(constructor => constructor.Parameters)
                     .FirstOrDefault(parameter => parameter.Type.TypeKind == TypeKind.Delegate);
                 if (delegateParameter is not null)
+                {
                     symbolContext.ReportDiagnostic(Diagnostic.Create(
-                        ExecutableDelegateCommand,
-                        type.Locations.FirstOrDefault(),
-                        type.ToDisplayString(),
-                        delegateParameter.Name));
+                    ExecutableDelegateCommand,
+                    type.Locations.FirstOrDefault(),
+                    type.ToDisplayString(),
+                    delegateParameter.Name));
+                }
             }
 
             foreach (var contract in type.AllInterfaces.Where(IsRequestHandlerInterface))
@@ -134,10 +138,12 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
             }
 
             if (Implements(type, "GameGuild.IDurableIntegrationEvent") && !HasVersionedEventName(type))
+            {
                 symbolContext.ReportDiagnostic(Diagnostic.Create(
-                    UnversionedEvent,
-                    type.Locations.FirstOrDefault(),
-                    type.ToDisplayString()));
+                UnversionedEvent,
+                type.Locations.FirstOrDefault(),
+                type.ToDisplayString()));
+            }
         }, SymbolKind.NamedType);
 
         context.RegisterSyntaxNodeAction(AnalyzeMethod, Microsoft.CodeAnalysis.CSharp.SyntaxKind.MethodDeclaration);
@@ -147,21 +153,33 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
             var type = (INamedTypeSymbol)controllerContext.Symbol;
             if (type.TypeKind != TypeKind.Class || type.IsAbstract ||
                 !type.Name.EndsWith("Controller", StringComparison.Ordinal))
+            {
                 return;
+            }
 
             // A class-level [Authorize] or [AllowAnonymous] covers every action; base types
             // in other assemblies deliberately do not count (fail closed on inheritance).
             if (HasAuthorizationAttribute(type.GetAttributes()))
+            {
                 return;
+            }
 
             foreach (var method in type.GetMembers().OfType<IMethodSymbol>())
             {
                 if (method.MethodKind != MethodKind.Ordinary || method.DeclaredAccessibility != Accessibility.Public)
+                {
                     continue;
+                }
+
                 if (!IsHttpEndpoint(method))
+                {
                     continue;
+                }
+
                 if (HasAuthorizationAttribute(method.GetAttributes()))
+                {
                     continue;
+                }
 
                 controllerContext.ReportDiagnostic(Diagnostic.Create(
                     ControllerAuthorization,
@@ -178,25 +196,31 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
             foreach (var command in commands)
             {
                 if (!contracts.Contains(command.Key, SymbolEqualityComparer.Default))
+                {
                     endContext.ReportDiagnostic(Diagnostic.Create(
-                        MissingContract,
-                        command.Value,
-                        command.Key.ToDisplayString()));
+                    MissingContract,
+                    command.Value,
+                    command.Key.ToDisplayString()));
+                }
 
                 var count = handlersByCommand.TryGetValue(command.Key, out var registeredHandlers)
                     ? registeredHandlers.Count
                     : 0;
                 if (unavailableCommands.Contains(command.Key, SymbolEqualityComparer.Default))
+                {
                     count++;
+                }
                 // A contracts-only assembly deliberately declares commands whose handler lives in a
                 // consuming module. A single-compilation analyzer cannot see that downstream type;
                 // the solution-wide architecture test enforces cardinality across loaded assemblies.
                 if (!isContractsAssembly && count != 1)
+                {
                     endContext.ReportDiagnostic(Diagnostic.Create(
-                        HandlerCardinality,
-                        command.Value,
-                        command.Key.ToDisplayString(),
-                        count));
+                    HandlerCardinality,
+                    command.Value,
+                    command.Key.ToDisplayString(),
+                    count));
+                }
             }
         });
     }
@@ -222,13 +246,17 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                          || name.EndsWith("HttpPatch", StringComparison.Ordinal)
                          || name.EndsWith("HttpDelete", StringComparison.Ordinal));
         if (!isMutationAction)
+        {
             return;
+        }
 
         var isExplicitlyUnavailable = method.AttributeLists.SelectMany(list => list.Attributes)
             .Any(attribute => attribute.Name.ToString().EndsWith("UnavailableEndpoint", StringComparison.Ordinal)
                               || attribute.Name.ToString().EndsWith("UnavailableEndpointAttribute", StringComparison.Ordinal));
         if (isExplicitlyUnavailable)
+        {
             return;
+        }
 
         var noBusinessMutation = method.AttributeLists.SelectMany(list => list.Attributes)
             .FirstOrDefault(attribute => attribute.Name.ToString().EndsWith("NoBusinessMutationEndpoint", StringComparison.Ordinal)
@@ -236,7 +264,9 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
         if (noBusinessMutation?.ArgumentList?.Arguments.FirstOrDefault()?.Expression is LiteralExpressionSyntax reasonLiteral
             && reasonLiteral.Token.Value is string reason
             && !string.IsNullOrWhiteSpace(reason))
+        {
             return;
+        }
 
         var containingType = context.SemanticModel.GetDeclaredSymbol(method)?.ContainingType;
         if (containingType is not null && PerformsPersistence(
@@ -244,10 +274,12 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                 context.SemanticModel,
                 containingType,
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)))
+        {
             context.ReportDiagnostic(Diagnostic.Create(
-                ControllerPersistenceBypass,
-                method.Identifier.GetLocation(),
-                method.Identifier.ValueText));
+            ControllerPersistenceBypass,
+            method.Identifier.GetLocation(),
+            method.Identifier.ValueText));
+        }
 
         var sendsCommand = containingType is not null
             && SendsCommand(
@@ -256,10 +288,12 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                 containingType,
                 new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
         if (!sendsCommand)
+        {
             context.ReportDiagnostic(Diagnostic.Create(
-                ControllerPersistence,
-                method.Identifier.GetLocation(),
-                method.Identifier.ValueText));
+            ControllerPersistence,
+            method.Identifier.GetLocation(),
+            method.Identifier.ValueText));
+        }
     }
 
     private static bool PerformsPersistence(
@@ -271,19 +305,25 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
         foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             if (InvocationName(invocation).StartsWith("SaveChanges", StringComparison.Ordinal))
+            {
                 return true;
+            }
 
             if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol calledMethod
                 || !SymbolEqualityComparer.Default.Equals(calledMethod.ContainingType, containingType)
                 || !visited.Add(calledMethod))
+            {
                 continue;
+            }
 
             foreach (var syntaxReference in calledMethod.DeclaringSyntaxReferences)
             {
                 if (syntaxReference.GetSyntax() is MethodDeclarationSyntax calledDeclaration
                     && calledDeclaration.SyntaxTree == semanticModel.SyntaxTree
                     && PerformsPersistence(calledDeclaration, semanticModel, containingType, visited))
+                {
                     return true;
+                }
             }
         }
 
@@ -302,21 +342,33 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                 && Receiver(invocation) is { } receiver
                 && IsSender(semanticModel.GetTypeInfo(receiver).Type)
                 && SendsCommandArgument(invocation, semanticModel))
+            {
                 return true;
+            }
 
             if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol calledMethod
                 || !SymbolEqualityComparer.Default.Equals(calledMethod.ContainingType, containingType)
                 || !visited.Add(calledMethod))
+            {
                 continue;
+            }
 
             foreach (var syntaxReference in calledMethod.DeclaringSyntaxReferences)
             {
                 if (syntaxReference.GetSyntax() is not MethodDeclarationSyntax calledDeclaration)
+                {
                     continue;
+                }
+
                 if (calledDeclaration.SyntaxTree != semanticModel.SyntaxTree)
+                {
                     continue;
+                }
+
                 if (SendsCommand(calledDeclaration, semanticModel, containingType, visited))
+                {
                     return true;
+                }
             }
         }
 
@@ -330,7 +382,9 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                      attribute.AttributeClass?.ToDisplayString() == "GameGuild.UseCaseEventContractAttribute"))
         {
             if (attribute.ConstructorArguments.FirstOrDefault().Value is INamedTypeSymbol command)
+            {
                 builder.Add(command);
+            }
         }
 
         return builder.ToImmutable();
@@ -346,7 +400,9 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
                 argument.Key == "UnavailableReason").Value.Value as string;
             if (!string.IsNullOrWhiteSpace(unavailableReason)
                 && attribute.ConstructorArguments.FirstOrDefault().Value is INamedTypeSymbol command)
+            {
                 builder.Add(command);
+            }
         }
 
         return builder.ToImmutable();
@@ -393,14 +449,19 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
         foreach (var syntaxReference in type.DeclaringSyntaxReferences)
         {
             if (syntaxReference.GetSyntax() is not TypeDeclarationSyntax declaration)
+            {
                 continue;
+            }
+
             var eventNameProperty = declaration.Members.OfType<PropertyDeclarationSyntax>()
                 .FirstOrDefault(property => property.Identifier.ValueText == "EventName");
             var literal = eventNameProperty?.ExpressionBody?.Expression as LiteralExpressionSyntax
                           ?? eventNameProperty?.Initializer?.Value as LiteralExpressionSyntax;
             if (literal?.Token.ValueText is { } eventName
                 && Regex.IsMatch(eventName, @"\.v\d+$", RegexOptions.CultureInvariant))
+            {
                 return true;
+            }
         }
 
         return false;
@@ -417,7 +478,9 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
     private static bool IsManualEventPublish(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
     {
         if (InvocationName(invocation) is not ("Publish" or "PublishAsync"))
+        {
             return false;
+        }
 
         // Match the event publisher contract, not unrelated helpers named PublishAsync
         // (for example, KYC ledger persistence). Concrete implementations are included.
@@ -442,7 +505,9 @@ public sealed class GameGuildArchitectureAnalyzer : DiagnosticAnalyzer
     {
         var argument = invocation.ArgumentList.Arguments.FirstOrDefault();
         if (argument is null)
+        {
             return false;
+        }
 
         var argumentType = semanticModel.GetTypeInfo(argument.Expression).Type;
         return IsCommandType(argumentType);

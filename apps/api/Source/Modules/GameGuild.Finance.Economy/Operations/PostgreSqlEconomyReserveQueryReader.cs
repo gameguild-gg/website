@@ -93,7 +93,11 @@ public sealed class PostgreSqlEconomyReserveQueryReader : IEconomyReserveQueryRe
         ValidateTenant(tenantId);
         var head = await _db.Set<EconomyReserveHeadRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.IsActive, cancellationToken);
-        if (head is null) return null;
+        if (head is null)
+        {
+            return null;
+        }
+
         var allocations = await _db.Set<EconomyReserveAssetAllocationRow>().AsNoTracking()
             .Where(row => row.ReserveVersion == head.Version)
             .OrderBy(row => row.AssetKey)
@@ -132,41 +136,64 @@ public sealed class PostgreSqlEconomyReserveQueryReader : IEconomyReserveQueryRe
 
     private static (DateTimeOffset At, Guid Id)? DecodeDateCursor(string? cursor, string label)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var ticks) ||
             !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException($"{label} cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 
     private static (long Version, Guid Id)? DecodeVersionCursor(string? cursor)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var version) || version < 1 ||
             !Guid.TryParseExact(cursor[16..], "N", out var id))
+        {
             throw new ArgumentException("Reserve proposal cursor is invalid.", nameof(cursor));
+        }
+
         return (version, id);
     }
 
     private static void ValidateTenantAndLimit(Guid tenantId, int limit)
     {
         ValidateTenant(tenantId);
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
     }
 
     private static void ValidateTenantAndId(Guid tenantId, Guid id, string parameterName)
     {
         ValidateTenant(tenantId);
-        if (id == Guid.Empty) throw new ArgumentException("Identifier cannot be empty.", parameterName);
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Identifier cannot be empty.", parameterName);
+        }
     }
 
     private static void ValidateTenant(Guid tenantId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
     }
 }

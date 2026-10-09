@@ -29,7 +29,9 @@ public sealed class AiFundingFragment
         if (parentLot.Id != selection.ParentLotId ||
             parentLot.Amount.Currency != selection.Amount.Currency ||
             parentLot.TraceUnitsPerCoinUnit != selection.TraceUnitsPerCoinUnit)
+        {
             throw new ArgumentException("Funding selection is not bound to its parent lot.", nameof(selection));
+        }
 
         ParentLot = parentLot;
         Selection = selection;

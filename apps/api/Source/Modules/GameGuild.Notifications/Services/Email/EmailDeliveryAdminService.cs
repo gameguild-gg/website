@@ -95,7 +95,7 @@ public class EmailDeliveryAdminService(
 
         suppression.Release();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        logger.LogInformation("Suppression released by admin. EmailAddress: {EmailAddress}", normalized);
+        logger.LogInformation("Suppression released by admin. EmailAddress: {EmailAddress}", LogRedaction.MaskEmail(normalized));
         return Result.Success(true);
     }
 

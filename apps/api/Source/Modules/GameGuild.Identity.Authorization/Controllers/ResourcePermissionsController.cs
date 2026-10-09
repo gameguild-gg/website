@@ -110,8 +110,8 @@ public sealed class ResourcePermissionsController(ISender sender, ILogger<Resour
     {
         logger.LogInformation(
             "Sharing resource {ResourceType}/{ResourceId} with {UserCount} users",
-            command.ResourceType,
-            command.ResourceId,
+            LogRedaction.Sanitize(command.ResourceType),
+            LogRedaction.RedactId(command.ResourceId, "rid"),
             command.UserIds.Length);
 
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
@@ -138,9 +138,9 @@ public sealed class ResourcePermissionsController(ISender sender, ILogger<Resour
     {
         logger.LogInformation(
             "Updating permissions for user {TargetUserId} on resource {ResourceType}/{ResourceId}",
-            command.TargetUserId,
-            command.ResourceType,
-            command.ResourceId);
+            LogRedaction.RedactId(command.TargetUserId, "uid"),
+            LogRedaction.Sanitize(command.ResourceType),
+            LogRedaction.RedactId(command.ResourceId, "rid"));
 
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
@@ -166,9 +166,9 @@ public sealed class ResourcePermissionsController(ISender sender, ILogger<Resour
     {
         logger.LogInformation(
             "Removing access for user {TargetUserId} from resource {ResourceType}/{ResourceId}",
-            command.TargetUserId,
-            command.ResourceType,
-            command.ResourceId);
+            LogRedaction.RedactId(command.TargetUserId, "uid"),
+            LogRedaction.Sanitize(command.ResourceType),
+            LogRedaction.RedactId(command.ResourceId, "rid"));
 
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 

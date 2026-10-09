@@ -23,7 +23,9 @@ public sealed class TenantMembershipRolePermissionProvider(ITenantMemberReposito
             .ConfigureAwait(false);
 
         if (membership is not { IsActive: true } || string.IsNullOrWhiteSpace(membership.Role))
+        {
             return [];
+        }
 
         var role = TenantRole.FromString(membership.Role);
         var permissions = new HashSet<string>(

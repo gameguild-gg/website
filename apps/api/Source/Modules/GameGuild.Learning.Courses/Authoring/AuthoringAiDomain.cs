@@ -30,7 +30,9 @@ public sealed class AiAuthoringConversation : EntityBase
     {
         ValidateActor(tenantId, authorId);
         if (programId == Guid.Empty || contentId == Guid.Empty)
+        {
             throw new ArgumentException("Program and content IDs are required.");
+        }
 
         return new AiAuthoringConversation
         {
@@ -54,7 +56,9 @@ public sealed class AiAuthoringConversation : EntityBase
     private static void ValidateActor(Guid tenantId, Guid authorId)
     {
         if (tenantId == Guid.Empty || authorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI authoring requires a tenant-scoped user actor.");
+        }
     }
 }
 
@@ -72,9 +76,15 @@ public sealed class AiAuthoringMessage
     public static AiAuthoringMessage Create(Guid conversationId, Guid? runId, string role, string content, DateTimeOffset now)
     {
         if (conversationId == Guid.Empty)
+        {
             throw new ArgumentException("Conversation ID is required.", nameof(conversationId));
+        }
+
         if (role is not ("user" or "assistant"))
+        {
             throw new ArgumentOutOfRangeException(nameof(role), "Only user and assistant messages are supported.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(content);
 
         return new AiAuthoringMessage
@@ -138,9 +148,15 @@ public sealed class AiAuthoringRun : EntityBase
         DateTimeOffset now)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI authoring requires a tenant-scoped user actor.");
+        }
+
         if (programId == Guid.Empty || contentId == Guid.Empty || draftId == Guid.Empty || conversationId == Guid.Empty)
+        {
             throw new ArgumentException("Program, content, draft, and conversation IDs are required.");
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(baseDraftRevision);
         ArgumentException.ThrowIfNullOrWhiteSpace(instruction);
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
@@ -217,7 +233,10 @@ public sealed class AiAuthoringRun : EntityBase
     public void Fail(string code, string message, long releasedAmount, DateTimeOffset now)
     {
         if (Status is AiAuthoringRunStatus.Completed or AiAuthoringRunStatus.Cancelled)
+        {
             throw new InvalidOperationException("A terminal AI run cannot fail.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ErrorCode = code.Trim();
         ErrorMessage = message;
@@ -230,7 +249,10 @@ public sealed class AiAuthoringRun : EntityBase
     public void RequestCancellation(DateTimeOffset now)
     {
         if (Status == AiAuthoringRunStatus.Cancelled)
+        {
             return;
+        }
+
         EnsureStatus(AiAuthoringRunStatus.Running);
         ErrorCode = "AI_CANCEL_REQUESTED";
         ErrorMessage = "Cancellation requested by the author.";
@@ -240,9 +262,15 @@ public sealed class AiAuthoringRun : EntityBase
     public void Cancel(long releasedAmount, DateTimeOffset now)
     {
         if (Status == AiAuthoringRunStatus.Cancelled)
+        {
             return;
+        }
+
         if (Status is not (AiAuthoringRunStatus.Reserved or AiAuthoringRunStatus.Running))
+        {
             throw new InvalidOperationException("Only a reserved or running AI run can be cancelled.");
+        }
+
         ReleasedAmount = Math.Max(0, releasedAmount);
         ErrorCode = "AI_CANCELLED";
         ErrorMessage = "AI generation was cancelled by the author.";
@@ -254,7 +282,9 @@ public sealed class AiAuthoringRun : EntityBase
     private void EnsureStatus(AiAuthoringRunStatus expected)
     {
         if (Status != expected)
+        {
             throw new InvalidOperationException($"AI run must be {expected} but is {Status}.");
+        }
     }
 }
 
@@ -281,7 +311,10 @@ public sealed class AiAuthoringStreamEvent
         DateTimeOffset now)
     {
         if (runId == Guid.Empty)
+        {
             throw new ArgumentException("Run ID is required.", nameof(runId));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sequence);
         ArgumentException.ThrowIfNullOrWhiteSpace(type);
         ArgumentException.ThrowIfNullOrWhiteSpace(status);

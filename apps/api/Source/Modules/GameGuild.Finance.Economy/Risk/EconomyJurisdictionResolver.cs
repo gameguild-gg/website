@@ -29,9 +29,14 @@ public sealed class EconomyJurisdictionResolver(
         CancellationToken cancellationToken)
     {
         if (tenantId == Guid.Empty)
+        {
             throw new ArgumentException("A tenant is required.", nameof(tenantId));
+        }
+
         if (actorId == Guid.Empty)
+        {
             throw new ArgumentException("An actor is required.", nameof(actorId));
+        }
 
         var subjectReference = EconomySubjectReference.ForUser(tenantId, actorId);
         var evidence = await evidenceReader.ReadLatestAsync(
@@ -73,7 +78,9 @@ public sealed class EconomyJurisdictionResolver(
         string source)
     {
         if (string.IsNullOrWhiteSpace(candidate))
+        {
             return;
+        }
 
         var normalized = EconomyJurisdictionCode.NormalizeOptional(candidate);
         if (normalized is null || !string.Equals(normalized, approvedJurisdiction, StringComparison.Ordinal))

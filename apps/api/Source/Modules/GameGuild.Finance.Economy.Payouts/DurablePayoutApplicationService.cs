@@ -105,14 +105,19 @@ public sealed class DurablePayoutApplicationService(
         ValidateReservationCommand(command);
         var payoutRequest = requests.GetForReview(command.RequestId, command.TenantId);
         if (payoutRequest.State != PayoutRequestState.Approved)
+        {
             throw new PayoutEligibilityException("Only a fully approved payout request can reserve value.");
+        }
 
         var reviewEvents = requests.ListReviewAudit(payoutRequest.Id, payoutRequest.TenantId);
         ValidateDualControlReview(payoutRequest, reviewEvents);
         var requestHash = RequestHash(payoutRequest, reviewEvents);
         var idempotencyKey = new IdempotencyKey($"payout-request:{payoutRequest.Id:N}:reservation");
         var replay = operations.FindReplay(command.TenantId, idempotencyKey.Value, requestHash);
-        if (replay is not null) return replay;
+        if (replay is not null)
+        {
+            return replay;
+        }
 
         var now = timeProvider.GetUtcNow();
         var jurisdiction = await jurisdictionResolver.ResolveAsync(
@@ -129,7 +134,9 @@ public sealed class DurablePayoutApplicationService(
         var wallet = await wallets.GetWalletAsync(
             command.TenantId, payoutRequest.WalletId, cancellationToken).ConfigureAwait(false);
         if (wallet.OwnerId != payoutRequest.PayeeId)
+        {
             throw new PayoutEligibilityException("The approved payout wallet is not owned by its payee.");
+        }
 
         var account = await provider.GetAccountAsync(payoutRequest.PayeeId, cancellationToken).ConfigureAwait(false);
         ValidateReadyAccount(account, payoutRequest.PayeeId, now);
@@ -137,7 +144,10 @@ public sealed class DurablePayoutApplicationService(
             command.TenantId, jurisdiction.JurisdictionCode, now, cancellationToken).ConfigureAwait(false);
         if (payoutRequest.Amount.Units < settings.MinimumAmountUnits ||
             payoutRequest.Amount.Units > settings.MaximumAmountUnits)
+        {
             throw new PayoutEligibilityException("Payout amount is outside the signed policy limits.");
+        }
+
         var reserve = await reserves.CurrentHeadAsync(now, cancellationToken).ConfigureAwait(false);
         var fencingToken = await fencingTokens.AllocateAsync(cancellationToken).ConfigureAwait(false);
         var providerBindingHash = Hash(string.Join('|',
@@ -197,7 +207,9 @@ public sealed class DurablePayoutApplicationService(
         ValidateDispatchCommand(command);
         var operation = operations.GetForTenant(command.TenantId, command.OperationId);
         if (operation.State != PayoutOperationState.Reserved || operation.Version != command.ExpectedVersion)
+        {
             throw new PayoutStaleCommandException("Payout is not reserved at the requested version.");
+        }
 
         var now = timeProvider.GetUtcNow();
         var transactionBinding = PayoutProtectedOperationBinding.Dispatch(
@@ -215,21 +227,32 @@ public sealed class DurablePayoutApplicationService(
         var (policy, settings) = await LoadPolicyAsync(
             operation.TenantId, jurisdiction.JurisdictionCode, now, cancellationToken).ConfigureAwait(false);
         if (policy.Version != operation.PolicyVersion.Value)
+        {
             throw new PayoutStaleCommandException("The signed payout policy changed before dispatch.");
+        }
+
         var reserve = await reserves.CurrentHeadAsync(now, cancellationToken).ConfigureAwait(false);
         if (reserve.Version != operation.ReserveVersion ||
             reserve.AuthorizationEpoch != operation.ReserveAuthorizationEpoch)
+        {
             throw new PayoutStaleCommandException("The reserve authorization changed before payout dispatch.");
+        }
+
         var account = await provider.GetAccountAsync(operation.PayeeId, cancellationToken).ConfigureAwait(false);
         ValidateReadyAccount(account, operation.PayeeId, now);
         if (!string.Equals(account.ProviderAccountId, operation.ProviderAccountId, StringComparison.Ordinal) ||
             !string.Equals(account.DestinationHash, operation.DestinationHash, StringComparison.Ordinal))
+        {
             throw new PayoutProviderBindingException("The payout destination changed before dispatch.");
+        }
 
         var fragments = reservationReader.Read(
             operation.Id, PersistedFragmentReservationStatus.Reserved);
         if (fragments.Count == 0 || fragments.Sum(item => item.Amount.Units) != operation.Amount.Units)
+        {
             throw new PayoutStaleCommandException("Payout FIFO reservations are missing or incomplete.");
+        }
+
         var sourceRoots = fragments.Select(item => item.RootSourceStampId)
             .Distinct().OrderBy(item => item.Value).ToArray();
         return await settlementWorkflow.BeginDispatchAsync(
@@ -260,16 +283,28 @@ public sealed class DurablePayoutApplicationService(
         ArgumentNullException.ThrowIfNull(command);
         ValidateIdentity(command.TenantId, command.ActorId);
         if (command.OperationId == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation ID is required.", nameof(command));
+        }
+
         var operation = operations.GetForTenant(command.TenantId, command.OperationId);
         if (operation.State is not (PayoutOperationState.Dispatching or PayoutOperationState.Ambiguous))
+        {
             throw new PayoutStaleCommandException("Only an in-flight payout can be reconciled.");
+        }
+
         if (string.IsNullOrWhiteSpace(operation.ProviderPayoutId))
+        {
             throw new PayoutStaleCommandException("Provider payout identity is unavailable for reconciliation.");
+        }
+
         var providerEvent = await provider.ReconcileAsync(
             operation.Id, operation.ProviderPayoutId, cancellationToken).ConfigureAwait(false);
         if (providerEvent.Outcome is not (PayoutProviderOutcome.Succeeded or PayoutProviderOutcome.Failed))
+        {
             return operations.GetForTenant(operation.TenantId, operation.Id);
+        }
+
         return await settlementWorkflow.ApplyProviderEventAsync(
             new DurablePayoutProviderEventRequest(providerEvent), cancellationToken).ConfigureAwait(false);
     }
@@ -296,11 +331,17 @@ public sealed class DurablePayoutApplicationService(
                 "No signed payout policy is active for the jurisdiction.");
         if (policy.State != EconomyCapabilityPolicyState.Active ||
             policy.EffectiveAt > now || policy.ExpiresAt <= now || !policy.ProviderReady)
+        {
             throw new PayoutExecutionDisabledException("Payout policy or provider readiness is unavailable.");
+        }
+
         if (!string.Equals(Hash(policy.CanonicalPayload), policy.PayloadHash, StringComparison.Ordinal) ||
             !await policySignatureVerifier.VerifyAsync(
                 policy.CanonicalPayload, policy.KeyId, policy.Signature, cancellationToken).ConfigureAwait(false))
+        {
             throw new PayoutExecutionDisabledException("Payout policy signature is invalid.");
+        }
+
         return (policy, ParsePolicy(policy.CanonicalPayload));
     }
 
@@ -314,7 +355,10 @@ public sealed class DurablePayoutApplicationService(
             var minimum = root.GetProperty("minimumAmountUnits").GetInt64();
             var maximum = root.GetProperty("maximumAmountUnits").GetInt64();
             if (minimum <= 0 || maximum < minimum)
+            {
                 throw new PayoutExecutionDisabledException("The active payout policy limits are invalid.");
+            }
+
             return new PayoutExecutionPolicy(providerHash, minimum, maximum);
         }
         catch (Exception exception) when (exception is KeyNotFoundException or InvalidOperationException or
@@ -330,7 +374,10 @@ public sealed class DurablePayoutApplicationService(
         ArgumentNullException.ThrowIfNull(command);
         ValidateIdentity(command.TenantId, command.ActorId);
         if (command.RequestId == Guid.Empty)
+        {
             throw new ArgumentException("Payout request ID is required.", nameof(command));
+        }
+
         ArgumentNullException.ThrowIfNull(command.Reauthentication);
     }
 
@@ -339,8 +386,15 @@ public sealed class DurablePayoutApplicationService(
         ArgumentNullException.ThrowIfNull(command);
         ValidateIdentity(command.TenantId, command.ActorId);
         if (command.OperationId == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation ID is required.", nameof(command));
-        if (command.ExpectedVersion <= 0) throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
+        if (command.ExpectedVersion <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         ArgumentNullException.ThrowIfNull(command.Reauthentication);
     }
 
@@ -353,7 +407,9 @@ public sealed class DurablePayoutApplicationService(
         if (approvals.Length != 2 || approvals.Select(item => item.ActorId).Distinct().Count() != 2 ||
             approvals.Any(item => item.TenantId != request.TenantId || item.RequestId != request.Id ||
                                   item.ActorId == request.PayeeId || string.IsNullOrWhiteSpace(item.Reason)))
+        {
             throw new PayoutEligibilityException("Payout approval audit does not prove independent dual control.");
+        }
     }
 
     private static void ValidateReadyAccount(
@@ -364,7 +420,9 @@ public sealed class DurablePayoutApplicationService(
         ValidateAccountIdentity(account, payeeId);
         if (account.State != ConnectAccountState.Ready || !account.ChargesEnabled || !account.PayoutsEnabled ||
             account.ObservedAt > now || account.ExpiresAt <= now || string.IsNullOrWhiteSpace(account.EvidenceHash))
+        {
             throw new PayoutExecutionDisabledException("The connected payout account is not ready or current.");
+        }
     }
 
     private static void ValidateAccountIdentity(ConnectAccountSnapshot account, Guid payeeId)
@@ -372,7 +430,9 @@ public sealed class DurablePayoutApplicationService(
         ArgumentNullException.ThrowIfNull(account);
         if (account.PayeeId != payeeId || string.IsNullOrWhiteSpace(account.ProviderAccountId) ||
             string.IsNullOrWhiteSpace(account.DestinationHash))
+        {
             throw new PayoutProviderBindingException("Connected payout account is not bound to the payee.");
+        }
     }
 
     private static string RequestHash(
@@ -401,14 +461,19 @@ public sealed class DurablePayoutApplicationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
         var normalized = value.Trim().ToLowerInvariant();
         if (normalized.Length > 128)
+        {
             throw new ArgumentOutOfRangeException(parameterName, "Payout bindings cannot exceed 128 characters.");
+        }
+
         return normalized;
     }
 
     private static void ValidateIdentity(Guid tenantId, Guid actorId)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new ArgumentException("Payout tenant and actor IDs are required.");
+        }
     }
 
     private static string Hash(string value) => Convert.ToHexStringLower(

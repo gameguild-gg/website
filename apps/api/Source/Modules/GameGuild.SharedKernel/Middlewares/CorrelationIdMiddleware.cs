@@ -55,7 +55,9 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next, ILogger<Correl
             var raw = existingCorrelationId.ToString();
             // Sanitize: truncate to max length and strip control characters to prevent log injection
             if (raw.Length > MaxCorrelationIdLength)
+            {
                 raw = raw[..MaxCorrelationIdLength];
+            }
 
             return SanitizeCorrelationId(raw);
         }
@@ -76,7 +78,9 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next, ILogger<Correl
         foreach (var c in span)
         {
             if (c >= ' ' && c <= '~')
+            {
                 buffer[pos++] = c;
+            }
         }
         return new string(buffer[..pos]);
     }

@@ -393,9 +393,20 @@ internal class TaxCalculator
 {
     public TaxResult CalculateTax(decimal subtotal, decimal rate)
     {
-        if (subtotal < 0) throw new ArgumentException("Subtotal cannot be negative", nameof(subtotal));
-        if (rate < 0) throw new ArgumentException("Rate cannot be negative", nameof(rate));
-        if (rate > 1) throw new ArgumentException("Rate cannot exceed 100%", nameof(rate));
+        if (subtotal < 0)
+        {
+            throw new ArgumentException("Subtotal cannot be negative", nameof(subtotal));
+        }
+
+        if (rate < 0)
+        {
+            throw new ArgumentException("Rate cannot be negative", nameof(rate));
+        }
+
+        if (rate > 1)
+        {
+            throw new ArgumentException("Rate cannot exceed 100%", nameof(rate));
+        }
 
         var taxAmount = Math.Round(subtotal * rate, 2);
         
@@ -410,8 +421,11 @@ internal class TaxCalculator
 
     public TaxResult ExtractTaxFromInclusive(decimal inclusiveAmount, decimal rate)
     {
-        if (rate < 0) throw new ArgumentException("Rate cannot be negative", nameof(rate));
-        
+        if (rate < 0)
+        {
+            throw new ArgumentException("Rate cannot be negative", nameof(rate));
+        }
+
         var subtotal = Math.Round(inclusiveAmount / (1 + rate), 2);
         var taxAmount = inclusiveAmount - subtotal;
 

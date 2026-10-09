@@ -46,14 +46,22 @@ public sealed class ProjectInvitation : EntityBase<Guid>
 
     public void Accept()
     {
-        if (!CanRespond) throw new InvalidOperationException("Only pending, non-expired invitations can be accepted.");
+        if (!CanRespond)
+        {
+            throw new InvalidOperationException("Only pending, non-expired invitations can be accepted.");
+        }
+
         Status = ProjectInvitationStatus.Accepted;
         RespondedAt = SystemClock.UtcNow;
     }
 
     public void Decline()
     {
-        if (!CanRespond) throw new InvalidOperationException("Only pending, non-expired invitations can be declined.");
+        if (!CanRespond)
+        {
+            throw new InvalidOperationException("Only pending, non-expired invitations can be declined.");
+        }
+
         Status = ProjectInvitationStatus.Declined;
         RespondedAt = SystemClock.UtcNow;
     }

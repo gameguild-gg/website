@@ -66,7 +66,10 @@ public class DelegatedAdminService(
             try
             {
                 var userIds = System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(scope.AllowedUserIds);
-                if (userIds != null) managedUsers.AddRange(userIds);
+                if (userIds != null)
+                {
+                    managedUsers.AddRange(userIds);
+                }
             }
             catch (System.Text.Json.JsonException ex)
             {
@@ -95,7 +98,10 @@ public class DelegatedAdminService(
             try
             {
                 var types = System.Text.Json.JsonSerializer.Deserialize<List<string>>(scope.AllowedResourceTypes);
-                if (types != null) resourceTypes.AddRange(types);
+                if (types != null)
+                {
+                    resourceTypes.AddRange(types);
+                }
             }
             catch (System.Text.Json.JsonException ex)
             {

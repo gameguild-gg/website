@@ -45,13 +45,17 @@ public sealed class PostgreSqlProviderReversalGateway : IProviderReversalGateway
         ArgumentNullException.ThrowIfNull(request.Command);
         ArgumentNullException.ThrowIfNull(request.Authority);
         if (request.DispatchSnapshotHash is { Length: > 128 })
+        {
             throw new ArgumentException("Dispatch snapshot hashes cannot exceed 128 characters.", nameof(request));
+        }
 
         var command = request.Command;
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(command.CumulativeProviderHardUnits);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Evidence);
         if (!Enum.IsDefined(command.IrrecoverableDisposition))
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
 
         var evidenceHash = Convert.ToHexString(SHA256.HashData(
             Encoding.UTF8.GetBytes(command.Evidence.Trim()))).ToLowerInvariant();

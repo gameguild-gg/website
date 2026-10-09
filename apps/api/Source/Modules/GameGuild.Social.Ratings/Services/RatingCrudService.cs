@@ -68,7 +68,9 @@ public class RatingCrudService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure<Rating>(RatingErrors.NotFound);
+        }
 
         return Result.Success(rating);
     }
@@ -85,7 +87,9 @@ public class RatingCrudService(
                 !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure<Rating>(RatingErrors.NotFound);
+        }
 
         return Result.Success(rating);
     }
@@ -98,7 +102,9 @@ public class RatingCrudService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && r.UserId == userId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure(RatingErrors.NotFound);
+        }
 
         rating.SoftDelete();
         await db.SaveChangesAsync(ct).ConfigureAwait(false);

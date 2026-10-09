@@ -66,7 +66,9 @@ public sealed class CloudCostIngestionService(IApplicationDbContext context) : I
                     cancellationToken)
                 .ConfigureAwait(false);
             if (exists)
+            {
                 continue;
+            }
 
             context.Set<CloudPriceRate>().Add(new CloudPriceRate
             {
@@ -87,7 +89,9 @@ public sealed class CloudCostIngestionService(IApplicationDbContext context) : I
         }
 
         if (imported > 0)
+        {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return imported;
     }
@@ -106,7 +110,9 @@ public sealed class CloudCostIngestionService(IApplicationDbContext context) : I
                     cancellationToken)
                 .ConfigureAwait(false);
             if (exists)
+            {
                 continue;
+            }
 
             context.Set<ActualCloudCostEntry>().Add(new ActualCloudCostEntry
             {
@@ -130,7 +136,9 @@ public sealed class CloudCostIngestionService(IApplicationDbContext context) : I
         }
 
         if (imported > 0)
+        {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return imported;
     }
@@ -181,9 +189,14 @@ public sealed class InternalCostValuationService(
                 .FirstOrDefaultAsync(cancellationToken)
                 .ConfigureAwait(false);
             if (rate is null)
+            {
                 return false;
+            }
+
             if (rate.UsdExchangeRate <= 0)
+            {
                 return false;
+            }
 
             var sourceCost = usage.Quantity * rate.SourceUnitPrice;
             var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -227,11 +240,15 @@ public sealed class PendingCostValuationService(
         foreach (var entry in pending)
         {
             if (await valuationService.TryValueAsync(entry, cancellationToken).ConfigureAwait(false))
+            {
                 valued++;
+            }
         }
 
         if (pending.Count > 0)
+        {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return valued;
     }

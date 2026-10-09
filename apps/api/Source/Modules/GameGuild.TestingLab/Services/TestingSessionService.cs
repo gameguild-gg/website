@@ -64,7 +64,11 @@ public sealed class TestingSessionService(
     public async Task<bool> CanUserJoinSessionAsync(Guid userId, Guid testingSessionId)
     {
         var session = await sessions.GetTestingSessionByIdAsync(testingSessionId).ConfigureAwait(false);
-        if (session == null || !session.AllowsRegistration) return false;
+        if (session == null || !session.AllowsRegistration)
+        {
+            return false;
+        }
+
         return !(await participants.GetSessionRegistrationsAsync(testingSessionId).ConfigureAwait(false))
             .Any(registration => registration.UserId == userId && registration.DeletedAt == null);
     }
@@ -79,7 +83,10 @@ public sealed class TestingSessionService(
     public async Task<TestingSession> LeaveSessionAsync(Guid userId, Guid testingSessionId)
     {
         if (!await participants.UnregisterFromSessionAsync(testingSessionId, userId).ConfigureAwait(false))
+        {
             throw new InvalidOperationException("User is not registered for this session.");
+        }
+
         return await sessions.GetTestingSessionByIdAsync(testingSessionId).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Testing session not found after cancellation.");
     }

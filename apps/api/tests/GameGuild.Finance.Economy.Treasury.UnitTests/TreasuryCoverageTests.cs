@@ -32,8 +32,11 @@ public sealed class TreasuryCoverageTests
         ];
 
         foreach (var observation in invalid)
+        {
             ((Action)(() => TreasuryAssetAllocator.Allocate([observation], Now)))
-                .Should().Throw<ReserveInputUnknownException>();
+            .Should().Throw<ReserveInputUnknownException>();
+        }
+
         ((Action)(() => TreasuryAssetAllocator.Allocate(null!, Now))).Should().Throw<ArgumentNullException>();
     }
 
@@ -57,8 +60,10 @@ public sealed class TreasuryCoverageTests
             Policy(new TreasuryBufferRule(0, 1_000_000))
         ];
         foreach (var policy in invalidPolicies)
+        {
             ((Action)(() => policy.Calculate(liabilities, zero, Now)))
-                .Should().Throw<ReserveInputUnknownException>();
+            .Should().Throw<ReserveInputUnknownException>();
+        }
 
         var negativeExposure = zero with { ChargebackRefundUsdMinor = -1 };
         ((Action)(() => Policy(new TreasuryBufferRule(0, 0)).Calculate(liabilities, negativeExposure, Now)))
@@ -81,9 +86,11 @@ public sealed class TreasuryCoverageTests
             new TreasuryOpenServiceAuthorization("key", "ai", 0, -1)
         ];
         foreach (var authorization in invalid)
+        {
             ((Action)(() => TreasuryLiabilityCalculator.Calculate(
-                    store, new HashSet<WalletId>(), [cost], [authorization], Now)))
-                .Should().Throw<ReserveInputUnknownException>();
+                store, new HashSet<WalletId>(), [cost], [authorization], Now)))
+            .Should().Throw<ReserveInputUnknownException>();
+        }
 
         ((Action)(() => TreasuryLiabilityCalculator.Calculate(
                 store, new HashSet<WalletId>(), [null!], [], Now)))
@@ -224,8 +231,11 @@ public sealed class TreasuryCoverageTests
             valid with { ExpiresAt = Now }
         ];
         foreach (var observation in invalid)
+        {
             ((Action)(() => Reconciler().Reconcile(head, [observation], Now)))
-                .Should().Throw<ReserveInputUnknownException>();
+            .Should().Throw<ReserveInputUnknownException>();
+        }
+
         ((Action)(() => Reconciler().Reconcile(head, [valid, valid], Now)))
             .Should().Throw<ReserveInputUnknownException>();
         ((Action)(() => Reconciler().Reconcile(null!, [], Now))).Should().Throw<ArgumentNullException>();

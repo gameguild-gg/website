@@ -367,7 +367,7 @@ export class TestingLabTestingEventsModule {
    */
   async getTestingEventsApplicationsTesterEligibility(
     eventId: string,
-    query?: { testerUserIds?: Array<string> },
+    query?: { testerUserIds?: string[] },
   ): Promise<Result<Types.TestingLabTestingApplicationTesterEligibilityProjection[], ApiError>> {
     const url = `/v1/testing/events/${eventId}/applications/tester-eligibility`;
 

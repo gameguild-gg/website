@@ -71,7 +71,9 @@ public class FeedbackQualityRating : EntityBase
     public void UpdateRating(int rating, string? reason = null)
     {
         if (rating < 1 || rating > 5)
+        {
             throw new ArgumentOutOfRangeException(nameof(rating), "Quality rating must be between 1 and 5");
+        }
 
         QualityRating = rating;
         Reason = reason;

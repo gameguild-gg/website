@@ -11,15 +11,35 @@ public sealed record HoldContract
         DateTimeOffset effectiveAt,
         DateTimeOffset? releasedAt)
     {
-        if (amount.Units == 0) throw new ArgumentOutOfRangeException(nameof(amount));
-        if (!Enum.IsDefined(reason)) throw new ArgumentOutOfRangeException(nameof(reason));
-        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+        if (amount.Units == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount));
+        }
+
+        if (!Enum.IsDefined(reason))
+        {
+            throw new ArgumentOutOfRangeException(nameof(reason));
+        }
+
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
         if (status == HoldStatus.Active && releasedAt is not null)
+        {
             throw new ArgumentException("Active holds cannot have a release timestamp.", nameof(releasedAt));
+        }
+
         if (status != HoldStatus.Active && releasedAt is null)
+        {
             throw new ArgumentException("Terminal holds require a release timestamp.", nameof(releasedAt));
+        }
+
         if (releasedAt < effectiveAt)
+        {
             throw new ArgumentException("A hold cannot be released before it becomes effective.", nameof(releasedAt));
+        }
 
         Id = id;
         WalletId = walletId;

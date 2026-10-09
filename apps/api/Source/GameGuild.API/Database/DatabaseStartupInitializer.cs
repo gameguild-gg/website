@@ -21,7 +21,9 @@ internal static class DatabaseStartupInitializer
         if (!DatabaseStartupConfiguration.ShouldRunStartupInitialization(
                 app.Configuration,
                 app.Environment.EnvironmentName))
+        {
             return true;
+        }
 
         var databaseConnectivityProbe = app.Services.GetRequiredService<DatabaseConnectivityProbe>();
         if (!await databaseConnectivityProbe.IsReachableAsync().ConfigureAwait(false))
@@ -31,7 +33,9 @@ internal static class DatabaseStartupInitializer
         }
 
         if (!await ApplyMigrationsAsync(app).ConfigureAwait(false))
+        {
             return false;
+        }
 
         try
         {
@@ -92,7 +96,9 @@ internal static class DatabaseStartupInitializer
                     : scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
                 if (!db.Database.IsRelational())
+                {
                     return true;
+                }
 
                 foreach (var prerequisite in scope.ServiceProvider.GetServices<IDatabaseMigrationPrerequisite>())
                 {
@@ -126,7 +132,9 @@ internal static class DatabaseStartupInitializer
                 }
 
                 if (ownsMigrationContext)
+                {
                     await GrantRuntimeRolePrivilegesAsync(app, db).ConfigureAwait(false);
+                }
 
                 return true;
             }
@@ -184,12 +192,16 @@ internal static class DatabaseStartupInitializer
     private static async Task GrantRuntimeRolePrivilegesAsync(WebApplication app, DbContext migrationDb)
     {
         if (!(app.Configuration.GetValue<bool?>("Database:GrantRuntimeRoleAfterMigrations") ?? true))
+        {
             return;
+        }
 
         var runtimeConnectionString = PostgresConnectionString.Resolve(app.Configuration);
         var migrationConnectionString = DatabaseStartupConfiguration.ResolveMigrationConnectionString(app.Configuration);
         if (string.IsNullOrWhiteSpace(runtimeConnectionString) || string.IsNullOrWhiteSpace(migrationConnectionString))
+        {
             return;
+        }
 
         var runtimeUser = new NpgsqlConnectionStringBuilder(runtimeConnectionString).Username;
         var migrationUser = new NpgsqlConnectionStringBuilder(migrationConnectionString).Username;

@@ -8,7 +8,11 @@ public readonly record struct BountyId
 {
     public BountyId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Bounty ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Bounty ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -58,7 +62,10 @@ public sealed class BountyEscrowFragment
         ParentLot = parentLot ?? throw new ArgumentNullException(nameof(parentLot));
         ArgumentNullException.ThrowIfNull(selection);
         if (selection.ParentLotId != parentLot.Id || selection.Amount.Currency != parentLot.Amount.Currency)
+        {
             throw new ArgumentException("Escrow selection must match its parent lot.", nameof(selection));
+        }
+
         Selection = selection;
     }
 

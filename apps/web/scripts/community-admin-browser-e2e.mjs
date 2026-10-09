@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 
 const apiBaseUrl = (process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080').replace(/\/$/, '');
@@ -9,7 +10,7 @@ const adminPassword = process.env.E2E_SYSTEM_ADMIN_PASSWORD ?? 'Admin123!';
 const headless = !['0', 'false', 'no'].includes((process.env.COMMUNITY_ADMIN_E2E_HEADLESS ?? 'true').toLowerCase());
 
 function unique() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${Date.now()}-${randomUUID().replaceAll('-', '').slice(0, 8)}`;
 }
 
 async function apiRequest(path, init = {}, accessToken) {

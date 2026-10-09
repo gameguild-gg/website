@@ -33,7 +33,9 @@ public sealed class AuthorizationTenantResolver : IAuthorizationTenantResolver
         {
             var headerValue = context.Request.Headers[_options.Resolution.HeaderName].FirstOrDefault();
             if (!string.IsNullOrEmpty(headerValue))
+            {
                 return headerValue;
+            }
         }
 
         // Try subdomain
@@ -53,7 +55,9 @@ public sealed class AuthorizationTenantResolver : IAuthorizationTenantResolver
         {
             var queryValue = context.Request.Query[_options.Resolution.QueryStringKey].FirstOrDefault();
             if (!string.IsNullOrEmpty(queryValue))
+            {
                 return queryValue;
+            }
         }
 
         return null;

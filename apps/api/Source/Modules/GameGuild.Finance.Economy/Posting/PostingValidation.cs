@@ -49,13 +49,19 @@ public static class PostingMatrix
             request.Template.Kind,
             PostingTemplate.CurrentVersion);
         if (!Enum.IsDefined(request.Template.Kind) || registeredTemplate is null)
+        {
             Add(errors, PostingErrorCode.UnsupportedTemplate, "Posting template is not registered.");
+        }
 
         if (request.Template.Version != PostingTemplate.CurrentVersion)
+        {
             Add(errors, PostingErrorCode.UnsupportedTemplateVersion, "Only the current immutable template version is accepted.");
+        }
 
         if (registeredTemplate is not null && request.Authority != registeredTemplate.Authority)
+        {
             Add(errors, PostingErrorCode.UnauthorizedAuthority, "Posting authority does not match the selected template.");
+        }
 
         ValidateSequences(request.Lines, errors);
         ValidateAmountsAndCurrencyBalance(request.Lines, errors);
@@ -68,20 +74,27 @@ public static class PostingMatrix
     public static void EnsureValid(PostingRequest request)
     {
         var result = Validate(request);
-        if (!result.IsValid) throw new PostingValidationException(result.Errors);
+        if (!result.IsValid)
+        {
+            throw new PostingValidationException(result.Errors);
+        }
     }
 
     private static void ValidateSequences(IReadOnlyList<PostingLine> lines, ICollection<PostingValidationError> errors)
     {
         var ordered = lines.Select(line => line.Sequence).Order().ToArray();
         if (ordered.Length == 0 || ordered.Distinct().Count() != ordered.Length || ordered.Where((sequence, index) => sequence != index + 1).Any())
+        {
             Add(errors, PostingErrorCode.InvalidSequence, "Line sequences must be unique and contiguous from one.");
+        }
     }
 
     private static void ValidateAmountsAndCurrencyBalance(IReadOnlyList<PostingLine> lines, ICollection<PostingValidationError> errors)
     {
         if (lines.Any(line => line.Amount.Units <= 0))
+        {
             Add(errors, PostingErrorCode.InvalidAmount, "Posting lines must carry positive integer units.");
+        }
 
         foreach (var currencyGroup in lines.GroupBy(line => line.Amount.Currency))
         {
@@ -90,7 +103,9 @@ public static class PostingMatrix
                 var debits = currencyGroup.Where(line => line.Side == EntrySide.Debit).Aggregate(0L, (total, line) => checked(total + line.Amount.Units));
                 var credits = currencyGroup.Where(line => line.Side == EntrySide.Credit).Aggregate(0L, (total, line) => checked(total + line.Amount.Units));
                 if (debits != credits)
+                {
                     Add(errors, PostingErrorCode.UnbalancedCurrency, $"{currencyGroup.Key} debits and credits must balance independently.");
+                }
             }
             catch (OverflowException)
             {
@@ -109,13 +124,18 @@ public static class PostingMatrix
         };
 
         if (requiredState.HasValue && request.Source?.State != requiredState)
+        {
             Add(errors, PostingErrorCode.InvalidSourceState, $"Template requires {requiredState} source evidence.");
+        }
+
         if (request.Template.Kind is PostingTemplateKind.ProviderReversalPartial or
             PostingTemplateKind.ProviderConvertedSoftReversal or
             PostingTemplateKind.ProviderReversalDebt or
             PostingTemplateKind.ProviderReversalLoss &&
             request.Source?.State is not (SourceConfirmationState.Disputed or SourceConfirmationState.Reversed))
+        {
             Add(errors, PostingErrorCode.InvalidSourceState, "Template requires disputed or reversed source evidence.");
+        }
     }
 
     private static void ValidateShape(PostingRequest request, ICollection<PostingValidationError> errors)
@@ -205,13 +225,23 @@ public static class PostingMatrix
             case PostingTemplateKind.BountyClaim:
                 var claimEscrowAccount = EscrowFor(lines[1].Amount.Currency);
                 if (claimEscrowAccount.HasValue)
+                {
                     Match(lines[0], EntrySide.Debit, claimEscrowAccount.Value, lines[1].Amount.Currency, false, null, errors);
+                }
                 else
+                {
                     Add(errors, PostingErrorCode.InvalidCurrency, "Bounty claim requires a supported coin currency.");
+                }
+
                 if (lines[1].Amount.Currency == CurrencyCode.HardCoin)
+                {
                     ValidateLiability(lines[1], EntrySide.Credit, ProvenanceKind.EarnedHard, errors);
+                }
                 else
+                {
                     ValidateLiability(lines[1], EntrySide.Credit, ProvenanceKind.EscrowReturn, errors);
+                }
+
                 break;
             case PostingTemplateKind.BountyReclaim:
                 ValidateBountyReclaim(lines, errors);
@@ -225,9 +255,14 @@ public static class PostingMatrix
             case PostingTemplateKind.Reclaim:
                 var escrowAccount = EscrowFor(lines[1].Amount.Currency);
                 if (escrowAccount.HasValue)
+                {
                     Match(lines[0], EntrySide.Debit, escrowAccount.Value, lines[1].Amount.Currency, false, null, errors);
+                }
                 else
+                {
                     Add(errors, PostingErrorCode.InvalidCurrency, "Reclaim requires a supported coin currency.");
+                }
+
                 ValidateLiability(lines[1], EntrySide.Credit, ProvenanceKind.EscrowReturn, errors);
                 break;
             case PostingTemplateKind.Refund:
@@ -268,8 +303,11 @@ public static class PostingMatrix
     {
         if (lines.All(line => line.Side != EntrySide.Debit) ||
             lines.All(line => line.Side != EntrySide.Credit))
+        {
             Add(errors, PostingErrorCode.InvalidAccountShape,
                 "Marketplace settlement requires buyer debits and seller/platform credits.");
+        }
+
         foreach (var line in lines)
         {
             if (line.Side == EntrySide.Debit)
@@ -278,14 +316,20 @@ public static class PostingMatrix
                 continue;
             }
             if (line.Amount.Currency == CurrencyCode.HardCoin)
+            {
                 Match(line, EntrySide.Credit, EconomyAccountCode.EarnedHardLiability,
                     CurrencyCode.HardCoin, true, ProvenanceKind.EarnedHard, errors);
+            }
             else if (line.Amount.Currency == CurrencyCode.SoftCoin)
+            {
                 Match(line, EntrySide.Credit, EconomyAccountCode.SoftCoinLiability,
                     CurrencyCode.SoftCoin, true, ProvenanceKind.MarketplaceSoft, errors);
+            }
             else
+            {
                 Add(errors, PostingErrorCode.InvalidCurrency,
                     "Marketplace settlement requires a supported coin currency.");
+            }
         }
     }
 
@@ -295,8 +339,11 @@ public static class PostingMatrix
     {
         if (lines.All(line => line.Side != EntrySide.Debit) ||
             lines.All(line => line.Side != EntrySide.Credit))
+        {
             Add(errors, PostingErrorCode.InvalidAccountShape,
                 "Marketplace refund requires proceeds debits and buyer credits.");
+        }
+
         foreach (var line in lines)
         {
             if (line.Side == EntrySide.Credit)
@@ -328,7 +375,9 @@ public static class PostingMatrix
         ValidateLiability(lines[0], EntrySide.Debit, null, errors);
         ValidateLiability(lines[1], EntrySide.Credit, creditProvenance, errors);
         if (lines[0].Account != lines[1].Account || lines[0].Amount.Currency != lines[1].Amount.Currency)
+        {
             Add(errors, PostingErrorCode.InvalidAccountShape, "Transfer legs must use the same currency liability account.");
+        }
     }
 
     private static void ValidateBountyEscrow(PostingLine[] lines, ICollection<PostingValidationError> errors)
@@ -347,18 +396,27 @@ public static class PostingMatrix
         {
             ValidateLiability(line, EntrySide.Debit, line.Provenance, errors);
             if (line.Amount.Currency != currency)
+            {
                 Add(errors, PostingErrorCode.InvalidCurrency, "Bounty escrow legs must use one currency.");
+            }
+
             if (line.Provenance is null)
+            {
                 Add(errors, PostingErrorCode.InvalidProvenance, "Bounty escrow debit legs require their immutable provenance.");
+            }
             else if (currency == CurrencyCode.HardCoin &&
                      ((line.Provenance == ProvenanceKind.EarnedHard && line.Account != EconomyAccountCode.EarnedHardLiability) ||
                       (line.Provenance != ProvenanceKind.EarnedHard && line.Account != EconomyAccountCode.PurchasedHardLiability)))
+            {
                 Add(errors, PostingErrorCode.InvalidAccountShape,
                     "HardCoin bounty escrow legs must retain the liability account that matches their provenance.");
+            }
             else if (currency == CurrencyCode.SoftCoin &&
                      line.Provenance is ProvenanceKind.PurchasedHard or ProvenanceKind.EarnedHard)
+            {
                 Add(errors, PostingErrorCode.InvalidProvenance,
                     "SoftCoin bounty escrow legs cannot carry HardCoin provenance.");
+            }
         }
     }
 
@@ -386,8 +444,10 @@ public static class PostingMatrix
             var credit = lines[index + 1];
             Match(debit, EntrySide.Debit, escrow.Value, currency, false, null, errors);
             if (credit.Amount.Currency != currency || credit.Amount.Units != debit.Amount.Units)
+            {
                 Add(errors, PostingErrorCode.InvalidAmount,
                     "Bounty reclaim debit and credit pairs must use the same currency and amount.");
+            }
 
             if (credit.WalletId is null)
             {
@@ -406,17 +466,23 @@ public static class PostingMatrix
             }
             ValidateLiability(credit, EntrySide.Credit, credit.Provenance, errors);
             if (credit.Provenance is null)
+            {
                 Add(errors, PostingErrorCode.InvalidProvenance,
                     "Bounty reclaim return credits must preserve immutable provenance.");
+            }
             else if (currency == CurrencyCode.HardCoin &&
                      ((credit.Provenance == ProvenanceKind.EarnedHard && credit.Account != EconomyAccountCode.EarnedHardLiability) ||
                       (credit.Provenance != ProvenanceKind.EarnedHard && credit.Account != EconomyAccountCode.PurchasedHardLiability)))
+            {
                 Add(errors, PostingErrorCode.InvalidAccountShape,
                     "HardCoin bounty reclaim credits must retain the liability account matching their provenance.");
+            }
             else if (currency == CurrencyCode.SoftCoin &&
                      credit.Provenance is ProvenanceKind.PurchasedHard or ProvenanceKind.EarnedHard)
+            {
                 Add(errors, PostingErrorCode.InvalidProvenance,
                     "SoftCoin bounty reclaim credits cannot carry HardCoin provenance.");
+            }
         }
     }
 
@@ -424,9 +490,13 @@ public static class PostingMatrix
     {
         ValidateLiability(lines[0], liabilitySide, null, errors);
         if (systemAccount.HasValue)
+        {
             Match(lines[1], EntrySide.Credit, systemAccount.Value, lines[0].Amount.Currency, false, null, errors);
+        }
         else
+        {
             Add(errors, PostingErrorCode.InvalidCurrency, "Template requires a supported coin currency.");
+        }
     }
 
     private static void ValidateLiability(
@@ -441,11 +511,25 @@ public static class PostingMatrix
             CurrencyCode.SoftCoin => line.Account == EconomyAccountCode.SoftCoinLiability,
             _ => false
         };
-        if (!validAccount) Add(errors, PostingErrorCode.InvalidAccountShape, "Line must use the liability account for its currency.");
-        if (line.Side != side) Add(errors, PostingErrorCode.InvalidAccountShape, "Liability line has the wrong entry side.");
-        if (line.WalletId is null) Add(errors, PostingErrorCode.MissingWallet, "Liability line requires a wallet.");
+        if (!validAccount)
+        {
+            Add(errors, PostingErrorCode.InvalidAccountShape, "Line must use the liability account for its currency.");
+        }
+
+        if (line.Side != side)
+        {
+            Add(errors, PostingErrorCode.InvalidAccountShape, "Liability line has the wrong entry side.");
+        }
+
+        if (line.WalletId is null)
+        {
+            Add(errors, PostingErrorCode.MissingWallet, "Liability line requires a wallet.");
+        }
+
         if (requiredProvenance.HasValue && line.Provenance != requiredProvenance)
+        {
             Add(errors, PostingErrorCode.InvalidProvenance, "Liability line has the wrong provenance.");
+        }
     }
 
     private static EconomyAccountCode? ReserveFor(CurrencyCode currency) => currency switch
@@ -472,15 +556,29 @@ public static class PostingMatrix
         ICollection<PostingValidationError> errors)
     {
         if (line.Side != side || line.Account != account)
+        {
             Add(errors, PostingErrorCode.InvalidAccountShape, $"Line {line.Sequence} does not match its registered account shape.");
+        }
+
         if (line.Amount.Currency != currency)
+        {
             Add(errors, PostingErrorCode.InvalidCurrency, $"Line {line.Sequence} uses the wrong currency.");
+        }
+
         if (walletRequired && line.WalletId is null)
+        {
             Add(errors, PostingErrorCode.MissingWallet, $"Line {line.Sequence} requires a wallet.");
+        }
+
         if (!walletRequired && line.WalletId is not null)
+        {
             Add(errors, PostingErrorCode.InvalidAccountShape, $"Line {line.Sequence} cannot target a wallet.");
+        }
+
         if (line.Provenance != provenance)
+        {
             Add(errors, PostingErrorCode.InvalidProvenance, $"Line {line.Sequence} uses the wrong provenance.");
+        }
     }
 
     private static void ValidateParity(long hardUnits, long softUnits, ICollection<PostingValidationError> errors)
@@ -488,7 +586,9 @@ public static class PostingMatrix
         try
         {
             if (checked(hardUnits * Money.FixedParity.SoftCoinsPerHardCoin) != softUnits)
+            {
                 Add(errors, PostingErrorCode.InvalidParity, "Principal conversion must use exactly 1 HC = 1,000 SC.");
+            }
         }
         catch (OverflowException)
         {

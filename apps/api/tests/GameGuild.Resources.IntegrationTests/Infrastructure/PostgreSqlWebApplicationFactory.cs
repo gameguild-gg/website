@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -42,13 +43,12 @@ public class PostgreSqlWebApplicationFactory : WebApplicationFactory<GameGuild.A
         builder.UseSetting("Database:FailStartupOnMigrationFailure", "true");
         builder.ConfigureTestServices(services =>
         {
-            // Remove all existing DbContext registrations
+            // Replace only the application database configuration. Keep the production
+            // DbContext/IApplicationDbContext aliases used by repositories and filters.
             var descriptorsToRemove = services
                 .Where(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>) ||
                             d.ServiceType == typeof(ApplicationDbContext) ||
-                            (d.ServiceType.FullName?.Contains("EntityFramework") == true &&
-                             d.ServiceType.FullName?.Contains("InMemory") != true) ||
-                            d.ImplementationType?.FullName?.Contains("Npgsql") == true)
+                            d.ServiceType == typeof(IDbContextOptionsConfiguration<ApplicationDbContext>))
                 .ToList();
 
             foreach (var descriptor in descriptorsToRemove)

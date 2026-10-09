@@ -7,7 +7,11 @@ public readonly record struct RiskDecisionId
 {
     public RiskDecisionId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Risk decision ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Risk decision ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -47,20 +51,38 @@ public sealed class CoreProtectedPostingGate
         ArgumentNullException.ThrowIfNull(readiness);
         ArgumentNullException.ThrowIfNull(reserveAuthorization);
         if (!readiness.IsReady)
+        {
             throw new RiskPersistenceNotReadyException(
                 "Protected postings remain disabled until schema and counter constraints are verified.");
+        }
+
         if (command.RiskDecisionId is null)
+        {
             throw new MissingRiskDecisionException("Protected postings require a RiskDecisionId.");
+        }
+
         if (command.RiskDecisionId.Value.Value != decision.Id)
+        {
             throw new RiskDecisionBindingException("RiskDecisionId does not match the supplied decision snapshot.");
+        }
+
         if (command.Operation != command.Context.Operation)
+        {
             throw new RiskDecisionBindingException("Protected posting operation does not match the bound context.");
+        }
+
         if (command.Context.ReserveVersion != reserveAuthorization.Version)
+        {
             throw new ReserveAuthorizationException(
                 "Protected posting reserve version does not match the active reserve lock.");
+        }
+
         if (command.Context.ReserveAuthorizationEpoch != reserveAuthorization.AuthorizationEpoch)
+        {
             throw new ReserveAuthorizationEpochException(
                 "Protected posting authorization epoch does not match the active reserve lock.");
+        }
+
         return _authorizer.AuthorizeValueMovement(decision, command.Context, now);
     }
 }

@@ -37,11 +37,20 @@ public static class SignalROptionsBuilder
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (options.KeepAliveInterval <= TimeSpan.Zero) throw new InvalidOperationException("Keep alive interval must be greater than zero.");
+        if (options.KeepAliveInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException("Keep alive interval must be greater than zero.");
+        }
 
-        if (options.ClientTimeoutInterval <= TimeSpan.Zero) throw new InvalidOperationException("Client timeout interval must be greater than zero.");
+        if (options.ClientTimeoutInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException("Client timeout interval must be greater than zero.");
+        }
 
-        if (options.MaximumReceiveMessageSize <= 0) throw new InvalidOperationException("Maximum receive message size must be greater than zero.");
+        if (options.MaximumReceiveMessageSize <= 0)
+        {
+            throw new InvalidOperationException("Maximum receive message size must be greater than zero.");
+        }
     }
 
     /// <summary>

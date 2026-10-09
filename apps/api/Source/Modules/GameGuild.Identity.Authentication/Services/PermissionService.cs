@@ -126,7 +126,10 @@ public class PermissionService(
     public async Task RevokeTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
-        if (grant == null) return;
+        if (grant == null)
+        {
+            return;
+        }
 
         grant.RemovePermissions(ToPermissionNames(permissions));
         if (grant.Permissions.Length == 0)
@@ -239,7 +242,10 @@ public class PermissionService(
     public async Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
     {
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
-        if (grant == null) return;
+        if (grant == null)
+        {
+            return;
+        }
 
         grant.RemovePermissions(permissions);
         if (!grant.GetPermissionsAsEnum().Any())
@@ -361,7 +367,10 @@ public class PermissionService(
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
-        if (grant == null) return;
+        if (grant == null)
+        {
+            return;
+        }
 
         context.Set<TPermission>().Remove(grant);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -432,22 +441,34 @@ public class PermissionService(
         if (userId.HasValue && resourceId.HasValue)
         {
             var resourcePermissions = await GetResourcePermissionsAsync<GenericResourcePermission, EntityBase>(userId, tenantId, resourceId.Value).ConfigureAwait(false);
-            if (resourcePermissions.Contains(permission)) return "Resource";
+            if (resourcePermissions.Contains(permission))
+            {
+                return "Resource";
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(contentTypeName))
         {
             var contentPermissions = await GetContentTypePermissionsAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
-            if (contentPermissions.Contains(permission)) return "ContentType";
+            if (contentPermissions.Contains(permission))
+            {
+                return "ContentType";
+            }
         }
 
         var tenantPermissions = await GetTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false);
-        if (tenantPermissions.Contains(permission)) return "Tenant";
+        if (tenantPermissions.Contains(permission))
+        {
+            return "Tenant";
+        }
 
         if (tenantId.HasValue)
         {
             var tenantDefaults = await GetTenantDefaultPermissionsAsync(tenantId.Value).ConfigureAwait(false);
-            if (tenantDefaults.Contains(permission)) return "TenantDefault";
+            if (tenantDefaults.Contains(permission))
+            {
+                return "TenantDefault";
+            }
         }
 
         var globalDefaults = await GetGlobalDefaultPermissionsAsync().ConfigureAwait(false);
