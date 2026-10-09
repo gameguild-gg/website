@@ -1,5 +1,5 @@
 import React from 'react';
-import { canManageCourse, getCourseAssessmentAnalytics, getCourseAssessmentGroups, getCourseAssessments } from '@/lib/learning';
+import { getCourseAccessCapabilities, getCourseAssessmentAnalytics, getCourseAssessmentGroups, getCourseAssessments } from '@/lib/learning';
 import { AssessmentsList } from '@/components/learning/console/courses/[course]/assessments/assessments-list';
 
 /**
@@ -13,11 +13,11 @@ export default async function AssessmentsPage({
 }: PageProps<'/[locale]/workspace/learning/courses/[course]/assessments'>): Promise<React.JSX.Element> {
   const { course: courseId } = await params;
 
-  const [{ assessments, total }, assessmentGroups, analytics, canManage] = await Promise.all([
+  const [{ assessments, total }, assessmentGroups, analytics, access] = await Promise.all([
     getCourseAssessments(courseId),
     getCourseAssessmentGroups(courseId),
     getCourseAssessmentAnalytics(courseId),
-    canManageCourse(courseId),
+    getCourseAccessCapabilities(courseId),
   ]);
 
   return (
@@ -27,7 +27,8 @@ export default async function AssessmentsPage({
       total={total}
       assessmentGroups={assessmentGroups}
       analytics={analytics}
-      canManage={canManage}
+      canManage={access.canEdit}
+      canReviewAsStaff={access.canReviewAsStaff}
     />
   );
 }

@@ -80,9 +80,13 @@ public class JitElevationRequestRepository(DbContext context) : IJitElevationReq
     )
     {
         var now = SystemClock.UtcNow;
+        // Approved elevations whose start time has arrived are included (lazy window
+        // entry): approval grants the time-bound window, so no separate activation
+        // step is required for the grant to take effect.
         var query = DbSet.Where(r =>
             r.RequesterId == userId &&
-            r.Status == ElevationRequestStatus.Active &&
+            (r.Status == ElevationRequestStatus.Active ||
+             (r.Status == ElevationRequestStatus.Approved && r.StartsAt != null && r.StartsAt <= now)) &&
             r.ExpiresAt > now
         );
 
@@ -98,8 +102,10 @@ public class JitElevationRequestRepository(DbContext context) : IJitElevationReq
     {
         var now = SystemClock.UtcNow;
         return await DbSet
-            .Where(r => r.Status == ElevationRequestStatus.Active && r.ExpiresAt <= now)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+            .Where(r =>
+                (r.Status == ElevationRequestStatus.Active || r.Status == ElevationRequestStatus.Approved) &&
+                r.ExpiresAt <= now)
+            .ToListAsync(cancellationToken);
     }
 }
 

@@ -10,7 +10,11 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
+  forbidden: vi.fn(() => {
+    throw new Error('forbidden');
+  }),
   getCourse: vi.fn(),
+  getCourseAccessCapabilities: vi.fn(),
   getCourseAnalytics: vi.fn(),
   getCourseCompletionAnalytics: vi.fn(),
   getCourseEngagementAnalytics: vi.fn(),
@@ -30,6 +34,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/workspace/learning',
   redirect: mocks.redirect,
   notFound: mocks.notFound,
+  forbidden: mocks.forbidden,
 }));
 
 vi.mock('@/i18n/navigation', () => ({
@@ -68,6 +73,7 @@ vi.mock('@/lib/learning/course-launch', () => ({
 
 vi.mock('@/lib/learning', () => ({
   getCourse: mocks.getCourse,
+  getCourseAccessCapabilities: mocks.getCourseAccessCapabilities,
   getCourseAnalytics: mocks.getCourseAnalytics,
   getCourseCompletionAnalytics: mocks.getCourseCompletionAnalytics,
   getCourseEngagementAnalytics: mocks.getCourseEngagementAnalytics,
@@ -207,6 +213,18 @@ describe('course-management dashboard route pages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCourse.mockResolvedValue(course);
+    mocks.getCourseAccessCapabilities.mockResolvedValue({
+      courseId: course.id,
+      courseExists: true,
+      isTenantMember: true,
+      isOwner: true,
+      hasActiveEnrollment: false,
+      canLearn: false,
+      canEdit: true,
+      canPublish: true,
+      canReviewAsStaff: true,
+      canAccessWorkspace: true,
+    });
     mocks.getCourseAnalytics.mockResolvedValue({
       totalUsers: 12,
       completedUsers: 5,

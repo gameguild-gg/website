@@ -75,6 +75,18 @@ public class WebAuthnService(
         CancellationToken cancellationToken = default) =>
         credentials.DeleteCredentialAsync(userId, credentialId, cancellationToken);
 
+    public Task<WebAuthnCredentialTransitionResult> DeactivateCredentialAsync(
+        Guid userId,
+        Guid credentialId,
+        CancellationToken cancellationToken = default) =>
+        credentials.DeactivateCredentialAsync(userId, credentialId, cancellationToken);
+
+    public Task<WebAuthnCredentialTransitionResult> ActivateCredentialAsync(
+        Guid userId,
+        Guid credentialId,
+        CancellationToken cancellationToken = default) =>
+        credentials.ActivateCredentialAsync(userId, credentialId, cancellationToken);
+
     public Task<bool> UpdateCredentialNameAsync(
         Guid userId,
         Guid credentialId,

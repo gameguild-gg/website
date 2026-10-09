@@ -17,7 +17,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Create or resume a content interaction
-   * Requires Read permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async postCourseInteractions(
     body: Types.LearningCoursesStartContentInput,
@@ -47,7 +47,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Mark content as completed
-   * Requires Edit permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async postCourseInteractionsComplete(
     interactionId: string,
@@ -78,7 +78,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Update progress for a content interaction
-   * Requires Edit permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async putCourseInteractionsProgress(
     interactionId: string,
@@ -109,7 +109,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Submit content interaction (makes it immutable)
-   * Requires Edit permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async postCourseInteractionsSubmit(
     interactionId: string,
@@ -140,7 +140,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Update time spent on content
-   * Requires Edit permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async putCourseInteractionsTimeSpent(
     interactionId: string,
@@ -244,7 +244,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Get all interactions for a user in a program
-   * Requires Read permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async getCourseInteractionsUser(
     programUserId: string,
@@ -264,7 +264,7 @@ export class LearningCoursesContentInteractionModule {
 
   /**
    * Get interaction for specific user and content
-   * Requires Read permission on the parent Program
+   * Requires an active enrollment in the parent Program.
    */
   async getCourseInteractionsUserContent(
     programUserId: string,

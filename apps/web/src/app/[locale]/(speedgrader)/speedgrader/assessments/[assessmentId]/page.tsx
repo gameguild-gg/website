@@ -1,9 +1,10 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { forbidden, notFound } from 'next/navigation';
 import type { LearningAssessmentsGradingQueue } from '@game-guild/client';
 import { Link } from '@/i18n/navigation';
 import { fetchGradingQueue } from './grading-queue';
 import { SpeedgraderWorkspace } from './speedgrader-workspace';
+import { getCourseAccessCapabilities } from '@/lib/learning';
 
 /**
  * SpeedGrader page: server-fetches the grading queue and lets each panel read
@@ -27,6 +28,11 @@ export default async function SpeedgraderAssessmentPage({
   const courseParam = typeof query.course === 'string' ? query.course : undefined;
   if (!courseParam) {
     notFound();
+  }
+
+  const access = await getCourseAccessCapabilities(courseParam);
+  if (!access.canReviewAsStaff) {
+    forbidden();
   }
 
   const queue = await fetchGradingQueue(assessmentId);

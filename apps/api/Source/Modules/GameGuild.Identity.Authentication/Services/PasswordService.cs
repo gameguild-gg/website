@@ -21,7 +21,7 @@ public class PasswordService(
         var user = await userRepository.GetByEmailAsync(request.Email.ToLowerInvariant(), cancellationToken).ConfigureAwait(false);
         if (user == null)
         {
-            return new EmailOperationResponse { Success = true, Message = "If an account exists with that email, a verification email has been sent" };
+            return GenericVerificationResponse();
         }
 
         await sender.Send(
@@ -33,8 +33,13 @@ public class PasswordService(
             },
             cancellationToken).ConfigureAwait(false);
 
-        return new EmailOperationResponse { Success = true, Message = "Verification email sent successfully" };
+        return GenericVerificationResponse();
     }
+
+    // Known and unknown accounts must observe the same message; the command performs the
+    // enumeration-safe delivery, so the facade only mirrors its public response.
+    private static EmailOperationResponse GenericVerificationResponse() =>
+        new() { Success = true, Message = UserEnumerationProtectionService.GenericEmailVerificationMessage };
 
     public async Task<EmailOperationResponse> VerifyEmailAsync(EmailVerificationRequest verificationRequest, CancellationToken cancellationToken = default)
     {
