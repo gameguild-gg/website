@@ -89,6 +89,15 @@ public static class Permissions
     /// <summary>Admin access to content</summary>
     public const string ContentAdmin = ContentPermission.Keys.Admin;
 
+    /// <summary>Edit existing editorial content</summary>
+    public const string ContentEdit = ContentPermission.Keys.Edit;
+
+    /// <summary>Create and maintain content drafts</summary>
+    public const string ContentDraft = ContentPermission.Keys.Draft;
+
+    /// <summary>Schedule and cancel scheduled content publication</summary>
+    public const string ContentSchedule = ContentPermission.Keys.Schedule;
+
     // ========================
     // PROJECT PERMISSIONS
     // ========================
@@ -234,6 +243,22 @@ public static class Permissions
 
     /// <summary>Report assets for moderation</summary>
     public const string AssetsReport = AssetsPermission.Keys.Report;
+
+    // ========================
+    // MODERATION PERMISSIONS
+    // ========================
+
+    /// <summary>Moderate content (edit, hide, restore)</summary>
+    public const string ModerationModerate = ModerationPermission.Keys.Moderate;
+
+    /// <summary>Flag content for review</summary>
+    public const string ModerationFlag = ModerationPermission.Keys.Flag;
+
+    /// <summary>Ban members</summary>
+    public const string ModerationBan = ModerationPermission.Keys.Ban;
+
+    /// <summary>Warn members</summary>
+    public const string ModerationWarn = ModerationPermission.Keys.Warn;
 }
 
 /// <summary>

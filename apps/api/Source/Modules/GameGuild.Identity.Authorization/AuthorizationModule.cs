@@ -46,6 +46,10 @@ public class AuthorizationModule : ModuleBase
         // Advanced permission services (JIT, delegation, SoD, access reviews, delegated admin)
         services.AddAdvancedPermissionServices();
 
+        // Permission evaluation engine (issue #358): throttle, webhooks, external sync,
+        // restoration, compliance reporting, evaluation extensions host point.
+        services.AddPermissionEngineServices();
+
         return services;
     }
 
@@ -85,5 +89,8 @@ public class AuthorizationModule : ModuleBase
         // RBAC: Dynamic roles with deny permission support
         modelBuilder.ApplyConfiguration(new DynamicRoleConfiguration());
         modelBuilder.ApplyConfiguration(new DynamicRoleAssignmentConfiguration());
+
+        // Permission evaluation log (issues #359/#358): durable compliance reporting source
+        modelBuilder.ApplyConfiguration(new PermissionEvaluationLogEntryConfiguration());
     }
 }

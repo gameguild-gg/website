@@ -711,24 +711,23 @@ public class ProgramContentControllerAuthorizationTests
     }
 
     [Theory]
-    [InlineData(nameof(ProgramContentController.CreateContent), PermissionType.Create)]
-    [InlineData(nameof(ProgramContentController.UpdateContent), PermissionType.Edit)]
-    [InlineData(nameof(ProgramContentController.DeleteContent), PermissionType.Delete)]
-    [InlineData(nameof(ProgramContentController.ReorderContent), PermissionType.Edit)]
-    [InlineData(nameof(ProgramContentController.MoveContent), PermissionType.Edit)]
-    public void MutationEndpoints_ShouldRequireProgramResourcePermission(string actionName, PermissionType requiredPermission)
+    [InlineData(nameof(ProgramContentController.CreateContent))]
+    [InlineData(nameof(ProgramContentController.UpdateContent))]
+    [InlineData(nameof(ProgramContentController.DeleteContent))]
+    [InlineData(nameof(ProgramContentController.ReorderContent))]
+    [InlineData(nameof(ProgramContentController.MoveContent))]
+    public void MutationEndpoints_ShouldRequireContextualCourseEdit(string actionName)
     {
         var method = GetAction(actionName);
 
         var attribute = method
             .GetCustomAttributes(inherit: true)
-            .OfType<IResourcePermissionMarker>()
+            .OfType<RequireCourseCapabilityAttribute>()
             .SingleOrDefault();
 
         attribute.Should().NotBeNull();
-        attribute!.ResourceType.Should().Be(typeof(Program));
-        attribute.ResourceIdParameterName.Should().Be("programId");
-        attribute.RequiredPermission.Should().Be(requiredPermission);
+        attribute!.Capability.Should().Be(CourseCapability.Edit);
+        attribute.RouteParameterName.Should().Be("programId");
     }
 
     private static MethodInfo GetAction(string actionName)

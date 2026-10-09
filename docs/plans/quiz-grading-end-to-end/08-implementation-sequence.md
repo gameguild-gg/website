@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Transformar as especificações temáticas deste diretório em três partes
+Transformar as especificações temáticas deste diretório em quatro partes
 executáveis, ordenadas pelas dependências reais entre domínio, contratos,
 persistência, API, interfaces e efeitos acadêmicos.
 
@@ -18,13 +18,17 @@ não representa a ordem em que seus conteúdos devem ser codificados.
 | 1 | `SEQ-00` a `SEQ-06` | fundação, autoria, segurança e publicação fail-closed | [Fundação e autoria](./implementation-sequence/01-foundation-and-authoring.md) |
 | 2 | `SEQ-07` a `SEQ-11` | test run e E2E oficial individual e coletivo | [E2E principal](./implementation-sequence/02-core-grading-e2e.md) |
 | Gate 2 → 3 | `CLOSE-01` a `CLOSE-04` | fechar somente lacunas encontradas após a primeira execução da Parte 2 | [Fechamento da Parte 2](./implementation-sequence/02a-core-grading-e2e-closeout.md) |
-| 3 | `SEQ-12` a `SEQ-16` | reviews adicionais, operação e auditoria final | [Expansão e operação](./implementation-sequence/03-review-expansion-and-operations.md) |
+| 3 | `ACCESS-01`, `ACCESS-02`, `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` | acesso contextual, sessões reais e revalidação do E2E principal; `ACCESS-03B` é operacional e não bloqueante | [Acesso contextual](./implementation-sequence/03-contextual-access-and-personas.md) |
+| 4 | `SEQ-12A`, depois `SEQ-12` a `SEQ-16` | lifecycle assíncrono comum, reviews adicionais, operação e auditoria final | [Expansão e operação](./implementation-sequence/04-review-expansion-and-operations.md) |
 
 A Parte 2 não começa até a Parte 1 estar concluída e testada. A Parte 3 não
 começa até a Parte 2 e seu fechamento `CLOSE-01` a `CLOSE-04` estarem concluídos
-e testados. O fechamento não repete `SEQ-07` a `SEQ-11`: executa apenas o delta
-registrado após a auditoria. Cada documento possui pré-requisitos, definição de
-pronto, acompanhamento e gate de passagem próprios.
+e testados. A Parte 4 não começa até `ACCESS-03A`, `ACCESS-04` e `ACCESS-05`
+comprovarem o fluxo com owner, ao menos dois learners e outsider em sessões
+reais. A delegação de equipe em `ACCESS-03B` não bloqueia esse gate. O
+fechamento não repete `SEQ-07` a `SEQ-11`: executa apenas o delta registrado
+após a auditoria. Cada documento possui pré-requisitos, definição de pronto,
+acompanhamento e gate de passagem próprios.
 
 ## Ordem global
 
@@ -35,7 +39,9 @@ flowchart LR
     P2["Parte 2<br/>E2E principal<br/>SEQ-07 a SEQ-11"]
     C2["Fechamento da Parte 2<br/>CLOSE-01 a CLOSE-04"]
     G2{"Gate da Parte 2<br/>aprovado?"}
-    P3["Parte 3<br/>Expansão e operação<br/>SEQ-12 a SEQ-16"]
+    P3["Parte 3<br/>Acesso contextual<br/>ACCESS-01, 02, 03A, 04 e 05"]
+    G3{"Gate de personas<br/>aprovado?"}
+    P4["Parte 4<br/>Expansão e operação<br/>SEQ-12A, depois SEQ-12 a SEQ-16"]
     DONE["Grading E2E concluído"]
 
     P1 --> G1
@@ -45,7 +51,10 @@ flowchart LR
     C2 --> G2
     G2 -->|Não| C2
     G2 -->|Sim| P3
-    P3 --> DONE
+    P3 --> G3
+    G3 -->|Não| P3
+    G3 -->|Sim| P4
+    P4 --> DONE
 ```
 
 Dentro de cada parte, os marcos continuam estritamente sequenciais. Dividir o
@@ -142,6 +151,33 @@ capabilities de uma parte posterior.
 29. Policy de release imediato persiste uma solicitação idempotente na mesma
     transação da finalização. Um worker chama `ReleaseGradeResult`; finalização e
     liberação continuam transições e eventos distintos.
+30. Aluno, instrutor, colaborador e revisor são personas contextuais, não roles
+    de tenant. Todos usam a membership `Member`; enrollment, `CreatorId` e
+    permissions por `Program` determinam a capacidade em cada curso.
+31. A Parte 3 consome os contratos públicos de `GameGuild.Identity.*` e não
+    altera sua semântica, schema ou armazenamento. Qualquer lacuna de plataforma
+    é devolvida ao owner do módulo em vez de receber bypass em Learning.
+32. `SystemAdmin` serve apenas ao bootstrap administrativo e não participa de
+    cenário funcional positivo. API e handler continuam sendo a autoridade;
+    ocultar um comando na web não é autorização.
+33. Os novos cenários acadêmicos usam `Enrollment` ativa como prova de
+    participação. Permission de recurso não substitui enrollment e enrollment
+    não concede authoring ou review.
+34. Antes dos métodos adicionais, `SEQ-12A` substitui a porta exclusivamente
+    síncrona por um lifecycle genérico de stage. O orquestrador reage a
+    transições e não cria branches por `ReviewMethod`.
+35. Test run multipersona mantém subjects e execuções relacionais separados e
+    só conclui quando todas as execuções obrigatórias terminarem; nenhuma delas
+    produz efeitos acadêmicos.
+36. Regrade reexecuta reviews de sistema, reutiliza por referência evidências
+    humanas finalizadas de self/peer e exige nova resolução docente. Nova coleta
+    humana é outro caso de uso e nunca ocorre implicitamente.
+37. O inbox de transporte do host não é dependência de módulos de domínio.
+    Learning expõe portas e comandos idempotentes, e adapters concretos são
+    compostos em `GameGuild.API` sem inverter a direção de dependência.
+38. Policy autoral de release agendado e schedule operacional por rodada são
+    dados distintos. `GradeResultRelease` permanece o fato final append-only;
+    qualquer owner de schedule exige `SCHEMA-GATE` e aprovação próprios.
 
 ## Política de evolução do schema
 
@@ -218,11 +254,18 @@ artefatos SQL fora do IModel afetados e seus testes
 | Gate 2 → 3 | `CLOSE-02` | E2Es oficiais HTTP + PostgreSQL | `CLOSE-01` | não |
 | Gate 2 → 3 | `CLOSE-03` | criação limpa e upgrade real populado | `CLOSE-02` | não; valida migrations existentes |
 | Gate 2 → 3 | `CLOSE-04` | suíte acumulada e aprovação do gate | `CLOSE-03` | não |
-| 3 | `SEQ-12` | `SelfReview` em teste e oficial | fechamento da Parte 2 aprovado | `SCHEMA-GATE` |
-| 3 | `SEQ-13` | `PeerReview` em teste e oficial | `SEQ-12` | `SCHEMA-GATE` |
-| 3 | `SEQ-14` | porta durável de `AIReview` | `SEQ-13` | `SCHEMA-GATE` condicional |
-| 3 | `SEQ-15` | release agendado, integração global e operação avançados | `SEQ-14` | `SCHEMA-GATE` condicional |
-| 3 | `SEQ-16` | auditoria e fechamento | `SEQ-15` | não |
+| 3 | `ACCESS-01` | contrato e matriz contextual de capacidades | fechamento da Parte 2 aprovado | não |
+| 3 | `ACCESS-02` | autorização uniforme na API de Learning | `ACCESS-01` | não; interromper se surgir necessidade |
+| 3 | `ACCESS-03A` | gates contextuais na web e nomenclatura `StaffReview` | `ACCESS-02` | não |
+| 3 | `ACCESS-03B` | delegação operacional para collaborator e reviewer da equipe | `ACCESS-02`; não bloqueia `ACCESS-04` | não; aguarda contrato de Authorization |
+| 3 | `ACCESS-04` | fixture de owner, dois learners e outsider com sessões reais | `ACCESS-03A` | não |
+| 3 | `ACCESS-05` | E2E principal revalidado por persona | `ACCESS-04` | não |
+| 4 | `SEQ-12A` | lifecycle genérico de stage, test run multipersona e regra de regrade | Parte 3 aprovada | não previsto; parar se houver delta |
+| 4 | `SEQ-12` | `SelfReview` em teste e oficial | `SEQ-12A` | `SCHEMA-GATE` |
+| 4 | `SEQ-13` | `PeerReview` em teste e oficial | `SEQ-12` | `SCHEMA-GATE` |
+| 4 | `SEQ-14` | porta durável de `AIReview` | `SEQ-13` | `SCHEMA-GATE` condicional |
+| 4 | `SEQ-15` | release agendado, integração global e operação avançados | `SEQ-14` | `SCHEMA-GATE`; schedule possui delta esperado |
+| 4 | `SEQ-16` | auditoria e fechamento | `SEQ-15` | não |
 
 `Não previsto` significa que o marco deve usar o schema já aprovado. Se a
 implementação demonstrar que falta uma coluna, constraint, índice ou entidade,
@@ -360,20 +403,33 @@ A implementação deve parar e retornar ao planejamento quando:
 50. consumer de gradebook usar média de percentuais, renormalizar pesos, fazer
     aritmética SQL ou divergir da fórmula canônica por pontos;
 51. policy `immediate` depender de chamada em memória depois do commit, sem
-    solicitação durável capaz de sobreviver a queda e retry.
+    solicitação durável capaz de sobreviver a queda e retry;
 52. uma migration, coluna, tabela, trigger, função ou dado histórico ser removido
     somente por ser considerado antigo, não utilizado ou anterior ao lançamento,
     sem prova de materialização, inventário de consumidores, teste de upgrade e
-    aprovação explícita.
+    aprovação explícita;
+53. `Student`, `Instructor`, `Reviewer` ou `TA` ser introduzido como role de
+    tenant para representar contexto de curso;
+54. código de Learning escrever diretamente em tabelas de permission, forjar
+    actor ou criar resolver paralelo para contornar o contrato de Authorization;
+55. frontend liberar ação protegida sem confirmação equivalente na API, ou
+    considerar elemento oculto como autorização suficiente;
+56. teste positivo de owner, learner, collaborator ou reviewer da equipe
+    depender de `SystemAdmin`;
+57. `Edit`, `Publish`, `StaffReview` ou enrollment promover implicitamente
+    outra capacidade sem regra aprovada e teste explícito;
+58. `SEQ-12A` começar antes de `ACCESS-05` comprovar as sessões e a matriz de
+    acesso contextuais.
 
 ## Acompanhamento global
 
 | Parte | Status | Gate de conclusão |
 | --- | --- | --- |
 | 1. Fundação e autoria | concluída | base contratual, relacional, segura e autoral aprovada |
-| 2. E2E principal | primeira implementação concluída; gate pendente | test run e fluxo oficial individual/coletivo aprovados |
-| Fechamento 2 → 3 | pendente | `CLOSE-01` a `CLOSE-04` aprovados sem reexecutar toda a Parte 2 |
-| 3. Expansão e operação | bloqueada pelo fechamento da Parte 2 | reviews adicionais, operação e auditoria aprovados |
+| 2. E2E principal | concluída | test run e fluxo oficial individual/coletivo aprovados |
+| Fechamento 2 → 3 | concluído | `CLOSE-01` a `CLOSE-04` aprovados sem reexecutar toda a Parte 2 |
+| 3. Acesso contextual | concluída | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados com owner, dois learners e outsider; `ACCESS-03B` não bloqueante |
+| 4. Expansão e operação | não iniciada; gate aprovado | começar por `SEQ-12A`; schema de peer e schedule continua sem aprovação |
 
 O detalhe de cada marco é atualizado somente no documento da parte
-correspondente. Este índice registra apenas a passagem entre as três entregas.
+correspondente. Este índice registra apenas a passagem entre as quatro entregas.
