@@ -5644,6 +5644,26 @@ export const postAdminEconomyTreasuryWithdrawalsReconcileEndpoint = {
 } as const;
 
 /**
+ * Builds the permission effectiveness compliance report (overall and per
+ * permission / evaluation surface / operation allow-deny rates) for a time range.
+ */
+export interface GetAuthorizationComplianceReportInput {
+  query?: {
+    tenantId?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetAuthorizationComplianceReportOutput = Types.IdentityAuthorizationPermissionComplianceReport;
+export const getAuthorizationComplianceReportEndpoint = {
+  operationId: 'getAuthorizationComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/compliance/report' as const,
+  tags: ['AccessControlPermissionCompliance'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific permission on a resource.
  */
 export interface GetAuthorizationResourcesHasPermissionInput {
@@ -5821,6 +5841,72 @@ export const putAuthorizationResourcesUsersPermissionsEndpoint = {
   method: 'PUT' as const,
   path: '/api/v1/authorization/resources/users/permissions' as const,
   tags: ['AccessControlResourcePermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Restores a soft-deleted tenant permission row inside the retention window.
+ */
+export interface PostAuthorizationRestorationsDeletedInput {
+  permissionId: string;
+}
+export type PostAuthorizationRestorationsDeletedOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsDeletedEndpoint = {
+  operationId: 'postAuthorizationRestorationsDeleted' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/deleted/{permissionId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverses a Grant/Revoke/Deny audit-log entry inside the retention window.
+ */
+export interface PostAuthorizationRestorationsUndoInput {
+  auditLogId: string;
+}
+export type PostAuthorizationRestorationsUndoOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsUndoEndpoint = {
+  operationId: 'postAuthorizationRestorationsUndo' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/undo/{auditLogId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Exports the permission state (roles, tenant defaults, user grants) of a tenant
+ * as a synchronization document. Omit tenantId for the global
+ * scope (system admins only).
+ */
+export interface GetAuthorizationSyncExportInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAuthorizationSyncExportOutput = Types.IdentityAuthorizationExternalPermissionSyncDocument;
+export const getAuthorizationSyncExportEndpoint = {
+  operationId: 'getAuthorizationSyncExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/sync/export' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Imports (or dry-runs) an external permission synchronization document. Invalid
+ * documents are rejected in full with their validation errors; nothing is
+ * partially applied.
+ */
+export interface PostAuthorizationSyncImportInput {
+  body?: Types.IdentityAuthorizationImportPermissionSyncInput;
+}
+export type PostAuthorizationSyncImportOutput = Types.IdentityAuthorizationPermissionSyncImportResult;
+export const postAuthorizationSyncImportEndpoint = {
+  operationId: 'postAuthorizationSyncImport' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/sync/import' as const,
+  tags: ['AccessControlPermissionSync'] as const,
   requiresAuth: true,
 } as const;
 
@@ -25836,6 +25922,7 @@ export const endpoints = {
   getAdminEconomyTreasuryWithdrawalsAudit: getAdminEconomyTreasuryWithdrawalsAuditEndpoint,
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
+  getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -25847,6 +25934,10 @@ export const endpoints = {
   postAuthorizationResourcesShare: postAuthorizationResourcesShareEndpoint,
   deleteAuthorizationResourcesUsersAccess: deleteAuthorizationResourcesUsersAccessEndpoint,
   putAuthorizationResourcesUsersPermissions: putAuthorizationResourcesUsersPermissionsEndpoint,
+  postAuthorizationRestorationsDeleted: postAuthorizationRestorationsDeletedEndpoint,
+  postAuthorizationRestorationsUndo: postAuthorizationRestorationsUndoEndpoint,
+  getAuthorizationSyncExport: getAuthorizationSyncExportEndpoint,
+  postAuthorizationSyncImport: postAuthorizationSyncImportEndpoint,
   getAuthorizationTenantsHasPermission: getAuthorizationTenantsHasPermissionEndpoint,
   getAuthorizationTenantsPermissions: getAuthorizationTenantsPermissionsEndpoint,
   postAuthorizationTenantsDefaults: postAuthorizationTenantsDefaultsEndpoint,
