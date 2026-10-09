@@ -8477,6 +8477,9 @@ export interface IdentityAuthorizationGrantTenantPermissionCommand {
   userId: string;
 }
 
+/** Graph export formats */
+export type IdentityAuthorizationGraphExportFormat = 'None' | 'DOT' | 'JSON' | 'GraphML';
+
 /** Response indicating whether the user has the requested permission. */
 export interface IdentityAuthorizationHasPermissionOutput {
   /** Gets the reason if permission was denied. */
@@ -8539,6 +8542,150 @@ export interface IdentityAuthorizationJitElevationInput {
   status?: IdentityAuthorizationElevationRequestStatus;
   tenantId?: CQRSModelsTenantId;
   updatedAt?: string | null;
+}
+
+/** A user affected by a simulated permission change, with the reason. */
+export interface IdentityAuthorizationModelsImpactedUser {
+  /** Permission keys the user loses entirely as a result of the change. */
+  lostPermissionKeys?: Array<string> | null;
+  /** Why the user is impacted (e.g. permission keys lost, or retention path). */
+  reason?: string | null;
+  /** For retention results: whether a direct user grant still provides the permission. */
+  retainedViaDirectGrant?: boolean;
+  /** For retention results: role chains that still provide the permission. */
+  retainedViaRoleIds?: Array<string> | null;
+  /** The affected user id. */
+  userId?: string;
+}
+
+/** Snapshot of a tenant's permission structure rendered as a directed graph:
+users -> roles -> permissions, including inheritance, denies, and direct grants. */
+export interface IdentityAuthorizationModelsPermissionGraph {
+  /** Graph edges. */
+  edges?: Array<IdentityAuthorizationModelsPermissionGraphEdge> | null;
+  /** UTC timestamp of generation. */
+  generatedAtUtc?: string;
+  /** Whether user nodes and their edges are included. */
+  includesUsers?: boolean;
+  /** Graph nodes. */
+  nodes?: Array<IdentityAuthorizationModelsPermissionGraphNode> | null;
+  summary?: IdentityAuthorizationModelsPermissionGraphSummary;
+  /** Tenant the graph was built for (null = global scope). */
+  tenantId?: string | null;
+}
+
+/** A cycle detected in the role-inheritance graph. */
+export interface IdentityAuthorizationModelsPermissionGraphCycle {
+  /** Role ids participating in the cycle, in walk order. */
+  roleIds?: Array<string> | null;
+}
+
+/** A directed edge of the permission graph. */
+export interface IdentityAuthorizationModelsPermissionGraphEdge {
+  /** Source node id. */
+  sourceId?: string | null;
+  /** Target node id. */
+  targetId?: string | null;
+  type?: IdentityAuthorizationModelsPermissionGraphEdgeType;
+}
+
+/** Type of an edge in the permission graph. */
+export type IdentityAuthorizationModelsPermissionGraphEdgeType =
+  'RoleInheritsFrom' | 'RoleGrantsPermission' | 'RoleDeniesPermission' | 'UserAssignedRole' | 'UserDirectGrant' | 'UserDirectDeny';
+
+/** A single node of the permission graph. */
+export interface IdentityAuthorizationModelsPermissionGraphNode {
+  /** Stable node identifier: `role:{roleId}`, `user:{userId}`, or `perm:{permissionKey}`.
+The tenant-default pseudo-role uses `role:tenant-default:{tenantId}`. */
+  id?: string | null;
+  /** Role nodes: whether the role is currently active. */
+  isActive?: boolean | null;
+  /** Permission nodes: whether the key exists in the GameGuild.Identity.Authorization.PermissionRegistry. */
+  isRegistered?: boolean;
+  /** Role nodes: whether this is a system role that cannot be deleted. */
+  isSystem?: boolean | null;
+  /** Human-readable label (role display name, user id, or permission key). */
+  label?: string | null;
+  /** Permission nodes: resource segment of the key (the part before the first colon). */
+  resource?: string | null;
+  /** Tenant scope of the entity (null for global roles). */
+  tenantId?: string | null;
+  type?: IdentityAuthorizationModelsPermissionGraphNodeType;
+}
+
+/** Type of a node in the permission graph. */
+export type IdentityAuthorizationModelsPermissionGraphNodeType = 'Role' | 'User' | 'Permission';
+
+/** Aggregated quality/statistics report for a permission graph. */
+export interface IdentityAuthorizationModelsPermissionGraphSummary {
+  /** Number of user -> permission direct grant edges. */
+  directGrantCount?: number;
+  /** Total number of edges. */
+  edgeCount?: number;
+  /** Cycles found in role inheritance (a data defect; resolution caps hierarchy walks). */
+  inheritanceCycles?: Array<IdentityAuthorizationModelsPermissionGraphCycle> | null;
+  /** Roles whose `ParentRoleId` points to a role that does not exist in scope. */
+  orphanedRoleIds?: Array<string> | null;
+  /** Number of permission nodes. */
+  permissionCount?: number;
+  /** Number of role nodes (including the tenant-default pseudo-role when present). */
+  roleCount?: number;
+  /** Permission keys present in stored grants/roles but not registered in
+GameGuild.Identity.Authorization.PermissionRegistry. Unknown keys fail closed at check time and usually
+indicate a typo or a permission removed from code while still stored. */
+  unregisteredPermissionKeys?: Array<string> | null;
+  /** Number of user nodes. */
+  userCount?: number;
+}
+
+/** Result of simulating the removal of a permission key from a role. */
+export interface IdentityAuthorizationModelsPermissionRemovalImpact {
+  /** Descendant roles whose inheritance chain passes through this role. */
+  downstreamRoleIds?: Array<string> | null;
+  /** Whether the key is only provided by an ancestor role (inherited). */
+  grantedViaInheritance?: boolean;
+  /** Whether the role's inheritance chain currently provides the key. */
+  isGranted?: boolean;
+  /** The permission key under analysis. */
+  permissionKey?: string | null;
+  /** Whether the key is stored verbatim on the role itself (removable directly). */
+  removableDirectly?: boolean;
+  /** Whether the role exists in the requested scope. */
+  roleFound?: boolean;
+  /** The analyzed role id. */
+  roleId?: string;
+  /** The role name (empty when not found). */
+  roleName?: string | null;
+  severity?: IdentityAuthorizationImpactSeverity;
+  /** Users who currently hold the key and would lose it after the removal. */
+  usersLosingPermission?: Array<IdentityAuthorizationModelsImpactedUser> | null;
+  /** Users who hold the key and would retain it through another path. */
+  usersRetainingPermission?: Array<IdentityAuthorizationModelsImpactedUser> | null;
+  /** Non-fatal findings. */
+  warnings?: Array<string> | null;
+}
+
+/** Result of simulating the deletion of a dynamic role. */
+export interface IdentityAuthorizationModelsRoleDeletionImpact {
+  /** Sample of user ids currently assigned (capped). */
+  assignedUserIds?: Array<string> | null;
+  /** Roles that inherit from this role and would need re-parenting. */
+  childRoleIds?: Array<string> | null;
+  /** Number of currently valid user assignments to the role. */
+  directAssignmentCount?: number;
+  /** Whether the role is a system role (deletion must be refused). */
+  isSystemRole?: boolean;
+  /** Whether the role exists in the requested scope. */
+  roleFound?: boolean;
+  /** The analyzed role id. */
+  roleId?: string;
+  /** The role name (empty when not found). */
+  roleName?: string | null;
+  severity?: IdentityAuthorizationImpactSeverity;
+  /** Users who lose at least one permission key entirely when the role is deleted. */
+  usersLosingPermissions?: Array<IdentityAuthorizationModelsImpactedUser> | null;
+  /** Non-fatal findings (system role, orphaned children, wildcard grants lost, cycles). */
+  warnings?: Array<string> | null;
 }
 
 /** Data model for Identity Authorization Permission Analytics Report. */
@@ -20311,11 +20458,22 @@ export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<Ide
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
 export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetTenantPermissionsOutput>;
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
+export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
 export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
+export let IdentityAuthorizationModelsImpactedUserSchema: z.ZodType<IdentityAuthorizationModelsImpactedUser>;
+export let IdentityAuthorizationModelsPermissionGraphSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraph>;
+export let IdentityAuthorizationModelsPermissionGraphCycleSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphCycle>;
+export let IdentityAuthorizationModelsPermissionGraphEdgeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphEdge>;
+export let IdentityAuthorizationModelsPermissionGraphEdgeTypeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphEdgeType>;
+export let IdentityAuthorizationModelsPermissionGraphNodeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphNode>;
+export let IdentityAuthorizationModelsPermissionGraphNodeTypeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphNodeType>;
+export let IdentityAuthorizationModelsPermissionGraphSummarySchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphSummary>;
+export let IdentityAuthorizationModelsPermissionRemovalImpactSchema: z.ZodType<IdentityAuthorizationModelsPermissionRemovalImpact>;
+export let IdentityAuthorizationModelsRoleDeletionImpactSchema: z.ZodType<IdentityAuthorizationModelsRoleDeletionImpact>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
 export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
@@ -29480,6 +29638,9 @@ IdentityAuthorizationGrantTenantPermissionCommandSchema = z.object({
   userId: z.string().uuid(),
 });
 
+/** Zod schema for IdentityAuthorizationGraphExportFormat. Graph export formats */
+IdentityAuthorizationGraphExportFormatSchema = z.enum(['None', 'DOT', 'JSON', 'GraphML']);
+
 /** Zod schema for IdentityAuthorizationHasPermissionOutput. Response indicating whether the user has the requested permission. */
 IdentityAuthorizationHasPermissionOutputSchema = z.object({
   denialReason: z.string().nullable().optional(),
@@ -29534,6 +29695,123 @@ IdentityAuthorizationJitElevationInputSchema = z.object({
   status: z.lazy(() => IdentityAuthorizationElevationRequestStatusSchema).optional(),
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema).optional(),
   updatedAt: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsImpactedUser. A user affected by a simulated permission change, with the reason. */
+IdentityAuthorizationModelsImpactedUserSchema = z.object({
+  lostPermissionKeys: z.array(z.string()).nullable().optional(),
+  reason: z.string().nullable().optional(),
+  retainedViaDirectGrant: z.boolean().optional(),
+  retainedViaRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraph. Snapshot of a tenant's permission structure rendered as a directed graph:
+users -> roles -> permissions, including inheritance, denies, and direct grants. */
+IdentityAuthorizationModelsPermissionGraphSchema = z.object({
+  edges: z
+    .array(z.lazy(() => IdentityAuthorizationModelsPermissionGraphEdgeSchema))
+    .nullable()
+    .optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  includesUsers: z.boolean().optional(),
+  nodes: z
+    .array(z.lazy(() => IdentityAuthorizationModelsPermissionGraphNodeSchema))
+    .nullable()
+    .optional(),
+  summary: z.lazy(() => IdentityAuthorizationModelsPermissionGraphSummarySchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphCycle. A cycle detected in the role-inheritance graph. */
+IdentityAuthorizationModelsPermissionGraphCycleSchema = z.object({
+  roleIds: z.array(z.string().uuid()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphEdge. A directed edge of the permission graph. */
+IdentityAuthorizationModelsPermissionGraphEdgeSchema = z.object({
+  sourceId: z.string().nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  type: z.lazy(() => IdentityAuthorizationModelsPermissionGraphEdgeTypeSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphEdgeType. Type of an edge in the permission graph. */
+IdentityAuthorizationModelsPermissionGraphEdgeTypeSchema = z.enum([
+  'RoleInheritsFrom',
+  'RoleGrantsPermission',
+  'RoleDeniesPermission',
+  'UserAssignedRole',
+  'UserDirectGrant',
+  'UserDirectDeny',
+]);
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphNode. A single node of the permission graph. */
+IdentityAuthorizationModelsPermissionGraphNodeSchema = z.object({
+  id: z.string().nullable().optional(),
+  isActive: z.boolean().nullable().optional(),
+  isRegistered: z.boolean().optional(),
+  isSystem: z.boolean().nullable().optional(),
+  label: z.string().nullable().optional(),
+  resource: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  type: z.lazy(() => IdentityAuthorizationModelsPermissionGraphNodeTypeSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphNodeType. Type of a node in the permission graph. */
+IdentityAuthorizationModelsPermissionGraphNodeTypeSchema = z.enum(['Role', 'User', 'Permission']);
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphSummary. Aggregated quality/statistics report for a permission graph. */
+IdentityAuthorizationModelsPermissionGraphSummarySchema = z.object({
+  directGrantCount: z.number().int().optional(),
+  edgeCount: z.number().int().optional(),
+  inheritanceCycles: z
+    .array(z.lazy(() => IdentityAuthorizationModelsPermissionGraphCycleSchema))
+    .nullable()
+    .optional(),
+  orphanedRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  permissionCount: z.number().int().optional(),
+  roleCount: z.number().int().optional(),
+  unregisteredPermissionKeys: z.array(z.string()).nullable().optional(),
+  userCount: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionRemovalImpact. Result of simulating the removal of a permission key from a role. */
+IdentityAuthorizationModelsPermissionRemovalImpactSchema = z.object({
+  downstreamRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  grantedViaInheritance: z.boolean().optional(),
+  isGranted: z.boolean().optional(),
+  permissionKey: z.string().nullable().optional(),
+  removableDirectly: z.boolean().optional(),
+  roleFound: z.boolean().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+  severity: z.lazy(() => IdentityAuthorizationImpactSeveritySchema).optional(),
+  usersLosingPermission: z
+    .array(z.lazy(() => IdentityAuthorizationModelsImpactedUserSchema))
+    .nullable()
+    .optional(),
+  usersRetainingPermission: z
+    .array(z.lazy(() => IdentityAuthorizationModelsImpactedUserSchema))
+    .nullable()
+    .optional(),
+  warnings: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsRoleDeletionImpact. Result of simulating the deletion of a dynamic role. */
+IdentityAuthorizationModelsRoleDeletionImpactSchema = z.object({
+  assignedUserIds: z.array(z.string().uuid()).nullable().optional(),
+  childRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  directAssignmentCount: z.number().int().optional(),
+  isSystemRole: z.boolean().optional(),
+  roleFound: z.boolean().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+  severity: z.lazy(() => IdentityAuthorizationImpactSeveritySchema).optional(),
+  usersLosingPermissions: z
+    .array(z.lazy(() => IdentityAuthorizationModelsImpactedUserSchema))
+    .nullable()
+    .optional(),
+  warnings: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionAnalyticsReport. Data model for Identity Authorization Permission Analytics Report. */
