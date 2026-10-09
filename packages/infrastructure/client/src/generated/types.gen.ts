@@ -8058,6 +8058,30 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
 /** Status of JIT elevation request */
 export type IdentityAuthorizationElevationRequestStatus = 'None' | 'Pending' | 'Approved' | 'Denied' | 'Active' | 'Expired' | 'Revoked';
 
+/** A tenant permission grant that is about to expire. */
+export interface IdentityAuthorizationExpiringTenantPermission {
+  /** Gets the expiration instant. */
+  expiresAt: string;
+  /** Gets the grant ID. */
+  permissionId: string;
+  /** Gets the grant's permission strings. */
+  permissions: Array<string> | null;
+  /** Gets the user ID the grant belongs to (null for tenant defaults). */
+  userId?: string | null;
+}
+
+/** Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+export interface IdentityAuthorizationExtendTenantPermissionExpirationCommand {
+  /** Gets the positive extension period. */
+  extension: string;
+  /** Gets the IDs of the permission grants to extend. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+}
+
 /** Permission entry in the sync contract (one TenantPermission row). */
 export interface IdentityAuthorizationExternalPermissionEntry {
   /** Denied permissions (DENY-WINS). */
@@ -8109,6 +8133,14 @@ export interface IdentityAuthorizationExternalRoleDefinition {
   permissions?: Array<string> | null;
   /** Conflict-resolution priority. */
   priority?: number;
+}
+
+/** Response containing grants that are about to expire in a tenant. */
+export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
+  /** Gets the grants expiring within the requested window, ordered by expiration instant. */
+  expiring: Array<IdentityAuthorizationExpiringTenantPermission> | null;
+  /** Gets the tenant ID. */
+  tenantId: string;
 }
 
 /** Response containing pending invitations for the current user. */
@@ -8599,6 +8631,18 @@ export interface IdentityAuthorizationSetTenantDefaultPermissionsCommand {
   permissions: Array<string> | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+export interface IdentityAuthorizationSetTenantPermissionExpirationCommand {
+  /** Gets the new expiration instant (null = permanent). */
+  expiresAt?: string | null;
+  /** Gets the IDs of the permission grants to update. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
   tenantId: CQRSModelsTenantId;
 }
 
@@ -19890,9 +19934,12 @@ export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<Ide
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
 export let IdentityAuthorizationElevationRequestStatusSchema: z.ZodType<IdentityAuthorizationElevationRequestStatus>;
+export let IdentityAuthorizationExpiringTenantPermissionSchema: z.ZodType<IdentityAuthorizationExpiringTenantPermission>;
+export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationExtendTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
 export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
 export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
@@ -19923,6 +19970,7 @@ export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizat
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
+export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
@@ -28739,6 +28787,23 @@ IdentityAuthorizationEffectivePermissionsOutputSchema = z.object({
 /** Zod schema for IdentityAuthorizationElevationRequestStatus. Status of JIT elevation request */
 IdentityAuthorizationElevationRequestStatusSchema = z.enum(['None', 'Pending', 'Approved', 'Denied', 'Active', 'Expired', 'Revoked']);
 
+/** Zod schema for IdentityAuthorizationExpiringTenantPermission. A tenant permission grant that is about to expire. */
+IdentityAuthorizationExpiringTenantPermissionSchema = z.object({
+  expiresAt: z.string().datetime(),
+  permissionId: z.string().uuid(),
+  permissions: z.array(z.string()).nullable(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExtendTenantPermissionExpirationCommand. Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema = z.object({
+  extension: z.string(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
 /** Zod schema for IdentityAuthorizationExternalPermissionEntry. Permission entry in the sync contract (one TenantPermission row). */
 IdentityAuthorizationExternalPermissionEntrySchema = z.object({
   denyPermissions: z.array(z.string()).nullable().optional(),
@@ -28777,6 +28842,12 @@ IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
   parentRoleName: z.string().nullable().optional(),
   permissions: z.array(z.string()).nullable().optional(),
   priority: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
+IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
+  expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
+  tenantId: z.string().uuid(),
 });
 
 /** Zod schema for IdentityAuthorizationGetPendingResourceInvitationsOutput. Response containing pending invitations for the current user. */
@@ -29197,6 +29268,15 @@ These are baseline permissions applied to all users in a specific tenant. */
 IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema = z.object({
   permissions: z.array(z.string()).nullable(),
   setBy: z.string().uuid(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationSetTenantPermissionExpirationCommand. Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+IdentityAuthorizationSetTenantPermissionExpirationCommandSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
 });
 

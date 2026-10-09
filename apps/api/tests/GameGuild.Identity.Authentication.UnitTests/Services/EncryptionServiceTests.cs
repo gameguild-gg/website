@@ -1,7 +1,9 @@
+using System.Security.Cryptography;
 using FluentAssertions;
 using GameGuild.Identity.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -16,8 +18,9 @@ public class EncryptionServiceTests
     {
         _loggerMock = new Mock<ILogger<EncryptionService>>();
         var configurationMock = new Mock<IConfiguration>();
-        // Return null so fallback key is used in tests
-        configurationMock.Setup(c => c["Encryption:Key"]).Returns((string?)null);
+        // The service fails closed without a key, so tests supply one (>= 32 bytes).
+        configurationMock.Setup(c => c["Encryption:EncryptionKey"]).Returns((string?)null);
+        configurationMock.Setup(c => c["Encryption:Key"]).Returns("unit-test-encryption-key-with-at-least-32-bytes");
         _service = new EncryptionService(_loggerMock.Object, configurationMock.Object);
     }
 
@@ -287,5 +290,174 @@ public class EncryptionServiceTests
         var shortToken = Convert.ToBase64String(new byte[8])
             .Replace("+", "-").Replace("/", "_").TrimEnd('=');
         (await _service.ValidateSecureTokenAsync(shortToken)).Should().BeFalse();
+    }
+}
+
+/// <summary>
+///     Key-handling policy for <see cref="EncryptionService" />: the service must fail closed when no
+///     key (or a key shorter than 32 bytes) is configured, and it must never fall back to a shared key.
+/// </summary>
+public sealed class EncryptionServiceKeyPolicyTests
+{
+    private const string ValidKey = "unit-test-encryption-key-with-at-least-32-bytes";
+
+    private static EncryptionService CreateService(Dictionary<string, string?> settings) =>
+        new(NullLogger<EncryptionService>.Instance,
+            new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
+
+    // --- Fail-closed: missing key ---
+
+    [Fact]
+    public void Encrypt_WithoutConfiguredKey_ThrowsInvalidOperationException()
+    {
+        var sut = CreateService(new Dictionary<string, string?>());
+
+        var act = () => sut.Encrypt("sensitive data");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Encryption:EncryptionKey*Encryption:Key*");
+    }
+
+    [Fact]
+    public async Task EncryptAsync_WithoutConfiguredKey_ThrowsInvalidOperationException()
+    {
+        var sut = CreateService(new Dictionary<string, string?>());
+
+        var act = async () => await sut.EncryptAsync("sensitive data");
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Decrypt_WithoutConfiguredKey_ThrowsInvalidOperationException()
+    {
+        var sut = CreateService(new Dictionary<string, string?>());
+
+        // Format-valid ciphertext so decryption reaches key resolution before any format check.
+        var act = () => sut.Decrypt(Convert.ToBase64String(new byte[40]));
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Encrypt_WithWhitespaceKey_ThrowsInvalidOperationException()
+    {
+        var sut = CreateService(new Dictionary<string, string?>
+        {
+            ["Encryption:Key"] = "   ",
+            ["Encryption:EncryptionKey"] = "   "
+        });
+
+        var act = () => sut.Encrypt("sensitive data");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // --- Fail-closed: key shorter than 32 bytes ---
+
+    [Theory]
+    [InlineData("Encryption:Key")]
+    [InlineData("Encryption:EncryptionKey")]
+    public void Encrypt_WithKeyShorterThan32Bytes_ThrowsInvalidOperationException(string settingName)
+    {
+        var sut = CreateService(new Dictionary<string, string?>
+        {
+            [settingName] = new string('x', 31) // 31 bytes — one short of the minimum
+        });
+
+        var act = () => sut.Encrypt("sensitive data");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*32*");
+    }
+
+    [Fact]
+    public void Encrypt_WithExactly32ByteKey_RoundTrips()
+    {
+        var sut = CreateService(new Dictionary<string, string?>
+        {
+            ["Encryption:Key"] = "0123456789abcdef0123456789abcdef" // exactly 32 bytes
+        });
+
+        var decrypted = sut.Decrypt(sut.Encrypt("boundary key length"));
+        decrypted.Should().Be("boundary key length");
+    }
+
+    // --- Setting resolution (mirrors the host startup guard) ---
+
+    [Fact]
+    public void EncryptionKeyAlias_EncryptionEncryptionKey_IsAccepted()
+    {
+        var sut = CreateService(new Dictionary<string, string?>
+        {
+            ["Encryption:EncryptionKey"] = ValidKey
+        });
+
+        var decrypted = sut.Decrypt(sut.Encrypt("alias resolution"));
+        decrypted.Should().Be("alias resolution");
+    }
+
+    [Fact]
+    public void WhenBothSettingsPresent_EncryptionEncryptionKey_TakesPrecedence()
+    {
+        // Same precedence as the host startup guard: Encryption:EncryptionKey first.
+        var encrypter = CreateService(new Dictionary<string, string?>
+        {
+            ["Encryption:EncryptionKey"] = ValidKey,
+            ["Encryption:Key"] = "another-encryption-key-with-32-bytes-min!"
+        });
+        var sameAlias = CreateService(new Dictionary<string, string?>
+        {
+            ["Encryption:EncryptionKey"] = ValidKey
+        });
+        var otherKeyOnly = CreateService(new Dictionary<string, string?>
+        {
+            ["Encryption:Key"] = "another-encryption-key-with-32-bytes-min!"
+        });
+
+        var encrypted = encrypter.Encrypt("precedence");
+
+        sameAlias.Decrypt(encrypted).Should().Be("precedence");
+        var act = () => otherKeyOnly.Decrypt(encrypted);
+        act.Should().Throw<CryptographicException>();
+    }
+
+    // --- Unbiased secure random string generation ---
+
+    private static string SampleOne() => CreateService(new Dictionary<string, string?>
+    {
+        ["Encryption:Key"] = ValidKey
+    }).GenerateSecureRandomString(310);
+
+    [Fact]
+    public void GenerateSecureRandomString_SelectsEveryAlphabetCharacter()
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        var sample = string.Concat(Enumerable.Range(0, 100).Select(_ => SampleOne()));
+
+        foreach (var c in alphabet)
+            sample.Should().Contain(c.ToString(), $"alphabet character '{c}' must be selectable");
+    }
+
+    [Fact]
+    public void GenerateSecureRandomString_IsApproximatelyUniform_NoModuloBias()
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        const int samplesPerCharacter = 500;
+        var totalSamples = alphabet.Length * samplesPerCharacter; // 31,000 characters
+        var sample = string.Concat(Enumerable.Range(0, totalSamples / 310).Select(_ => SampleOne()));
+
+        sample.Should().HaveLength(totalSamples);
+
+        // Each character should appear ~500 times. Bounds are ±5σ (σ ≈ 22.2), which the previous
+        // modulo-biased selection (first 8 characters ~25% more likely) would exceed while a
+        // correct uniform sampler stays inside with overwhelming probability.
+        const int expected = samplesPerCharacter;
+        const double sigma = 22.2;
+        var lowerBound = (int)(expected - 5 * sigma);
+        var upperBound = (int)(expected + 5 * sigma);
+
+        foreach (var c in alphabet)
+        {
+            var occurrences = sample.Count(ch => ch == c);
+            occurrences.Should().BeInRange(lowerBound, upperBound,
+                $"character '{c}' must be selected uniformly (expected ~{expected}, ±5σ bounds [{lowerBound}, {upperBound}])");
+        }
     }
 }
