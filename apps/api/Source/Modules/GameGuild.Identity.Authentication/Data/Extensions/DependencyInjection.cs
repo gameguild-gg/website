@@ -25,6 +25,9 @@ public static class DataDependencyInjection
         // Register core authentication services
         RegisterAuthenticationServices(services, configuration);
 
+        // Config-gated certificate blockchain anchoring (safe default: disabled no-op)
+        services.AddBlockchainCertificateAnchoring(configuration);
+
         // Register security services
         RegisterSecurityServices(services);
 
