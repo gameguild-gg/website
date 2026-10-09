@@ -4,17 +4,19 @@ using Microsoft.Extensions.Logging;
 namespace GameGuild.Compliance.Audit;
 
 /// <summary>
-/// Bridges identity authentication events to the central compliance audit log.
+/// Bridges identity authentication events to the durable security event pipeline. Authentication
+/// events are security events: they are classified by the security event taxonomy, persisted with
+/// bounded retries and local spool fallback, and evaluated against the security alert rules.
 /// </summary>
 public sealed class CentralAuthenticationAuditEventSink(
-    IAuditService auditService,
+    ISecurityEventLogger securityEventLogger,
     ILogger<CentralAuthenticationAuditEventSink> logger) : IAuthenticationAuditEventSink
 {
     public async Task RecordAsync(AuthenticationAuditEvent auditEvent, CancellationToken cancellationToken)
     {
         try
         {
-            await auditService.LogAsync(new CreateAuditLogRequest
+            var result = await securityEventLogger.RecordAsync(new CreateAuditLogRequest
             {
                 ActionType = auditEvent.ActionType,
                 ResourceType = "User",
@@ -37,12 +39,21 @@ public sealed class CentralAuthenticationAuditEventSink(
                     _ => auditEvent.Success ? AuditRiskLevel.Low : AuditRiskLevel.High
                 },
                 Category = AuditCategory.Authentication
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
+
+            if (result.Outcome is SecurityEventCaptureOutcome.SpooledLocally or SecurityEventCaptureOutcome.SpoolingDisabled)
+            {
+                logger.LogWarning(
+                    "Authentication event {ActionType} was not persisted directly (outcome {Outcome}); capture error: {CaptureError}",
+                    auditEvent.ActionType,
+                    result.Outcome,
+                    result.CaptureError);
+            }
         }
         catch (Exception exception)
         {
-            // Audit transport must not make a login, MFA, or session operation fail.
-            logger.LogError(exception, "Could not forward authentication event {ActionType} to the audit log", auditEvent.ActionType);
+            // The audit transport must not make a login, MFA, or session operation fail.
+            logger.LogError(exception, "Could not forward authentication event {ActionType} to the security event pipeline", auditEvent.ActionType);
         }
     }
 }

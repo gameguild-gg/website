@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 
 namespace GameGuild.Resources.Contents;
 
@@ -12,23 +13,44 @@ namespace GameGuild.Resources.Contents;
 [Authorize]
 public class VersioningController : BaseApiController
 {
+    /// <summary>
+    ///     Editorial permission keys (from GameGuild.Identity.Authorization's ContentPermission catalog)
+    ///     that gate the editorial workflow. The granular editorial keys enable least-privilege
+    ///     grants, while <c>content:write</c>/<c>content:admin</c> keep broader content managers able
+    ///     to work. System admins and <c>admin:*</c> holders bypass via <see cref="ActorContext"/>.
+    /// </summary>
+    private static readonly string[] DraftPermissions = ["content:draft", "content:write", "content:admin"];
+    private static readonly string[] SchedulePermissions = ["content:schedule", "content:write", "content:admin"];
+    private static readonly string[] EditPermissions = ["content:edit", "content:write", "content:admin"];
+
     private readonly IContentVersioningService _versioningService;
     private readonly ISender _sender;
+    private readonly IActorContextAccessor _actorContextAccessor;
 
-    public VersioningController(IContentVersioningService versioningService, ISender sender)
+    public VersioningController(
+        IContentVersioningService versioningService,
+        ISender sender,
+        IActorContextAccessor actorContextAccessor)
     {
         _versioningService = versioningService;
         _sender = sender;
+        _actorContextAccessor = actorContextAccessor;
     }
 
+    private bool HasEditorialPermission(string[] permissions) =>
+        _actorContextAccessor.ActorContext.HasAnyPermission(permissions);
+
     /// <summary>
-    /// Create a new draft version
+    ///     Create a new draft version
     /// </summary>
     [HttpPost("drafts")]
     [ProducesResponseType(typeof(ContentVersionDto), 201)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
     public async Task<IActionResult> CreateDraft([FromBody] CreateDraftRequest request, CancellationToken ct)
     {
+        if (!HasEditorialPermission(DraftPermissions)) return Forbid();
+
         var result = await _sender.Send(new CreateContentDraftCommand(request), ct).ConfigureAwait(false);
 
         return result.IsSuccess
@@ -37,14 +59,17 @@ public class VersioningController : BaseApiController
     }
 
     /// <summary>
-    /// Update a draft version
+    ///     Update a draft version
     /// </summary>
     [HttpPut("drafts/{versionId:guid}")]
     [ProducesResponseType(typeof(ContentVersionDto), 200)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> UpdateDraft(Guid versionId, [FromBody] UpdateDraftRequest request, CancellationToken ct)
     {
+        if (!HasEditorialPermission(DraftPermissions)) return Forbid();
+
         var result = await _sender.Send(new UpdateContentDraftCommand(versionId, request), ct).ConfigureAwait(false);
 
         return result.IsSuccess
@@ -197,9 +222,12 @@ public class VersioningController : BaseApiController
     [HttpPost("{versionId:guid}/schedule")]
     [ProducesResponseType(typeof(ContentVersionDto), 200)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> SchedulePublish(Guid versionId, [FromBody] ScheduleRequest request, CancellationToken ct)
     {
+        if (!HasEditorialPermission(SchedulePermissions)) return Forbid();
+
         var result = await _sender.Send(new ScheduleContentPublishCommand(versionId, request.ScheduledAt), ct).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(ContentVersionDto.FromEntity(result.Value))
@@ -212,9 +240,12 @@ public class VersioningController : BaseApiController
     [HttpPost("{versionId:guid}/cancel-schedule")]
     [ProducesResponseType(typeof(ContentVersionDto), 200)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> CancelSchedule(Guid versionId, CancellationToken ct)
     {
+        if (!HasEditorialPermission(SchedulePermissions)) return Forbid();
+
         var result = await _sender.Send(new CancelContentPublishCommand(versionId), ct).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(ContentVersionDto.FromEntity(result.Value))
@@ -245,6 +276,7 @@ public class VersioningController : BaseApiController
     [HttpPost("entity/{entityType}/{entityId:guid}/rollback")]
     [ProducesResponseType(typeof(ContentVersionDto), 201)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(403)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> Rollback(
         string entityType,
@@ -252,6 +284,9 @@ public class VersioningController : BaseApiController
         [FromBody] RollbackRequest request,
         CancellationToken ct)
     {
+        // Rollback authors a new draft from an earlier version, so it is an editorial edit operation.
+        if (!HasEditorialPermission(EditPermissions)) return Forbid();
+
         var result = await _sender.Send(
             new RollbackContentVersionCommand(entityId, entityType, request.TargetVersionNumber, request.Reason),
             ct).ConfigureAwait(false);
