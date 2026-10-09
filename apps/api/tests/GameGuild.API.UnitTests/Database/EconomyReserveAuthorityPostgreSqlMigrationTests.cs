@@ -151,7 +151,10 @@ public sealed class EconomyReserveAuthorityPostgreSqlMigrationTests
         var generator = context.GetService<IMigrationsSqlGenerator>();
         await using var transaction = await connection.BeginTransactionAsync();
         foreach (var command in generator.Generate(builder.Operations, null))
+        {
             await ExecuteAsync(connection, command.CommandText, transaction);
+        }
+
         await transaction.CommitAsync();
     }
 
@@ -186,7 +189,9 @@ public sealed class EconomyReserveAuthorityPostgreSqlMigrationTests
         public DockerFactAttribute()
         {
             if (string.Equals(Environment.GetEnvironmentVariable("SKIP_DOCKER_TESTS"), "1", StringComparison.Ordinal))
+            {
                 Skip = "Docker tests disabled by SKIP_DOCKER_TESTS=1.";
+            }
         }
     }
 }

@@ -208,9 +208,21 @@ public class TenantMetadata : EntityBase
     /// </summary>
     public void UpdateCategorization(string? industry = null, TenantSize? size = null, string? type = null)
     {
-        if (industry != null) Industry = industry;
-        if (size != null) Size = size;
-        if (type != null) Type = type;
+        if (industry != null)
+        {
+            Industry = industry;
+        }
+
+        if (size != null)
+        {
+            Size = size;
+        }
+
+        if (type != null)
+        {
+            Type = type;
+        }
+
         Touch();
     }
 
@@ -230,9 +242,15 @@ public class TenantMetadata : EntityBase
     {
         var metadata = new TenantMetadata { TenantId = tenantId };
 
-        if (customFields != null) metadata.SetCustomFields(customFields);
+        if (customFields != null)
+        {
+            metadata.SetCustomFields(customFields);
+        }
 
-        if (tags != null) metadata.SetTags(tags);
+        if (tags != null)
+        {
+            metadata.SetTags(tags);
+        }
 
         return metadata;
     }

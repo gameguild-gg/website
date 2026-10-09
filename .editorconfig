@@ -11,6 +11,7 @@ trim_trailing_whitespace = true
 
 [*.cs]
 indent_size = 4
+csharp_prefer_braces = true:warning
 
 [*.{ts,tsx,js,jsx,mjs,cjs}]
 indent_size = 2
@@ -35,3 +36,149 @@ indent_size = 2
 
 [Makefile]
 indent_style = tab
+
+# SonarAnalyzer.CSharp staged severities (todo 10, codacy-quality-debt plan).
+# Derived from .omo/codacy/csharp-patterns.json (all 131 Codacy patterns; the 45 SonarCSharp
+# ones listed here). Staging: security + errorprone-real rules warn (build gate), every
+# style/noise rule with findings is silenced until its owning batch fixes the debt.
+# AnalysisMode stays AllDisabledByDefault (apps/api/Directory.Build.props) — Sonar analyzers
+# still respect .editorconfig severities; disabled-by-default NET analyzers are unaffected.
+[*.cs]
+# --- Security (warning) ---
+# NOTE: SonarSource hotspot rules (S2068, S5443, S5332, S2053, S2245) are DORMANT when
+# SonarAnalyzer.CSharp runs standalone via PackageReference — they only fire under the
+# SonarQube/SonarCloud Scanner. Severity=warning is set so they gate the build the moment
+# a Scanner run activates them. Verified empirically (todo 10): scratch S2068 strings do
+# not fire locally; rule + message strings confirmed present in the analyzer DLL.
+# S2077 (SQLi) and S4784-4787 do not exist in SonarAnalyzer.CSharp 10.4 — SQLi is covered
+# by Semgrep engine on the Codacy side.
+dotnet_diagnostic.S2068.severity = warning   # hardcoded credentials (hotspot)
+dotnet_diagnostic.S5332.severity = warning   # insecure URLs (http/telnet/ftp) (hotspot)
+dotnet_diagnostic.S5443.severity = warning   # publicly writable directories (hotspot)
+dotnet_diagnostic.S2053.severity = warning   # weak password hashing (hotspot)
+dotnet_diagnostic.S2245.severity = warning   # weak randomness (hotspot)
+# --- ErrorProne-real (warning) ---
+dotnet_diagnostic.S2259.severity = warning   # null dereference
+dotnet_diagnostic.S2589.severity = warning   # always-true/false condition
+dotnet_diagnostic.S2583.severity = warning   # dead branch
+dotnet_diagnostic.S3358.severity = none      # nested ternary — errorprone-real per plan but
+                                             # 274 existing findings; parked like style debt
+                                             # until its batch clears them, then escalate to warning# --- Style/noise from the Codacy inventory (none until fixed by owning batch) ---
+dotnet_diagnostic.S2360.severity = none      # 5952: checkstyle-format
+dotnet_diagnostic.S121.severity = none       # 5896: control-flow braces
+dotnet_diagnostic.S1172.severity = none      # 922: unused parameters
+dotnet_diagnostic.S2339.severity = none      # 699: public member mislabeled
+dotnet_diagnostic.S1313.severity = none      # 167: tracked in Codacy; format noise
+dotnet_diagnostic.S1450.severity = none      # 74: field-to-local
+dotnet_diagnostic.S3254.severity = none      # 63: redundant default
+dotnet_diagnostic.S125.severity = none       # 52: commented-out code
+dotnet_diagnostic.S1118.severity = none      # 48: static ctor init
+dotnet_diagnostic.S1186.severity = none      # 43: empty method (todo 11)
+dotnet_diagnostic.S3218.severity = none      # 36: static member naming
+dotnet_diagnostic.S3257.severity = none      # 32: redundant type
+dotnet_diagnostic.S3459.severity = none      # 24: unassigned field
+dotnet_diagnostic.S1301.severity = none      # 19: switch vs if
+dotnet_diagnostic.S1449.severity = none      # 17: parse/culture
+dotnet_diagnostic.S3453.severity = none      # 15: uninitialized field
+dotnet_diagnostic.S131.severity = none       # 14: switch default
+dotnet_diagnostic.S3253.severity = none      # 10: redundant ctor
+dotnet_diagnostic.S2737.severity = none      # 9: redundant catch
+dotnet_diagnostic.S3427.severity = none      # 7: overload params
+dotnet_diagnostic.S1764.severity = none      # 7: identical expressions
+dotnet_diagnostic.S1854.severity = none      # 6: dead assignment
+dotnet_diagnostic.S108.severity = none       # 4: empty block
+dotnet_diagnostic.S2326.severity = none      # 4: unused type param
+dotnet_diagnostic.S3875.severity = none      # 4: operator overload
+dotnet_diagnostic.S3241.severity = none      # 4: unusual return type
+dotnet_diagnostic.S1244.severity = none      # 3: float equality
+dotnet_diagnostic.S1226.severity = none      # 3: param reintroduced
+dotnet_diagnostic.S1994.severity = none      # 3: loop var modified
+dotnet_diagnostic.S127.severity = none       # 2: loop counter in body
+dotnet_diagnostic.S3898.severity = none      # 2: array named type name
+dotnet_diagnostic.S2681.severity = none      # 2: nested loop var
+dotnet_diagnostic.S2743.severity = none      # 2: static type naming
+dotnet_diagnostic.S3897.severity = none      # 2: array dimension
+dotnet_diagnostic.S2197.severity = none      # 1: modulo one
+dotnet_diagnostic.S2760.severity = none      # 1: empty conditional
+dotnet_diagnostic.S2955.severity = none      # 1: freezing weather
+dotnet_diagnostic.S2225.severity = none      # 1: ToString override
+dotnet_diagnostic.S1117.severity = none      # 1: field shadow param
+dotnet_diagnostic.S3440.severity = none      # 1: redundant qualifier
+dotnet_diagnostic.S3237.severity = none      # 1: value-returning setter
+# --- Style/noise NOT in the Codacy inventory (not reported by Codacy's Sonar config;
+#     codesmell-level, discovered live during todo 10 iterate-to-green) ---
+dotnet_diagnostic.S3928.severity = none      # 54: param-name string in ArgumentException
+dotnet_diagnostic.S3267.severity = none      # 8: loop → Where
+dotnet_diagnostic.S3877.severity = none      # 4: throw in getter
+dotnet_diagnostic.S2139.severity = none      # 4: log-or-rethrow
+dotnet_diagnostic.S1066.severity = none      # 4: mergeable if
+dotnet_diagnostic.S6667.severity = none      # 2: LogDebug overload
+dotnet_diagnostic.S6610.severity = none      # 2: StartsWith char overload
+dotnet_diagnostic.S6608.severity = none      # 2: index-based loop
+dotnet_diagnostic.S4136.severity = none      # 2: adjacent overloads
+dotnet_diagnostic.S2219.severity = none      # 2: operator overuse
+dotnet_diagnostic.S2094.severity = none      # 2: empty type
+dotnet_diagnostic.S1694.severity = none      # 2: abstract → interface
+dotnet_diagnostic.S1210.severity = none      # 2: comparison operators
+dotnet_diagnostic.S4144.severity = none      # 2: identical implementations
+# --- Style/noise NOT in the Codacy inventory, discovered live during todo 10 iterate-to-green
+#     (2635 findings; all codesmell-level, none Security) ---
+dotnet_diagnostic.S6964.severity = none      # 1222: await before disposal
+dotnet_diagnostic.S1144.severity = none      # 668: unused private member
+dotnet_diagnostic.S927.severity = none       # 396: same-name property override
+dotnet_diagnostic.S6562.severity = none      # 382: DateTime.Today
+dotnet_diagnostic.S2699.severity = none      # 292: test needs assertion
+dotnet_diagnostic.S2325.severity = none      # 250: member should be static
+dotnet_diagnostic.S6966.severity = none      # 212: using without sleep
+dotnet_diagnostic.S1135.severity = none      # 188: TODO tracking
+dotnet_diagnostic.S1481.severity = none      # 170: unused local
+dotnet_diagnostic.S3878.severity = none      # 140: string concat with __
+dotnet_diagnostic.S6580.severity = none      # 122: LogLevel.Default
+dotnet_diagnostic.S5034.severity = none      # 114: optional value param
+dotnet_diagnostic.S1006.severity = none      # 104: multi-line lambda
+dotnet_diagnostic.S4581.severity = none      # 84: null checked twice
+dotnet_diagnostic.S3881.severity = none      # 70: IDisposable proper dispose
+dotnet_diagnostic.S1133.severity = none      # 70: deprecated attribute
+dotnet_diagnostic.S6934.severity = none      # 56: needless Interlocked
+dotnet_diagnostic.S4487.severity = none      # 56: unused capacity arg
+dotnet_diagnostic.S2925.severity = none      # 42: equals checks type
+dotnet_diagnostic.S3993.severity = none      # 40: custom equality
+dotnet_diagnostic.S1075.severity = none      # 34: URI not hardcoded
+dotnet_diagnostic.S6932.severity = none      # 30: name + nameof
+dotnet_diagnostic.S1125.severity = none      # 24: redundant boolean
+dotnet_diagnostic.S1905.severity = none      # 20: redundant cast
+dotnet_diagnostic.S112.severity = none       # 18: decimal literal suffix
+dotnet_diagnostic.S3220.severity = none      # 16: sequence cast
+dotnet_diagnostic.S2971.severity = none      # 16: value type IComparable
+dotnet_diagnostic.S2930.severity = none      # 16: volatile semantics
+dotnet_diagnostic.S1215.severity = none      # 16: GC.SuppressFinalize
+dotnet_diagnostic.S3260.severity = none      # 14: explicit class constraint
+dotnet_diagnostic.S3236.severity = none      # 10: circular dependency warning
+dotnet_diagnostic.S3398.severity = none      # 8: static method in static class
+dotnet_diagnostic.S3265.severity = none      # 8: event unsubscription
+dotnet_diagnostic.S2365.severity = none      # 8: property hiding
+dotnet_diagnostic.S6960.severity = none      # 6: use auto-property
+dotnet_diagnostic.S6931.severity = none      # 6: ActivityCreator type
+dotnet_diagnostic.S3973.severity = none      # 6: goto dispose
+dotnet_diagnostic.S3923.severity = none      # 6: branch same behavior
+dotnet_diagnostic.S3885.severity = none      # 6: using without brace
+dotnet_diagnostic.S3604.severity = none      # 6: initializer to static ctor
+dotnet_diagnostic.S2178.severity = none      # 6: short-circuit operator
+dotnet_diagnostic.S6672.severity = none      # 4: LogTrace overload
+dotnet_diagnostic.S4035.severity = none      # 4: sealed class
+dotnet_diagnostic.S3871.severity = none      # 4: zero-length array
+dotnet_diagnostic.S3626.severity = none      # 4: jump nested in conditional
+dotnet_diagnostic.S1185.severity = none      # 4: redundant base call
+dotnet_diagnostic.S4456.severity = none      # 2: param in async
+dotnet_diagnostic.S3903.severity = none      # 2: types in namespace
+dotnet_diagnostic.S3444.severity = none      # 2: backing field naming
+dotnet_diagnostic.S3011.severity = none      # 2: reflection bypass
+dotnet_diagnostic.S2344.severity = none      # 2: enum default mismatch
+dotnet_diagnostic.S1939.severity = none      # 2: default equality
+dotnet_diagnostic.S1199.severity = none      # 2: nested code block
+dotnet_diagnostic.S1104.severity = none      # 1: public field (scratch proof residue, fired live)
+
+# Test fixtures intentionally use fake credentials/permissions (todo 2 excludes them in
+# Codacy; local build must not flag them either).
+[apps/api/tests/**.cs]
+dotnet_diagnostic.S2068.severity = none

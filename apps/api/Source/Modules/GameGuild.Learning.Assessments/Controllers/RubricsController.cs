@@ -45,8 +45,15 @@ public class RubricsController : BaseApiController
     public async Task<ActionResult<RubricDto>> PutRubric(Guid assessmentId, [FromBody] SaveRubricRequest request)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new PutAssessmentRubricEndpointCommand(assessmentId, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -65,8 +72,15 @@ public class RubricsController : BaseApiController
     public async Task<ActionResult<RubricDto>> GetRubric(Guid assessmentId)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanReadRubricAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanReadRubricAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _rubricService.GetAsync(assessmentId).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -84,8 +98,15 @@ public class RubricsController : BaseApiController
     public async Task<ActionResult> DeleteRubric(Guid assessmentId)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new DeleteAssessmentRubricEndpointCommand(assessmentId)).ConfigureAwait(false);
         if (!result.IsSuccess)

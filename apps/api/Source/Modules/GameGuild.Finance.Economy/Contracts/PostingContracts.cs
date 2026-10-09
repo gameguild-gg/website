@@ -6,7 +6,11 @@ public readonly record struct PostingTemplate
 
     public PostingTemplate(PostingTemplateKind kind, int version)
     {
-        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+        if (!Enum.IsDefined(kind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(version);
         Kind = kind;
         Version = version;
@@ -28,10 +32,26 @@ public sealed record PostingLine
         ProvenanceKind? provenance)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sequence);
-        if (!Enum.IsDefined(side)) throw new ArgumentOutOfRangeException(nameof(side));
-        if (!Enum.IsDefined(account)) throw new ArgumentOutOfRangeException(nameof(account));
-        if (amount.Units == 0) throw new ArgumentOutOfRangeException(nameof(amount));
-        if (provenance.HasValue && !Enum.IsDefined(provenance.Value)) throw new ArgumentOutOfRangeException(nameof(provenance));
+        if (!Enum.IsDefined(side))
+        {
+            throw new ArgumentOutOfRangeException(nameof(side));
+        }
+
+        if (!Enum.IsDefined(account))
+        {
+            throw new ArgumentOutOfRangeException(nameof(account));
+        }
+
+        if (amount.Units == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount));
+        }
+
+        if (provenance.HasValue && !Enum.IsDefined(provenance.Value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(provenance));
+        }
+
         Sequence = sequence;
         Side = side;
         Account = account;
@@ -63,7 +83,11 @@ public sealed record PostingRequest
         DateTimeOffset requestedAt,
         IReadOnlyCollection<PostingLine> lines)
     {
-        if (!Enum.IsDefined(authority)) throw new ArgumentOutOfRangeException(nameof(authority));
+        if (!Enum.IsDefined(authority))
+        {
+            throw new ArgumentOutOfRangeException(nameof(authority));
+        }
+
         ArgumentNullException.ThrowIfNull(lines);
         Id = id;
         Template = template;

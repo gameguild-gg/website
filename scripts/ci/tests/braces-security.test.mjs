@@ -151,7 +151,7 @@ for (const packageRoot of packageRoots) {
   });
 }
 
-test("the advisory exception is bound to an exact installed security patch", () => {
+test("the installed security patch is verified without suppressing scanner advisories", () => {
   const manifest = JSON.parse(
     readFileSync(join(repositoryRoot, "package.json"), "utf8"),
   );
@@ -167,7 +167,7 @@ test("the advisory exception is bound to an exact installed security patch", () 
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith("#"));
-  assert.deepEqual(scannerExceptions, ["CVE-2026-93687"]);
+  assert.deepEqual(scannerExceptions, []);
   const patch = readFileSync(
     join(repositoryRoot, "patches/braces@3.0.3.patch"),
     "utf8",

@@ -68,36 +68,52 @@ public class ResourceQuotaIntegrationTests : IDisposable
         var tenantId = Guid.NewGuid();
         await setupScope.Service.SetQuotaAsync(tenantId, ResourceUsageType.Users, softLimit: 8, hardLimit: 10);
 
-        var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        // Simulate 20 concurrent create requests
-        var tasks = Enumerable.Range(0, 20)
-            .Select(async _ =>
+        var operationScopes = new List<ResourceQuotaPostgreSqlScope>();
+        try
+        {
+            // Establish independent connections before releasing the quota
+            // operations together; connection setup is not the race under test.
+            for (var index = 0; index < 20; index++)
             {
-                await start.Task;
-                await using var operationScope = ResourceQuotaPostgreSqlScope.Create(database.ConnectionString);
-                var (success, _, _) = await operationScope.Service.TryAtomicConsumeAsync(
-                    tenantId,
-                    ResourceUsageType.Users,
-                    amount: 1);
-                return success;
-            })
-            .ToArray();
+                var operationScope = ResourceQuotaPostgreSqlScope.Create(database.ConnectionString);
+                operationScopes.Add(operationScope);
+                await operationScope.Context.Database.OpenConnectionAsync();
+            }
 
-        // Act
-        start.SetResult(true);
-        var results = await Task.WhenAll(tasks);
-        var successCount = results.Count(r => r);
+            var start = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tasks = operationScopes.Select(async operationScope =>
+                {
+                    await start.Task;
+                    var (success, _, _) = await operationScope.Service.TryAtomicConsumeAsync(
+                        tenantId,
+                        ResourceUsageType.Users,
+                        amount: 1);
+                    return success;
+                })
+                .ToArray();
 
-        // Assert
-        successCount.Should().Be(10, "all ten available quota units should be consumed exactly once");
-        results.Count(result => !result).Should().Be(10, "the remaining requests should receive quota rejection results");
+            // Act: all twenty database operations remain concurrent.
+            start.SetResult(true);
+            var results = await Task.WhenAll(tasks);
+            var successCount = results.Count(r => r);
 
-        await using var assertionScope = ResourceQuotaPostgreSqlScope.Create(database.ConnectionString);
-        var quota = await assertionScope.Service.GetQuotaAsync(tenantId, ResourceUsageType.Users);
-        quota.Should().NotBeNull();
-        quota!.CurrentUsage.Should().Be(10, "final usage should equal the hard limit");
-        quota.CurrentUsage.Should().Be(successCount, "usage should match number of successful operations");
+            // Assert
+            successCount.Should().Be(10, "all ten available quota units should be consumed exactly once");
+            results.Count(result => !result).Should().Be(10, "the remaining requests should receive quota rejection results");
+
+            await using var assertionScope = ResourceQuotaPostgreSqlScope.Create(database.ConnectionString);
+            var quota = await assertionScope.Service.GetQuotaAsync(tenantId, ResourceUsageType.Users);
+            quota.Should().NotBeNull();
+            quota!.CurrentUsage.Should().Be(10, "final usage should equal the hard limit");
+            quota.CurrentUsage.Should().Be(successCount, "usage should match number of successful operations");
+        }
+        finally
+        {
+            foreach (var operationScope in operationScopes)
+            {
+                await operationScope.DisposeAsync();
+            }
+        }
     }
 
     [Fact]

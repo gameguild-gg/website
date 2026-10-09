@@ -193,3 +193,55 @@ test('ATTRIBUTE_SCHEMA includes all spec-required attrs', () => {
         assert.ok(required in ATTRIBUTE_SCHEMA, `missing attr '${required}'`);
     }
 });
+
+test('build attributes never traverse an inherited workspace object', () => {
+    const inheritedWorkspace = {};
+    Object.defineProperty(Object.prototype, 'workspace', {
+        value: inheritedWorkspace,
+        configurable: true,
+        writable: true,
+    });
+    try {
+        const input = parseAttributesToInput({ flags: '-O2', output: 'a.out' });
+        assert.deepEqual(inheritedWorkspace, {});
+        assert.ok(Object.hasOwn(input, 'workspace'));
+        assert.deepEqual(input.workspace, { flags: ['-O2'], output: 'a.out' });
+    } finally {
+        delete Object.prototype.workspace;
+    }
+});
+
+test('schema extensions cannot assign reserved intermediate or final path segments', () => {
+    const key = 'security-regression';
+    try {
+        for (const target of ['__proto__.polluted', 'constructor.prototype.polluted', 'prototype.polluted', '__proto__', 'constructor', 'prototype']) {
+            ATTRIBUTE_SCHEMA[key] = { target, kind: 'string' };
+            const input = parseAttributesToInput({ [key]: 'polluted' });
+            assert.deepEqual(input, {});
+            assert.equal(Object.prototype.polluted, undefined);
+            assert.equal(Object.getPrototypeOf(input), Object.prototype);
+        }
+    } finally {
+        delete ATTRIBUTE_SCHEMA[key];
+    }
+});
+
+test('final write never invokes inherited setters (defineProperty semantics)', () => {
+    // setPath writes with Object.defineProperty, so a hostile inherited
+    // setter (e.g. planted via earlier prototype pollution) is never called
+    // for a final path segment, unlike a plain `obj[key] = value` write.
+    const calls = [];
+    Object.defineProperty(Object.prototype, 'output', {
+        set(v) { calls.push(v); },
+        get() { return undefined; },
+        configurable: true,
+    });
+    try {
+        const input = parseAttributesToInput({ output: 'a.out' });
+        assert.deepEqual(calls, []);
+        assert.deepEqual(input, { workspace: { output: 'a.out' } });
+        assert.equal(({}).polluted, undefined);
+    } finally {
+        delete Object.prototype.output;
+    }
+});

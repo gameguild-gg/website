@@ -4,7 +4,11 @@ public readonly record struct WalletId
 {
     public WalletId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Wallet ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Wallet ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -16,7 +20,11 @@ public readonly record struct SourceStampId
 {
     public SourceStampId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Source stamp ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Source stamp ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -28,7 +36,11 @@ public readonly record struct CreditLotId
 {
     public CreditLotId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Credit lot ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Credit lot ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -40,7 +52,11 @@ public readonly record struct HoldId
 {
     public HoldId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Hold ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Hold ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -54,7 +70,11 @@ public readonly record struct IdempotencyKey
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         value = value.Trim();
-        if (value.Length > 128) throw new ArgumentException("Idempotency key cannot exceed 128 characters.", nameof(value));
+        if (value.Length > 128)
+        {
+            throw new ArgumentException("Idempotency key cannot exceed 128 characters.", nameof(value));
+        }
+
         Value = value;
     }
 
@@ -65,7 +85,11 @@ public readonly record struct PostingId
 {
     public PostingId(Guid value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("Posting ID cannot be empty.", nameof(value));
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Posting ID cannot be empty.", nameof(value));
+        }
+
         Value = value;
     }
 

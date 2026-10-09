@@ -12,7 +12,9 @@ public class Result
     protected Result(bool isSuccess, Error error)
     {
         if (isSuccess && error != Error.None || !isSuccess && error == Error.None)
+        {
             throw new ArgumentException("Invalid error", nameof(error));
+        }
 
         IsSuccess = isSuccess;
         Error = error;
@@ -65,14 +67,24 @@ public class Result
     ///     If successful, runs the predicate. If the predicate fails, returns a failure with <paramref name="error" />.
     /// </summary>
     public Result Ensure(Func<bool> predicate, Error error)
-        => IsFailure ? this : predicate() ? this : Failure(error);
+    {
+        if (IsFailure)
+        {
+            return this;
+        }
+        return predicate() ? this : Failure(error);
+    }
 
     /// <summary>
     ///     Executes <paramref name="action" /> on success, returns this result unchanged.
     /// </summary>
     public Result Tap(Action action)
     {
-        if (IsSuccess) action();
+        if (IsSuccess)
+        {
+            action();
+        }
+
         return this;
     }
 
@@ -130,14 +142,24 @@ public class Result<TValue> : Result
     ///     If successful, runs the predicate. If the predicate fails, returns a failure.
     /// </summary>
     public Result<TValue> Ensure(Func<TValue, bool> predicate, Error error)
-        => IsFailure ? this : predicate(_value!) ? this : Failure<TValue>(error);
+    {
+        if (IsFailure)
+        {
+            return this;
+        }
+        return predicate(_value!) ? this : Failure<TValue>(error);
+    }
 
     /// <summary>
     ///     Executes <paramref name="action" /> on success and returns this result unchanged.
     /// </summary>
     public Result<TValue> Tap(Action<TValue> action)
     {
-        if (IsSuccess) action(_value!);
+        if (IsSuccess)
+        {
+            action(_value!);
+        }
+
         return this;
     }
 

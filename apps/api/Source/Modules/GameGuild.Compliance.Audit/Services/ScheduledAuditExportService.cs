@@ -3,8 +3,22 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Compliance.Audit;
+
+/// <summary>
+/// Server-side configuration for scheduled audit exports. InProgress executions older than
+/// <see cref="StaleClaimThreshold"/> are treated as dead claims (for example after a process
+/// death mid-run) and recovered by the scheduling sweep.
+/// </summary>
+public sealed class AuditScheduledExportOptions
+{
+    public static string ConfigurationSection { get; } = "Audit:ScheduledExports";
+    public static string StaleClaimThresholdMinutesKey { get; } = "StaleClaimThresholdMinutes";
+
+    public TimeSpan StaleClaimThreshold { get; set; } = TimeSpan.FromMinutes(30);
+}
 
 public sealed record ScheduledAuditExportDownload(Stream Content, string FileName, string ContentType);
 
@@ -41,16 +55,18 @@ public sealed partial class ScheduledAuditExportService(
     IAuditService auditService,
     IAuditExportCronSchedule cronSchedule,
     IAuditScheduledExportStorage storage,
+    IOptions<AuditScheduledExportOptions> optionsAccessor,
     ILogger<ScheduledAuditExportService> logger) : IScheduledAuditExportService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly AuditScheduledExportOptions _options = optionsAccessor.Value;
 
     public async Task<ScheduledAuditExportResponse> CreateAsync(
         CreateScheduledAuditExportRequest request,
         Guid adminUserId,
         CancellationToken cancellationToken)
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = SystemClock.UtcNow;
         var nextRunUtc = cronSchedule.GetNextRunUtc(request.CronExpression, request.Timezone, nowUtc);
         var export = ScheduledAuditExport.Create(
             request.TenantId,
@@ -152,7 +168,8 @@ public sealed partial class ScheduledAuditExportService(
 
     public async Task<int> ProcessDueAsync(CancellationToken cancellationToken)
     {
-        var nowUtc = DateTime.UtcNow;
+        await RecoverStaleClaimsAsync(cancellationToken).ConfigureAwait(false);
+        var nowUtc = SystemClock.UtcNow;
         var dueExports = await repository.GetDueAsync(nowUtc, limit: 20, cancellationToken).ConfigureAwait(false);
         var processed = 0;
 
@@ -186,7 +203,7 @@ public sealed partial class ScheduledAuditExportService(
                     artifact.Sha256,
                     artifact.FileName,
                     timer.Elapsed,
-                    DateTime.UtcNow,
+                    SystemClock.UtcNow,
                     cancellationToken).ConfigureAwait(false);
                 await LogExecutionAsync(
                     export,
@@ -200,7 +217,7 @@ public sealed partial class ScheduledAuditExportService(
                     export.Id,
                     history.Id,
                     timer.Elapsed,
-                    DateTime.UtcNow,
+                    SystemClock.UtcNow,
                     CancellationToken.None).ConfigureAwait(false);
                 await LogExecutionAsync(export, history.Id, recordCount: 0, succeeded: false).ConfigureAwait(false);
                 throw;
@@ -212,7 +229,7 @@ public sealed partial class ScheduledAuditExportService(
                     export.Id,
                     history.Id,
                     timer.Elapsed,
-                    DateTime.UtcNow,
+                    SystemClock.UtcNow,
                     CancellationToken.None).ConfigureAwait(false);
                 await LogExecutionAsync(export, history.Id, recordCount: 0, succeeded: false).ConfigureAwait(false);
             }
@@ -221,6 +238,22 @@ public sealed partial class ScheduledAuditExportService(
         }
 
         return processed;
+    }
+
+    private async Task RecoverStaleClaimsAsync(CancellationToken cancellationToken)
+    {
+        var recovered = await repository.RecoverStaleClaimsAsync(
+            SystemClock.UtcNow,
+            _options.StaleClaimThreshold,
+            cancellationToken).ConfigureAwait(false);
+
+        if (recovered > 0)
+        {
+            logger.LogWarning(
+                "Recovered {ClaimCount} stale scheduled audit export claim(s) older than {StaleClaimThreshold}",
+                recovered,
+                _options.StaleClaimThreshold);
+        }
     }
 
     private async Task LogExecutionAsync(
@@ -246,7 +279,7 @@ public sealed partial class ScheduledAuditExportService(
 
     public async Task<int> ExpireExpiredFilesAsync(CancellationToken cancellationToken)
     {
-        var expiredFiles = await repository.GetExpiredFilesAsync(DateTime.UtcNow, limit: 100, cancellationToken)
+        var expiredFiles = await repository.GetExpiredFilesAsync(SystemClock.UtcNow, limit: 100, cancellationToken)
             .ConfigureAwait(false);
         var expired = 0;
 

@@ -345,7 +345,11 @@ public sealed class DurableAdminWithdrawalApplicationServiceTests
             "signature" => policy,
             _ => policy
         };
-        if (invalid == "signature") signatureValid = false;
+        if (invalid == "signature")
+        {
+            signatureValid = false;
+        }
+
         var service = CreateAdvancedService(
             new InMemoryAdminWithdrawalStore(), new AdminWithdrawalAuditTrail(),
             new SelectivePolicyStore(policy, null), new ConfigurableSignatureVerifier(signatureValid),
@@ -539,10 +543,12 @@ public sealed class DurableAdminWithdrawalApplicationServiceTests
         var command = CreateDispatchCommand(
             fixture.Run.TenantId, actorId, fixture.Run.Id, expectedVersion);
         if (invalid == "reauth-binding")
+        {
             command = command with
             {
                 Reauthentication = command.Reauthentication with { TransactionBinding = "wrong" }
             };
+        }
 
         await FluentActions.Awaiting(() => fixture.Service.DispatchAsync(command))
             .Should().ThrowAsync<Exception>();
@@ -606,7 +612,10 @@ public sealed class DurableAdminWithdrawalApplicationServiceTests
         var result = await service.ReconcileAsync(new ReconcileAdminWithdrawalCommand(
             tenantId, Guid.NewGuid(), run.Id));
 
-        if (terminal) workflow.ProviderEvents.Should().ContainSingle();
+        if (terminal)
+        {
+            workflow.ProviderEvents.Should().ContainSingle();
+        }
         else
         {
             result.Should().BeSameAs(run);
@@ -676,7 +685,11 @@ public sealed class DurableAdminWithdrawalApplicationServiceTests
         }
 
         var policy = CreatePolicy(tenantId, walletId, run.PolicyVersion.Value);
-        if (invalid == "policy-version") policy = policy with { Version = policy.Version + 1 };
+        if (invalid == "policy-version")
+        {
+            policy = policy with { Version = policy.Version + 1 };
+        }
+
         if (invalid is "policy-provider" or "policy-destination")
         {
             var payload = PolicyPayload(
@@ -691,17 +704,26 @@ public sealed class DurableAdminWithdrawalApplicationServiceTests
 
         var reserve = CreateReserve(run.ReserveVersion.Value);
         if (invalid == "reserve-version")
+        {
             reserve = reserve with { Version = new ReserveVersion(run.ReserveVersion.Value + 1) };
+        }
+
         if (invalid == "reserve-epoch")
+        {
             reserve = reserve with { AuthorizationEpoch = run.ReserveAuthorizationEpoch + 1 };
+        }
+
         IReadOnlyList<PersistedFragmentReservation> reservations = invalid == "fragments-empty"
             ? []
             : [CreateFragment(run, root)];
         if (invalid == "fragments-incomplete")
+        {
             reservations = [CreateFragment(run, root) with
             {
                 Amount = new CoinAmount(CurrencyCode.HardCoin, run.Amount.Units - 1)
             }];
+        }
+
         var service = CreateAdvancedService(
             store,
             audit,

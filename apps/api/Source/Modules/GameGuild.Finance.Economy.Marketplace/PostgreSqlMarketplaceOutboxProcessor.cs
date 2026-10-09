@@ -73,7 +73,9 @@ public sealed class PostgreSqlMarketplaceOutboxProcessor : IMarketplaceOutboxPro
         var normalizedOwner = owner.Trim();
         var row = await ClaimAsync(normalizedOwner, now, cancellationToken);
         if (row is null)
+        {
             return new MarketplaceOutboxProcessResult(MarketplaceOutboxProcessStatus.NoWork, null, null);
+        }
 
         try
         {
@@ -94,7 +96,11 @@ public sealed class PostgreSqlMarketplaceOutboxProcessor : IMarketplaceOutboxPro
         catch (Exception exception)
         {
             var error = $"{exception.GetType().Name}: {exception.Message}";
-            if (error.Length > 1_000) error = error[..1_000];
+            if (error.Length > 1_000)
+            {
+                error = error[..1_000];
+            }
+
             row.LeaseOwner = null;
             row.LeaseExpiresAt = null;
             row.LastError = error;
@@ -119,9 +125,11 @@ public sealed class PostgreSqlMarketplaceOutboxProcessor : IMarketplaceOutboxPro
             .ThenBy(item => item.Id)
             .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
-            return null;
+            {
+                return null;
+            }
 
-        row.LeaseOwner = owner;
+            row.LeaseOwner = owner;
         row.LeaseExpiresAt = now.Add(LeaseDuration);
         row.AttemptCount = checked(row.AttemptCount + 1);
         await _db.SaveChangesAsync(cancellationToken);
@@ -134,7 +142,9 @@ public sealed class PostgreSqlMarketplaceOutboxProcessor : IMarketplaceOutboxPro
         var actualHash = Convert.ToHexStringLower(
             SHA256.HashData(Encoding.UTF8.GetBytes(row.Payload)));
         if (!string.Equals(actualHash, row.PayloadHash, StringComparison.Ordinal))
+        {
             throw new MarketplaceOutboxException("Marketplace outbox payload hash is invalid.");
+        }
 
         using var document = JsonDocument.Parse(row.Payload);
         var payload = document.RootElement;
@@ -142,8 +152,10 @@ public sealed class PostgreSqlMarketplaceOutboxProcessor : IMarketplaceOutboxPro
             !payload.TryGetProperty("settlementId", out var settlementProperty) ||
             !settlementProperty.TryGetGuid(out var settlementId) ||
             settlementId != row.SettlementId)
+        {
             throw new MarketplaceOutboxException(
-                "Marketplace outbox payload is not bound to its settlement.");
+            "Marketplace outbox payload is not bound to its settlement.");
+        }
 
         return new MarketplaceOutboxDispatchMessage(
             row.Id, row.TenantId, row.SettlementId, row.MessageType,
@@ -216,17 +228,28 @@ public sealed class CommerceMarketplaceOutboxHandler : IMarketplaceOutboxHandler
             settlement.OrderId,
             cancellationToken);
         if (!entitlement.Success)
+        {
             throw new MarketplaceOutboxException(
-                entitlement.ErrorMessage ?? "Commerce rejected the Marketplace entitlement grant.");
+            entitlement.ErrorMessage ?? "Commerce rejected the Marketplace entitlement grant.");
+        }
 
         var order = await RequireOrderAsync(settlement, cancellationToken);
         if (order.Status is OrderStatus.Pending or OrderStatus.Processing)
+        {
             order.MarkAsPaid("economy-ledger", "gameguild-economy", settlement.PostingId.ToString("N"));
+        }
+
         if (order.Status == OrderStatus.Completed)
+        {
             order.MarkAsFulfilled();
+        }
+
         if (!order.IsSuccessfullyCompleted)
+        {
             throw new MarketplaceOutboxException(
-                "Commerce order is not in a state that can accept Marketplace fulfillment.");
+            "Commerce order is not in a state that can accept Marketplace fulfillment.");
+        }
+
         await _orders.UpdateAsync(order, cancellationToken);
         await _orders.SaveChangesAsync(cancellationToken);
     }
@@ -240,12 +263,17 @@ public sealed class CommerceMarketplaceOutboxHandler : IMarketplaceOutboxHandler
                 settlement.ProductId,
                 "Economy Marketplace order refunded",
                 cancellationToken))
+        {
             throw new MarketplaceOutboxException(
-                "Commerce could not find the Marketplace entitlement to revoke.");
+            "Commerce could not find the Marketplace entitlement to revoke.");
+        }
 
         var order = await RequireOrderAsync(settlement, cancellationToken);
         if (order.Status != OrderStatus.Refunded)
+        {
             order.ProcessRefund(order.Total, "Economy Marketplace order refunded");
+        }
+
         await _orders.UpdateAsync(order, cancellationToken);
         await _orders.SaveChangesAsync(cancellationToken);
     }
@@ -259,8 +287,11 @@ public sealed class CommerceMarketplaceOutboxHandler : IMarketplaceOutboxHandler
         if (order.TenantId != settlement.TenantId || order.UserId != settlement.BuyerId ||
             order.LineItems.Count != 1 || order.LineItems.Single().Id != settlement.OrderLineItemId ||
             order.LineItems.Single().ProductId != settlement.ProductId)
+        {
             throw new MarketplaceOutboxException(
-                "Commerce order no longer matches the immutable Marketplace snapshot.");
+            "Commerce order no longer matches the immutable Marketplace snapshot.");
+        }
+
         return order;
     }
 
@@ -268,8 +299,10 @@ public sealed class CommerceMarketplaceOutboxHandler : IMarketplaceOutboxHandler
     {
         if (!payload.TryGetProperty(propertyName, out var property) ||
             !property.TryGetGuid(out var actual) || actual != expected)
+        {
             throw new MarketplaceOutboxException(
-                $"Marketplace outbox {propertyName} binding is invalid.");
+            $"Marketplace outbox {propertyName} binding is invalid.");
+        }
     }
 }
 

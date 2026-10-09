@@ -2649,7 +2649,7 @@ public sealed class AuthorizationCoverageCompletionTests
             $"acl:{aclTenantId}:{aclUserId}:Document:doc-1:tv1:uv1:gv1",
             $"acl:{aclTenantId}:subject:Document:doc-1:tv1:uv1:gv1"
         ];
-        InvokePrivate<object>(aclWithoutMetrics, "InvalidatePrincipalResourceCache", AclPrincipalType.User, aclUserId, aclTenantId, "Document", "doc-1");
+        InvokePrivate<object>(aclWithoutMetrics, "InvalidatePrincipalResourceCache", aclTenantId, "Document", "doc-1");
         aclNullMetricKeys[aclTenantId.ToString()] = [$"acl:{aclTenantId}:{aclUserId}:Document:doc-1:tv1:uv1:gv1"];
         InvokePrivate<object>(aclWithoutMetrics, "InvalidateUserResourceCache", aclUserId, aclTenantId, "Document", "doc-1");
 

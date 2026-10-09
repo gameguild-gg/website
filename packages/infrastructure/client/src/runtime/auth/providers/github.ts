@@ -23,6 +23,7 @@
 import type { OAuthProviderConfig, ProviderResult, SessionUser } from '../types.js';
 import { OAuthError, parseErrorBody, extractErrorMessage } from '../errors.js';
 import { resolveAuthPermissions, resolveAuthRoles } from '../claims.js';
+import { assertSafeServiceUrl } from '../../security/safe-remote-url.js';
 
 /**
  * Options for the GitHub provider
@@ -83,7 +84,10 @@ export function GitHubProvider(options: GitHubProviderOptions): OAuthProviderCon
       const params = new URLSearchParams();
       if (redirectUri) params.set('redirectUri', redirectUri);
 
-      const response = await fetch(`${effectiveApiUrl}${authorizePath}?${params.toString()}`, { method: 'GET' });
+      const response = await fetch(assertSafeServiceUrl(`${effectiveApiUrl}${authorizePath}?${params.toString()}`, effectiveApiUrl), {
+        method: 'GET',
+        redirect: 'error',
+      });
 
       if (!response.ok) {
         const errorData = await parseErrorBody(response);
@@ -100,7 +104,8 @@ export function GitHubProvider(options: GitHubProviderOptions): OAuthProviderCon
     handleCallback: async (apiUrl: string, code: string, state?: string): Promise<ProviderResult> => {
       const effectiveApiUrl = options.apiUrl || apiUrl;
 
-      const response = await fetch(`${effectiveApiUrl}${callbackPath}`, {
+      const response = await fetch(assertSafeServiceUrl(`${effectiveApiUrl}${callbackPath}`, effectiveApiUrl), {
+        redirect: 'error',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, state }),

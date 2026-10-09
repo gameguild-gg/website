@@ -187,13 +187,24 @@ public class WebAuthnRegistrationService(
         if (userAgent != null)
         {
             if (userAgent.Contains("Windows"))
+            {
                 return type == WebAuthnAuthenticatorType.Platform ? "Windows Hello" : "Security Key";
+            }
+
             if (userAgent.Contains("Mac"))
+            {
                 return type == WebAuthnAuthenticatorType.Platform ? "Touch ID" : "Security Key";
+            }
+
             if (userAgent.Contains("iPhone") || userAgent.Contains("iPad"))
+            {
                 return "Face ID / Touch ID";
+            }
+
             if (userAgent.Contains("Android"))
+            {
                 return type == WebAuthnAuthenticatorType.Platform ? "Android Biometric" : "Security Key";
+            }
         }
 
         return type == WebAuthnAuthenticatorType.Platform ? "Built-in Authenticator" : "Security Key";

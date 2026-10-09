@@ -19,22 +19,38 @@ public static class BountyClaimPostingFactory
         ArgumentNullException.ThrowIfNull(escrow);
         ArgumentNullException.ThrowIfNull(request);
         if (escrow.Id != request.BountyId)
+        {
             throw new ArgumentException("The bounty claim must target the persisted escrow.", nameof(request));
+        }
+
         if (escrow.Status != BountyStatus.Open)
+        {
             throw new BountyTerminalConflictException("Only an open bounty can be claimed.");
+        }
+
         if (request.ClaimantId == escrow.PosterId ||
             request.ClaimantWalletId == escrow.PosterWalletId ||
             request.ClaimantWalletId == escrow.EscrowWalletId)
+        {
             throw new BountyClaimIneligibleException("A poster cannot claim their own bounty.");
+        }
+
         if (request.Authority.ActorId != request.ClaimantId)
+        {
             throw new ArgumentException("The bounty claim authority must be the claimant.", nameof(request));
+        }
 
         var fragments = escrow.Fragments.OrderBy(fragment => fragment.EscrowLotId?.Value).ToArray();
         if (fragments.Length == 0 || fragments.Any(fragment => fragment.EscrowLotId is null))
+        {
             throw new InvalidOperationException("A bounty claim requires every materialized escrow lot.");
+        }
+
         if (fragments.Any(fragment => fragment.Amount.Currency != escrow.Amount.Currency) ||
             fragments.Sum(fragment => fragment.Amount.Units) != escrow.Amount.Units)
+        {
             throw new InvalidOperationException("Bounty escrow fragments do not conserve the claim amount.");
+        }
 
         var outputProvenance = escrow.Amount.Currency == CurrencyCode.HardCoin
             ? ProvenanceKind.EarnedHard

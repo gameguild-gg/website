@@ -62,19 +62,33 @@ public sealed class ServiceAccountMutationCommandHandler(
         var account = await serviceAccountService.GetByIdAsync(command.ServiceAccountId, cancellationToken)
             .ConfigureAwait(false);
         if (account is null)
+        {
             return false;
+        }
 
         if (!string.IsNullOrEmpty(command.Name))
+        {
             account.Name = command.Name;
+        }
+
         if (command.Description is not null)
+        {
             account.Description = command.Description;
+        }
+
         if (!string.IsNullOrEmpty(command.Scopes))
+        {
             await serviceAccountService.UpdateScopesAsync(
                 command.ServiceAccountId,
                 command.Scopes,
                 cancellationToken).ConfigureAwait(false);
+        }
+
         if (command.ExpiresAt.HasValue)
+        {
             account.ExpiresAt = command.ExpiresAt.Value;
+        }
+
         return true;
     }
 
@@ -124,7 +138,9 @@ public sealed class ServiceAccountMutationCommandHandler(
             command.IpAddress,
             cancellationToken).ConfigureAwait(false);
         if (account is null)
+        {
             return new(null, null, null);
+        }
 
         var (token, expiresAt) = await jwtTokenService.GenerateServiceAccountTokenAsync(
             account.Id.ToString(),

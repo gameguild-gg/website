@@ -5,7 +5,6 @@ using GameGuild.API.Database;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Users;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,7 +33,7 @@ public static class AuthenticationEndpoint
         authGroup.MapPost("/google", GoogleSignIn).WithName("GoogleSignIn").Produces<SignInResponseDto>().Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
     }
 
-    private static async Task<IResult> SignUp(SignUpRequest request, IAuthService authService, HttpContext httpContext, ILogger<Program> logger, CancellationToken cancellationToken = default)
+    private static async Task<IResult> SignUp(SignUpRequest request, IAuthService authService, ILogger<Program> logger, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -60,7 +59,7 @@ public static class AuthenticationEndpoint
             // Call the Authentication module's service
             var response = await authService.LocalSignUpAsync(signUpRequest, cancellationToken).ConfigureAwait(false);
 
-            logger.LogInformation("User signed up successfully: {Email}, Response.Email: {ResponseEmail}, Response.UserId: {UserId}", request.Email, response.Email, response.UserId);
+            logger.LogInformation("User signed up successfully: {UserId}", LogRedaction.RedactId(response.UserId, "uid"));
 
             // Map to the API's response DTO
             return Results.Created(
@@ -97,7 +96,7 @@ public static class AuthenticationEndpoint
         }
     }
 
-    private static async Task<IResult> SignIn(SignInRequest request, ApplicationDbContext dbContext, IPasswordHasher<User> passwordHasher, IConfiguration configuration, ILogger<Program> logger)
+    private static async Task<IResult> SignIn(SignInRequest request, ApplicationDbContext dbContext, IConfiguration configuration, ILogger<Program> logger)
     {
         try
         {
@@ -116,7 +115,7 @@ public static class AuthenticationEndpoint
             // Generate tokens
             var tokens = GenerateTokens(user, configuration);
 
-            logger.LogInformation("User signed in successfully: {Email}", request.Email);
+            logger.LogInformation("User signed in successfully: {UserId}", LogRedaction.RedactId(user.Id, "uid"));
 
             return Results.Ok(
                 new SignInResponseDto

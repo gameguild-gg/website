@@ -91,8 +91,15 @@ public class UsageRetentionPolicy : EntityBase
     /// </summary>
     public bool ShouldExecute()
     {
-        if (!IsActive) return false;
-        if (!NextExecutionAt.HasValue) return true;
+        if (!IsActive)
+        {
+            return false;
+        }
+
+        if (!NextExecutionAt.HasValue)
+        {
+            return true;
+        }
 
         return SystemClock.UtcNow >= NextExecutionAt.Value;
     }

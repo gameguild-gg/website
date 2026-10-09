@@ -50,7 +50,10 @@ public static class ResponseCachingOptionsBuilder
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (options.MaximumBodySize < 0) throw new InvalidOperationException("Maximum body size cannot be negative.");
+        if (options.MaximumBodySize < 0)
+        {
+            throw new InvalidOperationException("Maximum body size cannot be negative.");
+        }
     }
 
     /// <summary>

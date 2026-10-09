@@ -37,7 +37,7 @@
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "eslint": "^10.11.0",
-        "eslint-config-next": "16.3.6",
+        "eslint-config-next": "16.3.8",
         "raw-loader": "^4.0.2",
         "tailwindcss": "^4",
         "typescript": "^6.0.3"

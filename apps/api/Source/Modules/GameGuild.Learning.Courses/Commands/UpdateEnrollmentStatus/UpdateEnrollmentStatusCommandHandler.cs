@@ -18,9 +18,17 @@ public sealed class UpdateEnrollmentStatusCommandHandler(IApplicationDbContext c
     if (program == null) { throw new InvalidOperationException($"Program with ID {request.ProgramId} not found"); }
 
     program.EnrollmentStatus = (EnrollmentStatus)request.Status;
-    if (request.MaxEnrollments.HasValue) program.MaxEnrollments = request.MaxEnrollments;
-    if (request.EnrollmentDeadline.HasValue) program.EnrollmentDeadline = request.EnrollmentDeadline;
-    program.Touch();
+    if (request.MaxEnrollments.HasValue)
+        {
+            program.MaxEnrollments = request.MaxEnrollments;
+        }
+
+        if (request.EnrollmentDeadline.HasValue)
+        {
+            program.EnrollmentDeadline = request.EnrollmentDeadline;
+        }
+
+        program.Touch();
 
     await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

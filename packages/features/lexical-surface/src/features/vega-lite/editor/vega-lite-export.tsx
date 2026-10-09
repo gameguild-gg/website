@@ -15,17 +15,22 @@ import type { VegaDataAttachment } from "../vega-lite-data";
 import type { Config } from "vega-lite";
 
 // Function to create dark version of any theme
-function createDarkTheme(baseTheme: Config) {
+function createDarkTheme(baseTheme: Config): Config {
+  const section = (value: unknown): Record<string, unknown> =>
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : {};
+  const theme = baseTheme as unknown as Record<string, unknown>;
   return {
-    ...baseTheme,
+    ...theme,
     background: "#1a1a1a",
     view: {
-      ...baseTheme.view,
+      ...section(theme.view),
       fill: "#1a1a1a",
       stroke: "#404040",
     },
     axis: {
-      ...baseTheme.axis,
+      ...section(theme.axis),
       domainColor: "#666666",
       gridColor: "#333333",
       tickColor: "#666666",
@@ -33,19 +38,19 @@ function createDarkTheme(baseTheme: Config) {
       titleColor: "#ffffff",
     },
     legend: {
-      ...baseTheme.legend,
+      ...section(theme.legend),
       labelColor: "#cccccc",
       titleColor: "#ffffff",
     },
     title: {
-      ...baseTheme.title,
+      ...section(theme.title),
       color: "#ffffff",
     },
     text: {
-      ...baseTheme.text,
+      ...section(theme.text),
       fill: "#cccccc",
     },
-  };
+  } as unknown as Config;
 }
 
 interface VegaLiteExportProps {

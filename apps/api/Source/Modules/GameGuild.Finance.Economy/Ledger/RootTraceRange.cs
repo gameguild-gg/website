@@ -25,7 +25,10 @@ public readonly record struct RootTraceRange
 
     public RootTraceSplit Take(long units)
     {
-        if (units <= 0 || units > Length) throw new ArgumentOutOfRangeException(nameof(units));
+        if (units <= 0 || units > Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(units));
+        }
 
         var selected = new RootTraceRange(Root, Start, units, Epoch);
         var remainingLength = Length - units;

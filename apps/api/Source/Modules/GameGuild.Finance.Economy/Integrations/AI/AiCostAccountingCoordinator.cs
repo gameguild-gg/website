@@ -40,14 +40,23 @@ public sealed class AiCostAccountingCoordinator
         {
             if (_authorizationKeys.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.RequestId == command.RequestId) return duplicate;
+                if (duplicate.RequestId == command.RequestId)
+                {
+                    return duplicate;
+                }
+
                 throw new AiCostAccountingIdempotencyException(
                     "An AI authorization idempotency key cannot identify another request.");
             }
             if (_authorizations.ContainsKey(command.RequestId))
+            {
                 throw new AiCostAccountingIdempotencyException("The AI request is already authorized.");
+            }
+
             if (command.AvailableFundingLots.GroupBy(lot => lot.Id).Any(group => group.Count() > 1))
+            {
                 throw new ArgumentException("Available funding lots must have unique identities.", nameof(command));
+            }
 
             var price = _catalog.Resolve(command.ServiceCode, command.Provider, command.Model, command.AuthorizedAt);
             var eligible = command.AvailableFundingLots.Where(lot =>
@@ -91,21 +100,36 @@ public sealed class AiCostAccountingCoordinator
         {
             if (_providerUsage.TryGetValue(command.ProviderUsageId.Trim(), out var duplicate))
             {
-                if (duplicate.AuthorizationId == command.AuthorizationId) return duplicate;
+                if (duplicate.AuthorizationId == command.AuthorizationId)
+                {
+                    return duplicate;
+                }
+
                 throw new AiProviderUsageReplayException("Provider usage cannot be replayed across authorizations.");
             }
             var authorization = GetAuthorization(command.AuthorizationId);
             if (authorization.Status != AiServiceChargeStatus.Reserved)
+            {
                 throw new InvalidOperationException("Only a reserved AI charge can be completed.");
+            }
+
             if (authorization.Provider != command.Provider ||
                 !string.Equals(authorization.Model, command.Model.Trim(), StringComparison.Ordinal))
+            {
                 throw new AiProviderUsageReplayException("Provider usage is not bound to the authorization rate card.");
+            }
+
             if (command.InputTokens > authorization.Price.MaximumInputTokens ||
                 command.OutputTokens > authorization.Price.MaximumOutputTokens)
+            {
                 throw new AiProviderUsageExceededReservationException(
                     "Provider usage exceeded the reserved token envelope.");
+            }
+
             if (command.TotalTokens != checked(command.InputTokens + command.OutputTokens))
+            {
                 throw new ArgumentException("Total tokens must equal input plus output tokens.", nameof(command));
+            }
 
             var cost = authorization.Price.RateCard.CalculateCost(command.InputTokens, command.OutputTokens);
             _charges.Finalize(authorization.Reservation, command.CompletedAt);
@@ -161,20 +185,30 @@ public sealed class AiCostAccountingCoordinator
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.AuthorizationId == Guid.Empty)
+        {
             throw new ArgumentException("Authorization ID cannot be empty.", nameof(command));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Reason);
 
         lock (_gate)
         {
             if (_failureKeys.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.Id == command.AuthorizationId) return duplicate;
+                if (duplicate.Id == command.AuthorizationId)
+                {
+                    return duplicate;
+                }
+
                 throw new AiCostAccountingIdempotencyException(
                     "An AI failure idempotency key cannot identify another authorization.");
             }
             var authorization = GetAuthorization(command.AuthorizationId);
             if (authorization.Status != AiServiceChargeStatus.Reserved)
+            {
                 throw new InvalidOperationException("Only a reserved AI charge can be released.");
+            }
+
             _charges.Release(authorization.Reservation, command.Reason.Trim(), command.FailedAt);
             authorization.ChangeStatus(AiServiceChargeStatus.Released);
             _failureKeys.Add(command.IdempotencyKey.Value, authorization);
@@ -185,8 +219,14 @@ public sealed class AiCostAccountingCoordinator
     public AiServiceAuthorization Get(Guid authorizationId)
     {
         if (authorizationId == Guid.Empty)
+        {
             throw new ArgumentException("Authorization ID cannot be empty.", nameof(authorizationId));
-        lock (_gate) return GetAuthorization(authorizationId);
+        }
+
+        lock (_gate)
+        {
+            return GetAuthorization(authorizationId);
+        }
     }
 
     private AiServiceAuthorization GetAuthorization(Guid authorizationId) =>
@@ -200,21 +240,37 @@ public sealed class AiCostAccountingCoordinator
         ArgumentNullException.ThrowIfNull(command.AvailableFundingLots);
         ArgumentNullException.ThrowIfNull(command.Risk);
         if (command.RequestId == Guid.Empty || command.TenantId == Guid.Empty || command.ActorId == Guid.Empty)
+        {
             throw new ArgumentException("Request, tenant, and actor identities are required.", nameof(command));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.ServiceCode);
-        if (!Enum.IsDefined(command.Provider)) throw new ArgumentOutOfRangeException(nameof(command.Provider));
+        if (!Enum.IsDefined(command.Provider))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command.Provider));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Model);
         if (command.AvailableFundingLots.Count == 0)
+        {
             throw new ArgumentException("At least one funding lot is required.", nameof(command));
+        }
     }
 
     private static void ValidateCompletion(CompleteAiServiceCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.AuthorizationId == Guid.Empty)
+        {
             throw new ArgumentException("Authorization ID cannot be empty.", nameof(command));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.ProviderUsageId);
-        if (!Enum.IsDefined(command.Provider)) throw new ArgumentOutOfRangeException(nameof(command.Provider));
+        if (!Enum.IsDefined(command.Provider))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command.Provider));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Model);
         ArgumentOutOfRangeException.ThrowIfNegative(command.InputTokens);
         ArgumentOutOfRangeException.ThrowIfNegative(command.OutputTokens);
@@ -230,6 +286,8 @@ public sealed class AiCostAccountingCoordinator
         if (reservation is null || reservation.Id == Guid.Empty || reservation.AuthorizationId != authorizationId ||
             reservation.Amount != new CoinAmount(CurrencyCode.SoftCoin, priceSoftUnits) ||
             !reservation.FundingFragments.SequenceEqual(funding))
+        {
             throw new InvalidOperationException("AI charge reservation is not bound to its authorization.");
+        }
     }
 }

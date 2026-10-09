@@ -107,10 +107,17 @@ public class ProgramCrudController(
   /// </summary>
   private async Task<bool> CanManageCatalogAsync(ActorContext actor)
   {
-    if (actor.IsSystemAdmin) return true;
-    if (!actor.SubjectIdAsGuid.HasValue || !actor.TenantId.HasValue) return false;
+    if (actor.IsSystemAdmin)
+        {
+            return true;
+        }
 
-    return await permissionQueryService.HasTenantPermissionAsync(
+        if (!actor.SubjectIdAsGuid.HasValue || !actor.TenantId.HasValue)
+        {
+            return false;
+        }
+
+        return await permissionQueryService.HasTenantPermissionAsync(
         actor.SubjectIdAsGuid.Value,
         actor.TenantId,
         $"{nameof(Program)}.{PermissionType.Manage}").ConfigureAwait(false);
@@ -132,9 +139,12 @@ public class ProgramCrudController(
   public async Task<ActionResult<IEnumerable<ProgramDto>>> GetMyPrograms()
   {
     var currentUserId = GetCurrentUserId();
-    if (!currentUserId.HasValue) return Unauthorized();
+    if (!currentUserId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-    var programs = await programService.GetUserProgramsAsync(currentUserId.Value).ConfigureAwait(false);
+        var programs = await programService.GetUserProgramsAsync(currentUserId.Value).ConfigureAwait(false);
     return Ok(programs.ToDtos());
   }
   /// <summary> Create a new program (content-type level draft permission) </summary>
@@ -142,12 +152,18 @@ public class ProgramCrudController(
   [RequireContentTypePermission<Program>(PermissionType.Draft)]
   public async Task<ActionResult<ProgramDto>> CreateProgram([FromBody] CreateProgramDto createDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var currentUserId = GetCurrentUserId();
-    if (!currentUserId.HasValue) return Unauthorized();
+        var currentUserId = GetCurrentUserId();
+    if (!currentUserId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-    var program = await sender.Send(new CreateProgramEndpointCommand(
+        var program = await sender.Send(new CreateProgramEndpointCommand(
       createDto with { CreatorId = currentUserId.Value })).ConfigureAwait(false);
 
     return CreatedAtAction(nameof(GetProgram), new { id = program.Id }, program.ToDto());
@@ -162,9 +178,12 @@ public class ProgramCrudController(
   {
     var program = await programService.GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Get a specific program with all content included (resource-level read permission) </summary>
@@ -174,9 +193,12 @@ public class ProgramCrudController(
   {
     var program = await programService.GetProgramWithContentAsync(id).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Update a program (resource-level edit permission) </summary>
@@ -184,13 +206,19 @@ public class ProgramCrudController(
   [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> UpdateProgram(Guid id, [FromBody] UpdateProgramDto updateDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var program = await sender.Send(new UpdateProgramEndpointCommand(id, updateDto)).ConfigureAwait(false);
+        var program = await sender.Send(new UpdateProgramEndpointCommand(id, updateDto)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Delete a program (resource-level delete permission) </summary>
@@ -200,9 +228,12 @@ public class ProgramCrudController(
   {
     var existingProgram = await programService.GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (existingProgram == null) return NotFound();
+    if (existingProgram == null)
+        {
+            return NotFound();
+        }
 
-    await sender.Send(new DeleteProgramEndpointCommand(id)).ConfigureAwait(false);
+        await sender.Send(new DeleteProgramEndpointCommand(id)).ConfigureAwait(false);
 
     return NoContent();
   }
@@ -212,13 +243,19 @@ public class ProgramCrudController(
   [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> CloneProgram(Guid id, [FromBody] CloneProgramDto cloneDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var program = await sender.Send(new CloneProgramEndpointCommand(id, cloneDto.NewTitle)).ConfigureAwait(false);
+        var program = await sender.Send(new CloneProgramEndpointCommand(id, cloneDto.NewTitle)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return CreatedAtAction(nameof(GetProgram), new { id = program.Id }, program.ToDto());
+        return CreatedAtAction(nameof(GetProgram), new { id = program.Id }, program.ToDto());
   }
 
   /// <summary> Get a specific program by slug (public access for published programs) </summary>
@@ -234,7 +271,10 @@ public class ProgramCrudController(
       ? await programService.GetProgramBySlugAsync(slug).ConfigureAwait(false)
       : await programService.GetPublishedProgramBySlugAsync(slug).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
     if (program.Status != ContentStatus.Published || program.Visibility != ContentVisibility.Public)
     {
@@ -251,9 +291,12 @@ public class ProgramCrudController(
   public async Task<ActionResult<UserProgressDto>> SelfEnroll(Guid id)
   {
     var userId = GetCurrentUserId();
-    if (!userId.HasValue) return Unauthorized();
+    if (!userId.HasValue)
+        {
+            return Unauthorized();
+        }
 
-    var program = await programService.GetProgramByIdAsync(id).ConfigureAwait(false);
+        var program = await programService.GetProgramByIdAsync(id).ConfigureAwait(false);
 
     if (program == null || program.Status != ContentStatus.Published || program.Visibility != ContentVisibility.Public)
     {
@@ -282,9 +325,12 @@ public class ProgramCrudController(
 
     var progress = await sender.Send(new AddUserToProgramEndpointCommand(id, userId.Value)).ConfigureAwait(false);
 
-    if (progress == null) return NotFound();
+    if (progress == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   // ===== USER PARTICIPATION ENDPOINTS =====
@@ -296,9 +342,12 @@ public class ProgramCrudController(
   {
     var progress = await sender.Send(new AddUserToProgramEndpointCommand(id, userId)).ConfigureAwait(false);
 
-    if (progress == null) return NotFound();
+    if (progress == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   /// <summary>
@@ -352,9 +401,12 @@ public class ProgramCrudController(
       new AddUserToProgramEndpointCommand(id, userId),
       cancellationToken).ConfigureAwait(false);
 
-    if (progress is null) return NotFound();
+    if (progress is null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   /// <summary> Remove a user from a program (resource-level edit permission) </summary>
@@ -364,9 +416,12 @@ public class ProgramCrudController(
   {
     var success = await sender.Send(new RemoveUserFromProgramEndpointCommand(id, userId)).ConfigureAwait(false);
 
-    if (!success) return NotFound();
+    if (!success)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Get all users in a program (resource-level read permission) </summary>
@@ -386,9 +441,12 @@ public class ProgramCrudController(
   {
     var progress = await programService.GetUserProgressDtoAsync(id, userId).ConfigureAwait(false);
 
-    if (progress == null) return NotFound();
+    if (progress == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   /// <summary> Get the current learner's progress in a program. </summary>
@@ -396,13 +454,19 @@ public class ProgramCrudController(
   public async Task<ActionResult<UserProgressDto>> GetMyProgress(Guid id)
   {
     var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var progress = await programService.GetUserProgressDtoAsync(id, currentUserId.Value).ConfigureAwait(false);
+        var progress = await programService.GetUserProgressDtoAsync(id, currentUserId.Value).ConfigureAwait(false);
 
-    if (progress == null) return NotFound();
+    if (progress == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   /// <summary> Update a user's progress in a program (resource-level edit permission) </summary>
@@ -410,29 +474,44 @@ public class ProgramCrudController(
   [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<UserProgressDto>> UpdateUserProgress(Guid id, Guid userId, [FromBody] UpdateProgressDto progressDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var progress = await sender.Send(new UpdateUserProgressEndpointCommand(id, userId, progressDto)).ConfigureAwait(false);
+        var progress = await sender.Send(new UpdateUserProgressEndpointCommand(id, userId, progressDto)).ConfigureAwait(false);
 
-    if (progress == null) return NotFound();
+    if (progress == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   /// <summary> Update the current learner's progress in a program. </summary>
   [HttpPut("{id}/me/progress")]
   public async Task<ActionResult<UserProgressDto>> UpdateMyProgress(Guid id, [FromBody] UpdateProgressDto progressDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
+        var currentUserId = GetCurrentUserId();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var progress = await sender.Send(new UpdateUserProgressEndpointCommand(id, currentUserId.Value, progressDto)).ConfigureAwait(false);
+        var progress = await sender.Send(new UpdateUserProgressEndpointCommand(id, currentUserId.Value, progressDto)).ConfigureAwait(false);
 
-    if (progress == null) return NotFound();
+    if (progress == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(progress);
+        return Ok(progress);
   }
 
   /// <summary> Mark content as completed for a user (resource-level edit permission) </summary>
@@ -442,9 +521,12 @@ public class ProgramCrudController(
   {
     var success = await sender.Send(new MarkProgramContentCompletedEndpointCommand(id, userId, contentId)).ConfigureAwait(false);
 
-    if (!success) return NotFound();
+    if (!success)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Mark content as completed for the current learner. </summary>
@@ -452,13 +534,19 @@ public class ProgramCrudController(
   public async Task<ActionResult> MarkMyContentCompleted(Guid id, Guid contentId)
   {
     var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var success = await sender.Send(new MarkProgramContentCompletedEndpointCommand(id, currentUserId.Value, contentId)).ConfigureAwait(false);
+        var success = await sender.Send(new MarkProgramContentCompletedEndpointCommand(id, currentUserId.Value, contentId)).ConfigureAwait(false);
 
-    if (!success) return NotFound();
+    if (!success)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Reset user progress in a program (resource-level edit permission) </summary>
@@ -468,9 +556,12 @@ public class ProgramCrudController(
   {
     var success = await sender.Send(new ResetUserProgressEndpointCommand(id, userId)).ConfigureAwait(false);
 
-    if (!success) return NotFound();
+    if (!success)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   private Guid? GetCurrentUserId()
@@ -489,13 +580,19 @@ public class ProgramCrudController(
   [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> EnableMonetization(Guid id, [FromBody] MonetizationDto monetizationDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var program = await sender.Send(new EnableProgramMonetizationEndpointCommand(id, monetizationDto)).ConfigureAwait(false);
+        var program = await sender.Send(new EnableProgramMonetizationEndpointCommand(id, monetizationDto)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Disable monetization for a program (resource-level monetize permission) </summary>
@@ -505,9 +602,12 @@ public class ProgramCrudController(
   {
     var program = await sender.Send(new DisableProgramMonetizationEndpointCommand(id)).ConfigureAwait(false);
 
-    if (program == null) return NotFound();
+    if (program == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(program.ToDto());
+        return Ok(program.ToDto());
   }
 
   /// <summary> Get program pricing information (resource-level read permission) </summary>
@@ -517,9 +617,12 @@ public class ProgramCrudController(
   {
     var pricing = await programService.GetProgramPricingAsync(id).ConfigureAwait(false);
 
-    if (pricing == null) return NotFound();
+    if (pricing == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(pricing);
+        return Ok(pricing);
   }
 
   /// <summary> Update program pricing (resource-level pricing permission) </summary>
@@ -527,13 +630,19 @@ public class ProgramCrudController(
   [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<PricingDto>> UpdateProgramPricing(Guid id, [FromBody] UpdatePricingDto pricingDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var pricing = await sender.Send(new UpdateProgramPricingEndpointCommand(id, pricingDto)).ConfigureAwait(false);
+        var pricing = await sender.Send(new UpdateProgramPricingEndpointCommand(id, pricingDto)).ConfigureAwait(false);
 
-    if (pricing == null) return NotFound();
+    if (pricing == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(pricing);
+        return Ok(pricing);
   }
 
   // ===== ANALYTICS ENDPOINTS =====
@@ -545,9 +654,12 @@ public class ProgramCrudController(
   {
     var analytics = await programService.GetProgramAnalyticsAsync(id).ConfigureAwait(false);
 
-    if (analytics == null) return NotFound();
+    if (analytics == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(analytics);
+        return Ok(analytics);
   }
 
   /// <summary> Get user completion rates for a program (resource-level analytics permission) </summary>
@@ -557,9 +669,12 @@ public class ProgramCrudController(
   {
     var rates = await programService.GetCompletionRatesAsync(id).ConfigureAwait(false);
 
-    if (rates == null) return NotFound();
+    if (rates == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(rates);
+        return Ok(rates);
   }
 
   /// <summary> Get program engagement metrics (resource-level analytics permission) </summary>
@@ -569,9 +684,12 @@ public class ProgramCrudController(
   {
     var metrics = await programService.GetEngagementMetricsAsync(id).ConfigureAwait(false);
 
-    if (metrics == null) return NotFound();
+    if (metrics == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(metrics);
+        return Ok(metrics);
   }
 
   /// <summary> Get program revenue analytics (resource-level revenue permission) </summary>
@@ -581,9 +699,12 @@ public class ProgramCrudController(
   {
     var revenue = await programService.GetRevenueAnalyticsAsync(id).ConfigureAwait(false);
 
-    if (revenue == null) return NotFound();
+    if (revenue == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(revenue);
+        return Ok(revenue);
   }
 
   // ===== PRODUCT INTEGRATION ENDPOINTS =====
@@ -593,13 +714,19 @@ public class ProgramCrudController(
   [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<Guid>> CreateProductFromProgram(Guid id, [FromBody] CreateProductFromProgramDto productDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var productId = await sender.Send(new CreateProductFromProgramEndpointCommand(id, productDto)).ConfigureAwait(false);
+        var productId = await sender.Send(new CreateProductFromProgramEndpointCommand(id, productDto)).ConfigureAwait(false);
 
-    if (productId == null) return NotFound();
+    if (productId == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(productId.Value);
+        return Ok(productId.Value);
   }
 
   /// <summary> Link a program to an existing product (resource-level edit permission) </summary>
@@ -609,9 +736,12 @@ public class ProgramCrudController(
   {
     var success = await sender.Send(new LinkProgramToProductEndpointCommand(id, productId)).ConfigureAwait(false);
 
-    if (!success) return NotFound();
+    if (!success)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Unlink a program from a product (resource-level edit permission) </summary>
@@ -621,9 +751,12 @@ public class ProgramCrudController(
   {
     var success = await sender.Send(new UnlinkProgramFromProductEndpointCommand(id, productId)).ConfigureAwait(false);
 
-    if (!success) return NotFound();
+    if (!success)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Get all products linked to a program (resource-level read permission) </summary>

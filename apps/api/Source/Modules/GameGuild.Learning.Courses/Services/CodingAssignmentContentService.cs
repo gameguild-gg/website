@@ -19,10 +19,16 @@ public sealed class CodingAssignmentContentService(
         CancellationToken ct = default)
     {
         var content = await GetContentAsync(programId, contentId, ct).ConfigureAwait(false);
-        if (content == null) return null;
+        if (content == null)
+        {
+            return null;
+        }
 
         var parsed = Parse(content.JsonBody);
-        if (parsed == null) return null;
+        if (parsed == null)
+        {
+            return null;
+        }
 
         return StripPrivate(parsed);
     }
@@ -81,7 +87,11 @@ public sealed class CodingAssignmentContentService(
 
     private static CodingAssignmentContent? Parse(string? jsonBody)
     {
-        if (string.IsNullOrWhiteSpace(jsonBody)) return null;
+        if (string.IsNullOrWhiteSpace(jsonBody))
+        {
+            return null;
+        }
+
         try
         {
             return JsonSerializer.Deserialize<CodingAssignmentContent>(
@@ -152,7 +162,11 @@ public sealed class CodingAssignmentContentService(
     {
         foreach (var suite in tests.EnumerateObject())
         {
-            if (suite.Value.ValueKind != JsonValueKind.Array) continue;
+            if (suite.Value.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
             foreach (var test in suite.Value.EnumerateArray())
             {
                 if (test.ValueKind == JsonValueKind.Object
@@ -181,7 +195,10 @@ public sealed class CodingAssignmentContentService(
         kind.WriteTo(writer);
         foreach (var prop in test.EnumerateObject())
         {
-            if (prop.Name != "kind") prop.WriteTo(writer);
+            if (prop.Name != "kind")
+            {
+                prop.WriteTo(writer);
+            }
         }
         writer.WriteEndObject();
     }

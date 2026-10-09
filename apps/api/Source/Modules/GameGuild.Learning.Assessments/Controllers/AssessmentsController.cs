@@ -77,9 +77,16 @@ public class AssessmentsController : BaseApiController
         [FromBody] SaveAssessmentDraftRequest request,
         CancellationToken cancellationToken)
     {
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var result = await _sender
             .Send(
@@ -96,8 +103,15 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment is null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _authoringService.GetStateAsync(id, cancellationToken).ConfigureAwait(false);
         return ToActionResult(result);
@@ -111,10 +125,21 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment is null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var result = await _sender
             .Send(new PrepareAssessmentRevisionEndpointCommand(id, actorId.Value, request), cancellationToken)
@@ -133,7 +158,10 @@ public class AssessmentsController : BaseApiController
         if (assessment is null) return NotFound();
         if (!await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Publish).ConfigureAwait(false)) return Forbid();
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var result = await _sender
             .Send(new PublishAssessmentRevisionEndpointCommand(id, actorId.Value, request), cancellationToken)
@@ -152,7 +180,10 @@ public class AssessmentsController : BaseApiController
         if (assessment is null) return NotFound();
         if (!await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Publish).ConfigureAwait(false)) return Forbid();
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var result = await _sender
             .Send(new UnpublishAssessmentRevisionEndpointCommand(id, actorId.Value, request), cancellationToken)
@@ -169,10 +200,22 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment is null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         return await ExecuteRuntimeAsync(() => _sender.Send(
             new StartAssessmentTestRunEndpointCommand(
                 id,
@@ -191,7 +234,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         return await ExecuteRuntimeAsync(async () =>
         {
             var run = await RequireRuntime().GetTestRunAsync(testRunId, actorId.Value, cancellationToken).ConfigureAwait(false);
@@ -207,7 +254,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         return await ExecuteRuntimeAsync(async () =>
         {
             var run = await RequireRuntime().GetTestRunAsync(testRunId, actorId.Value, cancellationToken).ConfigureAwait(false);
@@ -228,7 +279,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         return await ExecuteRuntimeAsync(async () =>
         {
             var run = await RequireRuntime().GetTestRunAsync(testRunId, actorId.Value, cancellationToken).ConfigureAwait(false);
@@ -250,7 +305,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         return await ExecuteRuntimeAsync(async () =>
         {
             var run = await RequireRuntime().GetTestRunAsync(testRunId, actorId.Value, cancellationToken).ConfigureAwait(false);
@@ -271,9 +330,17 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment is null) return NotFound();
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
         var userId = await ResolveEnrollmentUserIdAsync(
             assessment.CourseId,
             request.EnrollmentId,
@@ -306,9 +373,17 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var assessment = await _assessmentService.GetAssessmentByContentIdAsync(contentId).ConfigureAwait(false);
-        if (assessment is null) return NotFound();
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
         var enrollmentId = await ResolveActorMembershipIdAsync(assessment.CourseId, actorId.Value).ConfigureAwait(false);
         if (!enrollmentId.HasValue ||
             !await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Learn).ConfigureAwait(false))
@@ -357,9 +432,17 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var submission = await _assessmentService.GetSubmissionByIdAsync(submissionId).ConfigureAwait(false);
-        if (submission is null) return NotFound();
+        if (submission is null)
+        {
+            return NotFound();
+        }
+
         var assessment = await _assessmentService.GetAssessmentByIdAsync(submission.AssessmentId).ConfigureAwait(false);
         if (assessment is null) return NotFound();
         var capabilities = await _courseAccessEvaluator
@@ -423,7 +506,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var permission = await RequireSubmissionReviewPermissionAsync(submissionId).ConfigureAwait(false);
-        if (permission is not null) return permission;
+        if (permission is not null)
+        {
+            return permission;
+        }
+
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid!.Value;
         return await ExecuteRuntimeAsync(() => _sender.Send(
             new ResolveRuntimeInstructorReviewEndpointCommand(
@@ -441,7 +528,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var permission = await RequireSubmissionReviewPermissionAsync(submissionId).ConfigureAwait(false);
-        if (permission is not null) return permission;
+        if (permission is not null)
+        {
+            return permission;
+        }
+
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid!.Value;
         return await ExecuteRuntimeAsync(() => _sender.Send(
             new RegradeRuntimeSubmissionEndpointCommand(submissionId, actorId, request),
@@ -455,7 +546,11 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var permission = await RequireSubmissionReviewPermissionAsync(submissionId).ConfigureAwait(false);
-        if (permission is not null) return permission;
+        if (permission is not null)
+        {
+            return permission;
+        }
+
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid!.Value;
         return await ExecuteRuntimeAsync(() => _sender.Send(
             new ReleaseRuntimeSubmissionEndpointCommand(submissionId, actorId, request),
@@ -469,8 +564,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<AssessmentDto>> CreateAssessment([FromBody] CreateAssessmentRequest request)
     {
         var program = await _programService.GetProgramByIdAsync(request.CourseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanManageCourseAsync(program.Id).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(program.Id).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateAssessmentEndpointCommand(request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -548,15 +650,26 @@ public class AssessmentsController : BaseApiController
         CancellationToken cancellationToken)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program is null) return NotFound();
+        if (program is null)
+        {
+            return NotFound();
+        }
+
         var instructorView = await CanReviewCourseAsync(courseId).ConfigureAwait(false);
         if (!instructorView)
         {
             var enrollmentUserId = await ResolveEnrollmentUserIdAsync(courseId, enrollmentId, actorId.Value, canManage: false)
                 .ConfigureAwait(false);
-            if (enrollmentUserId != actorId.Value) return Forbid();
+            if (enrollmentUserId != actorId.Value)
+            {
+                return Forbid();
+            }
         }
 
         return Ok(await RequireGradebookProjection().GetCourseProjectionAsync(
@@ -573,8 +686,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<AssessmentGroupDto>> CreateAssessmentGroup([FromBody] CreateAssessmentGroupRequest request)
     {
         var program = await _programService.GetProgramByIdAsync(request.CourseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanManageCourseAsync(program.Id).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(program.Id).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateAssessmentGroupEndpointCommand(request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -595,8 +715,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<AssessmentGroupDto>> UpdateAssessmentGroup(Guid id, [FromBody] UpdateAssessmentGroupRequest request)
     {
         var group = await _assessmentService.GetAssessmentGroupByIdAsync(id).ConfigureAwait(false);
-        if (group == null) return NotFound();
-        if (!await CanManageCourseAsync(group.CourseId).ConfigureAwait(false)) return Forbid();
+        if (group == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(group.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new UpdateAssessmentGroupEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -616,8 +743,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult> DeleteAssessmentGroup(Guid id)
     {
         var group = await _assessmentService.GetAssessmentGroupByIdAsync(id).ConfigureAwait(false);
-        if (group == null) return NotFound();
-        if (!await CanManageCourseAsync(group.CourseId).ConfigureAwait(false)) return Forbid();
+        if (group == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(group.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new DeleteAssessmentGroupEndpointCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -637,8 +771,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<AssessmentDto>> UpdateAssessment(Guid id, [FromBody] UpdateAssessmentRequest request)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new UpdateAssessmentEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -661,8 +802,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<AssessmentDto>> AssignAssessmentToGroup(Guid id, [FromBody] AssignAssessmentGroupRequest request)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new AssignAssessmentToGroupEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -684,8 +832,15 @@ public class AssessmentsController : BaseApiController
         [FromBody] LinkInteractiveVideoCueRequest request)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new LinkInteractiveVideoCueEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -705,8 +860,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<IEnumerable<InteractiveVideoAssessmentCueDto>>> GetInteractiveVideoCues(Guid id)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var cues = await _assessmentService.GetInteractiveVideoCuesAsync(id).ConfigureAwait(false);
         return Ok(cues.Select(InteractiveVideoAssessmentCueDto.FromEntity));
@@ -719,8 +881,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult> UnlinkInteractiveVideoCue(Guid id, Guid cueId)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new UnlinkInteractiveVideoCueEndpointCommand(id, cueId)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -741,9 +910,17 @@ public class AssessmentsController : BaseApiController
         Guid enrollmentId)
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return Unauthorized();
+        if (!actorUserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
         var enrollment = await _enrollmentService.GetAsync(enrollmentId).ConfigureAwait(false);
         if (enrollment == null || enrollment.CourseId != assessment.CourseId) return NotFound();
         if (enrollment.UserId != actorUserId.Value) return Forbid();
@@ -762,8 +939,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult> DeleteAssessment(Guid id)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new DeleteAssessmentEndpointCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -783,8 +967,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult> RestoreAssessment(Guid id)
     {
         var assessment = await _assessmentService.GetAssessmentByIdIncludingDeletedAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new RestoreAssessmentEndpointCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -874,7 +1065,11 @@ public class AssessmentsController : BaseApiController
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] SubmitAssessmentRequest? request = null)
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return Unauthorized();
+        if (!actorUserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var submission = await _assessmentService.GetSubmissionByIdAsync(submissionId).ConfigureAwait(false);
         if (submission == null) return NotFound();
         if (submission.UserId != actorUserId.Value) return Forbid();
@@ -904,9 +1099,17 @@ public class AssessmentsController : BaseApiController
         }
 
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return Unauthorized();
+        if (!actorUserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var assessment = await _assessmentService.GetAssessmentByIdAsync(submission.AssessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
         if (submission.DefinitionRevisionId.HasValue)
         {
             var capabilities = await _courseAccessEvaluator
@@ -920,8 +1123,15 @@ public class AssessmentsController : BaseApiController
                 instructorView,
                 HttpContext.RequestAborted)).ConfigureAwait(false);
             if (runtimeView.Result is not OkObjectResult ok || ok.Value is not AssessmentSubmissionViewV1)
+            {
                 return runtimeView.Result ?? StatusCode(StatusCodes.Status500InternalServerError);
-            if (instructorView) return Ok(AssessmentSubmissionDto.FromEntity(submission));
+            }
+
+            if (instructorView)
+            {
+                return Ok(AssessmentSubmissionDto.FromEntity(submission));
+            }
+
             var releasedResults = await RequireLearnerResultProjection()
                 .GetLatestReleasedAsync([submission.Id], HttpContext.RequestAborted)
                 .ConfigureAwait(false);
@@ -932,11 +1142,19 @@ public class AssessmentsController : BaseApiController
 
         if (submission.UserId == actorUserId.Value)
         {
-            if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+            if (!await IsActorInProgramTenantAsync(assessment.CourseId).ConfigureAwait(false))
+            {
+                return Forbid();
+            }
+
             return Ok(LearnerAssessmentSubmissionDto.FromEntity(submission));
         }
 
-        if (!await CanReviewCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanReviewCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         return Ok(AssessmentSubmissionDto.FromEntity(submission));
     }
 
@@ -947,8 +1165,15 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<IEnumerable<AssessmentSubmissionDto>>> GetAssessmentSubmissions(Guid assessmentId)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
-        if (!await CanReviewCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanReviewCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var submissions = await _assessmentService.GetAssessmentSubmissionsAsync(assessmentId).ConfigureAwait(false);
         return Ok(submissions.Select(AssessmentSubmissionDto.FromEntity));
@@ -961,7 +1186,11 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<IEnumerable<LearnerAssessmentSubmissionDto>>> GetMySubmissions(Guid enrollmentId)
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return Unauthorized();
+        if (!actorUserId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var submissions = await _assessmentService.GetUserSubmissionsAsync(enrollmentId, actorUserId.Value).ConfigureAwait(false);
         var assessmentVisibility = new Dictionary<Guid, bool>();
         var visibleSubmissions = new List<LearnerAssessmentSubmissionDto>();
@@ -985,7 +1214,11 @@ public class AssessmentsController : BaseApiController
                 assessmentVisibility[submission.AssessmentId] = isVisible;
             }
 
-            if (!isVisible) continue;
+            if (!isVisible)
+            {
+                continue;
+            }
+
             if (!submission.DefinitionRevisionId.HasValue)
             {
                 visibleSubmissions.Add(LearnerAssessmentSubmissionDto.FromEntity(submission));
@@ -1012,7 +1245,11 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<CanAttemptResponse>> CanAttempt(Guid assessmentId, Guid enrollmentId)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(assessmentId).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
+        if (assessment == null)
+        {
+            return NotFound();
+        }
+
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorUserId.HasValue) return Unauthorized();
         var enrollmentUserId = await ResolveEnrollmentUserIdAsync(
@@ -1122,7 +1359,10 @@ public class AssessmentsController : BaseApiController
             .GetUserEnrollmentsAsync(actorUserId, GameGuild.Learning.Enrollments.EnrollmentStatus.Active)
             .ConfigureAwait(false);
         var enrollment = enrollments.FirstOrDefault(value => value.CourseId == courseId);
-        if (enrollment is not null) return enrollment.Id;
+        if (enrollment is not null)
+        {
+            return enrollment.Id;
+        }
 
         var canonicalId = await _assessmentService
             .GetProgramEnrollmentIdAsync(courseId, actorUserId, HttpContext.RequestAborted)
@@ -1170,17 +1410,31 @@ public class AssessmentsController : BaseApiController
         var assessment = await _assessmentService.GetAssessmentByIdAsync(run.AssessmentId).ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Assessment was not found.");
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false))
+        {
             throw new UnauthorizedAccessException("Actor cannot manage this assessment test run.");
+        }
     }
 
     private async Task<ActionResult?> RequireSubmissionReviewPermissionAsync(Guid submissionId)
     {
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue) return Unauthorized();
+        if (!actorId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var submission = await _assessmentService.GetSubmissionByIdAsync(submissionId).ConfigureAwait(false);
-        if (submission is null) return NotFound();
+        if (submission is null)
+        {
+            return NotFound();
+        }
+
         var assessment = await _assessmentService.GetAssessmentByIdAsync(submission.AssessmentId).ConfigureAwait(false);
-        if (assessment is null) return NotFound();
+        if (assessment is null)
+        {
+            return NotFound();
+        }
+
         return await CanReviewCourseAsync(assessment.CourseId).ConfigureAwait(false) ? null : Forbid();
     }
 

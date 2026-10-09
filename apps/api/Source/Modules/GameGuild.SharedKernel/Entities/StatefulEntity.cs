@@ -28,7 +28,10 @@ public abstract class StatefulEntity<TStatus> : EntityBase
     public bool CanTransitionTo(TStatus newStatus)
     {
         if (!ValidTransitions.TryGetValue(Status, out var allowed))
+        {
             return false;
+        }
+
         return allowed.Contains(newStatus);
     }
 
@@ -40,11 +43,13 @@ public abstract class StatefulEntity<TStatus> : EntityBase
     protected void TransitionTo(TStatus newStatus)
     {
         if (!CanTransitionTo(newStatus))
+        {
             throw new InvalidStateTransitionException(
                 GetType().Name,
                 Status.ToString()!,
                 newStatus.ToString()!);
-        
+        }
+
         var oldStatus = Status;
         Status = newStatus;
         Touch();

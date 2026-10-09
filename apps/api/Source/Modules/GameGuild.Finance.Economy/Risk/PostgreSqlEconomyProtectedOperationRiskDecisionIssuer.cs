@@ -62,8 +62,10 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuer :
             policy.PayloadHash != EconomyProtectedRiskDecisionIssuerSupport.Hash(policy.CanonicalPayload) ||
             !await _signatures.VerifyAsync(
                 policy.CanonicalPayload, policy.KeyId, policy.Signature, cancellationToken).ConfigureAwait(false))
+        {
             return Rejected(EconomyProtectedOperationState.InvalidPolicy,
                 "A current signed risk policy is required.");
+        }
 
         EconomyProtectedRiskPolicy riskPolicy;
         try
@@ -79,18 +81,25 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuer :
         var assessment = EconomyProtectedRiskDecisionIssuerSupport.Assess(evidence, now);
         if (assessment.State is EconomyProtectedOperationState.ComplianceUnavailable or
             EconomyProtectedOperationState.ComplianceStale or EconomyProtectedOperationState.Denied)
+        {
             return new EconomyProtectedRiskDecision(
                 Guid.Empty, assessment.Outcome, assessment.State, null, assessment.Diagnostics);
+        }
 
         var reserve = await _db.Set<EconomyReserveHeadRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.IsActive, cancellationToken).ConfigureAwait(false);
         if (reserve is null || reserve.Coverage != ReserveCoverageState.Covered ||
             reserve.ObservedAt > now || reserve.ExpiresAt <= now)
+        {
             return Rejected(EconomyProtectedOperationState.ReserveInsufficient,
                 "A current covered reserve head is required.");
+        }
+
         if (!await WalletsBelongToTenantAsync(request, cancellationToken).ConfigureAwait(false))
+        {
             throw new RiskDecisionBindingException(
                 "Protected operation wallets are not active in the actor tenant.");
+        }
 
         var cluster = await _entityGraph.ClusterForAsync(
             request.TenantId,
@@ -134,10 +143,13 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuer :
             .Append(cluster.EvidenceHash)
             .ToArray();
         if (assessment.Outcome == RiskOutcome.Review)
+        {
             await _reviews.SubmitAsync(
                 request.TenantId, reviewId!.Value, decisionId, request.ActorId,
                 evidenceHashes, now, riskPolicy.RequiredReviewApprovals, cancellationToken).ConfigureAwait(false);
+        }
         else if (assessment.Outcome == RiskOutcome.Hold)
+        {
             await _holds.ActivateAsync(new ComplianceHoldActivation(
                 EconomyProtectedRiskDecisionIssuerSupport.DeterministicGuid(request, "compliance-hold"),
                 new ComplianceHoldScope(request.TenantId, request.SubjectReference, request.Intent.Capability),
@@ -148,9 +160,12 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuer :
                 request.ActorId,
                 now,
                 now.Add(riskPolicy.ComplianceHoldDuration)), cancellationToken).ConfigureAwait(false);
+        }
         else
+        {
             await ReserveCountersAsync(
                 request, decisionId, riskPolicy, cluster, expiresAt, cancellationToken).ConfigureAwait(false);
+        }
 
         return new EconomyProtectedRiskDecision(
             decisionId, assessment.Outcome, assessment.State, reviewId, assessment.Diagnostics);
@@ -300,8 +315,10 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuer :
             existing.Outcome != assessment.Outcome || existing.PolicyVersion != policy.Version ||
             existing.ReserveVersion != reserve.Version || existing.TemplateKind != request.Intent.TemplateKind ||
             existing.AmountUnits != request.Intent.Amount.Units)
+        {
             throw new RiskDecisionReuseException(
                 "The protected-operation idempotency key is bound to different authority inputs.");
+        }
     }
 
     internal static void Validate(EconomyProtectedRiskDecisionRequest request)
@@ -309,7 +326,10 @@ public sealed class PostgreSqlEconomyProtectedOperationRiskDecisionIssuer :
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Intent);
         if (request.TenantId == Guid.Empty || request.ActorId == Guid.Empty)
+        {
             throw new ArgumentException("Protected operation tenant and actor are required.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.SubjectReference);
         _ = EconomyJurisdictionCode.Require(request.JurisdictionCode, nameof(request));
         ArgumentException.ThrowIfNullOrWhiteSpace(request.JurisdictionEvidenceHash);

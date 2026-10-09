@@ -403,8 +403,10 @@ public sealed class PostgreSqlComplianceHoldStoreTests
             $"7FFFFFFFFFFFFFFF{id:N}"
         };
         foreach (var cursor in invalid)
+        {
             FluentActions.Invoking(() => PostgreSqlComplianceHoldAdministrationStore.DecodeCursor(cursor))
-                .Should().Throw<ArgumentException>().WithParameterName("cursor");
+            .Should().Throw<ArgumentException>().WithParameterName("cursor");
+        }
 
         var resolver = new PostgreSqlComplianceHoldReleasePolicyResolver(
             context,

@@ -69,7 +69,10 @@ public class ResourceThrottlingPolicy : EntityBase
     /// </summary>
     public int CalculateDelayMs(double usagePercentage)
     {
-        if (!IsActive || usagePercentage < ThrottlingThresholdPercent) return 0;
+        if (!IsActive || usagePercentage < ThrottlingThresholdPercent)
+        {
+            return 0;
+        }
 
         return Strategy switch
         {
@@ -94,7 +97,10 @@ public class ResourceThrottlingPolicy : EntityBase
 
     private int CalculateRateLimitDelay()
     {
-        if (!MaxRequestsPerWindow.HasValue || !WindowDurationSeconds.HasValue) return 0;
+        if (!MaxRequestsPerWindow.HasValue || !WindowDurationSeconds.HasValue)
+        {
+            return 0;
+        }
 
         // Calculate delay to stay within rate limit
         return WindowDurationSeconds.Value * 1000 / MaxRequestsPerWindow.Value;
@@ -111,7 +117,10 @@ public class ResourceThrottlingPolicy : EntityBase
     /// </summary>
     public bool ShouldBlock(double usagePercentage)
     {
-        if (!IsActive) return false;
+        if (!IsActive)
+        {
+            return false;
+        }
 
         return Strategy == ThrottlingStrategy.HardCutoff && usagePercentage >= ThrottlingThresholdPercent;
     }

@@ -87,17 +87,22 @@ public sealed class PostgreSqlComplianceHoldStore : IComplianceHoldStore
         if (replay is not null)
         {
             if (!string.Equals(replay.RequestHash, requestHash, StringComparison.Ordinal))
-                throw new InvalidOperationException(
+                {
+                    throw new InvalidOperationException(
                     "The compliance hold idempotency key was replayed with different inputs.");
-            return Map(replay);
+                }
+
+                return Map(replay);
         }
         if (await _db.Set<EconomyComplianceHoldRow>().AnyAsync(
                 row => row.ScopeKey == activation.Scope.Key && row.ReleasedAt == null &&
                        row.ActivatedAt <= activation.ActivatedAt && row.ExpiresAt > activation.ActivatedAt,
                 cancellationToken))
-            throw new InvalidOperationException("An active compliance hold already exists for this scope.");
+            {
+                throw new InvalidOperationException("An active compliance hold already exists for this scope.");
+            }
 
-        var row = new EconomyComplianceHoldRow
+            var row = new EconomyComplianceHoldRow
         {
             Id = activation.Id, ScopeKey = activation.Scope.Key, TenantId = activation.Scope.TenantId,
             SubjectHash = activation.Scope.SubjectHash.Trim(), Capability = activation.Scope.Capability,
@@ -125,8 +130,16 @@ public sealed class PostgreSqlComplianceHoldStore : IComplianceHoldStore
         DateTimeOffset releasedAt,
         CancellationToken cancellationToken)
     {
-        if (holdId == Guid.Empty) throw new ArgumentException("Hold ID cannot be empty.", nameof(holdId));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        if (holdId == Guid.Empty)
+        {
+            throw new ArgumentException("Hold ID cannot be empty.", nameof(holdId));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async _ =>
@@ -139,12 +152,18 @@ public sealed class PostgreSqlComplianceHoldStore : IComplianceHoldStore
             var releaseEvent = await _db.Set<EconomyComplianceHoldEventRow>().AsNoTracking()
                 .SingleAsync(item => item.HoldId == holdId && item.Kind == "Released", cancellationToken);
             if (row.ReleasedBy != actorId || releaseEvent.EvidenceHash != evidenceHash.Trim())
-                throw new InvalidOperationException("Compliance hold release was replayed with different inputs.");
-            return Map(row);
+                {
+                    throw new InvalidOperationException("Compliance hold release was replayed with different inputs.");
+                }
+
+                return Map(row);
         }
         if (releasedAt < row.ActivatedAt)
-            throw new ArgumentException("Hold release cannot predate activation.", nameof(releasedAt));
-        var sequence = await _db.Set<EconomyComplianceHoldEventRow>()
+            {
+                throw new ArgumentException("Hold release cannot predate activation.", nameof(releasedAt));
+            }
+
+            var sequence = await _db.Set<EconomyComplianceHoldEventRow>()
             .Where(item => item.HoldId == holdId)
             .MaxAsync(item => item.Sequence, cancellationToken) + 1;
         row.ReleasedBy = actorId;
@@ -175,24 +194,40 @@ public sealed class PostgreSqlComplianceHoldStore : IComplianceHoldStore
     private static void ValidateActivation(ComplianceHoldActivation activation)
     {
         ArgumentNullException.ThrowIfNull(activation);
-        if (activation.Id == Guid.Empty) throw new ArgumentException("Hold ID cannot be empty.", nameof(activation));
+        if (activation.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Hold ID cannot be empty.", nameof(activation));
+        }
+
         ValidateScope(activation.Scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(activation.CaseReferenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(activation.ReasonCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(activation.EvidenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(activation.IdempotencyKey);
-        if (activation.ActorId == Guid.Empty) throw new ArgumentException("Actor ID cannot be empty.", nameof(activation));
+        if (activation.ActorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID cannot be empty.", nameof(activation));
+        }
+
         if (activation.ExpiresAt <= activation.ActivatedAt)
+        {
             throw new ArgumentException("Hold expiry must follow activation.", nameof(activation));
+        }
     }
 
     private static void ValidateScope(ComplianceHoldScope scope)
     {
         ArgumentNullException.ThrowIfNull(scope);
-        if (scope.TenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(scope));
+        if (scope.TenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(scope));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(scope.SubjectHash);
         if (scope.Capability is not null && !Enum.IsDefined(scope.Capability.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(scope));
+        }
     }
 
     private static ComplianceHold Map(EconomyComplianceHoldRow row) => new(

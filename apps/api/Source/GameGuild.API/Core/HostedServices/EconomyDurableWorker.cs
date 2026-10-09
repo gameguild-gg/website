@@ -42,9 +42,14 @@ public sealed class EconomyDurableWorker(
         while (!stoppingToken.IsCancellationRequested)
         {
             if (settings.SafetyWorkersEnabled)
+            {
                 await RunSafetyCycleAsync(workerId, settings, stoppingToken).ConfigureAwait(false);
+            }
+
             if (settings.DispatchWorkersEnabled)
+            {
                 await RunDispatchCycleAsync(workerId, stoppingToken).ConfigureAwait(false);
+            }
 
             await Task.Delay(settings.PollInterval, timeProvider, stoppingToken).ConfigureAwait(false);
         }
@@ -75,7 +80,10 @@ public sealed class EconomyDurableWorker(
                 {
                     var outcome = await marketplaceOutbox.ProcessNextAsync(
                         workerId, now, cancellationToken).ConfigureAwait(false);
-                    if (outcome.Status != MarketplaceOutboxProcessStatus.Published) break;
+                    if (outcome.Status != MarketplaceOutboxProcessStatus.Published)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -121,24 +129,35 @@ public sealed class EconomyDurableWorker(
     private static void Validate(EconomyDurableWorkerOptions settings)
     {
         if (settings.PollInterval < TimeSpan.FromMilliseconds(100))
+        {
             throw new OptionsValidationException(
-                EconomyDurableWorkerOptions.SectionName,
-                typeof(EconomyDurableWorkerOptions),
-                ["PollInterval must be at least 100 milliseconds."]);
+            EconomyDurableWorkerOptions.SectionName,
+            typeof(EconomyDurableWorkerOptions),
+            ["PollInterval must be at least 100 milliseconds."]);
+        }
+
         if (settings.JournalBatchSize is < 1 or > 10_000)
+        {
             throw new OptionsValidationException(
-                EconomyDurableWorkerOptions.SectionName,
-                typeof(EconomyDurableWorkerOptions),
-                ["JournalBatchSize must be between 1 and 10,000."]);
+            EconomyDurableWorkerOptions.SectionName,
+            typeof(EconomyDurableWorkerOptions),
+            ["JournalBatchSize must be between 1 and 10,000."]);
+        }
+
         if (settings.BountyExpirationBatchSize is < 1 or > 1_000)
+        {
             throw new OptionsValidationException(
-                EconomyDurableWorkerOptions.SectionName,
-                typeof(EconomyDurableWorkerOptions),
-                ["BountyExpirationBatchSize must be between 1 and 1,000."]);
+            EconomyDurableWorkerOptions.SectionName,
+            typeof(EconomyDurableWorkerOptions),
+            ["BountyExpirationBatchSize must be between 1 and 1,000."]);
+        }
+
         if (settings.MarketplaceOutboxBatchSize is < 1 or > 1_000)
+        {
             throw new OptionsValidationException(
-                EconomyDurableWorkerOptions.SectionName,
-                typeof(EconomyDurableWorkerOptions),
-                ["MarketplaceOutboxBatchSize must be between 1 and 1,000."]);
+            EconomyDurableWorkerOptions.SectionName,
+            typeof(EconomyDurableWorkerOptions),
+            ["MarketplaceOutboxBatchSize must be between 1 and 1,000."]);
+        }
     }
 }

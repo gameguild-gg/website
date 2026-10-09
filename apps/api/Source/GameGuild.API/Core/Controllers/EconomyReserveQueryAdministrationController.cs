@@ -25,7 +25,11 @@ public sealed class EconomyReserveQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await reserves.ListCustodyAsync(
             tenantId, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -35,7 +39,11 @@ public sealed class EconomyReserveQueryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCustody(Guid observationId, CancellationToken cancellationToken)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         var observation = await reserves.FindCustodyAsync(
             tenantId, observationId, cancellationToken).ConfigureAwait(false);
         return observation is null ? NotFound() : Ok(observation);
@@ -50,7 +58,11 @@ public sealed class EconomyReserveQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await reserves.ListProposalsAsync(
             tenantId, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -60,7 +72,11 @@ public sealed class EconomyReserveQueryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProposal(Guid proposalId, CancellationToken cancellationToken)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         var proposal = await reserves.FindProposalAsync(
             tenantId, proposalId, cancellationToken).ConfigureAwait(false);
         return proposal is null ? NotFound() : Ok(proposal);
@@ -71,7 +87,11 @@ public sealed class EconomyReserveQueryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetActiveHead(CancellationToken cancellationToken)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         var head = await reserves.ReadActiveHeadAsync(tenantId, cancellationToken).ConfigureAwait(false);
         return head is null ? NotFound() : Ok(head);
     }
@@ -82,7 +102,10 @@ public sealed class EconomyReserveQueryAdministrationController(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue ||
             !actor.HasPermission(EconomyPermission.Keys.ManageReserves))
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         return true;
     }

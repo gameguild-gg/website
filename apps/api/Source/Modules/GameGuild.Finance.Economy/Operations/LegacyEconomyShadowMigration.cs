@@ -213,8 +213,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
         if (replay is not null)
         {
             if (replay.RequestHash != requestHash)
+            {
                 throw new LegacyEconomyShadowMigrationException(
                     "The legacy shadow batch ID is already bound to different capture inputs.");
+            }
+
             return await RequiredBatchAsync(command.TenantId, command.BatchId, cancellationToken);
         }
 
@@ -314,15 +317,24 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
     {
         ValidateIdentity(command.BatchId, command.TenantId, command.ActorId);
         if (command.LegacyWalletId == Guid.Empty)
+        {
             throw new ArgumentException("Legacy wallet ID is required.", nameof(command));
+        }
+
         if (command.RiskDecisionId == Guid.Empty)
+        {
             throw new ArgumentException("Risk decision ID is required.", nameof(command));
+        }
+
         var fingerprint = Required(command.OperationFingerprint, nameof(command.OperationFingerprint));
         var batch = await _db.Set<EconomyLegacyShadowBatchRow>()
             .SingleOrDefaultAsync(row => row.Id == command.BatchId && row.TenantId == command.TenantId,
                 cancellationToken) ?? throw new KeyNotFoundException("Legacy shadow batch was not found.");
         if (batch.State is EconomyLegacyShadowBatchState.Failed or > EconomyLegacyShadowBatchState.Backfilled)
+        {
             throw new LegacyEconomyShadowMigrationException("The legacy shadow batch is not open for backfill.");
+        }
+
         var item = await _db.Set<EconomyLegacyShadowWalletRow>()
             .SingleOrDefaultAsync(row => row.BatchId == command.BatchId &&
                                          row.LegacyWalletId == command.LegacyWalletId &&
@@ -334,7 +346,10 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             return await RequiredBatchAsync(command.TenantId, command.BatchId, cancellationToken);
         }
         if (item.State == EconomyLegacyShadowItemState.Blocked || item.EconomyWalletId is null)
+        {
             throw new LegacyEconomyShadowMigrationException("A blocked legacy wallet cannot be backfilled.");
+        }
+
         if (item.LegacyBalanceMinorUnits == 0)
         {
             item.State = EconomyLegacyShadowItemState.Reconciled;
@@ -350,8 +365,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             command.TenantId, batch.JurisdictionCode, command.PostedAt, cancellationToken);
         ValidateMigrationPolicy(policy);
         if (policy.Version != batch.PolicyVersion)
+        {
             throw new LegacyEconomyShadowMigrationException(
                 "The active legacy migration policy changed after capture; create a new batch.");
+        }
+
         var providerHash = policy.PayloadHash;
         var destinationHash = Hash(item.EconomyWalletId.Value.ToString("N"));
         var sourceRootHash = Hash(item.SourceStampId.ToString("N"));
@@ -369,7 +387,10 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
                 [sourceRootHash],
                 command.PostedAt), cancellationToken);
         if (receipt.PolicyVersion != batch.PolicyVersion)
+        {
             throw new LegacyEconomyShadowMigrationException("Capability receipt policy does not match the captured batch.");
+        }
+
         var authority = await _postingAuthorities.ResolveAuthorityAsync(
             CapabilityName, PostingTemplateKind.ConfirmedTopUpMint, receipt, cancellationToken);
         var posting = _backfill.Post(new LegacyBalanceBackfillPostingRequest(
@@ -390,8 +411,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
         await _db.Entry(item).ReloadAsync(cancellationToken);
         if (item.State != EconomyLegacyShadowItemState.Posted ||
             item.JournalSequence != posting.JournalSequence || item.JournalHash != posting.JournalHash)
+        {
             throw new LegacyEconomyShadowMigrationException(
                 "The protected legacy writer did not persist the shadow-item posting binding.");
+        }
+
         await RefreshBatchStateAsync(batch, command.PostedAt, cancellationToken);
         return await RequiredBatchAsync(command.TenantId, command.BatchId, cancellationToken);
     }
@@ -408,26 +432,41 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             .SingleOrDefaultAsync(row => row.Id == command.BatchId && row.TenantId == command.TenantId,
                 cancellationToken) ?? throw new KeyNotFoundException("Legacy shadow batch was not found.");
         if (batch.State is EconomyLegacyShadowBatchState.Failed or EconomyLegacyShadowBatchState.Captured or EconomyLegacyShadowBatchState.Backfilling)
-            throw new LegacyEconomyShadowMigrationException("All non-zero legacy wallets must be posted before reconciliation.");
-        var items = await _db.Set<EconomyLegacyShadowWalletRow>()
+            {
+                throw new LegacyEconomyShadowMigrationException("All non-zero legacy wallets must be posted before reconciliation.");
+            }
+
+            var items = await _db.Set<EconomyLegacyShadowWalletRow>()
             .Where(row => row.BatchId == command.BatchId && row.TenantId == command.TenantId)
             .OrderBy(row => row.LegacyWalletId)
             .ToArrayAsync(cancellationToken);
         var source = await ReadCurrentLegacySourceAsync(command.TenantId, items, cancellationToken);
         if (source.WalletHash != batch.WalletSnapshotHash || source.TransactionHash != batch.TransactionSnapshotHash)
-            throw new LegacyEconomyShadowMigrationException(
+            {
+                throw new LegacyEconomyShadowMigrationException(
                 "Legacy wallet or transaction data changed after capture; reconciliation is fail-closed.");
-        var financialLedger = await ReadFinancialLedgerSnapshotAsync(command.TenantId, cancellationToken);
-        if (financialLedger.Count != batch.FinancialLedgerEntryCount || financialLedger.Hash != batch.FinancialLedgerSnapshotHash)
-            throw new LegacyEconomyShadowMigrationException(
-                "The legacy financial ledger changed after capture; reconciliation is fail-closed.");
+            }
 
-        foreach (var item in items)
+            var financialLedger = await ReadFinancialLedgerSnapshotAsync(command.TenantId, cancellationToken);
+        if (financialLedger.Count != batch.FinancialLedgerEntryCount || financialLedger.Hash != batch.FinancialLedgerSnapshotHash)
+            {
+                throw new LegacyEconomyShadowMigrationException(
+                "The legacy financial ledger changed after capture; reconciliation is fail-closed.");
+            }
+
+            foreach (var item in items)
         {
-            if (item.State == EconomyLegacyShadowItemState.Reconciled) continue;
-            if (item.State != EconomyLegacyShadowItemState.Posted || item.EconomyWalletId is null)
-                throw new LegacyEconomyShadowMigrationException("A legacy shadow item has not reached a reconcilable state.");
-            var proof = await (from lot in _db.Set<EconomyCreditLotRow>().AsNoTracking()
+            if (item.State == EconomyLegacyShadowItemState.Reconciled)
+                {
+                    continue;
+                }
+
+                if (item.State != EconomyLegacyShadowItemState.Posted || item.EconomyWalletId is null)
+                {
+                    throw new LegacyEconomyShadowMigrationException("A legacy shadow item has not reached a reconcilable state.");
+                }
+
+                var proof = await (from lot in _db.Set<EconomyCreditLotRow>().AsNoTracking()
                                join posting in _db.Set<EconomyPostingGroupRow>().AsNoTracking()
                                    on item.PostingId equals posting.Id
                                join journal in _db.Set<EconomyJournalEntryRow>().AsNoTracking()
@@ -444,9 +483,12 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
                                select new { lot.JournalSequence, journal.Hash })
                 .SingleOrDefaultAsync(cancellationToken);
             if (proof is null || proof.JournalSequence != item.JournalSequence || proof.Hash != item.JournalHash)
-                throw new LegacyEconomyShadowMigrationException(
+                {
+                    throw new LegacyEconomyShadowMigrationException(
                     "A legacy backfill posting is absent or no longer matches its captured provenance.");
-            item.State = EconomyLegacyShadowItemState.Reconciled;
+                }
+
+                item.State = EconomyLegacyShadowItemState.Reconciled;
             item.ReconciledAt = command.ReconciledAt;
             item.ReconciliationHash = Hash(string.Join('|', item.SnapshotHash, item.SourceStampId.ToString("N"),
                 item.PostingId.ToString("N"), item.CreditLotId.ToString("N"), proof.JournalSequence, proof.Hash));
@@ -458,8 +500,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             ? item.LegacyBalanceMinorUnits : 0);
         batch.ReconciledHardUnits = batch.BackfilledHardUnits;
         if (batch.ReconciledHardUnits != batch.ExpectedHardUnits)
-            throw new LegacyEconomyShadowMigrationException("Legacy and Economy backfill totals do not reconcile.");
-        batch.UpdatedAt = command.ReconciledAt;
+            {
+                throw new LegacyEconomyShadowMigrationException("Legacy and Economy backfill totals do not reconcile.");
+            }
+
+            batch.UpdatedAt = command.ReconciledAt;
         batch.Version++;
         await _db.SaveChangesAsync(cancellationToken);
         return await RequiredBatchAsync(command.TenantId, command.BatchId, cancellationToken);
@@ -480,10 +525,16 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
         var batch = await RequiredBatchRowAsync(command.TenantId, command.BatchId, cancellationToken);
         if (batch.State != EconomyLegacyShadowBatchState.Reconciled ||
             batch.ReconciledHardUnits != batch.ExpectedHardUnits)
-            throw new LegacyEconomyShadowMigrationException("Only a fully reconciled batch can enter cutover.");
-        if (await _db.Set<EconomyLegacyCutoverRow>().AnyAsync(row => row.TenantId == command.TenantId, cancellationToken))
-            throw new LegacyEconomyShadowMigrationException("The tenant already has a legacy cutover record.");
-        var cutover = new EconomyLegacyCutoverRow
+            {
+                throw new LegacyEconomyShadowMigrationException("Only a fully reconciled batch can enter cutover.");
+            }
+
+            if (await _db.Set<EconomyLegacyCutoverRow>().AnyAsync(row => row.TenantId == command.TenantId, cancellationToken))
+            {
+                throw new LegacyEconomyShadowMigrationException("The tenant already has a legacy cutover record.");
+            }
+
+            var cutover = new EconomyLegacyCutoverRow
         {
             TenantId = command.TenantId,
             BatchId = command.BatchId,
@@ -520,9 +571,12 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             .SingleOrDefaultAsync(row => row.TenantId == command.TenantId && row.BatchId == command.BatchId,
                 cancellationToken) ?? throw new KeyNotFoundException("Legacy cutover proposal was not found.");
         if (command.ActorId == cutover.ProposedBy || command.ActorId == cutover.FirstApprovedBy)
-            throw new LegacyEconomyShadowMigrationException(
+            {
+                throw new LegacyEconomyShadowMigrationException(
                 "Cutover requires the proposer and two different approving administrators.");
-        var sequence = await NextAuditSequenceAsync(command.TenantId, cancellationToken);
+            }
+
+            var sequence = await NextAuditSequenceAsync(command.TenantId, cancellationToken);
         if (cutover.State == EconomyLegacyCutoverState.Proposed)
         {
             cutover.State = EconomyLegacyCutoverState.FirstApproved;
@@ -568,8 +622,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             .SingleOrDefaultAsync(row => row.TenantId == command.TenantId && row.BatchId == command.BatchId,
                 cancellationToken) ?? throw new KeyNotFoundException("Legacy cutover was not found.");
         if (cutover.State != EconomyLegacyCutoverState.Active)
-            throw new LegacyEconomyShadowMigrationException("Only an active legacy cutover can be rolled back.");
-        cutover.State = EconomyLegacyCutoverState.RolledBack;
+            {
+                throw new LegacyEconomyShadowMigrationException("Only an active legacy cutover can be rolled back.");
+            }
+
+            cutover.State = EconomyLegacyCutoverState.RolledBack;
         cutover.RolledBackBy = command.ActorId;
         cutover.RolledBackAt = command.RolledBackAt;
         cutover.ReauthenticationHash = reauthenticationHash;
@@ -592,7 +649,10 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
         CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty || batchId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant and batch IDs are required.");
+        }
+
         var exists = await _db.Set<EconomyLegacyShadowBatchRow>().AsNoTracking()
             .AnyAsync(row => row.Id == batchId && row.TenantId == tenantId, cancellationToken);
         return exists ? await RequiredBatchAsync(tenantId, batchId, cancellationToken) : null;
@@ -610,8 +670,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
                          null, EconomyValueMovementCapability.LegacyBalanceBackfill, jurisdiction, cancellationToken);
         if (policy is null || policy.State != EconomyCapabilityPolicyState.Active ||
             policy.EffectiveAt > at || policy.ExpiresAt <= at || !policy.ProviderReady)
+        {
             throw new LegacyEconomyShadowMigrationException(
                 "An active, signed and provider-ready LegacyBalanceBackfill policy is required.");
+        }
+
         return policy;
     }
 
@@ -634,8 +697,10 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
                 "Legacy migration policy payload is missing its fail-closed classification fields.");
         }
         if (!valid)
+        {
             throw new LegacyEconomyShadowMigrationException(
                 "Legacy migration policy must explicitly bind USD minor units 1:1 to PurchasedHard through legacy-shadow-v1.");
+        }
     }
 
     private async ValueTask RefreshBatchStateAsync(
@@ -669,7 +734,10 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
                 .OrderBy(wallet => wallet.Id)
                 .ToArrayAsync(cancellationToken);
         if (wallets.Length != items.Count)
+        {
             throw new LegacyEconomyShadowMigrationException("A captured legacy wallet is missing or outside the tenant.");
+        }
+
         var transactions = legacyIds.Length == 0
             ? []
             : await _db.Set<WalletTransaction>().AsNoTracking()
@@ -696,12 +764,17 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
     {
         var connection = _db.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open)
+        {
             await connection.OpenAsync(cancellationToken);
+        }
+
         await using var exists = connection.CreateCommand();
         exists.Transaction = _db.Database.CurrentTransaction?.GetDbTransaction();
         exists.CommandText = "SELECT to_regclass('public.financial_ledger_entries') IS NOT NULL;";
         if (await exists.ExecuteScalarAsync(cancellationToken) is not true)
+        {
             return new FinancialLedgerSnapshot(0, Hash(string.Empty));
+        }
 
         await using var columns = connection.CreateCommand();
         columns.Transaction = _db.Database.CurrentTransaction?.GetDbTransaction();
@@ -713,8 +786,11 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
                                   'IsReconciled', 'CreatedAt');
             """;
         if (Convert.ToInt32(await columns.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) != 11)
+        {
             throw new LegacyEconomyShadowMigrationException(
                 "The legacy financial ledger schema is unknown and cannot be captured safely.");
+        }
+
         await using var snapshot = connection.CreateCommand();
         snapshot.Transaction = _db.Database.CurrentTransaction?.GetDbTransaction();
         snapshot.CommandText = """
@@ -741,29 +817,59 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
             wallet.TenantId?.ToString("N") ?? string.Empty, wallet.Balance.ToString(CultureInfo.InvariantCulture),
             wallet.Currency, wallet.IsActive, wallet.IsLocked, wallet.LastTransactionAt?.ToUniversalTime().Ticks ?? 0,
             string.Join('\n', transactions.Select(CanonicalTransaction))));
-        if (!wallet.IsActive) return new LegacyWalletAssessment(0, 0, 0, snapshot, "legacy-wallet-inactive");
-        if (wallet.IsLocked) return new LegacyWalletAssessment(0, 0, 0, snapshot, "legacy-wallet-locked");
+        if (!wallet.IsActive)
+        {
+            return new LegacyWalletAssessment(0, 0, 0, snapshot, "legacy-wallet-inactive");
+        }
+
+        if (wallet.IsLocked)
+        {
+            return new LegacyWalletAssessment(0, 0, 0, snapshot, "legacy-wallet-locked");
+        }
+
         if (!StringComparer.Ordinal.Equals(wallet.Currency, "USD"))
+        {
             return new LegacyWalletAssessment(0, 0, 0, snapshot, "legacy-wallet-currency-unsupported");
+        }
+
         if (!TryMinorUnits(wallet.Balance, out var balance))
+        {
             return new LegacyWalletAssessment(0, 0, 0, snapshot, "legacy-wallet-precision-invalid");
+        }
+
         if (transactions.Any(transaction => transaction.TenantId is { } tenant && tenant != wallet.TenantId))
+        {
             return new LegacyWalletAssessment(balance, 0, 0, snapshot, "legacy-transaction-tenant-mismatch");
+        }
+
         if (transactions.Any(transaction => transaction.Type == WalletTransactionType.Adjustment))
+        {
             return new LegacyWalletAssessment(balance, 0, 0, snapshot, "legacy-adjustment-unclassified");
+        }
+
         var completed = transactions.Where(transaction => transaction.Status == TransactionStatus.Completed).ToArray();
         if (completed.Length > 0 && completed[^1].BalanceAfter != wallet.Balance)
+        {
             return new LegacyWalletAssessment(balance, 0, 0, snapshot, "legacy-balance-after-mismatch");
+        }
+
         long credits = 0;
         long debits = 0;
         foreach (var transaction in completed)
         {
             if (!TryMinorUnits(transaction.Amount, out var units))
+            {
                 return new LegacyWalletAssessment(balance, credits, debits, snapshot, "legacy-transaction-precision-invalid");
+            }
+
             if (transaction.Type is WalletTransactionType.Credit or WalletTransactionType.TransferIn or WalletTransactionType.Refund)
+            {
                 credits = checked(credits + units);
+            }
             else if (transaction.Type is WalletTransactionType.Debit or WalletTransactionType.TransferOut or WalletTransactionType.Fee)
+            {
                 debits = checked(debits + units);
+            }
         }
         return new LegacyWalletAssessment(balance, credits, debits, snapshot, null);
     }
@@ -872,9 +978,20 @@ public sealed class PostgreSqlLegacyEconomyShadowMigration : ILegacyEconomyShado
 
     private static void ValidateIdentity(Guid batchId, Guid tenantId, Guid actorId)
     {
-        if (batchId == Guid.Empty) throw new ArgumentException("Batch ID is required.", nameof(batchId));
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        if (batchId == Guid.Empty)
+        {
+            throw new ArgumentException("Batch ID is required.", nameof(batchId));
+        }
+
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
     }
 
     private sealed record LegacyWalletAssessment(

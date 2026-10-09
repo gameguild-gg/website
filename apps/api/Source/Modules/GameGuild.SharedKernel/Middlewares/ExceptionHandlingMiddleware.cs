@@ -28,9 +28,9 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             logger.LogWarning(securityException,
                 "Security exception occurred. StatusCode: {StatusCode}, Path: {Path}, TraceId: {TraceId}, InternalMessage: {InternalMessage}",
                 (int)securityException.StatusCode,
-                context.Request.Path,
+                LogRedaction.Sanitize(context.Request.Path.Value),
                 context.TraceIdentifier,
-                securityException.InternalMessage);
+                LogRedaction.Sanitize(securityException.InternalMessage));
 
             if (context.Response.HasStarted)
             {
@@ -44,7 +44,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             logger.LogWarning(validationException,
                 "Validation failed. Path: {Path}, TraceId: {TraceId}, ErrorCount: {ErrorCount}",
-                context.Request.Path,
+                LogRedaction.Sanitize(context.Request.Path.Value),
                 context.TraceIdentifier,
                 validationException.Errors.Count);
 
@@ -60,7 +60,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             logger.LogWarning(domainException,
                 "Domain exception occurred. Path: {Path}, TraceId: {TraceId}",
-                context.Request.Path,
+                LogRedaction.Sanitize(context.Request.Path.Value),
                 context.TraceIdentifier);
 
             if (context.Response.HasStarted)

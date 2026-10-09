@@ -22,7 +22,11 @@ public sealed class HmacProviderCompletionProofService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(network);
         ArgumentNullException.ThrowIfNull(secret);
-        if (secret.Length < 32) throw new ArgumentException("Provider proof secret must contain at least 32 bytes.", nameof(secret));
+        if (secret.Length < 32)
+        {
+            throw new ArgumentException("Provider proof secret must contain at least 32 bytes.", nameof(secret));
+        }
+
         _network = network.Trim();
         _secret = [.. secret];
     }
@@ -35,7 +39,11 @@ public sealed class HmacProviderCompletionProofService
         string evidenceHash)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEventId);
-        if (sessionId == Guid.Empty) throw new ArgumentException("Session ID is required.", nameof(sessionId));
+        if (sessionId == Guid.Empty)
+        {
+            throw new ArgumentException("Session ID is required.", nameof(sessionId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(creativeId);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
         var canonical = Canonical(_network, providerEventId, sessionId, creativeId, completedAt, evidenceHash);
@@ -54,7 +62,10 @@ public sealed class HmacProviderCompletionProofService
             proof.SessionId != claims.SessionId ||
             !string.Equals(proof.CreativeId, claims.CreativeId, StringComparison.Ordinal) ||
             proof.CompletedAt < claims.IssuedAt || proof.CompletedAt > now)
+        {
             return false;
+        }
+
         byte[] supplied;
         try { supplied = Convert.FromBase64String(proof.Signature); }
         catch (FormatException) { return false; }
@@ -102,19 +113,30 @@ public sealed class AdPlaybackVerifier
         ArgumentNullException.ThrowIfNull(evidence);
         ArgumentNullException.ThrowIfNull(policy);
         if (!policy.IsEffective(now) || !string.Equals(policy.Network, claims.Network, StringComparison.Ordinal))
+        {
             throw new AdPlaybackVerificationException("The session policy is not current or bound to the network.");
+        }
+
         if (evidence.StartedAt < claims.IssuedAt || evidence.CompletedAt > now ||
             evidence.CompletedAt < evidence.StartedAt ||
             evidence.PlaybackDuration < claims.RequiredDuration ||
             evidence.VisibleDuration < TimeSpan.Zero || evidence.VisibleDuration > evidence.PlaybackDuration ||
             evidence.FocusLoss < TimeSpan.Zero || evidence.FocusLoss > policy.MaximumFocusLoss)
+        {
             throw new AdPlaybackVerificationException("Playback timing is not physically valid.");
+        }
+
         if ((decimal)evidence.VisibleDuration.Ticks * 1_000_000 <
             (decimal)evidence.PlaybackDuration.Ticks * policy.MinimumVisiblePpm)
+        {
             throw new AdPlaybackVerificationException("Playback visibility is below policy.");
+        }
+
         if (evidence.Milestones.Count < 2 || evidence.Milestones[0] != 0 || evidence.Milestones[^1] != 100 ||
             evidence.Milestones.Where((value, index) => index > 0 && value <= evidence.Milestones[index - 1]).Any())
+        {
             throw new AdPlaybackVerificationException("Playback milestones are incomplete or unordered.");
+        }
 
         return policy.IssuanceMode switch
         {

@@ -131,9 +131,15 @@ public class UserMetadata : EntityBase
     {
         var metadata = new UserMetadata { UserId = userId };
 
-        if (customFields != null) metadata.SetCustomFields(customFields);
+        if (customFields != null)
+        {
+            metadata.SetCustomFields(customFields);
+        }
 
-        if (tags != null) metadata.SetTags(tags);
+        if (tags != null)
+        {
+            metadata.SetTags(tags);
+        }
 
         return metadata;
     }

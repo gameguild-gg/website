@@ -76,7 +76,9 @@ public sealed class CreateApiKeyHandler : ICommandHandler<CreateApiKeyCommand, R
     {
         var actor = _actorContext.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue)
+        {
             return Result.Failure<CreateApiKeyResponse>(Error.Failure("Auth.Required", "User must be authenticated to create API keys"));
+        }
 
         var (apiKey, plaintext) = ApiKey.Create(
             actor.SubjectIdAsGuid.Value,
@@ -171,7 +173,9 @@ public sealed class ListApiKeysHandler : IRequestHandler<ListApiKeysQuery, Resul
     {
         var actor = _actorContext.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue)
+        {
             return Result.Failure<List<ApiKeyDto>>(Error.Failure("Auth.Required", "User must be authenticated"));
+        }
 
         var keys = await _apiKeyRepository.GetByUserIdAsync(actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
 
@@ -210,7 +214,9 @@ public sealed class RevokeApiKeyHandler : ICommandHandler<RevokeApiKeyCommand, R
     {
         var actor = _actorContext.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue)
+        {
             return Result.Failure<bool>(Error.Failure("Auth.Required", "User must be authenticated"));
+        }
 
         var apiKey = await _apiKeyRepository.RevokeAsync(
             request.KeyId,
@@ -219,7 +225,9 @@ public sealed class RevokeApiKeyHandler : ICommandHandler<RevokeApiKeyCommand, R
             cancellationToken).ConfigureAwait(false);
 
         if (apiKey == null)
+        {
             return Result.Failure<bool>(Error.NotFound("ApiKey.NotFound", "API key not found"));
+        }
 
         _logger.LogInformation("API key revoked: {KeyId} by user {UserId}. Reason: {Reason}",
             request.KeyId, actor.SubjectIdAsGuid.Value, request.Reason);

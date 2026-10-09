@@ -41,14 +41,22 @@ internal class MediatorPublisher : IPublisher
         var handlerType = typeof(INotificationHandler<TNotification>);
         var handlers = _serviceFactory(typeof(IEnumerable<>).MakeGenericType(handlerType)) as IEnumerable<INotificationHandler<TNotification>>;
 
-        if (handlers == null) return;
+        if (handlers == null)
+        {
+            return;
+        }
 
         var handlerArray = handlers as INotificationHandler<TNotification>[] ?? handlers.ToArray();
-        if (handlerArray.Length == 0) return;
+        if (handlerArray.Length == 0)
+        {
+            return;
+        }
 
         var executors = new NotificationHandlerExecutorAdapter<TNotification>[handlerArray.Length];
         for (var i = 0; i < handlerArray.Length; i++)
+        {
             executors[i] = new NotificationHandlerExecutorAdapter<TNotification>(handlerArray[i]);
+        }
 
         await _notificationPublisher.Publish(executors, notification, cancellationToken).ConfigureAwait(false);
     }
@@ -63,14 +71,19 @@ internal class MediatorPublisher : IPublisher
         ArgumentNullException.ThrowIfNull(notification);
 
         if (notification is not INotification notificationInstance)
+        {
             throw new InvalidOperationException($"Object {notification.GetType()} does not implement INotification");
+        }
 
         var notificationType = notification.GetType();
         var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
         var enumerableType = typeof(IEnumerable<>).MakeGenericType(handlerType);
         var handlers = _serviceFactory(enumerableType) as IEnumerable;
 
-        if (handlers == null) return;
+        if (handlers == null)
+        {
+            return;
+        }
 
         var executors = new List<NotificationHandlerExecutor>();
         foreach (var handler in handlers)
@@ -93,6 +106,8 @@ internal class MediatorPublisher : IPublisher
         }
 
         if (executors.Count > 0)
+        {
             await _notificationPublisher.Publish(executors, notificationInstance, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

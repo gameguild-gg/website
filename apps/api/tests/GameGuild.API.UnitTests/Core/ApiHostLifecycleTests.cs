@@ -18,35 +18,39 @@ public sealed class ApiHostLifecycleTests
         var services = new ServiceCollection();
         var errors = new List<string>();
 
-        DataProtectionStartupConfiguration.ConfigureServices(services, "TestProduct", errors.Add);
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest("CN=dataprotection-test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
+        var certificateBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(certificate.ExportCertificatePem()));
+        var keyBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rsa.ExportPkcs8PrivateKeyPem()));
+        DataProtectionStartupConfiguration.ConfigureServices(services, "TestProduct", errors.Add,
+            name => name == "DATAPROTECTION_CERTIFICATE_BASE64" ? certificateBase64 : keyBase64);
         using var provider = services.BuildServiceProvider();
 
         provider.GetRequiredService<IDataProtectionProvider>().Should().NotBeNull();
-        // No cert env vars in the test environment → a plaintext-fallback warning is expected.
-        errors.Should().ContainSingle().Which.Should().Contain("unencrypted");
+        errors.Should().BeEmpty();
     }
 
     [Fact]
-    public void LoadCertificate_ShouldReturnNullWhenEnvironmentVariablesAreAbsent()
+    public void LoadCertificate_ShouldFailClosedWhenEnvironmentVariablesAreAbsent()
     {
         var errors = new List<string>();
 
-        var certificate = DataProtectionStartupConfiguration.LoadCertificate(_ => null, errors.Add);
-
-        certificate.Should().BeNull();
-        errors.Should().ContainSingle().Which.Should().Contain("unencrypted");
+        var load = () => DataProtectionStartupConfiguration.LoadCertificate(_ => null, errors.Add);
+        load.Should().Throw<InvalidOperationException>().WithMessage("*required for durable key storage*");
+        errors.Should().ContainSingle().Which.Should().Contain("required");
     }
 
     [Fact]
-    public void LoadCertificate_ShouldReturnNullWhenOnlyOneVariableIsSet()
+    public void LoadCertificate_ShouldFailClosedWhenOnlyOneVariableIsSet()
     {
         var errors = new List<string>();
 
-        var certificate = DataProtectionStartupConfiguration.LoadCertificate(
+        var load = () => DataProtectionStartupConfiguration.LoadCertificate(
             name => name == "DATAPROTECTION_CERTIFICATE_BASE64" ? "Y2VydA==" : null,
             errors.Add);
 
-        certificate.Should().BeNull();
+        load.Should().Throw<InvalidOperationException>().WithMessage("*required for durable key storage*");
     }
 
     [Fact]
@@ -65,7 +69,7 @@ public sealed class ApiHostLifecycleTests
         var certificateBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(selfSigned.ExportCertificatePem()));
         var keyBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(rsa.ExportPkcs8PrivateKeyPem()));
 
-        var certificate = DataProtectionStartupConfiguration.LoadCertificate(
+        using var certificate = DataProtectionStartupConfiguration.LoadCertificate(
             name => name == "DATAPROTECTION_CERTIFICATE_BASE64" ? certificateBase64 : keyBase64,
             _ => { });
 
@@ -74,14 +78,13 @@ public sealed class ApiHostLifecycleTests
     }
 
     [Fact]
-    public void LoadCertificate_ShouldReturnNullOnMalformedBase64()
+    public void LoadCertificate_ShouldFailClosedOnMalformedBase64()
     {
         var errors = new List<string>();
 
-        var certificate = DataProtectionStartupConfiguration.LoadCertificate(_ => "!!!not-base64!!!", errors.Add);
-
-        certificate.Should().BeNull();
-        errors.Should().ContainSingle().Which.Should().Contain("Failed to load");
+        var load = () => DataProtectionStartupConfiguration.LoadCertificate(_ => "!!!not-base64!!!", errors.Add);
+        load.Should().Throw<InvalidOperationException>().WithMessage("*invalid or unavailable*");
+        errors.Should().ContainSingle().Which.Should().Contain("invalid or unavailable");
     }
 
     [Theory]

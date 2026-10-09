@@ -169,9 +169,11 @@ public sealed class StripeEconomyTopUpEventConsumerTests
             valid with { TenantId = Guid.NewGuid() }
         ];
         foreach (var providerEvent in invalid)
+        {
             FluentActions.Invoking(() =>
-                    StripeEconomyTopUpEventConsumer.EnsureAuthoritativePayment(providerEvent, context))
-                .Should().Throw<InvalidWebhookPayloadException>();
+                StripeEconomyTopUpEventConsumer.EnsureAuthoritativePayment(providerEvent, context))
+            .Should().Throw<InvalidWebhookPayloadException>();
+        }
     }
 
     private static ConsumerFixture SuccessfulFixture()
@@ -329,7 +331,10 @@ public sealed class StripeEconomyTopUpEventConsumerTests
             Calls++;
             Intent = intent;
             if (Exception is not null)
+            {
                 throw Exception;
+            }
+
             tenantId.Should().Be(TenantId);
             actorId.Should().Be(ActorId);
             return await operation(Authorization, cancellationToken);

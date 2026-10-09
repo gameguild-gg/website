@@ -4,7 +4,8 @@ namespace GameGuild.Notifications.Services.Email;
 
 /// <summary>
 /// Renders an email-channel <see cref="Notification"/> into an <see cref="EmailMessage"/> at send time.
-/// Rendering context comes from the row's <see cref="Notification.Metadata"/> JSON; renderers must not
+/// Rendering context comes from <see cref="Notification.Metadata"/>; identity credentials require
+/// <see cref="NotificationMetadataProtector"/> before JSON parsing. Renderers must not
 /// reach out to services other than their constructor-injected dependencies.
 /// </summary>
 /// <remarks>

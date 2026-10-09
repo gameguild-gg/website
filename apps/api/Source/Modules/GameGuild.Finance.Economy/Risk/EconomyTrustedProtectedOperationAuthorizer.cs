@@ -16,7 +16,10 @@ public sealed class EconomyTrustedProtectedOperationAuthorizer(
         CancellationToken cancellationToken)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new ArgumentException("Trusted Economy authority requires tenant and actor IDs.");
+        }
+
         EconomyProtectedOperationOrchestrator.Validate(intent);
         ArgumentNullException.ThrowIfNull(operation);
         cancellationToken.ThrowIfCancellationRequested();
@@ -44,10 +47,15 @@ public sealed class EconomyTrustedProtectedOperationAuthorizer(
                 token).ConfigureAwait(false);
             if (decision.Outcome != RiskOutcome.Allow ||
                 decision.State != EconomyProtectedOperationState.Ready)
+            {
                 return ProtectedExecution<TResult>.Rejected(decision);
+            }
+
             if (decision.Id == Guid.Empty)
+            {
                 throw new InvalidOperationException(
                     "A ready protected operation must have a durable risk decision.");
+            }
 
             var receipt = await capabilityAuthorization.AuthorizeAndConsumeAsync(
                 new EconomyCapabilityEvaluationContext(
@@ -76,10 +84,13 @@ public sealed class EconomyTrustedProtectedOperationAuthorizer(
         }, cancellationToken).ConfigureAwait(false);
 
         if (!execution.Success)
+        {
             throw new EconomyProtectedOperationException(
                 execution.Decision.State,
                 execution.Decision.ReviewId,
                 execution.Decision.Diagnostics);
+        }
+
         return execution.Result;
     }
 

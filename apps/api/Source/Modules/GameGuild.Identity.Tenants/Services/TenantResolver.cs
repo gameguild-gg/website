@@ -167,7 +167,9 @@ public sealed class TenantResolver(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantIdentifier))
+        {
             return null;
+        }
 
         // Try as GUID first
         // SECURITY (Attack 5): Reject Guid.Empty to prevent type confusion
@@ -200,7 +202,9 @@ public sealed class TenantResolver(
     private static Guid? GetTenantIdFromClaims(ClaimsPrincipal? user)
     {
         if (user?.Identity?.IsAuthenticated != true)
+        {
             return null;
+        }
 
         var tenantClaim = user.FindFirst(TenantIdClaimType);
         // SECURITY (Attack 5): Reject Guid.Empty to prevent type confusion

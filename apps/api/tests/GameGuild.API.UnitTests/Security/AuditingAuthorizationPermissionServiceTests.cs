@@ -112,8 +112,10 @@ public sealed class AuditingAuthorizationPermissionServiceTests
         result.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task HasPermissionAsync_AlertsOnceWhenDenialsReachTheConfiguredThreshold()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HasPermissionAsync_AlertsOnceWhenDenialsReachTheConfiguredThreshold(bool boundedCache)
     {
         var queryService = new Mock<IPermissionQueryService>();
         queryService.Setup(service => service.HasTenantPermissionAsync(UserId, TenantId, "teams.read", It.IsAny<CancellationToken>()))
@@ -124,7 +126,11 @@ public sealed class AuditingAuthorizationPermissionServiceTests
         var siemService = new Mock<ISiemIntegrationService>();
         siemService.Setup(service => service.SendSecurityEventAsync(It.IsAny<SiemEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var service = CreateService(queryService.Object, auditService.Object, siemService.Object);
+        using var alertCache = new MemoryCache(new MemoryCacheOptions
+        {
+            SizeLimit = boundedCache ? 64 : null
+        });
+        var service = CreateService(queryService.Object, auditService.Object, siemService.Object, alertCache);
 
         await service.HasPermissionAsync(UserId, TenantId, "teams.read");
         await service.HasPermissionAsync(UserId, TenantId, "teams.read");
@@ -158,6 +164,13 @@ public sealed class AuditingAuthorizationPermissionServiceTests
         IPermissionQueryService queryService,
         IAuditService auditService,
         ISiemIntegrationService? siemService = null)
+        => CreateService(queryService, auditService, siemService, new MemoryCache(new MemoryCacheOptions()));
+
+    private static AuditingAuthorizationPermissionService CreateService(
+        IPermissionQueryService queryService,
+        IAuditService auditService,
+        ISiemIntegrationService? siemService,
+        IMemoryCache alertCache)
     {
         var context = new DefaultHttpContext
         {
@@ -177,7 +190,7 @@ public sealed class AuditingAuthorizationPermissionServiceTests
                 ["Authorization:Anomaly:MaxFailedAttemptsPerHour"] = "5"
             }).Build(),
             siemService ?? new Mock<ISiemIntegrationService>().Object,
-            new MemoryCache(new MemoryCacheOptions()),
+            alertCache,
             NullLogger<AuditingAuthorizationPermissionService>.Instance);
     }
 }

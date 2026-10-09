@@ -30,8 +30,15 @@ public sealed class PostgreSqlEconomyWalletProvisioner : IEconomyWalletProvision
         DateTimeOffset createdAt,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (ownerId == Guid.Empty) throw new ArgumentException("Owner ID is required.", nameof(ownerId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (ownerId == Guid.Empty)
+        {
+            throw new ArgumentException("Owner ID is required.", nameof(ownerId));
+        }
 
         try
         {

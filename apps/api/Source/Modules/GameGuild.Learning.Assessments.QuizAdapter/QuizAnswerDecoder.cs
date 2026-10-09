@@ -41,7 +41,11 @@ public sealed class QuizAnswerDecoder
         JsonContract.RequireObject(answers, "Quiz answers");
         foreach (var answerProperty in answers.EnumerateObject())
         {
-            if (string.IsNullOrWhiteSpace(answerProperty.Name)) throw new JsonException("Quiz answer item ID is required.");
+            if (string.IsNullOrWhiteSpace(answerProperty.Name))
+            {
+                throw new JsonException("Quiz answer item ID is required.");
+            }
+
             ValidateAnswer(answerProperty.Value);
         }
 
@@ -92,9 +96,17 @@ public sealed class QuizAnswerDecoder
     private static void ValidateAnswer(JsonElement answer)
     {
         JsonContract.RequireObject(answer, "Quiz answer");
-        if (!answer.TryGetProperty("type", out var typeProperty)) throw new JsonException("Quiz answer type is required.");
+        if (!answer.TryGetProperty("type", out var typeProperty))
+        {
+            throw new JsonException("Quiz answer type is required.");
+        }
+
         var type = typeProperty.GetString();
-        if (type is null || !Shapes.TryGetValue(type, out var shape)) throw new JsonException("Quiz answer type is unsupported.");
+        if (type is null || !Shapes.TryGetValue(type, out var shape))
+        {
+            throw new JsonException("Quiz answer type is unsupported.");
+        }
+
         JsonContract.RequireExactProperties(answer, shape.Allowed, shape.Required);
 
         switch (type)
@@ -158,8 +170,12 @@ public sealed class QuizAnswerDecoder
                 var limit = entry.TryGetProperty("selectionLimit", out var selectionLimit)
                     ? selectionLimit.GetInt32()
                     : entry.GetProperty("options").GetArrayLength();
-                if (values.Length > limit) throw new JsonException("optionIds exceeds the configured selection limit.");
-                break;
+                if (values.Length > limit)
+                    {
+                        throw new JsonException("optionIds exceeds the configured selection limit.");
+                    }
+
+                    break;
             }
             case "FILL_IN_THE_BLANK":
                 RequireKnown(
@@ -173,8 +189,11 @@ public sealed class QuizAnswerDecoder
                 var pairs = entry.GetProperty("pairs").EnumerateArray().ToArray();
                 RequireKnown(matches.EnumerateObject().Select(value => value.Name), IdSet(pairs), "matching pair IDs");
                 if (matches.EnumerateObject().Count() > pairs.Length)
-                    throw new JsonException("matches exceeds the number of matching pairs.");
-                var allowedValues = pairs.Select(value => RequiredProjectionText(value, "right"))
+                    {
+                        throw new JsonException("matches exceeds the number of matching pairs.");
+                    }
+
+                    var allowedValues = pairs.Select(value => RequiredProjectionText(value, "right"))
                     .Concat(OptionalStringValues(entry, "rightOptions"))
                     .Concat(OptionalStringValues(entry, "distractors"))
                     .ToHashSet(StringComparer.Ordinal);
@@ -188,8 +207,12 @@ public sealed class QuizAnswerDecoder
                 var values = ReadUniqueStrings(answer.GetProperty("itemIds"), "itemIds");
                 var allowed = IdSet(entry.GetProperty("items"));
                 RequireKnown(values, allowed, "itemIds");
-                if (values.Length > allowed.Count) throw new JsonException("itemIds exceeds the number of ordering items.");
-                break;
+                if (values.Length > allowed.Count)
+                    {
+                        throw new JsonException("itemIds exceeds the number of ordering items.");
+                    }
+
+                    break;
             }
             case "CATEGORIZATION":
             {
@@ -202,8 +225,10 @@ public sealed class QuizAnswerDecoder
                     var values = ReadUniqueStrings(assignment.Value, $"categoryIdsByItem.{assignment.Name}");
                     RequireKnown(values, categories, "category IDs");
                     if (values.Length > categories.Count)
-                        throw new JsonException("A categorization answer exceeds the number of categories.");
-                }
+                        {
+                            throw new JsonException("A categorization answer exceeds the number of categories.");
+                        }
+                    }
                 break;
             }
             case "RATING":
@@ -243,40 +268,64 @@ public sealed class QuizAnswerDecoder
     {
         var source = values.ToArray();
         if (source.Distinct(StringComparer.Ordinal).Count() != source.Length)
+        {
             throw new JsonException($"{label} contains duplicate values.");
+        }
     }
 
     private static void RequireKnown(IEnumerable<string> values, IReadOnlySet<string> allowed, string label)
     {
         var unknown = values.FirstOrDefault(value => !allowed.Contains(value));
-        if (unknown is not null) throw new JsonException($"{label} contains unknown value {unknown}.");
+        if (unknown is not null)
+        {
+            throw new JsonException($"{label} contains unknown value {unknown}.");
+        }
     }
 
     private static void ValidateOptionalDomainValue(JsonElement value, IReadOnlySet<string> allowed, string label)
     {
-        if (value.ValueKind == JsonValueKind.Null) return;
+        if (value.ValueKind == JsonValueKind.Null)
+        {
+            return;
+        }
+
         var selected = value.GetString()!;
-        if (!allowed.Contains(selected)) throw new JsonException($"{label} contains an unknown value.");
+        if (!allowed.Contains(selected))
+        {
+            throw new JsonException($"{label} contains an unknown value.");
+        }
     }
 
     private static void ValidateRating(JsonElement value, JsonElement scale)
     {
-        if (value.ValueKind == JsonValueKind.Null) return;
+        if (value.ValueKind == JsonValueKind.Null)
+        {
+            return;
+        }
+
         var selected = value.GetDecimal();
         var minimum = scale.GetProperty("min").GetDecimal();
         var maximum = scale.GetProperty("max").GetDecimal();
         var step = scale.GetProperty("step").GetDecimal();
         if (selected < minimum || selected > maximum || step <= 0 || (selected - minimum) % step != 0)
+        {
             throw new JsonException("Rating value is outside its configured scale.");
+        }
     }
 
     private static void ValidateHotspotPoint(JsonElement point)
     {
-        if (point.ValueKind == JsonValueKind.Null) return;
+        if (point.ValueKind == JsonValueKind.Null)
+        {
+            return;
+        }
+
         var x = point.GetProperty("x").GetDecimal();
         var y = point.GetProperty("y").GetDecimal();
         if (x is < 0 or > 100 || y is < 0 or > 100)
+        {
             throw new JsonException("Hotspot coordinates must be between 0 and 100.");
+        }
     }
 
     private static void ValidateHighlightBounds(JsonElement spans, int textLength)
@@ -287,11 +336,16 @@ public sealed class QuizAnswerDecoder
             .ThenBy(span => span.End)
             .ToArray();
         if (ranges.Any(span => span.End > textLength))
+        {
             throw new JsonException("Highlight span exceeds the source text.");
+        }
+
         for (var index = 1; index < ranges.Length; index++)
         {
             if (ranges[index].Start < ranges[index - 1].End)
+            {
                 throw new JsonException("Highlight spans cannot overlap.");
+            }
         }
     }
 
@@ -307,7 +361,11 @@ public sealed class QuizAnswerDecoder
 
     private static void ValidatePoint(JsonElement point)
     {
-        if (point.ValueKind == JsonValueKind.Null) return;
+        if (point.ValueKind == JsonValueKind.Null)
+        {
+            return;
+        }
+
         JsonContract.RequireObject(point, "point");
         JsonContract.RequireExactProperties(point, JsonContract.Set("x", "y"));
         JsonContract.RequireNumber(point.GetProperty("x"), "x");
@@ -316,14 +374,21 @@ public sealed class QuizAnswerDecoder
 
     private static void ValidateSpans(JsonElement spans)
     {
-        if (spans.ValueKind != JsonValueKind.Array) throw new JsonException("spans must be an array.");
+        if (spans.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException("spans must be an array.");
+        }
+
         foreach (var span in spans.EnumerateArray())
         {
             JsonContract.RequireObject(span, "span");
             JsonContract.RequireExactProperties(span, JsonContract.Set("start", "end"));
             var start = span.GetProperty("start").GetInt32();
             var end = span.GetProperty("end").GetInt32();
-            if (start < 0 || end <= start) throw new JsonException("Highlight span is invalid.");
+            if (start < 0 || end <= start)
+            {
+                throw new JsonException("Highlight span is invalid.");
+            }
         }
     }
 
@@ -343,7 +408,10 @@ internal static class JsonContract
 
     public static void RequireObject(JsonElement value, string label)
     {
-        if (value.ValueKind != JsonValueKind.Object) throw new JsonException($"{label} must be an object.");
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException($"{label} must be an object.");
+        }
     }
 
     public static void RequireExactProperties(
@@ -360,34 +428,57 @@ internal static class JsonContract
 
     public static void RequireString(JsonElement value, string label)
     {
-        if (value.ValueKind != JsonValueKind.String) throw new JsonException($"{label} must be a string.");
+        if (value.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException($"{label} must be a string.");
+        }
     }
 
     public static void RequireStringOrNull(JsonElement value, string label)
     {
-        if (value.ValueKind is not (JsonValueKind.String or JsonValueKind.Null)) throw new JsonException($"{label} must be a string or null.");
+        if (value.ValueKind is not (JsonValueKind.String or JsonValueKind.Null))
+        {
+            throw new JsonException($"{label} must be a string or null.");
+        }
     }
 
     public static void RequireBooleanOrNull(JsonElement value, string label)
     {
-        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False or JsonValueKind.Null)) throw new JsonException($"{label} must be a boolean or null.");
+        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False or JsonValueKind.Null))
+        {
+            throw new JsonException($"{label} must be a boolean or null.");
+        }
     }
 
     public static void RequireNumberOrNull(JsonElement value, string label)
     {
-        if (value.ValueKind is not (JsonValueKind.Number or JsonValueKind.Null)) throw new JsonException($"{label} must be a number or null.");
-        if (value.ValueKind == JsonValueKind.Number) RequireFiniteNumber(value, label);
+        if (value.ValueKind is not (JsonValueKind.Number or JsonValueKind.Null))
+        {
+            throw new JsonException($"{label} must be a number or null.");
+        }
+
+        if (value.ValueKind == JsonValueKind.Number)
+        {
+            RequireFiniteNumber(value, label);
+        }
     }
 
     public static void RequireNumber(JsonElement value, string label)
     {
-        if (value.ValueKind != JsonValueKind.Number) throw new JsonException($"{label} must be a number.");
+        if (value.ValueKind != JsonValueKind.Number)
+        {
+            throw new JsonException($"{label} must be a number.");
+        }
+
         RequireFiniteNumber(value, label);
     }
 
     public static void RequireObjectOrNull(JsonElement value, string label)
     {
-        if (value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null)) throw new JsonException($"{label} must be an object or null.");
+        if (value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null))
+        {
+            throw new JsonException($"{label} must be an object or null.");
+        }
     }
 
     public static void RequireStringArray(JsonElement value)
@@ -410,12 +501,18 @@ internal static class JsonContract
     public static void RequireStringArrayRecord(JsonElement value)
     {
         RequireObject(value, "String-array record");
-        foreach (var property in value.EnumerateObject()) RequireStringArray(property.Value);
+        foreach (var property in value.EnumerateObject())
+        {
+            RequireStringArray(property.Value);
+        }
     }
 
     private static void RequireFiniteNumber(JsonElement value, string label)
     {
         var number = value.GetDouble();
-        if (double.IsNaN(number) || double.IsInfinity(number)) throw new JsonException($"{label} must be finite.");
+        if (double.IsNaN(number) || double.IsInfinity(number))
+        {
+            throw new JsonException($"{label} must be finite.");
+        }
     }
 }

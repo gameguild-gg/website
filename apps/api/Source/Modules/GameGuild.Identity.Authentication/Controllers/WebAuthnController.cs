@@ -42,7 +42,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(new BeginWebAuthnRegistrationCommand(
             userId.Value,
@@ -52,7 +54,9 @@ public class WebAuthnController(
             cancellationToken).ConfigureAwait(false);
 
         if (!result.Success)
+        {
             return BadRequest(result);
+        }
 
         return Ok(result);
     }
@@ -74,7 +78,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(new CompleteWebAuthnRegistrationCommand(
             userId.Value,
@@ -86,7 +92,9 @@ public class WebAuthnController(
             cancellationToken).ConfigureAwait(false);
 
         if (!result.Success)
+        {
             return BadRequest(result);
+        }
 
         return Ok(result);
     }
@@ -113,7 +121,9 @@ public class WebAuthnController(
             cancellationToken).ConfigureAwait(false);
 
         if (!result.Success)
+        {
             return BadRequest(result);
+        }
 
         return Ok(result);
     }
@@ -139,7 +149,9 @@ public class WebAuthnController(
             cancellationToken).ConfigureAwait(false);
 
         if (!result.Success)
+        {
             return BadRequest(result);
+        }
 
         return Ok(result);
     }
@@ -160,7 +172,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var credentials = await webAuthnService.GetUserCredentialsAsync(userId.Value, cancellationToken).ConfigureAwait(false);
         return Ok(credentials);
@@ -182,11 +196,15 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var credential = await webAuthnService.GetCredentialByIdAsync(userId.Value, credentialId, cancellationToken).ConfigureAwait(false);
         if (credential == null)
+        {
             return NotFound();
+        }
 
         return Ok(credential);
     }
@@ -207,7 +225,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var exists = await webAuthnService.CredentialExistsAsync(userId.Value, credentialId, cancellationToken).ConfigureAwait(false);
         return exists ? Ok() : NotFound();
@@ -229,13 +249,17 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new VerifyWebAuthnCredentialCommand(userId.Value, credentialId),
             cancellationToken).ConfigureAwait(false);
         if (!result.Success && result.Error == "Credential not found")
+        {
             return NotFound();
+        }
 
         return Ok(result);
     }
@@ -323,13 +347,17 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new DeleteWebAuthnCredentialCommand(userId.Value, credentialId),
             cancellationToken).ConfigureAwait(false);
         if (!result)
+        {
             return NotFound();
+        }
 
         return NoContent();
     }
@@ -352,7 +380,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(new UpdateWebAuthnCredentialNameCommand(
             userId.Value,
@@ -360,7 +390,9 @@ public class WebAuthnController(
             request.FriendlyName), cancellationToken).ConfigureAwait(false);
 
         if (!result)
+        {
             return NotFound();
+        }
 
         return NoContent();
     }
@@ -377,7 +409,9 @@ public class WebAuthnController(
     {
         var userId = GetCurrentUserId();
         if (!userId.HasValue)
+        {
             return Unauthorized();
+        }
 
         var isEnabled = await webAuthnService.IsWebAuthnEnabledAsync(userId.Value, cancellationToken).ConfigureAwait(false);
         var credentials = await webAuthnService.GetUserCredentialsAsync(userId.Value, cancellationToken).ConfigureAwait(false);

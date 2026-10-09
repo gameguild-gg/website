@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { mkdir } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { createClient, GeneratedApi } from "@game-guild/client";
 import { chromium } from "playwright";
@@ -41,7 +42,7 @@ const refreshWaitMs = Number.parseInt(
 );
 
 function unique() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${Date.now()}-${randomUUID().replaceAll("-", "").slice(0, 8)}`;
 }
 
 function formatApiError(error) {

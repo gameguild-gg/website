@@ -389,8 +389,10 @@ public sealed class DurablePayoutApplicationServiceTests
                      fixture.DispatchCommand(operation) with { ExpectedVersion = 0 },
                      fixture.DispatchCommand(operation) with { Reauthentication = null! }
                  })
+        {
             await FluentActions.Awaiting(async () => await fixture.Service.DispatchAsync(command))
-                .Should().ThrowAsync<ArgumentException>();
+            .Should().ThrowAsync<ArgumentException>();
+        }
 
         await FluentActions.Awaiting(async () => await fixture.Service.ReconcileAsync(
                 new ReconcilePayoutOperationCommand(fixture.TenantId, fixture.ActorId, Guid.Empty)))
@@ -590,7 +592,11 @@ public sealed class DurablePayoutApplicationServiceTests
             ValueTask.FromResult(new ConnectOnboardingResult(Account, new Uri("https://connect.example/onboard")));
         public ValueTask<ConnectAccountSnapshot> GetAccountAsync(Guid payeeId, CancellationToken cancellationToken = default)
         {
-            if (ThrowOnRead) throw new InvalidOperationException("provider should not be read");
+            if (ThrowOnRead)
+            {
+                throw new InvalidOperationException("provider should not be read");
+            }
+
             return ValueTask.FromResult(Account);
         }
         public ValueTask<PayoutDispatchReceipt> DispatchAsync(PayoutDispatchCommand command, CancellationToken cancellationToken = default) => throw new NotSupportedException();

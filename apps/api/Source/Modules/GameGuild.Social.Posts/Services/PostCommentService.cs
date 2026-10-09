@@ -31,7 +31,9 @@ public class PostCommentService : IPostCommentService
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
+        {
             return Result.Failure<PostComment>(PostErrors.NotFound);
+        }
 
         if (parentCommentId.HasValue)
         {
@@ -39,7 +41,9 @@ public class PostCommentService : IPostCommentService
                 .AnyAsync(c => c.Id == parentCommentId.Value && c.PostId == postId, cancellationToken).ConfigureAwait(false);
 
             if (!parentExists)
+            {
                 return Result.Failure<PostComment>(PostErrors.ParentCommentNotFound);
+            }
         }
 
         var comment = PostComment.Create(postId, authorId, content, parentCommentId);
@@ -60,10 +64,14 @@ public class PostCommentService : IPostCommentService
             .FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (comment is null)
+        {
             return Result.Failure<PostComment>(PostErrors.CommentNotFound);
+        }
 
         if (comment.AuthorId != actorId)
+        {
             return Result.Failure<PostComment>(PostErrors.Forbidden);
+        }
 
         comment.Edit(content);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -77,10 +85,14 @@ public class PostCommentService : IPostCommentService
             .FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (comment is null)
+        {
             return Result.Failure(PostErrors.CommentNotFound);
+        }
 
         if (comment.AuthorId != actorId)
+        {
             return Result.Failure(PostErrors.Forbidden);
+        }
 
         var post = await _context.Set<Post>()
             .FirstOrDefaultAsync(p => p.Id == comment.PostId, cancellationToken).ConfigureAwait(false);
@@ -101,7 +113,10 @@ public class PostCommentService : IPostCommentService
         while (pending.Count > 0)
         {
             var currentId = pending.Pop();
-            if (!visited.Add(currentId) || !commentsById.TryGetValue(currentId, out var current)) continue;
+            if (!visited.Add(currentId) || !commentsById.TryGetValue(currentId, out var current))
+            {
+                continue;
+            }
 
             if (!current.IsDeleted)
             {
@@ -109,11 +124,21 @@ public class PostCommentService : IPostCommentService
                 deletedCount++;
             }
 
-            if (!childrenByParentId.TryGetValue(currentId, out var children)) continue;
-            foreach (var child in children) pending.Push(child.Id);
+            if (!childrenByParentId.TryGetValue(currentId, out var children))
+            {
+                continue;
+            }
+
+            foreach (var child in children)
+            {
+                pending.Push(child.Id);
+            }
         }
 
-        for (var index = 0; index < deletedCount; index++) post?.DecrementComments();
+        for (var index = 0; index < deletedCount; index++)
+        {
+            post?.DecrementComments();
+        }
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -126,7 +151,9 @@ public class PostCommentService : IPostCommentService
             .Where(c => c.PostId == postId && c.DeletedAt == null);
 
         if (parentCommentId.HasValue)
+        {
             query = query.Where(c => c.ParentCommentId == parentCommentId.Value);
+        }
 
         var comments = await query
             .OrderBy(c => c.CreatedAt)
@@ -143,7 +170,9 @@ public class PostCommentService : IPostCommentService
             .FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (comment is null)
+        {
             return Result.Failure<PostComment>(PostErrors.CommentNotFound);
+        }
 
         return Result.Success(comment);
     }

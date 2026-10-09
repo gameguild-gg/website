@@ -33,7 +33,9 @@ public sealed class RuleParameters
     public static RuleParameters FromJson(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
+        {
             return new RuleParameters();
+        }
 
         var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, JsonOptions)
                    ?? new Dictionary<string, JsonElement>();
@@ -61,7 +63,9 @@ public sealed class RuleParameters
     public IReadOnlyList<string> GetStringArray(string key)
     {
         if (!_values.TryGetValue(key, out var element))
+        {
             return [];
+        }
 
         if (element.ValueKind == JsonValueKind.Array)
         {
@@ -73,7 +77,9 @@ public sealed class RuleParameters
 
         // Single value as array
         if (element.ValueKind == JsonValueKind.String)
+        {
             return [element.GetString()!];
+        }
 
         return [];
     }
@@ -84,7 +90,9 @@ public sealed class RuleParameters
     public bool GetBool(string key, bool defaultValue = false)
     {
         if (!_values.TryGetValue(key, out var element))
+        {
             return defaultValue;
+        }
 
         return element.ValueKind switch
         {
@@ -101,7 +109,9 @@ public sealed class RuleParameters
     public int GetInt(string key, int defaultValue = 0)
     {
         if (!_values.TryGetValue(key, out var element))
+        {
             return defaultValue;
+        }
 
         return element.ValueKind switch
         {
@@ -128,7 +138,9 @@ public sealed class RuleParameters
     public static RuleParameters FromDictionary(Dictionary<string, JsonElement>? values)
     {
         if (values is null || values.Count == 0)
+        {
             return new RuleParameters();
+        }
 
         return new RuleParameters(values);
     }

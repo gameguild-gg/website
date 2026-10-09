@@ -16,6 +16,8 @@ namespace GameGuild.Notifications;
 [Index(nameof(ScheduledAt))]
 public class Notification : EntityBase
 {
+    public const int MaximumMetadataInputLength = 4000;
+
     /// <summary>
     /// ID of the user who will receive this notification.
     /// Null for email-only recipients (e.g., tenant invites to unregistered addresses).
@@ -148,9 +150,8 @@ public class Notification : EntityBase
     public string? ReferenceEntityType { get; private set; }
 
     /// <summary>
-    /// Optional metadata JSON for additional notification data
+    /// Optional metadata; identity-email credentials are stored as a protected envelope.
     /// </summary>
-    [MaxLength(4000)]
     public string? Metadata { get; private set; }
 
     /// <summary>
@@ -189,6 +190,11 @@ public class Notification : EntityBase
         Guid? templateId = null,
         string? recipientEmail = null)
     {
+        if (metadata?.Length > MaximumMetadataInputLength)
+        {
+            throw new ArgumentException("Notification metadata exceeds the input limit.", nameof(metadata));
+        }
+
         return new Notification
         {
             Id = Guid.NewGuid(),
@@ -212,13 +218,18 @@ public class Notification : EntityBase
         };
     }
 
+    internal void SetProtectedMetadata(string metadata) => Metadata = metadata;
+
     /// <summary>
     /// Marks the notification as read
     /// </summary>
     public void MarkAsRead()
     {
-        if (IsRead) return;
-        
+        if (IsRead)
+        {
+            return;
+        }
+
         IsRead = true;
         ReadAt = SystemClock.UtcNow;
         UpdatedAt = SystemClock.UtcNow;
@@ -239,8 +250,11 @@ public class Notification : EntityBase
     /// </summary>
     public void MarkAsSent()
     {
-        if (IsSent) return;
-        
+        if (IsSent)
+        {
+            return;
+        }
+
         IsSent = true;
         SentAt = SystemClock.UtcNow;
         UpdatedAt = SystemClock.UtcNow;
@@ -262,7 +276,10 @@ public class Notification : EntityBase
     public void MarkDeliverySent(string? providerMessageId)
     {
         MarkAsSent();
-        if (DeliveryStatus == NotificationDeliveryStatus.Sent) return;
+        if (DeliveryStatus == NotificationDeliveryStatus.Sent)
+        {
+            return;
+        }
 
         ProviderMessageId = providerMessageId;
         DeliveryStatus = NotificationDeliveryStatus.Sent;
@@ -302,7 +319,10 @@ public class Notification : EntityBase
     /// </summary>
     public void MarkRequeued()
     {
-        if (DeliveryStatus != NotificationDeliveryStatus.DeadLettered) return;
+        if (DeliveryStatus != NotificationDeliveryStatus.DeadLettered)
+        {
+            return;
+        }
 
         DeliveryStatus = NotificationDeliveryStatus.Pending;
         NextAttemptAt = null;
@@ -315,7 +335,10 @@ public class Notification : EntityBase
     /// </summary>
     public void ClaimForSending()
     {
-        if (DeliveryStatus != NotificationDeliveryStatus.Pending) return;
+        if (DeliveryStatus != NotificationDeliveryStatus.Pending)
+        {
+            return;
+        }
 
         DeliveryStatus = NotificationDeliveryStatus.Sending;
         UpdatedAt = SystemClock.UtcNow;

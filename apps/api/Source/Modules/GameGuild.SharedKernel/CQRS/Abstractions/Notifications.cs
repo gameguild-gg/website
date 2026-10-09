@@ -63,8 +63,10 @@ public sealed class NotificationHandlerExecutorAdapter<TNotification> : Notifica
     public override Task ExecuteHandler(INotification notification, CancellationToken cancellationToken)
     {
         if (notification is not TNotification typed)
+        {
             throw new InvalidOperationException(
                 $"Expected notification of type {typeof(TNotification).Name} but received {notification.GetType().Name}.");
+        }
 
         return _handler.Handle(typed, cancellationToken);
     }

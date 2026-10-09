@@ -80,7 +80,9 @@ public class UserSignedInEventHandlerTests
         logger.Entries.Should().ContainSingle();
         logger.Entries[0].Level.Should().Be(LogLevel.Information);
         logger.Entries[0].Message.Should().Contain("Unknown");
-        logger.Entries[0].Message.Should().Contain(notification.Email);
+        logger.Entries[0].Message.Should().Contain(LogRedaction.MaskEmail(notification.Email))
+            .And.MatchRegex("email:[0-9a-f]{64}")
+            .And.NotContain("u***@e***.com").And.NotContain(notification.Email);
         logger.Entries[0].Message.Should().Contain(notification.AuthMethod);
     }
 
@@ -142,7 +144,9 @@ public class SendEmailVerificationRequestedHandlerTests
 
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Information &&
-            entry.Message.Contains("Verification email queued for user@example.com"));
+            entry.Message.Contains($"Verification email queued for {LogRedaction.MaskEmail(notification.Email)}"));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 
     [Fact]
@@ -161,7 +165,9 @@ public class SendEmailVerificationRequestedHandlerTests
 
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Warning &&
-            entry.Message.Contains("unknown@example.com"));
+            entry.Message.Contains(LogRedaction.MaskEmail(notification.Email)));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 
     [Fact]
@@ -186,7 +192,9 @@ public class SendEmailVerificationRequestedHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
-            entry.Message.Contains("user@example.com"));
+            entry.Message.Contains(LogRedaction.MaskEmail(notification.Email)));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 }
 
@@ -226,7 +234,9 @@ public class SendWelcomeEmailHandlerTests
 
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Information &&
-            entry.Message.Contains("Welcome email queued for user@example.com"));
+            entry.Message.Contains($"Welcome email queued for {LogRedaction.MaskEmail(notification.Email)}"));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 
     [Fact]
@@ -252,7 +262,9 @@ public class SendWelcomeEmailHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Warning &&
-            entry.Message.Contains("user@example.com"));
+            entry.Message.Contains(LogRedaction.MaskEmail(notification.Email)));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 }
 
@@ -296,7 +308,9 @@ public class SendPasswordResetRequestedHandlerTests
 
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Information &&
-            entry.Message.Contains("Password reset email queued for user@example.com"));
+            entry.Message.Contains($"Password reset email queued for {LogRedaction.MaskEmail(notification.Email)}"));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 
     [Fact]
@@ -326,7 +340,9 @@ public class SendPasswordResetRequestedHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
-            entry.Message.Contains("user@example.com"));
+            entry.Message.Contains(LogRedaction.MaskEmail(notification.Email)));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 }
 
@@ -371,7 +387,9 @@ public class SendMagicLinkRequestedHandlerTests
 
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Information &&
-            entry.Message.Contains("Magic-link email queued for user@example.com"));
+            entry.Message.Contains($"Magic-link email queued for {LogRedaction.MaskEmail(notification.Email)}"));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 
     [Fact]
@@ -401,7 +419,9 @@ public class SendMagicLinkRequestedHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
-            entry.Message.Contains("user@example.com"));
+            entry.Message.Contains(LogRedaction.MaskEmail(notification.Email)));
+        logger.Entries.Should().OnlyContain(entry =>
+            !entry.Message.Contains(notification.Email) && !entry.Message.Contains("u***@e***.com"));
     }
 }
 
@@ -421,10 +441,13 @@ sealed class TestLogger<T> : ILogger<T>
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        Entries.Add(new LogEntry(logLevel, formatter(state, exception), exception));
+        var properties = state is IEnumerable<KeyValuePair<string, object?>> values
+            ? values.ToArray()
+            : [];
+        Entries.Add(new LogEntry(logLevel, formatter(state, exception), exception, properties));
     }
 
-    public sealed record LogEntry(LogLevel Level, string Message, Exception? Exception);
+    public sealed record LogEntry(LogLevel Level, string Message, Exception? Exception, IReadOnlyList<KeyValuePair<string, object?>> Properties);
 
     private sealed class NullScope : IDisposable
     {

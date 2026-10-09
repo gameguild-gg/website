@@ -195,7 +195,8 @@ public class EfConfigAndServicesTests
         var svc = new CapabilityService(
             Mock.Of<IApplicationDbContext>(),
             new MemoryCache(new MemoryCacheOptions()),
-            NullLogger<CapabilityService>.Instance);
+            NullLogger<CapabilityService>.Instance,
+            Mock.Of<GameGuild.Identity.Context.Actors.IActorContextAccessor>());
         svc.Should().NotBeNull();
     }
 

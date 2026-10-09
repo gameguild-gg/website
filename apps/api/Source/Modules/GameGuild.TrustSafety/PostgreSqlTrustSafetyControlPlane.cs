@@ -90,8 +90,11 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         if (replay is not null)
         {
             if (replay.PayloadHash != evidence.PayloadHash)
-                throw new TrustSafetyConflictException("The internal event was replayed with a different payload.");
-            return new TrustSafetyIngestionResult(
+                {
+                    throw new TrustSafetyConflictException("The internal event was replayed with a different payload.");
+                }
+
+                return new TrustSafetyIngestionResult(
                 replay.ProcessedAt is not null
                     ? ComplianceEvidenceIngestionStatus.Duplicate
                     : string.Equals(replay.ProcessingError, "out-of-order-event", StringComparison.Ordinal)
@@ -107,10 +110,12 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
                        row.Version == evidence.Version,
                 cancellationToken);
         if (versionReplay is not null)
-            throw new TrustSafetyConflictException(
+            {
+                throw new TrustSafetyConflictException(
                 "The Trust/Safety subject version is already bound to another internal event.");
+            }
 
-        var canonical = Canonicalize(evidence);
+            var canonical = Canonicalize(evidence);
         var signatureVerified = await _signatureVerifier.VerifyAsync(
             canonical, evidence.KeyId, evidence.Signature, cancellationToken);
         var inbox = ToRow(evidence, signatureVerified);
@@ -171,8 +176,11 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         { EvidenceKind = ComplianceEvidenceKinds.TrustSafety };
         var ingestion = await _evidence.IngestAsync(envelope, cancellationToken);
         if (ingestion.Status is not (ComplianceEvidenceIngestionStatus.Published or ComplianceEvidenceIngestionStatus.Duplicate))
-            throw new TrustSafetyConflictException("Trust/Safety evidence could not be published in sequence.");
-        inbox.ProcessedAt = evidence.ReceivedAt;
+            {
+                throw new TrustSafetyConflictException("Trust/Safety evidence could not be published in sequence.");
+            }
+
+            inbox.ProcessedAt = evidence.ReceivedAt;
         await _db.SaveChangesAsync(cancellationToken);
         return new TrustSafetyIngestionResult(ingestion.Status, ingestion.EvidenceId);
         }, cancellationToken);
@@ -188,7 +196,10 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         if (replay is not null)
         {
             if (replay.SubmissionEvidenceHash != appeal.SubmissionEvidenceHash || replay.SubmittedBy != appeal.SubmittedBy)
+            {
                 throw new TrustSafetyConflictException("The appeal was replayed with different inputs.");
+            }
+
             return Map(replay);
         }
         var row = ToRow(appeal);
@@ -204,7 +215,10 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         ValidateTenantActor(tenantId, actorId);
         var row = await ReadAppealAsync(tenantId, appealId, cancellationToken);
         if (row.State != TrustSafetyAppealState.Submitted || row.Version != expectedVersion)
+        {
             throw new TrustSafetyConflictException("The appeal cannot be assigned at this version.");
+        }
+
         row.State = TrustSafetyAppealState.Assigned;
         row.AssignedTo = actorId;
         row.Version++;
@@ -221,7 +235,10 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceHash);
         var row = await ReadAppealAsync(tenantId, appealId, cancellationToken);
         if (row.State != TrustSafetyAppealState.Assigned || row.AssignedTo != actorId || row.Version != expectedVersion)
+        {
             throw new TrustSafetyConflictException("The appeal is not assigned to this reviewer at this version.");
+        }
+
         row.State = overturn ? TrustSafetyAppealState.Overturned : TrustSafetyAppealState.Upheld;
         row.DecidedBy = actorId;
         row.DecisionEvidenceHash = evidenceHash.Trim();
@@ -238,12 +255,28 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         int limit,
         CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant is required.", nameof(tenantId));
-        if (state is not null && !Enum.IsDefined(state.Value)) throw new ArgumentOutOfRangeException(nameof(state));
-        if (limit is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant is required.", nameof(tenantId));
+        }
+
+        if (state is not null && !Enum.IsDefined(state.Value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+
+        if (limit is < 1 or > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
         var query = _db.Set<TrustSafetyAppealRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
-        if (state is not null) query = query.Where(row => row.State == state.Value);
+        if (state is not null)
+        {
+            query = query.Where(row => row.State == state.Value);
+        }
+
         var rows = await query.OrderByDescending(row => row.SubmittedAt).ThenBy(row => row.Id)
             .Take(limit).ToArrayAsync(cancellationToken);
         return Array.AsReadOnly(rows.Select(Map).ToArray());
@@ -295,7 +328,11 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
     private static void ValidateEvent(TrustSafetyEvent value)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (value.Id == Guid.Empty || value.TenantId == Guid.Empty) throw new ArgumentException("Event IDs are required.", nameof(value));
+        if (value.Id == Guid.Empty || value.TenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Event IDs are required.", nameof(value));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(value.EventId);
         ArgumentException.ThrowIfNullOrWhiteSpace(value.SubjectHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(value.PayloadHash);
@@ -305,17 +342,25 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
         ArgumentException.ThrowIfNullOrWhiteSpace(value.Signature);
         if (!Enum.IsDefined(value.Kind) || !Enum.IsDefined(value.Outcome) || value.Version <= 0 || value.PolicyVersion <= 0 ||
             value.ExpiresAt <= value.IssuedAt || value.ReceivedAt < value.IssuedAt)
+        {
             throw new ArgumentException("Trust/Safety event metadata is invalid.", nameof(value));
+        }
     }
 
     private static void ValidateAppeal(TrustSafetyAppeal value)
     {
         ArgumentNullException.ThrowIfNull(value);
         if (value.Id == Guid.Empty || value.TenantId == Guid.Empty || value.SubmittedBy == Guid.Empty)
+        {
             throw new ArgumentException("Appeal IDs are required.", nameof(value));
+        }
+
         if (value.State != TrustSafetyAppealState.Submitted || value.Version != 1 || value.AssignedTo is not null ||
             value.DecidedBy is not null || value.DecidedAt is not null)
+        {
             throw new ArgumentException("A new appeal must be unassigned and submitted at version one.", nameof(value));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(value.SubjectHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(value.RestrictionReferenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(value.SubmissionEvidenceHash);
@@ -323,8 +368,15 @@ public sealed class PostgreSqlTrustSafetyControlPlane : ITrustSafetyControlPlane
 
     private static void ValidateTenantActor(Guid tenantId, Guid actorId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant is required.", nameof(tenantId));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor is required.", nameof(actorId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant is required.", nameof(tenantId));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor is required.", nameof(actorId));
+        }
     }
 
     private static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

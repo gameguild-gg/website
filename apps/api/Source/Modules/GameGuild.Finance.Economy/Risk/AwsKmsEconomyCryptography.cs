@@ -59,7 +59,10 @@ public sealed class AwsKmsEconomyCryptography :
             SigningAlgorithm = algorithm
         }, cancellationToken);
         if (response.Signature is null || response.Signature.Length == 0 || string.IsNullOrWhiteSpace(response.KeyId))
+        {
             throw new EconomyCryptographyUnavailableException("AWS KMS did not return an asymmetric signature.");
+        }
+
         return new CapabilityReceiptSignature(
             response.KeyId.Trim(),
             $"{response.SigningAlgorithm.Value}:{Convert.ToBase64String(response.Signature.ToArray())}");
@@ -73,11 +76,22 @@ public sealed class AwsKmsEconomyCryptography :
     {
         if (!_options.Enabled || string.IsNullOrWhiteSpace(canonicalPayload) ||
             string.IsNullOrWhiteSpace(keyId) || string.IsNullOrWhiteSpace(signature))
+        {
             return false;
+        }
+
         var separator = signature.IndexOf(':', StringComparison.Ordinal);
-        if (separator <= 0 || separator == signature.Length - 1) return false;
+        if (separator <= 0 || separator == signature.Length - 1)
+        {
+            return false;
+        }
+
         var algorithmName = signature[..separator];
-        if (!AllowedAlgorithms.Contains(algorithmName)) return false;
+        if (!AllowedAlgorithms.Contains(algorithmName))
+        {
+            return false;
+        }
+
         byte[] signatureBytes;
         try
         {
@@ -112,8 +126,10 @@ public sealed class AwsKmsEconomyCryptography :
     {
         if (!_options.Enabled || string.IsNullOrWhiteSpace(_options.KeyId) ||
             !AllowedAlgorithms.Contains(_options.SigningAlgorithm.Trim()))
+        {
             throw new EconomyCryptographyUnavailableException(
                 "Economy asymmetric signing is disabled until a valid AWS KMS SIGN_VERIFY key is configured.");
+        }
     }
 
     private static MemoryStream Digest(string canonicalPayload) =>

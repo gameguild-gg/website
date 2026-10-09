@@ -257,7 +257,10 @@ public class PaymentTransitionTests
         {
             p.MarkAsProcessing();
             p.MarkAsFailed("fail");
-            if (i < 2) p.PrepareForRetry();
+            if (i < 2)
+            {
+                p.PrepareForRetry();
+            }
         }
 
         // At this point RetryCount == 2, one more retry allowed

@@ -61,7 +61,9 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
             var operation = operations.Get(request.OperationId);
             if (operation.State == PayoutOperationState.Dispatching &&
                 operation.Version == checked(request.ExpectedVersion + 1))
+            {
                 return operation;
+            }
 
             ValidateDispatchTransition(operation, request);
             var intent = new EconomyProtectedOperationIntent(
@@ -120,8 +122,11 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
                     PersistedFragmentReservationStatus.Dispatching,
                     request.OccurredAt);
                 if (transitioned <= 0)
+                {
                     throw new PayoutStaleCommandException(
-                        "Payout fragments are no longer reserved for dispatch.");
+                    "Payout fragments are no longer reserved for dispatch.");
+                }
+
                 var command = new PayoutDispatchCommand(
                     operation.Id,
                     dispatching.Version,
@@ -159,16 +164,23 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
 
         var replay = operations.FindProviderEvent(request.ProviderEvent.EventId, eventHash);
         if (replay is not null)
+        {
             return operations.Get(replay.OperationId);
+        }
 
         if (!providerEvidence.Verify(request.ProviderEvent))
+        {
             throw new PayoutEvidenceException("Provider payout event signature is invalid.");
+        }
+
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             dbContext, IsolationLevel.ReadCommitted, async _ =>
         {
             replay = operations.FindProviderEvent(request.ProviderEvent.EventId, eventHash);
             if (replay is not null)
+            {
                 return operations.Get(replay.OperationId);
+            }
 
             var operation = operations.Get(request.ProviderEvent.OperationId);
             ValidateTerminalTransition(operation, request.ProviderEvent);
@@ -207,8 +219,11 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
                 cancellationToken).ConfigureAwait(false);
             if (authority.TenantId != operation.TenantId || authority.ActorId != operation.ActorId ||
                 authority.RiskDecisionId == operation.RiskDecisionId)
+            {
                 throw new PayoutEvidenceException(
-                    "Provider evidence posting authority is not bound to the payout actor and tenant.");
+                "Provider evidence posting authority is not bound to the payout actor and tenant.");
+            }
+
             var changed = operation.Transition(
                 nextState,
                 request.ProviderEvent.ObservedAt,
@@ -227,7 +242,9 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
                 nextReservationStatus,
                 request.ProviderEvent.ObservedAt);
             if (transitioned <= 0)
+            {
                 throw new PayoutStaleCommandException("Payout fragments are no longer reserved for terminal settlement.");
+            }
 
             operations.RecordProviderEvent(
                 request.ProviderEvent.EventId,
@@ -266,27 +283,43 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
     private static void ValidateDispatchRequest(DurablePayoutDispatchRequest request)
     {
         if (request.OperationId == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation ID is required.", nameof(request));
+        }
+
         if (request.ActorId == Guid.Empty)
+        {
             throw new ArgumentException("Payout dispatch actor ID is required.", nameof(request));
+        }
+
         if (request.ExpectedVersion <= 0 || request.FencingToken <= 0 || request.KillSwitchEpoch < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request), "Payout dispatch control versions must be positive.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.JurisdictionCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReauthenticationEvidenceHash);
         if (request.ReauthenticationEvidenceHash.Trim().Length != 64)
+        {
             throw new ArgumentException(
-                "Payout reauthentication evidence hashes must contain 64 characters.", nameof(request));
+            "Payout reauthentication evidence hashes must contain 64 characters.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ProviderHash);
         ArgumentNullException.ThrowIfNull(request.SourceRoots);
         if (request.SourceRoots.Count == 0 || request.SourceRoots.Any(root => root.Value == Guid.Empty))
+        {
             throw new ArgumentException("Payout dispatch requires immutable source roots.", nameof(request));
+        }
     }
 
     private static void ValidateDispatchTransition(PayoutOperation operation, DurablePayoutDispatchRequest request)
     {
         if (operation.State != PayoutOperationState.Reserved || operation.Version != request.ExpectedVersion ||
             operation.FencingToken != request.FencingToken || operation.KillSwitchEpoch != request.KillSwitchEpoch)
+        {
             throw new PayoutStaleCommandException("Payout dispatch command is stale or fenced.");
+        }
     }
 
     private static void ValidateProviderEvent(PayoutProviderEvent providerEvent)
@@ -299,9 +332,14 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.EvidenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(providerEvent.Signature);
         if (providerEvent.OperationId == Guid.Empty)
+        {
             throw new ArgumentException("Provider payout events require an operation ID.", nameof(providerEvent));
+        }
+
         if (providerEvent.Outcome is not (PayoutProviderOutcome.Succeeded or PayoutProviderOutcome.Failed))
+        {
             throw new PayoutEvidenceException("Only terminal provider events can settle a payout.");
+        }
     }
 
     private static void ValidateTerminalTransition(
@@ -309,12 +347,20 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
         PayoutProviderEvent providerEvent)
     {
         if (operation.State is not (PayoutOperationState.Dispatching or PayoutOperationState.Ambiguous))
+        {
             throw new PayoutStaleCommandException("Provider terminal event is out of order.");
+        }
+
         if (!string.Equals(providerEvent.ProviderAccountId, operation.ProviderAccountId, StringComparison.Ordinal) ||
             !string.Equals(providerEvent.DestinationHash, operation.DestinationHash, StringComparison.Ordinal))
+        {
             throw new PayoutProviderBindingException("Provider payout event is not bound to this operation.");
+        }
+
         if (providerEvent.ObservedAt < operation.CreatedAt)
+        {
             throw new PayoutEvidenceException("Provider payout event predates the payout operation.");
+        }
     }
 
     private static string ProviderEventHash(PayoutProviderEvent providerEvent)
@@ -360,8 +406,10 @@ public sealed class PostgreSqlDurablePayoutSettlementWorkflow(
             !string.Equals(receipt.ProviderHash, request.ProviderHash, StringComparison.Ordinal) ||
             !string.Equals(receipt.DestinationHash, operation.DestinationHash, StringComparison.Ordinal) ||
             !receipt.SourceRootHashes.SequenceEqual(rootHashes, StringComparer.Ordinal))
+        {
             throw new PayoutStaleCommandException(
-                "The dispatch capability receipt does not match the reserved payout snapshot.");
+            "The dispatch capability receipt does not match the reserved payout snapshot.");
+        }
     }
 
     private static Guid DeterministicGuid(Guid operationId, string suffix)

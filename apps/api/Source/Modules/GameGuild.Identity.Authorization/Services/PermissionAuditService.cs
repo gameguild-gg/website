@@ -101,9 +101,14 @@ public class PermissionAuditService(
         var logs = await _repository.GetByUserAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
 
         if (fromDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp >= fromDate.Value).ToList();
+        }
+
         if (toDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp <= toDate.Value).ToList();
+        }
 
         return logs;
     }
@@ -119,9 +124,14 @@ public class PermissionAuditService(
         logs = logs.Where(l => l.ResourceId == resourceId).ToList();
 
         if (fromDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp >= fromDate.Value).ToList();
+        }
+
         if (toDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp <= toDate.Value).ToList();
+        }
 
         return logs;
     }
@@ -138,9 +148,14 @@ public class PermissionAuditService(
         logs = logs.Where(l => l.OperationType == operationType).ToList();
 
         if (fromDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp >= fromDate.Value).ToList();
+        }
+
         if (toDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp <= toDate.Value).ToList();
+        }
 
         return logs;
     }
@@ -155,7 +170,9 @@ public class PermissionAuditService(
         logs = logs.Where(l => !l.Success).ToList();
 
         if (fromDate.HasValue)
+        {
             logs = logs.Where(l => l.Timestamp >= fromDate.Value).ToList();
+        }
 
         return logs;
     }

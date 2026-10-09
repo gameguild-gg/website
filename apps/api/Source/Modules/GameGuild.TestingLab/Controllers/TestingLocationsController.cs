@@ -31,7 +31,11 @@ public class TestingLocationsController(
     public async Task<ActionResult<TestingLocation>> GetTestingLocation(Guid id)
     {
         var location = await locationService.GetTestingLocationByIdAsync(id).ConfigureAwait(false);
-        if (location == null) return NotFound();
+        if (location == null)
+        {
+            return NotFound();
+        }
+
         return Ok(location);
     }
 
@@ -40,7 +44,10 @@ public class TestingLocationsController(
     [RequireTestingLabPermission(TestingLabActions.Create, TestingLabResourceTypes.Location)]
     public async Task<ActionResult<TestingLocation>> CreateTestingLocation(CreateTestingLocationDto locationDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var createdLocation = await sender.Send(new CreateTestingLocationEndpointCommand(locationDto)).ConfigureAwait(false);
 
@@ -53,7 +60,10 @@ public class TestingLocationsController(
     public async Task<ActionResult<TestingLocation>> UpdateTestingLocation(Guid id, UpdateTestingLocationDto locationDto)
     {
         var updatedLocation = await sender.Send(new UpdateTestingLocationEndpointCommand(id, locationDto)).ConfigureAwait(false);
-        if (updatedLocation == null) return NotFound();
+        if (updatedLocation == null)
+        {
+            return NotFound();
+        }
 
         return Ok(updatedLocation);
     }
@@ -66,7 +76,11 @@ public class TestingLocationsController(
         try
         {
             var result = await sender.Send(new DeleteTestingLocationEndpointCommand(id)).ConfigureAwait(false);
-            if (!result) return NotFound();
+            if (!result)
+            {
+                return NotFound();
+            }
+
             return NoContent();
         }
         catch (InvalidOperationException exception)
@@ -81,7 +95,11 @@ public class TestingLocationsController(
     public async Task<ActionResult> RestoreTestingLocation(Guid id)
     {
         var result = await sender.Send(new RestoreTestingLocationEndpointCommand(id)).ConfigureAwait(false);
-        if (!result) return NotFound();
+        if (!result)
+        {
+            return NotFound();
+        }
+
         return Ok(new { message = "Testing location restored successfully" });
     }
 }

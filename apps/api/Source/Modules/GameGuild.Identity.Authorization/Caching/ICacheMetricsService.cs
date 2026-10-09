@@ -218,9 +218,13 @@ public sealed class CacheMetricsService : ICacheMetricsService
         _hitsCounter.Add(1, tags);
 
         if (cacheLevel == CacheLevel.L1)
+        {
             Interlocked.Increment(ref _l1Hits);
+        }
         else
+        {
             Interlocked.Increment(ref _l2Hits);
+        }
 
         UpdateTypeStats(cacheType, cacheLevel, isHit: true);
     }
@@ -349,9 +353,13 @@ public sealed class CacheMetricsService : ICacheMetricsService
             if (isHit)
             {
                 if (cacheLevel == CacheLevel.L1)
+                {
                     stats.L1Hits++;
+                }
                 else
+                {
                     stats.L2Hits++;
+                }
             }
             else
             {

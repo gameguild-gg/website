@@ -25,7 +25,11 @@ public sealed class MarketplaceCartHandler(
 {
     public async Task<ActionResult<MarketplaceCartDto>> Handle(GetMarketplaceCartQuery command, CancellationToken cancellationToken)
     {
-        if (!TryActor(out var actor)) return new ForbidResult();
+        if (!TryActor(out var actor))
+        {
+            return new ForbidResult();
+        }
+
         var cart = await ActiveCart(actor, tracking: false, cancellationToken);
         return new OkObjectResult(Map(cart, actor.TenantId, actor.UserId));
 
@@ -34,15 +38,28 @@ public sealed class MarketplaceCartHandler(
     public async Task<ActionResult<MarketplaceCartDto>> Handle(AddMarketplaceCartItemCommand command, CancellationToken cancellationToken)
     {
         var input = command.Input;
-        if (!TryActor(out var actor)) return new ForbidResult();
+        if (!TryActor(out var actor))
+        {
+            return new ForbidResult();
+        }
+
         if (input.Quantity is < 1 or > 100 || string.IsNullOrWhiteSpace(input.IdempotencyKey))
+        {
             return new BadRequestObjectResult("Quantity and idempotency key are required.");
+        }
+
         if (!await IsCurrentPublishedPrice(input, actor.TenantId, cancellationToken))
+        {
             return new ConflictObjectResult("The product or immutable price version is unavailable or stale.");
+        }
 
         var cart = await ActiveCart(actor, tracking: true, cancellationToken)
             ?? MarketplaceCart.Create(actor.TenantId, actor.UserId);
-        if (cart.Version == 0) context.Set<MarketplaceCart>().Add(cart);
+        if (cart.Version == 0)
+        {
+            context.Set<MarketplaceCart>().Add(cart);
+        }
+
         cart.AddItem(input.ProductId, input.ProductPricingId, input.ProductPricingVersionId, input.Quantity, input.IdempotencyKey);
         await context.SaveChangesAsync(cancellationToken);
         return new OkObjectResult(Map(cart, actor.TenantId, actor.UserId));
@@ -53,10 +70,22 @@ public sealed class MarketplaceCartHandler(
     {
         var itemId = command.ItemId;
         var input = command.Input;
-        if (!TryActor(out var actor)) return new ForbidResult();
+        if (!TryActor(out var actor))
+        {
+            return new ForbidResult();
+        }
+
         var cart = await ActiveCart(actor, tracking: true, cancellationToken);
-        if (cart is null) return new NotFoundResult();
-        if (cart.Version != input.ExpectedVersion) return new ConflictObjectResult("The cart changed on another device.");
+        if (cart is null)
+        {
+            return new NotFoundResult();
+        }
+
+        if (cart.Version != input.ExpectedVersion)
+        {
+            return new ConflictObjectResult("The cart changed on another device.");
+        }
+
         try { cart.SetQuantity(itemId, input.Quantity); }
         catch (KeyNotFoundException) { return new NotFoundResult(); }
         catch (ArgumentOutOfRangeException exception) { return new BadRequestObjectResult(exception.Message); }
@@ -69,10 +98,22 @@ public sealed class MarketplaceCartHandler(
     {
         var itemId = command.ItemId;
         var expectedVersion = command.ExpectedVersion;
-        if (!TryActor(out var actor)) return new ForbidResult();
+        if (!TryActor(out var actor))
+        {
+            return new ForbidResult();
+        }
+
         var cart = await ActiveCart(actor, tracking: true, cancellationToken);
-        if (cart is null) return new NotFoundResult();
-        if (cart.Version != expectedVersion) return new ConflictObjectResult("The cart changed on another device.");
+        if (cart is null)
+        {
+            return new NotFoundResult();
+        }
+
+        if (cart.Version != expectedVersion)
+        {
+            return new ConflictObjectResult("The cart changed on another device.");
+        }
+
         try { cart.RemoveItem(itemId); }
         catch (KeyNotFoundException) { return new NotFoundResult(); }
         await context.SaveChangesAsync(cancellationToken);
@@ -83,18 +124,37 @@ public sealed class MarketplaceCartHandler(
     public async Task<ActionResult<MarketplaceCheckoutDto>> Handle(CheckoutMarketplaceCartCommand command, CancellationToken cancellationToken)
     {
         var input = command.Input;
-        if (!TryActor(out var actor)) return new ForbidResult();
+        if (!TryActor(out var actor))
+        {
+            return new ForbidResult();
+        }
+
         var cart = await ActiveCart(actor, tracking: true, cancellationToken);
-        if (cart is null || cart.Items.Count == 0) return new BadRequestObjectResult("The cart is empty.");
-        if (cart.Version != input.ExpectedVersion) return new ConflictObjectResult("The cart changed on another device.");
-        if (string.IsNullOrWhiteSpace(input.IdempotencyKey)) return new BadRequestObjectResult("Idempotency key is required.");
+        if (cart is null || cart.Items.Count == 0)
+        {
+            return new BadRequestObjectResult("The cart is empty.");
+        }
+
+        if (cart.Version != input.ExpectedVersion)
+        {
+            return new ConflictObjectResult("The cart changed on another device.");
+        }
+
+        if (string.IsNullOrWhiteSpace(input.IdempotencyKey))
+        {
+            return new BadRequestObjectResult("Idempotency key is required.");
+        }
 
         var snapshots = new List<MarketplaceCheckoutSnapshot>();
         foreach (var item in cart.Items.OrderBy(item => item.Id))
         {
             var snapshot = await PriceSnapshot(
                 item.ProductId, item.ProductPricingId, item.ProductPricingVersionId, actor.TenantId, cancellationToken);
-            if (snapshot is null) return new ConflictObjectResult("A cart price changed before checkout.");
+            if (snapshot is null)
+            {
+                return new ConflictObjectResult("A cart price changed before checkout.");
+            }
+
             snapshots.Add(new MarketplaceCheckoutSnapshot(item, snapshot.Value));
         }
 
@@ -161,7 +221,10 @@ public sealed class MarketplaceCartHandler(
             cancellationToken);
         if (product is null || pricing is null || version is null || version.PriceVersion != pricing.CurrentVersion ||
             version.Currency != pricing.Currency || version.BasePrice != pricing.BasePrice || version.SalePrice != pricing.SalePrice)
+        {
             return null;
+        }
+
         var unitPrice = pricing.IsSaleActive() && version.SalePrice.HasValue ? version.SalePrice.Value : version.BasePrice;
         return unitPrice > 0 ? (product, pricing, version, unitPrice) : null;
     }
@@ -172,7 +235,11 @@ public sealed class MarketplaceCartHandler(
         CancellationToken cancellationToken)
     {
         IQueryable<MarketplaceCart> query = context.Set<MarketplaceCart>().Include(cart => cart.Items);
-        if (!tracking) query = query.AsNoTracking();
+        if (!tracking)
+        {
+            query = query.AsNoTracking();
+        }
+
         return query.SingleOrDefaultAsync(
             cart => cart.TenantId == actor.TenantId && cart.UserId == actor.UserId && cart.State == MarketplaceCartState.Active && cart.DeletedAt == null,
             cancellationToken);

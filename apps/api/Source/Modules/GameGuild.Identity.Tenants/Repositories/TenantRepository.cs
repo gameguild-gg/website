@@ -129,13 +129,17 @@ public class TenantRepository(IApplicationDbContext context) : ITenantRepository
     private static void EnsureDefaultTenantRemainsActive(Tenant tenant)
     {
         if (tenant.IsDefault && (!tenant.IsActive || tenant.DeletedAt != null))
+        {
             throw new InvalidOperationException("The default tenant must remain active.");
+        }
     }
 
     private static void EnsureTenantCanBeDeleted(Tenant tenant)
     {
         if (tenant.IsDefault)
+        {
             throw new InvalidOperationException("The default tenant cannot be deleted.");
+        }
     }
 
     public async Task<PagedResult<TenantAuditLogEntry>> GetAuditLogAsync(

@@ -15,10 +15,19 @@ public sealed record TestingProjectBrief(
             string.IsNullOrWhiteSpace(Controls) ||
             string.IsNullOrWhiteSpace(KnownLimitations) ||
             TestTasks == null || TestTasks.Count == 0 || TestTasks.Any(string.IsNullOrWhiteSpace))
+        {
             throw new ArgumentException("Test objective, installation/access, tasks, controls, and known limitations are required.");
-        if (TestTasks.Count > 50) throw new ArgumentException("A test brief cannot contain more than 50 tasks.");
+        }
+
+        if (TestTasks.Count > 50)
+        {
+            throw new ArgumentException("A test brief cannot contain more than 50 tasks.");
+        }
+
         if ((Links ?? []).Any(link => !Uri.TryCreate(link, UriKind.Absolute, out _)))
+        {
             throw new ArgumentException("Every test brief link must be an absolute URL.");
+        }
     }
 }
 
@@ -45,9 +54,20 @@ public sealed class TestingQuestionnaireRevision : EntityBase<Guid>
         bool ensureValid = true)
     {
         if (applicationId == Guid.Empty || createdByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Application and creator are required.");
-        if (revisionNumber < 1) throw new ArgumentOutOfRangeException(nameof(revisionNumber));
-        if (ensureValid) schema.EnsureValid();
+        }
+
+        if (revisionNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(revisionNumber));
+        }
+
+        if (ensureValid)
+        {
+            schema.EnsureValid();
+        }
+
         return new TestingQuestionnaireRevision
         {
             Id = Guid.NewGuid(),

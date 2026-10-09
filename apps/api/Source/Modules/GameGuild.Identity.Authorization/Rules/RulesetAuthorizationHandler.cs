@@ -107,10 +107,14 @@ public sealed class RulesetAuthorizationHandler : AuthorizationHandler<RulesetRe
             {
                 var childResult = await EvaluateRuleAsync(context, childRule, policyName).ConfigureAwait(false);
                 if (childResult.IsSuccess && !childResult.IsSkipped)
+                {
                     return RuleEvaluationResult.Success();
+                }
 
                 if (!string.IsNullOrWhiteSpace(childResult.FailureReason))
+                {
                     failureReasons.Add(childResult.FailureReason);
+                }
             }
 
             return RuleEvaluationResult.Fail(
@@ -135,7 +139,9 @@ public sealed class RulesetAuthorizationHandler : AuthorizationHandler<RulesetRe
                 RuleParameters.FromDictionary(rule.Params)).ConfigureAwait(false);
 
             if (result.IsSkipped)
+            {
                 return RuleEvaluationResult.Fail(result.FailureReason ?? $"Rule '{rule.Type}' was skipped");
+            }
 
             return result;
         }

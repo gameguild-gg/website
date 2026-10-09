@@ -17,11 +17,19 @@ public sealed class ProjectChannelAvailabilityService(IApplicationDbContext cont
             .ConfigureAwait(false);
 
         if (project == null)
+        {
             return Unavailable(projectId, channel, ProjectChannelReasonCodes.ProjectNotFound);
+        }
+
         if (project.DeletedAt != null)
+        {
             return Unavailable(projectId, channel, ProjectChannelReasonCodes.ProjectSoftDeleted);
+        }
+
         if (project.TenantId != tenantId)
+        {
             return Unavailable(projectId, channel, ProjectChannelReasonCodes.TenantMismatch);
+        }
 
         if (channel is ProjectChannel.TestingLab or ProjectChannel.LaunchPad &&
             project.Status is ContentStatus.Archived or ContentStatus.Deleted)
@@ -32,9 +40,14 @@ public sealed class ProjectChannelAvailabilityService(IApplicationDbContext cont
         if (channel == ProjectChannel.Store || channel == ProjectChannel.Projects && requirePublicVisibility)
         {
             if (project.Status != ContentStatus.Published)
+            {
                 return Unavailable(projectId, channel, ProjectChannelReasonCodes.NotPublished);
+            }
+
             if (project.Visibility != ContentVisibility.Public)
+            {
                 return Unavailable(projectId, channel, ProjectChannelReasonCodes.NotPublic);
+            }
         }
 
         return new ProjectChannelAvailability(projectId, channel, true, ProjectChannelReasonCodes.Available);

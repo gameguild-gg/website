@@ -148,7 +148,11 @@ public class BulkPurgeUsersCommandHandlerAdditionalTests
             .Returns(() =>
             {
                 callCount++;
-                if (callCount == 1) throw new Exception("DB error");
+                if (callCount == 1)
+                {
+                    throw new Exception("DB error");
+                }
+
                 return Task.CompletedTask;
             });
         var publisher = new Mock<IPublisher>();
@@ -284,7 +288,11 @@ public class BulkUpdateUsersCommandHandlerAdditionalTests
             .Returns(() =>
             {
                 count++;
-                if (count == 1) throw new Exception("fail");
+                if (count == 1)
+                {
+                    throw new Exception("fail");
+                }
+
                 return Task.CompletedTask;
             });
 
@@ -941,7 +949,9 @@ public class GetUserNotificationsPagedQueryHandlerAdditionalTests
         // Set metadata via reflection since it's likely a private setter
         var metaProp = typeof(UserNotification).GetProperty("Metadata");
         if (metaProp != null && metaProp.CanWrite)
+        {
             metaProp.SetValue(n1, "{\"key\":\"value\"}");
+        }
 
         var repo = new Mock<IUserNotificationRepository>();
         repo.Setup(r => r.GetPagedByUserIdAsync(

@@ -191,9 +191,12 @@ export function buildHTMLPreviewSrcDoc(files: HTMLFile[]): string {
   }
   const DOMPurify = createDOMPurify(window)
 
-  // Strip <script> tags up-front (belt-and-suspenders alongside the
-  // sandbox attribute and DOMPurify's FORBID_TAGS).
-  const stripped = index.content.replace(/<script[\s\S]*?<\/script>/gi, "")
+  // Strip <script> tags up-front (belt-and-suspenders alongside the sandbox
+  // attribute and DOMPurify's FORBID_TAGS). DOMParser-based removal because
+  // a regex strip is bypassable by nested/trick markup.
+  const parsed = new DOMParser().parseFromString(index.content, "text/html")
+  parsed.querySelectorAll("script").forEach(el => el.remove())
+  const stripped = `<!DOCTYPE html>${parsed.documentElement.outerHTML}`
 
   const sanitized = DOMPurify.sanitize(stripped, {
     WHOLE_DOCUMENT: true,

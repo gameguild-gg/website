@@ -142,10 +142,14 @@ public sealed class AiController(
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(subject))
+        {
             return BadRequest(new ProblemDetails { Title = "Subject is required", Status = StatusCodes.Status400BadRequest });
+        }
 
         if (string.IsNullOrWhiteSpace(context))
+        {
             return BadRequest(new ProblemDetails { Title = "Context is required", Status = StatusCodes.Status400BadRequest });
+        }
 
         var prompt = BuildGeneratedContentPrompt(kind, subject, context, audience, tone);
         var result = await sender.Send(new GenerateAiCommand(new AiGenerateRequest(
@@ -183,7 +187,9 @@ public sealed class AiController(
         CancellationToken cancellationToken = default)
     {
         if (!requestContextAccessor.CurrentTenantId.HasValue)
+        {
             return Forbid();
+        }
 
         var entries = await historyRepository
             .GetRecentAsync(requestContextAccessor.CurrentTenantId.Value, take, cancellationToken)
@@ -201,7 +207,9 @@ public sealed class AiController(
         CancellationToken cancellationToken = default)
     {
         if (!requestContextAccessor.CurrentTenantId.HasValue)
+        {
             return Forbid();
+        }
 
         var tenantId = requestContextAccessor.CurrentTenantId.Value;
         var entries = await historyRepository
@@ -223,7 +231,9 @@ public sealed class AiController(
     public async Task<ActionResult<AiQuotaStatusResponse>> Quotas(CancellationToken cancellationToken = default)
     {
         if (!requestContextAccessor.CurrentTenantId.HasValue)
+        {
             return Forbid();
+        }
 
         var tenantId = requestContextAccessor.CurrentTenantId.Value;
         return Ok(await BuildQuotaStatusAsync(tenantId, cancellationToken).ConfigureAwait(false));
@@ -260,12 +270,16 @@ public sealed class AiController(
     private AiProviderOptions? ResolvePlatformProviderOptions(AiProvider provider)
     {
         if (_aiOptions.Providers.TryGetValue(provider.ToString(), out var directMatch))
+        {
             return directMatch;
+        }
 
         foreach (var providerEntry in _aiOptions.Providers)
         {
             if (AiProviderParser.TryParse(providerEntry.Key, out var parsedProvider) && parsedProvider == provider)
+            {
                 return providerEntry.Value;
+            }
         }
 
         return null;

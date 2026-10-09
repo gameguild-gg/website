@@ -48,7 +48,7 @@ public class AuditController(
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
 
-        _logger.LogInformation("Admin {AdminUserId} querying audit logs: ActionType={ActionType}, RiskLevel={RiskLevel}", adminUserId.Value, request.ActionType, request.RiskLevel);
+        _logger.LogInformation("Admin {AdminUserId} querying audit logs: ActionType={ActionType}, RiskLevel={RiskLevel}", adminUserId.Value, LogRedaction.Sanitize(request.ActionType), request.RiskLevel);
 
         // Log admin access to audit logs
         await auditService.LogAdminActionAsync(adminUserId.Value, "ViewAuditLogs", "Admin accessed audit logs", new { Filters = request, RequestedBy = adminUserId.Value }).ConfigureAwait(false);
@@ -721,13 +721,15 @@ public class AuditController(
     {
         if (string.IsNullOrWhiteSpace(webhookUrl)) { return; }
 
+        var effectiveTotalRecords = totalRecords;
+        var effectiveRecordsWritten = recordsWritten;
         try
         {
             var progress = await exportProgressTracker.GetAsync(exportId, ownerUserId, CancellationToken.None).ConfigureAwait(false);
             if (progress is not null)
             {
-                totalRecords = progress.TotalRecords;
-                recordsWritten = progress.RecordsWritten;
+                effectiveTotalRecords = progress.TotalRecords;
+                effectiveRecordsWritten = progress.RecordsWritten;
             }
         }
         catch (Exception exception)
@@ -748,8 +750,8 @@ public class AuditController(
             exportId,
             format,
             status,
-            Math.Max(totalRecords, 0),
-            Math.Clamp(recordsWritten, 0, Math.Max(totalRecords, 0)),
+            Math.Max(effectiveTotalRecords, 0),
+            Math.Clamp(effectiveRecordsWritten, 0, Math.Max(effectiveTotalRecords, 0)),
             errorCode);
 
         try

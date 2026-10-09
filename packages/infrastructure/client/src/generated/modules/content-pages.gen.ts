@@ -274,7 +274,7 @@ export class ContentPagesModule {
   /**
    * Reorder sections within a page.
    */
-  async postPagesSectionsReorder(pageId: string, body: Array<string>): Promise<Result<void, ApiError>> {
+  async postPagesSectionsReorder(pageId: string, body: string[]): Promise<Result<void, ApiError>> {
     const url = `/v1/pages/${pageId}/sections/reorder`;
 
     const result = await this.client.request({

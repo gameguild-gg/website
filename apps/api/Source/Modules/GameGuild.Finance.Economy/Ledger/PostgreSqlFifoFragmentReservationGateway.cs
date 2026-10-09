@@ -77,11 +77,21 @@ public sealed class PostgreSqlFifoFragmentReservationGateway :
     public IReadOnlyList<PersistedFragmentReservation> Reserve(FifoFragmentReservationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.OperationId == Guid.Empty) throw new ArgumentException("Operation ID is required.", nameof(request));
-        if (!Enum.IsDefined(request.Purpose)) throw new ArgumentOutOfRangeException(nameof(request));
+        if (request.OperationId == Guid.Empty)
+        {
+            throw new ArgumentException("Operation ID is required.", nameof(request));
+        }
+
+        if (!Enum.IsDefined(request.Purpose))
+        {
+            throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.Amount.Units);
         if (request.Amount.Currency != request.Currency)
+        {
             throw new ArgumentException("Reservation currency must match its amount.", nameof(request));
+        }
 
         try
         {
@@ -143,8 +153,15 @@ public sealed class PostgreSqlFifoFragmentReservationGateway :
         PersistedFragmentReservationStatus next,
         DateTimeOffset terminalAt)
     {
-        if (operationId == Guid.Empty) throw new ArgumentException("Operation ID is required.", nameof(operationId));
-        if (!Enum.IsDefined(expected) || !Enum.IsDefined(next)) throw new ArgumentOutOfRangeException(nameof(expected));
+        if (operationId == Guid.Empty)
+        {
+            throw new ArgumentException("Operation ID is required.", nameof(operationId));
+        }
+
+        if (!Enum.IsDefined(expected) || !Enum.IsDefined(next))
+        {
+            throw new ArgumentOutOfRangeException(nameof(expected));
+        }
 
         try
         {
@@ -165,8 +182,15 @@ public sealed class PostgreSqlFifoFragmentReservationGateway :
         Guid operationId,
         PersistedFragmentReservationStatus status)
     {
-        if (operationId == Guid.Empty) throw new ArgumentException("Operation ID is required.", nameof(operationId));
-        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+        if (operationId == Guid.Empty)
+        {
+            throw new ArgumentException("Operation ID is required.", nameof(operationId));
+        }
+
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
 
         return _db.Database.SqlQuery<FifoFragmentReservationStateRow>($"""
                 SELECT reservation."Id", reservation."OperationId", reservation."ParentLotId",

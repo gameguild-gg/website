@@ -117,7 +117,7 @@ public static class DatabaseSeeder
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(adminUser, "Admin").ConfigureAwait(false);
-                logger?.LogInformation("  Created admin user: {Email}", adminEmail);
+                logger?.LogInformation("  Created admin user: {Email}", LogRedaction.MaskEmail(adminEmail));
             }
             else
             {

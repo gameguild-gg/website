@@ -38,15 +38,22 @@ public sealed class PostgreSqlHardToSoftConversionGateway : IHardToSoftConversio
         ArgumentNullException.ThrowIfNull(request.Command);
         ArgumentNullException.ThrowIfNull(request.Authority);
         if (request.DispatchSnapshotHash is { Length: > 128 })
+        {
             throw new ArgumentException("Dispatch snapshot hashes cannot exceed 128 characters.", nameof(request));
+        }
 
         var command = request.Command;
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(command.PrincipalHardCoinUnits);
         ArgumentOutOfRangeException.ThrowIfNegative(command.FeeHardCoinUnits);
         if (command.FeeHardCoinUnits == 0 && command.FeePostingId.Value != Guid.Empty)
+        {
             throw new ArgumentException("A fee posting ID is only valid when a conversion fee is charged.", nameof(request));
+        }
+
         if (command.FeeHardCoinUnits > 0 && command.FeePostingId.Value == Guid.Empty)
+        {
             throw new ArgumentException("A fee posting ID is required when a conversion fee is charged.", nameof(request));
+        }
 
         var total = new CoinAmount(
             CurrencyCode.HardCoin,
@@ -58,7 +65,9 @@ public sealed class PostgreSqlHardToSoftConversionGateway : IHardToSoftConversio
             command.ReserveVersion,
             command.RequestedAt);
         if (command.Authorization.SourceRoots.Count == 0)
+        {
             throw new RegisteredPostingRejectedException("A conversion requires an explicit source-root authorization.");
+        }
 
         Guid? feePostingId = command.FeeHardCoinUnits == 0
             ? null

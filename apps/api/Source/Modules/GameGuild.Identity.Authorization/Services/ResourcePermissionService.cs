@@ -53,7 +53,7 @@ public class ResourcePermissionService : IResourcePermissionService
 
             _logger.LogInformation(
                 "Created resource invitation for {Email} to access {ResourceType}/{ResourceId}",
-                request.Email, resourceType, resourceId);
+                LogRedaction.MaskEmail(request.Email), LogRedaction.Sanitize(resourceType), LogRedaction.Sanitize(resourceId));
 
             return ShareResult.SuccessWithInvitation(
                 invitation.Id,

@@ -30,7 +30,10 @@ public static class BlogCommandHandlers
     {
         var actor = actorContext.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } userId || userId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("An authenticated user is required.");
+        }
+
         return userId;
     }
 }

@@ -11,16 +11,26 @@ public static class LineagePartitioner
         ArgumentNullException.ThrowIfNull(sources);
         ArgumentNullException.ThrowIfNull(outputAmounts);
         if (sources.Count == 0 || outputAmounts.Count == 0)
+        {
             throw new LineageConservationException("Lineage partitioning requires sources and outputs.");
+        }
 
         var currency = sources[0].Amount.Currency;
         var scale = sources[0].TraceUnitsPerCoinUnit;
         if (sources.Any(source => source.Amount.Currency != currency || source.TraceUnitsPerCoinUnit != scale))
+        {
             throw new LineageConservationException("Lineage sources must share currency and trace scale.");
+        }
+
         if (outputAmounts.Any(output => output.Currency != currency))
+        {
             throw new LineageConservationException("Lineage outputs must use the source currency.");
+        }
+
         if (outputAmounts.Any(output => output.Units == 0))
+        {
             throw new LineageConservationException("Lineage outputs must contain positive coin units.");
+        }
 
         LineageAllocator.EnsureNonOverlapping(
             sources.SelectMany(source => source.SelectedRanges).ToArray());
@@ -28,7 +38,9 @@ public static class LineagePartitioner
         var sourceUnits = sources.Aggregate(0L, static (total, source) => checked(total + source.Amount.Units));
         var outputUnits = outputAmounts.Aggregate(0L, static (total, output) => checked(total + output.Units));
         if (sourceUnits != outputUnits)
+        {
             throw new LineageConservationException("Lineage output amounts must consume all source units exactly.");
+        }
 
         var cursors = sources.Select(source => new SelectionCursor(source)).ToArray();
         var cursorIndex = 0;
@@ -51,7 +63,10 @@ public static class LineagePartitioner
                     [],
                     scale));
                 traceUnitsNeeded -= traceUnits;
-                if (cursor.RemainingTraceUnits == 0) cursorIndex++;
+                if (cursor.RemainingTraceUnits == 0)
+                {
+                    cursorIndex++;
+                }
             }
 
             partitions.Add(new LineagePartition(output, allocations));
@@ -74,7 +89,9 @@ public static class LineagePartitioner
                 0L,
                 static (total, range) => checked(total + range.Length));
             if (RemainingTraceUnits != checked(source.Amount.Units * source.TraceUnitsPerCoinUnit))
+            {
                 throw new LineageConservationException("Source selection trace units do not conserve its amount.");
+            }
         }
 
         internal FragmentSelection Source { get; }
@@ -92,7 +109,11 @@ public static class LineagePartitioner
                 var units = Math.Min(remaining, range.Length);
                 var split = range.Take(units);
                 selected.Add(split.Selected);
-                if (split.Remaining is { } remainder) _remainder = remainder;
+                if (split.Remaining is { } remainder)
+                {
+                    _remainder = remainder;
+                }
+
                 remaining -= units;
                 RemainingTraceUnits -= units;
             }

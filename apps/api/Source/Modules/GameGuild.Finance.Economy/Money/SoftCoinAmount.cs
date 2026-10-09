@@ -16,7 +16,11 @@ public readonly record struct SoftCoinAmount : IComparable<SoftCoinAmount>
 
     public static SoftCoinAmount operator -(SoftCoinAmount left, SoftCoinAmount right)
     {
-        if (right.Units > left.Units) throw new InvalidOperationException("Soft-coin amounts cannot underflow.");
+        if (right.Units > left.Units)
+        {
+            throw new InvalidOperationException("Soft-coin amounts cannot underflow.");
+        }
+
         return new SoftCoinAmount(left.Units - right.Units);
     }
 
