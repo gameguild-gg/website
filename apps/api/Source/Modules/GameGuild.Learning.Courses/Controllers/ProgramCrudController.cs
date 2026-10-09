@@ -20,13 +20,13 @@ public class ProgramCrudController(
     IProgramCrudService programService,
     IActorContextAccessor actorContextAccessor,
     IPermissionQueryService permissionQueryService,
+    ICourseAccessEvaluator courseAccessEvaluator,
     ISender sender) : BaseApiController
 {
   // ===== CONTENT-TYPE LEVEL OPERATIONS =====
 
   /// <summary> Get all courses with optional filtering (content-type level read permission). Non-manage actors are DAC-scoped to their own courses. </summary>
   [HttpGet]
-  [RequireContentTypePermission<Program>(PermissionType.Read)]
   public async Task<ActionResult<IEnumerable<ProgramDto>>> GetPrograms(
       [FromQuery] string? status = null,
       [FromQuery] ProgramCategory? category = null,
@@ -40,14 +40,6 @@ public class ProgramCrudController(
     var actor = actorContextAccessor.ActorContext;
     var canManageCatalog = await CanManageCatalogAsync(actor).ConfigureAwait(false);
     var selfId = actor.SubjectIdAsGuid;
-
-    if (!canManageCatalog && selfId.HasValue)
-    {
-      // Non-manage actors are scoped to their own courses in every filter branch. An explicit
-      // ?creatorId= pointing at someone else is ignored (conservative option: scoping to self
-      // never confirms whether the probed id exists, unlike a 403 would).
-      creatorId = selfId;
-    }
 
     IEnumerable<Program> programs;
     if (!string.IsNullOrEmpty(q))
@@ -83,12 +75,26 @@ public class ProgramCrudController(
       programs = await programService.GetProgramsAsync(skip, take).ConfigureAwait(false);
     }
 
-    // Belt-and-suspenders for branches the service cannot scope query-level (q/status/category/difficulty/sort).
     if (!canManageCatalog)
     {
-      programs = selfId.HasValue
-          ? programs.Where(p => p.CreatorId == selfId.Value)
-          : Enumerable.Empty<Program>();
+      if (!selfId.HasValue)
+      {
+        programs = Enumerable.Empty<Program>();
+      }
+      else
+      {
+        var visiblePrograms = new List<Program>();
+        foreach (var program in programs)
+        {
+          var access = await courseAccessEvaluator.GetCapabilitiesAsync(program).ConfigureAwait(false);
+          if (access.CanAccessWorkspace)
+          {
+            visiblePrograms.Add(program);
+          }
+        }
+
+        programs = visiblePrograms;
+      }
     }
 
     return Ok(programs.ToDtos());
@@ -97,7 +103,7 @@ public class ProgramCrudController(
   /// <summary>
   /// Catalog-wide manage capability: system admin, or a Program content-type Manage grant.
   /// Same actors and permission-name scheme as <see cref="ResourcePermissionAuthorizationFilter"/>
-  /// content-type checks ("{ContentTypeName}.{PermissionType}") and AssessmentsController.CanManageCourseAsync.
+  /// content-type checks ("{ContentTypeName}.{PermissionType}").
   /// </summary>
   private async Task<bool> CanManageCatalogAsync(ActorContext actor)
   {
@@ -167,7 +173,7 @@ public class ProgramCrudController(
 
   /// <summary> Get a specific program by ID (resource-level read permission) </summary>
   [HttpGet("{id}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read)]
+  [RequireCourseCapability(CourseCapability.AccessWorkspace)]
   public async Task<ActionResult<ProgramDto>> GetProgram(Guid id)
   {
     var program = await programService.GetProgramByIdAsync(id).ConfigureAwait(false);
@@ -182,7 +188,7 @@ public class ProgramCrudController(
 
   /// <summary> Get a specific program with all content included (resource-level read permission) </summary>
   [HttpGet("{id}/with-content")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read)]
+  [RequireCourseCapability(CourseCapability.AccessWorkspace)]
   public async Task<ActionResult<ProgramDto>> GetProgramWithContent(Guid id)
   {
     var program = await programService.GetProgramWithContentAsync(id).ConfigureAwait(false);
@@ -197,7 +203,7 @@ public class ProgramCrudController(
 
   /// <summary> Update a program (resource-level edit permission) </summary>
   [HttpPut("{id}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> UpdateProgram(Guid id, [FromBody] UpdateProgramDto updateDto)
   {
     if (!ModelState.IsValid)
@@ -217,7 +223,7 @@ public class ProgramCrudController(
 
   /// <summary> Delete a program (resource-level delete permission) </summary>
   [HttpDelete("{id}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Delete)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult> DeleteProgram(Guid id)
   {
     var existingProgram = await programService.GetProgramByIdAsync(id).ConfigureAwait(false);
@@ -234,7 +240,7 @@ public class ProgramCrudController(
 
   /// <summary> Clone/duplicate a program (resource-level clone permission) </summary>
   [HttpPost("{id}:clone")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Clone)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> CloneProgram(Guid id, [FromBody] CloneProgramDto cloneDto)
   {
     if (!ModelState.IsValid)
@@ -261,21 +267,23 @@ public class ProgramCrudController(
 
     Program? program;
 
-    if (isAuthenticated)
-    {
-      program = await programService.GetProgramBySlugAsync(slug).ConfigureAwait(false);
-    }
-    else
-    {
-      program = await programService.GetPublishedProgramBySlugAsync(slug).ConfigureAwait(false);
-    }
+    program = isAuthenticated
+      ? await programService.GetProgramBySlugAsync(slug).ConfigureAwait(false)
+      : await programService.GetPublishedProgramBySlugAsync(slug).ConfigureAwait(false);
 
     if (program == null)
         {
             return NotFound();
         }
 
-        return Ok(program.ToDto());
+    if (program.Status != ContentStatus.Published || program.Visibility != ContentVisibility.Public)
+    {
+      if (!isAuthenticated) return NotFound();
+      var access = await courseAccessEvaluator.GetCapabilitiesAsync(program).ConfigureAwait(false);
+      if (!access.CanAccessWorkspace) return NotFound();
+    }
+
+    return Ok(program.ToDto());
   }
 
   /// <summary> Self-enroll the current authenticated user in a published public course. </summary>
@@ -329,7 +337,7 @@ public class ProgramCrudController(
 
   /// <summary> Add a user to a program (resource-level edit permission) </summary>
   [HttpPost("{id}/users/{userId}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<UserProgressDto>> AddUserToProgram(Guid id, Guid userId)
   {
     var progress = await sender.Send(new AddUserToProgramEndpointCommand(id, userId)).ConfigureAwait(false);
@@ -348,7 +356,7 @@ public class ProgramCrudController(
   /// so course owners do not need tenant-wide user administration privileges.
   /// </summary>
   [HttpPost("{id}/users:enroll")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<UserProgressDto>> AddUserToProgramByReference(
       Guid id,
       [FromBody] EnrollProgramUserRequest request,
@@ -403,7 +411,7 @@ public class ProgramCrudController(
 
   /// <summary> Remove a user from a program (resource-level edit permission) </summary>
   [HttpDelete("{id}/users/{userId}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult> RemoveUserFromProgram(Guid id, Guid userId)
   {
     var success = await sender.Send(new RemoveUserFromProgramEndpointCommand(id, userId)).ConfigureAwait(false);
@@ -418,7 +426,7 @@ public class ProgramCrudController(
 
   /// <summary> Get all users in a program (resource-level read permission) </summary>
   [HttpGet("{id}/users")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read)]
+  [RequireCourseCapability(CourseCapability.StaffReview)]
   public async Task<ActionResult<IEnumerable<UserProgressDto>>> GetProgramUsers(Guid id, [FromQuery] int skip = 0, [FromQuery] int take = 50)
   {
     var users = await programService.GetProgramUsersAsync(id, skip, take).ConfigureAwait(false);
@@ -428,7 +436,7 @@ public class ProgramCrudController(
 
   /// <summary> Get a specific user's progress in a program (resource-level read permission) </summary>
   [HttpGet("{id}/users/{userId}/progress")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read)]
+  [RequireCourseCapability(CourseCapability.StaffReview)]
   public async Task<ActionResult<UserProgressDto>> GetUserProgress(Guid id, Guid userId)
   {
     var progress = await programService.GetUserProgressDtoAsync(id, userId).ConfigureAwait(false);
@@ -463,7 +471,7 @@ public class ProgramCrudController(
 
   /// <summary> Update a user's progress in a program (resource-level edit permission) </summary>
   [HttpPut("{id}/users/{userId}/progress")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<UserProgressDto>> UpdateUserProgress(Guid id, Guid userId, [FromBody] UpdateProgressDto progressDto)
   {
     if (!ModelState.IsValid)
@@ -508,7 +516,7 @@ public class ProgramCrudController(
 
   /// <summary> Mark content as completed for a user (resource-level edit permission) </summary>
   [HttpPost("{id}/users/{userId}/content/{contentId}:complete")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult> MarkContentCompleted(Guid id, Guid userId, Guid contentId)
   {
     var success = await sender.Send(new MarkProgramContentCompletedEndpointCommand(id, userId, contentId)).ConfigureAwait(false);
@@ -543,7 +551,7 @@ public class ProgramCrudController(
 
   /// <summary> Reset user progress in a program (resource-level edit permission) </summary>
   [HttpPost("{id}/users/{userId}:reset")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult> ResetUserProgress(Guid id, Guid userId)
   {
     var success = await sender.Send(new ResetUserProgressEndpointCommand(id, userId)).ConfigureAwait(false);
@@ -569,7 +577,7 @@ public class ProgramCrudController(
 
   /// <summary> Enable monetization for a program (resource-level monetize permission) </summary>
   [HttpPost("{id}:monetize")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> EnableMonetization(Guid id, [FromBody] MonetizationDto monetizationDto)
   {
     if (!ModelState.IsValid)
@@ -589,7 +597,7 @@ public class ProgramCrudController(
 
   /// <summary> Disable monetization for a program (resource-level monetize permission) </summary>
   [HttpPost("{id}:disable-monetization")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<ProgramDto>> DisableMonetization(Guid id)
   {
     var program = await sender.Send(new DisableProgramMonetizationEndpointCommand(id)).ConfigureAwait(false);
@@ -604,7 +612,7 @@ public class ProgramCrudController(
 
   /// <summary> Get program pricing information (resource-level read permission) </summary>
   [HttpGet("{id}/pricing")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read)]
+  [RequireCourseCapability(CourseCapability.AccessWorkspace)]
   public async Task<ActionResult<PricingDto>> GetProgramPricing(Guid id)
   {
     var pricing = await programService.GetProgramPricingAsync(id).ConfigureAwait(false);
@@ -619,7 +627,7 @@ public class ProgramCrudController(
 
   /// <summary> Update program pricing (resource-level pricing permission) </summary>
   [HttpPut("{id}/pricing")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<PricingDto>> UpdateProgramPricing(Guid id, [FromBody] UpdatePricingDto pricingDto)
   {
     if (!ModelState.IsValid)
@@ -641,7 +649,7 @@ public class ProgramCrudController(
 
   /// <summary> Get program analytics (resource-level analytics permission) </summary>
   [HttpGet("{id}/analytics")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Analytics)]
+  [RequireCourseCapability(CourseCapability.StaffReview)]
   public async Task<ActionResult<ProgramAnalyticsDto>> GetProgramAnalytics(Guid id)
   {
     var analytics = await programService.GetProgramAnalyticsAsync(id).ConfigureAwait(false);
@@ -656,7 +664,7 @@ public class ProgramCrudController(
 
   /// <summary> Get user completion rates for a program (resource-level analytics permission) </summary>
   [HttpGet("{id}/analytics/completion-rates")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Analytics)]
+  [RequireCourseCapability(CourseCapability.StaffReview)]
   public async Task<ActionResult<CompletionRatesDto>> GetCompletionRates(Guid id)
   {
     var rates = await programService.GetCompletionRatesAsync(id).ConfigureAwait(false);
@@ -671,7 +679,7 @@ public class ProgramCrudController(
 
   /// <summary> Get program engagement metrics (resource-level analytics permission) </summary>
   [HttpGet("{id}/analytics/engagement")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Analytics)]
+  [RequireCourseCapability(CourseCapability.StaffReview)]
   public async Task<ActionResult<EngagementMetricsDto>> GetEngagementMetrics(Guid id)
   {
     var metrics = await programService.GetEngagementMetricsAsync(id).ConfigureAwait(false);
@@ -686,7 +694,7 @@ public class ProgramCrudController(
 
   /// <summary> Get program revenue analytics (resource-level revenue permission) </summary>
   [HttpGet("{id}/analytics/revenue")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<RevenueAnalyticsDto>> GetRevenueAnalytics(Guid id)
   {
     var revenue = await programService.GetRevenueAnalyticsAsync(id).ConfigureAwait(false);
@@ -703,7 +711,7 @@ public class ProgramCrudController(
 
   /// <summary> Create a product from a program (resource-level edit permission for program, content-type level draft permission for product) </summary>
   [HttpPost("{id}:create-product")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult<Guid>> CreateProductFromProgram(Guid id, [FromBody] CreateProductFromProgramDto productDto)
   {
     if (!ModelState.IsValid)
@@ -723,7 +731,7 @@ public class ProgramCrudController(
 
   /// <summary> Link a program to an existing product (resource-level edit permission) </summary>
   [HttpPost("{id}:link-product/{productId}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult> LinkProgramToProduct(Guid id, Guid productId)
   {
     var success = await sender.Send(new LinkProgramToProductEndpointCommand(id, productId)).ConfigureAwait(false);
@@ -738,7 +746,7 @@ public class ProgramCrudController(
 
   /// <summary> Unlink a program from a product (resource-level edit permission) </summary>
   [HttpDelete("{id}:unlink-product/{productId}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
+  [RequireCourseCapability(CourseCapability.Edit)]
   public async Task<ActionResult> UnlinkProgramFromProduct(Guid id, Guid productId)
   {
     var success = await sender.Send(new UnlinkProgramFromProductEndpointCommand(id, productId)).ConfigureAwait(false);

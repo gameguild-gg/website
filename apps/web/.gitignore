@@ -16,7 +16,7 @@
 # next.js
 /.next/
 /.next-e2e-coding-cycle/
-/.next-learning/
+/.next-fast/
 /out/
 
 # emception CDN payload (copied from tools/emception by sync:emception at build)

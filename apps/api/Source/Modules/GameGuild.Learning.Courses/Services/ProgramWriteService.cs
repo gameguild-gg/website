@@ -15,7 +15,7 @@ public class ProgramWriteService(
   IApplicationDbContext context,
   IProgramContentLifecycleGuard? lifecycleReferenceGuard = null,
   IRequestContextAccessor? requestContextAccessor = null,
-  IPermissionQueryService? permissionQueryService = null,
+  ICourseAccessEvaluator? courseAccessEvaluator = null,
   IEnumerable<IProgramContentAcademicMutationGuard>? academicGuards = null) : IProgramWriteService
 {
   private readonly IProgramContentLifecycleGuard lifecycleGuard = lifecycleReferenceGuard ?? new NullProgramContentLifecycleGuard();
@@ -709,7 +709,7 @@ public class ProgramWriteService(
             throw new RequestValidationException("An authenticated actor is required to submit course content.");
         }
 
-        if (actorId.Value != userId && !await HasProgramEditAccessAsync(programId, actorId.Value).ConfigureAwait(false))
+        if (actorId.Value != userId && !await HasProgramEditAccessAsync(programId).ConfigureAwait(false))
         {
             throw new RequestValidationException("Program management permission is required to submit content for another learner.");
         }
@@ -841,18 +841,8 @@ public class ProgramWriteService(
     return interaction;
   }
 
-  private Task<bool> HasProgramEditAccessAsync(Guid programId, Guid actorId)
-  {
-    if (!requestContextAccessor!.CurrentTenantId.HasValue || permissionQueryService is null)
-        {
-            return Task.FromResult(false);
-        }
-
-        return permissionQueryService.HasTenantPermissionAsync(
-      actorId,
-      requestContextAccessor.CurrentTenantId,
-      $"{nameof(Program)}.{programId}.{PermissionType.Edit}");
-  }
+  private Task<bool> HasProgramEditAccessAsync(Guid programId) =>
+    courseAccessEvaluator?.HasCapabilityAsync(programId, CourseCapability.Edit) ?? Task.FromResult(false);
 
   public async Task<bool> MarkContentCompletedAsync(Guid programId, Guid userId, Guid contentId)
   {

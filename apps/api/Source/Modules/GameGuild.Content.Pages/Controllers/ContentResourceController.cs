@@ -24,6 +24,15 @@ public class ContentResourceController(
     /// </summary>
     private static readonly string[] ContentManagePermissions = ["content:read", "content:write", "content:admin"];
 
+    /// <summary>
+    ///     Editorial permission keys (from GameGuild.Identity.Authorization's ContentPermission
+    ///     catalog) required to edit existing content resources. The granular <c>content:edit</c>
+    ///     key enables least-privilege editorial grants; <c>content:write</c>/<c>content:admin</c>
+    ///     keep broader content managers working. System admins and <c>admin:*</c> holders bypass
+    ///     via <see cref="ActorContext"/>.
+    /// </summary>
+    private static readonly string[] EditorialEditPermissions = ["content:edit", "content:write", "content:admin"];
+
     /// <summary>List content resources with filtering and search.</summary>
     [HttpGet]
     [AllowAnonymous]
@@ -96,8 +105,11 @@ public class ContentResourceController(
 
     /// <summary>Update a content resource.</summary>
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(ContentResourceDto), 200)]
+    [ProducesResponseType(403)]
     public async Task<ActionResult<ContentResourceDto>> Update(Guid id, [FromBody] UpdateContentResourceDto dto)
     {
+        if (!CanEditContent) return Forbid();
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var resource = await sender.Send(new UpdateContentResourceCommand(id, dto)).ConfigureAwait(false);
         if (resource is null) return NotFound();
@@ -127,4 +139,7 @@ public class ContentResourceController(
 
     private bool CanViewUnpublished =>
         actorContextAccessor.ActorContext.HasAnyPermission(ContentManagePermissions);
+
+    private bool CanEditContent =>
+        actorContextAccessor.ActorContext.HasAnyPermission(EditorialEditPermissions);
 }

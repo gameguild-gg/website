@@ -12,7 +12,7 @@ import { z } from 'zod';
 /** Canonical request shape for conversational completions. */
 export interface AIAiChatInput {
   maxTokens?: number | null;
-  messages?: AIAiChatMessage[] | null;
+  messages?: Array<AIAiChatMessage> | null;
   model?: string | null;
   provider?: string | null;
   systemPrompt?: string | null;
@@ -155,7 +155,7 @@ export interface AIAiQuotaStatusDto {
 /** Data model for AI Ai Quota Status Response. */
 export interface AIAiQuotaStatusOutput {
   generatedAtUtc?: string;
-  quotas?: AIAiQuotaStatusDto[] | null;
+  quotas?: Array<AIAiQuotaStatusDto> | null;
   tenantId?: string;
 }
 
@@ -164,7 +164,7 @@ export interface AIAiStatusOutput {
   allowTenantOverrides?: boolean;
   defaultProvider?: string | null;
   enabled?: boolean;
-  providers?: AIAiProviderStatusDto[] | null;
+  providers?: Array<AIAiProviderStatusDto> | null;
 }
 
 /** Normalized token usage information returned by a provider. */
@@ -229,7 +229,7 @@ export interface AnalyticsAnalyticsWarehouseRunOutput {
 export interface AnalyticsAnalyzeFunnelQuery {
   endDate?: string;
   startDate?: string;
-  steps?: string[] | null;
+  steps?: Array<string> | null;
   tenantId?: string | null;
 }
 
@@ -240,7 +240,7 @@ export interface AnalyticsCreateDashboardInput {
   slug?: string | null;
   tenantId?: string | null;
   title?: string | null;
-  widgets?: AnalyticsDashboardWidgetInput[] | null;
+  widgets?: Array<AnalyticsDashboardWidgetInput> | null;
 }
 
 /** Data model for Analytics Dashboard Dto. */
@@ -253,7 +253,7 @@ export interface AnalyticsDashboardDto {
   tenantId?: string | null;
   title?: string | null;
   updatedAt?: string;
-  widgets?: AnalyticsDashboardWidgetDto[] | null;
+  widgets?: Array<AnalyticsDashboardWidgetDto> | null;
 }
 
 /** Data model for Analytics Dashboard Widget Dto. */
@@ -304,7 +304,7 @@ export interface AnalyticsProductMetricsOutput {
   startUtc?: string;
   subscriptions?: AnalyticsProductSubscriptionMetrics;
   tenantId?: string | null;
-  thresholds?: AnalyticsProductMetricThreshold[] | null;
+  thresholds?: Array<AnalyticsProductMetricThreshold> | null;
 }
 
 /** Data model for Analytics Product Metric Threshold. */
@@ -357,7 +357,7 @@ export interface AnalyticsUpdateDashboardInput {
   isDefault?: boolean;
   slug?: string | null;
   title?: string | null;
-  widgets?: AnalyticsDashboardWidgetInput[] | null;
+  widgets?: Array<AnalyticsDashboardWidgetInput> | null;
 }
 
 /** OpenAPI schema for Analytics Widget Type. */
@@ -365,7 +365,7 @@ export type AnalyticsWidgetType = 'Counter' | 'Chart' | 'Table' | 'Gauge' | 'Tim
 
 /** Data model for API Access Access Capabilities Response. */
 export interface APIAccessAccessCapabilitiesOutput {
-  capabilities?: string[] | null;
+  capabilities?: Array<string> | null;
 }
 
 /** Data model for API Controllers Activate Economy Kill Switch Request. */
@@ -377,7 +377,7 @@ export interface APIControllersActivateEconomyKillSwitchInput {
 
 /** Data model for API Controllers Ad Reward Protected Operation Failure Response. */
 export interface APIControllersAdRewardProtectedOperationFailureOutput {
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
@@ -504,12 +504,12 @@ export interface APIControllersDependencyHealthItem {
   isHealthy?: boolean;
   name?: string | null;
   status?: string | null;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
 }
 
 /** Dependency health check response model */
 export interface APIControllersDependencyHealthOutput {
-  dependencies?: APIControllersDependencyHealthItem[] | null;
+  dependencies?: Array<APIControllersDependencyHealthItem> | null;
   error?: string | null;
   healthyCount?: number;
   status?: string | null;
@@ -563,7 +563,7 @@ export interface APIControllersEconomyPayoutExecutionOperationDto {
 /** Data model for API Controllers Economy Self Service Capability Dto. */
 export interface APIControllersEconomySelfServiceCapabilityDto {
   capability?: FinanceEconomyRiskEconomyValueMovementCapability;
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   state?: APISetupEconomyCapabilityReadinessState;
 }
 
@@ -580,7 +580,7 @@ export interface APIControllersEconomyTopUpFailureOutput {
 
 /** Data model for API Controllers Economy Transfer Protected Operation Failure Response. */
 export interface APIControllersEconomyTransferProtectedOperationFailureOutput {
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
@@ -616,7 +616,7 @@ export interface APIControllersInspectEconomyCapabilityReadinessInput {
   operationFingerprint?: string | null;
   providerHash?: string | null;
   riskDecisionId?: string;
-  sourceRootHashes?: string[] | null;
+  sourceRootHashes?: Array<string> | null;
   subjectReference?: string | null;
 }
 
@@ -631,14 +631,14 @@ export interface APIControllersLivenessOutput {
 
 /** Data model for API Controllers Marketplace Protected Operation Failure Response. */
 export interface APIControllersMarketplaceProtectedOperationFailureOutput {
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
 
 /** Data model for API Controllers Payout Protected Operation Failure Response. */
 export interface APIControllersPayoutProtectedOperationFailureOutput {
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
@@ -674,13 +674,13 @@ export interface APIControllersProposeEconomyReserveInput {
   id?: string;
   authorizationEpoch?: number;
   buffers?: FinanceEconomyReservesReserveBufferPosition;
-  custodyObservationIds?: string[] | null;
+  custodyObservationIds?: Array<string> | null;
   expectedActiveVersion?: number | null;
   expiresAt?: string;
   irreversibleInFlightProviderCostUsdNanos?: number;
   observedAt?: string;
   policyVersion?: number;
-  services?: FinanceEconomyReservesReserveServiceObservation[] | null;
+  services?: Array<FinanceEconomyReservesReserveServiceObservation> | null;
   version?: number;
 }
 
@@ -794,7 +794,7 @@ export interface APIProjectsAddProjectTeamInput {
   contributionPercentage?: number;
   notes?: string | null;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
   role?: ProjectsProjectTeamRole;
   teamId?: string;
 }
@@ -841,10 +841,10 @@ export interface APIProjectsProjectAllocationDto {
 
 /** Data model for API Projects Project Ownership Dto. */
 export interface APIProjectsProjectOwnershipDto {
-  agreements?: APIProjectsProjectTeamAgreementDto[] | null;
-  allocations?: APIProjectsProjectAllocationDto[] | null;
+  agreements?: Array<APIProjectsProjectTeamAgreementDto> | null;
+  allocations?: Array<APIProjectsProjectAllocationDto> | null;
   projectId?: string;
-  teams?: APIProjectsProjectTeamOwnershipDto[] | null;
+  teams?: Array<APIProjectsProjectTeamOwnershipDto> | null;
 }
 
 /** Data model for API Projects Project Team Agreement Dto. */
@@ -869,7 +869,7 @@ export interface APIProjectsProjectTeamOwnershipDto {
   endedAt?: string | null;
   isActive?: boolean;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   role?: ProjectsProjectTeamRole;
   teamId?: string;
   teamName?: string | null;
@@ -895,7 +895,7 @@ export interface APIProjectsUpdateProjectTeamInput {
   contributionPercentage?: number;
   notes?: string | null;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
   role?: ProjectsProjectTeamRole;
 }
 
@@ -955,7 +955,7 @@ export interface APIProjectWorkMoveProjectWorkTaskInput {
 /** Data model for API Project Work Project Board Dto. */
 export interface APIProjectWorkProjectBoardDto {
   id?: string;
-  columns?: APIProjectWorkProjectWorkColumnDto[] | null;
+  columns?: Array<APIProjectWorkProjectWorkColumnDto> | null;
   name?: string | null;
   projectId?: string;
 }
@@ -1005,7 +1005,7 @@ export interface APIProjectWorkProjectWorkColumnDto {
   kind?: ProjectWorkProjectWorkColumnKind;
   name?: string | null;
   position?: number;
-  tasks?: APIProjectWorkProjectWorkTaskDto[] | null;
+  tasks?: Array<APIProjectWorkProjectWorkTaskDto> | null;
   workInProgressLimit?: number | null;
 }
 
@@ -1021,10 +1021,10 @@ export interface APIProjectWorkProjectWorkHistoryDto {
 
 /** Data model for API Project Work Project Work Task Details Dto. */
 export interface APIProjectWorkProjectWorkTaskDetailsDto {
-  checklist?: APIProjectWorkProjectChecklistItemDto[] | null;
-  comments?: APIProjectWorkProjectTaskCommentDto[] | null;
-  dependencies?: APIProjectWorkProjectTaskDependencyDto[] | null;
-  labels?: APIProjectWorkProjectTaskLabelDto[] | null;
+  checklist?: Array<APIProjectWorkProjectChecklistItemDto> | null;
+  comments?: Array<APIProjectWorkProjectTaskCommentDto> | null;
+  dependencies?: Array<APIProjectWorkProjectTaskDependencyDto> | null;
+  labels?: Array<APIProjectWorkProjectTaskLabelDto> | null;
   task?: APIProjectWorkProjectWorkTaskDto;
 }
 
@@ -1124,7 +1124,7 @@ export interface APITeamsTeamDto {
   id?: string;
   description?: string | null;
   isPersonal?: boolean;
-  members?: APITeamsTeamMemberDto[] | null;
+  members?: Array<APITeamsTeamMemberDto> | null;
   name?: string | null;
   slug?: string | null;
   status?: TeamsTeamStatus;
@@ -1230,7 +1230,7 @@ export interface AssetsCommandsBulkDeleteAssetItem {
 /** Data model for Assets Commands Bulk Delete Assets Response. */
 export interface AssetsCommandsBulkDeleteAssetsOutput {
   failed?: number;
-  items?: AssetsCommandsBulkDeleteAssetItem[] | null;
+  items?: Array<AssetsCommandsBulkDeleteAssetItem> | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -1247,7 +1247,7 @@ export interface AssetsCommandsBulkUploadAssetItem {
 /** Data model for Assets Commands Bulk Upload Assets Response. */
 export interface AssetsCommandsBulkUploadAssetsOutput {
   failed?: number;
-  items?: AssetsCommandsBulkUploadAssetItem[] | null;
+  items?: Array<AssetsCommandsBulkUploadAssetItem> | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -1266,18 +1266,18 @@ export interface AssetsControllersAssetExtractedTextOutput {
 
 /** Data model for Assets Controllers Bulk Asset Access Url Request. */
 export interface AssetsControllersBulkAssetAccessUrlInput {
-  assetIds?: string[] | null;
+  assetIds?: Array<string> | null;
   directStorageUrl?: boolean;
 }
 
 /** Data model for Assets Controllers Bulk Delete Assets Request. */
 export interface AssetsControllersBulkDeleteAssetsInput {
-  assetIds?: string[] | null;
+  assetIds?: Array<string> | null;
 }
 
 /** Data model for Assets Controllers Content Moderation Request. */
 export interface AssetsControllersContentModerationInput {
-  labels?: string[] | null;
+  labels?: Array<string> | null;
   notes?: string | null;
   status?: AssetsModerationStatus;
 }
@@ -1307,9 +1307,9 @@ export interface AssetsControllersReportAssetInput {
 
 /** Data model for Assets Controllers Restrict Asset Folder Request. */
 export interface AssetsControllersRestrictAssetFolderInput {
-  authorities?: string[] | null;
+  authorities?: Array<string> | null;
   mode?: AssetsAssetFolderRestrictionMode;
-  teamIds?: string[] | null;
+  teamIds?: Array<string> | null;
 }
 
 /** Data model for Assets Controllers Review Report Request. */
@@ -1355,7 +1355,7 @@ export interface AssetsQueriesAssetPreviewOutput {
   previewMode?: string | null;
   thumbnailUrl?: string | null;
   usedOcr?: boolean;
-  warnings?: string[] | null;
+  warnings?: Array<string> | null;
 }
 
 /** Data model for Assets Queries Asset Retention Candidate Response. */
@@ -1373,7 +1373,7 @@ export interface AssetsQueriesAssetRetentionReportOutput {
   candidateBytes?: number;
   candidates?: number;
   gracePeriodHours?: number;
-  items?: AssetsQueriesAssetRetentionCandidateOutput[] | null;
+  items?: Array<AssetsQueriesAssetRetentionCandidateOutput> | null;
   limit?: number;
   markedForDeletion?: number;
   onLegalHold?: number;
@@ -1381,7 +1381,7 @@ export interface AssetsQueriesAssetRetentionReportOutput {
 
 /** Data model for Assets Queries Asset Search Response. */
 export interface AssetsQueriesAssetSearchOutput {
-  items?: AssetsQueriesAssetSearchResult[] | null;
+  items?: Array<AssetsQueriesAssetSearchResult> | null;
   returned?: number;
   totalMatched?: number;
 }
@@ -1432,7 +1432,7 @@ export interface AssetsQueriesBulkAssetAccessUrlItem {
 /** Data model for Assets Queries Bulk Asset Access Urls Response. */
 export interface AssetsQueriesBulkAssetAccessUrlsOutput {
   failed?: number;
-  items?: AssetsQueriesBulkAssetAccessUrlItem[] | null;
+  items?: Array<AssetsQueriesBulkAssetAccessUrlItem> | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -1470,7 +1470,7 @@ export interface BulkOperationError {
 /** Response for bulk operations */
 export interface BulkOperationOutput {
   /** Per-item error details for failed operations. */
-  errors?: BulkOperationError[] | null;
+  errors?: Array<BulkOperationError> | null;
   /** Number of items that failed. */
   failedOperations?: number;
   /** Whether every item in the batch succeeded. */
@@ -1563,7 +1563,7 @@ export interface CommerceOrdersCreateOrderInput {
 /** Data model for Commerce Orders Marketplace Cart Dto. */
 export interface CommerceOrdersMarketplaceCartDto {
   id?: string | null;
-  items?: CommerceOrdersMarketplaceCartItemDto[] | null;
+  items?: Array<CommerceOrdersMarketplaceCartItemDto> | null;
   state?: CommerceOrdersMarketplaceCartState;
   tenantId?: string;
   userId?: string;
@@ -1585,7 +1585,7 @@ export type CommerceOrdersMarketplaceCartState = 'Active' | 'CheckedOut' | 'Aban
 /** Data model for Commerce Orders Marketplace Checkout Dto. */
 export interface CommerceOrdersMarketplaceCheckoutDto {
   cartId?: string;
-  orders?: CommerceOrdersMarketplaceCheckoutOrderDto[] | null;
+  orders?: Array<CommerceOrdersMarketplaceCheckoutOrderDto> | null;
 }
 
 /** Data model for Commerce Orders Marketplace Checkout Order Dto. */
@@ -1603,7 +1603,7 @@ export interface CommerceOrdersOrderCaptureDto {
   currency?: string | null;
   discountTotal?: number;
   idempotencyKey?: string | null;
-  lineItems?: CommerceOrdersOrderLineItemDto[] | null;
+  lineItems?: Array<CommerceOrdersOrderLineItemDto> | null;
   paidAt?: string | null;
   paymentId?: string | null;
   paymentMessage?: string | null;
@@ -1628,7 +1628,7 @@ export interface CommerceOrdersOrderDto {
   currency?: string | null;
   discountTotal?: number;
   idempotencyKey?: string | null;
-  lineItems?: CommerceOrdersOrderLineItemDto[] | null;
+  lineItems?: Array<CommerceOrdersOrderLineItemDto> | null;
   paidAt?: string | null;
   paymentMethod?: string | null;
   paymentProviderReference?: string | null;
@@ -1699,7 +1699,7 @@ export interface CommercePaymentsBillingChargesControllerRefundBillingChargeInpu
 /** Tax calculation request DTO */
 export interface CommercePaymentsCalculateTaxInput {
   amount: number;
-  applicableExemptions?: string[] | null;
+  applicableExemptions?: Array<string> | null;
   currency: string | null;
   customerType: string | null;
   customerVatNumber?: string | null;
@@ -1896,6 +1896,286 @@ export interface CommercePaymentsProcessRefundResult {
   status: CommercePaymentsTransactionStatus;
 }
 
+/** Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Detection is idempotent per (kind, day): re-running detection for the same
+day never duplicates an alert. */
+export interface CommercePaymentsRevenueAnomalyAlert {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the alert was acknowledged (UTC). */
+  acknowledgedAtUtc?: string | null;
+  /** Operator that acknowledged the alert. */
+  acknowledgedByUserId?: string | null;
+  /** Optional operator notes recorded at acknowledgement. */
+  acknowledgementNotes?: string | null;
+  /** Number of baseline days used for the evaluation. */
+  baselineDays?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Moment the anomaly was detected (UTC). */
+  detectedAtUtc?: string;
+  /** UTC day (midnight) the anomalous net revenue belongs to. */
+  detectedForDateUtc?: string;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Baseline (mean) net revenue expected for the evaluated day. */
+  expectedNetRevenue?: number;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueAnomalyKind;
+  /** Net revenue observed for the evaluated day. */
+  observedNetRevenue?: number;
+  status?: CommercePaymentsRevenueAnomalyStatus;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+  /** Standard-score of the observation against the baseline, rounded to 4 decimals. */
+  zScore?: number;
+}
+
+/** Kind of revenue anomaly detected by the statistical detector */
+export type CommercePaymentsRevenueAnomalyKind = 'Spike' | 'Drop';
+
+/** Lifecycle status of a revenue anomaly alert */
+export type CommercePaymentsRevenueAnomalyStatus = 'Open' | 'Acknowledged';
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput {
+  notes?: string | null;
+}
+
+/** Result of a manual anomaly detection pass. */
+export interface CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult {
+  alertsCreated?: number;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput {
+  evaluationDateUtc?: string | null;
+  tenantId?: string | null;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput {
+  externalStatementId?: string | null;
+  lines?: Array<CommercePaymentsRevenueAuditingControllerStatementLineInput> | null;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  source?: string | null;
+  tenantId?: string | null;
+}
+
+/** One external statement line supplied inline. */
+export interface CommercePaymentsRevenueAuditingControllerStatementLineInput {
+  amount?: number;
+  currency?: string | null;
+  occurredAtUtc?: string;
+  referenceId?: string | null;
+}
+
+/** Compliance-grade revenue summary for an inclusive period. */
+export interface CommercePaymentsRevenueComplianceReport {
+  /** Human-readable attestation statement for compliance filings. */
+  attestation?: string | null;
+  /** Start of the period (inclusive). */
+  fromUtc?: string;
+  /** Moment the report was produced. */
+  generatedAtUtc?: string;
+  reconciliation?: CommercePaymentsRevenueReconciliationCoverage;
+  /** Revenue totals grouped by event type. */
+  totalsByEventType?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** Revenue totals grouped by source. */
+  totalsBySource?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** Revenue totals grouped by processing status. */
+  totalsByStatus?: Array<CommercePaymentsRevenueEventGroupTotal> | null;
+  /** End of the period (inclusive). */
+  toUtc?: string;
+  /** Revenue events still pending processing (not counted as recognized revenue). */
+  uncountedEventCount?: number;
+}
+
+/** Kind of mismatch detected between an external statement and internal revenue events */
+export type CommercePaymentsRevenueDiscrepancyKind =
+  'MissingInternal' | 'MissingExternal' | 'AmountMismatch' | 'CurrencyMismatch' | 'DuplicateExternalReference';
+
+/** Grouped totals for one key of a grouping dimension (event type, source or status). */
+export interface CommercePaymentsRevenueEventGroupTotal {
+  /** Number of revenue events in the group. */
+  count?: number;
+  /** Grouping key (enum name). */
+  key?: string | null;
+  /** Sum of event amounts in the group. */
+  total?: number;
+}
+
+/** Reconciliation coverage summary included in compliance reports. */
+export interface CommercePaymentsRevenueReconciliationCoverage {
+  /** Total discrepancies recorded by those runs. */
+  discrepancies?: number;
+  /** Completion timestamp of the most recent run, if any. */
+  lastRunCompletedAtUtc?: string | null;
+  /** Total statement lines matched by those runs. */
+  matchedLines?: number;
+  /** Number of reconciliation runs overlapping the period. */
+  reconciliationRuns?: number;
+}
+
+/** One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+export interface CommercePaymentsRevenueReconciliationDiscrepancy {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Amount reported by the external statement, when applicable. */
+  externalAmount?: number | null;
+  /** Currency reported by the external statement, when applicable. */
+  externalCurrency?: string | null;
+  /** Settlement moment reported by the external statement, when applicable. */
+  externalOccurredAtUtc?: string | null;
+  /** External reference of the mismatched statement line. */
+  externalReference: string;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Amount recorded internally, when a revenue event was found. */
+  internalAmount?: number | null;
+  /** Currency recorded internally, when a revenue event was found. */
+  internalCurrency?: string | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueDiscrepancyKind;
+  /** Human-readable explanation of the mismatch. */
+  message?: string | null;
+  /** Internal revenue event involved in the mismatch, when one was found. */
+  revenueEventId?: string | null;
+  run?: CommercePaymentsRevenueReconciliationRun;
+  /** Run that recorded the discrepancy. */
+  runId?: string;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+export interface CommercePaymentsRevenueReconciliationRun {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the run committed its results (UTC). */
+  completedAtUtc?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Discrepancies recorded by this run. */
+  discrepancies?: Array<CommercePaymentsRevenueReconciliationDiscrepancy> | null;
+  /** Number of discrepancies recorded by the run. */
+  discrepancyCount?: number;
+  /** Domain events raised by this entity */
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  /** Optional identifier of the statement/batch within the external system. */
+  externalStatementId?: string | null;
+  /** Reason the run failed, when GameGuild.Commerce.Payments.RevenueReconciliationRun.Status is GameGuild.Commerce.Payments.RevenueReconciliationStatus.Failed. */
+  failureReason?: string | null;
+  /** Actor that initiated the run, when initiated by an interactive request. */
+  initiatedByUserId?: string | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Number of statement lines matched to an internal revenue event. */
+  matchedCount?: number;
+  /** Inclusive end of the reconciled period (UTC). */
+  periodEndUtc?: string;
+  /** Inclusive start of the reconciled period (UTC). */
+  periodStartUtc?: string;
+  /** External system the statement came from (for example "stripe-payouts" or "manual-export"). */
+  source: string;
+  /** Moment the run started (UTC). */
+  startedAtUtc?: string;
+  /** Number of statement lines evaluated by the run. */
+  statementLineCount?: number;
+  status?: CommercePaymentsRevenueReconciliationStatus;
+  /** Machine-readable totals snapshot (per discrepancy kind) captured at completion. */
+  summaryJson?: string | null;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle status of a revenue reconciliation run */
+export type CommercePaymentsRevenueReconciliationStatus = 'Running' | 'Completed' | 'Failed';
+
+/** One point of a historical revenue trend. */
+export interface CommercePaymentsRevenueTrendPoint {
+  /** Credit-side total for the day. */
+  creditTotal?: number;
+  /** UTC day (midnight) the point covers. */
+  dateUtc?: string;
+  /** Debit-side total for the day. */
+  debitTotal?: number;
+  /** Revenue events counted for the day. */
+  eventCount?: number;
+  /** Net total for the day. */
+  netTotal?: number;
+}
+
+/** Historical revenue trend over an inclusive date range. */
+export interface CommercePaymentsRevenueTrendReport {
+  /** Start of the range (inclusive). */
+  fromUtc?: string;
+  /** One point per UTC day in the range, including zero-activity days. */
+  points?: Array<CommercePaymentsRevenueTrendPoint> | null;
+  /** Credit total across the range. */
+  totalCredit?: number;
+  /** Debit total across the range. */
+  totalDebit?: number;
+  /** Net total across the range. */
+  totalNet?: number;
+  /** End of the range (inclusive). */
+  toUtc?: string;
+}
+
 /** Individual tax breakdown (for compound/multiple taxes) */
 export interface CommercePaymentsTaxBreakdown {
   description?: string | null;
@@ -1916,7 +2196,7 @@ export interface CommercePaymentsTaxCalculationResult {
   jurisdictionName?: string | null;
   subtotalAmount?: number;
   taxAmount?: number;
-  taxBreakdowns?: CommercePaymentsTaxBreakdown[] | null;
+  taxBreakdowns?: Array<CommercePaymentsTaxBreakdown> | null;
   taxDescription?: string | null;
   taxType?: CommercePaymentsTaxType;
   totalAmount?: number;
@@ -1930,7 +2210,7 @@ export interface CommercePaymentsTaxExemptionValidationResult {
   validationMessage?: string | null;
   validFrom?: string | null;
   validTo?: string | null;
-  warnings?: string[] | null;
+  warnings?: Array<string> | null;
 }
 
 /** Entity representing a tax jurisdiction */
@@ -1939,7 +2219,7 @@ export interface CommercePaymentsTaxJurisdiction {
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
   /** Navigation property to child jurisdictions */
-  childJurisdictions?: CommercePaymentsTaxJurisdiction[] | null;
+  childJurisdictions?: Array<CommercePaymentsTaxJurisdiction> | null;
   /** Jurisdiction code */
   code: string;
   /** Timestamp when the entity was created.
@@ -1949,8 +2229,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this jurisdiction is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -1968,7 +2248,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Tax registration number */
   taxRegistrationNumber?: string | null;
   /** Navigation property to tax rules */
-  taxRules?: CommercePaymentsTaxRule[] | null;
+  taxRules?: Array<CommercePaymentsTaxRule> | null;
   tenantId?: string | null;
   type?: CommercePaymentsTaxJurisdictionType;
   /** Timestamp when the entity was last updated.
@@ -2009,12 +2289,12 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Rate description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Effective from date */
   effectiveFrom?: string;
   /** Effective to date */
   effectiveTo?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this rate is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -2062,14 +2342,14 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Rule description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Effective from date */
   effectiveFrom?: string | null;
   /** Effective to date */
   effectiveTo?: string | null;
   /** Exemption conditions (JSON) */
   exemptionConditions?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this rule is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -2145,8 +2425,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this wallet is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -2164,7 +2444,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   monthlyLimit?: number | null;
   tenantId?: string | null;
   /** Navigation property to wallet transactions */
-  transactions?: CommercePaymentsWalletTransaction[] | null;
+  transactions?: Array<CommercePaymentsWalletTransaction> | null;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
@@ -2204,8 +2484,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Transaction description */
   description: string;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -2262,7 +2542,7 @@ export interface CommerceProductsAppliedPromoCode {
 export interface CommerceProductsApplyPromoCodesInput {
   orderAmount?: number;
   productId?: string | null;
-  promoCodes?: string[] | null;
+  promoCodes?: Array<string> | null;
 }
 
 /** Data model for Commerce Products Assign Support Ticket Request. */
@@ -2272,13 +2552,13 @@ export interface CommerceProductsAssignSupportTicketInput {
 
 /** Request model for batch creating products */
 export interface CommerceProductsBatchCreateProductsInput {
-  products?: CommerceProductsBatchProductCreateItem[] | null;
+  products?: Array<CommerceProductsBatchProductCreateItem> | null;
 }
 
 /** Item for batch product creation */
 export interface CommerceProductsBatchProductCreateItem {
   affiliateCommissionPercentage?: number;
-  bundleItems?: string[] | null;
+  bundleItems?: Array<string> | null;
   creatorId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
@@ -2297,7 +2577,7 @@ export interface CommerceProductsChangeSupportTicketPriorityInput {
 
 /** Request to check multiple product access */
 export interface CommerceProductsCheckMultipleAccessInput {
-  productIds?: string[] | null;
+  productIds?: Array<string> | null;
 }
 
 /** Data model for Commerce Products Close Support Ticket Request. */
@@ -2316,7 +2596,7 @@ export interface CommerceProductsCreateMySupportTicketInput {
 /** Request model for creating a product */
 export interface CommerceProductsCreateProductInput {
   affiliateCommissionPercentage?: number;
-  bundleItems?: string[] | null;
+  bundleItems?: Array<string> | null;
   description?: string | null;
   imageUrl?: string | null;
   isBundle?: boolean;
@@ -2389,7 +2669,7 @@ export interface CommerceProductsGrantEntitlementInput {
 /** Request model for partial product update (PATCH) */
 export interface CommerceProductsPatchProductInput {
   affiliateCommissionPercentage?: number | null;
-  bundleItems?: string[] | null;
+  bundleItems?: Array<string> | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -2430,7 +2710,7 @@ export interface CommerceProductsProductDto {
   /** Affiliate commission percentage */
   affiliateCommissionPercentage?: number;
   /** Bundle item IDs */
-  bundleItems?: string[] | null;
+  bundleItems?: Array<string> | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Creator user ID */
@@ -2448,7 +2728,7 @@ export interface CommerceProductsProductDto {
   /** Product name */
   name?: string | null;
   /** Pricing information (optional) */
-  pricing?: CommerceProductsProductPricingDto[] | null;
+  pricing?: Array<CommerceProductsProductPricingDto> | null;
   /** Referral commission percentage */
   referralCommissionPercentage?: number;
   /** Short description */
@@ -2506,13 +2786,13 @@ export type CommerceProductsProductType =
 /** Result of applying one or more promo codes */
 export interface CommerceProductsPromoCodeApplicationResult {
   /** List of codes that were applied */
-  appliedCodes?: CommerceProductsAppliedPromoCode[] | null;
+  appliedCodes?: Array<CommerceProductsAppliedPromoCode> | null;
   /** Amount after discounts */
   finalAmount?: number;
   /** Original order amount */
   originalAmount?: number;
   /** List of codes that were rejected with reasons */
-  rejectedCodes?: CommerceProductsRejectedPromoCode[] | null;
+  rejectedCodes?: Array<CommerceProductsRejectedPromoCode> | null;
   /** Total discount applied */
   totalDiscount?: number;
 }
@@ -2653,7 +2933,7 @@ export interface CommerceProductsSupportTicketDto {
   lastMessageAt?: string | null;
   lastMessagePreview?: string | null;
   messageCount?: number;
-  messages?: CommerceProductsSupportTicketMessageDto[] | null;
+  messages?: Array<CommerceProductsSupportTicketMessageDto> | null;
   openedAt?: string;
   priority?: CommerceProductsSupportTicketPriority;
   reporterEmail?: string | null;
@@ -2700,7 +2980,7 @@ export interface CommerceProductsSupportTicketSummaryDto {
 /** Request model for updating a product */
 export interface CommerceProductsUpdateProductInput {
   affiliateCommissionPercentage?: number | null;
-  bundleItems?: string[] | null;
+  bundleItems?: Array<string> | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -2821,7 +3101,7 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** When the subscription ends (null for active subscriptions) */
   endDate?: string | null;
   /** External customer ID for payment provider */
@@ -2832,7 +3112,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
 Required for audit trail - no subscription without payment proof.
 Null only for legacy/migrated subscriptions. */
   fulfilledOrderId?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if the subscription is currently active */
   isActive?: boolean;
   /** Checks if the subscription is cancelled */
@@ -2996,7 +3276,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Detailed description of the plan */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** External ID for integration with payment providers (Stripe, etc.) */
   externalId?: string | null;
   /** Features included in this plan (JSON serialized list of feature codes) */
@@ -3007,7 +3287,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   hasCustomBranding?: boolean;
   /** Whether this plan includes priority support */
   hasPrioritySupport?: boolean;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this plan is currently available for new subscriptions */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -3033,7 +3313,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   slug: string;
   /** Display order for sorting plans */
   sortOrder?: number;
-  subscriptions?: CommerceSubscriptionsSubscription[] | null;
+  subscriptions?: Array<CommerceSubscriptionsSubscription> | null;
   tenantId?: string | null;
   /** Trial period in days (0 = no trial) */
   trialPeriodDays?: number;
@@ -3101,7 +3381,7 @@ export interface CommerceSubscriptionsSubscriptionPlanOperationsControllerValida
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Compare Plans Request. */
 export interface CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInput {
   basePlanId?: string;
-  comparePlanIds?: string[] | null;
+  comparePlanIds?: Array<string> | null;
 }
 
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Create Plan Request. */
@@ -3186,13 +3466,18 @@ export interface CommerceSubscriptionsSubscriptionUpgradeResult {
 export interface CommerceSubscriptionsSubscriptionUsageDto {
   apiCallsThisMonth?: number;
   isOverLimit?: boolean;
-  limitWarnings?: string[] | null;
+  limitWarnings?: Array<string> | null;
   maxApiCallsPerMonth?: number | null;
   maxStorageMb?: number | null;
   maxUsers?: number | null;
   storageUsedMb?: number;
   subscriptionId?: string;
   usersCount?: number;
+}
+
+/** Data model for Compliance Audit Acknowledge Security Alert Request. */
+export interface ComplianceAuditAcknowledgeSecurityAlertInput {
+  notes?: string | null;
 }
 
 /** Data model for Compliance Audit Audit Access Age Bucket. */
@@ -3204,8 +3489,8 @@ export interface ComplianceAuditAuditAccessAgeBucket {
 /** Data model for Compliance Audit Audit Action Type Descriptor. */
 export interface ComplianceAuditAuditActionTypeDescriptor {
   actionType?: string | null;
-  categoryPath?: string[] | null;
-  groups?: string[] | null;
+  categoryPath?: Array<string> | null;
+  groups?: Array<string> | null;
 }
 
 /** Data model for Compliance Audit Audit Action Type Frequency. */
@@ -3225,10 +3510,10 @@ export type ComplianceAuditAuditActionTypeLogicalOperator = 'Any' | 'All' | 'Non
 
 /** Data model for Compliance Audit Audit Action Type Search Response. */
 export interface ComplianceAuditAuditActionTypeSearchOutput {
-  frequency?: ComplianceAuditAuditActionTypeFrequency[] | null;
-  relatedActions?: ComplianceAuditAuditRelatedAction[] | null;
+  frequency?: Array<ComplianceAuditAuditActionTypeFrequency> | null;
+  relatedActions?: Array<ComplianceAuditAuditRelatedAction> | null;
   results?: ComplianceAuditAuditLogOutput;
-  trends?: ComplianceAuditAuditActionTypeTrend[] | null;
+  trends?: Array<ComplianceAuditAuditActionTypeTrend> | null;
 }
 
 /** OpenAPI schema for Compliance Audit Audit Action Type Sort Direction. */
@@ -3239,8 +3524,8 @@ export type ComplianceAuditAuditActionTypeSortField = 'CreatedAt' | 'ActionType'
 
 /** Data model for Compliance Audit Audit Action Type Taxonomy Response. */
 export interface ComplianceAuditAuditActionTypeTaxonomyOutput {
-  actionTypes?: ComplianceAuditAuditActionTypeDescriptor[] | null;
-  groups?: ComplianceAuditAuditActionTypeGroupDescriptor[] | null;
+  actionTypes?: Array<ComplianceAuditAuditActionTypeDescriptor> | null;
+  groups?: Array<ComplianceAuditAuditActionTypeGroupDescriptor> | null;
 }
 
 /** Data model for Compliance Audit Audit Action Type Trend. */
@@ -3273,7 +3558,7 @@ export type ComplianceAuditAuditCategory =
 
 /** Data model for Compliance Audit Audit Date Range Search Response. */
 export interface ComplianceAuditAuditDateRangeSearchOutput {
-  activity?: ComplianceAuditAuditActivityBucketOutput[] | null;
+  activity?: Array<ComplianceAuditAuditActivityBucketOutput> | null;
   bucketSize?: ComplianceAuditAuditActivityBucketSize;
   endDateUtc?: string;
   results?: ComplianceAuditAuditLogOutput;
@@ -3307,7 +3592,7 @@ export interface ComplianceAuditAuditExportInput {
   actionType?: string | null;
   category?: ComplianceAuditAuditCategory;
   /** Ordered CSV columns. Omit to include every supported audit field. */
-  columns?: string[] | null;
+  columns?: Array<string> | null;
   endDate?: string | null;
   ipAddress?: string | null;
   /** Optional 1-based page number. Omit both pagination fields to export all matching rows. */
@@ -3341,7 +3626,7 @@ export interface ComplianceAuditAuditExportProgressOutput {
 /** Data model for Compliance Audit Audit Json Export Document. */
 export interface ComplianceAuditAuditJsonExportDocument {
   pagination?: ComplianceAuditAuditJsonExportPagination;
-  records?: ComplianceAuditAuditJsonExportRecord[] | null;
+  records?: Array<ComplianceAuditAuditJsonExportRecord> | null;
   schemaVersion?: string | null;
 }
 
@@ -3389,7 +3674,7 @@ export interface ComplianceAuditAuditLogDto {
 
 /** Data model for Compliance Audit Audit Log Response. */
 export interface ComplianceAuditAuditLogOutput {
-  logs?: ComplianceAuditAuditLogDto[] | null;
+  logs?: Array<ComplianceAuditAuditLogDto> | null;
   skip?: number;
   take?: number;
   totalCount?: number;
@@ -3426,10 +3711,13 @@ export interface ComplianceAuditAuditRetentionComplianceViolation {
   source?: string | null;
 }
 
-/** Data model for Compliance Audit Audit Retention Configuration Response. */
+/** The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 export interface ComplianceAuditAuditRetentionConfigurationOutput {
   id?: string;
   configuration?: ComplianceAuditConfigureAuditRetentionInput;
+  inheritedFromTemplateId?: string | null;
   revision?: number;
   tenantId?: string;
   updatedAtUtc?: string;
@@ -3441,12 +3729,12 @@ export type ComplianceAuditAuditRetentionGrowthModel = 'Constant' | 'HistoricalT
 
 /** Data model for Compliance Audit Audit Retention Historical Evidence. */
 export interface ComplianceAuditAuditRetentionHistoricalEvidence {
-  accessAges?: ComplianceAuditAuditAccessAgeBucket[] | null;
+  accessAges?: Array<ComplianceAuditAuditAccessAgeBucket> | null;
   asOfUtc?: string;
   availableHistoryDays?: number;
   averageDailyLogicalBytes?: number;
   averageDailyRecords?: number;
-  cohorts?: ComplianceAuditAuditStorageDailyCohort[] | null;
+  cohorts?: Array<ComplianceAuditAuditStorageDailyCohort> | null;
   dailyLogicalBytesTrend?: number;
   dailyRecordsTrend?: number;
   daysWithRecords?: number;
@@ -3457,7 +3745,7 @@ export interface ComplianceAuditAuditRetentionHistoricalEvidence {
   oldestObservedAccessAgeDays?: number | null;
   storedLogicalBytes?: number;
   storedRecordCount?: number;
-  weeklySeasonality?: ComplianceAuditAuditRetentionWeekdayFactor[] | null;
+  weeklySeasonality?: Array<ComplianceAuditAuditRetentionWeekdayFactor> | null;
 }
 
 /** Data model for Compliance Audit Audit Retention Month Forecast. */
@@ -3471,7 +3759,7 @@ export interface ComplianceAuditAuditRetentionMonthForecast {
   retrievalCost?: number;
   startUtcDate?: string;
   storageCost?: number;
-  tiers?: ComplianceAuditAuditRetentionTierForecast[] | null;
+  tiers?: Array<ComplianceAuditAuditRetentionTierForecast> | null;
   totalCost?: number;
 }
 
@@ -3481,6 +3769,45 @@ export interface ComplianceAuditAuditRetentionObligation {
   minimumRetentionDays?: number;
   name: string;
   source: string;
+}
+
+/** Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+export interface ComplianceAuditAuditRetentionPolicySensitivityRule {
+  /** Optional maximum retention, in days, after which data at this classification may be purged. */
+  maximumRetentionDays: number | null;
+  /** Minimum retention, in days, enforced for data at this classification. */
+  minimumRetentionDays: number;
+  /** Why this classification receives this retention period. */
+  rationale: string | null;
+  sensitivity: ComplianceAuditSensitivityLevel;
+}
+
+/** Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+export interface ComplianceAuditAuditRetentionPolicyTemplate {
+  /** Stable template identifier referenced by GameGuild.Compliance.Audit.AuditRetentionPolicyTemplate.BaseTemplateId. */
+  id: string | null;
+  baselineScenario: ComplianceAuditAuditRetentionScenario;
+  /** Template this one inherits obligations and sensitivity floors from; null for the baseline. */
+  baseTemplateId: string | null;
+  /** What the template presets and why. */
+  description: string | null;
+  /** Human-readable template name. */
+  displayName: string | null;
+  /** Regulatory framework or policy family this template targets. */
+  framework: string | null;
+  /** True only for the platform baseline every other template inherits from. */
+  isBaseline: boolean;
+  /** Retention obligations with the administrator-provided regulatory source for each. */
+  obligations: Array<ComplianceAuditAuditRetentionObligation> | null;
+  /** Publication timestamp of this template revision (UTC). */
+  publishedAtUtc: string;
+  /** Sensitivity classification floors; retention grows with classification. */
+  sensitivityRules: Array<ComplianceAuditAuditRetentionPolicySensitivityRule> | null;
+  /** Storage tier price assumptions preset by the template. */
+  tierPrices: Array<ComplianceAuditAuditStorageTierPrice> | null;
 }
 
 /** Data model for Compliance Audit Audit Retention Recommendation. */
@@ -3511,14 +3838,14 @@ export interface ComplianceAuditAuditRetentionScenario {
 export interface ComplianceAuditAuditRetentionScenarioResult {
   budgetVariance?: number | null;
   complianceStatus?: string | null;
-  complianceViolations?: ComplianceAuditAuditRetentionComplianceViolation[] | null;
+  complianceViolations?: Array<ComplianceAuditAuditRetentionComplianceViolation> | null;
   differenceFromBaseline?: number;
   expectedReadLatencyMilliseconds?: number | null;
   initialExpiredLogicalBytes?: number;
   initialExpiredRecords?: number;
-  months?: ComplianceAuditAuditRetentionMonthForecast[] | null;
+  months?: Array<ComplianceAuditAuditRetentionMonthForecast> | null;
   p95ReadLatencyMilliseconds?: number | null;
-  risks?: ComplianceAuditAuditRetentionRisk[] | null;
+  risks?: Array<ComplianceAuditAuditRetentionRisk> | null;
   savingsPercent?: number | null;
   scenario?: ComplianceAuditAuditRetentionScenario;
   slowObservedReadsPercent?: number | null;
@@ -3526,7 +3853,7 @@ export interface ComplianceAuditAuditRetentionScenarioResult {
   totalRetrievalCost?: number;
   totalStorageCost?: number;
   unavailableObservedReadsPercent?: number | null;
-  years?: ComplianceAuditAuditRetentionYearForecast[] | null;
+  years?: Array<ComplianceAuditAuditRetentionYearForecast> | null;
 }
 
 /** Data model for Compliance Audit Audit Retention Simulation Response. */
@@ -3544,7 +3871,7 @@ export interface ComplianceAuditAuditRetentionSimulationOutput {
 /** Data model for Compliance Audit Audit Retention Simulation Report. */
 export interface ComplianceAuditAuditRetentionSimulationReport {
   annualGrowthPercent?: number | null;
-  assumptions?: string[] | null;
+  assumptions?: Array<string> | null;
   baseline?: ComplianceAuditAuditRetentionScenarioResult;
   currency?: string | null;
   evidence?: ComplianceAuditAuditRetentionHistoricalEvidence;
@@ -3552,7 +3879,7 @@ export interface ComplianceAuditAuditRetentionSimulationReport {
   growthModel?: ComplianceAuditAuditRetentionGrowthModel;
   modelVersion?: string | null;
   recommendation?: ComplianceAuditAuditRetentionRecommendation;
-  scenarios?: ComplianceAuditAuditRetentionScenarioResult[] | null;
+  scenarios?: Array<ComplianceAuditAuditRetentionScenarioResult> | null;
   storageOverheadMultiplier?: number;
 }
 
@@ -3645,7 +3972,7 @@ export interface ComplianceAuditAuthenticationAuditEntry {
 
 /** Response for authentication audit logs. */
 export interface ComplianceAuditAuthenticationAuditOutput {
-  entries?: ComplianceAuditAuthenticationAuditEntry[] | null;
+  entries?: Array<ComplianceAuditAuthenticationAuditEntry> | null;
   failedLogins?: number;
   skip?: number;
   successfulLogins?: number;
@@ -3665,7 +3992,7 @@ export interface ComplianceAuditComplianceArtifactEntry {
 /** Data model for Compliance Audit Compliance Artifact Manifest. */
 export interface ComplianceAuditComplianceArtifactManifest {
   capturedAtUtc?: string;
-  entries?: ComplianceAuditComplianceArtifactEntry[] | null;
+  entries?: Array<ComplianceAuditComplianceArtifactEntry> | null;
   formatVersion?: string | null;
   name?: string | null;
   packageId?: string;
@@ -3688,24 +4015,24 @@ export interface ComplianceAuditComplianceArtifactSeal {
 
 /** Data model for Compliance Audit Compliance Artifact Verification. */
 export interface ComplianceAuditComplianceArtifactVerification {
-  errors?: string[] | null;
+  errors?: Array<string> | null;
   isValid?: boolean;
 }
 
 /** Data model for Compliance Audit Compliance Control Evidence Result. */
 export interface ComplianceAuditComplianceControlEvidenceResult {
   controlId?: string | null;
-  documentIds?: string[] | null;
-  evidencePaths?: string[] | null;
-  gaps?: ComplianceAuditComplianceEvidenceGap[] | null;
+  documentIds?: Array<string> | null;
+  evidencePaths?: Array<string> | null;
+  gaps?: Array<ComplianceAuditComplianceEvidenceGap> | null;
   status?: string | null;
 }
 
 /** References and collection mappings, not a reproduction of a licensed standard or a certification. */
 export interface ComplianceAuditComplianceControlTemplate {
   id?: string | null;
-  automaticEvidence?: ComplianceAuditComplianceEvidenceKind[] | null;
-  requiredDocumentTypes?: string[] | null;
+  automaticEvidence?: Array<ComplianceAuditComplianceEvidenceKind> | null;
+  requiredDocumentTypes?: Array<string> | null;
   sourceUri?: string | null;
 }
 
@@ -3714,7 +4041,7 @@ export interface ComplianceAuditComplianceDocumentOutput {
   id?: string;
   contentLength?: number;
   contentSha256?: string | null;
-  controlIds?: string[] | null;
+  controlIds?: Array<string> | null;
   mediaType?: string | null;
   name?: string | null;
   review?: ComplianceAuditComplianceDocumentReview;
@@ -3732,7 +4059,7 @@ export interface ComplianceAuditComplianceDocumentOutput {
 
 /** Data model for Compliance Audit Compliance Document Requirement. */
 export interface ComplianceAuditComplianceDocumentRequirement {
-  requiredFields?: string[] | null;
+  requiredFields?: Array<string> | null;
   requiresControlAssessments?: boolean;
   requiresPeriodCoverage?: boolean;
   type?: string | null;
@@ -3761,11 +4088,11 @@ export type ComplianceAuditComplianceFramework = 'SOC2Type1' | 'SOC2Type2' | 'IS
 /** Data model for Compliance Audit Compliance Framework Template. */
 export interface ComplianceAuditComplianceFrameworkTemplate {
   id?: string | null;
-  controls?: ComplianceAuditComplianceControlTemplate[] | null;
-  documents?: ComplianceAuditComplianceDocumentRequirement[] | null;
+  controls?: Array<ComplianceAuditComplianceControlTemplate> | null;
+  documents?: Array<ComplianceAuditComplianceDocumentRequirement> | null;
   framework?: ComplianceAuditComplianceFramework;
   periodMode?: ComplianceAuditComplianceEvidencePeriodMode;
-  sources?: string[] | null;
+  sources?: Array<string> | null;
   version?: string | null;
 }
 
@@ -3794,9 +4121,9 @@ export interface ComplianceAuditCompliancePackageSummary {
 
 /** Data model for Compliance Audit Compliance Package Validation Report. */
 export interface ComplianceAuditCompliancePackageValidationReport {
-  assumptions?: string[] | null;
-  controls?: ComplianceAuditComplianceControlEvidenceResult[] | null;
-  gaps?: ComplianceAuditComplianceEvidenceGap[] | null;
+  assumptions?: Array<string> | null;
+  controls?: Array<ComplianceAuditComplianceControlEvidenceResult> | null;
+  gaps?: Array<ComplianceAuditComplianceEvidenceGap> | null;
   readyForAuditorReview?: boolean;
 }
 
@@ -3814,17 +4141,28 @@ export interface ComplianceAuditConfigureAuditRetentionInput {
   expectedRevision?: number;
   maximumReadLatencyMilliseconds?: number;
   monthlyBudget?: number | null;
-  obligations: ComplianceAuditAuditRetentionObligation[];
+  obligations: Array<ComplianceAuditAuditRetentionObligation>;
   /** All existing records are preserved through this inclusive UTC date in every scenario. */
   preserveAllRecordsThroughUtcDate?: string | null;
   storageOverheadMultiplier?: number;
-  tierPrices: ComplianceAuditAuditStorageTierPrice[];
+  tierPrices: Array<ComplianceAuditAuditStorageTierPrice>;
+}
+
+/** Configures the retention policy applied to a tenant's security audit log. */
+export interface ComplianceAuditConfigureSecurityLogRetentionInput {
+  /** Per-category overrides. Keys are `AuditCategory` names; values are days (30..3650). */
+  categoryOverrides?: Record<string, number> | null;
+  /** Revision the caller observed; rejected on mismatch to avoid lost updates. */
+  expectedRevision?: number;
+  /** When set to a future instant, retention enforcement is suspended until then. */
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
 }
 
 /** Data model for Compliance Audit Create Compliance Package Request. */
 export interface ComplianceAuditCreateCompliancePackageInput {
-  documentIds: string[];
-  exclusions: ComplianceAuditComplianceScopeExclusion[];
+  documentIds: Array<string>;
+  exclusions: Array<ComplianceAuditComplianceScopeExclusion>;
   name: string;
   periodEndUtc?: string;
   periodStartUtc?: string;
@@ -3835,7 +4173,7 @@ export interface ComplianceAuditCreateCompliancePackageInput {
 export interface ComplianceAuditCreateScheduledAuditExportInput {
   actionType?: string | null;
   /** Ordered CSV columns. Omit to include every supported audit field. */
-  columns?: string[] | null;
+  columns?: Array<string> | null;
   /** Five-field cron expression: minute, hour, day of month, month, and day of week. */
   cronExpression: string;
   endDate?: string | null;
@@ -3858,6 +4196,12 @@ export interface ComplianceAuditDailyActivityTrend {
   permissionEvents?: number;
   securityViolations?: number;
   totalEvents?: number;
+}
+
+/** Data model for Compliance Audit Enforce Security Log Retention Request. */
+export interface ComplianceAuditEnforceSecurityLogRetentionInput {
+  /** When true, the pass only reports what would be deleted; no rows are removed. */
+  dryRun?: boolean;
 }
 
 /** OpenAPI schema for Compliance Audit Export Format. */
@@ -3894,7 +4238,7 @@ export interface ComplianceAuditPermissionAuditEntry {
 /** Response for permission audit logs. */
 export interface ComplianceAuditPermissionAuditOutput {
   denyOperations?: number;
-  entries?: ComplianceAuditPermissionAuditEntry[] | null;
+  entries?: Array<ComplianceAuditPermissionAuditEntry> | null;
   grantOperations?: number;
   revokeOperations?: number;
   skip?: number;
@@ -3915,7 +4259,7 @@ export interface ComplianceAuditRunAuditRetentionSimulationInput {
   forecastMonths?: number;
   growthModel?: ComplianceAuditAuditRetentionGrowthModel;
   historicalDays?: number;
-  scenarios: ComplianceAuditAuditRetentionScenario[];
+  scenarios: Array<ComplianceAuditAuditRetentionScenario>;
 }
 
 /** Data model for Compliance Audit Scheduled Audit Export Response. */
@@ -3937,10 +4281,35 @@ export interface ComplianceAuditScheduledAuditExportOutput {
   updatedAt?: string;
 }
 
+/** Data model for Compliance Audit Security Alert Response. */
+export interface ComplianceAuditSecurityAlertOutput {
+  id?: string;
+  acknowledgedAtUtc?: string | null;
+  acknowledgedByUserId?: string | null;
+  acknowledgementNotes?: string | null;
+  description?: string | null;
+  firstSeenAtUtc?: string;
+  ipAddress?: string | null;
+  kind?: ComplianceAuditSecurityEventKind;
+  lastSeenAtUtc?: string;
+  occurrenceCount?: number;
+  ruleId?: string | null;
+  severity?: ComplianceAuditAuditRiskLevel;
+  sourceActionType?: string | null;
+  sourceAuditLogId?: string | null;
+  status?: ComplianceAuditSecurityAlertStatus;
+  subjectUserId?: string | null;
+  tenantId?: string | null;
+  title?: string | null;
+}
+
+/** Status of a security alert raised by the security event pipeline. */
+export type ComplianceAuditSecurityAlertStatus = 'Open' | 'Acknowledged' | 'Resolved';
+
 /** Security audit dashboard with aggregated statistics. */
 export interface ComplianceAuditSecurityAuditDashboard {
   crossTenantAttempts?: number;
-  dailyTrends?: ComplianceAuditDailyActivityTrend[] | null;
+  dailyTrends?: Array<ComplianceAuditDailyActivityTrend> | null;
   endDate?: string;
   failedLogins?: number;
   highRiskEvents?: number;
@@ -3952,9 +4321,9 @@ export interface ComplianceAuditSecurityAuditDashboard {
   successfulLogins?: number;
   suspiciousLoginAttempts?: number;
   tenantId?: string | null;
-  topActiveUsers?: ComplianceAuditTopUserActivity[] | null;
-  topFailureReasons?: ComplianceAuditFailureReasonCount[] | null;
-  topIpAddresses?: ComplianceAuditTopIpActivity[] | null;
+  topActiveUsers?: Array<ComplianceAuditTopUserActivity> | null;
+  topFailureReasons?: Array<ComplianceAuditFailureReasonCount> | null;
+  topIpAddresses?: Array<ComplianceAuditTopIpActivity> | null;
   totalAuthenticationAttempts?: number;
   totalPermissionChanges?: number;
   totalSecurityViolations?: number;
@@ -3963,6 +4332,78 @@ export interface ComplianceAuditSecurityAuditDashboard {
 
 /** Source type for security audit entries. */
 export type ComplianceAuditSecurityAuditSourceType = 'Authentication' | 'Permission' | 'General' | 'All';
+
+/** Durable delivery status of the security event pipeline for the current instance. */
+export interface ComplianceAuditSecurityEventDeliveryStatusOutput {
+  databaseWriteAttemptsBeforeSpool?: number;
+  lastDrainAttemptedAtUtc?: string | null;
+  lastDrainError?: string | null;
+  lastDrainSucceededAtUtc?: string | null;
+  oldestSpooledEventUtc?: string | null;
+  spooledEventCount?: number;
+  spoolingEnabled?: boolean;
+}
+
+/** Kinds of security-relevant events recognized by the security event pipeline.
+Every kind maps to a default severity, an escalation policy for failed outcomes,
+and a stable description used by the taxonomy endpoint. */
+export type ComplianceAuditSecurityEventKind =
+  | 'Authentication'
+  | 'Authorization'
+  | 'SessionManagement'
+  | 'AccountLifecycle'
+  | 'ThreatDetection'
+  | 'DataProtection'
+  | 'TenantIsolation'
+  | 'ConfigurationChange'
+  | 'DataMovement'
+  | 'Other';
+
+/** One entry of the published security event taxonomy. */
+export interface ComplianceAuditSecurityEventTaxonomyEntry {
+  actionType?: string | null;
+  defaultSeverity?: ComplianceAuditAuditRiskLevel;
+  description?: string | null;
+  escalateOnFailure?: boolean;
+  kind?: ComplianceAuditSecurityEventKind;
+}
+
+/** Response of `GET /api/audit/security-events/taxonomy`: the complete security event taxonomy. */
+export interface ComplianceAuditSecurityEventTaxonomyOutput {
+  entries: Array<ComplianceAuditSecurityEventTaxonomyEntry>;
+  kinds?: Array<string> | null;
+  totalEntries?: number;
+}
+
+/** Data model for Compliance Audit Security Log Retention Execution Response. */
+export interface ComplianceAuditSecurityLogRetentionExecutionOutput {
+  id?: string;
+  cutoffUtc?: string;
+  deletedCount?: number;
+  dryRun?: boolean;
+  evaluatedCount?: number;
+  executedAtUtc?: string;
+  legalHoldActive?: boolean;
+  policyRetentionDays?: number;
+  tenantId?: string;
+  triggeredByUserId?: string | null;
+}
+
+/** Data model for Compliance Audit Security Log Retention Policy Response. */
+export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
+  id?: string;
+  categoryOverrides?: Record<string, number> | null;
+  configuredAtUtc?: string;
+  legalHoldActive?: boolean;
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+  revision?: number;
+  tenantId?: string;
+  updatedByUserId?: string;
+}
+
+/** Defines sensitivity levels for data access auditing */
+export type ComplianceAuditSensitivityLevel = 'Public' | 'Internal' | 'Confidential' | 'Restricted' | 'HighlyRestricted';
 
 /** Data model for Compliance Audit Top Ip Activity. */
 export interface ComplianceAuditTopIpActivity {
@@ -4049,7 +4490,7 @@ export interface ComplianceAuditUnifiedSecurityAuditInput {
 /** Response containing unified security audit logs. */
 export interface ComplianceAuditUnifiedSecurityAuditOutput {
   /** The audit log entries. */
-  entries?: ComplianceAuditUnifiedSecurityAuditEntry[] | null;
+  entries?: Array<ComplianceAuditUnifiedSecurityAuditEntry> | null;
   /** Number of records skipped. */
   skip?: number;
   /** Breakdown by source type. */
@@ -4063,7 +4504,7 @@ export interface ComplianceAuditUnifiedSecurityAuditOutput {
 /** Data model for Compliance Audit Upload Compliance Document Request. */
 export interface ComplianceAuditUploadComplianceDocumentInput {
   contentBase64: string;
-  controlIds: string[];
+  controlIds: Array<string>;
   mediaType: string;
   name: string;
   sourceUri: string;
@@ -4352,9 +4793,9 @@ export interface ComplianceFinancialCrimeFinancialCrimeCaseDecision {
 /** Data model for Compliance Financial Crime Financial Crime Case Details. */
 export interface ComplianceFinancialCrimeFinancialCrimeCaseDetails {
   case?: ComplianceFinancialCrimeFinancialCrimeCase;
-  decisions?: ComplianceFinancialCrimeFinancialCrimeCaseDecision[] | null;
-  events?: ComplianceFinancialCrimeFinancialCrimeCaseEvent[] | null;
-  regulatoryReferences?: ComplianceFinancialCrimeFinancialCrimeRegulatoryReference[] | null;
+  decisions?: Array<ComplianceFinancialCrimeFinancialCrimeCaseDecision> | null;
+  events?: Array<ComplianceFinancialCrimeFinancialCrimeCaseEvent> | null;
+  regulatoryReferences?: Array<ComplianceFinancialCrimeFinancialCrimeRegulatoryReference> | null;
 }
 
 /** Data model for Compliance Financial Crime Financial Crime Case Event. */
@@ -4589,7 +5030,7 @@ export interface ContentPagesPageDto {
   publishedAt?: string | null;
   robotsDirective?: string | null;
   scheduledPublishAt?: string | null;
-  sections?: ContentPagesPageSectionDto[] | null;
+  sections?: Array<ContentPagesPageSectionDto> | null;
   slug?: string | null;
   sortOrder?: number;
   status?: string | null;
@@ -4750,7 +5191,7 @@ export type ErrorType = 'Failure' | 'Validation' | 'Problem' | 'NotFound' | 'Con
 export interface FeaturesBulkEvaluationInput {
   context?: FeaturesFeatureContext;
   /** List of feature keys to evaluate */
-  featureKeys?: string[] | null;
+  featureKeys?: Array<string> | null;
 }
 
 /** DTO for capability audit log entries. */
@@ -4790,7 +5231,7 @@ export interface FeaturesFeatureContext {
   environment?: string | null;
   ipAddress?: string | null;
   /** User permissions for permission-based targeting */
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   requestTime?: string;
   subscriptionPlanId?: string | null;
   tenantId?: string | null;
@@ -4818,7 +5259,7 @@ export interface FeaturesFeatureFlagDto {
   isEnabled: boolean;
   key: string | null;
   name: string | null;
-  targets?: FeaturesFeatureFlagTargetDto[] | null;
+  targets?: Array<FeaturesFeatureFlagTargetDto> | null;
   tenantId?: string | null;
   type: FeaturesFeatureFlagType;
   updatedAt?: string | null;
@@ -4879,10 +5320,10 @@ export interface FeaturesUpdateFeatureInput {
 
 /** Data model for Fido2 Net Lib Assertion Options. */
 export interface Fido2NetLibAssertionOptions {
-  allowCredentials?: ObjectsPublicKeyCredentialDescriptor[] | null;
+  allowCredentials?: Array<ObjectsPublicKeyCredentialDescriptor> | null;
   challenge?: string | null;
   extensions?: ObjectsAuthenticationExtensionsClientInputs;
-  hints?: ObjectsPublicKeyCredentialHint[] | null;
+  hints?: Array<ObjectsPublicKeyCredentialHint> | null;
   rpId?: string | null;
   timeout?: number;
   userVerification?: ObjectsUserVerificationRequirement;
@@ -4899,13 +5340,13 @@ export interface Fido2NetLibAuthenticatorSelection {
 /** Data model for Fido2 Net Lib Credential Create Options. */
 export interface Fido2NetLibCredentialCreateOptions {
   attestation?: ObjectsAttestationConveyancePreference;
-  attestationFormats?: ObjectsAttestationStatementFormatIdentifier[] | null;
+  attestationFormats?: Array<ObjectsAttestationStatementFormatIdentifier> | null;
   authenticatorSelection?: Fido2NetLibAuthenticatorSelection;
   challenge: string | null;
-  excludeCredentials?: ObjectsPublicKeyCredentialDescriptor[] | null;
+  excludeCredentials?: Array<ObjectsPublicKeyCredentialDescriptor> | null;
   extensions?: ObjectsAuthenticationExtensionsClientInputs;
-  hints?: ObjectsPublicKeyCredentialHint[] | null;
-  pubKeyCredParams: Fido2NetLibPubKeyCredParam[] | null;
+  hints?: Array<ObjectsPublicKeyCredentialHint> | null;
+  pubKeyCredParams: Array<Fido2NetLibPubKeyCredParam> | null;
   rp: Fido2NetLibPublicKeyCredentialRpEntity;
   timeout?: number;
   user: Fido2NetLibFido2User;
@@ -4935,7 +5376,7 @@ export interface Fido2NetLibPublicKeyCredentialRpEntity {
 export interface FinanceEconomyAdRewardsAdPlaybackEvidence {
   completedAt?: string;
   focusLoss?: string;
-  milestones?: number[] | null;
+  milestones?: Array<number> | null;
   playbackDuration?: string;
   startedAt?: string;
   visibleDuration?: string;
@@ -4952,7 +5393,7 @@ export interface FinanceEconomyAdRewardsAdProviderReport {
   periodStart?: string;
   reportId?: string | null;
   signature?: string | null;
-  verifiedSessionIds?: string[] | null;
+  verifiedSessionIds?: Array<string> | null;
   version?: number;
 }
 
@@ -5032,8 +5473,8 @@ export interface FinanceEconomyAdRewardsAdRewardSessionEventOperationalStatus {
 /** Data model for Finance Economy Ad Rewards Ad Reward Session Operational Details. */
 export interface FinanceEconomyAdRewardsAdRewardSessionOperationalDetails {
   completion?: FinanceEconomyAdRewardsAdRewardCompletionOperationalStatus;
-  events?: FinanceEconomyAdRewardsAdRewardSessionEventOperationalStatus[] | null;
-  milestones?: FinanceEconomyAdRewardsAdRewardMilestoneOperationalStatus[] | null;
+  events?: Array<FinanceEconomyAdRewardsAdRewardSessionEventOperationalStatus> | null;
+  milestones?: Array<FinanceEconomyAdRewardsAdRewardMilestoneOperationalStatus> | null;
   summary?: FinanceEconomyAdRewardsAdRewardSessionOperationalSummary;
 }
 
@@ -5056,7 +5497,7 @@ export interface FinanceEconomyAdRewardsDurableAdProviderReportImportResult {
   isDuplicate?: boolean;
   providerReportId?: string;
   reconciliation?: FinanceEconomyAdRewardsAdRewardReconciliation;
-  verifiedPendingSessions?: string[] | null;
+  verifiedPendingSessions?: Array<string> | null;
 }
 
 /** Data model for Finance Economy Ad Rewards Durable Ad Provider Report Status. */
@@ -5210,7 +5651,7 @@ export interface FinanceEconomyBountiesPersistedBountyTerminalEvent {
   firstJournalSequence?: number;
   idempotencyKey?: FinanceEconomyContractsIdempotencyKey;
   occurredAt?: string;
-  outputLots?: FinanceEconomyBountiesBountyTerminalOutputLot[] | null;
+  outputLots?: Array<FinanceEconomyBountiesBountyTerminalOutputLot> | null;
   proceedsLotId?: FinanceEconomyContractsCreditLotId;
   proceedsSourceStampId?: FinanceEconomyContractsSourceStampId;
   returnedUnits?: number;
@@ -5458,12 +5899,12 @@ export interface FinanceEconomyMarketplaceDurableMarketplaceRefundDebt {
 /** Data model for Finance Economy Marketplace Durable Marketplace Refund Result. */
 export interface FinanceEconomyMarketplaceDurableMarketplaceRefundResult {
   cumulativeRefundedQuantity?: number;
-  debts?: FinanceEconomyMarketplaceDurableMarketplaceRefundDebt[] | null;
+  debts?: Array<FinanceEconomyMarketplaceDurableMarketplaceRefundDebt> | null;
   entitlementStatus?: FinanceEconomyMarketplaceMarketplaceEntitlementStatus;
   isDuplicate?: boolean;
   journalHash?: string | null;
   journalSequence?: number;
-  legs?: FinanceEconomyContractsCoinAmount[] | null;
+  legs?: Array<FinanceEconomyContractsCoinAmount> | null;
   postingId?: FinanceEconomyContractsPostingId;
   quantity?: number;
   refundedAt?: string;
@@ -5479,7 +5920,7 @@ export interface FinanceEconomyMarketplaceDurableMarketplaceSettlementResult {
   isDuplicate?: boolean;
   journalHash?: string | null;
   journalSequence?: number;
-  legs?: FinanceEconomyMarketplaceMarketplacePriceLegSnapshot[] | null;
+  legs?: Array<FinanceEconomyMarketplaceMarketplacePriceLegSnapshot> | null;
   orderId?: string;
   postingId?: FinanceEconomyContractsPostingId;
   productId?: string;
@@ -5553,10 +5994,10 @@ export interface FinanceEconomyMarketplaceMarketplaceSettlementLegOperationalSta
 
 /** Data model for Finance Economy Marketplace Marketplace Settlement Operational Details. */
 export interface FinanceEconomyMarketplaceMarketplaceSettlementOperationalDetails {
-  events?: FinanceEconomyMarketplaceMarketplaceEventOperationalStatus[] | null;
-  legs?: FinanceEconomyMarketplaceMarketplaceSettlementLegOperationalStatus[] | null;
-  outbox?: FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus[] | null;
-  refunds?: FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus[] | null;
+  events?: Array<FinanceEconomyMarketplaceMarketplaceEventOperationalStatus> | null;
+  legs?: Array<FinanceEconomyMarketplaceMarketplaceSettlementLegOperationalStatus> | null;
+  outbox?: Array<FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus> | null;
+  refunds?: Array<FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus> | null;
   summary?: FinanceEconomyMarketplaceMarketplaceSettlementOperationalSummary;
 }
 
@@ -5592,7 +6033,7 @@ export type FinanceEconomyMarketplaceProductCurrencyMode = 'HardOnly' | 'SoftOnl
 
 /** Data model for Finance Economy Operations Economy Active Reserve Operational Details. */
 export interface FinanceEconomyOperationsEconomyActiveReserveOperationalDetails {
-  allocations?: FinanceEconomyOperationsEconomyReserveAssetAllocationOperationalStatus[] | null;
+  allocations?: Array<FinanceEconomyOperationsEconomyReserveAssetAllocationOperationalStatus> | null;
   head?: FinanceEconomyOperationsEconomyReserveOperationalStatus;
   reconciliation?: FinanceEconomyOperationsEconomyCustodyReconciliationOperationalStatus;
 }
@@ -5631,8 +6072,8 @@ export interface FinanceEconomyOperationsEconomyAnchorVerificationOperationalSta
 
 /** Data model for Finance Economy Operations Economy Capability Configuration Snapshot. */
 export interface FinanceEconomyOperationsEconomyCapabilityConfigurationSnapshot {
-  killSwitches?: FinanceEconomyOperationsEconomyKillSwitchOperationalStatus[] | null;
-  policies?: FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus[] | null;
+  killSwitches?: Array<FinanceEconomyOperationsEconomyKillSwitchOperationalStatus> | null;
+  policies?: Array<FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus> | null;
 }
 
 /** Data model for Finance Economy Operations Economy Capability Policy Operational Status. */
@@ -5716,7 +6157,7 @@ export interface FinanceEconomyOperationsEconomyKillSwitchOperationalStatus {
   epoch?: number;
   isActive?: boolean;
   reason?: string | null;
-  releaseApprovers?: string[] | null;
+  releaseApprovers?: Array<string> | null;
   releasedAt?: string | null;
   releaseProposedBy?: string | null;
   scope?: FinanceEconomyRiskEconomyKillSwitchScope;
@@ -5726,7 +6167,7 @@ export interface FinanceEconomyOperationsEconomyKillSwitchOperationalStatus {
 export interface FinanceEconomyOperationsEconomyLedgerHealthSnapshot {
   activeProjection?: FinanceEconomyOperationsEconomyProjectionOperationalStatus;
   activeReserve?: FinanceEconomyOperationsEconomyReserveOperationalStatus;
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   head?: FinanceEconomyOperationsEconomyJournalHeadStatus;
   isAnchorHealthy?: boolean;
   isJournalHealthy?: boolean;
@@ -5738,79 +6179,79 @@ export interface FinanceEconomyOperationsEconomyLedgerHealthSnapshot {
 
 /** Data model for Finance Economy Operations Economy Operational Page Ad Reward Pending Claim Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatus {
-  items?: FinanceEconomyAdRewardsAdRewardPendingClaimOperationalStatus[] | null;
+  items?: Array<FinanceEconomyAdRewardsAdRewardPendingClaimOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Ad Reward Reconciliation Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatus {
-  items?: FinanceEconomyAdRewardsAdRewardReconciliationOperationalStatus[] | null;
+  items?: Array<FinanceEconomyAdRewardsAdRewardReconciliationOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Ad Reward Session Operational Summary. */
 export interface FinanceEconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummary {
-  items?: FinanceEconomyAdRewardsAdRewardSessionOperationalSummary[] | null;
+  items?: Array<FinanceEconomyAdRewardsAdRewardSessionOperationalSummary> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Anchor Operational Details. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetails {
-  items?: FinanceEconomyOperationsEconomyAnchorOperationalDetails[] | null;
+  items?: Array<FinanceEconomyOperationsEconomyAnchorOperationalDetails> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Capability Policy Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatus {
-  items?: FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus[] | null;
+  items?: Array<FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Custody Observation Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatus {
-  items?: FinanceEconomyOperationsEconomyCustodyObservationOperationalStatus[] | null;
+  items?: Array<FinanceEconomyOperationsEconomyCustodyObservationOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Journal Verification Run Details. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetails {
-  items?: FinanceEconomyOperationsEconomyJournalVerificationRunDetails[] | null;
+  items?: Array<FinanceEconomyOperationsEconomyJournalVerificationRunDetails> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Projection Generation Operational Details. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetails {
-  items?: FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetails[] | null;
+  items?: Array<FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetails> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Reserve Proposal Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatus {
-  items?: FinanceEconomyOperationsEconomyReserveProposalOperationalStatus[] | null;
+  items?: Array<FinanceEconomyOperationsEconomyReserveProposalOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Legacy Economy Shadow Batch Summary. */
 export interface FinanceEconomyOperationsEconomyOperationalPageLegacyEconomyShadowBatchSummary {
-  items?: FinanceEconomyOperationsLegacyEconomyShadowBatchSummary[] | null;
+  items?: Array<FinanceEconomyOperationsLegacyEconomyShadowBatchSummary> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Marketplace Outbox Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatus {
-  items?: FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus[] | null;
+  items?: Array<FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Marketplace Refund Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatus {
-  items?: FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus[] | null;
+  items?: Array<FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus> | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Marketplace Settlement Operational Summary. */
 export interface FinanceEconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummary {
-  items?: FinanceEconomyMarketplaceMarketplaceSettlementOperationalSummary[] | null;
+  items?: Array<FinanceEconomyMarketplaceMarketplaceSettlementOperationalSummary> | null;
   nextCursor?: string | null;
 }
 
@@ -5942,7 +6383,7 @@ export interface FinanceEconomyOperationsLegacyEconomyShadowBatchView {
   transactionCount?: number;
   transactionSnapshotHash?: string | null;
   walletCount?: number;
-  wallets?: FinanceEconomyOperationsLegacyEconomyShadowWalletView[] | null;
+  wallets?: Array<FinanceEconomyOperationsLegacyEconomyShadowWalletView> | null;
   walletSnapshotHash?: string | null;
 }
 
@@ -6050,7 +6491,7 @@ export interface FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto {
 
 /** Data model for Finance Economy Projections Projection Generation State. */
 export interface FinanceEconomyProjectionsProjectionGenerationState {
-  approvedBy?: string[] | null;
+  approvedBy?: Array<string> | null;
   generation?: number;
   isActive?: boolean;
   journalHash?: string | null;
@@ -6143,7 +6584,7 @@ export type FinanceEconomyReservesReserveCoverageState = 'Covered' | 'Shortfall'
 
 /** Data model for Finance Economy Reserves Reserve Head. */
 export interface FinanceEconomyReservesReserveHead {
-  assetAllocations?: FinanceEconomyReservesExternalReserveAsset[] | null;
+  assetAllocations?: Array<FinanceEconomyReservesExternalReserveAsset> | null;
   authorizationEpoch?: number;
   coverage?: FinanceEconomyReservesReserveCoverageState;
   evidenceHash?: string | null;
@@ -6184,7 +6625,7 @@ export interface FinanceEconomyRiskCapabilityAuthorizationReceipt {
   actorId?: string;
   capability?: FinanceEconomyRiskEconomyValueMovementCapability;
   destinationHash?: string | null;
-  evidenceHashes?: string[] | null;
+  evidenceHashes?: Array<string> | null;
   expiresAt?: string;
   issuedAt?: string;
   jurisdictionCode?: string | null;
@@ -6197,7 +6638,7 @@ export interface FinanceEconomyRiskCapabilityAuthorizationReceipt {
   reserveVersion?: number;
   riskDecisionId?: string;
   signature?: string | null;
-  sourceRootHashes?: string[] | null;
+  sourceRootHashes?: Array<string> | null;
   subjectReference?: string | null;
   tenantId?: string;
 }
@@ -6222,7 +6663,7 @@ export interface FinanceEconomyRiskComplianceHold {
 /** Data model for Finance Economy Risk Compliance Hold Administration State. */
 export interface FinanceEconomyRiskComplianceHoldAdministrationState {
   hold?: FinanceEconomyRiskComplianceHold;
-  releaseApprovers?: string[] | null;
+  releaseApprovers?: Array<string> | null;
   releasePolicyEvidenceHash?: string | null;
   releaseProposedAt?: string | null;
   releaseProposedBy?: string | null;
@@ -6241,7 +6682,7 @@ export interface FinanceEconomyRiskComplianceHoldEvent {
 
 /** Data model for Finance Economy Risk Compliance Hold Page. */
 export interface FinanceEconomyRiskComplianceHoldPage {
-  items?: FinanceEconomyRiskComplianceHoldAdministrationState[] | null;
+  items?: Array<FinanceEconomyRiskComplianceHoldAdministrationState> | null;
   nextCursor?: string | null;
 }
 
@@ -6255,7 +6696,7 @@ export interface FinanceEconomyRiskComplianceHoldScope {
 
 /** Data model for Finance Economy Risk Economy Capability Evaluation Result. */
 export interface FinanceEconomyRiskEconomyCapabilityEvaluationResult {
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   isReady?: boolean;
   receipt?: FinanceEconomyRiskCapabilityAuthorizationReceipt;
   state?: FinanceEconomyRiskEconomyCapabilityReadinessStatus;
@@ -6318,7 +6759,7 @@ export interface FinanceEconomyRiskEconomyKillSwitchState {
   epoch?: number;
   isActive?: boolean;
   reason?: string | null;
-  releaseApprovers?: string[] | null;
+  releaseApprovers?: Array<string> | null;
   releasedAt?: string | null;
   releaseProposedAt?: string | null;
   releaseProposedBy?: string | null;
@@ -6352,7 +6793,7 @@ export type FinanceEconomyRiskRiskManualDecisionCode = 'EvidenceVerified' | 'Ris
 export interface FinanceEconomyRiskRiskReviewCase {
   id?: string;
   appealOf?: string | null;
-  approvers?: string[] | null;
+  approvers?: Array<string> | null;
   decisionId?: string;
   requiredApprovals?: number;
   resolution?: string | null;
@@ -6367,7 +6808,7 @@ export interface FinanceEconomyRiskRiskReviewCase {
 export interface FinanceEconomyRiskRiskReviewEvent {
   actorId?: string;
   decisionCode?: FinanceEconomyRiskRiskManualDecisionCode;
-  evidenceHashes?: string[] | null;
+  evidenceHashes?: Array<string> | null;
   kind?: FinanceEconomyRiskRiskReviewEventKind;
   occurredAt?: string;
   resolution?: string | null;
@@ -6380,7 +6821,7 @@ export type FinanceEconomyRiskRiskReviewEventKind = 'Submitted' | 'ApprovalRecor
 
 /** Data model for Finance Economy Risk Risk Review Page. */
 export interface FinanceEconomyRiskRiskReviewPage {
-  items?: FinanceEconomyRiskRiskReviewCase[] | null;
+  items?: Array<FinanceEconomyRiskRiskReviewCase> | null;
   nextCursor?: string | null;
 }
 
@@ -6425,7 +6866,7 @@ export interface FinanceEconomyTreasuryAdminWithdrawalAuditEvent {
 
 /** Data model for Finance Economy Treasury Admin Withdrawal Audit View. */
 export interface FinanceEconomyTreasuryAdminWithdrawalAuditView {
-  events?: FinanceEconomyTreasuryAdminWithdrawalAuditEvent[] | null;
+  events?: Array<FinanceEconomyTreasuryAdminWithdrawalAuditEvent> | null;
   integrityValid?: boolean;
   runId?: string;
 }
@@ -6496,9 +6937,9 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endDate: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -6563,9 +7004,9 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   feedback?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -6630,7 +7071,11 @@ export interface IdentityAuthenticationApiKeyDto {
   keyPrefix?: string | null;
   lastUsedAt?: string | null;
   name?: string | null;
-  scopes?: string[] | null;
+  /** Key replaced by this key (set when this key was issued by a rotation) */
+  replacesKeyId?: string | null;
+  /** When the rotation overlap window for this key ends (rotated keys only) */
+  rotationGraceEndsAt?: string | null;
+  scopes?: Array<string> | null;
   usageCount?: number;
 }
 
@@ -6643,7 +7088,7 @@ export interface IdentityAuthenticationAssignRoleToUserInput {
 
 /** Backup codes response */
 export interface IdentityAuthenticationBackupCodesOutput {
-  codes?: string[] | null;
+  codes?: Array<string> | null;
   generatedAt?: string;
 }
 
@@ -6683,7 +7128,7 @@ export interface IdentityAuthenticationBulkAssignRolesCommand {
   /** The role to assign to each user. */
   roleId?: string;
   /** Users receiving the role. Duplicate IDs are collapsed before processing. */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Outcome for a user in a bulk role assignment. */
@@ -6703,7 +7148,7 @@ export interface IdentityAuthenticationBulkRoleAssignmentResult {
   reactivated?: number;
   roleId?: string;
   totalRequested?: number;
-  users?: IdentityAuthenticationBulkRoleAssignmentItemResult[] | null;
+  users?: Array<IdentityAuthenticationBulkRoleAssignmentItemResult> | null;
 }
 
 /** Result status for one requested user. */
@@ -6776,7 +7221,7 @@ export interface IdentityAuthenticationCreateApiKeyCommand {
   expiresAt?: string | null;
   ipWhitelist?: string | null;
   name: string | null;
-  scopes: string[] | null;
+  scopes: Array<string> | null;
 }
 
 /** Data model for Identity Authentication Create Api Key Response. */
@@ -6787,14 +7232,14 @@ export interface IdentityAuthenticationCreateApiKeyOutput {
   expiresAt?: string | null;
   keyPrefix?: string | null;
   name?: string | null;
-  scopes?: string[] | null;
+  scopes?: Array<string> | null;
 }
 
 /** Request DTO for creating a new role */
 export interface IdentityAuthenticationCreateRoleInput {
   description?: string | null;
   name?: string | null;
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   tenantId?: string | null;
 }
 
@@ -7029,7 +7474,7 @@ export interface IdentityAuthenticationMfaConfigurationOutput {
   backupCodesIssued?: number | null;
   backupCodesRemaining?: number;
   enabledAt?: string | null;
-  enabledMethods?: string[] | null;
+  enabledMethods?: Array<string> | null;
   isEnabled?: boolean;
 }
 
@@ -7061,12 +7506,12 @@ export interface IdentityAuthenticationMfaMethodInfo {
 export interface IdentityAuthenticationMfaMethodsOutput {
   defaultMethod?: IdentityAuthenticationMfaMethod;
   /** List of all MFA methods */
-  methods: IdentityAuthenticationMfaMethodInfo[] | null;
+  methods: Array<IdentityAuthenticationMfaMethodInfo> | null;
 }
 
 /** Response of MFA setup operation */
 export interface IdentityAuthenticationMfaSetupOutput {
-  backupCodes?: string[] | null;
+  backupCodes?: Array<string> | null;
   errorMessage?: string | null;
   isSuccess?: boolean;
   qrCodeData?: string | null;
@@ -7197,6 +7642,30 @@ export interface IdentityAuthenticationRevokeRefreshTokenInput {
 /** Risk level for session security and anomaly detection */
 export type IdentityAuthenticationRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
+/** Data model for Identity Authentication Rotate Api Key Request. */
+export interface IdentityAuthenticationRotateApiKeyInput {
+  /** Optional absolute expiry for the replacement key; defaults to preserving the old key's expiry. */
+  expiresAt?: string | null;
+  /** Optional overlap window, in minutes, during which the old key keeps working;
+defaults to the configured rotation grace period. Zero revokes the old key immediately. */
+  gracePeriodMinutes?: number | null;
+  /** Optional display name for the replacement key; defaults to the old key's name. */
+  name?: string | null;
+  /** Optional scopes for the replacement key; defaults to the old key's scopes. */
+  scopes?: Array<string> | null;
+}
+
+/** Data model for Identity Authentication Rotate Api Key Response. */
+export interface IdentityAuthenticationRotateApiKeyOutput {
+  newKey?: IdentityAuthenticationCreateApiKeyOutput;
+  /** When the old key stops being honored (null when it was revoked immediately) */
+  oldKeyGraceEndsAt?: string | null;
+  /** The key that was rotated (now superseded) */
+  oldKeyId?: string;
+  /** Whether the old key was revoked immediately instead of getting an overlap window */
+  oldKeyRevoked?: boolean;
+}
+
 /** Request to manually rotate signing key */
 export interface IdentityAuthenticationRotateKeyInput {
   reason?: string | null;
@@ -7226,7 +7695,7 @@ export interface IdentityAuthenticationServiceAccountAuditEntry {
 
 /** Response for service account audit log. */
 export interface IdentityAuthenticationServiceAccountAuditLogOutput {
-  entries?: IdentityAuthenticationServiceAccountAuditEntry[] | null;
+  entries?: Array<IdentityAuthenticationServiceAccountAuditEntry> | null;
   page?: number;
   pageSize?: number;
   serviceAccountId?: string;
@@ -7284,10 +7753,10 @@ export interface IdentityAuthenticationSessionSecurityAnalysis {
   analyzedAt?: string;
   isSuspicious?: boolean;
   metadata?: Record<string, string> | null;
-  riskFactors?: string[] | null;
+  riskFactors?: Array<string> | null;
   riskLevel?: IdentityAuthenticationRiskLevel;
   riskScore?: number;
-  securityFlags?: string[] | null;
+  securityFlags?: Array<string> | null;
   sessionId?: string;
   totalDeviceCount?: number;
   unusualActivityDetected?: boolean;
@@ -7315,9 +7784,9 @@ export interface IdentityAuthenticationSignInOutput {
   /** When the access token expires (short-lived) */
   accessTokenExpiresAt?: string;
   /** Available step-up authentication methods */
-  availableMethods?: string[] | null;
+  availableMethods?: Array<string> | null;
   /** List of tenants the user has access to */
-  availableTenants?: TenantInfo[] | null;
+  availableTenants?: Array<TenantInfo> | null;
   /** User email */
   email?: string | null;
   /** Backward compatible field: originally represented refresh token expiry (or conflated); prefer using AccessTokenExpiresAt / RefreshTokenExpiresAt. */
@@ -7339,7 +7808,7 @@ export interface IdentityAuthenticationSignInOutput {
   /** Whether step-up authentication is required due to high-risk login */
   requiresStepUp?: boolean;
   /** List of risk factors detected */
-  riskFactors?: string[] | null;
+  riskFactors?: Array<string> | null;
   riskLevel?: IdentityAuthenticationRiskLevel;
   /** Session ID */
   sessionId?: string;
@@ -7412,7 +7881,7 @@ export interface IdentityAuthenticationUpdateRoleInput {
   description?: string | null;
   isActive?: boolean | null;
   name?: string | null;
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
 }
 
 /** Request to update scopes. */
@@ -7530,21 +7999,44 @@ export interface IdentityAuthenticationWebAuthnCredentialInfo {
   authenticatorType?: IdentityAuthenticationWebAuthnAuthenticatorType;
   backedUp?: boolean;
   createdAt?: string;
+  /** When the credential was temporarily deactivated, if applicable. */
+  deactivatedAt?: string | null;
   friendlyName?: string | null;
   isDefault?: boolean;
   isPasswordless?: boolean;
   lastUsedAt?: string | null;
+  /** When the credential was revoked (terminal), if applicable. */
+  revokedAt?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+}
+
+/** Lifecycle status of a WebAuthn credential. */
+export type IdentityAuthenticationWebAuthnCredentialStatus = 'Active' | 'Deactivated' | 'Revoked';
+
+/** Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+export interface IdentityAuthenticationWebAuthnCredentialTransitionResult {
+  /** Machine-readable failure reason (`CredentialNotFound`, `InvalidTransition`)
+or `null` on success. */
+  error?: string | null;
+  /** Human-readable explanation of the failure, or `null` on success. */
+  errorDescription?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+  /** Whether the requested transition was applied. */
+  success?: boolean;
 }
 
 /** Result of verifying a WebAuthn credential. */
 export interface IdentityAuthenticationWebAuthnCredentialVerifyResult {
   error?: string | null;
+  /** Whether the credential is temporarily deactivated (reversible, unlike revocation). */
+  isDeactivated?: boolean;
   isExpired?: boolean;
   isRevoked?: boolean;
   isValid?: boolean;
   lastUsedAt?: string | null;
   /** Signature counter for replay attack protection (increases with each use). */
   signatureCount?: number;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
   success?: boolean;
 }
 
@@ -7595,7 +8087,7 @@ export interface IdentityAuthorizationAccessReviewCampaign {
   createdBy?: string;
   description?: string | null;
   endDate?: string;
-  items?: IdentityAuthorizationAccessReviewItem[] | null;
+  items?: Array<IdentityAuthorizationAccessReviewItem> | null;
   name?: string | null;
   notificationTemplate?: string | null;
   reminderFrequencyDays?: number;
@@ -7662,7 +8154,7 @@ export interface IdentityAuthorizationCommandsCreateAccessReviewCampaignCommand 
 
 /** Command to create a new SoD rule */
 export interface IdentityAuthorizationCommandsCreateSoDRuleCommand {
-  conflictingPermissions?: string[] | null;
+  conflictingPermissions?: Array<string> | null;
   description?: string | null;
   isEnabled?: boolean;
   name?: string | null;
@@ -7676,7 +8168,7 @@ export interface IdentityAuthorizationCommandsDelegatePermissionsCommand {
   delegateUserId?: string;
   delegatorUserId?: string;
   expiresAt?: string | null;
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   reason?: string | null;
   resourceId?: string | null;
   tenantId?: string | null;
@@ -7686,10 +8178,10 @@ export interface IdentityAuthorizationCommandsDelegatePermissionsCommand {
 /** Command to grant delegated admin scope */
 export interface IdentityAuthorizationCommandsGrantDelegatedAdminCommand {
   adminUserId?: string;
-  allowedOperations?: string[] | null;
+  allowedOperations?: Array<string> | null;
   description?: string | null;
-  managedResourceTypes?: string[] | null;
-  managedUserIds?: string[] | null;
+  managedResourceTypes?: Array<string> | null;
+  managedUserIds?: Array<string> | null;
   name?: string | null;
   organizationalUnitId?: string | null;
   tenantId?: string | null;
@@ -7757,7 +8249,7 @@ export interface IdentityAuthorizationControllersRevokeItemInput {
 
 /** Data model for Identity Authorization Controllers Update So DRule Request. */
 export interface IdentityAuthorizationControllersUpdateSoDRuleInput {
-  conflictingPermissions?: string[] | null;
+  conflictingPermissions?: Array<string> | null;
   description?: string | null;
   isEnabled?: boolean;
   name?: string | null;
@@ -7807,7 +8299,7 @@ export interface IdentityAuthorizationDenyTenantPermissionCommand {
   /** Gets the ID of the user denying the permissions. */
   deniedBy: string;
   /** Gets the permissions to deny. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the optional reason for denying permissions. */
   reason?: string | null;
   tenantId: CQRSModelsTenantId;
@@ -7834,7 +8326,7 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
   /** Gets whether the user is the owner of the resource. */
   isOwner?: boolean;
   /** Gets the list of effective permissions. */
-  permissions: IdentityAuthorizationEffectivePermissionDto[] | null;
+  permissions: Array<IdentityAuthorizationEffectivePermissionDto> | null;
   /** Gets the resource ID. */
   resourceId: string;
   /** Gets the resource type. */
@@ -7846,9 +8338,94 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
 /** Status of JIT elevation request */
 export type IdentityAuthorizationElevationRequestStatus = 'None' | 'Pending' | 'Approved' | 'Denied' | 'Active' | 'Expired' | 'Revoked';
 
+/** A tenant permission grant that is about to expire. */
+export interface IdentityAuthorizationExpiringTenantPermission {
+  /** Gets the expiration instant. */
+  expiresAt: string;
+  /** Gets the grant ID. */
+  permissionId: string;
+  /** Gets the grant's permission strings. */
+  permissions: Array<string> | null;
+  /** Gets the user ID the grant belongs to (null for tenant defaults). */
+  userId?: string | null;
+}
+
+/** Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+export interface IdentityAuthorizationExtendTenantPermissionExpirationCommand {
+  /** Gets the positive extension period. */
+  extension: string;
+  /** Gets the IDs of the permission grants to extend. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Permission entry in the sync contract (one TenantPermission row). */
+export interface IdentityAuthorizationExternalPermissionEntry {
+  /** Denied permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Whether the entry is active. */
+  isActive?: boolean;
+  /** Allowed permissions. */
+  permissions?: Array<string> | null;
+  /** Subject user (null = tenant defaults). */
+  userId?: string | null;
+}
+
+/** Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+export interface IdentityAuthorizationExternalPermissionSyncDocument {
+  /** When the document was produced. */
+  exportedAtUtc?: string;
+  /** Permission entries (tenant defaults and user grants) to synchronize. */
+  permissions?: Array<IdentityAuthorizationExternalPermissionEntry> | null;
+  /** Role definitions to synchronize. */
+  roles?: Array<IdentityAuthorizationExternalRoleDefinition> | null;
+  /** Contract version; the only supported value is `1.0`. */
+  schemaVersion?: string | null;
+  /** Tenant scope of the document (null = global, system-admin only). */
+  tenantId?: string | null;
+}
+
+/** Role definition in the sync contract. */
+export interface IdentityAuthorizationExternalRoleDefinition {
+  /** Additional parent role names (multi-parent inheritance, issue #358). */
+  additionalParentRoleNames?: Array<string> | null;
+  /** Inherited permissions the role opts out of (selective blocking, issue #358). */
+  blockedInheritedPermissions?: Array<string> | null;
+  /** Directly assigned deny permissions (DENY-WINS). */
+  denyPermissions?: Array<string> | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Display name. */
+  displayName?: string | null;
+  /** Whether the role is active. */
+  isActive?: boolean;
+  /** Unique role name within the tenant scope. */
+  name?: string | null;
+  /** Primary parent role name (optional). */
+  parentRoleName?: string | null;
+  /** Directly assigned allow permissions. */
+  permissions?: Array<string> | null;
+  /** Conflict-resolution priority. */
+  priority?: number;
+}
+
+/** Response containing grants that are about to expire in a tenant. */
+export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
+  /** Gets the grants expiring within the requested window, ordered by expiration instant. */
+  expiring: Array<IdentityAuthorizationExpiringTenantPermission> | null;
+  /** Gets the tenant ID. */
+  tenantId: string;
+}
+
 /** Response containing pending invitations for the current user. */
 export interface IdentityAuthorizationGetPendingResourceInvitationsOutput {
-  invitations: IdentityAuthorizationResourceInvitationDto[] | null;
+  invitations: Array<IdentityAuthorizationResourceInvitationDto> | null;
   totalCount?: number;
 }
 
@@ -7868,7 +8445,7 @@ export interface IdentityAuthorizationGetResourceUsersOutput {
   /** Gets the total count of users. */
   totalCount?: number;
   /** Gets the list of users with access. */
-  users: IdentityAuthorizationResourceUser[] | null;
+  users: Array<IdentityAuthorizationResourceUser> | null;
 }
 
 /** Response containing tenant permissions for a user. */
@@ -7878,7 +8455,7 @@ export interface IdentityAuthorizationGetTenantPermissionsOutput {
   /** Gets whether the user is a tenant admin. */
   isTenantAdmin?: boolean;
   /** Gets the list of permissions. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the tenant ID. */
   tenantId: string;
   /** Gets the user ID. */
@@ -7892,7 +8469,7 @@ export interface IdentityAuthorizationGrantTenantPermissionCommand {
   /** Gets the ID of the user granting the permissions. */
   grantedBy: string;
   /** Gets the permissions to grant. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the optional reason for granting permissions. */
   reason?: string | null;
   tenantId: CQRSModelsTenantId;
@@ -7918,6 +8495,15 @@ export interface IdentityAuthorizationHasPermissionOutput {
 
 /** Impact severity level */
 export type IdentityAuthorizationImpactSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** Request body for the permission sync import endpoint. */
+export interface IdentityAuthorizationImportPermissionSyncInput {
+  document?: IdentityAuthorizationExternalPermissionSyncDocument;
+  /** Validate and report without applying. */
+  dryRun?: boolean;
+  /** Optional target tenant (null/empty = global scope, system admins only). */
+  tenantId?: string | null;
+}
 
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
@@ -7958,12 +8544,12 @@ export interface IdentityAuthorizationJitElevationInput {
 /** Data model for Identity Authorization Permission Analytics Report. */
 export interface IdentityAuthorizationPermissionAnalyticsReport {
   activeUsers?: number;
-  anomalies?: IdentityAuthorizationPermissionAnomaly[] | null;
+  anomalies?: Array<IdentityAuthorizationPermissionAnomaly> | null;
   periodEnd?: string;
   periodStart?: string;
   tenantId?: string | null;
-  topPermissions?: IdentityAuthorizationPermissionUsageMetrics[] | null;
-  topUsers?: IdentityAuthorizationUserActivitySummary[] | null;
+  topPermissions?: Array<IdentityAuthorizationPermissionUsageMetrics> | null;
+  topUsers?: Array<IdentityAuthorizationUserActivitySummary> | null;
   totalGrants?: number;
   totalRevokes?: number;
 }
@@ -7977,13 +8563,61 @@ export interface IdentityAuthorizationPermissionAnomaly {
   userId?: string;
 }
 
+/** Allow/deny rates for one reporting dimension value. */
+export interface IdentityAuthorizationPermissionComplianceBreakdown {
+  /** Allow outcomes. */
+  allow?: number;
+  /** Allow share for this value (0-1). */
+  allowRate?: number;
+  /** Deny outcomes. */
+  deny?: number;
+  /** Deny share for this value (0-1). */
+  denyRate?: number;
+  /** Error outcomes. */
+  error?: number;
+  /** The dimension value (permission, source surface or operation). */
+  key?: string | null;
+  /** Evaluations for this value. */
+  total?: number;
+}
+
+/** Compliance report over recorded permission evaluations. */
+export interface IdentityAuthorizationPermissionComplianceReport {
+  /** Evaluations with outcome Allow. */
+  allowCount?: number;
+  /** Share of evaluations that allowed (0-1). Denominator excludes nothing. */
+  allowRate?: number;
+  /** Effectiveness breakdown per triggering operation (when recorded). */
+  byOperation?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluated permission. */
+  byPermission?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Effectiveness breakdown per evaluation surface (the layer that reported the evaluation, e.g. `graphql`). */
+  bySource?: Array<IdentityAuthorizationPermissionComplianceBreakdown> | null;
+  /** Evaluations with outcome Deny. */
+  denyCount?: number;
+  /** Share of evaluations that denied (0-1). */
+  denyRate?: number;
+  /** Evaluations with outcome Error (failed closed). */
+  errorCount?: number;
+  /** Share of evaluations that errored and failed closed (0-1). */
+  errorRate?: number;
+  /** Inclusive range start. */
+  fromUtc?: string;
+  /** Tenant scope of the report (null = global report). */
+  tenantId?: string | null;
+  /** Recorded evaluations in range. */
+  totalEvaluations?: number;
+  /** Inclusive range end. */
+  toUtc?: string;
+}
+
 /** Permission delegation allows users to delegate their permissions to other users */
 export interface IdentityAuthorizationPermissionDelegation {
   id?: string;
   canSubDelegate?: boolean;
   conditions?: string | null;
   createdAt?: string;
-  delegatedPermissions?: string[] | null;
+  delegatedPermissions?: Array<string> | null;
   delegateUserId?: string;
   delegatorUserId?: string;
   expiresAt?: string | null;
@@ -7995,6 +8629,42 @@ export interface IdentityAuthorizationPermissionDelegation {
   updatedAt?: string | null;
   usageCount?: number;
   usageLimit?: number | null;
+}
+
+/** Result of a permission restoration attempt. */
+export interface IdentityAuthorizationPermissionRestorationResult {
+  /** Human-readable outcome description. */
+  message?: string | null;
+  /** The affected TenantPermission id (when known). */
+  restoredPermissionId?: string | null;
+  /** Whether the restoration was applied. */
+  succeeded?: boolean;
+  /** Tenant scope of the restoration (from the restored/undone record, never from the caller). */
+  tenantId?: string | null;
+}
+
+/** One planned change of a synchronization import. */
+export interface IdentityAuthorizationPermissionSyncChange {
+  /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
+  kind?: string | null;
+  /** The permissions or role fields involved. */
+  payload?: Record<string, string> | null;
+  /** Human-readable target description (role name or user id). */
+  target?: string | null;
+}
+
+/** Result of a synchronization import (or dry-run preview). */
+export interface IdentityAuthorizationPermissionSyncImportResult {
+  /** True when the plan was actually applied (false for dry-runs and invalid documents). */
+  applied?: boolean;
+  /** The planned changes (the full plan when valid). */
+  changes?: Array<IdentityAuthorizationPermissionSyncChange> | null;
+  /** True when this was a dry-run. */
+  dryRun?: boolean;
+  /** False when validation failed — nothing was applied (fail-closed). */
+  isValid?: boolean;
+  /** Validation problems (empty when valid). */
+  validationErrors?: Array<string> | null;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -8116,7 +8786,7 @@ export type IdentityAuthorizationPermissionType =
 export interface IdentityAuthorizationPermissionUpdateResult {
   errorMessage?: string | null;
   success?: boolean;
-  updatedPermissions?: string[] | null;
+  updatedPermissions?: Array<string> | null;
   userId?: string;
 }
 
@@ -8131,7 +8801,7 @@ export interface IdentityAuthorizationPermissionUsageMetrics {
 /** Command to remove deny entries from a user's permissions. */
 export interface IdentityAuthorizationRemoveDenyPermissionsCommand {
   /** Gets the deny permissions to remove. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the ID of the user removing the deny permissions. */
   removedBy: string;
   tenantId: CQRSModelsTenantId;
@@ -8177,7 +8847,7 @@ export interface IdentityAuthorizationResourceInvitationDto {
   /** Optional invitation message. */
   message?: string | null;
   /** The permissions to be granted when accepted. */
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   /** The shared resource identifier. */
   resourceId?: string | null;
   /** The shared resource type. */
@@ -8203,7 +8873,7 @@ export interface IdentityAuthorizationResourceUser {
   /** Gets when the user last accessed the resource. */
   lastAccessedAt?: string | null;
   /** Gets the permissions the user has. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the resource ID. */
   resourceId: string | null;
   /** Gets the resource type. */
@@ -8215,7 +8885,7 @@ export interface IdentityAuthorizationResourceUser {
 /** Command to revoke tenant-level permissions from a user. */
 export interface IdentityAuthorizationRevokeTenantPermissionCommand {
   /** Gets the permissions to revoke. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the optional reason for revoking permissions. */
   reason?: string | null;
   /** Gets the ID of the user revoking the permissions. */
@@ -8229,7 +8899,7 @@ export interface IdentityAuthorizationRevokeTenantPermissionCommand {
 These are baseline permissions applied to all users across all tenants. */
 export interface IdentityAuthorizationSetGlobalDefaultPermissionsCommand {
   /** Gets the permissions to set as global defaults. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
 }
@@ -8238,9 +8908,21 @@ export interface IdentityAuthorizationSetGlobalDefaultPermissionsCommand {
 These are baseline permissions applied to all users in a specific tenant. */
 export interface IdentityAuthorizationSetTenantDefaultPermissionsCommand {
   /** Gets the permissions to set as tenant defaults. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+export interface IdentityAuthorizationSetTenantPermissionExpirationCommand {
+  /** Gets the new expiration instant (null = permanent). */
+  expiresAt?: string | null;
+  /** Gets the IDs of the permission grants to update. */
+  permissionIds: Array<string> | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
   tenantId: CQRSModelsTenantId;
 }
 
@@ -8255,7 +8937,7 @@ export interface IdentityAuthorizationShareResourceCommand {
   /** Gets whether to notify users about the share via email/notification. */
   notifyUsers?: boolean;
   /** Gets the permissions to grant to the users. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets whether the users must accept the share before gaining access. */
   requireAcceptance?: boolean;
   /** Gets the ID of the resource being shared. */
@@ -8264,9 +8946,9 @@ export interface IdentityAuthorizationShareResourceCommand {
   resourceType: string | null;
   tenantId: CQRSModelsTenantId;
   /** Gets the email addresses of users to share with (alternative to UserIds). */
-  userEmails?: string[] | null;
+  userEmails?: Array<string> | null;
   /** Gets the IDs of users to share the resource with. */
-  userIds: string[] | null;
+  userIds: Array<string> | null;
 }
 
 /** Result of sharing a resource. */
@@ -8305,7 +8987,7 @@ export interface IdentityAuthorizationSoDRule {
   tenantId?: CQRSModelsTenantId;
   updatedAt?: string | null;
   violationCount?: number;
-  violations?: IdentityAuthorizationSoDViolation[] | null;
+  violations?: Array<IdentityAuthorizationSoDViolation> | null;
 }
 
 /** Type of SoD rule */
@@ -8347,7 +9029,7 @@ export interface IdentityAuthorizationUpdateUserPermissionsCommand {
   /** Gets the optional expiration date for the permissions. */
   expiresAt?: string | null;
   /** Gets the new set of permissions to grant to the user. */
-  permissions: string[] | null;
+  permissions: Array<string> | null;
   /** Gets the ID of the resource. */
   resourceId: string | null;
   /** Gets the type of resource. */
@@ -8398,12 +9080,12 @@ export interface IdentityTenantsArchiveInput {
 
 /** Command to perform bulk activation of tenants */
 export interface IdentityTenantsBulkActivateTenantsCommand {
-  tenantIds?: string[] | null;
+  tenantIds?: Array<string> | null;
 }
 
 /** Command to perform bulk archival of tenants */
 export interface IdentityTenantsBulkArchiveTenantsCommand {
-  tenantIds?: string[] | null;
+  tenantIds?: Array<string> | null;
 }
 
 /** Data for a single tenant to create in a bulk operation */
@@ -8421,30 +9103,30 @@ export interface IdentityTenantsBulkCreateTenantItem {
 /** Command to create multiple tenants at once */
 export interface IdentityTenantsBulkCreateTenantsCommand {
   /** Collection of tenant data to create */
-  tenants?: IdentityTenantsBulkCreateTenantItem[] | null;
+  tenants?: Array<IdentityTenantsBulkCreateTenantItem> | null;
 }
 
 /** Command to perform bulk deactivation of tenants */
 export interface IdentityTenantsBulkDeactivateTenantsCommand {
-  tenantIds?: string[] | null;
+  tenantIds?: Array<string> | null;
 }
 
 /** Command to perform bulk deletion of tenants */
 export interface IdentityTenantsBulkDeleteTenantsCommand {
   hardDelete?: boolean;
-  tenantIds?: string[] | null;
+  tenantIds?: Array<string> | null;
 }
 
 /** Command to permanently purge multiple tenants (irreversible hard delete) */
 export interface IdentityTenantsBulkPurgeTenantsCommand {
   /** Collection of tenant IDs to permanently delete */
-  tenantIds?: string[] | null;
+  tenantIds?: Array<string> | null;
 }
 
 /** Command to restore multiple soft-deleted tenants at once */
 export interface IdentityTenantsBulkUndeleteTenantsCommand {
   /** Collection of tenant IDs to restore */
-  tenantIds?: string[] | null;
+  tenantIds?: Array<string> | null;
 }
 
 /** Data for a single tenant update in a bulk operation */
@@ -8460,7 +9142,7 @@ export interface IdentityTenantsBulkUpdateTenantItem {
 /** Command to update multiple tenants at once */
 export interface IdentityTenantsBulkUpdateTenantsCommand {
   /** Collection of tenant updates */
-  updates?: IdentityTenantsBulkUpdateTenantItem[] | null;
+  updates?: Array<IdentityTenantsBulkUpdateTenantItem> | null;
 }
 
 /** Request model for creating a tenant */
@@ -8478,7 +9160,7 @@ export interface IdentityTenantsCreateTenantInput {
 /** Response containing all tenant memberships for a user. */
 export interface IdentityTenantsGetUserMembershipsOutput {
   /** List of tenant memberships the user belongs to */
-  memberships?: IdentityTenantsUserMembershipDto[] | null;
+  memberships?: Array<IdentityTenantsUserMembershipDto> | null;
   /** Total count of memberships */
   totalCount?: number;
 }
@@ -8506,7 +9188,7 @@ export interface IdentityTenantsReplaceTenantMetadataInput {
   /** Complete set of external references */
   externalReferences?: Record<string, string> | null;
   /** Complete set of tags */
-  tags?: string[] | null;
+  tags?: Array<string> | null;
 }
 
 /** Request model for replacing tenant settings */
@@ -8539,7 +9221,7 @@ export interface IdentityTenantsSetTenantMembershipStatusOutput {
 export interface IdentityTenantsSlugValidation {
   isAvailable?: boolean;
   isValid?: boolean;
-  suggestedAlternatives?: string[] | null;
+  suggestedAlternatives?: Array<string> | null;
 }
 
 /** Represents a tenant in a multi-tenant system.
@@ -8566,10 +9248,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Description of the tenant */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Checks if the tenant has any active members. */
   hasActiveMembers?: boolean;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this tenant is currently active */
   isActive?: boolean;
   /** Whether this tenant is archived (distinct from deleted) */
@@ -8587,17 +9269,17 @@ PostgreSQL filtered unique index ensures only one tenant can be default */
   /** Slug for the tenant (URL-friendly unique identifier) */
   slug: string;
   /** Navigation property to tenant domains */
-  tenantDomains?: IdentityTenantsTenantDomain[] | null;
+  tenantDomains?: Array<IdentityTenantsTenantDomain> | null;
   tenantId?: string | null;
   /** Navigation property to tenant members */
-  tenantMembers?: IdentityTenantsTenantMember[] | null;
+  tenantMembers?: Array<IdentityTenantsTenantMember> | null;
   tenantSettings?: IdentityTenantsTenantSettings;
   tenantStatistics?: IdentityTenantsTenantStatistics;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
   /** Navigation property to usage tracking records */
-  usageTrackingRecords?: IdentityTenantsUsageTracking[] | null;
+  usageTrackingRecords?: Array<IdentityTenantsUsageTracking> | null;
   /** Version number for optimistic concurrency control.
 Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
 Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
@@ -8652,7 +9334,7 @@ export interface IdentityTenantsTenantBrandingDto {
 /** Business information data transfer object for tenant classification */
 export interface IdentityTenantsTenantBusinessInfoDto {
   /** Compliance and regulatory requirements */
-  complianceRequirements?: string[] | null;
+  complianceRequirements?: Array<string> | null;
   /** Geographic location and regulatory information */
   geographicRegion?: string | null;
   /** Industry sector and vertical market */
@@ -8714,10 +9396,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Gets the full domain string including subdomain if present */
   fullDomain?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -8765,7 +9447,7 @@ export interface IdentityTenantsTenantMember {
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
   /** Collection of child members in the organizational hierarchy. */
-  childMembers?: IdentityTenantsTenantMember[] | null;
+  childMembers?: Array<IdentityTenantsTenantMember> | null;
   /** Timestamp when the entity was created.
 Protected setter prevents modification after initial creation; EF Core uses backing field. */
   createdAt: string;
@@ -8773,8 +9455,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this membership is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -8824,7 +9506,7 @@ export interface IdentityTenantsTenantMetadataDto {
   /** External system identifiers and references */
   externalReferences?: Record<string, string> | null;
   /** Collection of tags for categorization and filtering */
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   /** Timestamp when the metadata was last updated */
   updatedAt?: string;
 }
@@ -8834,7 +9516,7 @@ export interface IdentityTenantsTenantSecuritySettingsDto {
   /** API rate limiting settings */
   apiRateLimits?: Record<string, number> | null;
   /** IP address whitelist for access control */
-  ipWhitelist?: string[] | null;
+  ipWhitelist?: Array<string> | null;
   /** Password requirements and policies */
   passwordPolicy?: Record<string, Record<string, unknown> | null> | null;
   /** Session timeout settings */
@@ -8866,12 +9548,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Enable/disable API access for this tenant */
   enableApiAccess?: boolean;
   /** Enable/disable audit logging for this tenant */
   enableAuditLogging?: boolean;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Integration settings (JSON)
 Stores external service configuration, API keys, and SSO settings. */
   integrationSettingsJson?: string | null;
@@ -8941,10 +9623,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Number of inactive members */
   inactiveMembers?: number;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9023,11 +9705,11 @@ export interface IdentityTenantsTenantValidationError {
 
 /** Tenant validation response */
 export interface IdentityTenantsTenantValidationOutput {
-  errors?: IdentityTenantsTenantValidationError[] | null;
+  errors?: Array<IdentityTenantsTenantValidationError> | null;
   isValid?: boolean;
   slugValidation?: IdentityTenantsSlugValidation;
-  suggestions?: string[] | null;
-  warnings?: IdentityTenantsTenantValidationWarning[] | null;
+  suggestions?: Array<string> | null;
+  warnings?: Array<IdentityTenantsTenantValidationWarning> | null;
 }
 
 /** Validation warning detail */
@@ -9068,7 +9750,7 @@ export interface IdentityTenantsUpdateTenantBrandingInput {
 /** Request model for updating tenant business information */
 export interface IdentityTenantsUpdateTenantBusinessInfoInput {
   /** Compliance requirements */
-  complianceRequirements?: string[] | null;
+  complianceRequirements?: Array<string> | null;
   /** Geographic region */
   geographicRegion?: string | null;
   /** Industry sector */
@@ -9170,7 +9852,7 @@ export interface IdentityTenantsUpdateTenantMetadataInput {
   /** External references to update */
   externalReferences?: Record<string, string> | null;
   /** Tags to add or update */
-  tags?: string[] | null;
+  tags?: Array<string> | null;
 }
 
 /** Request model for updating security settings */
@@ -9178,7 +9860,7 @@ export interface IdentityTenantsUpdateTenantSecuritySettingsInput {
   /** API rate limits to update */
   apiRateLimits?: Record<string, number> | null;
   /** IP whitelist to update */
-  ipWhitelist?: string[] | null;
+  ipWhitelist?: Array<string> | null;
   /** Password policy to update */
   passwordPolicy?: Record<string, Record<string, unknown> | null> | null;
   /** Session timeout to update */
@@ -9231,7 +9913,7 @@ export interface IdentityTenantsUpdateTenantSystemLimitsInput {
 /** Request model for updating tenant tags */
 export interface IdentityTenantsUpdateTenantTagsInput {
   /** List of tags to set */
-  tags?: string[] | null;
+  tags?: Array<string> | null;
 }
 
 /** Request model for updating UI settings */
@@ -9276,8 +9958,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9358,56 +10040,56 @@ export interface IdentityTenantsValidateTenantInput {
 /** Request model for bulk activating users via API */
 export interface IdentityUsersBulkActivateUsersInput {
   /** Collection of user IDs to activate */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Response of bulk activate users operation */
 export interface IdentityUsersBulkActivateUsersOutput {
   /** Successfully activated users */
-  activatedUsers?: IdentityUsersUserDto[] | null;
+  activatedUsers?: Array<IdentityUsersUserDto> | null;
   /** User IDs that failed to activate */
-  failedUserIds?: string[] | null;
+  failedUserIds?: Array<string> | null;
 }
 
 /** Request model for bulk creating users via API */
 export interface IdentityUsersBulkCreateUsersInput {
   /** Collection of users to create */
-  users?: IdentityUsersCreateUserRequestItem[] | null;
+  users?: Array<IdentityUsersCreateUserRequestItem> | null;
 }
 
 /** Response of bulk create users operation */
 export interface IdentityUsersBulkCreateUsersOutput {
   /** Successfully created user IDs */
-  createdUserIds?: string[] | null;
+  createdUserIds?: Array<string> | null;
   /** Email addresses that failed to create */
-  failedEmails?: string[] | null;
+  failedEmails?: Array<string> | null;
 }
 
 /** Request model for bulk deactivating users via API */
 export interface IdentityUsersBulkDeactivateUsersInput {
   /** Collection of user IDs to deactivate */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Response of bulk deactivate users operation */
 export interface IdentityUsersBulkDeactivateUsersOutput {
   /** Successfully deactivated users */
-  deactivatedUsers?: IdentityUsersUserDto[] | null;
+  deactivatedUsers?: Array<IdentityUsersUserDto> | null;
   /** User IDs that failed to deactivate */
-  failedUserIds?: string[] | null;
+  failedUserIds?: Array<string> | null;
 }
 
 /** Request model for bulk deleting users via API */
 export interface IdentityUsersBulkDeleteUsersInput {
   /** Collection of user IDs to delete */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Request model for bulk notification operations */
 export interface IdentityUsersBulkNotificationInput {
   filterCriteria?: IdentityUsersNotificationFilterCriteria;
   /** IDs of notifications to operate on */
-  notificationIds?: string[] | null;
+  notificationIds?: Array<string> | null;
   /** Operation to perform */
   operation?: string | null;
 }
@@ -9416,55 +10098,55 @@ export interface IdentityUsersBulkNotificationInput {
 export interface IdentityUsersBulkPurgeUsersInput {
   strategy?: IdentityUsersPurgeStrategy;
   /** Collection of user IDs to permanently delete */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Request model for bulk restore users operation */
 export interface IdentityUsersBulkRestoreUsersInput {
   /** Collection of user IDs to restore */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Response of bulk restore users operation */
 export interface IdentityUsersBulkRestoreUsersOutput {
   /** User IDs that failed to restore */
-  failedUserIds?: string[] | null;
+  failedUserIds?: Array<string> | null;
   /** Successfully restored users */
-  restoredUsers?: IdentityUsersUserDto[] | null;
+  restoredUsers?: Array<IdentityUsersUserDto> | null;
 }
 
 /** Request model for bulk suspending users via API */
 export interface IdentityUsersBulkSuspendUsersInput {
   /** Collection of user IDs to suspend */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Response of bulk suspend users operation */
 export interface IdentityUsersBulkSuspendUsersOutput {
   /** User IDs that failed to suspend */
-  failedUserIds?: string[] | null;
+  failedUserIds?: Array<string> | null;
   /** Successfully suspended users */
-  suspendedUsers?: IdentityUsersUserDto[] | null;
+  suspendedUsers?: Array<IdentityUsersUserDto> | null;
 }
 
 /** Request model for bulk unsuspending users via API */
 export interface IdentityUsersBulkUnsuspendUsersInput {
   /** Collection of user IDs to unsuspend */
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Response of bulk unsuspend users operation */
 export interface IdentityUsersBulkUnsuspendUsersOutput {
   /** User IDs that failed to unsuspend */
-  failedUserIds?: string[] | null;
+  failedUserIds?: Array<string> | null;
   /** Successfully unsuspended users */
-  unsuspendedUsers?: IdentityUsersUserDto[] | null;
+  unsuspendedUsers?: Array<IdentityUsersUserDto> | null;
 }
 
 /** Request model for bulk updating users via API */
 export interface IdentityUsersBulkUpdateUsersInput {
   /** Collection of user updates */
-  updates?: IdentityUsersUpdateUserRequestItem[] | null;
+  updates?: Array<IdentityUsersUpdateUserRequestItem> | null;
 }
 
 /** Request model for creating a user via API */
@@ -9504,7 +10186,7 @@ export interface IdentityUsersNotificationActionDto {
 /** Filter criteria for notifications */
 export interface IdentityUsersNotificationFilterCriteria {
   /** Filter by categories */
-  categories?: string[] | null;
+  categories?: Array<string> | null;
   /** Filter by creation date from */
   dateFrom?: string | null;
   /** Filter by creation date to */
@@ -9514,9 +10196,9 @@ export interface IdentityUsersNotificationFilterCriteria {
   /** Filter by read status */
   isRead?: boolean | null;
   /** Filter by priorities */
-  priorities?: string[] | null;
+  priorities?: Array<string> | null;
   /** Filter by types */
-  types?: string[] | null;
+  types?: Array<string> | null;
 }
 
 /** Notification priority levels */
@@ -9547,7 +10229,7 @@ export interface IdentityUsersReplaceUserMetadataInput {
   /** Complete set of external references */
   externalReferences?: Record<string, string> | null;
   /** Complete set of tags */
-  tags?: string[] | null;
+  tags?: Array<string> | null;
 }
 
 /** Request model for replacing user notification preferences */
@@ -9627,9 +10309,9 @@ export interface IdentityUsersUpdateUserMetadataInput {
   /** External references to update */
   externalReferences?: Record<string, string> | null;
   /** Tags to add to the user */
-  tagsToAdd?: string[] | null;
+  tagsToAdd?: Array<string> | null;
   /** Tags to remove from the user */
-  tagsToRemove?: string[] | null;
+  tagsToRemove?: Array<string> | null;
 }
 
 /** Request model for updating user notification preferences */
@@ -9709,12 +10391,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Email address of the user (unique) */
   email: string;
   /** Check if the user has a password set (vs OAuth-only) */
   hasPassword?: boolean;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this user is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -9734,7 +10416,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Full name of the user */
   name: string;
   /** Collection of notifications for this user. */
-  notifications?: IdentityUsersUserNotification[] | null;
+  notifications?: Array<IdentityUsersUserNotification> | null;
   /** Optional phone number */
   phoneNumber?: string | null;
   preferences?: IdentityUsersUserPreferences;
@@ -9743,7 +10425,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   tenantId?: string | null;
   /** Collection of tenant memberships for this user.
 Provides direct navigation to all tenants the user belongs to. */
-  tenantMemberships?: IdentityTenantsTenantMember[] | null;
+  tenantMemberships?: Array<IdentityTenantsTenantMember> | null;
   /** Token version for immediate session invalidation.
 Increment this when: user changes password, signs out all sessions,
 or admin forces logout. JWT tokens with older versions are rejected. */
@@ -9831,10 +10513,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** External system references and IDs */
   externalReferences?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9868,7 +10550,7 @@ export interface IdentityUsersUserMetadataDto {
   /** Dictionary of external system references */
   externalReferences?: Record<string, string> | null;
   /** List of tags associated with the user */
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   /** When the metadata was last updated */
   updatedAt?: string | null;
   /** The user identifier that this metadata belongs to */
@@ -9895,8 +10577,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether the notification is archived */
   isArchived?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -9939,10 +10621,10 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Data transfer object for detailed notification information */
 export interface IdentityUsersUserNotificationDetailDto {
   /** Available actions for the notification */
-  actions?: IdentityUsersNotificationActionDto[] | null;
+  actions?: Array<IdentityUsersNotificationActionDto> | null;
   notification?: IdentityUsersUserNotificationDto;
   /** Related notifications */
-  relatedNotifications?: IdentityUsersUserNotificationDto[] | null;
+  relatedNotifications?: Array<IdentityUsersUserNotificationDto> | null;
 }
 
 /** Data transfer object for user notification */
@@ -10019,10 +10701,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** General application preferences (theme, language, timezone) */
   generalPreferences?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10115,10 +10797,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Display name for the profile (can be different from User.Name) */
   displayName?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** User's gender */
   gender?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10240,8 +10922,8 @@ export interface LaunchPadCreateLaunchPadSlotInput {
 
 /** Data model for Launch Pad Create Launch Plan Request. */
 export interface LaunchPadCreateLaunchPlanInput {
-  channels?: string[] | null;
-  checklistItems?: LaunchPadLaunchChecklistItemInput[] | null;
+  channels?: Array<string> | null;
+  checklistItems?: Array<LaunchPadLaunchChecklistItemInput> | null;
   name?: string | null;
   positioning?: string | null;
   projectId?: string;
@@ -10262,8 +10944,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   isComplete?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -10314,8 +10996,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10332,7 +11014,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   reviewedByUserId?: string | null;
   status?: LaunchPadLaunchPadApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
   submittedAssetReferenceIdsJson?: string | null;
   submittedAt?: string;
   submittedByUser?: IdentityUsersUser;
@@ -10356,7 +11038,7 @@ export interface LaunchPadLaunchPadApplicationProjection {
   projectVersionId?: string;
   status?: LaunchPadLaunchPadApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
   submittedAt?: string;
   submittedByUserId?: string;
 }
@@ -10369,7 +11051,7 @@ export interface LaunchPadLaunchPadEvent {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  applications?: LaunchPadLaunchPadApplication[] | null;
+  applications?: Array<LaunchPadLaunchPadApplication> | null;
   applicationsCloseAt?: string | null;
   applicationsOpenAt?: string | null;
   /** Timestamp when the entity was created.
@@ -10380,16 +11062,16 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endsAt?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   name: string;
-  slots?: LaunchPadLaunchPadParticipantSlot[] | null;
+  slots?: Array<LaunchPadLaunchPadParticipantSlot> | null;
   startsAt?: string;
   status?: LaunchPadLaunchPadEventStatus;
   tenantId?: string | null;
@@ -10405,7 +11087,7 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Data model for Launch Pad Launch Pad Event Detail Projection. */
 export interface LaunchPadLaunchPadEventDetailProjection {
   event?: LaunchPadLaunchPadEventProjection;
-  slots?: LaunchPadLaunchPadSlotProjection[] | null;
+  slots?: Array<LaunchPadLaunchPadSlotProjection> | null;
 }
 
 /** Data model for Launch Pad Launch Pad Event Projection. */
@@ -10438,8 +11120,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10477,10 +11159,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endsAt?: string;
   hasCapacity?: boolean;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10489,7 +11171,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   launchPadEvent?: LaunchPadLaunchPadEvent;
   launchPadEventId?: string;
   name: string;
-  registrations?: LaunchPadLaunchPadParticipantRegistration[] | null;
+  registrations?: Array<LaunchPadLaunchPadParticipantRegistration> | null;
   reservedCount?: number;
   role?: LaunchPadLaunchPadParticipantRole;
   startsAt?: string;
@@ -10542,8 +11224,8 @@ export interface LaunchPadLaunchPlan {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  channels?: string[] | null;
-  checklistItems?: LaunchPadLaunchChecklistItem[] | null;
+  channels?: Array<string> | null;
+  checklistItems?: Array<LaunchPadLaunchChecklistItem> | null;
   /** Timestamp when the entity was created.
 Protected setter prevents modification after initial creation; EF Core uses backing field. */
   createdAt: string;
@@ -10551,8 +11233,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10596,7 +11278,7 @@ export interface LaunchPadSubmitLaunchPadApplicationInput {
   pitch?: string | null;
   projectId?: string;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
 }
 
 /** Data model for Launch Pad Transition Launch Pad Event Request. */
@@ -10613,7 +11295,7 @@ export interface LaunchPadTransitionLaunchPadRegistrationInput {
 export interface LaunchPadUpdateLaunchPadApplicationInput {
   pitch?: string | null;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
 }
 
 /** Data model for Launch Pad Update Launch Pad Event Request. */
@@ -10640,7 +11322,7 @@ export interface LearningAssessmentsAnonymousReviewAssessmentDto {
 
 /** Data model for Learning Assessments Anonymous Review Rubric Dto. */
 export interface LearningAssessmentsAnonymousReviewRubricDto {
-  criteria?: LearningAssessmentsRubricCriterionDto[] | null;
+  criteria?: Array<LearningAssessmentsRubricCriterionDto> | null;
 }
 
 /** THE anonymity boundary for reviewers: the reviewee's submission stripped of every identity,
@@ -10704,7 +11386,7 @@ export interface LearningAssessmentsAssessmentDto {
 export interface LearningAssessmentsAssessmentGroupAnalyticsDto {
   assessmentCount?: number;
   averagePercent?: LearningGradingContractsPercentValue;
-  distribution?: LearningAssessmentsAssessmentScoreBucketDto[] | null;
+  distribution?: Array<LearningAssessmentsAssessmentScoreBucketDto> | null;
   gradedCount?: number;
   groupId?: string | null;
   groupName?: string | null;
@@ -10780,9 +11462,9 @@ export interface LearningAssessmentsCourseAssessmentAnalyticsDto {
   assessmentCount?: number;
   averagePercent?: LearningGradingContractsPercentValue;
   courseId?: string;
-  distribution?: LearningAssessmentsAssessmentScoreBucketDto[] | null;
+  distribution?: Array<LearningAssessmentsAssessmentScoreBucketDto> | null;
   gradedCount?: number;
-  groups?: LearningAssessmentsAssessmentGroupAnalyticsDto[] | null;
+  groups?: Array<LearningAssessmentsAssessmentGroupAnalyticsDto> | null;
   passRate?: LearningGradingContractsPercentValue;
   ungradedCount?: number;
 }
@@ -10937,7 +11619,7 @@ export interface LearningAssessmentsGradingContractsAssessmentExecutionDeliveryI
 export interface LearningAssessmentsGradingContractsAssessmentExecutionDeliveryV1 {
   definitionRevisionId?: string;
   executionSnapshotHash?: string | null;
-  itemOrder?: string[] | null;
+  itemOrder?: Array<string> | null;
   items?: Record<string, LearningAssessmentsGradingContractsAssessmentExecutionDeliveryItemV1> | null;
   schemaVersion?: number;
 }
@@ -10958,7 +11640,7 @@ export type LearningAssessmentsGradingContractsContentCompletionMode = 'on-submi
 
 /** Data model for Learning Assessments Grading Contracts Grade Item Result V1. */
 export interface LearningAssessmentsGradingContractsGradeItemResultV1 {
-  evidenceRefs?: string[] | null;
+  evidenceRefs?: Array<string> | null;
   feedback?: string | null;
   handlerKey?: string | null;
   handlerVersion?: string | null;
@@ -10975,9 +11657,9 @@ export type LearningAssessmentsGradingContractsGradeItemState = 'graded' | 'pend
 
 /** Data model for Learning Assessments Grading Contracts Grade Result V1. */
 export interface LearningAssessmentsGradingContractsGradeResultV1 {
-  evidenceRefs?: string[] | null;
+  evidenceRefs?: Array<string> | null;
   feedback?: string | null;
-  items?: LearningAssessmentsGradingContractsGradeItemResultV1[] | null;
+  items?: Array<LearningAssessmentsGradingContractsGradeItemResultV1> | null;
   maxScore?: LearningGradingContractsScoreValue;
   schemaVersion?: number;
   score?: LearningGradingContractsScoreValue | null;
@@ -11022,7 +11704,7 @@ export interface LearningAssessmentsGradingQueueAssessmentDto {
 No peer-review data here — SpeedGrader fetches reviews per submission. */
 export interface LearningAssessmentsGradingQueueDto {
   assessment?: LearningAssessmentsGradingQueueAssessmentDto;
-  items?: LearningAssessmentsGradingQueueItemDto[] | null;
+  items?: Array<LearningAssessmentsGradingQueueItemDto> | null;
   needsGrading?: number;
   total?: number;
 }
@@ -11044,7 +11726,7 @@ export interface LearningAssessmentsGradingQueueItemDto {
   groupName?: string | null;
   isGroup?: boolean;
   isLate?: boolean;
-  memberNames?: string[] | null;
+  memberNames?: Array<string> | null;
   status?: LearningAssessmentsSubmissionStatus;
   submissionId?: string;
   submittedAt?: string | null;
@@ -11060,7 +11742,7 @@ export interface LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1 {
   deliveryHash?: string | null;
   executionId?: string;
   executionSnapshotHash?: string | null;
-  history?: LearningAssessmentsGradingRuntimeGradeRoundViewV1[] | null;
+  history?: Array<LearningAssessmentsGradingRuntimeGradeRoundViewV1> | null;
   instructorVisibleContent?: Record<string, unknown> | null;
   instructorVisibleResult?: LearningAssessmentsGradingContractsGradeResultV1;
   instructorVisibleRubric?: Record<string, unknown> | null;
@@ -11096,7 +11778,7 @@ export interface LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1 {
   assessmentId?: string;
   candidateStillMatchesDraft?: boolean;
   definitionRevisionId?: string;
-  diagnostics?: string[] | null;
+  diagnostics?: Array<string> | null;
   execution?: LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1;
   personaDisplayName?: string | null;
   personaKey?: string | null;
@@ -11120,7 +11802,7 @@ export interface LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1 {
   courseId?: string;
   coursePercentUnits?: number | null;
   enrollmentId?: string;
-  groups?: LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1[] | null;
+  groups?: Array<LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1> | null;
   hasWithheldContribution?: boolean;
   learnerVisible?: boolean;
 }
@@ -11128,7 +11810,7 @@ export interface LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1 {
 /** Data model for Learning Assessments Grading Runtime Gradebook Group Projection V1. */
 export interface LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1 {
   assessmentGroupId?: string;
-  assessments?: LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1[] | null;
+  assessments?: Array<LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1> | null;
   contributionPercent?: LearningGradingContractsPercentValue;
   groupRatio?: LearningGradingContractsPercentValue;
   weightPercent?: LearningGradingContractsPercentValue;
@@ -11159,7 +11841,7 @@ export interface LearningAssessmentsGradingRuntimeInstructorItemResolutionV1 {
 /** Data model for Learning Assessments Grading Runtime Instructor Review Resolution V1. */
 export interface LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1 {
   feedback?: string | null;
-  items?: LearningAssessmentsGradingRuntimeInstructorItemResolutionV1[] | null;
+  items?: Array<LearningAssessmentsGradingRuntimeInstructorItemResolutionV1> | null;
   overrideReason?: string | null;
   rubricScores?: Record<string, LearningGradingContractsScoreValue> | null;
   schemaVersion?: number;
@@ -11184,7 +11866,7 @@ export interface LearningAssessmentsGroupDetailDto {
   id?: string;
   capacity?: number;
   memberCount?: number;
-  members?: LearningAssessmentsGroupMemberDto[] | null;
+  members?: Array<LearningAssessmentsGroupMemberDto> | null;
   name?: string | null;
 }
 
@@ -11220,7 +11902,7 @@ export interface LearningAssessmentsGroupSetDto {
 /** Group set listing entry with per-group summary. */
 export interface LearningAssessmentsGroupSetSummaryDto {
   id?: string;
-  groups?: LearningAssessmentsGroupSummaryDto[] | null;
+  groups?: Array<LearningAssessmentsGroupSummaryDto> | null;
   name?: string | null;
 }
 
@@ -11343,7 +12025,7 @@ export interface LearningAssessmentsRubricCriterionDto {
 /** Rubric read shape with criteria ordered by GameGuild.Learning.Assessments.RubricCriterionDto.Order. */
 export interface LearningAssessmentsRubricDto {
   id?: string;
-  criteria?: LearningAssessmentsRubricCriterionDto[] | null;
+  criteria?: Array<LearningAssessmentsRubricCriterionDto> | null;
   title?: string | null;
 }
 
@@ -11363,7 +12045,7 @@ export interface LearningAssessmentsSaveRubricCriterionInput {
 
 /** Request to create or fully replace an assessment rubric. */
 export interface LearningAssessmentsSaveRubricInput {
-  criteria?: LearningAssessmentsSaveRubricCriterionInput[] | null;
+  criteria?: Array<LearningAssessmentsSaveRubricCriterionInput> | null;
   title?: string | null;
 }
 
@@ -11435,7 +12117,7 @@ export interface LearningAssessmentsTaskItemDto {
 
 /** Data model for Learning Assessments Tasks Dto. */
 export interface LearningAssessmentsTasksDto {
-  items?: LearningAssessmentsTaskItemDto[] | null;
+  items?: Array<LearningAssessmentsTaskItemDto> | null;
 }
 
 /** Request to update a weighted assessment group. */
@@ -11650,15 +12332,15 @@ export interface LearningCohortsCohortScheduleConflictDto {
 export interface LearningCohortsCohortScheduleDto {
   id?: string;
   cohortId?: string;
-  items?: LearningCohortsCohortScheduleItemDto[] | null;
-  meetingDays?: SystemDayOfWeek[] | null;
+  items?: Array<LearningCohortsCohortScheduleItemDto> | null;
+  meetingDays?: Array<SystemDayOfWeek> | null;
   meetingDurationMinutes?: number;
   meetingStartTime?: string;
   pacingMode?: LearningCohortsCohortPacingMode;
   releasePolicy?: LearningCohortsCohortReleasePolicy;
   timezoneId?: string | null;
   unitsPerPeriod?: number;
-  unscheduledContentIds?: string[] | null;
+  unscheduledContentIds?: Array<string> | null;
   version?: number;
 }
 
@@ -11691,9 +12373,9 @@ export type LearningCohortsCohortScheduleItemType = 'ContentRelease' | 'LiveSess
 /** Data model for Learning Cohorts Cohort Schedule Preview Dto. */
 export interface LearningCohortsCohortSchedulePreviewDto {
   calculatedEndDate?: string;
-  conflicts?: LearningCohortsCohortScheduleConflictDto[] | null;
+  conflicts?: Array<LearningCohortsCohortScheduleConflictDto> | null;
   hasBlockingConflicts?: boolean;
-  items?: LearningCohortsCohortSchedulePreviewItemDto[] | null;
+  items?: Array<LearningCohortsCohortSchedulePreviewItemDto> | null;
 }
 
 /** Data model for Learning Cohorts Cohort Schedule Preview Item Dto. */
@@ -11714,7 +12396,7 @@ export interface LearningCohortsCohortSchedulePreviewItemDto {
 /** Data model for Learning Cohorts Cohort Schedule Summary Dto. */
 export interface LearningCohortsCohortScheduleSummaryDto {
   itemCount?: number;
-  meetingDays?: SystemDayOfWeek[] | null;
+  meetingDays?: Array<SystemDayOfWeek> | null;
   meetingStartTime?: string;
   pacingMode?: LearningCohortsCohortPacingMode;
   releasePolicy?: LearningCohortsCohortReleasePolicy;
@@ -11731,7 +12413,7 @@ export type LearningCohortsCohortVisibilityOverride = 'Inherited' | 'Hidden' | '
 /** Data model for Learning Cohorts Course Cohort Calendar Dto. */
 export interface LearningCohortsCourseCohortCalendarDto {
   courseId?: string;
-  entries?: LearningCohortsCohortCalendarEntryDto[] | null;
+  entries?: Array<LearningCohortsCohortCalendarEntryDto> | null;
 }
 
 /** Request to create a new cohort */
@@ -11752,12 +12434,12 @@ export interface LearningCohortsPreviewCohortScheduleInput {
   assessmentDueOffsetDays?: number;
   cohortEndDate?: string;
   firstInstructionalDate?: string;
-  meetingDays?: SystemDayOfWeek[] | null;
+  meetingDays?: Array<SystemDayOfWeek> | null;
   meetingDurationMinutes?: number;
   meetingStartTime?: string;
   pacingMode?: LearningCohortsCohortPacingMode;
   releasePolicy?: LearningCohortsCohortReleasePolicy;
-  skippedDates?: string[] | null;
+  skippedDates?: Array<string> | null;
   timezoneId?: string | null;
   unitsPerPeriod?: number;
 }
@@ -11837,7 +12519,7 @@ export interface LearningCoursesAiAuthoringConversationDto {
   authorId?: string;
   contentId?: string;
   lastMessageAt?: string;
-  messages?: LearningCoursesAiAuthoringMessageDto[] | null;
+  messages?: Array<LearningCoursesAiAuthoringMessageDto> | null;
 }
 
 /** Data model for Learning Courses Ai Authoring Message Dto. */
@@ -12019,7 +12701,7 @@ export interface LearningCoursesCompleteCourseCheckoutOutput {
   amount?: number;
   courseId?: string;
   currency?: string | null;
-  enrollmentIds?: string[] | null;
+  enrollmentIds?: Array<string> | null;
   entitlementId?: string;
   learningUrl?: string | null;
   paymentProviderReference?: string | null;
@@ -12028,7 +12710,7 @@ export interface LearningCoursesCompleteCourseCheckoutOutput {
 
 /** Data model for Learning Courses Completion Rates Dto. */
 export interface LearningCoursesCompletionRatesDto {
-  completionTrends?: LearningCoursesCompletionTrendDto[] | null;
+  completionTrends?: Array<LearningCoursesCompletionTrendDto> | null;
   contentCompletionRates?: Record<string, number> | null;
   overallCompletionRate?: number;
   programId?: string;
@@ -12137,6 +12819,20 @@ export interface LearningCoursesContentSummaryDto {
   contentType?: string | null;
   estimatedMinutes?: number | null;
   title?: string | null;
+}
+
+/** Data model for Learning Courses Course Access Capabilities. */
+export interface LearningCoursesCourseAccessCapabilities {
+  canAccessWorkspace?: boolean;
+  canEdit?: boolean;
+  canLearn?: boolean;
+  canPublish?: boolean;
+  canReviewAsStaff?: boolean;
+  courseExists?: boolean;
+  courseId?: string;
+  hasActiveEnrollment?: boolean;
+  isOwner?: boolean;
+  isTenantMember?: boolean;
 }
 
 /** Data model for Learning Courses Course Support Ticket Message Request. */
@@ -12292,7 +12988,7 @@ export interface LearningCoursesMoveContentDto {
 /** Data model for Learning Courses Prerequisite Check Result Dto. */
 export interface LearningCoursesPrerequisiteCheckResultDto {
   isSatisfied?: boolean;
-  prerequisites?: LearningCoursesPrerequisiteStatusDto[] | null;
+  prerequisites?: Array<LearningCoursesPrerequisiteStatusDto> | null;
 }
 
 /** Data model for Learning Courses Prerequisite Dto. */
@@ -12353,7 +13049,7 @@ export interface LearningCoursesProgramContentDto {
   id?: string;
   activitySettings?: LearningCoursesActivitySettings;
   body?: string | null;
-  children?: LearningCoursesProgramContentDto[] | null;
+  children?: Array<LearningCoursesProgramContentDto> | null;
   childrenCount?: number;
   createdAt?: string;
   description?: string | null;
@@ -12468,12 +13164,12 @@ export interface LearningCoursesRejectProgramDto {
 
 /** Data model for Learning Courses Reorder Content Dto. */
 export interface LearningCoursesReorderContentDto {
-  contentIds?: string[] | null;
+  contentIds?: Array<string> | null;
 }
 
 /** Data model for Learning Courses Reorder Prerequisites Request. */
 export interface LearningCoursesReorderPrerequisitesInput {
-  prerequisiteIds?: string[] | null;
+  prerequisiteIds?: Array<string> | null;
 }
 
 /** Data model for Learning Courses Resolve Course Support Ticket Request. */
@@ -12488,7 +13184,7 @@ export interface LearningCoursesRevenueAnalyticsDto {
   monthlyPurchases?: number;
   monthlyRevenue?: number;
   programId?: string;
-  revenueChart?: LearningCoursesRevenueChartDto[] | null;
+  revenueChart?: Array<LearningCoursesRevenueChartDto> | null;
   totalPurchases?: number;
   totalRevenue?: number;
 }
@@ -12525,7 +13221,7 @@ export interface LearningCoursesSearchContentDto {
 export interface LearningCoursesSendCourseStudentMessageInput {
   message?: string | null;
   subject?: string | null;
-  userIds?: string[] | null;
+  userIds?: Array<string> | null;
 }
 
 /** Data model for Learning Courses Send Course Student Message Response. */
@@ -12590,8 +13286,8 @@ export interface LearningCoursesTest {
 /** Test buckets for a coding assignment. Field names are PascalCase on the wire (deliberate divergence from the draft).
 Visibility values match `TestVisibilityType` from the draft: `"Public"`, `"Private"`. */
 export interface LearningCoursesTestSuite {
-  private?: LearningCoursesTest[] | null;
-  public?: LearningCoursesTest[] | null;
+  private?: Array<LearningCoursesTest> | null;
+  public?: Array<LearningCoursesTest> | null;
 }
 
 /** DTO for updating existing activity grades */
@@ -12685,7 +13381,7 @@ export interface LearningCoursesUpdateTimeSpentInput {
 export interface LearningCoursesUserProgressDto {
   completedAt?: string | null;
   completionPercentage?: LearningGradingContractsPercentValue;
-  contentProgress?: LearningCoursesContentProgressDto[] | null;
+  contentProgress?: Array<LearningCoursesContentProgressDto> | null;
   courseId?: string;
   enrollmentId?: string;
   lastAccessedAt?: string | null;
@@ -12885,7 +13581,7 @@ export interface LearningExperienceLearningPathsLearningPathCourseDto {
 export interface LearningExperienceLearningPathsLearningPathDetailDto {
   id?: string;
   completionCount?: number;
-  courses?: LearningExperienceLearningPathsLearningPathCourseDto[] | null;
+  courses?: Array<LearningExperienceLearningPathsLearningPathCourseDto> | null;
   createdAt?: string;
   creatorId?: string;
   description?: string | null;
@@ -12955,7 +13651,7 @@ export interface LearningExperienceLearningPathsLearningPathStatisticsDto {
 
 /** DTO for reordering courses in a learning path */
 export interface LearningExperienceLearningPathsReorderCoursesDto {
-  courses?: LearningExperienceLearningPathsCourseOrderDto[] | null;
+  courses?: Array<LearningExperienceLearningPathsCourseOrderDto> | null;
 }
 
 /** DTO for updating a learning path */
@@ -12980,11 +13676,11 @@ export interface LearningExperienceRecommendationsAddSkillInput {
 
 /** DTO for creating/updating user learning profile */
 export interface LearningExperienceRecommendationsCreateOrUpdateLearningProfileDto {
-  learningGoals?: string[] | null;
-  preferredCategories?: string[] | null;
+  learningGoals?: Array<string> | null;
+  preferredCategories?: Array<string> | null;
   preferredDifficulty?: string | null;
   preferredDuration?: string | null;
-  skills?: string[] | null;
+  skills?: Array<string> | null;
 }
 
 /** DTO for popular course result */
@@ -13040,7 +13736,7 @@ export interface LearningExperienceRecommendationsSimilarCourseDto {
   category?: string | null;
   courseId?: string;
   description?: string | null;
-  matchingTags?: string[] | null;
+  matchingTags?: Array<string> | null;
   similarityScore?: number;
   thumbnail?: string | null;
   title?: string | null;
@@ -13062,11 +13758,11 @@ export interface LearningExperienceRecommendationsUserLearningProfileDto {
   id?: string;
   createdAt?: string;
   lastActivityAt?: string | null;
-  learningGoals?: string[] | null;
-  preferredCategories?: string[] | null;
+  learningGoals?: Array<string> | null;
+  preferredCategories?: Array<string> | null;
   preferredDifficulty?: string | null;
   preferredDuration?: string | null;
-  skills?: string[] | null;
+  skills?: Array<string> | null;
   totalCoursesCompleted?: number;
   totalHoursLearned?: number;
   updatedAt?: string;
@@ -13398,26 +14094,26 @@ export interface LearningWorkspacesLearnerCourseSummaryDto {
 
 /** Data model for Learning Workspaces Learner Course Workspace Dto. */
 export interface LearningWorkspacesLearnerCourseWorkspaceDto {
-  assessmentGroups?: LearningWorkspacesLearnerAssessmentGroupDto[] | null;
-  assessments?: LearningWorkspacesLearnerAssessmentDto[] | null;
-  calendar?: LearningWorkspacesLearnerScheduleEntryDto[] | null;
-  certificates?: LearningWorkspacesLearnerCertificateDto[] | null;
+  assessmentGroups?: Array<LearningWorkspacesLearnerAssessmentGroupDto> | null;
+  assessments?: Array<LearningWorkspacesLearnerAssessmentDto> | null;
+  calendar?: Array<LearningWorkspacesLearnerScheduleEntryDto> | null;
+  certificates?: Array<LearningWorkspacesLearnerCertificateDto> | null;
   cohort?: LearningWorkspacesLearnerCohortDto;
-  content?: LearningWorkspacesLearnerContentDto[] | null;
+  content?: Array<LearningWorkspacesLearnerContentDto> | null;
   course?: LearningWorkspacesLearnerCourseSummaryDto;
-  discussions?: LearningWorkspacesLearnerDiscussionDto[] | null;
-  progress?: LearningWorkspacesLearnerContentProgressDto[] | null;
-  submissions?: LearningWorkspacesLearnerAssessmentSubmissionDto[] | null;
+  discussions?: Array<LearningWorkspacesLearnerDiscussionDto> | null;
+  progress?: Array<LearningWorkspacesLearnerContentProgressDto> | null;
+  submissions?: Array<LearningWorkspacesLearnerAssessmentSubmissionDto> | null;
 }
 
 /** Data model for Learning Workspaces Learner Dashboard Dto. */
 export interface LearningWorkspacesLearnerDashboardDto {
-  announcements?: LearningWorkspacesLearnerAnnouncementDto[] | null;
-  certificates?: LearningWorkspacesLearnerCertificateDto[] | null;
-  courses?: LearningWorkspacesLearnerCourseSummaryDto[] | null;
-  deadlines?: LearningWorkspacesLearnerAssessmentDeadlineDto[] | null;
-  grades?: LearningWorkspacesLearnerGradeSummaryDto[] | null;
-  upcoming?: LearningWorkspacesLearnerScheduleEntryDto[] | null;
+  announcements?: Array<LearningWorkspacesLearnerAnnouncementDto> | null;
+  certificates?: Array<LearningWorkspacesLearnerCertificateDto> | null;
+  courses?: Array<LearningWorkspacesLearnerCourseSummaryDto> | null;
+  deadlines?: Array<LearningWorkspacesLearnerAssessmentDeadlineDto> | null;
+  grades?: Array<LearningWorkspacesLearnerGradeSummaryDto> | null;
+  upcoming?: Array<LearningWorkspacesLearnerScheduleEntryDto> | null;
 }
 
 /** Data model for Learning Workspaces Learner Discussion Dto. */
@@ -13461,8 +14157,8 @@ export interface LearningWorkspacesLearnerGradeSummaryDto {
   earnedPoints?: LearningGradingContractsScoreValue | null;
   finalGrade?: LearningGradingContractsPercentValue | null;
   gradedAssessments?: number;
-  groups?: LearningWorkspacesLearnerAssessmentGroupDto[] | null;
-  items?: LearningWorkspacesLearnerGradeItemDto[] | null;
+  groups?: Array<LearningWorkspacesLearnerAssessmentGroupDto> | null;
+  items?: Array<LearningWorkspacesLearnerGradeItemDto> | null;
   percentage?: LearningGradingContractsPercentValue | null;
   possiblePoints?: LearningGradingContractsScoreValue | null;
   totalAssessments?: number;
@@ -13717,7 +14413,7 @@ export interface MvcProblemDetails {
 /** Data model for Mvc Validation Problem Details. */
 export interface MvcValidationProblemDetails {
   detail?: string | null;
-  errors?: Record<string, string[]> | null;
+  errors?: Record<string, Array<string>> | null;
   instance?: string | null;
   status?: number | null;
   title?: string | null;
@@ -13775,7 +14471,7 @@ export interface NotificationsControllersEmailSuppressionDto {
 
 /** Data model for Notifications Controllers Muted Types Response. */
 export interface NotificationsControllersMutedTypesOutput {
-  mutedTypes?: string[] | null;
+  mutedTypes?: Array<string> | null;
 }
 
 /** Data model for Notifications Controllers Notification Dto. */
@@ -13803,7 +14499,7 @@ export interface NotificationsControllersNotificationPreferenceDto {
   inAppEnabled?: boolean;
   learningEnabled?: boolean;
   marketingEnabled?: boolean;
-  mutedTypes?: string[] | null;
+  mutedTypes?: Array<string> | null;
   pushEnabled?: boolean;
   quietHoursEnd?: string | null;
   quietHoursStart?: string | null;
@@ -13814,7 +14510,7 @@ export interface NotificationsControllersNotificationPreferenceDto {
 
 /** Data model for Notifications Controllers Notification Timeline Dto. */
 export interface NotificationsControllersNotificationTimelineDto {
-  events?: NotificationsControllersEmailDeliveryEventDto[] | null;
+  events?: Array<NotificationsControllersEmailDeliveryEventDto> | null;
   notificationId?: string;
   providerMessageId?: string | null;
 }
@@ -13867,7 +14563,7 @@ export interface NotificationsControllersUpdateDigestFrequencyInput {
 
 /** Data model for Notifications Controllers Update Muted Types Request. */
 export interface NotificationsControllersUpdateMutedTypesInput {
-  types?: string[] | null;
+  types?: Array<string> | null;
 }
 
 /** Data model for Notifications Controllers Update Preferences Request. */
@@ -13940,7 +14636,7 @@ export type ObjectsLargeBlobSupport = 'Required' | 'Preferred';
 /** Data model for Objects Public Key Credential Descriptor. */
 export interface ObjectsPublicKeyCredentialDescriptor {
   id?: string | null;
-  transports?: ObjectsAuthenticatorTransport[] | null;
+  transports?: Array<ObjectsAuthenticatorTransport> | null;
   type?: ObjectsPublicKeyCredentialType;
 }
 
@@ -13964,7 +14660,7 @@ export interface PagedResultDeadLetterDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: NotificationsControllersDeadLetterDto[] | null;
+  items?: Array<NotificationsControllersDeadLetterDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13987,7 +14683,7 @@ export interface PagedResultEmailDeliveryEventDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: NotificationsControllersEmailDeliveryEventDto[] | null;
+  items?: Array<NotificationsControllersEmailDeliveryEventDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14010,7 +14706,7 @@ export interface PagedResultEmailSuppressionDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: NotificationsControllersEmailSuppressionDto[] | null;
+  items?: Array<NotificationsControllersEmailSuppressionDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14033,7 +14729,7 @@ export interface PagedResultProductDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: CommerceProductsProductDto[] | null;
+  items?: Array<CommerceProductsProductDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14056,7 +14752,76 @@ export interface PagedResultPromoCodeDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: CommerceProductsPromoCodeDto[] | null;
+  items?: Array<CommerceProductsPromoCodeDto> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueAnomalyAlert {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueAnomalyAlert> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationDiscrepancy {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueReconciliationDiscrepancy> | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationRun {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: Array<CommercePaymentsRevenueReconciliationRun> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14079,7 +14844,7 @@ export interface PagedResultSubscription {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: CommerceSubscriptionsSubscription[] | null;
+  items?: Array<CommerceSubscriptionsSubscription> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14102,7 +14867,7 @@ export interface PagedResultSubscriptionNotificationDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: CommerceSubscriptionsSubscriptionNotificationDto[] | null;
+  items?: Array<CommerceSubscriptionsSubscriptionNotificationDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14125,7 +14890,7 @@ export interface PagedResultSupportTicketDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: CommerceProductsSupportTicketDto[] | null;
+  items?: Array<CommerceProductsSupportTicketDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14148,7 +14913,7 @@ export interface PagedResultTenant {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: IdentityTenantsTenant[] | null;
+  items?: Array<IdentityTenantsTenant> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14171,7 +14936,7 @@ export interface PagedResultTenantAuditLogEntry {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: IdentityTenantsTenantAuditLogEntry[] | null;
+  items?: Array<IdentityTenantsTenantAuditLogEntry> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14194,7 +14959,7 @@ export interface PagedResultUserDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: IdentityUsersUserDto[] | null;
+  items?: Array<IdentityUsersUserDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14217,7 +14982,7 @@ export interface PagedResultUserNotificationDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: IdentityUsersUserNotificationDto[] | null;
+  items?: Array<IdentityUsersUserNotificationDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14240,7 +15005,7 @@ export interface PagedResultUserProfileDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: IdentityUsersUserProfileDto[] | null;
+  items?: Array<IdentityUsersUserProfileDto> | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -14282,7 +15047,7 @@ export interface ProjectsAddCollaboratorInput {
   email?: string | null;
   expiresAt?: string | null;
   message?: string | null;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
   requireAcceptance?: boolean;
 }
 
@@ -14314,7 +15079,7 @@ export interface ProjectsCreateProjectInput {
   repositoryUrl?: string | null;
   shortDescription?: string | null;
   status?: ContentStatus;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   title: string;
   type?: ProjectsProjectType;
   visibility?: ContentVisibility;
@@ -14335,7 +15100,7 @@ export type ProjectsDevelopmentStatus = 'Planning' | 'InDevelopment' | 'Alpha' |
 export interface ProjectsEffectivePermission {
   expiresAt?: string | null;
   isOwner?: boolean;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
   resourceId?: string;
   resourceType?: string | null;
 }
@@ -14372,13 +15137,13 @@ export interface ProjectsProject {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  allocations?: ProjectsProjectMemberAllocation[] | null;
+  allocations?: Array<ProjectsProjectMemberAllocation> | null;
   /** Computed property: Average rating from feedback */
   averageRating?: number | null;
   category?: ProjectsProjectCategory;
   categoryId?: string | null;
   /** Navigation property to project collaborators */
-  collaborators?: ProjectsProjectCollaborator[] | null;
+  collaborators?: Array<ProjectsProjectCollaborator> | null;
   /** Copyright information */
   copyright?: string | null;
   /** Timestamp when the entity was created.
@@ -14392,7 +15157,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   description?: string | null;
   developmentStatus?: ProjectsDevelopmentStatus;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Download URL or platform links */
   downloadUrl?: string | null;
   /** Featured image or thumbnail URL */
@@ -14400,14 +15165,14 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Computed property: Total feedback count */
   feedbackCount?: number;
   /** Navigation property to project feedback/reviews */
-  feedbacks?: ProjectsProjectFeedback[] | null;
+  feedbacks?: Array<ProjectsProjectFeedback> | null;
   /** Computed property: Number of followers */
   followerCount?: number;
   /** Navigation property to project followers */
-  followers?: ProjectsProjectFollower[] | null;
+  followers?: Array<ProjectsProjectFollower> | null;
   /** Project image/logo URL */
   imageUrl?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Computed property: Is the project active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -14418,7 +15183,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   /** Navigation property to jam submissions */
-  jamSubmissions?: ProjectsProjectJamSubmission[] | null;
+  jamSubmissions?: Array<ProjectsProjectJamSubmission> | null;
   latestVersion?: ProjectsProjectVersion;
   /** License type for the project */
   license?: string | null;
@@ -14426,7 +15191,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** When the project was published */
   publishedAt?: string | null;
   /** Navigation property to project releases */
-  releases?: ProjectsProjectRelease[] | null;
+  releases?: Array<ProjectsProjectRelease> | null;
   /** Repository URL */
   repositoryUrl?: string | null;
   /** Short description (max 500 chars) */
@@ -14438,11 +15203,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   status: ContentStatus;
   /** Project tags (JSON array) */
   tags?: string | null;
-  teamAgreements?: ProjectsProjectTeamAgreement[] | null;
+  teamAgreements?: Array<ProjectsProjectTeamAgreement> | null;
   /** Computed property: Number of teams working on this project */
   teamCount?: number;
   /** Navigation property to project teams */
-  teams?: ProjectsProjectTeam[] | null;
+  teams?: Array<ProjectsProjectTeam> | null;
   tenantId?: string | null;
   /** Project title */
   title: string;
@@ -14455,7 +15220,7 @@ Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Se
 Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
   version?: number;
   /** Navigation property to project versions */
-  versions?: ProjectsProjectVersion[] | null;
+  versions?: Array<ProjectsProjectVersion> | null;
   visibility: ContentVisibility;
   /** Website URL */
   websiteUrl?: string | null;
@@ -14468,7 +15233,7 @@ export interface ProjectsProjectApiOutput {
   averageRating?: number | null;
   category?: ProjectsProjectCategoryApiOutput;
   categoryId?: string | null;
-  collaborators?: ProjectsProjectCollaboratorApiOutput[] | null;
+  collaborators?: Array<ProjectsProjectCollaboratorApiOutput> | null;
   copyright?: string | null;
   createdAt?: string;
   createdById?: string | null;
@@ -14485,7 +15250,7 @@ export interface ProjectsProjectApiOutput {
   license?: string | null;
   metadata?: ProjectsProjectMetadataApiOutput;
   publishedAt?: string | null;
-  releases?: ProjectsProjectReleaseApiOutput[] | null;
+  releases?: Array<ProjectsProjectReleaseApiOutput> | null;
   repositoryUrl?: string | null;
   shortDescription?: string | null;
   slug?: string | null;
@@ -14493,12 +15258,12 @@ export interface ProjectsProjectApiOutput {
   status?: ContentStatus;
   tags?: string | null;
   teamCount?: number;
-  teams?: ProjectsProjectTeamApiOutput[] | null;
+  teams?: Array<ProjectsProjectTeamApiOutput> | null;
   tenantId?: string | null;
   title?: string | null;
   type?: ProjectsProjectType;
   updatedAt?: string;
-  versions?: ProjectsProjectVersionApiOutput[] | null;
+  versions?: Array<ProjectsProjectVersionApiOutput> | null;
   visibility?: ContentVisibility;
   websiteUrl?: string | null;
 }
@@ -14515,8 +15280,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14524,7 +15289,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   isNew?: boolean;
   name: string;
   /** Projects in this category */
-  projects?: ProjectsProject[] | null;
+  projects?: Array<ProjectsProject> | null;
   tenantId?: string | null;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
@@ -14553,8 +15318,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether the collaborator is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -14591,7 +15356,7 @@ export interface ProjectsProjectCollaboratorApiOutput {
   isActive?: boolean;
   joinedAt?: string;
   leftAt?: string | null;
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   role?: string | null;
   userId?: string;
   userName?: string | null;
@@ -14604,7 +15369,7 @@ export interface ProjectsProjectCollaboratorDto {
   invitedBy?: string | null;
   isOwner?: boolean;
   joinedAt?: string;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
   profilePictureUrl?: string | null;
   role?: string | null;
   userId?: string;
@@ -14627,10 +15392,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Number of helpful votes */
   helpfulVotes?: number;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether this feedback is featured */
@@ -14678,12 +15443,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Whether the follower wants email notifications */
   emailNotifications?: boolean;
   /** Date when the user started following */
   followedAt?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14742,12 +15507,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Final score calculated from all ratings */
   finalScore?: number | null;
   /** Whether this submission won an award */
   hasAward?: boolean;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether the submission is eligible for judging */
@@ -14765,7 +15530,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Ranking in the jam (if calculated) */
   ranking?: number | null;
   /** Navigation property to jam scores */
-  scores?: GameJamsJamScore[] | null;
+  scores?: Array<GameJamsJamScore> | null;
   /** Submission notes or description */
   submissionNotes?: string | null;
   /** Date when the project was submitted to the jam */
@@ -14793,10 +15558,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endsAt?: string | null;
   function: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -14829,10 +15594,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   downloadCount?: number;
   followerCount?: number;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14877,14 +15642,14 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Release description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Number of downloads for this release */
   downloadCount?: number;
   /** Download URL for this release */
   downloadUrl?: string | null;
   /** File size in bytes */
   fileSize?: number | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14949,7 +15714,7 @@ export interface ProjectsProjectReleaseApiOutput {
 export interface ProjectsProjectRoleTemplate {
   description?: string | null;
   name?: string | null;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
 }
 
 /** Statistics and analytics DTO for a project */
@@ -15000,7 +15765,7 @@ export interface ProjectsProjectTeam {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  allocations?: ProjectsProjectMemberAllocation[] | null;
+  allocations?: Array<ProjectsProjectMemberAllocation> | null;
   /** Date when the team was assigned to the project */
   assignedAt?: string;
   /** Team's contribution percentage (0-100) */
@@ -15012,10 +15777,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Date when the team's involvement ended (if applicable) */
   endedAt?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether the team is currently active on this project */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -15061,9 +15826,9 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   deliverables: string;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endsAt?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15100,7 +15865,7 @@ export interface ProjectsProjectTeamApiOutput {
   name?: string | null;
   notes?: string | null;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: string[] | null;
+  permissions?: Array<string> | null;
   role?: ProjectsProjectTeamRole;
   slug?: string | null;
   teamId?: string;
@@ -15135,10 +15900,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Download count */
   downloadCount?: number;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15201,8 +15966,8 @@ export interface ProjectsShareProjectWithRoleInput {
   notifyUsers?: boolean;
   requireAcceptance?: boolean;
   roleName?: string | null;
-  userEmails?: string[] | null;
-  userIds?: string[] | null;
+  userEmails?: Array<string> | null;
+  userIds?: Array<string> | null;
 }
 
 /** Result of a bulk share operation. */
@@ -15216,7 +15981,7 @@ export interface ProjectsShareResult {
 /** Request to update collaborator permissions */
 export interface ProjectsUpdateCollaboratorInput {
   expiresAt?: string | null;
-  permissions?: IdentityAuthorizationPermissionType[] | null;
+  permissions?: Array<IdentityAuthorizationPermissionType> | null;
 }
 
 /** Request to update a project collaborator */
@@ -15234,7 +15999,7 @@ export interface ProjectsUpdateProjectInput {
   repositoryUrl?: string | null;
   shortDescription?: string | null;
   status?: ContentStatus;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   title?: string | null;
   type?: ProjectsProjectType;
   visibility?: ContentVisibility;
@@ -15272,7 +16037,7 @@ export interface ResourcesCheckResourceQuotaInput {
 /** Request to cleanup orphaned resources */
 export interface ResourcesCleanupOrphanedResourcesInput {
   dryRun?: boolean;
-  resourceTypes?: ResourcesResourceUsageType[] | null;
+  resourceTypes?: Array<ResourcesResourceUsageType> | null;
 }
 
 /** Data model for Resources Contents Add Review Request. */
@@ -15285,7 +16050,7 @@ export interface ResourcesContentsAddReviewInput {
 /** Data model for Resources Contents Bulk Generate Contracts Request. */
 export interface ResourcesContentsBulkGenerateContractsInput {
   continueOnError?: boolean;
-  contracts?: ResourcesContentsGenerateContractInput[] | null;
+  contracts?: Array<ResourcesContentsGenerateContractInput> | null;
 }
 
 /** Data model for Resources Contents Bulk Generated Contract Item Response. */
@@ -15300,7 +16065,7 @@ export interface ResourcesContentsBulkGeneratedContractItemOutput {
 export interface ResourcesContentsBulkGeneratedContractsOutput {
   failed?: number;
   hasFailures?: boolean;
-  items?: ResourcesContentsBulkGeneratedContractItemOutput[] | null;
+  items?: Array<ResourcesContentsBulkGeneratedContractItemOutput> | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -15394,7 +16159,7 @@ export interface ResourcesContentsGeneratedContractOutput {
   entityId?: string;
   entityType?: string | null;
   generatedAtUtc?: string;
-  missingVariables?: string[] | null;
+  missingVariables?: Array<string> | null;
   published?: boolean;
   templateKey?: string | null;
   title?: string | null;
@@ -15471,8 +16236,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Display order for UI purposes */
   displayOrder?: number;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this metadata entry is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -15586,8 +16351,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Display order for UI purposes */
   displayOrder?: number;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this setting is active/enabled */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -15710,8 +16475,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15757,7 +16522,7 @@ export interface ResourcesUsageTrendDataPoint {
 
 /** Result of usage trends query */
 export interface ResourcesUsageTrendsResult {
-  dataPoints?: ResourcesUsageTrendDataPoint[] | null;
+  dataPoints?: Array<ResourcesUsageTrendDataPoint> | null;
   endDate?: string;
   granularity?: ResourcesTrendGranularity;
   startDate?: string;
@@ -15788,7 +16553,7 @@ export interface SocialBlogAuthoringBlogAiConversationDto {
   authorId?: string;
   blogPostId?: string;
   lastMessageAt?: string;
-  messages?: SocialBlogAuthoringBlogAiMessageDto[] | null;
+  messages?: Array<SocialBlogAuthoringBlogAiMessageDto> | null;
 }
 
 /** Credit accounting snapshot for a run or wallet. */
@@ -15879,7 +16644,7 @@ export interface SocialBlogAuthoringBlogPostDto {
   revision?: number;
   slug?: string | null;
   status?: SocialBlogBlogPostStatus;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   title?: string | null;
   twitterCard?: string | null;
   updatedAt?: string;
@@ -15909,8 +16674,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
   deletedAt?: string | null;
   deletedByUserId?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15948,10 +16713,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   excerpt?: string | null;
   format?: SocialBlogBlogContentFormat;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15968,7 +16733,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   slug?: string | null;
   status?: SocialBlogBlogPostStatus;
   structuredDataOverride?: string | null;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   /** Serialized tags for persistence (jsonb column). */
   tagsJson?: string | null;
   tenantId?: string | null;
@@ -16026,7 +16791,7 @@ export interface SocialBlogControllersUpdateBlogPostDraftInput {
   ogImageUrl?: string | null;
   revision?: number;
   structuredDataOverride?: string | null;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   title?: string | null;
   twitterCard?: string | null;
 }
@@ -16044,7 +16809,7 @@ export interface SocialBlogQueriesBlogCommentDto {
 /** Page of comments, oldest-first, with depth-1 replies flattened under their parents. */
 export interface SocialBlogQueriesBlogCommentPage {
   hasMore?: boolean;
-  items?: SocialBlogQueriesBlogCommentDto[] | null;
+  items?: Array<SocialBlogQueriesBlogCommentDto> | null;
 }
 
 /** Full public post detail: body, format, SEO fields, revision, and updated timestamp. */
@@ -16052,7 +16817,7 @@ export interface SocialBlogQueriesBlogPostDetailDto {
   id?: string;
   allowComments?: boolean;
   canonicalUrlOverride?: string | null;
-  coAuthorHandles?: string[] | null;
+  coAuthorHandles?: Array<string> | null;
   commentCount?: number;
   content?: string | null;
   excerpt?: string | null;
@@ -16069,7 +16834,7 @@ export interface SocialBlogQueriesBlogPostDetailDto {
   revision?: number;
   slug?: string | null;
   structuredDataOverride?: string | null;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   title?: string | null;
   twitterCard?: string | null;
   updatedAt?: string;
@@ -16080,7 +16845,7 @@ export interface SocialBlogQueriesBlogPostDetailDto {
 (Content/JsonBody) — list surfaces never ship the body. */
 export interface SocialBlogQueriesBlogPostSummaryDto {
   id?: string;
-  coAuthorHandles?: string[] | null;
+  coAuthorHandles?: Array<string> | null;
   commentCount?: number;
   excerpt?: string | null;
   ogImageUrl?: string | null;
@@ -16090,14 +16855,14 @@ export interface SocialBlogQueriesBlogPostSummaryDto {
   reactionCount?: number;
   readTimeMinutes?: number;
   slug?: string | null;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   title?: string | null;
 }
 
 /** Page of published posts ordered newest-first (keyset on PublishedAt, then Id). */
 export interface SocialBlogQueriesBlogPostSummaryPage {
   hasMore?: boolean;
-  items?: SocialBlogQueriesBlogPostSummaryDto[] | null;
+  items?: Array<SocialBlogQueriesBlogPostSummaryDto> | null;
 }
 
 /** Canonical (handle, slug) route a stale URL resolves to, for permanent redirects. */
@@ -16193,7 +16958,7 @@ export interface SocialFeedSocialFeedItemDto {
   engagement?: SocialFeedFeedEngagementDto;
   kind?: SocialFeedSocialFeedItemKind;
   post?: SocialFeedSocialPostContentDto;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   testingSession?: SocialFeedTestingSessionFeedDto;
   viewer?: SocialFeedFeedViewerStateDto;
 }
@@ -16203,7 +16968,7 @@ export type SocialFeedSocialFeedItemKind = 'Post' | 'Repost' | 'TestingSession';
 
 /** Data model for Social Feed Social Feed Page Dto. */
 export interface SocialFeedSocialFeedPageDto {
-  items?: SocialFeedSocialFeedItemDto[] | null;
+  items?: Array<SocialFeedSocialFeedItemDto> | null;
   nextCursor?: string | null;
 }
 
@@ -16267,13 +17032,13 @@ export interface SocialFeedTestingSessionFeedDto {
 
 /** Data model for Social Follows Controllers Batch Counts Request. */
 export interface SocialFollowsControllersBatchCountsInput {
-  entityIds?: string[] | null;
+  entityIds?: Array<string> | null;
   entityType?: string | null;
 }
 
 /** Data model for Social Follows Controllers Batch Status Request. */
 export interface SocialFollowsControllersBatchStatusInput {
-  entityIds?: string[] | null;
+  entityIds?: Array<string> | null;
   entityType?: string | null;
 }
 
@@ -16446,7 +17211,7 @@ export interface SocialPostsControllersAddCommentInput {
 export interface SocialPostsControllersCreatePostInput {
   assetReferenceId?: string | null;
   content?: string | null;
-  tags?: string[] | null;
+  tags?: Array<string> | null;
   visibility?: SocialPostsPostVisibility;
 }
 
@@ -16539,13 +17304,13 @@ export interface SocialProfilesSocialProfileDto {
   handle?: string | null;
   headline?: string | null;
   location?: string | null;
-  portfolioItems?: SocialProfilesProfilePortfolioItemDto[] | null;
+  portfolioItems?: Array<SocialProfilesProfilePortfolioItemDto> | null;
   postCount?: number;
   projectCount?: number;
   showActivity?: boolean;
   showPortfolio?: boolean;
   showSkills?: boolean;
-  skills?: SocialProfilesProfileSkillDto[] | null;
+  skills?: Array<SocialProfilesProfileSkillDto> | null;
   socialLinksJson?: string | null;
   timeZone?: string | null;
   userId?: string;
@@ -16641,9 +17406,9 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
-  invitations?: TeamsTeamInvitation[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  invitations?: Array<TeamsTeamInvitation> | null;
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -16651,7 +17416,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   isPersonal?: boolean;
-  members?: TeamsTeamMember[] | null;
+  members?: Array<TeamsTeamMember> | null;
   name: string;
   slug: string;
   status?: TeamsTeamStatus;
@@ -16680,9 +17445,9 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   expiresAt?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   invitedByUserId?: string;
   invitedEmail?: string | null;
   invitedUserId?: string | null;
@@ -16719,8 +17484,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -16857,7 +17622,7 @@ export interface TestingLabCreateTestingEventInput {
 
 /** Data model for Testing Lab Create Testing Event Slots Request. */
 export interface TestingLabCreateTestingEventSlotsInput {
-  slots?: TestingLabUpsertTestingEventSlotInput[] | null;
+  slots?: Array<TestingLabUpsertTestingEventSlotInput> | null;
 }
 
 /** Data model for Testing Lab Create Testing Lab Role Request. */
@@ -16980,11 +17745,11 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   feedback?: TestingLabTestingFeedback;
   /** Foreign key to the feedback being rated */
   feedbackId: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether this rating is global (tenant-independent) */
@@ -17056,11 +17821,11 @@ export interface TestingLabPublicTestingEventProjection {
   configuration?: TestingLabTestingEventConfigurationProjection;
   description?: string | null;
   endsAt?: string;
-  games?: TestingLabPublicTestingEventGameProjection[] | null;
+  games?: Array<TestingLabPublicTestingEventGameProjection> | null;
   mode?: TestingLabTestingEventMode;
   name?: string | null;
   requiresFeedback?: boolean;
-  slots?: TestingLabPublicTestingEventSlotProjection[] | null;
+  slots?: Array<TestingLabPublicTestingEventSlotProjection> | null;
   startsAt?: string;
   status?: TestingLabTestingEventStatus;
   timeZoneId?: string | null;
@@ -17086,7 +17851,7 @@ export interface TestingLabPublicTestingEventSlotProjection {
 /** Data model for Testing Lab Questionnaire Answer. */
 export interface TestingLabQuestionnaireAnswer {
   questionId?: string | null;
-  selectedOptionIds?: string[] | null;
+  selectedOptionIds?: Array<string> | null;
   textValue?: string | null;
 }
 
@@ -17108,14 +17873,14 @@ export interface TestingLabQuestionnaireOption {
 
 /** Data model for Testing Lab Questionnaire Response. */
 export interface TestingLabQuestionnaireOutput {
-  answers?: TestingLabQuestionnaireAnswer[] | null;
+  answers?: Array<TestingLabQuestionnaireAnswer> | null;
 }
 
 /** Data model for Testing Lab Questionnaire Question. */
 export interface TestingLabQuestionnaireQuestion {
   id?: string | null;
   condition?: TestingLabQuestionnaireCondition;
-  options?: TestingLabQuestionnaireOption[] | null;
+  options?: Array<TestingLabQuestionnaireOption> | null;
   prompt?: string | null;
   required?: boolean;
   type?: TestingLabQuestionnaireQuestionType;
@@ -17126,7 +17891,7 @@ export type TestingLabQuestionnaireQuestionType = 'FreeText' | 'SingleChoice' | 
 
 /** Data model for Testing Lab Questionnaire Schema. */
 export interface TestingLabQuestionnaireSchema {
-  questions?: TestingLabQuestionnaireQuestion[] | null;
+  questions?: Array<TestingLabQuestionnaireQuestion> | null;
   title?: string | null;
 }
 
@@ -17161,7 +17926,7 @@ export interface TestingLabSaveTestingProjectApplicationDraftInput {
   feedbackQuestionnaire?: TestingLabQuestionnaireSchema;
   preferredAvailability?: string | null;
   projectVersionId?: string | null;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
 }
 
 /** Data model for Testing Lab Session Project Projection. */
@@ -17195,8 +17960,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether the user has checked in */
   isCheckedIn?: boolean;
   /** Whether the user has checked out */
@@ -17253,8 +18018,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17313,7 +18078,7 @@ export interface TestingLabSubmitTestingProjectApplicationInput {
   preferredAvailability?: string | null;
   projectId?: string;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
 }
 
 /** Data model for Testing Lab Testing Application Review Asset Projection. */
@@ -17328,7 +18093,7 @@ export interface TestingLabTestingApplicationReviewAssetProjection {
 /** Data model for Testing Lab Testing Application Review Package Projection. */
 export interface TestingLabTestingApplicationReviewPackageProjection {
   applicationId?: string;
-  assets?: TestingLabTestingApplicationReviewAssetProjection[] | null;
+  assets?: Array<TestingLabTestingApplicationReviewAssetProjection> | null;
   brief?: TestingLabTestingProjectBrief;
   feedbackQuestionnaire?: TestingLabQuestionnaireSchema;
   projectId?: string;
@@ -17343,7 +18108,7 @@ export type TestingLabTestingApplicationStatus = 'Draft' | 'Pending' | 'UnderRev
 
 /** Data model for Testing Lab Testing Application Tester Eligibility Projection. */
 export interface TestingLabTestingApplicationTesterEligibilityProjection {
-  eligibleApplicationIds?: string[] | null;
+  eligibleApplicationIds?: Array<string> | null;
   testerUserId?: string;
 }
 
@@ -17363,8 +18128,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17406,10 +18171,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   event?: TestingLabTestingEvent;
   eventId?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   isActive?: boolean;
   isChair?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -17437,7 +18202,7 @@ export interface TestingLabTestingEvent {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  applications?: TestingLabTestingProjectApplication[] | null;
+  applications?: Array<TestingLabTestingProjectApplication> | null;
   applicationsCloseAt?: string;
   applicationsOpenAt?: string;
   approvalMode?: TestingLabTestingEventApprovalMode;
@@ -17445,7 +18210,7 @@ Setter is public for EF Core materialization; prefer constructor or factory meth
   cancelledAt?: string | null;
   candidateInstructions?: string | null;
   cohortId?: string | null;
-  committeeMembers?: TestingLabTestingCommitteeMember[] | null;
+  committeeMembers?: Array<TestingLabTestingCommitteeMember> | null;
   configurationFrozenAt?: string | null;
   courseId?: string | null;
   /** Timestamp when the entity was created.
@@ -17456,10 +18221,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endsAt?: string;
   generalRules?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17483,7 +18248,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   reminderDaysBeforeOverride?: string | null;
   requiresFeedback?: boolean;
   sentReminderDays?: string | null;
-  slots?: TestingLabTestingEventSlot[] | null;
+  slots?: Array<TestingLabTestingEventSlot> | null;
   sourceTemplateId?: string | null;
   sourceTemplateRevisionId?: string | null;
   startsAt?: string;
@@ -17582,7 +18347,7 @@ export interface TestingLabTestingEventProjection {
   managerUserId?: string;
   mode?: TestingLabTestingEventMode;
   name?: string | null;
-  recurrenceDaysOfWeek?: SystemDayOfWeek[] | null;
+  recurrenceDaysOfWeek?: Array<SystemDayOfWeek> | null;
   recurrenceEndsAt?: string | null;
   recurrenceFrequency?: TestingLabTestingEventRecurrenceFrequency;
   recurrenceInterval?: number | null;
@@ -17602,7 +18367,7 @@ export type TestingLabTestingEventRecurrenceFrequency = 'Daily' | 'Weekly' | 'Mo
 
 /** Data model for Testing Lab Testing Event Recurrence Request. */
 export interface TestingLabTestingEventRecurrenceInput {
-  daysOfWeek?: SystemDayOfWeek[] | null;
+  daysOfWeek?: Array<SystemDayOfWeek> | null;
   endsAt?: string | null;
   frequency?: TestingLabTestingEventRecurrenceFrequency;
   interval?: number;
@@ -17622,11 +18387,11 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   endsAt?: string;
   event?: TestingLabTestingEvent;
   eventId?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17718,7 +18483,7 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   event?: TestingLabTestingEvent;
   eventId?: string | null;
   /** Feedback data in JSON format */
@@ -17726,7 +18491,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   feedbackForm?: TestingLabTestingFeedbackForm;
   /** Foreign key to the feedback form */
   feedbackFormId?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether this feedback is global (tenant-independent) */
@@ -17743,7 +18508,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   overallRating?: number | null;
   qualityRating?: TestingLabFeedbackQuality;
   /** Quality ratings for this feedback */
-  qualityRatings?: TestingLabFeedbackQualityRating[] | null;
+  qualityRatings?: Array<TestingLabFeedbackQualityRating> | null;
   questionnaireRevisionId?: string | null;
   /** When this feedback was reported */
   reportedAt?: string | null;
@@ -17809,7 +18574,7 @@ export interface TestingLabTestingFeedbackDirectoryItem {
 
 /** Data model for Testing Lab Testing Feedback Directory Page. */
 export interface TestingLabTestingFeedbackDirectoryPage {
-  items?: TestingLabTestingFeedbackDirectoryItem[] | null;
+  items?: Array<TestingLabTestingFeedbackDirectoryItem> | null;
   skip?: number;
   take?: number;
   totalCount?: number;
@@ -17829,16 +18594,16 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Form description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Feedback submissions using this form */
-  feedback?: TestingLabTestingFeedback[] | null;
+  feedback?: Array<TestingLabTestingFeedback> | null;
   /** Form structure in JSON format */
   formData: string;
   formSchema?: string | null;
   formType?: TestingLabFeedbackFormType;
   /** Version number of this form */
   formVersion?: number;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this form is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -17854,7 +18619,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Number of feedback submissions */
   submissionCount?: number;
   /** Tags as array */
-  tagArray?: string[] | null;
+  tagArray?: Array<string> | null;
   /** Tags for categorization */
   tags?: string | null;
   tenantId?: string | null;
@@ -17912,7 +18677,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Request description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** URL to download the product/game build */
   downloadUrl?: string | null;
   /** Testing duration */
@@ -17922,11 +18687,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Estimated testing duration in hours */
   estimatedDurationHours?: number | null;
   /** Feedback collected for this request */
-  feedback?: TestingLabTestingFeedback[] | null;
+  feedback?: Array<TestingLabTestingFeedback> | null;
   /** Simple feedback form content (plain text questions) */
   feedbackFormContent?: string | null;
   /** Feedback forms associated with this request */
-  feedbackForms?: TestingLabTestingFeedbackForm[] | null;
+  feedbackForms?: Array<TestingLabTestingFeedbackForm> | null;
   /** Instructions content (text format) */
   instructionsContent?: string | null;
   /** File ID for instruction documents */
@@ -17934,7 +18699,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   instructionsType: TestingLabInstructionType;
   /** URL for instructions */
   instructionsUrl?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this request is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -17947,13 +18712,13 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   maxTesters?: number | null;
   mode?: TestingLabTestingMode;
   /** Participants in this testing request */
-  participants?: TestingLabTestingParticipant[] | null;
+  participants?: Array<TestingLabTestingParticipant> | null;
   priority?: TestingLabTestingPriority;
   projectVersion?: ProjectsProjectVersion;
   /** Foreign key to the project version (optional - can be standalone testing) */
   projectVersionId?: string | null;
   /** Testing sessions for this request */
-  sessions?: TestingLabTestingSession[] | null;
+  sessions?: Array<TestingLabTestingSession> | null;
   /** Testing start date */
   startDate: string;
   status: TestingLabTestingRequestStatus;
@@ -17972,13 +18737,13 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Data model for Testing Lab Testing Lab Analytics Report Projection. */
 export interface TestingLabTestingLabAnalyticsReportProjection {
   current?: TestingLabTestingLabAnalyticsSummaryProjection;
-  events?: TestingLabTestingLabEventAnalyticsProjection[] | null;
+  events?: Array<TestingLabTestingLabEventAnalyticsProjection> | null;
   fromDate?: string;
   generatedAt?: string;
   locations?: TestingLabTestingLabLocationAnalyticsProjection;
   previous?: TestingLabTestingLabAnalyticsSummaryProjection;
   toDate?: string;
-  trend?: TestingLabTestingLabAnalyticsTrendProjection[] | null;
+  trend?: Array<TestingLabTestingLabAnalyticsTrendProjection> | null;
 }
 
 /** Data model for Testing Lab Testing Lab Analytics Summary Projection. */
@@ -18140,13 +18905,13 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Location description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Available equipment/resources */
   equipment?: string | null;
   equipmentAvailable?: string | null;
   /** Full address as string */
   fullAddress?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether this location is currently available */
   isAvailable?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -18164,7 +18929,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Postal code */
   postalCode?: string | null;
   /** Testing sessions at this location */
-  sessions?: TestingLabTestingSession[] | null;
+  sessions?: Array<TestingLabTestingSession> | null;
   /** State/Province */
   state?: string | null;
   status?: TestingLabLocationStatus;
@@ -18199,16 +18964,16 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Feedback provided by this participant */
-  feedback?: TestingLabTestingFeedback[] | null;
+  feedback?: Array<TestingLabTestingFeedback> | null;
   /** Number of feedback submissions */
   feedbackCount?: number;
   /** Whether instructions have been acknowledged */
   instructionsAcknowledged: boolean;
   /** When instructions were acknowledged */
   instructionsAcknowledgedAt?: string | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether participation is active */
   isActive?: boolean;
   /** Whether participation is completed */
@@ -18274,7 +19039,7 @@ export interface TestingLabTestingParticipantDirectoryProjection {
   attendedCount?: number;
   checkedInCount?: number;
   completedCount?: number;
-  items?: TestingLabTestingParticipantDirectoryItemProjection[] | null;
+  items?: Array<TestingLabTestingParticipantDirectoryItemProjection> | null;
   noShowCount?: number;
   registeredCount?: number;
   totalCount?: number;
@@ -18314,12 +19079,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   event?: TestingLabTestingEvent;
   eventApplicationResponse?: TestingLabQuestionnaireOutput;
   eventApplicationResponseJson?: string | null;
   eventId?: string;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -18330,11 +19095,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   projectId?: string;
   projectVersion?: ProjectsProjectVersion;
   projectVersionId?: string | null;
-  questionnaireRevisions?: TestingLabTestingQuestionnaireRevision[] | null;
+  questionnaireRevisions?: Array<TestingLabTestingQuestionnaireRevision> | null;
   rulesAcceptedAt?: string | null;
   status?: TestingLabTestingApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
   submittedAssetReferenceIdsJson?: string | null;
   submittedBy?: IdentityUsersUser;
   submittedByUserId?: string;
@@ -18346,7 +19111,7 @@ Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses 
 Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
 Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
   version?: number;
-  votes?: TestingLabTestingApplicationVote[] | null;
+  votes?: Array<TestingLabTestingApplicationVote> | null;
 }
 
 /** Data model for Testing Lab Testing Project Application Projection. */
@@ -18367,9 +19132,9 @@ export interface TestingLabTestingProjectApplicationProjection {
   rulesAcceptedAt?: string | null;
   status?: TestingLabTestingApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
   submittedByUserId?: string;
-  votes?: TestingLabTestingApplicationVoteProjection[] | null;
+  votes?: Array<TestingLabTestingApplicationVoteProjection> | null;
 }
 
 /** Data model for Testing Lab Testing Project Brief. */
@@ -18377,9 +19142,9 @@ export interface TestingLabTestingProjectBrief {
   controls?: string | null;
   installationAndAccess?: string | null;
   knownLimitations?: string | null;
-  links?: string[] | null;
+  links?: Array<string> | null;
   testObjective?: string | null;
-  testTasks?: string[] | null;
+  testTasks?: Array<string> | null;
 }
 
 /** Data model for Testing Lab Testing Questionnaire Revision. */
@@ -18396,8 +19161,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -18474,7 +19239,7 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: CQRSIDomainEvent[] | null;
+  domainEvents?: Array<CQRSIDomainEvent> | null;
   /** Session duration */
   duration?: string;
   /** Session end time */
@@ -18483,8 +19248,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Optional event slot that scheduled this operational session. */
   eventSlotId?: string | null;
   /** Testing feedback for this session */
-  feedback?: TestingLabTestingFeedback[] | null;
-  integrationEvents?: IDurableIntegrationEvent[] | null;
+  feedback?: Array<TestingLabTestingFeedback> | null;
+  integrationEvents?: Array<IDurableIntegrationEvent> | null;
   /** Whether the session is currently active */
   isActive?: boolean;
   /** Whether the session is completed */
@@ -18514,7 +19279,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Number of registered testers */
   registeredTesterCount?: number;
   /** Session registrations */
-  registrations?: TestingLabSessionRegistration[] | null;
+  registrations?: Array<TestingLabSessionRegistration> | null;
   /** Session date */
   sessionDate: string;
   /** Session name */
@@ -18631,7 +19396,7 @@ export interface TestingLabUpdateTestingLocationDto {
 export interface TestingLabUpdateTestingProjectApplicationInput {
   preferredAvailability?: string | null;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: string[] | null;
+  submittedAssetReferenceIds?: Array<string> | null;
 }
 
 /** Data model for Testing Lab Update Testing Request Dto. */
@@ -18680,9 +19445,9 @@ export interface TestingLabUpsertTestingEventTemplateInput {
 
 /** Data model for Testing Lab User Testing Lab Permissions. */
 export interface TestingLabUserTestingLabPermissions {
-  assignedRoles?: string[] | null;
+  assignedRoles?: Array<string> | null;
   permissions?: TestingLabTestingLabPermissionsDto;
-  resourcePermissions?: TestingLabTestingLabResourcePermissionDto[] | null;
+  resourcePermissions?: Array<TestingLabTestingLabResourcePermissionDto> | null;
   tenantId?: string | null;
   userId?: string;
 }
@@ -18934,6 +19699,23 @@ export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodTyp
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
+export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
+export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
+export let CommercePaymentsRevenueAnomalyStatusSchema: z.ZodType<CommercePaymentsRevenueAnomalyStatus>;
+export let CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput>;
+export let CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult>;
+export let CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput>;
+export let CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput>;
+export let CommercePaymentsRevenueAuditingControllerStatementLineInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerStatementLineInput>;
+export let CommercePaymentsRevenueComplianceReportSchema: z.ZodType<CommercePaymentsRevenueComplianceReport>;
+export let CommercePaymentsRevenueDiscrepancyKindSchema: z.ZodType<CommercePaymentsRevenueDiscrepancyKind>;
+export let CommercePaymentsRevenueEventGroupTotalSchema: z.ZodType<CommercePaymentsRevenueEventGroupTotal>;
+export let CommercePaymentsRevenueReconciliationCoverageSchema: z.ZodType<CommercePaymentsRevenueReconciliationCoverage>;
+export let CommercePaymentsRevenueReconciliationDiscrepancySchema: z.ZodType<CommercePaymentsRevenueReconciliationDiscrepancy>;
+export let CommercePaymentsRevenueReconciliationRunSchema: z.ZodType<CommercePaymentsRevenueReconciliationRun>;
+export let CommercePaymentsRevenueReconciliationStatusSchema: z.ZodType<CommercePaymentsRevenueReconciliationStatus>;
+export let CommercePaymentsRevenueTrendPointSchema: z.ZodType<CommercePaymentsRevenueTrendPoint>;
+export let CommercePaymentsRevenueTrendReportSchema: z.ZodType<CommercePaymentsRevenueTrendReport>;
 export let CommercePaymentsTaxBreakdownSchema: z.ZodType<CommercePaymentsTaxBreakdown>;
 export let CommercePaymentsTaxCalculationResultSchema: z.ZodType<CommercePaymentsTaxCalculationResult>;
 export let CommercePaymentsTaxExemptionValidationResultSchema: z.ZodType<CommercePaymentsTaxExemptionValidationResult>;
@@ -19030,6 +19812,7 @@ export let CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInputSchem
 export let CommerceSubscriptionsSubscriptionStatusSchema: z.ZodType<CommerceSubscriptionsSubscriptionStatus>;
 export let CommerceSubscriptionsSubscriptionUpgradeResultSchema: z.ZodType<CommerceSubscriptionsSubscriptionUpgradeResult>;
 export let CommerceSubscriptionsSubscriptionUsageDtoSchema: z.ZodType<CommerceSubscriptionsSubscriptionUsageDto>;
+export let ComplianceAuditAcknowledgeSecurityAlertInputSchema: z.ZodType<ComplianceAuditAcknowledgeSecurityAlertInput>;
 export let ComplianceAuditAuditAccessAgeBucketSchema: z.ZodType<ComplianceAuditAuditAccessAgeBucket>;
 export let ComplianceAuditAuditActionTypeDescriptorSchema: z.ZodType<ComplianceAuditAuditActionTypeDescriptor>;
 export let ComplianceAuditAuditActionTypeFrequencySchema: z.ZodType<ComplianceAuditAuditActionTypeFrequency>;
@@ -19064,6 +19847,8 @@ export let ComplianceAuditAuditRetentionGrowthModelSchema: z.ZodType<ComplianceA
 export let ComplianceAuditAuditRetentionHistoricalEvidenceSchema: z.ZodType<ComplianceAuditAuditRetentionHistoricalEvidence>;
 export let ComplianceAuditAuditRetentionMonthForecastSchema: z.ZodType<ComplianceAuditAuditRetentionMonthForecast>;
 export let ComplianceAuditAuditRetentionObligationSchema: z.ZodType<ComplianceAuditAuditRetentionObligation>;
+export let ComplianceAuditAuditRetentionPolicySensitivityRuleSchema: z.ZodType<ComplianceAuditAuditRetentionPolicySensitivityRule>;
+export let ComplianceAuditAuditRetentionPolicyTemplateSchema: z.ZodType<ComplianceAuditAuditRetentionPolicyTemplate>;
 export let ComplianceAuditAuditRetentionRecommendationSchema: z.ZodType<ComplianceAuditAuditRetentionRecommendation>;
 export let ComplianceAuditAuditRetentionRiskSchema: z.ZodType<ComplianceAuditAuditRetentionRisk>;
 export let ComplianceAuditAuditRetentionScenarioSchema: z.ZodType<ComplianceAuditAuditRetentionScenario>;
@@ -19100,9 +19885,11 @@ export let ComplianceAuditCompliancePackageSummarySchema: z.ZodType<ComplianceAu
 export let ComplianceAuditCompliancePackageValidationReportSchema: z.ZodType<ComplianceAuditCompliancePackageValidationReport>;
 export let ComplianceAuditComplianceScopeExclusionSchema: z.ZodType<ComplianceAuditComplianceScopeExclusion>;
 export let ComplianceAuditConfigureAuditRetentionInputSchema: z.ZodType<ComplianceAuditConfigureAuditRetentionInput>;
+export let ComplianceAuditConfigureSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditConfigureSecurityLogRetentionInput>;
 export let ComplianceAuditCreateCompliancePackageInputSchema: z.ZodType<ComplianceAuditCreateCompliancePackageInput>;
 export let ComplianceAuditCreateScheduledAuditExportInputSchema: z.ZodType<ComplianceAuditCreateScheduledAuditExportInput>;
 export let ComplianceAuditDailyActivityTrendSchema: z.ZodType<ComplianceAuditDailyActivityTrend>;
+export let ComplianceAuditEnforceSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditEnforceSecurityLogRetentionInput>;
 export let ComplianceAuditExportFormatSchema: z.ZodType<ComplianceAuditExportFormat>;
 export let ComplianceAuditExportStatusSchema: z.ZodType<ComplianceAuditExportStatus>;
 export let ComplianceAuditFailureReasonCountSchema: z.ZodType<ComplianceAuditFailureReasonCount>;
@@ -19111,8 +19898,17 @@ export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAudit
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
 export let ComplianceAuditScheduledAuditExportOutputSchema: z.ZodType<ComplianceAuditScheduledAuditExportOutput>;
+export let ComplianceAuditSecurityAlertOutputSchema: z.ZodType<ComplianceAuditSecurityAlertOutput>;
+export let ComplianceAuditSecurityAlertStatusSchema: z.ZodType<ComplianceAuditSecurityAlertStatus>;
 export let ComplianceAuditSecurityAuditDashboardSchema: z.ZodType<ComplianceAuditSecurityAuditDashboard>;
 export let ComplianceAuditSecurityAuditSourceTypeSchema: z.ZodType<ComplianceAuditSecurityAuditSourceType>;
+export let ComplianceAuditSecurityEventDeliveryStatusOutputSchema: z.ZodType<ComplianceAuditSecurityEventDeliveryStatusOutput>;
+export let ComplianceAuditSecurityEventKindSchema: z.ZodType<ComplianceAuditSecurityEventKind>;
+export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyEntry>;
+export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
+export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
+export let ComplianceAuditSensitivityLevelSchema: z.ZodType<ComplianceAuditSensitivityLevel>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
 export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditEntry>;
@@ -19436,6 +20232,8 @@ export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<Iden
 export let IdentityAuthenticationRevokeApiKeyInputSchema: z.ZodType<IdentityAuthenticationRevokeApiKeyInput>;
 export let IdentityAuthenticationRevokeRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRevokeRefreshTokenInput>;
 export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticationRiskLevel>;
+export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
+export let IdentityAuthenticationRotateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyOutput>;
 export let IdentityAuthenticationRotateKeyInputSchema: z.ZodType<IdentityAuthenticationRotateKeyInput>;
 export let IdentityAuthenticationSecretRotationOutputSchema: z.ZodType<IdentityAuthenticationSecretRotationOutput>;
 export let IdentityAuthenticationSendEmailVerificationInputSchema: z.ZodType<IdentityAuthenticationSendEmailVerificationInput>;
@@ -19468,6 +20266,8 @@ export let IdentityAuthenticationWebAuthnAuthenticationOptionsResultSchema: z.Zo
 export let IdentityAuthenticationWebAuthnAuthenticationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticationResult>;
 export let IdentityAuthenticationWebAuthnAuthenticatorTypeSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticatorType>;
 export let IdentityAuthenticationWebAuthnCredentialInfoSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialInfo>;
+export let IdentityAuthenticationWebAuthnCredentialStatusSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialStatus>;
+export let IdentityAuthenticationWebAuthnCredentialTransitionResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialTransitionResult>;
 export let IdentityAuthenticationWebAuthnCredentialVerifyResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialVerifyResult>;
 export let IdentityAuthenticationWebAuthnRegistrationOptionsResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationOptionsResult>;
 export let IdentityAuthenticationWebAuthnRegistrationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationResult>;
@@ -19500,6 +20300,12 @@ export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<Ide
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
 export let IdentityAuthorizationElevationRequestStatusSchema: z.ZodType<IdentityAuthorizationElevationRequestStatus>;
+export let IdentityAuthorizationExpiringTenantPermissionSchema: z.ZodType<IdentityAuthorizationExpiringTenantPermission>;
+export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationExtendTenantPermissionExpirationCommand>;
+export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
+export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
+export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
@@ -19507,11 +20313,17 @@ export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<Iden
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
+export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
+export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
+export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<IdentityAuthorizationPermissionComplianceReport>;
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
+export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
+export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -19524,6 +20336,7 @@ export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizat
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
+export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
@@ -19846,6 +20659,7 @@ export let LearningCoursesContentInteractionSummaryDtoSchema: z.ZodType<Learning
 export let LearningCoursesContentProgressDtoSchema: z.ZodType<LearningCoursesContentProgressDto>;
 export let LearningCoursesContentStatsDtoSchema: z.ZodType<LearningCoursesContentStatsDto>;
 export let LearningCoursesContentSummaryDtoSchema: z.ZodType<LearningCoursesContentSummaryDto>;
+export let LearningCoursesCourseAccessCapabilitiesSchema: z.ZodType<LearningCoursesCourseAccessCapabilities>;
 export let LearningCoursesCourseSupportTicketMessageInputSchema: z.ZodType<LearningCoursesCourseSupportTicketMessageInput>;
 export let LearningCoursesCreateActivityGradeDtoSchema: z.ZodType<LearningCoursesCreateActivityGradeDto>;
 export let LearningCoursesCreateCourseSupportTicketInputSchema: z.ZodType<LearningCoursesCreateCourseSupportTicketInput>;
@@ -20037,6 +20851,9 @@ export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDel
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
+export let PagedResultRevenueAnomalyAlertSchema: z.ZodType<PagedResultRevenueAnomalyAlert>;
+export let PagedResultRevenueReconciliationDiscrepancySchema: z.ZodType<PagedResultRevenueReconciliationDiscrepancy>;
+export let PagedResultRevenueReconciliationRunSchema: z.ZodType<PagedResultRevenueReconciliationRun>;
 export let PagedResultSubscriptionSchema: z.ZodType<PagedResultSubscription>;
 export let PagedResultSubscriptionNotificationDtoSchema: z.ZodType<PagedResultSubscriptionNotificationDto>;
 export let PagedResultSupportTicketDtoSchema: z.ZodType<PagedResultSupportTicketDto>;
@@ -22336,6 +23153,228 @@ CommercePaymentsProcessRefundResultSchema = z.object({
   status: z.lazy(() => CommercePaymentsTransactionStatusSchema),
 });
 
+/** Zod schema for CommercePaymentsRevenueAnomalyAlert. Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Detection is idempotent per (kind, day): re-running detection for the same
+day never duplicates an alert. */
+CommercePaymentsRevenueAnomalyAlertSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().max(1000).nullable().optional(),
+  baselineDays: z.number().int().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  detectedAtUtc: z.string().datetime().optional(),
+  detectedForDateUtc: z.string().datetime().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  expectedNetRevenue: z.number().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueAnomalyKindSchema).optional(),
+  observedNetRevenue: z.number().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueAnomalyStatusSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+  zScore: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAnomalyKind. Kind of revenue anomaly detected by the statistical detector */
+CommercePaymentsRevenueAnomalyKindSchema = z.enum(['Spike', 'Drop']);
+
+/** Zod schema for CommercePaymentsRevenueAnomalyStatus. Lifecycle status of a revenue anomaly alert */
+CommercePaymentsRevenueAnomalyStatusSchema = z.enum(['Open', 'Acknowledged']);
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult. Result of a manual anomaly detection pass. */
+CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema = z.object({
+  alertsCreated: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema = z.object({
+  evaluationDateUtc: z.string().datetime().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema = z.object({
+  externalStatementId: z.string().nullable().optional(),
+  lines: z
+    .array(z.lazy(() => CommercePaymentsRevenueAuditingControllerStatementLineInputSchema))
+    .nullable()
+    .optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerStatementLineInput. One external statement line supplied inline. */
+CommercePaymentsRevenueAuditingControllerStatementLineInputSchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  referenceId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueComplianceReport. Compliance-grade revenue summary for an inclusive period. */
+CommercePaymentsRevenueComplianceReportSchema = z.object({
+  attestation: z.string().nullable().optional(),
+  fromUtc: z.string().datetime().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  reconciliation: z.lazy(() => CommercePaymentsRevenueReconciliationCoverageSchema).optional(),
+  totalsByEventType: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsBySource: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsByStatus: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  toUtc: z.string().datetime().optional(),
+  uncountedEventCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueDiscrepancyKind. Kind of mismatch detected between an external statement and internal revenue events */
+CommercePaymentsRevenueDiscrepancyKindSchema = z.enum([
+  'MissingInternal',
+  'MissingExternal',
+  'AmountMismatch',
+  'CurrencyMismatch',
+  'DuplicateExternalReference',
+]);
+
+/** Zod schema for CommercePaymentsRevenueEventGroupTotal. Grouped totals for one key of a grouping dimension (event type, source or status). */
+CommercePaymentsRevenueEventGroupTotalSchema = z.object({
+  count: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationCoverage. Reconciliation coverage summary included in compliance reports. */
+CommercePaymentsRevenueReconciliationCoverageSchema = z.object({
+  discrepancies: z.number().int().optional(),
+  lastRunCompletedAtUtc: z.string().datetime().nullable().optional(),
+  matchedLines: z.number().int().optional(),
+  reconciliationRuns: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationDiscrepancy. One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+CommercePaymentsRevenueReconciliationDiscrepancySchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalAmount: z.number().nullable().optional(),
+  externalCurrency: z.string().max(3).nullable().optional(),
+  externalOccurredAtUtc: z.string().datetime().nullable().optional(),
+  externalReference: z.string().min(1).max(200),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  internalAmount: z.number().nullable().optional(),
+  internalCurrency: z.string().max(3).nullable().optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueDiscrepancyKindSchema).optional(),
+  message: z.string().max(1000).nullable().optional(),
+  revenueEventId: z.string().uuid().nullable().optional(),
+  run: z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema).optional(),
+  runId: z.string().uuid().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationRun. One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+CommercePaymentsRevenueReconciliationRunSchema = z.object({
+  id: z.string().uuid().optional(),
+  completedAtUtc: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  discrepancies: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  discrepancyCount: z.number().int().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalStatementId: z.string().max(200).nullable().optional(),
+  failureReason: z.string().max(1000).nullable().optional(),
+  initiatedByUserId: z.string().uuid().nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  matchedCount: z.number().int().optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().min(1).max(100),
+  startedAtUtc: z.string().datetime().optional(),
+  statementLineCount: z.number().int().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueReconciliationStatusSchema).optional(),
+  summaryJson: z.string().max(2000).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationStatus. Lifecycle status of a revenue reconciliation run */
+CommercePaymentsRevenueReconciliationStatusSchema = z.enum(['Running', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRevenueTrendPoint. One point of a historical revenue trend. */
+CommercePaymentsRevenueTrendPointSchema = z.object({
+  creditTotal: z.number().optional(),
+  dateUtc: z.string().datetime().optional(),
+  debitTotal: z.number().optional(),
+  eventCount: z.number().int().optional(),
+  netTotal: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueTrendReport. Historical revenue trend over an inclusive date range. */
+CommercePaymentsRevenueTrendReportSchema = z.object({
+  fromUtc: z.string().datetime().optional(),
+  points: z
+    .array(z.lazy(() => CommercePaymentsRevenueTrendPointSchema))
+    .nullable()
+    .optional(),
+  totalCredit: z.number().optional(),
+  totalDebit: z.number().optional(),
+  totalNet: z.number().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for CommercePaymentsTaxBreakdown. Individual tax breakdown (for compound/multiple taxes) */
 CommercePaymentsTaxBreakdownSchema = z.object({
   description: z.string().nullable().optional(),
@@ -23439,6 +24478,11 @@ CommerceSubscriptionsSubscriptionUsageDtoSchema = z.object({
   usersCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAcknowledgeSecurityAlertInput. Data model for Compliance Audit Acknowledge Security Alert Request. */
+ComplianceAuditAcknowledgeSecurityAlertInputSchema = z.object({
+  notes: z.string().max(1000).nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditAccessAgeBucket. Data model for Compliance Audit Audit Access Age Bucket. */
 ComplianceAuditAuditAccessAgeBucketSchema = z.object({
   ageDays: z.number().int().optional(),
@@ -23699,10 +24743,13 @@ ComplianceAuditAuditRetentionComplianceViolationSchema = z.object({
   source: z.string().nullable().optional(),
 });
 
-/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. Data model for Compliance Audit Audit Retention Configuration Response. */
+/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
 ComplianceAuditAuditRetentionConfigurationOutputSchema = z.object({
   id: z.string().uuid().optional(),
   configuration: z.lazy(() => ComplianceAuditConfigureAuditRetentionInputSchema).optional(),
+  inheritedFromTemplateId: z.string().nullable().optional(),
   revision: z.number().int().optional(),
   tenantId: z.string().uuid().optional(),
   updatedAtUtc: z.string().datetime().optional(),
@@ -23766,6 +24813,32 @@ ComplianceAuditAuditRetentionObligationSchema = z.object({
   minimumRetentionDays: z.number().int().min(1).max(36500).optional(),
   name: z.string().min(1).max(100),
   source: z.string().min(1).max(1000),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicySensitivityRule. Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+ComplianceAuditAuditRetentionPolicySensitivityRuleSchema = z.object({
+  maximumRetentionDays: z.number().int().nullable(),
+  minimumRetentionDays: z.number().int(),
+  rationale: z.string().nullable(),
+  sensitivity: z.lazy(() => ComplianceAuditSensitivityLevelSchema),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicyTemplate. Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+ComplianceAuditAuditRetentionPolicyTemplateSchema = z.object({
+  id: z.string().nullable(),
+  baselineScenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema),
+  baseTemplateId: z.string().nullable(),
+  description: z.string().nullable(),
+  displayName: z.string().nullable(),
+  framework: z.string().nullable(),
+  isBaseline: z.boolean(),
+  obligations: z.array(z.lazy(() => ComplianceAuditAuditRetentionObligationSchema)).nullable(),
+  publishedAtUtc: z.string().datetime(),
+  sensitivityRules: z.array(z.lazy(() => ComplianceAuditAuditRetentionPolicySensitivityRuleSchema)).nullable(),
+  tierPrices: z.array(z.lazy(() => ComplianceAuditAuditStorageTierPriceSchema)).nullable(),
 });
 
 /** Zod schema for ComplianceAuditAuditRetentionRecommendation. Data model for Compliance Audit Audit Retention Recommendation. */
@@ -24150,6 +25223,14 @@ ComplianceAuditConfigureAuditRetentionInputSchema = z.object({
     .max(4),
 });
 
+/** Zod schema for ComplianceAuditConfigureSecurityLogRetentionInput. Configures the retention policy applied to a tenant's security audit log. */
+ComplianceAuditConfigureSecurityLogRetentionInputSchema = z.object({
+  categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  expectedRevision: z.number().int().min(0).max(2147483647).optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().min(30).max(3650).optional(),
+});
+
 /** Zod schema for ComplianceAuditCreateCompliancePackageInput. Data model for Compliance Audit Create Compliance Package Request. */
 ComplianceAuditCreateCompliancePackageInputSchema = z.object({
   documentIds: z.array(z.string().uuid()).max(100),
@@ -24183,6 +25264,11 @@ ComplianceAuditDailyActivityTrendSchema = z.object({
   permissionEvents: z.number().int().optional(),
   securityViolations: z.number().int().optional(),
   totalEvents: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditEnforceSecurityLogRetentionInput. Data model for Compliance Audit Enforce Security Log Retention Request. */
+ComplianceAuditEnforceSecurityLogRetentionInputSchema = z.object({
+  dryRun: z.boolean().optional(),
 });
 
 /** Zod schema for ComplianceAuditExportFormat. OpenAPI schema for Compliance Audit Export Format. */
@@ -24268,6 +25354,31 @@ ComplianceAuditScheduledAuditExportOutputSchema = z.object({
   updatedAt: z.string().datetime().optional(),
 });
 
+/** Zod schema for ComplianceAuditSecurityAlertOutput. Data model for Compliance Audit Security Alert Response. */
+ComplianceAuditSecurityAlertOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  firstSeenAtUtc: z.string().datetime().optional(),
+  ipAddress: z.string().nullable().optional(),
+  kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
+  lastSeenAtUtc: z.string().datetime().optional(),
+  occurrenceCount: z.number().int().optional(),
+  ruleId: z.string().nullable().optional(),
+  severity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  sourceActionType: z.string().nullable().optional(),
+  sourceAuditLogId: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => ComplianceAuditSecurityAlertStatusSchema).optional(),
+  subjectUserId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityAlertStatus. Status of a security alert raised by the security event pipeline. */
+ComplianceAuditSecurityAlertStatusSchema = z.enum(['Open', 'Acknowledged', 'Resolved']);
+
 /** Zod schema for ComplianceAuditSecurityAuditDashboard. Security audit dashboard with aggregated statistics. */
 ComplianceAuditSecurityAuditDashboardSchema = z.object({
   crossTenantAttempts: z.number().int().optional(),
@@ -24306,6 +25417,79 @@ ComplianceAuditSecurityAuditDashboardSchema = z.object({
 
 /** Zod schema for ComplianceAuditSecurityAuditSourceType. Source type for security audit entries. */
 ComplianceAuditSecurityAuditSourceTypeSchema = z.enum(['Authentication', 'Permission', 'General', 'All']);
+
+/** Zod schema for ComplianceAuditSecurityEventDeliveryStatusOutput. Durable delivery status of the security event pipeline for the current instance. */
+ComplianceAuditSecurityEventDeliveryStatusOutputSchema = z.object({
+  databaseWriteAttemptsBeforeSpool: z.number().int().optional(),
+  lastDrainAttemptedAtUtc: z.string().datetime().nullable().optional(),
+  lastDrainError: z.string().nullable().optional(),
+  lastDrainSucceededAtUtc: z.string().datetime().nullable().optional(),
+  oldestSpooledEventUtc: z.string().datetime().nullable().optional(),
+  spooledEventCount: z.number().int().optional(),
+  spoolingEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityEventKind. Kinds of security-relevant events recognized by the security event pipeline.
+Every kind maps to a default severity, an escalation policy for failed outcomes,
+and a stable description used by the taxonomy endpoint. */
+ComplianceAuditSecurityEventKindSchema = z.enum([
+  'Authentication',
+  'Authorization',
+  'SessionManagement',
+  'AccountLifecycle',
+  'ThreatDetection',
+  'DataProtection',
+  'TenantIsolation',
+  'ConfigurationChange',
+  'DataMovement',
+  'Other',
+]);
+
+/** Zod schema for ComplianceAuditSecurityEventTaxonomyEntry. One entry of the published security event taxonomy. */
+ComplianceAuditSecurityEventTaxonomyEntrySchema = z.object({
+  actionType: z.string().nullable().optional(),
+  defaultSeverity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  description: z.string().nullable().optional(),
+  escalateOnFailure: z.boolean().optional(),
+  kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityEventTaxonomyOutput. Response of `GET /api/audit/security-events/taxonomy`: the complete security event taxonomy. */
+ComplianceAuditSecurityEventTaxonomyOutputSchema = z.object({
+  entries: z.array(z.lazy(() => ComplianceAuditSecurityEventTaxonomyEntrySchema)),
+  kinds: z.array(z.string()).nullable().optional(),
+  totalEntries: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogRetentionExecutionOutput. Data model for Compliance Audit Security Log Retention Execution Response. */
+ComplianceAuditSecurityLogRetentionExecutionOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  cutoffUtc: z.string().datetime().optional(),
+  deletedCount: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  evaluatedCount: z.number().int().optional(),
+  executedAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  policyRetentionDays: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  triggeredByUserId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogRetentionPolicyOutput. Data model for Compliance Audit Security Log Retention Policy Response. */
+ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  configuredAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().optional(),
+  revision: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  updatedByUserId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditSensitivityLevel. Defines sensitivity levels for data access auditing */
+ComplianceAuditSensitivityLevelSchema = z.enum(['Public', 'Internal', 'Confidential', 'Restricted', 'HighlyRestricted']);
 
 /** Zod schema for ComplianceAuditTopIpActivity. Data model for Compliance Audit Top Ip Activity. */
 ComplianceAuditTopIpActivitySchema = z.object({
@@ -27102,6 +28286,8 @@ IdentityAuthenticationApiKeyDtoSchema = z.object({
   keyPrefix: z.string().nullable().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   name: z.string().nullable().optional(),
+  replacesKeyId: z.string().uuid().nullable().optional(),
+  rotationGraceEndsAt: z.string().datetime().nullable().optional(),
   scopes: z.array(z.string()).nullable().optional(),
   usageCount: z.number().int().optional(),
 });
@@ -27572,6 +28758,22 @@ IdentityAuthenticationRevokeRefreshTokenInputSchema = z.object({
 /** Zod schema for IdentityAuthenticationRiskLevel. Risk level for session security and anomaly detection */
 IdentityAuthenticationRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
 
+/** Zod schema for IdentityAuthenticationRotateApiKeyInput. Data model for Identity Authentication Rotate Api Key Request. */
+IdentityAuthenticationRotateApiKeyInputSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  gracePeriodMinutes: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRotateApiKeyOutput. Data model for Identity Authentication Rotate Api Key Response. */
+IdentityAuthenticationRotateApiKeyOutputSchema = z.object({
+  newKey: z.lazy(() => IdentityAuthenticationCreateApiKeyOutputSchema).optional(),
+  oldKeyGraceEndsAt: z.string().datetime().nullable().optional(),
+  oldKeyId: z.string().uuid().optional(),
+  oldKeyRevoked: z.boolean().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationRotateKeyInput. Request to manually rotate signing key */
 IdentityAuthenticationRotateKeyInputSchema = z.object({
   reason: z.string().nullable().optional(),
@@ -27861,20 +29063,36 @@ IdentityAuthenticationWebAuthnCredentialInfoSchema = z.object({
   authenticatorType: z.lazy(() => IdentityAuthenticationWebAuthnAuthenticatorTypeSchema).optional(),
   backedUp: z.boolean().optional(),
   createdAt: z.string().datetime().optional(),
+  deactivatedAt: z.string().datetime().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isDefault: z.boolean().optional(),
   isPasswordless: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
+  revokedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialStatus. Lifecycle status of a WebAuthn credential. */
+IdentityAuthenticationWebAuthnCredentialStatusSchema = z.enum(['Active', 'Deactivated', 'Revoked']);
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialTransitionResult. Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+IdentityAuthenticationWebAuthnCredentialTransitionResultSchema = z.object({
+  error: z.string().nullable().optional(),
+  errorDescription: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationWebAuthnCredentialVerifyResult. Result of verifying a WebAuthn credential. */
 IdentityAuthenticationWebAuthnCredentialVerifyResultSchema = z.object({
   error: z.string().nullable().optional(),
+  isDeactivated: z.boolean().optional(),
   isExpired: z.boolean().optional(),
   isRevoked: z.boolean().optional(),
   isValid: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   signatureCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
   success: z.boolean().optional(),
 });
 
@@ -28160,6 +29378,69 @@ IdentityAuthorizationEffectivePermissionsOutputSchema = z.object({
 /** Zod schema for IdentityAuthorizationElevationRequestStatus. Status of JIT elevation request */
 IdentityAuthorizationElevationRequestStatusSchema = z.enum(['None', 'Pending', 'Approved', 'Denied', 'Active', 'Expired', 'Revoked']);
 
+/** Zod schema for IdentityAuthorizationExpiringTenantPermission. A tenant permission grant that is about to expire. */
+IdentityAuthorizationExpiringTenantPermissionSchema = z.object({
+  expiresAt: z.string().datetime(),
+  permissionId: z.string().uuid(),
+  permissions: z.array(z.string()).nullable(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExtendTenantPermissionExpirationCommand. Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema = z.object({
+  extension: z.string(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionEntry. Permission entry in the sync contract (one TenantPermission row). */
+IdentityAuthorizationExternalPermissionEntrySchema = z.object({
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionSyncDocument. Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+IdentityAuthorizationExternalPermissionSyncDocumentSchema = z.object({
+  exportedAtUtc: z.string().datetime().optional(),
+  permissions: z
+    .array(z.lazy(() => IdentityAuthorizationExternalPermissionEntrySchema))
+    .nullable()
+    .optional(),
+  roles: z
+    .array(z.lazy(() => IdentityAuthorizationExternalRoleDefinitionSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalRoleDefinition. Role definition in the sync contract. */
+IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
+  additionalParentRoleNames: z.array(z.string()).nullable().optional(),
+  blockedInheritedPermissions: z.array(z.string()).nullable().optional(),
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  parentRoleName: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  priority: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
+IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
+  expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
+  tenantId: z.string().uuid(),
+});
+
 /** Zod schema for IdentityAuthorizationGetPendingResourceInvitationsOutput. Response containing pending invitations for the current user. */
 IdentityAuthorizationGetPendingResourceInvitationsOutputSchema = z.object({
   invitations: z.array(z.lazy(() => IdentityAuthorizationResourceInvitationDtoSchema)).nullable(),
@@ -28211,6 +29492,13 @@ IdentityAuthorizationHasPermissionOutputSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationImpactSeverity. Impact severity level */
 IdentityAuthorizationImpactSeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthorizationImportPermissionSyncInput. Request body for the permission sync import endpoint. */
+IdentityAuthorizationImportPermissionSyncInputSchema = z.object({
+  document: z.lazy(() => IdentityAuthorizationExternalPermissionSyncDocumentSchema).optional(),
+  dryRun: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
@@ -28279,6 +29567,43 @@ IdentityAuthorizationPermissionAnomalySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionComplianceBreakdown. Allow/deny rates for one reporting dimension value. */
+IdentityAuthorizationPermissionComplianceBreakdownSchema = z.object({
+  allow: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  deny: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  error: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionComplianceReport. Compliance report over recorded permission evaluations. */
+IdentityAuthorizationPermissionComplianceReportSchema = z.object({
+  allowCount: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  byOperation: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  byPermission: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  bySource: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  denyCount: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  errorCount: z.number().int().optional(),
+  errorRate: z.number().optional(),
+  fromUtc: z.string().datetime().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalEvaluations: z.number().int().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionDelegation. Permission delegation allows users to delegate their permissions to other users */
 IdentityAuthorizationPermissionDelegationSchema = z.object({
   id: z.string().uuid().optional(),
@@ -28297,6 +29622,33 @@ IdentityAuthorizationPermissionDelegationSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
   usageCount: z.number().int().optional(),
   usageLimit: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionRestorationResult. Result of a permission restoration attempt. */
+IdentityAuthorizationPermissionRestorationResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  restoredPermissionId: z.string().uuid().nullable().optional(),
+  succeeded: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
+IdentityAuthorizationPermissionSyncChangeSchema = z.object({
+  kind: z.string().nullable().optional(),
+  payload: z.record(z.string(), z.string()).nullable().optional(),
+  target: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncImportResult. Result of a synchronization import (or dry-run preview). */
+IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
+  applied: z.boolean().optional(),
+  changes: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionSyncChangeSchema))
+    .nullable()
+    .optional(),
+  dryRun: z.boolean().optional(),
+  isValid: z.boolean().optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
@@ -28507,6 +29859,15 @@ These are baseline permissions applied to all users in a specific tenant. */
 IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema = z.object({
   permissions: z.array(z.string()).nullable(),
   setBy: z.string().uuid(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationSetTenantPermissionExpirationCommand. Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+IdentityAuthorizationSetTenantPermissionExpirationCommandSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
 });
 
@@ -32068,6 +33429,20 @@ LearningCoursesContentSummaryDtoSchema = z.object({
   title: z.string().nullable().optional(),
 });
 
+/** Zod schema for LearningCoursesCourseAccessCapabilities. Data model for Learning Courses Course Access Capabilities. */
+LearningCoursesCourseAccessCapabilitiesSchema = z.object({
+  canAccessWorkspace: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  canLearn: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
+  canReviewAsStaff: z.boolean().optional(),
+  courseExists: z.boolean().optional(),
+  courseId: z.string().uuid().optional(),
+  hasActiveEnrollment: z.boolean().optional(),
+  isOwner: z.boolean().optional(),
+  isTenantMember: z.boolean().optional(),
+});
+
 /** Zod schema for LearningCoursesCourseSupportTicketMessageInput. Data model for Learning Courses Course Support Ticket Message Request. */
 LearningCoursesCourseSupportTicketMessageInputSchema = z.object({
   isInternal: z.boolean().optional(),
@@ -34050,6 +35425,57 @@ PagedResultPromoCodeDtoSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
   items: z
     .array(z.lazy(() => CommerceProductsPromoCodeDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueAnomalyAlert. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueAnomalyAlertSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueAnomalyAlertSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationDiscrepancy. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationDiscrepancySchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationRun. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationRunSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema))
     .nullable()
     .optional(),
   pageNumber: z.number().int().optional(),

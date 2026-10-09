@@ -1,6 +1,21 @@
 namespace GameGuild.Configuration.PresentationLayer.Authorization;
 
 /// <summary>
+///     Compression algorithm applied to qualifying L2 (distributed) cache values.
+/// </summary>
+public enum L2CompressionAlgorithm
+{
+    /// <summary>No compression; values are stored as raw JSON.</summary>
+    None = 0,
+
+    /// <summary>GZIP (RFC 1952). Faster compress/decompress; the default.</summary>
+    GZip = 1,
+
+    /// <summary>Brotli. Higher ratio; higher CPU cost per write.</summary>
+    Brotli = 2
+}
+
+/// <summary>
 ///     Configuration options for authorization caching.
 /// </summary>
 public sealed class AuthorizationCacheOptions : BaseOptions
@@ -74,6 +89,63 @@ public sealed class AuthorizationCacheOptions : BaseOptions
     ///     Should cover the longest L1 cache TTL to reduce Redis calls.
     /// </summary>
     public int DistributedCacheTtlSeconds { get; set; } = 600;
+
+    // ========================
+    // REDIS TOPOLOGY & FAILOVER
+    // ========================
+
+    /// <summary>
+    ///     Sentinel master set name. Set this (and list the sentinel endpoints in
+    ///     <see cref="RedisConnectionString"/>) to resolve the current primary through Sentinel.
+    ///     Wired through to <c>StackExchange.Redis.ConfigurationOptions.ServiceName</c>.
+    /// </summary>
+    public string? RedisServiceName { get; set; }
+
+    /// <summary>
+    ///     Optional proxy mode for the Redis connection: <c>None</c> (default), <c>Twemproxy</c>,
+    ///     or <c>Envoyproxy</c>. Wired through to <c>StackExchange.Redis.ConfigurationOptions.Proxy</c>
+    ///     when set. Cluster routing needs no setting: list the cluster endpoints in the
+    ///     connection string and StackExchange.Redis follows MOVED/ASK redirects automatically.
+    /// </summary>
+    public string? RedisProxy { get; set; }
+
+    /// <summary>
+    ///     Redis connect timeout in milliseconds. Wired through to
+    ///     <c>StackExchange.Redis.ConfigurationOptions.ConnectTimeout</c> when set; otherwise the
+    ///     value from the connection string (or the client default) applies.
+    /// </summary>
+    public int? RedisConnectTimeoutMilliseconds { get; set; }
+
+    /// <summary>
+    ///     Number of connection attempts before giving up during an initial connect or failover.
+    ///     Wired through to <c>StackExchange.Redis.ConfigurationOptions.ConnectRetry</c> when set.
+    ///     The multiplexer is always created with <c>AbortOnConnectFail = false</c>, so a failed
+    ///     initial connect retries in the background instead of crashing startup.
+    /// </summary>
+    public int? RedisConnectRetry { get; set; }
+
+    // ========================
+    // L2 PAYLOAD COMPRESSION
+    // ========================
+
+    /// <summary>
+    ///     Whether to compress L2 (distributed) cache values that reach
+    ///     <see cref="L2CompressionThresholdBytes"/>. Existing entries written without
+    ///     compression remain readable: compressed payloads carry a versioned envelope and
+    ///     readers fall back to raw JSON for non-enveloped bytes.
+    /// </summary>
+    public bool L2CompressionEnabled { get; set; } = true;
+
+    /// <summary>
+    ///     Compression algorithm applied to qualifying L2 values. Default is <see cref="L2CompressionAlgorithm.GZip"/>.
+    /// </summary>
+    public L2CompressionAlgorithm L2CompressionAlgorithm { get; set; } = L2CompressionAlgorithm.GZip;
+
+    /// <summary>
+    ///     Serialized values at or above this size in bytes are compressed before being written
+    ///     to L2. Smaller values are stored as raw JSON. Must be non-negative.
+    /// </summary>
+    public int L2CompressionThresholdBytes { get; set; } = 1024;
 
     // ========================
     // AUTOMATIC CACHE WARMING
@@ -215,6 +287,37 @@ public sealed class AuthorizationCacheOptions : BaseOptions
             throw new InvalidOperationException("RedisConnectionString is required when UseDistributedCache is true.");
         }
 
+
+        if (RedisServiceName is not null && string.IsNullOrWhiteSpace(RedisServiceName))
+        {
+            throw new InvalidOperationException("RedisServiceName cannot be empty or whitespace.");
+        }
+
+        if (RedisProxy is not null && !IsSupportedRedisProxyMode(RedisProxy))
+        {
+            throw new InvalidOperationException("RedisProxy must be one of: None, Twemproxy, Envoyproxy.");
+        }
+
+        if (RedisConnectTimeoutMilliseconds is < 0)
+        {
+            throw new InvalidOperationException("RedisConnectTimeoutMilliseconds cannot be negative.");
+        }
+
+        if (RedisConnectRetry is < 0)
+        {
+            throw new InvalidOperationException("RedisConnectRetry cannot be negative.");
+        }
+
+        if (L2CompressionThresholdBytes < 0)
+        {
+            throw new InvalidOperationException("L2CompressionThresholdBytes cannot be negative.");
+        }
+
+        if (!Enum.IsDefined(L2CompressionAlgorithm))
+        {
+            throw new InvalidOperationException("L2CompressionAlgorithm must be None, GZip, or Brotli.");
+        }
+
         var longestL1TtlSeconds = Math.Max(
             Math.Max(PolicyTtlSeconds, PermissionTtlSeconds),
             Math.Max(AccessControlListTtlSeconds, RulesetTtlSeconds));
@@ -228,4 +331,9 @@ public sealed class AuthorizationCacheOptions : BaseOptions
     ///     Creates a default instance of AuthorizationCacheOptions.
     /// </summary>
     public static AuthorizationCacheOptions CreateDefault() => new();
+
+    private static bool IsSupportedRedisProxyMode(string value) =>
+        string.Equals(value.Trim(), "None", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(value.Trim(), "Twemproxy", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(value.Trim(), "Envoyproxy", StringComparison.OrdinalIgnoreCase);
 }

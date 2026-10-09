@@ -6,13 +6,14 @@ import { COI_LEARN_RULES } from "./src/lib/emception/coi-headers";
 const configuredDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const precompiledLearning =
-  process.env.GAMEGUILD_PRECOMPILED_SCOPE === "learning";
+const fastDev =
+  process.env.GAMEGUILD_FAST_DEV === "1" ||
+  process.env.npm_lifecycle_event === "dev:fast";
 const isolatedDistDir =
   process.env.CODING_CYCLE_E2E === "1"
     ? ".next-e2e-coding-cycle"
-    : precompiledLearning
-      ? ".next-learning"
+    : fastDev
+      ? ".next-fast"
       : undefined;
 
 const nextConfig: NextConfig = {
@@ -30,9 +31,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // Locale routing must see RSC headers to preserve internal navigation.
   skipProxyUrlNormalize: true,
-  // The precompiled local surface is served by `next start`; release builds
-  // keep the standalone artifact consumed by Docker.
-  ...(!precompiledLearning ? { output: "standalone" as const } : {}),
+  output: "standalone",
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
   transpilePackages: [
     "@game-guild/ui",
@@ -71,15 +70,9 @@ const nextConfig: NextConfig = {
     //   { protocol: "https", hostname: "www.python.org" },
     // ],
   },
-  ...(precompiledLearning
-    ? { typescript: { tsconfigPath: "tsconfig.learning.json" } }
-    : {}),
   experimental: {
     authInterrupts: true,
     cpus: 1,
-    // Selective builds need Next's TypeScript API checker so source files and
-    // generated route types are filtered by the same --debug-build-paths set.
-    ...(precompiledLearning ? { useTypeScriptCli: false } : {}),
   },
   turbopack: {
     rules: {
@@ -91,6 +84,16 @@ const nextConfig: NextConfig = {
       },
     },
     resolveAlias: {
+      ...(fastDev
+        ? {
+            "@game-guild/client/react":
+              "../../packages/infrastructure/client/dist-fast/react.js",
+            "@game-guild/client/next":
+              "../../packages/infrastructure/client/dist-fast/next.js",
+            "@game-guild/client":
+              "../../packages/infrastructure/client/dist-fast/index.js",
+          }
+        : {}),
       module: {
         browser: "./src/lib/browser-node-module-stub.ts",
       },

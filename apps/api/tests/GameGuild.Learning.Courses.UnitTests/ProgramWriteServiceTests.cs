@@ -78,7 +78,7 @@ public sealed class ProgramWriteServiceTests
         var respondent = new ProgramUser { Id = Guid.NewGuid(), ProgramId = program.Id, UserId = Guid.NewGuid(), IsActive = true };
         context.AddRange(program, reflection, respondent, ReflectionResponse(respondent, reflection));
         await context.SaveChangesAsync();
-        dynamic service = new ContentInteractionService(context, new TestRequestContextAccessor(managerId, tenantId), CreatePermissions(PermissionType.Review));
+        dynamic service = new ContentInteractionService(context, new TestRequestContextAccessor(managerId, tenantId), CreateCourseAccess(canReviewAsStaff: true));
 
         var result = ((IEnumerable<object>)await service.GetReflectionResponsesAsync(program.Id, reflection.Id)).Single();
 
@@ -106,7 +106,7 @@ public sealed class ProgramWriteServiceTests
 
         context.AddRange(program, content);
         await context.SaveChangesAsync();
-        var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), tenantId), CreatePermissions(PermissionType.Read));
+        var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), tenantId), CreateCourseAccess(canReviewAsStaff: false));
 
         Func<Task> action = survey
             ? () => service.GetSurveyResponsesAsync(program.Id, content.Id)
@@ -167,17 +167,16 @@ public sealed class ProgramWriteServiceTests
     [Theory]
     [InlineData(nameof(ContentInteractionController.GetSurveyResults))]
     [InlineData(nameof(ContentInteractionController.GetReflectionResponses))]
-    public void ManagerResponseEndpoints_ShouldRequireProgramReviewPermission(string actionName)
+    public void ManagerResponseEndpoints_ShouldRequireCourseReviewCapability(string actionName)
     {
         var action = typeof(ContentInteractionController).GetMethod(actionName);
 
         var permission = action!.GetCustomAttributes(inherit: true)
-            .OfType<IResourcePermissionMarker>()
+            .OfType<RequireCourseCapabilityAttribute>()
             .Single();
 
-        permission.ResourceType.Should().Be(typeof(Program));
-        permission.RequiredPermission.Should().Be(PermissionType.Review);
-        permission.ResourceIdParameterName.Should().Be("programId");
+        permission.Capability.Should().Be(CourseCapability.StaffReview);
+        permission.RouteParameterName.Should().Be("programId");
     }
 
     [Theory]
@@ -197,7 +196,7 @@ public sealed class ProgramWriteServiceTests
         context.AddRange(program, enrollment, survey, new ContentInteraction { Id = Guid.NewGuid(), ProgramUserId = enrollment.Id, UserId = learnerId, ContentId = survey.Id, SubmittedAt = SystemClock.UtcNow, SubmissionData = """{"kind":"survey","answers":{"a":1}}""" });
         await context.SaveChangesAsync();
         var actorId = managerPath ? Guid.NewGuid() : learnerId;
-        var service = new ContentInteractionService(context, new TestRequestContextAccessor(actorId, requestTenantId), CreatePermissions(PermissionType.Read));
+        var service = new ContentInteractionService(context, new TestRequestContextAccessor(actorId, requestTenantId), CreateCourseAccess(canReviewAsStaff: false));
 
         Func<Task> action = managerPath
             ? () => service.GetSurveyResponsesAsync(program.Id, survey.Id)
@@ -261,7 +260,7 @@ public sealed class ProgramWriteServiceTests
         context.AddRange(program, survey, response);
         await context.SaveChangesAsync();
 
-        var results = await new ContentInteractionService(context, new TestRequestContextAccessor(managerId, tenantId), CreatePermissions(PermissionType.Review))
+        var results = await new ContentInteractionService(context, new TestRequestContextAccessor(managerId, tenantId), CreateCourseAccess(canReviewAsStaff: true))
             .GetSurveyResponsesAsync(program.Id, survey.Id);
 
         GetRespondentUserId(results.Should().ContainSingle().Which).Should().Be(shouldExposeIdentity ? respondentId : null);
@@ -602,7 +601,7 @@ public sealed class ProgramWriteServiceTests
         context.AddRange(graph.Program, graph.Content, graph.Enrollment);
         await context.SaveChangesAsync();
         var managerId = Guid.NewGuid();
-        var service = CreateSubmissionService(context, managerId, Guid.NewGuid(), CreatePermissions(PermissionType.Edit));
+        var service = CreateSubmissionService(context, managerId, Guid.NewGuid(), CreateCourseAccess(canEdit: true));
 
         var submitted = await service.SubmitUserContentAsync(
             graph.Program.Id, graph.Enrollment.UserId, graph.Content.Id, "manual submission");
@@ -622,8 +621,11 @@ public sealed class ProgramWriteServiceTests
         context.AddRange(graph.Program, graph.Content, graph.Enrollment);
         await context.SaveChangesAsync();
         var managerId = Guid.NewGuid();
-        var permissions = CreatePermissions(grantedPermission);
-        var service = CreateSubmissionService(context, managerId, Guid.NewGuid(), permissions);
+        var service = CreateSubmissionService(
+            context,
+            managerId,
+            Guid.NewGuid(),
+            CreateCourseAccess(canEdit: grantedPermission == PermissionType.Edit));
 
         Func<Task> action = () => service.SubmitUserContentAsync(
             graph.Program.Id, graph.Enrollment.UserId, graph.Content.Id, "manual submission");
@@ -1124,17 +1126,28 @@ public sealed class ProgramWriteServiceTests
         IApplicationDbContext context,
         Guid userId,
         Guid? tenantId = null,
-        IPermissionQueryService? permissions = null) =>
-        new(context, requestContextAccessor: new TestRequestContextAccessor(userId, tenantId), permissionQueryService: permissions);
+        ICourseAccessEvaluator? courseAccess = null) =>
+        new(context, requestContextAccessor: new TestRequestContextAccessor(userId, tenantId), courseAccessEvaluator: courseAccess);
 
-    private static IPermissionQueryService CreatePermissions(PermissionType grantedPermission)
+    private static ICourseAccessEvaluator CreateCourseAccess(bool canReviewAsStaff = false, bool canEdit = false)
     {
-        var permissions = new Mock<IPermissionQueryService>();
-        permissions.Setup(service => service.HasTenantPermissionAsync(
-                It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid? _, Guid? _, string permission, CancellationToken _) =>
-                permission.EndsWith($".{grantedPermission}", StringComparison.Ordinal));
-        return permissions.Object;
+        var access = new Mock<ICourseAccessEvaluator>();
+        access.Setup(service => service.HasCapabilityAsync(
+                It.IsAny<Guid>(), CourseCapability.Edit, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(canEdit);
+        access.Setup(service => service.GetCapabilitiesAsync(
+                It.IsAny<Program>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Program program, CancellationToken _) => new CourseAccessCapabilities(
+                program.Id,
+                true,
+                true,
+                false,
+                false,
+                false,
+                canEdit,
+                false,
+                canReviewAsStaff));
+        return access.Object;
     }
 
     private sealed class TestRequestContextAccessor(Guid userId, Guid? tenantId = null) : IRequestContextAccessor

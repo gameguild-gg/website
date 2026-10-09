@@ -25,6 +25,10 @@ public sealed record CompleteWebAuthnAuthenticationCommand(
     string UserAgent) : ICommand<WebAuthnAuthenticationResult>;
 public sealed record VerifyWebAuthnCredentialCommand(Guid UserId, Guid CredentialId) : ICommand<WebAuthnCredentialVerifyResult>;
 public sealed record DeleteWebAuthnCredentialCommand(Guid UserId, Guid CredentialId) : ICommand<bool>;
+public sealed record DeactivateWebAuthnCredentialCommand(Guid UserId, Guid CredentialId)
+    : ICommand<WebAuthnCredentialTransitionResult>;
+public sealed record ActivateWebAuthnCredentialCommand(Guid UserId, Guid CredentialId)
+    : ICommand<WebAuthnCredentialTransitionResult>;
 public sealed record UpdateWebAuthnCredentialNameCommand(
     Guid UserId,
     Guid CredentialId,
@@ -37,6 +41,8 @@ public sealed class WebAuthnMutationCommandHandler :
     ICommandHandler<CompleteWebAuthnAuthenticationCommand, WebAuthnAuthenticationResult>,
     ICommandHandler<VerifyWebAuthnCredentialCommand, WebAuthnCredentialVerifyResult>,
     ICommandHandler<DeleteWebAuthnCredentialCommand, bool>,
+    ICommandHandler<DeactivateWebAuthnCredentialCommand, WebAuthnCredentialTransitionResult>,
+    ICommandHandler<ActivateWebAuthnCredentialCommand, WebAuthnCredentialTransitionResult>,
     ICommandHandler<UpdateWebAuthnCredentialNameCommand, bool>
 {
     private readonly IWebAuthnService webAuthnService;
@@ -145,6 +151,16 @@ public sealed class WebAuthnMutationCommandHandler :
 
     public Task<bool> Handle(DeleteWebAuthnCredentialCommand command, CancellationToken cancellationToken) =>
         webAuthnService.DeleteCredentialAsync(command.UserId, command.CredentialId, cancellationToken);
+
+    public Task<WebAuthnCredentialTransitionResult> Handle(
+        DeactivateWebAuthnCredentialCommand command,
+        CancellationToken cancellationToken) =>
+        webAuthnService.DeactivateCredentialAsync(command.UserId, command.CredentialId, cancellationToken);
+
+    public Task<WebAuthnCredentialTransitionResult> Handle(
+        ActivateWebAuthnCredentialCommand command,
+        CancellationToken cancellationToken) =>
+        webAuthnService.ActivateCredentialAsync(command.UserId, command.CredentialId, cancellationToken);
 
     public Task<bool> Handle(UpdateWebAuthnCredentialNameCommand command, CancellationToken cancellationToken) =>
         webAuthnService.UpdateCredentialNameAsync(

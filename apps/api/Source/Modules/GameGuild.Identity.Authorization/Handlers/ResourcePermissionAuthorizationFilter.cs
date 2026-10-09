@@ -51,7 +51,13 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
         var permissionQueryService = context.HttpContext.RequestServices.GetService<IPermissionQueryService>();
         if (actorContextAccessor == null || permissionQueryService == null)
         {
-            _logger.LogWarning("IActorContextAccessor or IPermissionQueryService not available - skipping authorization check");
+            // SECURITY (deny-by-default / fail-safe defaults): missing authorization
+            // dependencies are a host misconfiguration, not a bypass route. The request is
+            // denied instead of skipped so that no surface can execute without the
+            // permission-evaluation pipeline being present.
+            _logger.LogError(
+                "IActorContextAccessor or IPermissionQueryService not available - denying request (fail-closed)");
+            context.Result = new Microsoft.AspNetCore.Mvc.ForbidResult();
             return;
         }
 
@@ -76,6 +82,15 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
         foreach (var attr in attributes)
         {
             var authorized = await CheckPermissionAsync(attr, context.HttpContext, actor, permissionQueryService).ConfigureAwait(false);
+
+            // Durable decision audit for endpoint-level permission checks (issue #346):
+            // granted AND denied evaluations are recorded in the permission audit trail so
+            // access to sensitive surfaces (monetization, analytics) is traceable.
+            if (attr is RequiresPermissionAttribute or RequirePermissionAttribute)
+            {
+                await AuditSimplePermissionDecisionAsync(context, actionDescriptor, actor, attr, authorized).ConfigureAwait(false);
+            }
+
             if (!authorized)
             {
                 _logger.LogWarning(
@@ -86,6 +101,66 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
                 context.Result = new Microsoft.AspNetCore.Mvc.ForbidResult();
                 return;
             }
+        }
+    }
+
+    /// <summary>
+    ///     Records a <see cref="PermissionOperationType.Check"/> entry in the permission audit
+    ///     trail for an endpoint-level permission decision. Best-effort: an audit failure must
+    ///     never change the authorization outcome.
+    /// </summary>
+    private async Task AuditSimplePermissionDecisionAsync(
+        AuthorizationFilterContext context,
+        ControllerActionDescriptor actionDescriptor,
+        ActorContext actor,
+        Attribute attr,
+        bool authorized)
+    {
+        var auditService = context.HttpContext.RequestServices.GetService<IPermissionAuditService>();
+        if (auditService == null)
+        {
+            return;
+        }
+
+        var permissionName = attr switch
+        {
+            RequiresPermissionAttribute simple => simple.PermissionName,
+            RequirePermissionAttribute alias => alias.PermissionName,
+            _ => null
+        };
+        if (string.IsNullOrEmpty(permissionName))
+        {
+            return;
+        }
+
+        var actorUserId = actor.SubjectIdAsGuid;
+        try
+        {
+            await auditService.LogPermissionChangeAsync(
+                operationType: PermissionOperationType.Check,
+                userId: actorUserId,
+                performedBy: actorUserId ?? Guid.Empty,
+                tenantId: actor.TenantId,
+                permissionType: permissionName,
+                resourceType: $"{actionDescriptor.ControllerName}.{actionDescriptor.ActionName}",
+                reason: authorized ? "Endpoint permission check granted." : "Endpoint permission check denied.",
+                success: authorized,
+                errorMessage: authorized ? null : $"Required permission '{permissionName}' was not granted.",
+                ipAddress: context.HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: context.HttpContext.Request.Headers.UserAgent.ToString(),
+                cancellationToken: context.HttpContext.RequestAborted).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Request aborted - the audit entry is not required for a discarded request.
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to audit permission decision for permission {Permission} on {Controller}.{Action}",
+                permissionName,
+                actionDescriptor.ControllerName,
+                actionDescriptor.ActionName);
         }
     }
 

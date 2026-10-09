@@ -43,6 +43,12 @@ describe("web runtime hardening", () => {
 
     expect(nextConfig).toContain("reactCompiler: true");
     expect(nextConfig).toContain(
+      'process.env.npm_lifecycle_event === "dev:fast"',
+    );
+    expect(nextConfig).toContain(
+      "../../packages/infrastructure/client/dist-fast/index.js",
+    );
+    expect(nextConfig).toContain(
       'outputFileTracingRoot: path.resolve(__dirname, "../..")',
     );
     expect(nextConfig).toContain(
@@ -131,5 +137,30 @@ describe("web runtime hardening", () => {
     expect(rawSourceLoader('print("ready")\n')).toBe(
       'export default "print(\\\"ready\\\")\\n";',
     );
+  });
+
+  it("limits Tailwind discovery to executable UI source", () => {
+    const sharedStyles = readRepoFile("packages/ui/src/styles/globals.css");
+    const webStyles = readRepoFile("apps/web/src/styles/globals.css");
+
+    expect(sharedStyles).toContain('@import "tailwindcss" source(none)');
+    expect(webStyles).toContain('@source "../**/*.{js,jsx,ts,tsx}"');
+    expect(webStyles).not.toContain("*.md");
+    expect(webStyles).not.toContain("*.ipynb");
+  });
+
+  it("keeps the regular and fast development orchestrators separate", () => {
+    const rootPackage = JSON.parse(readRepoFile("package.json")) as {
+      scripts: Record<string, string>;
+    };
+    const regularDev = readRepoFile("scripts/dev.mjs");
+    const fastDev = readRepoFile("scripts/dev-fast.mjs");
+
+    expect(rootPackage.scripts.dev).toBe("node scripts/dev.mjs");
+    expect(rootPackage.scripts["dev:fast"]).toBe("node scripts/dev-fast.mjs");
+    expect(regularDev).not.toContain("dev:fast");
+    expect(regularDev).not.toContain("build:fast");
+    expect(fastDev).toContain('registerDevProcess("dev-fast")');
+    expect(fastDev).toContain('"build:fast"');
   });
 });

@@ -55,8 +55,7 @@ const argumentsToPreserve = [
   "owned^literal",
 ];
 for (const relative of [
-  "scripts/dev-learning.mjs",
-  "apps/web/scripts/build-learning.mjs",
+  "scripts/dev-fast.mjs",
 ]) {
   for (const argument of argumentsToPreserve) {
     test(`${relative} preserves literal child argument ${argument}`, async () => {
@@ -89,8 +88,7 @@ for (const relative of [
           resolvePnpmProcess,
         });
         const operation = run(process.execPath, [entry, argument]);
-        if (relative.startsWith("apps/")) await operation;
-        else await waitForExit(operation);
+        await waitForExit(operation);
         const actual = JSON.parse(await readFile(result, "utf8"));
         assert.deepEqual(actual, [argument]);
         assert.equal(calls.length, 1);
@@ -104,8 +102,7 @@ for (const relative of [
 }
 
 for (const relative of [
-  "scripts/dev-learning.mjs",
-  "apps/web/scripts/build-learning.mjs",
+  "scripts/dev-fast.mjs",
 ]) {
   test(`${relative} executes a pnpm entry point containing spaces and metacharacters`, async () => {
     const owned = await ownedDirectory();
@@ -126,7 +123,7 @@ for (const relative of [
       const source = await readFile(path.join(root, relative), "utf8");
       const run = vm.runInNewContext(`(${sourceFunction(source, "run")})`, {
         spawn,
-        process: { platform: "win32" },
+        process: { platform: "win32", env: environment },
         children: new Set(),
         runtimeEnv: environment,
         buildEnv: environment,
@@ -137,8 +134,7 @@ for (const relative of [
       });
       const args = ["owned argument & literal", "%OWNED_PROCESS_MARKER%"];
       const operation = run("pnpm", args);
-      if (relative.startsWith("apps/")) await operation;
-      else await waitForExit(operation);
+      await waitForExit(operation);
       assert.deepEqual(JSON.parse(await readFile(result, "utf8")), args);
     } finally {
       await owned.cleanup();
@@ -148,7 +144,7 @@ for (const relative of [
 
 test("Windows taskkill invokes its native executable without a shell", async () => {
   const source = await readFile(
-    path.join(root, "scripts/dev-learning.mjs"),
+    path.join(root, "scripts/dev-fast.mjs"),
     "utf8",
   );
   const calls = [];

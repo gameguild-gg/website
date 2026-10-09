@@ -56,7 +56,7 @@ public sealed class AssessmentCourseMembershipPostgreSqlHttpTests(ApiPostgreSqlF
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
                 UserId = userId,
-                Role = userId == instructorId ? "Instructor" : "Member",
+                Role = "Member",
                 IsActive = true,
             }));
             context.AddRange(

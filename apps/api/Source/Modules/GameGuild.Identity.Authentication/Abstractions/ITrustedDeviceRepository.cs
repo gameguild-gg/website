@@ -50,4 +50,9 @@ public interface ITrustedDeviceRepository
     ///     Deletes expired trusted devices (cleanup task).
     /// </summary>
     Task DeleteExpiredAsync(DateTime now, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Checks whether a device fingerprint is currently trusted for a user.
+    /// </summary>
+    Task<bool> IsDeviceTrustedAsync(Guid userId, string deviceFingerprint, CancellationToken cancellationToken = default);
 }

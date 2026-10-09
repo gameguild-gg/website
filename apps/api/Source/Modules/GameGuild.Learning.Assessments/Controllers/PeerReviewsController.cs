@@ -25,8 +25,7 @@ public class PeerReviewsController : BaseApiController
     private readonly IAssessmentService _assessmentService;
     private readonly IRubricService _rubricService;
     private readonly IActorContextAccessor _actorContextAccessor;
-    private readonly IProgramCrudService _programService;
-    private readonly IPermissionQueryService _permissionQueryService;
+    private readonly ICourseAccessEvaluator _courseAccessEvaluator;
     private readonly ILogger<PeerReviewsController> _logger;
     private readonly ISender _sender;
 
@@ -35,8 +34,7 @@ public class PeerReviewsController : BaseApiController
         IAssessmentService assessmentService,
         IRubricService rubricService,
         IActorContextAccessor actorContextAccessor,
-        IProgramCrudService programService,
-        IPermissionQueryService permissionQueryService,
+        ICourseAccessEvaluator courseAccessEvaluator,
         ILogger<PeerReviewsController> logger,
         ISender sender)
     {
@@ -44,8 +42,7 @@ public class PeerReviewsController : BaseApiController
         _assessmentService = assessmentService;
         _rubricService = rubricService;
         _actorContextAccessor = actorContextAccessor;
-        _programService = programService;
-        _permissionQueryService = permissionQueryService;
+        _courseAccessEvaluator = courseAccessEvaluator;
         _logger = logger;
         _sender = sender;
     }
@@ -350,72 +347,17 @@ public class PeerReviewsController : BaseApiController
         return closesAt.Value >= SystemClock.UtcNow;
     }
 
-    private async Task<bool> IsActorInProgramTenantAsync(Guid courseId)
-    {
-        var actor = _actorContextAccessor.ActorContext;
-        var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null)
-        {
-            return false;
-        }
+    private Task<bool> IsActorInProgramTenantAsync(Guid courseId) =>
+        _courseAccessEvaluator.HasCapabilityAsync(
+            courseId,
+            CourseCapability.Learn,
+            HttpContext.RequestAborted);
 
-        if (actor.IsSystemAdmin)
-        {
-            return true;
-        }
-
-        return actor.TenantId.HasValue &&
-               (!program.TenantId.HasValue || program.TenantId == actor.TenantId);
-    }
-
-    private async Task<bool> CanManageCourseAsync(Guid courseId)
-    {
-        var actor = _actorContextAccessor.ActorContext;
-        if (actor.IsSystemAdmin)
-        {
-            return true;
-        }
-
-        if (!actor.SubjectIdAsGuid.HasValue)
-        {
-            return false;
-        }
-
-        var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null)
-        {
-            return false;
-        }
-
-        if (!actor.TenantId.HasValue)
-        {
-            return false;
-        }
-
-        if (program.TenantId.HasValue && program.TenantId != actor.TenantId)
-        {
-            return false;
-        }
-
-        if (program.CreatorId == actor.SubjectIdAsGuid.Value)
-        {
-            return true;
-        }
-
-        foreach (var permission in new[] { PermissionType.Edit, PermissionType.Create, PermissionType.Delete })
-        {
-            var permissionName = $"{nameof(Program)}.{courseId}.{permission}";
-            if (await _permissionQueryService.HasTenantPermissionAsync(
-                    actor.SubjectIdAsGuid.Value,
-                    actor.TenantId,
-                    permissionName).ConfigureAwait(false))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private Task<bool> CanManageCourseAsync(Guid courseId) =>
+        _courseAccessEvaluator.HasCapabilityAsync(
+            courseId,
+            CourseCapability.StaffReview,
+            HttpContext.RequestAborted);
 }
 
 // ===== DTOs =====
