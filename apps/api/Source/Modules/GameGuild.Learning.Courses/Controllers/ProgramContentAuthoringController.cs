@@ -20,7 +20,7 @@ public sealed class ProgramContentAuthoringController(
     ISender sender) : BaseApiController
 {
     [HttpGet]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AuthoringDraftDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<AuthoringDraftDto>> GetDraft(
         Guid programId,
@@ -41,7 +41,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpPut]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AuthoringDraftDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AuthoringDraftDto>> SaveDraft(
@@ -80,7 +80,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpPost("publish")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Publish, "programId")]
+    [RequireCourseCapability(CourseCapability.Publish, "programId")]
     [ProducesResponseType<PublishAuthoringResult>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PublishAuthoringResult>> Publish(
@@ -122,7 +122,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpGet("ai/entitlement")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AiEntitlementDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<AiEntitlementDto>> GetAiEntitlement(
         Guid programId,
@@ -142,7 +142,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpGet("ai/conversations")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<IReadOnlyList<AiAuthoringConversationDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AiAuthoringConversationDto>>> GetAiConversations(
         Guid programId,
@@ -155,7 +155,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpPost("ai/runs")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AiAuthoringRunDto>(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status402PaymentRequired)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -216,7 +216,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpGet("ai/runs/{runId:guid}")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AiAuthoringRunDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<AiAuthoringRunDto>> GetAiRun(
         Guid programId,
@@ -237,7 +237,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpPost("ai/runs/{runId:guid}/cancel")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AiAuthoringRunDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<AiAuthoringRunDto>> CancelAiRun(
         Guid programId,
@@ -262,7 +262,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpGet("ai/runs/{runId:guid}/stream")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [Produces("text/event-stream")]
     public async Task StreamAiRun(
         Guid programId,
@@ -293,7 +293,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpPost("ai/proposals/{proposalId:guid}/apply")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AuthoringDraftDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AuthoringDraftDto>> ApplyAiProposal(
@@ -334,7 +334,7 @@ public sealed class ProgramContentAuthoringController(
     }
 
     [HttpDelete("ai/proposals/{proposalId:guid}")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+    [RequireCourseCapability(CourseCapability.Edit, "programId")]
     [ProducesResponseType<AiProposalDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AiProposalDto>> DiscardAiProposal(

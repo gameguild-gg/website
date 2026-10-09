@@ -68,9 +68,15 @@ public sealed record AuditRetentionSimulationListRequest
     [FromQuery(Name = "take"), Range(1, 100)] public int Take { get; init; } = 25;
 }
 
+/// <summary>
+/// The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+/// was requested, the response carries the platform baseline template and <see cref="InheritedFromTemplateId"/>
+/// names it; otherwise <see cref="InheritedFromTemplateId"/> is null.
+/// </summary>
 public sealed record AuditRetentionConfigurationResponse(
     Guid Id, Guid TenantId, int Revision, Guid UpdatedByUserId, DateTime UpdatedAtUtc,
-    ConfigureAuditRetentionRequest Configuration);
+    ConfigureAuditRetentionRequest Configuration,
+    string? InheritedFromTemplateId = null);
 
 /// <summary>Measured PostgreSQL logical row bytes; physical disk, compression and index costs are separate assumptions.</summary>
 public sealed record AuditStorageDailyCohort(DateOnly DateUtc, long RecordCount, decimal LogicalBytes);

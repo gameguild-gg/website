@@ -13,9 +13,14 @@ public class LoginAttemptAnalysisService(
     IThreatDetectionService threatDetectionService,
     ILogger<LoginAttemptAnalysisService> logger,
     IConfiguration configuration,
-    ISiemIntegrationService siemService) : ILoginAttemptAnalysisService
+    ISiemIntegrationService siemService,
+    IThreatIntelligenceProvider? threatIntelligenceProvider = null,
+    IAuthenticationAuditEventSink? auditEventSink = null) : ILoginAttemptAnalysisService
 {
     private const int DefaultSuspiciousThreshold = 3;
+    private const string MaliciousIpAnomaly = "ThreatIntel:MaliciousIp";
+    private const string BreachedPasswordAnomaly = "ThreatIntel:BreachedPassword";
+    private const string ThreatIntelMatchActionType = "Authentication.ThreatIntelligenceMatch";
 
     public async Task RecordSuspiciousActivityAsync(SuspiciousActivity activity)
     {
@@ -187,6 +192,8 @@ public class LoginAttemptAnalysisService(
                 result.DetectedAnomalies.Add("UnusualTimeOfDay");
             }
 
+            await ApplyThreatIntelligenceSignalsAsync(context, result).ConfigureAwait(false);
+
             result.RiskLevel = result.RiskScore switch
             {
                 >= 80 => RiskLevel.Critical,
@@ -215,6 +222,125 @@ public class LoginAttemptAnalysisService(
     }
 
     // ── Private helpers ──────────────────────────────────────────────────
+
+    /// <summary>
+    ///     Applies credential-stuffing threat-intelligence signals (malicious IP blocklist,
+    ///     breached-password corpus) to the risk analysis. Fails open on every provider
+    ///     error so a defense-in-depth signal can never break sign-in. In observation mode
+    ///     (the default) matches are logged and audited without raising the risk score.
+    /// </summary>
+    private async Task ApplyThreatIntelligenceSignalsAsync(
+        AuthenticationAttemptContext context,
+        AuthenticationAnomalyResult result)
+    {
+        if (threatIntelligenceProvider is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var enforcementMode = configuration.GetValue(
+                "ThreatIntelligence:EnforcementMode",
+                ThreatIntelligenceEnforcementMode.Observation);
+            var enforce = enforcementMode == ThreatIntelligenceEnforcementMode.Enforce;
+
+            var ipResult = await threatIntelligenceProvider
+                .CheckIpAddressAsync(context.IpAddress)
+                .ConfigureAwait(false);
+
+            if (ipResult.IsMatch)
+            {
+                await ApplyThreatIntelligenceMatchAsync(
+                    result,
+                    MaliciousIpAnomaly,
+                    ipResult.MatchedCidr,
+                    enforce,
+                    configuration.GetValue("ThreatIntelligence:MaliciousIpRiskScore", 60),
+                    context).ConfigureAwait(false);
+            }
+
+            var passwordResult = await threatIntelligenceProvider
+                .CheckPasswordHashAsync(context.PasswordSha256Hex)
+                .ConfigureAwait(false);
+
+            if (passwordResult.IsMatch)
+            {
+                // The matched digest itself is never included in labels, logs, or audit metadata.
+                await ApplyThreatIntelligenceMatchAsync(
+                    result,
+                    BreachedPasswordAnomaly,
+                    matchedDetail: null,
+                    enforce,
+                    configuration.GetValue("ThreatIntelligence:BreachedPasswordRiskScore", 60),
+                    context).ConfigureAwait(false);
+            }
+        }
+        catch (Exception exception)
+        {
+            // Fail open: threat intelligence is defense-in-depth and must not affect the
+            // outcome (or the availability) of the primary risk analysis.
+            logger.LogWarning(exception, "Threat intelligence evaluation skipped after a provider error");
+        }
+    }
+
+    private async Task ApplyThreatIntelligenceMatchAsync(
+        AuthenticationAnomalyResult result,
+        string anomalyLabel,
+        string? matchedDetail,
+        bool enforce,
+        int riskScoreBump,
+        AuthenticationAttemptContext context)
+    {
+        result.DetectedAnomalies.Add(anomalyLabel);
+
+        if (enforce)
+        {
+            result.RiskScore += riskScoreBump;
+        }
+
+        logger.LogWarning(
+            "Threat intelligence match ({Mode}) - Signal: {Signal}, IP: {IpAddress}, UserId: {UserId}, RiskScoreBump: {RiskScoreBump}",
+            enforce ? "Enforce" : "Observation",
+            anomalyLabel,
+            context.IpAddress,
+            context.UserId,
+            enforce ? riskScoreBump : 0);
+
+        if (auditEventSink is null)
+        {
+            return;
+        }
+
+        try
+        {
+            // Forwarded to the central security event pipeline (SecurityEventLogger) by the
+            // audit module's IAuthenticationAuditEventSink implementation.
+            await auditEventSink.RecordAsync(
+                new AuthenticationAuditEvent(
+                    ThreatIntelMatchActionType,
+                    context.UserId,
+                    Success: false,
+                    Method: "Password",
+                    IpAddress: context.IpAddress,
+                    UserAgent: string.IsNullOrEmpty(context.UserAgent) ? null : context.UserAgent,
+                    TenantId: context.TenantId,
+                    ErrorMessage: anomalyLabel,
+                    AssessedRiskLevel: enforce ? RiskLevel.High : RiskLevel.Medium,
+                    Metadata: new
+                    {
+                        Signal = anomalyLabel,
+                        EnforcementMode = enforce ? "Enforce" : "Observation",
+                        MatchedDetail = matchedDetail,
+                        Provider = threatIntelligenceProvider?.ProviderName
+                    }),
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Could not record the threat intelligence match security event");
+        }
+    }
 
     private async Task<AuthenticationAttemptAnalysis> AnalyzeLoginAttemptInternalAsync(
         AuthenticationAttempt attempt,

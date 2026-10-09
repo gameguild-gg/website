@@ -21,7 +21,7 @@ public sealed class CourseSupportTicketsController(
     IApplicationDbContext db) : BaseApiController
 {
     [HttpPost]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> Create(
         Guid courseId,
         [FromBody] CreateCourseSupportTicketRequest request,
@@ -51,7 +51,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpGet]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<PagedResult<SupportTicketDto>>> List(
         Guid courseId,
         [FromQuery] int skip = 0,
@@ -65,7 +65,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpGet("{ticketId:guid}")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> GetById(
         Guid courseId,
         Guid ticketId,
@@ -76,7 +76,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpPost("{ticketId:guid}/messages")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> AddMessage(
         Guid courseId,
         Guid ticketId,
@@ -101,7 +101,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpPost("{ticketId:guid}:resolve")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> Resolve(
         Guid courseId,
         Guid ticketId,

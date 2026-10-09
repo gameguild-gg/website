@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+dist-fast/
 *.tsbuildinfo
 
 # Generated code is committed because package builds in clean clones

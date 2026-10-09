@@ -392,6 +392,89 @@ export const postApiAuditExportJsonEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesOutput = Array<Types.ComplianceAuditAuditRetentionSimulationSummary>;
+export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditRetentionPoliciesInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostApiAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postApiAuditRetentionPoliciesEndpoint = {
+  operationId: 'postApiAuditRetentionPolicies' as const,
+  method: 'POST' as const,
+  path: '/api/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdInput {
+  id: string;
+}
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetApiAuditRetentionPoliciesConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetApiAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getApiAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesConfiguration' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiAuditRetentionPoliciesConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutApiAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putApiAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'putApiAuditRetentionPoliciesConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetApiAuditRetentionPoliciesTemplatesInput = void;
+export type GetApiAuditRetentionPoliciesTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getApiAuditRetentionPoliciesTemplatesEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAuditRetentionSimulationForGetApiAuditRetentionSimulationInput {
   query?: {
     skip?: number;
@@ -431,7 +514,15 @@ export const getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById
   requiresAuth: true,
 } as const;
 
-export type GetApiAuditRetentionSimulationConfigurationInput = void;
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetApiAuditRetentionSimulationConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
 export type GetApiAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
 export const getApiAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'getApiAuditRetentionSimulationConfiguration' as const,
@@ -449,6 +540,20 @@ export const putApiAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'putApiAuditRetentionSimulationConfiguration' as const,
   method: 'PUT' as const,
   path: '/api/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetApiAuditRetentionSimulationTemplatesInput = void;
+export type GetApiAuditRetentionSimulationTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getApiAuditRetentionSimulationTemplatesEndpoint = {
+  operationId: 'getApiAuditRetentionSimulationTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-simulation/templates' as const,
   tags: ['ComplianceAuditRetentionSimulation'] as const,
   requiresAuth: true,
 } as const;
@@ -2065,6 +2170,10 @@ export const getApiLiveEndpoint = {
   requiresAuth: false,
 } as const;
 
+/**
+ * Product revenue/subscription metrics are business-intelligence data:
+ * access requires the monetization analytics permission (issue #346, ViewAnalytics).
+ */
 export interface GetApiMetricsProductInput {
   query?: {
     startUtc?: string;
@@ -2081,6 +2190,10 @@ export const getApiMetricsProductEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Exports of revenue/subscription metrics are business-intelligence data:
+ * access requires the monetization analytics permission (issue #346, ViewAnalytics).
+ */
 export interface GetApiMetricsProductExportInput {
   query?: {
     startUtc?: string;
@@ -5539,6 +5652,26 @@ export const postAdminEconomyTreasuryWithdrawalsReconcileEndpoint = {
 } as const;
 
 /**
+ * Builds the permission effectiveness compliance report (overall and per
+ * permission / evaluation surface / operation allow-deny rates) for a time range.
+ */
+export interface GetAuthorizationComplianceReportInput {
+  query?: {
+    tenantId?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetAuthorizationComplianceReportOutput = Types.IdentityAuthorizationPermissionComplianceReport;
+export const getAuthorizationComplianceReportEndpoint = {
+  operationId: 'getAuthorizationComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/compliance/report' as const,
+  tags: ['AccessControlPermissionCompliance'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific permission on a resource.
  */
 export interface GetAuthorizationResourcesHasPermissionInput {
@@ -5720,6 +5853,72 @@ export const putAuthorizationResourcesUsersPermissionsEndpoint = {
 } as const;
 
 /**
+ * Restores a soft-deleted tenant permission row inside the retention window.
+ */
+export interface PostAuthorizationRestorationsDeletedInput {
+  permissionId: string;
+}
+export type PostAuthorizationRestorationsDeletedOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsDeletedEndpoint = {
+  operationId: 'postAuthorizationRestorationsDeleted' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/deleted/{permissionId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverses a Grant/Revoke/Deny audit-log entry inside the retention window.
+ */
+export interface PostAuthorizationRestorationsUndoInput {
+  auditLogId: string;
+}
+export type PostAuthorizationRestorationsUndoOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsUndoEndpoint = {
+  operationId: 'postAuthorizationRestorationsUndo' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/undo/{auditLogId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Exports the permission state (roles, tenant defaults, user grants) of a tenant
+ * as a synchronization document. Omit tenantId for the global
+ * scope (system admins only).
+ */
+export interface GetAuthorizationSyncExportInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAuthorizationSyncExportOutput = Types.IdentityAuthorizationExternalPermissionSyncDocument;
+export const getAuthorizationSyncExportEndpoint = {
+  operationId: 'getAuthorizationSyncExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/sync/export' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Imports (or dry-runs) an external permission synchronization document. Invalid
+ * documents are rejected in full with their validation errors; nothing is
+ * partially applied.
+ */
+export interface PostAuthorizationSyncImportInput {
+  body?: Types.IdentityAuthorizationImportPermissionSyncInput;
+}
+export type PostAuthorizationSyncImportOutput = Types.IdentityAuthorizationPermissionSyncImportResult;
+export const postAuthorizationSyncImportEndpoint = {
+  operationId: 'postAuthorizationSyncImport' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/sync/import' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific tenant-level permission.
  */
 export interface GetAuthorizationTenantsHasPermissionInput {
@@ -5828,6 +6027,83 @@ export const postAuthorizationTenantsGrantEndpoint = {
   operationId: 'postAuthorizationTenantsGrant' as const,
   method: 'POST' as const,
   path: '/api/v1/authorization/tenants/grant' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets permission grants expiring within a window (administrative visibility
+ * for upcoming expirations).
+ */
+export interface GetAuthorizationTenantsPermissionsExpiringInput {
+  tenantId: string;
+  query?: {
+    expiresBefore?: string;
+  };
+}
+export type GetAuthorizationTenantsPermissionsExpiringOutput = Types.IdentityAuthorizationGetExpiringTenantPermissionsOutput;
+export const getAuthorizationTenantsPermissionsExpiringEndpoint = {
+  operationId: 'getAuthorizationTenantsPermissionsExpiring' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/tenants/permissions:expiring' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-extends the expiration of permission grants in a tenant by a time period.
+ */
+export interface PostAuthorizationTenantsPermissionsExtendExpirationInput {
+  body?: Types.IdentityAuthorizationExtendTenantPermissionExpirationCommand;
+}
+export type PostAuthorizationTenantsPermissionsExtendExpirationOutput = number;
+export const postAuthorizationTenantsPermissionsExtendExpirationEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsExtendExpiration' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:extend-expiration' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Processes (deactivates, audits, notifies) all expired permission grants now,
+ * without waiting for the background worker. System admin only.
+ */
+export type PostAuthorizationTenantsPermissionsProcessExpiredInput = void;
+export type PostAuthorizationTenantsPermissionsProcessExpiredOutput = number;
+export const postAuthorizationTenantsPermissionsProcessExpiredEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsProcessExpired' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:process-expired' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Publishes upcoming-expiration notifications for grants expiring within the
+ * configured window, without waiting for the background worker. System admin only.
+ */
+export type PostAuthorizationTenantsPermissionsSendExpirationRemindersInput = void;
+export type PostAuthorizationTenantsPermissionsSendExpirationRemindersOutput = number;
+export const postAuthorizationTenantsPermissionsSendExpirationRemindersEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsSendExpirationReminders' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:send-expiration-reminders' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-sets an absolute expiration for permission grants in a tenant.
+ */
+export interface PostAuthorizationTenantsPermissionsSetExpirationInput {
+  body?: Types.IdentityAuthorizationSetTenantPermissionExpirationCommand;
+}
+export type PostAuthorizationTenantsPermissionsSetExpirationOutput = number;
+export const postAuthorizationTenantsPermissionsSetExpirationEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsSetExpiration' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:set-expiration' as const,
   tags: ['AccessControlTenantPermissions'] as const,
   requiresAuth: true,
 } as const;
@@ -5964,6 +6240,210 @@ export const postBillingInvoicesRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/invoices/{invoiceId}/retry' as const,
   tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
+ *
+ * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
+ */
+export interface GetBillingRevenueAuditingInput {
+  query?: {
+    tenantId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingOutput = Types.PagedResultRevenueReconciliationRun;
+export const getBillingRevenueAuditingEndpoint = {
+  operationId: 'getBillingRevenueAuditing' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run a reconciliation comparing an external accounting/ERP statement against internal
+ * revenue events for an inclusive period. Requires the SystemAdmin role.
+ *
+ * Compares external accounting/ERP statement lines against internal revenue events for an inclusive period, records an immutable reconciliation run and persists every discrepancy (missing internal/external references, amount and currency mismatches, duplicate external references). When no inline lines are supplied, lines are read from the configured external statement source.
+ */
+export interface PostBillingRevenueAuditingInput {
+  body?: Types.CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput;
+}
+export type PostBillingRevenueAuditingOutput = Types.CommercePaymentsRevenueReconciliationRun;
+export const postBillingRevenueAuditingEndpoint = {
+  operationId: 'postBillingRevenueAuditing' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Trigger anomaly detection for the trailing days and persist alerts. Requires the
+ * SystemAdmin role; the periodic worker performs the same pass automatically when
+ * `RevenueAuditing:WorkerEnabled` is set.
+ *
+ * Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Detection is idempotent per kind and day.
+ */
+export interface PostBillingRevenueAuditingAnomaliesDetectInput {
+  body?: Types.CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput;
+}
+export type PostBillingRevenueAuditingAnomaliesDetectOutput = Types.CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult;
+export const postBillingRevenueAuditingAnomaliesDetectEndpoint = {
+  operationId: 'postBillingRevenueAuditingAnomaliesDetect' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing/anomalies/detect' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List revenue anomaly alerts, newest detection first. Tenant-scoped for non-admin actors.
+ *
+ * Returns a paged list of revenue anomaly alerts, newest detection first, optionally filtered by status (Open, Acknowledged). Non-admin actors only see alerts of their own tenant.
+ */
+export interface GetBillingRevenueAuditingAnomalyAlertsInput {
+  query?: {
+    tenantId?: string;
+    status?: Types.CommercePaymentsRevenueAnomalyStatus;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingAnomalyAlertsOutput = Types.PagedResultRevenueAnomalyAlert;
+export const getBillingRevenueAuditingAnomalyAlertsEndpoint = {
+  operationId: 'getBillingRevenueAuditingAnomalyAlerts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/anomaly-alerts' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledge an open anomaly alert, recording the reviewing operator. Requires the
+ * SystemAdmin role.
+ *
+ * Marks an open revenue anomaly alert as acknowledged, recording the reviewing operator and optional notes. The acting identity is taken from the authenticated actor, never from the request body.
+ */
+export interface PostBillingRevenueAuditingAnomalyAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput;
+}
+export type PostBillingRevenueAuditingAnomalyAlertsAcknowledgeOutput = void;
+export const postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint = {
+  operationId: 'postBillingRevenueAuditingAnomalyAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing/anomaly-alerts/{alertId}/acknowledge' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Compliance report for an inclusive period: totals by event type, source and status,
+ * uncounted events, reconciliation coverage and an attestation statement.
+ *
+ * Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status, uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.
+ */
+export interface GetBillingRevenueAuditingComplianceReportInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingComplianceReportOutput = Types.CommercePaymentsRevenueComplianceReport;
+export const getBillingRevenueAuditingComplianceReportEndpoint = {
+  operationId: 'getBillingRevenueAuditingComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/compliance-report' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Export the audit report for a period as CSV (RFC 4180) or JSON for external
+ * accounting and ERP systems.
+ *
+ * Serializes the compliance summary and daily trend for the inclusive period as RFC 4180 CSV or JSON, ready for delivery to external accounting and ERP systems.
+ */
+export interface GetBillingRevenueAuditingExportInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    format?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingExportOutput = Blob;
+export const getBillingRevenueAuditingExportEndpoint = {
+  operationId: 'getBillingRevenueAuditingExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/export' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one reconciliation run with its counters and summary.
+ *
+ * Returns one reconciliation run, including matched/discrepancy counters and the machine-readable summary captured at completion.
+ */
+export interface GetRunByIdInput {
+  runId: string;
+}
+export type GetRunByIdOutput = Types.CommercePaymentsRevenueReconciliationRun;
+export const getRunByIdEndpoint = {
+  operationId: 'getRunById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/runs/{runId}' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the discrepancies recorded by a reconciliation run.
+ *
+ * Returns a paged list of the discrepancies recorded by a reconciliation run, optionally filtered by kind (MissingInternal, MissingExternal, AmountMismatch, CurrencyMismatch, DuplicateExternalReference).
+ */
+export interface GetBillingRevenueAuditingRunsDiscrepanciesInput {
+  runId: string;
+  query?: {
+    kind?: Types.CommercePaymentsRevenueDiscrepancyKind;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingRunsDiscrepanciesOutput = Types.PagedResultRevenueReconciliationDiscrepancy;
+export const getBillingRevenueAuditingRunsDiscrepanciesEndpoint = {
+  operationId: 'getBillingRevenueAuditingRunsDiscrepancies' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/runs/{runId}/discrepancies' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Historical daily net-revenue trend for an inclusive period, with zero-activity days included.
+ *
+ * Returns one net-revenue point per UTC day in the inclusive period (credit total, debit total, net total and event count), including days without activity, plus range totals.
+ */
+export interface GetBillingRevenueAuditingTrendsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingTrendsOutput = Types.CommercePaymentsRevenueTrendReport;
+export const getBillingRevenueAuditingTrendsEndpoint = {
+  operationId: 'getBillingRevenueAuditingTrends' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/trends' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11679,6 +12159,89 @@ export const getAuditCompliancePackagingTemplatesEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesOutput = Array<Types.ComplianceAuditAuditRetentionSimulationSummary>;
+export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint = {
+  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPolicies' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditRetentionPoliciesInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postAuditRetentionPoliciesEndpoint = {
+  operationId: 'postAuditRetentionPolicies' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdInput {
+  id: string;
+}
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint = {
+  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPoliciesById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetAuditRetentionPoliciesConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'getAuditRetentionPoliciesConfiguration' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAuditRetentionPoliciesConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'putAuditRetentionPoliciesConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetAuditRetentionPoliciesTemplatesInput = void;
+export type GetAuditRetentionPoliciesTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getAuditRetentionPoliciesTemplatesEndpoint = {
+  operationId: 'getAuditRetentionPoliciesTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAuditRetentionSimulationForGetAuditRetentionSimulationInput {
   query?: {
     skip?: number;
@@ -11718,7 +12281,15 @@ export const getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoi
   requiresAuth: true,
 } as const;
 
-export type GetAuditRetentionSimulationConfigurationInput = void;
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetAuditRetentionSimulationConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
 export type GetAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
 export const getAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'getAuditRetentionSimulationConfiguration' as const,
@@ -11736,6 +12307,20 @@ export const putAuditRetentionSimulationConfigurationEndpoint = {
   operationId: 'putAuditRetentionSimulationConfiguration' as const,
   method: 'PUT' as const,
   path: '/v1/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetAuditRetentionSimulationTemplatesInput = void;
+export type GetAuditRetentionSimulationTemplatesOutput = Array<Types.ComplianceAuditAuditRetentionPolicyTemplate>;
+export const getAuditRetentionSimulationTemplatesEndpoint = {
+  operationId: 'getAuditRetentionSimulationTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-simulation/templates' as const,
   tags: ['ComplianceAuditRetentionSimulation'] as const,
   requiresAuth: true,
 } as const;
@@ -13383,7 +13968,7 @@ export const getContentResourcesBySlugEndpoint = {
 
 /**
  * Create or resume a content interaction
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsInput {
   query?: {
@@ -13402,7 +13987,7 @@ export const postCourseInteractionsEndpoint = {
 
 /**
  * Mark content as completed
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsCompleteInput {
   interactionId: string;
@@ -13422,7 +14007,7 @@ export const postCourseInteractionsCompleteEndpoint = {
 
 /**
  * Update progress for a content interaction
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsProgressInput {
   interactionId: string;
@@ -13442,7 +14027,7 @@ export const putCourseInteractionsProgressEndpoint = {
 
 /**
  * Submit content interaction (makes it immutable)
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsSubmitInput {
   interactionId: string;
@@ -13462,7 +14047,7 @@ export const postCourseInteractionsSubmitEndpoint = {
 
 /**
  * Update time spent on content
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsTimeSpentInput {
   interactionId: string;
@@ -13545,7 +14130,7 @@ export const getCourseInteractionsContentSurveyResultsVisibleEndpoint = {
 
 /**
  * Get all interactions for a user in a program
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserInput {
   programUserId: string;
@@ -13564,7 +14149,7 @@ export const getCourseInteractionsUserEndpoint = {
 
 /**
  * Get interaction for specific user and content
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserContentInput {
   programUserId: string;
@@ -13618,6 +14203,18 @@ export const postCoursesEndpoint = {
   method: 'POST' as const,
   path: '/v1/courses' as const,
   tags: ['LearningCoursesProgram'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesAccessCapabilitiesInput {
+  courseId: string;
+}
+export type GetCoursesAccessCapabilitiesOutput = Types.LearningCoursesCourseAccessCapabilities;
+export const getCoursesAccessCapabilitiesEndpoint = {
+  operationId: 'getCoursesAccessCapabilities' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{courseId}/access/capabilities' as const,
+  tags: ['LearningCoursesAccess'] as const,
   requiresAuth: true,
 } as const;
 
@@ -25235,11 +25832,18 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
+  postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
+  getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
+  getApiAuditRetentionPoliciesConfiguration: getApiAuditRetentionPoliciesConfigurationEndpoint,
+  putApiAuditRetentionPoliciesConfiguration: putApiAuditRetentionPoliciesConfigurationEndpoint,
+  getApiAuditRetentionPoliciesTemplates: getApiAuditRetentionPoliciesTemplatesEndpoint,
   getApiAuditRetentionSimulationForGetApiAuditRetentionSimulation: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationEndpoint,
   postApiAuditRetentionSimulation: postApiAuditRetentionSimulationEndpoint,
   getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdEndpoint,
   getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
+  getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
@@ -25607,6 +26211,7 @@ export const endpoints = {
   getAdminEconomyTreasuryWithdrawalsAudit: getAdminEconomyTreasuryWithdrawalsAuditEndpoint,
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
+  getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -25618,6 +26223,10 @@ export const endpoints = {
   postAuthorizationResourcesShare: postAuthorizationResourcesShareEndpoint,
   deleteAuthorizationResourcesUsersAccess: deleteAuthorizationResourcesUsersAccessEndpoint,
   putAuthorizationResourcesUsersPermissions: putAuthorizationResourcesUsersPermissionsEndpoint,
+  postAuthorizationRestorationsDeleted: postAuthorizationRestorationsDeletedEndpoint,
+  postAuthorizationRestorationsUndo: postAuthorizationRestorationsUndoEndpoint,
+  getAuthorizationSyncExport: getAuthorizationSyncExportEndpoint,
+  postAuthorizationSyncImport: postAuthorizationSyncImportEndpoint,
   getAuthorizationTenantsHasPermission: getAuthorizationTenantsHasPermissionEndpoint,
   getAuthorizationTenantsPermissions: getAuthorizationTenantsPermissionsEndpoint,
   postAuthorizationTenantsDefaults: postAuthorizationTenantsDefaultsEndpoint,
@@ -25625,6 +26234,11 @@ export const endpoints = {
   postAuthorizationTenantsDenyRemove: postAuthorizationTenantsDenyRemoveEndpoint,
   postAuthorizationTenantsGlobalDefaults: postAuthorizationTenantsGlobalDefaultsEndpoint,
   postAuthorizationTenantsGrant: postAuthorizationTenantsGrantEndpoint,
+  getAuthorizationTenantsPermissionsExpiring: getAuthorizationTenantsPermissionsExpiringEndpoint,
+  postAuthorizationTenantsPermissionsExtendExpiration: postAuthorizationTenantsPermissionsExtendExpirationEndpoint,
+  postAuthorizationTenantsPermissionsProcessExpired: postAuthorizationTenantsPermissionsProcessExpiredEndpoint,
+  postAuthorizationTenantsPermissionsSendExpirationReminders: postAuthorizationTenantsPermissionsSendExpirationRemindersEndpoint,
+  postAuthorizationTenantsPermissionsSetExpiration: postAuthorizationTenantsPermissionsSetExpirationEndpoint,
   postAuthorizationTenantsRevoke: postAuthorizationTenantsRevokeEndpoint,
   getBillingCharges: getBillingChargesEndpoint,
   postBillingCharges: postBillingChargesEndpoint,
@@ -25633,6 +26247,16 @@ export const endpoints = {
   postBillingChargesRefund: postBillingChargesRefundEndpoint,
   postBillingChargesRetry: postBillingChargesRetryEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
+  postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
+  postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
+  getBillingRevenueAuditingAnomalyAlerts: getBillingRevenueAuditingAnomalyAlertsEndpoint,
+  postBillingRevenueAuditingAnomalyAlertsAcknowledge: postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint,
+  getBillingRevenueAuditingComplianceReport: getBillingRevenueAuditingComplianceReportEndpoint,
+  getBillingRevenueAuditingExport: getBillingRevenueAuditingExportEndpoint,
+  getRunById: getRunByIdEndpoint,
+  getBillingRevenueAuditingRunsDiscrepancies: getBillingRevenueAuditingRunsDiscrepanciesEndpoint,
+  getBillingRevenueAuditingTrends: getBillingRevenueAuditingTrendsEndpoint,
   getBillingSubscriptions: getBillingSubscriptionsEndpoint,
   postBillingSubscriptions: postBillingSubscriptionsEndpoint,
   getBillingSubscriptionById: getBillingSubscriptionByIdEndpoint,
@@ -25978,11 +26602,18 @@ export const endpoints = {
     getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint,
   postAuditCompliancePackagingDocumentsReview: postAuditCompliancePackagingDocumentsReviewEndpoint,
   getAuditCompliancePackagingTemplates: getAuditCompliancePackagingTemplatesEndpoint,
+  getAuditRetentionPoliciesForGetAuditRetentionPolicies: getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint,
+  postAuditRetentionPolicies: postAuditRetentionPoliciesEndpoint,
+  getAuditRetentionPoliciesForGetAuditRetentionPoliciesById: getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint,
+  getAuditRetentionPoliciesConfiguration: getAuditRetentionPoliciesConfigurationEndpoint,
+  putAuditRetentionPoliciesConfiguration: putAuditRetentionPoliciesConfigurationEndpoint,
+  getAuditRetentionPoliciesTemplates: getAuditRetentionPoliciesTemplatesEndpoint,
   getAuditRetentionSimulationForGetAuditRetentionSimulation: getAuditRetentionSimulationForGetAuditRetentionSimulationEndpoint,
   postAuditRetentionSimulation: postAuditRetentionSimulationEndpoint,
   getAuditRetentionSimulationForGetAuditRetentionSimulationById: getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoint,
   getAuditRetentionSimulationConfiguration: getAuditRetentionSimulationConfigurationEndpoint,
   putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
+  getAuditRetentionSimulationTemplates: getAuditRetentionSimulationTemplatesEndpoint,
   getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
   postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
@@ -26097,6 +26728,7 @@ export const endpoints = {
   getCourseInteractionsUserContent: getCourseInteractionsUserContentEndpoint,
   getCoursesForGetCourses: getCoursesForGetCoursesEndpoint,
   postCourses: postCoursesEndpoint,
+  getCoursesAccessCapabilities: getCoursesAccessCapabilitiesEndpoint,
   getCoursesCohortsSchedule: getCoursesCohortsScheduleEndpoint,
   putCoursesCohortsSchedule: putCoursesCohortsScheduleEndpoint,
   getCoursesCohortsScheduleAvailableContent: getCoursesCohortsScheduleAvailableContentEndpoint,
