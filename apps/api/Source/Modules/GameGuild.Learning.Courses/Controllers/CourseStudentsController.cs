@@ -14,7 +14,7 @@ namespace GameGuild.Learning.Courses;
 public sealed class CourseStudentsController(ISender sender, IActorContextAccessor actorContextAccessor) : BaseApiController
 {
     [HttpPost("message")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SendCourseStudentMessageResponse>> SendMessage(
         Guid courseId,
         [FromBody] SendCourseStudentMessageRequest request,

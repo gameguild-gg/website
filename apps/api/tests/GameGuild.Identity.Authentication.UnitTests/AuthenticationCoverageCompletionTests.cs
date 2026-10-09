@@ -964,6 +964,7 @@ public sealed class AuthenticationCoverageCompletionTests
         new LocalSignUpHandler(
             Mock.Of<IAuthService>(),
             Mock.Of<IUserRepository>(),
+            Mock.Of<GameGuild.CQRS.ISender>(),
             NullLogger<LocalSignUpHandler>.Instance).Should().NotBeNull();
         new GoogleIdTokenSignInHandler(
             Mock.Of<IAuthService>(),
