@@ -115,10 +115,9 @@ public class TenantPermissionRepository(IApplicationDbContext context) : ITenant
             .AsNoTracking()
             .Where(p => p.DeletedAt == null
                 && p.IsActive
-                && p.ExpiresAt.HasValue
-                && p.ExpiresAt.Value > now
-                && p.ExpiresAt.Value <= cutoff)
-            .OrderBy(p => p.ExpiresAt.Value)
+                && p.ExpiresAt > now
+                && p.ExpiresAt <= cutoff)
+            .OrderBy(p => p.ExpiresAt)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
