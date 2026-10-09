@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.Extensions.Logging;
 
@@ -453,7 +454,10 @@ public sealed class PermissionQueryService(
     {
         var existing = await repository.GetByUserAndTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
 
-        if (existing == null) return new List<string>();
+        // SECURITY (deny-by-default, #327): inactive or expired grants contribute nothing;
+        // the row is treated as absent. Mirrors EffectivePermissionResolverService's
+        // layer rule so list results can never widen an authorization decision.
+        if (!IsGrantEffective(existing)) return new List<string>();
 
         return existing.Permissions.ToList();
     }
@@ -497,7 +501,9 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, null, cancellationToken).ConfigureAwait(false);
-        return defaults?.Permissions.ToList() ?? new List<string>();
+
+        // SECURITY (deny-by-default, #327): inactive or expired defaults contribute nothing.
+        return IsGrantEffective(defaults) ? defaults.Permissions.ToList() : new List<string>();
     }
 
     public async Task<List<string>> GetTenantDefaultPermissionsAsync(
@@ -505,7 +511,9 @@ public sealed class PermissionQueryService(
         CancellationToken cancellationToken = default)
     {
         var defaults = await repository.GetByUserAndTenantAsync(null, tenantId, cancellationToken).ConfigureAwait(false);
-        return defaults?.Permissions.ToList() ?? new List<string>();
+
+        // SECURITY (deny-by-default, #327): inactive or expired defaults contribute nothing.
+        return IsGrantEffective(defaults) ? defaults.Permissions.ToList() : new List<string>();
     }
 
     public async Task<bool> IsUserInTenantAsync(
@@ -517,6 +525,17 @@ public sealed class PermissionQueryService(
         // Having permissions in a tenant is NOT the same as being a member
         return await membershipChecker.IsUserMemberOfTenantAsync(userId, tenantId, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///     SECURITY (deny-by-default, #327): a grant contributes to an authorization
+    ///     decision or a permission listing only when it is active, unexpired and not
+    ///     soft-deleted. Repository lookups already exclude soft-deleted rows; this
+    ///     predicate excludes inactive and expired ones so every query surface applies
+    ///     the same rule as <see cref="EffectivePermissionResolverService"/>'s layer
+    ///     evaluation.
+    /// </summary>
+    private static bool IsGrantEffective([NotNullWhen(true)] TenantPermission? grant) =>
+        grant is not null && grant.IsActive && !grant.IsExpired();
 }
 
 /// <summary>
