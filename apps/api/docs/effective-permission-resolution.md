@@ -43,6 +43,13 @@ warning is logged. Invalid context never falls back to global defaults.
 8. **Resource grants** — `ResourceUserPermission` rows for the current user and tenant.
    They contribute **only** when the context carries the exact matching
    (`ResourceType`, `ResourceId`) pair.
+9. **External authorization decisions** (issue #146) — a registered
+   `IExternalAuthorizationDecisionProvider` (for example the OAuth2 client-credentials
+   HTTP provider under `Authorization:ExternalDecision`) is consulted for every
+   locally-allowed permission after all local layers and evaluation extensions. The
+   layer is **veto-only**: an external `deny` unions into the deny set; an external
+   `allow`, `not_applicable` or missing decision changes nothing. See
+   [External authorization-decision layer](#external-authorization-decision-layer-issue-146).
 
 Rows in layers 4–6 contribute only while **active and unexpired**
 (`IsActive == true` and `ExpiresAt` is null or in the future). Resource grants contribute
@@ -62,6 +69,89 @@ only while **unrevoked and unexpired**.
 - **Determinism:** layer order is fixed and providers are evaluated in registration
   order, so the same inputs always produce the same output. First layer to grant a
   permission wins the `Sources` attribution.
+
+## External authorization-decision layer (issue #146)
+
+External **authorization-decision** services (policy decision points) integrate through
+`IExternalAuthorizationDecisionProvider` (`Abstractions/IExternalAuthorizationDecisionProvider.cs`).
+The built-in implementation is `HttpExternalAuthorizationDecisionProvider`
+(`Services/HttpExternalAuthorizationDecisionProvider.cs`), gated by the
+`Authorization:ExternalDecision` configuration section and **disabled by default**
+(`Enabled = false` → the provider returns no decision for any query, makes no outbound
+call, and resolution keeps purely local semantics with zero overhead).
+
+### Position and precedence
+
+The external layer runs **after every local layer** (1–8, including evaluation
+extensions) and immediately before the DENY-WINS subtraction, as an additional deny
+source:
+
+| Local result | External decision | Effective result |
+|---|---|---|
+| allowed | `deny` | **denied** — an external deny overrides a local allow |
+| allowed | `allow` / `not_applicable` / no decision | allowed (passthrough) |
+| locally denied or absent | any (including `allow`) | **denied** — an external allow can never override a local deny and never grants on its own |
+
+The layer is **veto-only by design**: grants remain exclusively local, so a
+misconfigured, compromised or unavailable external service can narrow access but never
+widen it (fail-closed paramount; absent = deny per #327). The static system-account
+wildcard is not queried and stays non-deniable. A provider implementation that throws
+despite the never-throw contract denies the permission under question (fail-closed,
+logged as an error); caller cancellation is the only exception propagated.
+
+### Wire contract (OAuth2 client-credentials)
+
+1. `POST {TokenEndpoint}` (form-urlencoded) with `grant_type=client_credentials`,
+   `client_id`, `client_secret`; the returned `access_token` is cached until shortly
+   before `expires_in` elapses.
+2. `POST {Endpoint}` (JSON, bearer-token authorized) with the permission-shaped query:
+   `{ "userId", "tenantId", "permission", "resourceType"?, "resourceId"? }`.
+3. Expected JSON response: `{ "decision": "allow" | "deny" | "not_applicable",
+   "reasons": [ ... ] }` (casing and `-`/`_` separators are tolerated).
+
+Decisions (including denials) are cached per exact query for `CacheTtl`
+(30 s default; `0` disables caching), bounding the outbound call volume per resolution.
+
+### Configuration
+
+```json
+{
+  "Authorization": {
+    "ExternalDecision": {
+      "Enabled": true,
+      "Endpoint": "https://pdp.example.com/decisions",
+      "TokenEndpoint": "https://idp.example.com/oauth2/token",
+      "ClientId": "gameguild-api",
+      "ClientSecret": "<secret>",
+      "Timeout": "00:00:05",
+      "CacheTtl": "00:00:30",
+      "FailMode": "Enforce"
+    }
+  }
+}
+```
+
+Enabling the section requires complete, **HTTPS-only** endpoints and client
+credentials — host startup fails validation otherwise. `FailMode` governs every
+unavailable or unusable external answer (network failure, timeout, non-2xx,
+unparseable payload, failed token acquisition):
+
+- **`Enforce` (default):** the queried permission is **denied** (fail-closed).
+- **`Observe`:** no decision is returned (local resolution applies) and a warning is
+  logged — rollout mode only; during an outage the external policy stops constraining
+  access.
+
+### SAML authorization-assertion integration (deferred)
+
+SAML carries authorization statements inside signed authentication assertions.
+Consuming them as decision inputs requires product decisions (assertion freshness,
+attribute-to-permission mapping, per-IdP trust configuration) that remain open;
+ingesting SAML assertions as authorization inputs is therefore **intentionally
+deferred**. Until it lands, SAML-authenticated identities authorize through local
+layers 1–8 like every other identity, and external decision services integrate over
+the OAuth2 client-credentials contract above. External **authentication** protocols
+(including SAML identity assertion) are a separate concern handled by the
+authentication modules, not by this layer.
 
 ## Context isolation
 
