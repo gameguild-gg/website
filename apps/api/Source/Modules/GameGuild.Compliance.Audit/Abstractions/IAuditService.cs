@@ -7,6 +7,17 @@ public interface IAuditService
 {
     Task LogAsync(CreateAuditLogRequest request);
 
+    /// <summary>
+    /// Attempts to persist one audit log entry and reports whether the write was durable.
+    /// Unlike <see cref="LogAsync"/>, the outcome is observable so callers that must not
+    /// swallow audit delivery failures (for example permission evaluation logging) can
+    /// surface them. Like <see cref="LogAsync"/>, this method never throws for
+    /// persistence failures.
+    /// </summary>
+    /// <param name="request">The audit log entry to persist.</param>
+    /// <returns><see langword="true"/> when the entry was persisted; <see langword="false"/> when the write failed.</returns>
+    Task<bool> TryLogAsync(CreateAuditLogRequest request);
+
     Task LogPermissionGrantAsync(Guid userId, string permissionName, string resourceType, string? resourceId, Guid? tenantId = null);
 
     Task LogPermissionDenyAsync(Guid? userId, string permissionName, string resourceType, string? resourceId, string reason, Guid? tenantId = null);

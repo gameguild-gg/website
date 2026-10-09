@@ -1010,13 +1010,16 @@ public class SimpleServiceHandlerTests5
         new CleanupExpiredElevationsHandler(service.Object).Should().NotBeNull();
     }
 
-    // Delegated Admin handlers - all take IDelegatedAdminService
+    // Delegated Admin handlers - take IDelegatedAdminService + guard/version/audit dependencies
     [Fact]
     public void DelegatedAdminHandlers_CanBeCreated()
     {
         var service = new Mock<IDelegatedAdminService>();
-        new GrantDelegatedAdminHandler(service.Object).Should().NotBeNull();
-        new RevokeDelegatedAdminHandler(service.Object).Should().NotBeNull();
+        var accessor = new Mock<IActorContextAccessor>();
+        var versionStore = new Mock<ITenantSecurityVersionStore>();
+        var audit = new Mock<IPermissionAuditService>();
+        new GrantDelegatedAdminHandler(service.Object, accessor.Object, versionStore.Object, audit.Object).Should().NotBeNull();
+        new RevokeDelegatedAdminHandler(service.Object, accessor.Object, versionStore.Object, audit.Object).Should().NotBeNull();
     }
 
     // SoD handlers - all take ISoDService

@@ -44,10 +44,18 @@ public class DynamicRoleConfiguration : IEntityTypeConfiguration<DynamicRole>
         // PostgreSQL native arrays for role IDs (handled automatically by Npgsql)
         builder.Property(e => e.MutuallyExclusiveRoleIds)
             .IsRequired();
-        
+
         builder.Property(e => e.PrerequisiteRoleIds)
             .IsRequired();
-        
+
+        // Multi-parent inheritance (issue #358): additional parents beyond the primary parent
+        builder.Property(e => e.AdditionalParentRoleIds)
+            .IsRequired();
+
+        // Selective inheritance blocking (issue #358): inherited permissions this role opts out of
+        builder.Property(e => e.BlockedInheritedPermissions)
+            .IsRequired();
+
         // JSONB column for Metadata dictionary — stored as PostgreSQL jsonb type
         builder.Property(e => e.Metadata)
             .HasColumnType("jsonb")

@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Json;
 using FluentAssertions;
 using Xunit;
 using GameGuild.API.Database;
@@ -5,10 +7,12 @@ using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GameGuild.Tests.Authentication.Integration;
 
@@ -65,59 +69,18 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
             .Should().ThrowAsync<Exception>();
     }
 
-    [Fact]
-    public async Task LocalAuth_TokenRefresh_AfterRevocation_ShouldFail()
-    {
-        // Arrange
-        var email = $"revoke.test.{Guid.NewGuid()}@test.com";
-
-        var signUpRequest = new LocalSignUpRequest
-        {
-            Email = email,
-            Username = $"user_{Guid.NewGuid():N}",
-            Password = "TestPassword123!"
-        };
-
-        var signUpResult = await _authService.LocalSignUpAsync(signUpRequest);
-        await _authService.LocalSignInAsync(new LocalSignInRequest
-        {
-            Email = email,
-            Password = signUpRequest.Password
-        });
-        var originalVersion = await _dbContext.Set<User>().AsNoTracking()
-            .Where(user => user.Id == signUpResult.UserId)
-            .Select(user => user.TokenVersion).SingleAsync();
-
-        // Revoke the refresh token
-        await _authService.RevokeRefreshTokenAsync(signUpResult.RefreshToken, "127.0.0.1");
-
-        // Act & Assert - Try to use revoked token
-        var refreshRequest = new RefreshTokenRequest
-        {
-            RefreshToken = signUpResult.RefreshToken
-        };
-
-        // The internal denial commits replay containment; the HTTP boundary still returns 401.
-        var denial = await _authService.RefreshTokenAsync(refreshRequest);
-        denial.Should().BeAssignableTo<global::GameGuild.ICommitOnFailureOutcome>();
-        denial.Success.Should().BeFalse();
-        denial.AccessToken.Should().BeNullOrEmpty();
-        denial.RefreshToken.Should().BeNullOrEmpty();
-        denial.UserId.Should().Be(Guid.Empty);
-
-        var storedTokens = await _dbContext.Set<RefreshToken>().AsNoTracking()
-            .Where(token => token.UserId == signUpResult.UserId).ToListAsync();
-        storedTokens.Should().HaveCount(2);
-        storedTokens.Should().AllSatisfy(token => token.IsRevoked.Should().BeTrue());
-        var storedSessions = await _dbContext.Set<UserSession>().AsNoTracking()
-            .Where(session => session.UserId == signUpResult.UserId).ToListAsync();
-        storedSessions.Should().HaveCount(2);
-        storedSessions.Should().AllSatisfy(session => session.IsActive.Should().BeFalse());
-        var storedVersion = await _dbContext.Set<User>().AsNoTracking()
-            .Where(user => user.Id == signUpResult.UserId)
-            .Select(user => user.TokenVersion).SingleAsync();
-        storedVersion.Should().Be(originalVersion + 1);
-    }
+    // LocalAuth_TokenRefresh_AfterRevocation_ShouldFail was retired: the production
+    // revocation path (RefreshTokenRepository.RevokeFamilyAsync / replay containment
+    // from the #263 sweep) uses atomic ExecuteUpdate statements, which the EF InMemory
+    // provider cannot translate, so this InMemory-hosted copy could never execute
+    // again. Its scenario — revoked refresh token rejected with replay containment,
+    // family revocation, and session termination — is covered end-to-end against the
+    // real provider at the HTTP boundary by the Postgres suite:
+    // GameGuild.API.IntegrationTests/BearerRevocationPostgreSqlHttpTests.cs
+    // (RealRefreshReplayRejectsEarlierSignedBearerAndLeavesAnotherUserActive) and
+    // RefreshTokenLifecycleAuditPostgreSqlHttpTests.cs
+    // (ReplayCommitsContainmentAuditAndMetricWhileReturningNoCredentials,
+    // ExplicitRevocationCommitsAuditAndMetricForOwnedTokenOrWholeAccount).
 
     [Fact]
     public async Task LocalAuth_SignIn_WithTenantMemberships_ShouldPopulateTenantContext()
@@ -309,27 +272,233 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
 
     #region Social Authentication E2E Tests (with mocked providers)
 
+    // Google ID-token sign-in is exercised end to end over HTTP against the real
+    // ASP.NET host (routing → GoogleIdTokenSignInCommand → OAuthAuthService → user
+    // provisioning/linking → default-tenant membership → session + token issuance →
+    // SignInResponse serialization). Only the cryptographic boundary is stubbed:
+    // GoogleSignInE2EApiFactory swaps IGoogleIdTokenVerifier (whose production
+    // implementation calls GoogleJsonWebSignature.ValidateAsync — an external
+    // Google JWKS dependency) for a programmable verifier that is faithful to the
+    // real contract: it returns the provider-asserted claims for tokens that would
+    // pass Google's validation and throws UnauthorizedAccessException for every
+    // other token, exactly as GoogleIdTokenVerifier does for forged/expired
+    // tokens. Everything downstream of that seam is production code.
+
     [Fact]
     public async Task SocialAuth_GoogleProvider_CompleteFlow_ShouldAuthenticateUser()
     {
-        // Arrange - Mock Google OAuth response
-        var mockGoogleIdToken = "mock.google.id.token";
-        var mockGoogleEmail = $"google.user.{Guid.NewGuid()}@gmail.com";
+        // Arrange - a Google credential the stub verifier accepts
+        var email = $"google.e2e.{Guid.NewGuid():N}@gmail.com";
+        var googleSub = $"google-sub-{Guid.NewGuid():N}";
+        var idToken = $"e2e-google-id-token-{Guid.NewGuid():N}";
 
-        // Note: In a real scenario, we would need to mock the Google token validation
-        // For now, this demonstrates the test structure
-
-        var googleSignInRequest = new GoogleSignInRequest
+        using var factory = new GoogleSignInE2EApiFactory();
+        factory.Verifier.Allow(idToken, new VerifiedGoogleUser
         {
-            AccessToken = mockGoogleIdToken
-        };
+            Sub = googleSub,
+            Email = email,
+            EmailVerified = true,
+            Name = "Google E2E User",
+            Picture = "https://lh3.googleusercontent.com/gameguild-e2e.png"
+        });
 
-        // Act & Assert
-        // This would work with proper mocking of external services
-        // await FluentActions.Invoking(async () => await _authService.GoogleIdTokenSignInAsync(googleSignInRequest))
-        //     .Should().NotThrowAsync();
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.EnsureCreated();
+        SeedDefaultTenant(dbContext);
+        var defaultTenantId = dbContext.Set<Tenant>().Single(t => t.IsDefault).Id;
 
-        await Task.CompletedTask; // Placeholder until actual implementation
+        using var client = factory.CreateClient();
+
+        // Act - POST the endpoint the web Google GIS/One Tap credential feeds
+        using var response = await client.PostAsJsonAsync(
+            "/v1/auth/google:sign-in",
+            new GoogleIdTokenRequestDto { IdToken = idToken });
+
+        var body = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+
+        var dto = await response.Content.ReadFromJsonAsync<SignInResponse>();
+
+        // Assert - response DTO: tokens, session and tenant context are all issued
+        dto.Should().NotBeNull();
+        dto!.Success.Should().BeTrue();
+        dto.Message.Should().Be("Google ID token sign-in successful");
+        dto.AccessToken.Should().NotBeNullOrWhiteSpace();
+        dto.AccessToken.Split('.').Should().HaveCount(3, "the access token must be a three-segment JWT");
+        dto.RefreshToken.Should().NotBeNullOrWhiteSpace();
+        dto.UserId.Should().NotBeEmpty();
+        dto.Email.Should().Be(email);
+        dto.SessionId.Should().NotBeEmpty();
+        dto.ExpiresIn.Should().BePositive();
+        dto.AccessTokenExpiresAt.Should().BeAfter(DateTime.UtcNow);
+        dto.RefreshTokenExpiresAt.Should().BeAfter(DateTime.UtcNow);
+        dto.TenantId.Should().Be(defaultTenantId);
+        dto.AvailableTenants.Should().ContainSingle(tenant => tenant.Id == defaultTenantId);
+
+        // Assert - user provisioned and the Google identity linked to it
+        var user = await dbContext.Set<User>().SingleAsync(u => u.Email == email);
+        user.Id.Should().Be(dto.UserId);
+        var externalLogin = await dbContext.Set<ExternalLogin>()
+            .SingleAsync(login => login.Provider == "google" && login.ProviderKey == googleSub);
+        externalLogin.UserId.Should().Be(user.Id);
+
+        // Assert - self-service default-tenant membership provisioned
+        var membership = await dbContext.Set<TenantMember>().SingleAsync(m => m.UserId == user.Id);
+        membership.TenantId.Should().Be(defaultTenantId);
+        membership.IsActive.Should().BeTrue();
+
+        // Assert - session persisted and only the hashed refresh token is stored
+        var hasher = scope.ServiceProvider.GetRequiredService<IRefreshTokenHasher>();
+        var session = await dbContext.Set<UserSession>().SingleAsync(s => s.Id == dto.SessionId);
+        session.UserId.Should().Be(user.Id);
+        session.IsActive.Should().BeTrue();
+        session.RefreshToken.Should().Be(hasher.HashToken(dto.RefreshToken));
+
+        // Assert - the federated success is audited
+        (await dbContext.Set<AuthenticationAttempt>()
+            .AnyAsync(attempt => attempt.Email == email && attempt.UserId == user.Id && attempt.IsSuccessful))
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SocialAuth_GoogleProvider_SecondSignIn_ShouldReuseLinkedIdentityWithoutDuplicates()
+    {
+        // Arrange
+        var email = $"google.e2e.repeat.{Guid.NewGuid():N}@gmail.com";
+        var googleSub = $"google-sub-{Guid.NewGuid():N}";
+        var idToken = $"e2e-google-id-token-{Guid.NewGuid():N}";
+
+        using var factory = new GoogleSignInE2EApiFactory();
+        factory.Verifier.Allow(idToken, new VerifiedGoogleUser
+        {
+            Sub = googleSub,
+            Email = email,
+            EmailVerified = true,
+            Name = "Google E2E Repeat User"
+        });
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.EnsureCreated();
+        SeedDefaultTenant(dbContext);
+
+        using var client = factory.CreateClient();
+
+        // Act - the same Google identity signs in twice
+        using var firstResponse = await client.PostAsJsonAsync(
+            "/v1/auth/google:sign-in",
+            new GoogleIdTokenRequestDto { IdToken = idToken });
+        using var secondResponse = await client.PostAsJsonAsync(
+            "/v1/auth/google:sign-in",
+            new GoogleIdTokenRequestDto { IdToken = idToken });
+
+        var firstBody = await firstResponse.Content.ReadAsStringAsync();
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK, firstBody);
+        var secondBody = await secondResponse.Content.ReadAsStringAsync();
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK, secondBody);
+
+        var first = await firstResponse.Content.ReadFromJsonAsync<SignInResponse>();
+        var second = await secondResponse.Content.ReadFromJsonAsync<SignInResponse>();
+
+        // Assert - linked user is reused, no duplicate user or external login, fresh session each time
+        first!.UserId.Should().Be(second!.UserId);
+        first.SessionId.Should().NotBe(second.SessionId);
+        (await dbContext.Set<User>().CountAsync(u => u.Email == email)).Should().Be(1);
+        (await dbContext.Set<ExternalLogin>()
+            .CountAsync(login => login.Provider == "google" && login.ProviderKey == googleSub))
+            .Should().Be(1);
+        var sessionIds = new[] { first.SessionId, second.SessionId };
+        (await dbContext.Set<UserSession>().CountAsync(session => sessionIds.Contains(session.Id)))
+            .Should().Be(2);
+    }
+
+    [Fact]
+    public async Task SocialAuth_GoogleProvider_InvalidToken_ShouldFailClosedWithoutUserOrSession()
+    {
+        // Arrange - a forged token the stub verifier (like GoogleJsonWebSignature) rejects
+        var forgedToken = $"e2e-forged-google-id-token-{Guid.NewGuid():N}";
+        var victimEmail = $"google.e2e.forged.{Guid.NewGuid():N}@gmail.com";
+
+        using var factory = new GoogleSignInE2EApiFactory();
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.EnsureCreated();
+        SeedDefaultTenant(dbContext);
+
+        using var client = factory.CreateClient();
+
+        // Act
+        using var response = await client.PostAsJsonAsync(
+            "/v1/auth/google:sign-in",
+            new GoogleIdTokenRequestDto { IdToken = forgedToken });
+
+        // Assert - fail closed: 401, no credentials disclosed
+        var body = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized, body);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Status.Should().Be((int)HttpStatusCode.Unauthorized);
+        problem.Title.Should().Be("Unauthorized");
+
+        // Assert - no user provisioned, no external link, no session, no success audit
+        (await dbContext.Set<User>().AnyAsync(u => u.Email == victimEmail)).Should().BeFalse();
+        (await dbContext.Set<ExternalLogin>().AnyAsync()).Should().BeFalse();
+        (await dbContext.Set<UserSession>().CountAsync()).Should().Be(0);
+        (await dbContext.Set<AuthenticationAttempt>()
+            .AnyAsync(attempt => !attempt.IsSuccessful && attempt.FailureReason == nameof(UnauthorizedAccessException)))
+            .Should().BeTrue("a rejected Google token must be audited as a failed attempt");
+    }
+
+    [Fact]
+    public async Task SocialAuth_GoogleProvider_UnverifiedEmailOverExistingLocalAccount_ShouldRefuseLinking()
+    {
+        // Arrange - a pre-existing local account with the same email
+        var email = $"google.e2e.collision.{Guid.NewGuid():N}@example.com";
+
+        using var factory = new GoogleSignInE2EApiFactory();
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.EnsureCreated();
+        SeedDefaultTenant(dbContext);
+
+        using var client = factory.CreateClient();
+
+        using var signUpResponse = await client.PostAsJsonAsync("/v1/auth/sign-up", new LocalSignUpRequest
+        {
+            Email = email,
+            Username = $"local_user_{Guid.NewGuid():N}",
+            Password = "LocalPassword123!"
+        });
+        var signUpBody = await signUpResponse.Content.ReadAsStringAsync();
+        signUpResponse.StatusCode.Should().Be(HttpStatusCode.Created, signUpBody);
+
+        var localUser = await dbContext.Set<User>().SingleAsync(u => u.Email == email);
+        var sessionsBefore = await dbContext.Set<UserSession>().CountAsync(s => s.UserId == localUser.Id);
+
+        // An unverified Google identity must not hijack the local account
+        var idToken = $"e2e-google-id-token-unverified-{Guid.NewGuid():N}";
+        factory.Verifier.Allow(idToken, new VerifiedGoogleUser
+        {
+            Sub = $"google-sub-{Guid.NewGuid():N}",
+            Email = email,
+            EmailVerified = false,
+            Name = "Unverified Google User"
+        });
+
+        // Act
+        using var response = await client.PostAsJsonAsync(
+            "/v1/auth/google:sign-in",
+            new GoogleIdTokenRequestDto { IdToken = idToken });
+
+        // Assert - denied, no link created, no extra session issued
+        var body = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized, body);
+        (await dbContext.Set<ExternalLogin>().AnyAsync(login => login.UserId == localUser.Id)).Should().BeFalse();
+        (await dbContext.Set<UserSession>().CountAsync(s => s.UserId == localUser.Id))
+            .Should().Be(sessionsBefore);
     }
 
     [Fact]
@@ -617,5 +786,67 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
             IsDefault = true
         });
         dbContext.SaveChanges();
+    }
+
+    /// <summary>
+    ///     Programmable stand-in for <see cref="IGoogleIdTokenVerifier" />. Tokens registered
+    ///     via <see cref="Allow" /> yield their provider-asserted claims (the outcome of a
+    ///     successful GoogleJsonWebSignature validation); every other token is rejected with
+    ///     <see cref="UnauthorizedAccessException" />, mirroring the fail-closed production
+    ///     contract for forged, expired or mis-audience tokens.
+    /// </summary>
+    private sealed class StubGoogleIdTokenVerifier : IGoogleIdTokenVerifier
+    {
+        private readonly Dictionary<string, VerifiedGoogleUser> _validTokens = new(StringComparer.Ordinal);
+
+        public void Allow(string idToken, VerifiedGoogleUser user) => _validTokens[idToken] = user;
+
+        public Task<VerifiedGoogleUser> VerifyAsync(string idToken, CancellationToken ct) =>
+            _validTokens.TryGetValue(idToken, out var user)
+                ? Task.FromResult(user)
+                : Task.FromException<VerifiedGoogleUser>(
+                    new UnauthorizedAccessException("Google ID token is invalid"));
+    }
+
+    /// <summary>
+    ///     Host for the Google sign-in E2E flow: same InMemory configuration as
+    ///     <see cref="AuthenticationApiFactory" /> plus the stubbed
+    ///     <see cref="IGoogleIdTokenVerifier" /> test seam. The sign-in happy path never
+    ///     touches the ExecuteUpdate-based revocation code (RefreshTokenRepository), which
+    ///     is what keeps the InMemory provider viable here; revocation is covered by the
+    ///     Postgres suites (see the retired-test note above).
+    /// </summary>
+    private sealed class GoogleSignInE2EApiFactory : WebApplicationFactory<GameGuild.API.Program>
+    {
+        private readonly string _databaseName = $"GoogleSignInE2ETests_{Guid.NewGuid()}";
+
+        public StubGoogleIdTokenVerifier Verifier { get; } = new();
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseEnvironment("Testing");
+            builder.ConfigureTestServices(services =>
+            {
+                var descriptorsToRemove = services
+                    .Where(descriptor =>
+                        descriptor.ServiceType == typeof(DbContextOptions<ApplicationDbContext>) ||
+                        descriptor.ServiceType == typeof(ApplicationDbContext) ||
+                        descriptor.ServiceType.FullName?.Contains("EntityFramework", StringComparison.Ordinal) == true ||
+                        descriptor.ImplementationType?.FullName?.Contains("Npgsql", StringComparison.Ordinal) == true)
+                    .ToList();
+
+                foreach (var descriptor in descriptorsToRemove)
+                    services.Remove(descriptor);
+
+                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(_databaseName));
+                services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+                services.AddMemoryCache();
+                services.AddHttpLogging(_ => { });
+
+                // Test seam: replace Google's cryptographic validation with the controlled stub.
+                services.RemoveAll<IGoogleIdTokenVerifier>();
+                services.AddSingleton<IGoogleIdTokenVerifier>(Verifier);
+            });
+        }
     }
 }

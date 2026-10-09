@@ -45,8 +45,7 @@ public sealed class ProgramCrudControllerCatalogScopeTests
   [Fact]
   public async Task GetPrograms_PlainCreator_ReturnsOnlyOwnCourses()
   {
-    var ownCourses = MixedCatalog().Where(p => p.CreatorId == _actorId).ToList();
-    _service.Setup(s => s.GetProgramsByCreatorAsync(_actorId, 0, 50)).ReturnsAsync(ownCourses);
+    _service.Setup(s => s.GetProgramsAsync(0, 50)).ReturnsAsync(MixedCatalog());
     var controller = CreateController(isSystemAdmin: false);
 
     var result = await controller.GetPrograms();
@@ -55,7 +54,7 @@ public sealed class ProgramCrudControllerCatalogScopeTests
     var dtos = ok.Value.Should().BeAssignableTo<IEnumerable<ProgramDto>>().Subject.ToList();
     dtos.Should().HaveCount(2);
     dtos.Should().OnlyContain(dto => dto.CreatorId == _actorId);
-    _service.Verify(s => s.GetProgramsAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    _service.Verify(s => s.GetProgramsAsync(0, 50), Times.Once);
   }
 
   [Fact]
@@ -79,20 +78,18 @@ public sealed class ProgramCrudControllerCatalogScopeTests
   }
 
   [Fact]
-  public async Task GetPrograms_NonManageActorProbingOtherCreator_GetsOwnCoursesOnly()
+  public async Task GetPrograms_NonManageActorProbingOtherCreator_GetsNoUnsharedCourses()
   {
-    var ownCourses = MixedCatalog().Where(p => p.CreatorId == _actorId).ToList();
-    _service.Setup(s => s.GetProgramsByCreatorAsync(_actorId, 0, 50)).ReturnsAsync(ownCourses);
+    var otherCourses = MixedCatalog().Where(p => p.CreatorId == _otherCreatorId).ToList();
+    _service.Setup(s => s.GetProgramsByCreatorAsync(_otherCreatorId, 0, 50)).ReturnsAsync(otherCourses);
     var controller = CreateController(isSystemAdmin: false);
 
     var result = await controller.GetPrograms(creatorId: _otherCreatorId);
 
     var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
     var dtos = ok.Value.Should().BeAssignableTo<IEnumerable<ProgramDto>>().Subject.ToList();
-    dtos.Should().HaveCount(2);
-    dtos.Should().OnlyContain(dto => dto.CreatorId == _actorId);
-    _service.Verify(s => s.GetProgramsByCreatorAsync(_otherCreatorId, It.IsAny<int>(), It.IsAny<int>()), Times.Never);
-    _service.Verify(s => s.GetProgramsByCreatorAsync(_actorId, 0, 50), Times.Once);
+    dtos.Should().BeEmpty();
+    _service.Verify(s => s.GetProgramsByCreatorAsync(_otherCreatorId, 0, 50), Times.Once);
   }
 
   [Fact]
@@ -134,7 +131,28 @@ public sealed class ProgramCrudControllerCatalogScopeTests
     var actorAccessor = new Mock<IActorContextAccessor>();
     actorAccessor.Setup(a => a.ActorContext).Returns(actor);
 
-    var controller = new ProgramCrudController(_service.Object, actorAccessor.Object, _permissions.Object, Mock.Of<ISender>())
+    var access = new Mock<ICourseAccessEvaluator>();
+    access
+      .Setup(evaluator => evaluator.GetCapabilitiesAsync(
+        It.IsAny<Program>(),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync((Program program, CancellationToken _) => new CourseAccessCapabilities(
+        program.Id,
+        true,
+        true,
+        program.CreatorId == _actorId,
+        false,
+        false,
+        isSystemAdmin || program.CreatorId == _actorId,
+        isSystemAdmin || program.CreatorId == _actorId,
+        isSystemAdmin || program.CreatorId == _actorId));
+
+    var controller = new ProgramCrudController(
+      _service.Object,
+      actorAccessor.Object,
+      _permissions.Object,
+      access.Object,
+      Mock.Of<ISender>())
     {
       ControllerContext = new ControllerContext
       {

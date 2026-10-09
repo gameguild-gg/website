@@ -1,8 +1,9 @@
 @import "@game-guild/ui/globals.css";
 
-@source "../../../../packages/features/lexical-surface/src/**/*.{ts,tsx}";
-@source "../../../../packages/features/quiz-surface/src/**/*.{ts,tsx}";
-@source "../../../../packages/features/content-rendering/src/**/*.{ts,tsx}";
+@source "../**/*.{js,jsx,ts,tsx}";
+@source "../../../../packages/features/*/src/**/*.{js,jsx,ts,tsx}";
+@source "../../../../packages/infrastructure/ui-emception/src/**/*.{js,jsx,ts,tsx}";
+@source "../../../../tools/emception/packages/*/src/**/*.{js,jsx,ts,tsx}";
 
 /* Scrollbar utilities */
 @utility scrollbar-hide {

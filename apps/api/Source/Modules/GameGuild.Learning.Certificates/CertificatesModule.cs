@@ -1,5 +1,6 @@
 using GameGuild.Learning.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GameGuild.Learning.Certificates;
 
@@ -18,6 +19,10 @@ public static class CertificatesModule
         services.AddScoped<ICertificateService>(sp => sp.GetRequiredService<CertificateService>());
         services.AddScoped<ICertificateIssuanceService>(sp => sp.GetRequiredService<CertificateService>());
         services.AddScoped<ICertificateTemplateService, CertificateTemplateService>();
+
+        // Default no-op anchoring; the host may register a blockchain-backed
+        // ICertificateAnchoring adapter after the module (last registration wins).
+        services.TryAddScoped<ICertificateAnchoring, NoOpCertificateAnchoring>();
 
         return services;
     }

@@ -56,6 +56,15 @@ public class AuthenticationAttemptContext
     public string? DeviceFingerprint { get; set; }
 
     /// <summary>
+    ///     SHA-256 hex digest of the candidate password submitted during this attempt,
+    ///     computed by the caller before verification. Used exclusively for
+    ///     breached-password (credential-stuffing) threat-intelligence matching; the
+    ///     plaintext password must never be stored on the context, and this digest must
+    ///     never be persisted or logged.
+    /// </summary>
+    public string? PasswordSha256Hex { get; set; }
+
+    /// <summary>
     ///     Tenant context.
     /// </summary>
     public Guid? TenantId { get; set; }

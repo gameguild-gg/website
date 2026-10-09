@@ -13,11 +13,16 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
 {
     private readonly IApplicationDbContext _context;
     private readonly ILogger<CertificateService> _logger;
+    private readonly ICertificateAnchoring _certificateAnchoring;
 
-    public CertificateService(IApplicationDbContext context, ILogger<CertificateService> logger)
+    public CertificateService(
+        IApplicationDbContext context,
+        ILogger<CertificateService> logger,
+        ICertificateAnchoring? certificateAnchoring = null)
     {
         _context = context;
         _logger = logger;
+        _certificateAnchoring = certificateAnchoring ?? NoOpCertificateAnchoring.Instance;
     }
 
     public async Task<Result<Certificate>> IssueCertificateAsync(
@@ -76,6 +81,8 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
             _logger.LogInformation(
                 "Certificate issued: {CertificateNumber} to user {UserId} for course {CourseId}",
                 certificate.CertificateNumber, userId, courseId);
+
+            await AnchorIssuedCertificateSafelyAsync(certificate).ConfigureAwait(false);
 
             return Result.Success(certificate);
         }
@@ -214,6 +221,8 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
                 "Certificate revoked: {CertificateNumber} - Reason: {Reason}",
                 certificate.CertificateNumber, reason);
 
+            await RecordRevocationSafelyAsync(certificate, reason).ConfigureAwait(false);
+
             return Result.Success();
         }
         catch (Exception ex)
@@ -298,5 +307,39 @@ public class CertificateService : ICertificateService, ICertificateIssuanceServi
     {
         var number = $"CERT-{SystemClock.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
         return Task.FromResult(number);
+    }
+
+    /// <summary>
+    ///     Anchoring is auxiliary trust evidence: failures are logged but never break issuance,
+    ///     verification, or revocation of the certificate itself.
+    /// </summary>
+    private async Task AnchorIssuedCertificateSafelyAsync(Certificate certificate)
+    {
+        try
+        {
+            await _certificateAnchoring.AnchorIssuedCertificateAsync(certificate).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Certificate anchoring failed for certificate {CertificateNumber} (non-fatal; certificate remains issued)",
+                certificate.CertificateNumber);
+        }
+    }
+
+    private async Task RecordRevocationSafelyAsync(Certificate certificate, string reason)
+    {
+        try
+        {
+            await _certificateAnchoring.RecordRevocationAsync(certificate, reason).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Certificate revocation anchoring failed for certificate {CertificateNumber} (non-fatal; certificate remains revoked)",
+                certificate.CertificateNumber);
+        }
     }
 }

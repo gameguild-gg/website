@@ -178,6 +178,15 @@ public sealed class ContentPermission : Permission
 
         /// <summary>Admin access to content</summary>
         public const string Admin = "content:admin";
+
+        /// <summary>Edit existing editorial content (editorial permission)</summary>
+        public const string Edit = "content:edit";
+
+        /// <summary>Create and maintain content drafts (editorial permission)</summary>
+        public const string Draft = "content:draft";
+
+        /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
+        public const string Schedule = "content:schedule";
     }
 
     /// <summary>Read content</summary>
@@ -188,6 +197,15 @@ public sealed class ContentPermission : Permission
 
     /// <summary>Admin access to content</summary>
     public static readonly ContentPermission Admin = new(Keys.Admin, "Admin access to content");
+
+    /// <summary>Edit existing editorial content (editorial permission)</summary>
+    public static readonly ContentPermission Edit = new(Keys.Edit, "Edit existing editorial content");
+
+    /// <summary>Create and maintain content drafts (editorial permission)</summary>
+    public static readonly ContentPermission Draft = new(Keys.Draft, "Create and maintain content drafts");
+
+    /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
+    public static readonly ContentPermission Schedule = new(Keys.Schedule, "Schedule and cancel scheduled publication");
 }
 
 /// <summary>
@@ -717,4 +735,64 @@ public sealed class EconomyPermission : Permission
     public static readonly EconomyPermission OperateBounties = new(Keys.OperateBounties, "Operate Bounty expiration and conflicts");
     public static readonly EconomyPermission OperateTreasury = new(Keys.OperateTreasury, "Operate Treasury withdrawals and reconciliation");
     public static readonly EconomyPermission ManageLegacyMigration = new(Keys.ManageLegacyMigration, "Manage tenant-scoped Economy legacy migration and cutover");
+}
+
+/// <summary>
+///     Strongly-typed permissions for monetization and analytics authorization
+///     (issue #346: Monetize, ViewAnalytics, Configure).
+/// </summary>
+/// <remarks>
+///     <para>
+///         These permissions control access to revenue-generation features and
+///         platform business-intelligence data:
+///         <list type="bullet">
+///             <item><see cref="Monetize"/> — enable revenue generation, set pricing, manage monetization settings.</item>
+///             <item><see cref="ViewAnalytics"/> — access revenue reports, financial dashboards and performance metrics.</item>
+///             <item><see cref="Configure"/> — manage payment settings, subscription tiers and pricing models.</item>
+///         </list>
+///     </para>
+///     <para>
+///         The keys are ordinary tenant-level permission strings, so they flow through the
+///         existing grant/inheritance/precedence machinery (global defaults → tenant defaults →
+///         direct grants → role providers, deny-wins) without any special casing.
+///     </para>
+/// </remarks>
+public sealed class MonetizationPermission : Permission
+{
+    private MonetizationPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    /// <example>
+    ///     [RequirePermission(MonetizationPermission.Keys.ViewAnalytics)]
+    ///     public IActionResult GetMetrics() { }
+    /// </example>
+    public static class Keys
+    {
+        /// <summary>Enable revenue generation, set pricing, manage monetization settings</summary>
+        public const string Monetize = "monetization:monetize";
+
+        /// <summary>Access revenue reports, financial dashboards, performance metrics</summary>
+        public const string ViewAnalytics = "monetization:view-analytics";
+
+        /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
+        public const string Configure = "monetization:configure";
+    }
+
+    /// <summary>Enable revenue generation, set pricing, manage monetization settings</summary>
+    public static readonly MonetizationPermission Monetize = new(Keys.Monetize, "Enable revenue generation, set pricing and manage monetization settings");
+
+    /// <summary>Access revenue reports, financial dashboards, performance metrics</summary>
+    public static readonly MonetizationPermission ViewAnalytics = new(Keys.ViewAnalytics, "Access revenue reports, financial dashboards and performance metrics");
+
+    /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
+    public static readonly MonetizationPermission Configure = new(Keys.Configure, "Manage payment settings, subscription tiers and pricing models");
 }
