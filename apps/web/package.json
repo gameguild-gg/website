@@ -98,7 +98,7 @@
     "@reduxjs/toolkit": "^2.9",
     "@runno/wasi": "^0.10.0",
     "@shikijs/monaco": "^4.4.1",
-    "@stripe/react-stripe-js": "^6.10.0",
+    "@stripe/react-stripe-js": "^7.0.0",
     "@stripe/stripe-js": "^10.0.0",
     "@sumsub/websdk-react": "^2.9.0",
     "@tanstack/react-query": "^5.103.1",
