@@ -17,7 +17,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Submit a program for review (resource-level submit permission) </summary>
   [HttpPost("{id}:submit")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Submit)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> SubmitProgram(Guid id) {
     var program = await sender.Send(new SubmitProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -31,7 +31,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Approve a program (resource-level approve permission) </summary>
   [HttpPost("{id}:approve")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Approve)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> ApproveProgram(Guid id) {
     var program = await sender.Send(new ApproveProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -45,7 +45,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Reject a program (resource-level reject permission) </summary>
   [HttpPost("{id}:reject")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Reject)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> RejectProgram(Guid id, [FromBody] RejectProgramDto rejectDto) {
     if (!ModelState.IsValid)
         {
@@ -64,7 +64,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Withdraw a program from review (resource-level withdraw permission) </summary>
   [HttpPost("{id}:withdraw")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Withdraw)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> WithdrawProgram(Guid id) {
     var program = await sender.Send(new WithdrawProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -78,7 +78,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Archive a program (resource-level archive permission) </summary>
   [HttpPost("{id}:archive")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Archive)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> ArchiveProgram(Guid id) {
     var program = await sender.Send(new ArchiveProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -92,7 +92,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Restore an archived program (resource-level restore permission) </summary>
   [HttpPost("{id}:restore")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Restore)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> RestoreProgram(Guid id) {
     var program = await sender.Send(new RestoreProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -106,7 +106,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Publish a program (resource-level publish permission) </summary>
   [HttpPost("{id}:publish")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Publish)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> PublishProgram(Guid id) {
     var program = await sender.Send(new PublishProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -120,7 +120,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Unpublish a program (resource-level unpublish permission) </summary>
   [HttpPost("{id}:unpublish")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Unpublish)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> UnpublishProgram(Guid id) {
     var program = await sender.Send(new UnpublishProgramLifecycleCommand(id)).ConfigureAwait(false);
 
@@ -134,7 +134,7 @@ public class ProgramLifecycleController(ISender sender) : BaseApiController {
 
   /// <summary> Schedule a program for publishing (resource-level schedule permission) </summary>
   [HttpPost("{id}:schedule")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Schedule)]
+  [RequireCourseCapability(CourseCapability.Publish)]
   public async Task<ActionResult<ProgramDto>> ScheduleProgram(Guid id, [FromBody] ScheduleProgramDto scheduleDto) {
     if (!ModelState.IsValid)
         {

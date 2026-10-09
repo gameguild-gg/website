@@ -997,7 +997,7 @@ public sealed class SendEmailVerificationHandlerCoverageTests
             .Returns(Task.CompletedTask);
 
         var result = await _sut.Handle(cmd, CancellationToken.None);
-        result.Message.Should().Be("Verification email sent successfully");
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
     }
 
     [Fact]
@@ -1014,7 +1014,7 @@ public sealed class SendEmailVerificationHandlerCoverageTests
             .Returns(Task.CompletedTask);
 
         var result = await _sut.Handle(cmd, CancellationToken.None);
-        result.Message.Should().Be("Verification email sent successfully");
+        result.Message.Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);
     }
 }
 

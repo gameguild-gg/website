@@ -1009,7 +1009,7 @@ public class PermissionQueryServiceTests5
         var repo = new Mock<ITenantPermissionRepository>();
         var membershipChecker = new Mock<ITenantMembershipChecker>();
         var logger = NullLogger<PermissionQueryService>.Instance;
-        var svc = new PermissionQueryService(repo.Object, membershipChecker.Object, logger);
+        var svc = new PermissionQueryService(repo.Object, membershipChecker.Object, Mock.Of<IEffectivePermissionResolver>(), logger);
         svc.Should().NotBeNull();
     }
 }

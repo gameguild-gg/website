@@ -12,23 +12,36 @@ namespace GameGuild.Identity.Authentication;
 public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfiguration configuration) : IEncryptionService
 {
     /// <summary>
-    ///     Fallback key used only when no key is configured. Logs a warning on first use.
-    ///     In production, set Encryption:Key in configuration or use a key vault.
+    ///     Minimum configured key material accepted by the service. Mirrors the host startup guard,
+    ///     which requires the same length in protected environments. The service fails closed: no
+    ///     built-in fallback key exists.
     /// </summary>
-    private const string FallbackKey = "GameGuild_Encryption_Key_32_Chars";
+    private const int MinimumKeyLengthBytes = 32;
 
+    /// <summary>
+    ///     Resolves the configured key. Accepts the same settings as the host startup guard, in the same
+    ///     precedence order: <c>Encryption:EncryptionKey</c> first, then <c>Encryption:Key</c>.
+    ///     Throws <see cref="InvalidOperationException" /> when no key is configured or the key is
+    ///     shorter than 32 bytes — the service never falls back to a shared or built-in key.
+    /// </summary>
     private string EncryptionKey
     {
         get
         {
-            var configuredKey = configuration["Encryption:Key"];
-            if (!string.IsNullOrEmpty(configuredKey))
-            {
-                return configuredKey;
-            }
+            var configuredKey = configuration["Encryption:EncryptionKey"];
+            if (string.IsNullOrWhiteSpace(configuredKey))
+                configuredKey = configuration["Encryption:Key"];
 
-            logger.LogWarning("Encryption:Key not configured — using insecure fallback key. Set Encryption:Key in configuration for production");
-            return FallbackKey;
+            if (string.IsNullOrWhiteSpace(configuredKey))
+                throw new InvalidOperationException(
+                    "Encryption:EncryptionKey (or Encryption:Key) is not configured. Credential encryption fails closed; set a key of at least 32 bytes in configuration (deployment secret store, environment variables or appsettings) before encrypting or decrypting data.");
+
+            var keyLengthBytes = Encoding.UTF8.GetByteCount(configuredKey);
+            if (keyLengthBytes < MinimumKeyLengthBytes)
+                throw new InvalidOperationException(
+                    $"Encryption:EncryptionKey (or Encryption:Key) must contain at least {MinimumKeyLengthBytes} bytes; found {keyLengthBytes}. Credential encryption fails closed and will not use a weak key.");
+
+            return configuredKey;
         }
     }
 
@@ -215,21 +228,17 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
 
     /// <summary>
     ///     Generates a cryptographically secure random string.
+    ///     Uses <see cref="RandomNumberGenerator.GetItems{T}(ReadOnlySpan{T}, int)" /> so every
+    ///     character of the alphabet is selected with uniform probability (no modulo bias).
     /// </summary>
     public string GenerateSecureRandomString(int length)
     {
         if (length <= 0) { throw new ArgumentException("Length must be positive", nameof(length)); }
 
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var randomBytes = new byte[length];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
+        var selected = RandomNumberGenerator.GetItems<char>(chars, length);
 
-        var result = new char[length];
-
-        for (var i = 0; i < length; i++) { result[i] = chars[randomBytes[i] % chars.Length]; }
-
-        return new string(result);
+        return new string(selected);
     }
 
     /// <summary>

@@ -113,6 +113,7 @@ interface AssessmentsListProps {
   assessmentGroups?: AssessmentGroup[];
   analytics?: CourseAssessmentAnalytics | null;
   canManage?: boolean;
+  canReviewAsStaff?: boolean;
 }
 
 interface AssessmentGroupView {
@@ -187,13 +188,15 @@ function buildGroupedAssessments(
 
 function DraggableAssessmentRow({
   id,
+  disabled,
   children,
 }: {
   id: string;
+  disabled: boolean;
   children: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id });
+    useDraggable({ id, disabled });
   const style: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
     opacity: isDragging ? 0.4 : undefined,
@@ -207,12 +210,14 @@ function DraggableAssessmentRow({
 
 function DroppableGroupBody({
   id,
+  disabled,
   children,
 }: {
   id: string;
+  disabled: boolean;
   children: React.ReactNode;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
+  const { setNodeRef, isOver } = useDroppable({ id, disabled });
   return (
     <div
       ref={setNodeRef}
@@ -345,6 +350,7 @@ export function AssessmentsList({
   assessmentGroups = [],
   analytics = null,
   canManage = false,
+  canReviewAsStaff = false,
 }: AssessmentsListProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -622,20 +628,22 @@ export function AssessmentsList({
           <h2 className="text-lg font-semibold">Assessments</h2>
           <Badge variant="secondary">{total}</Badge>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => setShowCreateAssessment(true)}>
-            <Wand2 className="mr-2 h-4 w-4" />
-            Create Assessment
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowCreateGroup(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Group
-          </Button>
-        </div>
+        {canManage && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" onClick={() => setShowCreateAssessment(true)}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Create Assessment
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowCreateGroup(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Group
+            </Button>
+          </div>
+        )}
       </div>
 
       {hasWeightWarning && (
@@ -677,7 +685,7 @@ export function AssessmentsList({
       {groupedAssessments.length > 0 && (
         <DndContext
           id={`assessments-${courseId}`}
-          sensors={dndSensors}
+          sensors={canManage ? dndSensors : []}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
@@ -728,7 +736,7 @@ export function AssessmentsList({
                   <Badge variant="outline">
                     {formatAssessmentRole(group.weightPercent)}
                   </Badge>
-                  {group.id !== UNGROUPED_ID && (
+                  {canManage && group.id !== UNGROUPED_ID && (
                     <>
                       <Button
                         type="button"
@@ -754,21 +762,31 @@ export function AssessmentsList({
                   )}
                 </div>
 
-                <DroppableGroupBody id={`${GROUP_DROP_PREFIX}${group.id}`}>
+                <DroppableGroupBody
+                  id={`${GROUP_DROP_PREFIX}${group.id}`}
+                  disabled={!canManage}
+                >
                   <div className="divide-y">
                     {group.assessments.map((assessment) => (
                       <DraggableAssessmentRow
                         key={assessment.id}
                         id={`${ASSESSMENT_DRAG_PREFIX}${assessment.id}`}
+                        disabled={!canManage}
                       >
                         <Link
-                          href={`${pathname}/${assessment.id}`}
+                          href={
+                            canManage
+                              ? `${pathname}/${assessment.id}`
+                              : `${pathname}/${assessment.id}/submissions`
+                          }
                           className="group flex min-h-16 items-center gap-3 px-4 py-3 transition hover:bg-muted/45"
                         >
-                          <GripVertical
-                            className="text-muted-foreground/70 size-4 shrink-0 cursor-grab"
-                            aria-hidden="true"
-                          />
+                          {canManage && (
+                            <GripVertical
+                              className="text-muted-foreground/70 size-4 shrink-0 cursor-grab"
+                              aria-hidden="true"
+                            />
+                          )}
                           <span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-md">
                             {typeIcon(assessment.type)}
                           </span>
@@ -801,7 +819,7 @@ export function AssessmentsList({
                             {assessment.isAvailable ? "available" : "scheduled"}
                           </Badge>
                         </Link>
-                        {canManage && (
+                        {canReviewAsStaff && (
                            <Link
                              href={`${pathname}/${assessment.id}/submissions`}
                              data-testid={`grade-link-${assessment.id}`}

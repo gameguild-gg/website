@@ -88,6 +88,17 @@ public class ApiKey : EntityBase
     public string? RevocationReason { get; set; }
 
     /// <summary>
+    ///     Key that this key replaces (set when this key was issued by a rotation)
+    /// </summary>
+    public Guid? ReplacesKeyId { get; set; }
+
+    /// <summary>
+    ///     When this key stops being honored because it was rotated (overlap/grace window end).
+    ///     Until this moment the rotated (old) key remains valid alongside its replacement.
+    /// </summary>
+    public DateTime? RotationGraceEndsAt { get; set; }
+
+    /// <summary>
     ///     Create a new API key
     /// </summary>
     public static (ApiKey key, string plaintext) Create(
@@ -146,23 +157,18 @@ public class ApiKey : EntityBase
     /// </summary>
     public bool IsValid()
     {
-        if (!IsActive)
-        {
-            return false;
-        }
-
-        if (RevokedAt.HasValue)
-        {
-            return false;
-        }
-
-        if (ExpiresAt.HasValue && ExpiresAt.Value < SystemClock.UtcNow)
-        {
-            return false;
-        }
-
+        if (!IsActive) return false;
+        if (RevokedAt.HasValue) return false;
+        if (IsRotationGraceExpired()) return false;
+        if (ExpiresAt.HasValue && ExpiresAt.Value < SystemClock.UtcNow) return false;
         return true;
     }
+
+    /// <summary>
+    ///     Whether the rotation overlap window for this key has already closed
+    /// </summary>
+    public bool IsRotationGraceExpired()
+        => RotationGraceEndsAt.HasValue && RotationGraceEndsAt.Value <= SystemClock.UtcNow;
 
     /// <summary>
     ///     Check if key has a specific scope
@@ -193,6 +199,32 @@ public class ApiKey : EntityBase
         RevokedAt = SystemClock.UtcNow;
         RevocationReason = reason;
         Touch();
+    }
+
+    /// <summary>
+    ///     Start the rotation overlap window: this (old) key stays valid until
+    ///     <paramref name="graceEndsAt"/>, after which <see cref="IsValid"/> fails closed.
+    /// </summary>
+    public void BeginRotationGrace(DateTime graceEndsAt)
+    {
+        RotationGraceEndsAt = graceEndsAt;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Lazily record the revocation of a rotated key once its overlap window has closed.
+    ///     Returns true when the entity transitioned (caller must persist), false when
+    ///     there is nothing to finalize.
+    /// </summary>
+    public bool FinalizeRotationRevocation()
+    {
+        if (!IsRotationGraceExpired() || RevokedAt.HasValue || !IsActive)
+        {
+            return false;
+        }
+
+        Revoke("Rotated: superseded by a replacement key after the overlap window closed");
+        return true;
     }
 
     /// <summary>

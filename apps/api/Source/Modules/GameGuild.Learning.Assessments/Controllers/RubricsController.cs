@@ -19,26 +19,20 @@ public class RubricsController : BaseApiController
 {
     private readonly IRubricService _rubricService;
     private readonly IAssessmentService _assessmentService;
-    private readonly IActorContextAccessor _actorContextAccessor;
-    private readonly IProgramCrudService _programService;
-    private readonly IPermissionQueryService _permissionQueryService;
+    private readonly ICourseAccessEvaluator _courseAccessEvaluator;
     private readonly ILogger<RubricsController> _logger;
     private readonly ISender _sender;
 
     public RubricsController(
         IRubricService rubricService,
         IAssessmentService assessmentService,
-        IActorContextAccessor actorContextAccessor,
-        IProgramCrudService programService,
-        IPermissionQueryService permissionQueryService,
+        ICourseAccessEvaluator courseAccessEvaluator,
         ILogger<RubricsController> logger,
         ISender sender)
     {
         _rubricService = rubricService;
         _assessmentService = assessmentService;
-        _actorContextAccessor = actorContextAccessor;
-        _programService = programService;
-        _permissionQueryService = permissionQueryService;
+        _courseAccessEvaluator = courseAccessEvaluator;
         _logger = logger;
         _sender = sender;
     }
@@ -134,99 +128,16 @@ public class RubricsController : BaseApiController
         };
     }
 
-    private async Task<bool> CanReadRubricAsync(Guid courseId)
-    {
-        // Mirrors the GetSubmission reviewer gate: managers or Review-permission holders
-        // (CanReviewCourseAsync includes the program-tenant check).
-        return await CanManageCourseAsync(courseId).ConfigureAwait(false) ||
-               await CanReviewCourseAsync(courseId).ConfigureAwait(false);
-    }
-
-    private async Task<bool> CanManageCourseAsync(Guid courseId)
-    {
-        var actor = _actorContextAccessor.ActorContext;
-        if (actor.IsSystemAdmin)
-        {
-            return true;
-        }
-
-        if (!actor.SubjectIdAsGuid.HasValue)
-        {
-            return false;
-        }
-
-        var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null)
-        {
-            return false;
-        }
-
-        if (!actor.TenantId.HasValue)
-        {
-            return false;
-        }
-
-        if (program.TenantId.HasValue && program.TenantId != actor.TenantId)
-        {
-            return false;
-        }
-
-        if (program.CreatorId == actor.SubjectIdAsGuid.Value)
-        {
-            return true;
-        }
-
-        foreach (var permission in new[] { PermissionType.Edit, PermissionType.Create, PermissionType.Delete })
-        {
-            var permissionName = $"{nameof(Program)}.{courseId}.{permission}";
-            if (await _permissionQueryService.HasTenantPermissionAsync(
-                    actor.SubjectIdAsGuid.Value,
-                    actor.TenantId,
-                    permissionName).ConfigureAwait(false))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private async Task<bool> IsActorInProgramTenantAsync(Guid courseId)
-    {
-        var actor = _actorContextAccessor.ActorContext;
-        var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null)
-        {
-            return false;
-        }
-
-        if (actor.IsSystemAdmin)
-        {
-            return true;
-        }
-
-        return actor.TenantId.HasValue &&
-               (!program.TenantId.HasValue || program.TenantId == actor.TenantId);
-    }
-
-    private async Task<bool> CanReviewCourseAsync(Guid courseId)
-    {
-        var actor = _actorContextAccessor.ActorContext;
-        if (!actor.SubjectIdAsGuid.HasValue)
-        {
-            return false;
-        }
-
-        if (!await IsActorInProgramTenantAsync(courseId).ConfigureAwait(false))
-        {
-            return false;
-        }
-
-        var permissionName = $"{nameof(Program)}.{courseId}.{PermissionType.Review}";
-        return await _permissionQueryService.HasTenantPermissionAsync(
-                actor.SubjectIdAsGuid.Value,
-                actor.TenantId,
-                permissionName)
+    private async Task<bool> CanReadRubricAsync(Guid courseId) =>
+        await CanManageCourseAsync(courseId).ConfigureAwait(false) ||
+        await _courseAccessEvaluator
+            .HasCapabilityAsync(courseId, CourseCapability.StaffReview, HttpContext.RequestAborted)
             .ConfigureAwait(false);
-    }
+            .ConfigureAwait(false);
+
+    private Task<bool> CanManageCourseAsync(Guid courseId) =>
+        _courseAccessEvaluator.HasCapabilityAsync(
+            courseId,
+            CourseCapability.Edit,
+            HttpContext.RequestAborted);
 }

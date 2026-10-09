@@ -13,7 +13,7 @@ namespace GameGuild.Learning.Courses;
 public class ContentInteractionService(
   IApplicationDbContext context,
   IRequestContextAccessor requestContextAccessor,
-  IPermissionQueryService? permissionQueryService = null,
+  ICourseAccessEvaluator? courseAccessEvaluator = null,
   IEnumerable<IProgramContentAcademicMutationGuard>? academicGuards = null) : IContentInteractionService {
   private readonly IEnumerable<IProgramContentAcademicMutationGuard> academicMutationGuards = academicGuards ?? [];
   /// <summary> Start a new content interaction (or resume existing one if not submitted) </summary>
@@ -292,10 +292,8 @@ public class ContentInteractionService(
             throw new RequestValidationException("Survey content was not found for the specified program.");
         }
 
-        if (!await HasProgramReviewAccessAsync(program.Id, actorId.Value).ConfigureAwait(false))
-        {
-            throw new RequestValidationException("Program review permission is required.");
-        }
+    if (!await HasProgramReviewAccessAsync(program).ConfigureAwait(false))
+      throw new RequestValidationException("Program review permission is required.");
 
         var interactions = await context.Set<ContentInteraction>()
       .Where(item => item.ContentId == contentId && item.SubmittedAt != null && item.DeletedAt == null)
@@ -363,17 +361,11 @@ public class ContentInteractionService(
   public async Task<IEnumerable<ReflectionResponseResultDto>> GetReflectionResponsesAsync(Guid expectedProgramId, Guid contentId) {
     var actorId = requestContextAccessor.CurrentUserId;
     if (!requestContextAccessor.IsAuthenticated || !actorId.HasValue)
-        {
-            throw new RequestValidationException("Program management permission is required.");
-        }
-
-        var program = await GetTenantScopedProgramAsync(expectedProgramId, "Program management permission is required.").ConfigureAwait(false);
-    if (!await HasProgramReviewAccessAsync(program.Id, actorId.Value).ConfigureAwait(false))
-        {
-            throw new RequestValidationException("Program review permission is required.");
-        }
-
-        var content = await GetReflectionContentAsync(program.Id, contentId).ConfigureAwait(false);
+      throw new RequestValidationException("Program management permission is required.");
+    var program = await GetTenantScopedProgramAsync(expectedProgramId, "Program management permission is required.").ConfigureAwait(false);
+    if (!await HasProgramReviewAccessAsync(program).ConfigureAwait(false))
+      throw new RequestValidationException("Program review permission is required.");
+    var content = await GetReflectionContentAsync(program.Id, contentId).ConfigureAwait(false);
     var interactions = await SubmittedInteractionsAsync(content.Id).ConfigureAwait(false);
     return interactions.Select(interaction => ReflectionResponseResultDto.FromInteraction(interaction, true)).ToList();
   }
@@ -430,17 +422,9 @@ public class ContentInteractionService(
       .OrderBy(item => item.SubmittedAt)
       .ToListAsync();
 
-  private Task<bool> HasProgramReviewAccessAsync(Guid programId, Guid actorId) {
-    if (permissionQueryService is null)
-        {
-            return Task.FromResult(false);
-        }
-
-        return permissionQueryService.HasTenantPermissionAsync(
-      actorId,
-      requestContextAccessor.CurrentTenantId,
-      $"{nameof(Program)}.{programId}.{PermissionType.Review}");
-  }
+  private async Task<bool> HasProgramReviewAccessAsync(Program program) =>
+    courseAccessEvaluator is not null &&
+    (await courseAccessEvaluator.GetCapabilitiesAsync(program).ConfigureAwait(false)).CanReviewAsStaff;
 
   /// <summary> Update time spent on content </summary>
   public async Task<ContentInteraction> UpdateTimeSpentAsync(Guid interactionId, int additionalMinutes) {
