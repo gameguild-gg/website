@@ -24,7 +24,7 @@ public interface IPermissionExpirationService
     /// <summary>
     ///     Deactivates grants whose <c>ExpiresAt</c> has passed: publishes an
     ///     <see cref="PermissionExpirationNotification"/> with kind
-    ///     <see cref="PermissionExpirationKind.Exired"/>, writes an audit entry with
+    ///     <see cref="PermissionExpirationKind.Expired"/>, writes an audit entry with
     ///     operation <see cref="PermissionOperationType.Expire"/>, and bumps the tenant
     ///     security version. Idempotent.
     /// </summary>
