@@ -160,13 +160,25 @@ public sealed class AuthenticationOptions : BaseOptions
 
         if (EnableAuthentication)
         {
-            if (string.IsNullOrEmpty(JwtSecretKey)) throw new InvalidOperationException("JWT secret key must be configured when authentication is enabled.");
+            if (string.IsNullOrEmpty(JwtSecretKey))
+            {
+                throw new InvalidOperationException("JWT secret key must be configured when authentication is enabled.");
+            }
 
-            if (string.IsNullOrEmpty(JwtIssuer)) throw new InvalidOperationException("JWT issuer must be configured when authentication is enabled.");
+            if (string.IsNullOrEmpty(JwtIssuer))
+            {
+                throw new InvalidOperationException("JWT issuer must be configured when authentication is enabled.");
+            }
 
-            if (string.IsNullOrEmpty(JwtAudience)) throw new InvalidOperationException("JWT audience must be configured when authentication is enabled.");
+            if (string.IsNullOrEmpty(JwtAudience))
+            {
+                throw new InvalidOperationException("JWT audience must be configured when authentication is enabled.");
+            }
 
-            if (JwtExpiration <= TimeSpan.Zero) throw new InvalidOperationException("JWT expiration must be greater than zero.");
+            if (JwtExpiration <= TimeSpan.Zero)
+            {
+                throw new InvalidOperationException("JWT expiration must be greater than zero.");
+            }
 
             if (RefreshTokenExpirationDays <= 0)
             {

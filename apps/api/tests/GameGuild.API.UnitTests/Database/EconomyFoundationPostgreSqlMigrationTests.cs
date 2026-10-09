@@ -132,7 +132,10 @@ public sealed class EconomyFoundationPostgreSqlMigrationTests
                      ("a1000000-0000-0000-0000-000000000005", "99000000-0000-0000-0000-000000000005", 40L),
                      ("a1000000-0000-0000-0000-000000000006", "99000000-0000-0000-0000-000000000006", 40L)
                  })
+        {
             await ReserveAsWriterAsync(connection, reservation.Item1, reservation.Item2, reservation.Item3);
+        }
+
         await ExecuteAsync(connection, """
             INSERT INTO public.economy_risk_counter_reservations
                 ("Id", "RiskDecisionId", "RiskCounterId", "AmountUnits", "ReservedAt")
@@ -261,12 +264,14 @@ public sealed class EconomyFoundationPostgreSqlMigrationTests
         forgedState.ConstraintName.Should().Be("ck_economy_source_stamps_confirmation");
 
         for (var index = 1; index <= 8; index++)
+        {
             await ReserveAsWriterAsync(
-                connection,
-                $"ca000000-0000-0000-0000-{index:D12}",
-                $"c9000000-0000-0000-0000-{index:D12}",
-                index == 7 ? 101 : 100,
-                "c8000000-0000-0000-0000-000000000001");
+            connection,
+            $"ca000000-0000-0000-0000-{index:D12}",
+            $"c9000000-0000-0000-0000-{index:D12}",
+            index == 7 ? 101 : 100,
+            "c8000000-0000-0000-0000-000000000001");
+        }
 
         var accepted = await ExecuteTopUpPostingAsync(
             connectionString,
@@ -800,7 +805,10 @@ public sealed class EconomyFoundationPostgreSqlMigrationTests
         var generator = context.GetService<IMigrationsSqlGenerator>();
         await using var transaction = await connection.BeginTransactionAsync();
         foreach (var command in generator.Generate(builder.Operations, null))
+        {
             await ExecuteAsync(connection, command.CommandText, transaction);
+        }
+
         await transaction.CommitAsync();
     }
 
@@ -830,7 +838,9 @@ public sealed class EconomyFoundationPostgreSqlMigrationTests
         public DockerFactAttribute()
         {
             if (string.Equals(Environment.GetEnvironmentVariable("SKIP_DOCKER_TESTS"), "1", StringComparison.Ordinal))
+            {
                 Skip = "Docker tests disabled by SKIP_DOCKER_TESTS=1.";
+            }
         }
     }
 

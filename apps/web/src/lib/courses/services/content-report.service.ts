@@ -1,3 +1,5 @@
+import { assertSafeRemoteUrl } from '@/lib/security/safe-remote-url';
+
 export interface ContentReport {
   id: string;
   contentType: string;
@@ -69,7 +71,8 @@ export async function reportContent(data: ReportPayload): Promise<ContentReportR
 
 export async function getContentReports(contentType: string, contentId: string) {
   const query = new URLSearchParams({ contentType, contentId });
-  const response = await fetch(`/api/courses/content-reports?${query.toString()}`, {
+  const response = await fetch(assertSafeRemoteUrl(`/api/courses/content-reports?${query.toString()}`), {
+    redirect: 'error',
     method: 'GET',
   });
 

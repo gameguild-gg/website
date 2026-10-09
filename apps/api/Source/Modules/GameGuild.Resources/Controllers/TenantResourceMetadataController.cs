@@ -36,16 +36,22 @@ public sealed class TenantResourceMetadataController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass tenant membership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // If actor's current tenant matches, allow access
         if (actor.TenantId.HasValue && actor.TenantId.Value == tenantId)
+        {
             return true;
-        
+        }
+
         // Check actual tenant membership in database
         return await tenantMembershipChecker.IsUserMemberOfTenantAsync(
             actor.SubjectIdAsGuid.Value, 
@@ -68,8 +74,10 @@ public sealed class TenantResourceMetadataController(
     public async Task<IActionResult> GetTenantMetadata(Guid tenantId, [FromQuery] string? category, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         if (!string.IsNullOrEmpty(category)) { return Ok(await metadataRepository.GetByCategoryAsync(tenantId, category, ct).ConfigureAwait(false)); }
 
         return Ok(await metadataRepository.GetByTenantAsync(tenantId, ct).ConfigureAwait(false));
@@ -91,11 +99,16 @@ public sealed class TenantResourceMetadataController(
     public async Task<IActionResult> GetTenantMetadataByKey(Guid tenantId, string key, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         var metadata = await metadataRepository.GetByKeyAsync(tenantId, key, ct).ConfigureAwait(false);
 
-        if (metadata == null) return NotFound($"Metadata not found for key: {key}");
+        if (metadata == null)
+        {
+            return NotFound($"Metadata not found for key: {key}");
+        }
 
         return Ok(metadata);
     }
@@ -117,8 +130,10 @@ public sealed class TenantResourceMetadataController(
     public async Task<IActionResult> SetTenantMetadata(Guid tenantId, string key, [FromBody] SetResourceMetadataRequest body, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var metadata = await sender.Send(new SetTenantResourceMetadataCommand(tenantId, key, body), ct)
@@ -142,12 +157,17 @@ public sealed class TenantResourceMetadataController(
     public async Task<IActionResult> DeleteTenantMetadata(Guid tenantId, string key, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         var deleted = await sender.Send(new DeleteTenantResourceMetadataCommand(tenantId, key), ct)
             .ConfigureAwait(false);
 
-        if (!deleted) return NotFound($"Metadata not found for key: {key}");
+        if (!deleted)
+        {
+            return NotFound($"Metadata not found for key: {key}");
+        }
 
         return NoContent();
     }

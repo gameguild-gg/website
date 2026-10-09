@@ -140,7 +140,10 @@ public static class ServiceCollectionExtensions
 
         foreach (var type in types)
         {
-            if (!type.IsClass || type.IsAbstract || type.IsGenericTypeDefinition) continue;
+            if (!type.IsClass || type.IsAbstract || type.IsGenericTypeDefinition)
+            {
+                continue;
+            }
 
             var interfaces = type.GetInterfaces();
             for (var i = 0; i < interfaces.Length; i++)
@@ -191,7 +194,10 @@ public static class ServiceCollectionExtensions
 
         foreach (var type in types)
         {
-            if (!type.IsClass || type.IsAbstract || type.IsGenericTypeDefinition) continue;
+            if (!type.IsClass || type.IsAbstract || type.IsGenericTypeDefinition)
+            {
+                continue;
+            }
 
             var interfaces = type.GetInterfaces();
             for (var i = 0; i < interfaces.Length; i++)

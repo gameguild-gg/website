@@ -24,11 +24,20 @@ public sealed class MemoryCachingOptions : BaseOptions
     {
         base.Validate();
 
-        if (SizeLimit <= 0) throw new InvalidOperationException("Size limit must be greater than zero.");
+        if (SizeLimit <= 0)
+        {
+            throw new InvalidOperationException("Size limit must be greater than zero.");
+        }
 
-        if (CompactionPercentage <= 0 || CompactionPercentage >= 1) throw new InvalidOperationException("Compaction percentage must be between 0 and 1.");
+        if (CompactionPercentage <= 0 || CompactionPercentage >= 1)
+        {
+            throw new InvalidOperationException("Compaction percentage must be between 0 and 1.");
+        }
 
-        if (ExpirationScanFrequency <= TimeSpan.Zero) throw new InvalidOperationException("Expiration scan frequency must be greater than zero.");
+        if (ExpirationScanFrequency <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException("Expiration scan frequency must be greater than zero.");
+        }
     }
 
     public static MemoryCachingOptions CreateDefault() { return new MemoryCachingOptions(); }

@@ -63,7 +63,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
     public async Task<ActionResult<FeaturedContentDto>> GetFeaturedContentById(Guid id)
     {
         var content = await discoveryService.GetFeaturedContentByIdAsync(id).ConfigureAwait(false);
-        if (content == null) return NotFound();
+        if (content == null)
+        {
+            return NotFound();
+        }
+
         return Ok(content.ToDto());
     }
 
@@ -78,7 +82,10 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         [FromBody] CreateFeaturedContentDto dto,
         [FromQuery] Guid? tenantId = null)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var content = await sender.Send(new CreateFeaturedContentCommand(
             dto.Type,
@@ -105,7 +112,10 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         Guid id,
         [FromBody] UpdateFeaturedContentDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var content = await sender.Send(new UpdateFeaturedContentCommand(
             id,
@@ -118,7 +128,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
             dto.EndsAt,
             dto.IsActive,
             dto.TargetAudience)).ConfigureAwait(false);
-        if (content == null) return NotFound();
+        if (content == null)
+        {
+            return NotFound();
+        }
+
         return Ok(content.ToDto());
     }
 
@@ -132,7 +146,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         [FromQuery] bool isActive)
     {
         var content = await sender.Send(new ToggleFeaturedContentCommand(id, isActive)).ConfigureAwait(false);
-        if (content == null) return NotFound();
+        if (content == null)
+        {
+            return NotFound();
+        }
+
         return Ok(content.ToDto());
     }
 
@@ -144,7 +162,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
     public async Task<IActionResult> DeleteFeaturedContent(Guid id)
     {
         var success = await sender.Send(new DeleteFeaturedContentCommand(id)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -185,7 +207,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         [FromQuery] Guid? tenantId = null)
     {
         var collection = await discoveryService.GetCollectionBySlugAsync(slug, tenantId).ConfigureAwait(false);
-        if (collection == null) return NotFound();
+        if (collection == null)
+        {
+            return NotFound();
+        }
+
         return Ok(collection.ToDto());
     }
 
@@ -196,7 +222,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
     public async Task<ActionResult<CourseCollectionDto>> GetCollectionById(Guid id)
     {
         var collection = await discoveryService.GetCollectionByIdAsync(id).ConfigureAwait(false);
-        if (collection == null) return NotFound();
+        if (collection == null)
+        {
+            return NotFound();
+        }
+
         return Ok(collection.ToDto());
     }
 
@@ -226,7 +256,10 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         [FromQuery] Guid curatorId,
         [FromQuery] Guid? tenantId = null)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var collection = await sender.Send(new CreateCourseCollectionCommand(
             curatorId,
@@ -247,7 +280,10 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         Guid id,
         [FromBody] UpdateCourseCollectionDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var collection = await sender.Send(new UpdateCourseCollectionCommand(
             id,
@@ -255,7 +291,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
             dto.Description,
             dto.ImageUrl,
             dto.IsFeatured)).ConfigureAwait(false);
-        if (collection == null) return NotFound();
+        if (collection == null)
+        {
+            return NotFound();
+        }
+
         return Ok(collection.ToDto());
     }
 
@@ -267,7 +307,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
     public async Task<ActionResult<CourseCollectionDto>> PublishCollection(Guid id)
     {
         var collection = await sender.Send(new PublishCourseCollectionCommand(id)).ConfigureAwait(false);
-        if (collection == null) return NotFound();
+        if (collection == null)
+        {
+            return NotFound();
+        }
+
         return Ok(collection.ToDto());
     }
 
@@ -279,7 +323,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
     public async Task<ActionResult<CourseCollectionDto>> UnpublishCollection(Guid id)
     {
         var collection = await sender.Send(new UnpublishCourseCollectionCommand(id)).ConfigureAwait(false);
-        if (collection == null) return NotFound();
+        if (collection == null)
+        {
+            return NotFound();
+        }
+
         return Ok(collection.ToDto());
     }
 
@@ -291,7 +339,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
     public async Task<IActionResult> DeleteCollection(Guid id)
     {
         var success = await sender.Send(new DeleteCourseCollectionCommand(id)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -305,7 +357,10 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         [FromBody] RecordSearchDto dto,
         [FromQuery] Guid? userId = null)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var searchHistory = await sender.Send(new RecordSearchCommand(
             dto.Query,
@@ -324,7 +379,11 @@ public class DiscoveryController(IDiscoveryService discoveryService, ISender sen
         [FromBody] RecordSearchClickDto dto)
     {
         var success = await sender.Send(new RecordSearchClickCommand(searchId, dto.ClickedCourseId)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 

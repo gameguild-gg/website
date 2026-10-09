@@ -25,15 +25,21 @@ public sealed class TenantInviteRequestedHandler(
     {
         var member = await memberRepository.GetByIdAsync(@event.MemberId, cancellationToken).ConfigureAwait(false);
         if (member is null || member.IsDeleted || member.TenantId != @event.TenantId)
+        {
             return;
+        }
 
         var metadata = TenantMemberInviteMetadata.FromJson(member.Metadata);
         if (metadata.InviteStatus == TenantMemberInviteStatuses.Cancelled || string.IsNullOrWhiteSpace(metadata.InviteeEmail))
+        {
             return;
+        }
 
         var tenant = await tenantRepository.GetByIdAsync(member.TenantId, cancellationToken).ConfigureAwait(false);
         if (tenant is null || tenant.IsDeleted)
+        {
             return;
+        }
 
         var appBaseUrl = (configuration["App:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
         var path = configuration["Identity:Invitations:ReviewPath"];
@@ -81,7 +87,7 @@ public sealed class TenantInviteRequestedHandler(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to queue tenant invite notification for {Email}", notification.InviteeEmail);
+            logger.LogWarning(ex, "Failed to queue tenant invite notification for {Email}", LogRedaction.MaskEmail(notification.InviteeEmail));
             throw;
         }
     }

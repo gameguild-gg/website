@@ -133,14 +133,14 @@ export function buildBlogJsonLd(post: BlogPostDetail, authorProfiles?: BlogAutho
 }
 
 /**
- * Exact JSON-LD script payload: the stored override verbatim when present,
- * the generated `BlogPosting` otherwise.
+ * JSON-LD script payload: use the stored override when present or generate a
+ * `BlogPosting`, then escape HTML script delimiters without changing JSON values.
  */
 export function resolveBlogJsonLd(post: BlogPostDetail, authorProfiles?: BlogAuthorProfile[]): string {
-  if (post.structuredDataOverride && post.structuredDataOverride.trim().length > 0) {
-    return post.structuredDataOverride;
-  }
-  return JSON.stringify(buildBlogJsonLd(post, authorProfiles));
+  const payload = post.structuredDataOverride && post.structuredDataOverride.trim().length > 0
+    ? post.structuredDataOverride
+    : JSON.stringify(buildBlogJsonLd(post, authorProfiles));
+  return payload.replace(/</g, '\\u003c');
 }
 
 export const BLOG_API_BASE_URL = (

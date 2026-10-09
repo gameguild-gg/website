@@ -32,7 +32,10 @@ public sealed class MarketplaceSettlementCoordinator
     {
         get
         {
-            lock (_gate) return _settlements.Count;
+            lock (_gate)
+            {
+                return _settlements.Count;
+            }
         }
     }
 
@@ -44,15 +47,24 @@ public sealed class MarketplaceSettlementCoordinator
         {
             if (_settlementIdempotency.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.Id == command.Id) return duplicate;
+                if (duplicate.Id == command.Id)
+                {
+                    return duplicate;
+                }
+
                 throw new MarketplaceIdempotencyConflictException(
                     "A settlement idempotency key cannot identify another settlement.");
             }
 
             if (_settlements.ContainsKey(command.Id))
+            {
                 throw new MarketplaceIdempotencyConflictException("The settlement ID already exists.");
+            }
+
             if (command.AvailableBuyerLots.GroupBy(lot => lot.Id).Any(group => group.Count() > 1))
+            {
                 throw new ArgumentException("Available buyer lots must have unique identities.", nameof(command));
+            }
 
             var buyerLots = command.AvailableBuyerLots
                 .Where(lot =>
@@ -88,8 +100,10 @@ public sealed class MarketplaceSettlementCoordinator
                     entitlement.OrderId != command.OrderId ||
                     entitlement.ProductId != command.ProductId ||
                     entitlement.BuyerId != command.BuyerId)
+                {
                     throw new MarketplaceEntitlementException(
-                        "Entitlement receipt is not bound to the marketplace settlement.");
+                    "Entitlement receipt is not bound to the marketplace settlement.");
+                }
 
                 var result = new MarketplaceSettlementResult(
                     command.Id,
@@ -117,20 +131,32 @@ public sealed class MarketplaceSettlementCoordinator
         {
             if (_refundIdempotency.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.SettlementId == command.SettlementId) return duplicate.Result;
+                if (duplicate.SettlementId == command.SettlementId)
+                {
+                    return duplicate.Result;
+                }
+
                 throw new MarketplaceIdempotencyConflictException(
                     "A refund idempotency key cannot identify another settlement.");
             }
 
             if (!_settlements.TryGetValue(command.SettlementId, out var state))
+            {
                 throw new KeyNotFoundException("Marketplace settlement was not found.");
+            }
+
             if (state.Result.Status == MarketplaceSettlementStatus.Refunded)
+            {
                 throw new MarketplaceAlreadyRefundedException(
-                    "The marketplace settlement is already fully refunded.");
+                "The marketplace settlement is already fully refunded.");
+            }
+
             if (command.BuyerId != state.Result.BuyerId ||
                 command.BuyerWalletId != state.RemainingFunding[0].ParentLot.WalletId)
+            {
                 throw new MarketplaceRefundException(
-                    "Only the original buyer wallet can receive restored provenance.");
+                "Only the original buyer wallet can receive restored provenance.");
+            }
 
             var remaining = state.RemainingFunding.ToDictionary(
                 fragment => fragment.ParentLot.Id,
@@ -140,8 +166,10 @@ public sealed class MarketplaceSettlementCoordinator
             foreach (var leg in command.RefundLegs)
             {
                 if (state.Result.Quote.Legs.All(quoted => quoted.Currency != leg.Currency))
+                {
                     throw new MarketplaceRefundException(
-                        "Refund currency was not part of the original settlement.");
+                    "Refund currency was not part of the original settlement.");
+                }
 
                 var eligible = remaining.Values
                     .Where(fragment => fragment.Amount.Currency == leg.Currency)
@@ -191,7 +219,9 @@ public sealed class MarketplaceSettlementCoordinator
             return _fences.WithAllocationFence(fence, roots, () =>
             {
                 if (isFull)
+                {
                     _entitlements.Revoke(state.Result.Entitlement, command.RefundedAt);
+                }
 
                 state.ReplaceRemaining(remaining.Values);
                 state.Result.ApplyRefund(command.RefundLegs, isFull);
@@ -229,21 +259,36 @@ public sealed class MarketplaceSettlementCoordinator
             command.ProductId == Guid.Empty ||
             command.BuyerId == Guid.Empty ||
             command.SellerId == Guid.Empty)
+        {
             throw new ArgumentException(
-                "Order, product, buyer, and seller identities are required.", nameof(command));
+            "Order, product, buyer, and seller identities are required.", nameof(command));
+        }
+
         if (command.BuyerId == command.SellerId)
+        {
             throw new ArgumentException("Buyer and seller must be distinct.", nameof(command));
+        }
+
         if (command.Quote.ProductId != command.ProductId ||
             command.Quote.SellerId != command.SellerId)
+        {
             throw new ArgumentException(
-                "The quote must bind the order product and seller.", nameof(command));
+            "The quote must bind the order product and seller.", nameof(command));
+        }
+
         if (command.BuyerWalletId == command.SellerWalletId ||
             command.BuyerWalletId == command.PlatformFeeWalletId ||
             command.SellerWalletId == command.PlatformFeeWalletId)
+        {
             throw new ArgumentException("Marketplace wallets must be distinct.", nameof(command));
+        }
+
         if (command.RefundHoldUntil <= command.SettledAt)
+        {
             throw new ArgumentException(
-                "Refund hold expiry must follow settlement.", nameof(command));
+            "Refund hold expiry must follow settlement.", nameof(command));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(command.FirstJournalSequence);
     }
 
@@ -252,13 +297,19 @@ public sealed class MarketplaceSettlementCoordinator
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(command.RefundLegs);
         if (command.BuyerId == Guid.Empty)
+        {
             throw new ArgumentException("Buyer ID cannot be empty.", nameof(command));
+        }
+
         if (command.RefundLegs.Count == 0 ||
             command.RefundLegs.Any(leg => leg.Units == 0) ||
             command.RefundLegs.Select(leg => leg.Currency).Distinct().Count() !=
             command.RefundLegs.Count)
+        {
             throw new MarketplaceRefundException(
-                "Refunds require unique positive currency legs.");
+            "Refunds require unique positive currency legs.");
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(command.FirstJournalSequence);
     }
 
@@ -290,13 +341,15 @@ public sealed class MarketplaceSettlementCoordinator
                 parentLots,
                 ref nextSequence));
             if (leg.PlatformFeeUnits > 0)
+            {
                 credits.AddRange(CreatePartitionCredits(
-                    command,
-                    MarketplaceCreditPurpose.PlatformFee,
-                    command.PlatformFeeWalletId,
-                    partitions[1],
-                    parentLots,
-                    ref nextSequence));
+                command,
+                MarketplaceCreditPurpose.PlatformFee,
+                command.PlatformFeeWalletId,
+                partitions[1],
+                parentLots,
+                ref nextSequence));
+            }
         }
 
         return credits;

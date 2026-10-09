@@ -48,18 +48,31 @@ public sealed class ProgramStatisticsAndDiscoveryQueryHandlers(IApplicationDbCon
 
     var query = context.Set<Program>().Where(p => p.DeletedAt == null);
 
-    if (request.FromDate.HasValue) query = query.Where(p => p.CreatedAt >= request.FromDate.Value);
+    if (request.FromDate.HasValue)
+        {
+            query = query.Where(p => p.CreatedAt >= request.FromDate.Value);
+        }
 
-    if (request.ToDate.HasValue) query = query.Where(p => p.CreatedAt <= request.ToDate.Value);
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(p => p.CreatedAt <= request.ToDate.Value);
+        }
 
-    var totalPrograms = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        var totalPrograms = await query.CountAsync(cancellationToken).ConfigureAwait(false);
     var publishedPrograms = await query.Where(p => p.Status == ContentStatus.Published).CountAsync(cancellationToken);
 
     var enrollmentQuery = context.Set<ProgramUser>().AsQueryable();
-    if (request.FromDate.HasValue) enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt >= request.FromDate.Value); // Fixed property name
-    if (request.ToDate.HasValue) enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt <= request.ToDate.Value); // Fixed property name
+    if (request.FromDate.HasValue)
+        {
+            enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt >= request.FromDate.Value); // Fixed property name
+        }
 
-    var totalEnrollments = await enrollmentQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+        if (request.ToDate.HasValue)
+        {
+            enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt <= request.ToDate.Value); // Fixed property name
+        }
+
+        var totalEnrollments = await enrollmentQuery.CountAsync(cancellationToken).ConfigureAwait(false);
     var activeEnrollments = await enrollmentQuery.Where(pu => pu.IsActive).CountAsync(cancellationToken);
 
     var allRatings = await context.Set<ProgramRating>().ToListAsync(cancellationToken).ConfigureAwait(false);
@@ -90,20 +103,33 @@ public sealed class ProgramStatisticsAndDiscoveryQueryHandlers(IApplicationDbCon
     // CreatorId property doesn't exist in current Program model, return empty statistics for now
     var query = context.Set<Program>().Where(p => false && p.DeletedAt == null); // Return empty until CreatorId is added to model
 
-    if (request.FromDate.HasValue) query = query.Where(p => p.CreatedAt >= request.FromDate.Value);
+    if (request.FromDate.HasValue)
+        {
+            query = query.Where(p => p.CreatedAt >= request.FromDate.Value);
+        }
 
-    if (request.ToDate.HasValue) query = query.Where(p => p.CreatedAt <= request.ToDate.Value);
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(p => p.CreatedAt <= request.ToDate.Value);
+        }
 
-    var totalPrograms = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        var totalPrograms = await query.CountAsync(cancellationToken).ConfigureAwait(false);
     var publishedPrograms = await query.Where(p => p.Status == ContentStatus.Published).CountAsync(cancellationToken);
 
     var programIds = await query.Select(p => p.Id).ToListAsync(cancellationToken);
 
     var enrollmentQuery = context.Set<ProgramUser>().Where(pu => programIds.Contains(pu.ProgramId));
-    if (request.FromDate.HasValue) enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt >= request.FromDate.Value); // Fixed property name
-    if (request.ToDate.HasValue) enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt <= request.ToDate.Value); // Fixed property name
+    if (request.FromDate.HasValue)
+        {
+            enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt >= request.FromDate.Value); // Fixed property name
+        }
 
-    var totalEnrollments = await enrollmentQuery.CountAsync(cancellationToken).ConfigureAwait(false);
+        if (request.ToDate.HasValue)
+        {
+            enrollmentQuery = enrollmentQuery.Where(pu => pu.JoinedAt <= request.ToDate.Value); // Fixed property name
+        }
+
+        var totalEnrollments = await enrollmentQuery.CountAsync(cancellationToken).ConfigureAwait(false);
     var activeEnrollments = await enrollmentQuery.Where(pu => pu.IsActive).CountAsync(cancellationToken);
 
     var ratings = await context.Set<ProgramRating>().Where(pr => programIds.Contains(pr.ProgramId)).ToListAsync(cancellationToken);

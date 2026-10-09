@@ -99,7 +99,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         [FromQuery] Guid? tenantId = null)
     {
         var path = await learningPathService.GetPathBySlugAsync(slug, tenantId).ConfigureAwait(false);
-        if (path == null) return NotFound();
+        if (path == null)
+        {
+            return NotFound();
+        }
+
         return Ok(path.ToDetailDto());
     }
 
@@ -110,7 +114,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
     public async Task<ActionResult<LearningPathDetailDto>> GetPathById(Guid id)
     {
         var path = await learningPathService.GetPathByIdAsync(id, includeCourses: true).ConfigureAwait(false);
-        if (path == null) return NotFound();
+        if (path == null)
+        {
+            return NotFound();
+        }
+
         return Ok(path.ToDetailDto());
     }
 
@@ -140,7 +148,10 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         [FromQuery] Guid creatorId,
         [FromQuery] Guid? tenantId = null)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var path = await sender.Send(new CreateLearningPathCommand(
             creatorId,
@@ -162,7 +173,10 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         Guid id,
         [FromBody] UpdateLearningPathDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var path = await sender.Send(new UpdateLearningPathCommand(
             id,
@@ -172,7 +186,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
             dto.EstimatedHours,
             dto.Difficulty,
             dto.IsFeatured)).ConfigureAwait(false);
-        if (path == null) return NotFound();
+        if (path == null)
+        {
+            return NotFound();
+        }
+
         return Ok(path.ToDto());
     }
 
@@ -184,7 +202,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
     public async Task<IActionResult> DeletePath(Guid id)
     {
         var success = await sender.Send(new DeleteLearningPathCommand(id)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -198,7 +220,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         try
         {
             var path = await sender.Send(new PublishLearningPathCommand(id)).ConfigureAwait(false);
-            if (path == null) return NotFound();
+            if (path == null)
+            {
+                return NotFound();
+            }
+
             return Ok(path.ToDto());
         }
         catch (InvalidOperationException ex)
@@ -215,7 +241,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
     public async Task<ActionResult<LearningPathDto>> UnpublishPath(Guid id)
     {
         var path = await sender.Send(new UnpublishLearningPathCommand(id)).ConfigureAwait(false);
-        if (path == null) return NotFound();
+        if (path == null)
+        {
+            return NotFound();
+        }
+
         return Ok(path.ToDto());
     }
 
@@ -230,12 +260,19 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         Guid id,
         [FromBody] AddCourseToPathDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         try
         {
             var path = await sender.Send(new AddCourseToPathCommand(id, dto.CourseId, dto.Order, dto.IsRequired)).ConfigureAwait(false);
-            if (path == null) return NotFound();
+            if (path == null)
+            {
+                return NotFound();
+            }
+
             return Ok(path.ToDetailDto());
         }
         catch (InvalidOperationException ex)
@@ -252,7 +289,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
     public async Task<IActionResult> RemoveCourseFromPath(Guid id, Guid courseId)
     {
         var success = await sender.Send(new RemoveCourseFromPathCommand(id, courseId)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -265,10 +306,17 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         Guid id,
         [FromBody] ReorderCoursesDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var path = await sender.Send(new ReorderPathCoursesCommand(id, dto.Courses)).ConfigureAwait(false);
-        if (path == null) return NotFound();
+        if (path == null)
+        {
+            return NotFound();
+        }
+
         return Ok(path.ToDetailDto());
     }
 
@@ -302,7 +350,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         [FromQuery] Guid userId)
     {
         var success = await sender.Send(new UnenrollFromPathCommand(id, userId)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -313,7 +365,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
     public async Task<ActionResult<LearningPathEnrollmentDto>> GetUserEnrollment(Guid id, Guid userId)
     {
         var enrollment = await learningPathService.GetEnrollmentAsync(id, userId).ConfigureAwait(false);
-        if (enrollment == null) return NotFound();
+        if (enrollment == null)
+        {
+            return NotFound();
+        }
+
         return Ok(enrollment.ToDto());
     }
 
@@ -336,10 +392,17 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         [FromQuery] Guid userId,
         [FromBody] UpdatePathProgressDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
         var enrollment = await sender.Send(new UpdatePathProgressCommand(id, userId, dto.CoursesCompleted)).ConfigureAwait(false);
-        if (enrollment == null) return NotFound();
+        if (enrollment == null)
+        {
+            return NotFound();
+        }
+
         return Ok(enrollment.ToDto());
     }
 
@@ -352,7 +415,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         [FromQuery] Guid userId)
     {
         var enrollment = await sender.Send(new CompletePathCommand(id, userId)).ConfigureAwait(false);
-        if (enrollment == null) return NotFound();
+        if (enrollment == null)
+        {
+            return NotFound();
+        }
+
         return Ok(enrollment.ToDto());
     }
 
@@ -365,7 +432,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
         [FromQuery] Guid userId)
     {
         var success = await sender.Send(new AbandonPathCommand(id, userId)).ConfigureAwait(false);
-        if (!success) return NotFound();
+        if (!success)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -408,7 +479,11 @@ public class LearningPathController(ILearningPathService learningPathService, IS
     public async Task<ActionResult<LearningPathStatisticsDto>> GetPathStatistics(Guid id)
     {
         var statistics = await learningPathService.GetPathStatisticsAsync(id).ConfigureAwait(false);
-        if (statistics == null) return NotFound();
+        if (statistics == null)
+        {
+            return NotFound();
+        }
+
         return Ok(statistics);
     }
 

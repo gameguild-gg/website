@@ -1054,18 +1054,16 @@ public class PolicyEvaluationLoggerFullTests
 
 public class CacheInvalidationServiceTests
 {
-    private readonly IMemoryCache _cache;
     private readonly Mock<ITenantSecurityVersionStore> _versionStore;
     private readonly Mock<IHybridPermissionCache> _hybridCache;
-    private readonly Mock<ICacheMetricsService> _metrics;
     private readonly CacheInvalidationService _sut;
 
     public CacheInvalidationServiceTests()
     {
-        _cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1000 });
+        IMemoryCache cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1000 });
         _versionStore = new Mock<ITenantSecurityVersionStore>();
         _hybridCache = new Mock<IHybridPermissionCache>();
-        _metrics = new Mock<ICacheMetricsService>();
+        Mock<ICacheMetricsService> metrics = new Mock<ICacheMetricsService>();
 
         var options = Options.Create(new AuthorizationCacheOptions
         {
@@ -1074,10 +1072,10 @@ public class CacheInvalidationServiceTests
         });
 
         _sut = new CacheInvalidationService(
-            _cache,
+            cache,
             _versionStore.Object,
             _hybridCache.Object,
-            _metrics.Object,
+            metrics.Object,
             options,
             NullLogger<CacheInvalidationService>.Instance);
     }

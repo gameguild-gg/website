@@ -130,7 +130,9 @@ public static class BlogPublicQueries
         IApplicationDbContext context, IReadOnlyCollection<Guid> userIds, CancellationToken ct)
     {
         if (userIds.Count == 0)
+        {
             return [];
+        }
 
         var profiles = await context.Set<SocialProfile>()
             .AsNoTracking()
@@ -145,7 +147,9 @@ public static class BlogPublicQueries
         IApplicationDbContext context, IReadOnlyCollection<Guid> postIds, CancellationToken ct)
     {
         if (postIds.Count == 0)
+        {
             return [];
+        }
 
         var totals = await context.Set<Reaction>()
             .AsNoTracking()
@@ -161,7 +165,9 @@ public static class BlogPublicQueries
         IApplicationDbContext context, IReadOnlyCollection<Guid> postIds, CancellationToken ct)
     {
         if (postIds.Count == 0)
+        {
             return [];
+        }
 
         var rows = await context.Set<BlogPostAuthor>()
             .AsNoTracking()
@@ -175,8 +181,13 @@ public static class BlogPublicQueries
         var profiles = await LoadProfilesAsync(context, rows.Select(r => r.UserId).Distinct().ToList(), ct)
             .ConfigureAwait(false);
         foreach (var row in rows)
+        {
             if (profiles.TryGetValue(row.UserId, out var profile))
+            {
                 perPost[row.BlogPostId].Add(profile.Handle);
+            }
+        }
+
         return perPost;
     }
 
@@ -263,7 +274,9 @@ public sealed class ListAuthorBlogSummariesQueryHandler(IApplicationDbContext co
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (authorUserId is null)
+        {
             return new BlogPostSummaryPage([], false);
+        }
 
         var posts = await BlogPublicQueries.PublishedPosts(context)
             .Where(p => p.PrimaryAuthorId == authorUserId)
@@ -300,7 +313,9 @@ public sealed class GetPublicBlogPostDetailQueryHandler(IApplicationDbContext co
                 && p.Slug == request.Slug, cancellationToken)
             .ConfigureAwait(false);
         if (post is null)
+        {
             return null;
+        }
 
         var profile = await context.Set<SocialProfile>()
             .AsNoTracking()
@@ -309,7 +324,9 @@ public sealed class GetPublicBlogPostDetailQueryHandler(IApplicationDbContext co
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (profile is null)
+        {
             return null;
+        }
 
         var reactions = await BlogPublicQueries.LoadReactionTotalsAsync(context, [post.Id], cancellationToken)
             .ConfigureAwait(false);
@@ -363,7 +380,9 @@ public sealed class ListBlogCommentsQueryHandler(IApplicationDbContext context, 
             .AnyAsync(p => p.Id == request.PostId, cancellationToken)
             .ConfigureAwait(false);
         if (!postPublished)
+        {
             return new BlogCommentPage([], false);
+        }
 
         var comments = await context.Set<BlogComment>()
             .AsNoTracking()
@@ -377,7 +396,9 @@ public sealed class ListBlogCommentsQueryHandler(IApplicationDbContext context, 
         {
             var muted = await moderationService.GetMutedUsersAsync(viewerId, ct: cancellationToken).ConfigureAwait(false);
             if (muted.IsSuccess)
+            {
                 comments = [.. comments.Where(c => !muted.Value.Select(m => m.MutedId).Contains(c.AuthorUserId))];
+            }
         }
 
         // Depth-1 flattening: drop replies whose (muted or soft-deleted) parent is absent,
@@ -432,7 +453,9 @@ public sealed class ResolveBlogRouteForRedirectQueryHandler(IApplicationDbContex
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (authorUserId is null)
+        {
             return null;
+        }
 
         // Current route first; retired route via slug history otherwise.
         var post = await BlogPublicQueries.PublishedPosts(context)
@@ -441,7 +464,9 @@ public sealed class ResolveBlogRouteForRedirectQueryHandler(IApplicationDbContex
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (post is not null)
+        {
             return await ToResolutionAsync(context, post.PrimaryAuthorId, post.Slug, cancellationToken).ConfigureAwait(false);
+        }
 
         var history = await context.Set<BlogSlugHistory>()
             .AsNoTracking()
@@ -450,7 +475,9 @@ public sealed class ResolveBlogRouteForRedirectQueryHandler(IApplicationDbContex
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (history == Guid.Empty)
+        {
             return null;
+        }
 
         var target = await BlogPublicQueries.PublishedPosts(context)
             .Where(p => p.Id == history)

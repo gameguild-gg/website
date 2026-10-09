@@ -51,7 +51,11 @@ public class TestingParticipantsController(
     public async Task<ActionResult> RemoveParticipant(Guid requestId, Guid userId)
     {
         var result = await sender.Send(new RemoveTestingParticipantEndpointCommand(requestId, userId)).ConfigureAwait(false);
-        if (!result) return NotFound();
+        if (!result)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 
@@ -83,7 +87,9 @@ public class TestingParticipantsController(
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         return await Execute(() => sender.Send(new RegisterTestingSessionEndpointCommand(
             sessionId, userId.Value, request.RegistrationType, request.Notes))).ConfigureAwait(false);
@@ -95,7 +101,9 @@ public class TestingParticipantsController(
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         try
         {
@@ -124,7 +132,9 @@ public class TestingParticipantsController(
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         return await Execute(() => sender.Send(new AddTestingSessionWaitlistEndpointCommand(
             sessionId, userId.Value, request.RegistrationType, request.Notes))).ConfigureAwait(false);
@@ -136,7 +146,9 @@ public class TestingParticipantsController(
     {
         var userId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (userId == null)
+        {
             return Unauthorized("User ID not found in token");
+        }
 
         try
         {

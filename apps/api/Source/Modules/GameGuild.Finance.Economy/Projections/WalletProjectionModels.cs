@@ -8,7 +8,11 @@ public sealed record PendingFundingClaim
     public PendingFundingClaim(WalletId walletId, CoinAmount amount, SourceConfirmationState state)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount.Units);
-        if (!Enum.IsDefined(state)) throw new ArgumentOutOfRangeException(nameof(state));
+        if (!Enum.IsDefined(state))
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+
         WalletId = walletId;
         Amount = amount;
         State = state;

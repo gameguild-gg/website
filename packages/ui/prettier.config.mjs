@@ -1,4 +1,4 @@
-import baseConfig from '@game-guild/prettier-config';
+import baseConfig from '../tooling/prettier/src/index.js';
 
 /**
  * @see https://prettier.io/docs/en/configuration.html

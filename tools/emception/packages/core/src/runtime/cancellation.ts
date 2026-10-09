@@ -29,20 +29,20 @@ export type CancellationOutcome<T> =
   | { kind: 'abort'; durationMs: number; reason: unknown };
 
 export interface WithCancellationOptions {
-  /** Hard wall-clock deadline. `<=0` or `undefined` disables the timer. */
+  /** Finite elapsed-time deadline. `<=0` or `undefined` disables the timer. */
   timeoutMs?: number;
   /** Cooperative cancel from the caller. */
   signal?: AbortSignal;
   /**
    * Invoked exactly once when the deadline or signal wins the race.
    * Should terminate the tool instance / worker so the underlying
-   * promise can no longer hold resources. `cleanup` is NOT awaited
-   * before resolving — adapters that need to flush should `await` it
-   * inside their own `cleanup` body.
+   * promise can no longer hold resources. Asynchronous cleanup is awaited
+   * before resolving, with the cancellation outcome reserved beforehand.
    */
   cleanup?: () => void | Promise<void>;
   /**
-   * Clock injection for tests. Defaults to `Date.now`. Must return a
+   * Clock injection for tests. Defaults to the monotonic performance clock
+   * where available, falling back to `Date.now`. Must return a
    * monotonically non-decreasing value in milliseconds.
    */
   now?: () => number;
@@ -51,10 +51,14 @@ export interface WithCancellationOptions {
 /**
  * Race `op` against `timeoutMs` and `signal`. Returns a discriminated
  * outcome describing which side won. The outcome always carries
- * `durationMs` (wall-clock from entry to resolution).
+ * `durationMs` (elapsed time from entry to resolution).
  */
 export async function withCancellation<T>(op: Promise<T>, opts: WithCancellationOptions = {}): Promise<CancellationOutcome<T>> {
-  const { timeoutMs, signal, cleanup, now = Date.now } = opts;
+  const { timeoutMs, signal, cleanup } = opts;
+  if (timeoutMs !== undefined && !Number.isFinite(timeoutMs)) {
+    throw new RangeError('timeoutMs must be finite.');
+  }
+  const now = opts.now ?? (() => globalThis.performance?.now() ?? Date.now());
   const start = now();
 
   if (signal?.aborted) {
@@ -91,21 +95,31 @@ export async function withCancellation<T>(op: Promise<T>, opts: WithCancellation
       );
 
       if (typeof timeoutMs === 'number' && timeoutMs > 0) {
-        timer = setTimeout(() => {
+        const checkDeadline = () => {
+          if (settled) return;
+          const remaining = timeoutMs - (now() - start);
+          if (remaining > 0) {
+            timer = setTimeout(checkDeadline, Math.min(remaining, 2_147_483_647));
+            return;
+          }
+          settled = true;
           void safeCleanup(cleanup).then(() => {
-            finish({
+            resolve({
               kind: 'timeout',
               durationMs: now() - start,
               timeoutMs,
             });
           });
-        }, timeoutMs);
+        };
+        timer = setTimeout(checkDeadline, Math.min(timeoutMs, 2_147_483_647));
       }
 
       if (signal) {
         abortHandler = () => {
+          if (settled) return;
+          settled = true;
           void safeCleanup(cleanup).then(() => {
-            finish({
+            resolve({
               kind: 'abort',
               durationMs: now() - start,
               reason: signal.reason,

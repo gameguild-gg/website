@@ -463,7 +463,10 @@ public class TaxCalculationIntegrationTests : IClassFixture<WebApplicationFactor
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "US-CA")) return;
+        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "US-CA"))
+        {
+            return;
+        }
 
         var jurisdictionId = Guid.NewGuid();
         var rateId = Guid.NewGuid();
@@ -481,7 +484,10 @@ public class TaxCalculationIntegrationTests : IClassFixture<WebApplicationFactor
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "DE")) return;
+        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "DE"))
+        {
+            return;
+        }
 
         var jurisdictionId = Guid.NewGuid();
         var rateId = Guid.NewGuid();
@@ -529,7 +535,10 @@ public class TaxCalculationIntegrationTests : IClassFixture<WebApplicationFactor
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "GB")) return;
+        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "GB"))
+        {
+            return;
+        }
 
         var jurisdictionId = Guid.NewGuid();
         var rateId = Guid.NewGuid();
@@ -549,7 +558,10 @@ public class TaxCalculationIntegrationTests : IClassFixture<WebApplicationFactor
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "CA-BC")) return;
+        if (await dbContext.Set<TaxJurisdiction>().AnyAsync(j => j.Code == "CA-BC"))
+        {
+            return;
+        }
 
         var jurisdictionId = Guid.NewGuid();
         var rateId = Guid.NewGuid();

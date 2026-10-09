@@ -48,7 +48,9 @@ public static class ProjectDependencyGraph
         Guid dependsOnTaskId)
     {
         if (taskId == dependsOnTaskId)
+        {
             throw new InvalidOperationException("Task dependencies cannot be cyclic.");
+        }
 
         var graph = existing.GroupBy(edge => edge.TaskId)
             .ToDictionary(group => group.Key, group => group.Select(edge => edge.DependsOnTaskId).ToArray());
@@ -58,11 +60,25 @@ public static class ProjectDependencyGraph
         while (pending.Count > 0)
         {
             var current = pending.Pop();
-            if (!visited.Add(current)) continue;
+            if (!visited.Add(current))
+            {
+                continue;
+            }
+
             if (current == taskId)
+            {
                 throw new InvalidOperationException("Task dependencies cannot be cyclic.");
-            if (!graph.TryGetValue(current, out var next)) continue;
-            foreach (var candidate in next) pending.Push(candidate);
+            }
+
+            if (!graph.TryGetValue(current, out var next))
+            {
+                continue;
+            }
+
+            foreach (var candidate in next)
+            {
+                pending.Push(candidate);
+            }
         }
     }
 }

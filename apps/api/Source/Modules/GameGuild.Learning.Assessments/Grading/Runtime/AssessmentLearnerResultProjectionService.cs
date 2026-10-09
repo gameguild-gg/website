@@ -30,7 +30,10 @@ public sealed class AssessmentLearnerResultProjectionService(IApplicationDbConte
         CancellationToken cancellationToken = default)
     {
         var ids = submissionIds.Where(value => value != Guid.Empty).Distinct().ToArray();
-        if (ids.Length == 0) return new Dictionary<Guid, LearnerReleasedAssessmentResultV1>();
+        if (ids.Length == 0)
+        {
+            return new Dictionary<Guid, LearnerReleasedAssessmentResultV1>();
+        }
 
         var executions = await context.Set<GradingExecution>()
             .AsNoTracking()
@@ -40,7 +43,10 @@ public sealed class AssessmentLearnerResultProjectionService(IApplicationDbConte
                 ids.Contains(value.AssessmentSubmissionId.Value))
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (executions.Length == 0) return new Dictionary<Guid, LearnerReleasedAssessmentResultV1>();
+        if (executions.Length == 0)
+        {
+            return new Dictionary<Guid, LearnerReleasedAssessmentResultV1>();
+        }
 
         var executionIds = executions.Select(value => value.Id).ToArray();
         var releases = await context.Set<GradeResultRelease>()
@@ -48,7 +54,10 @@ public sealed class AssessmentLearnerResultProjectionService(IApplicationDbConte
             .Where(value => executionIds.Contains(value.GradingExecutionId))
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (releases.Length == 0) return new Dictionary<Guid, LearnerReleasedAssessmentResultV1>();
+        if (releases.Length == 0)
+        {
+            return new Dictionary<Guid, LearnerReleasedAssessmentResultV1>();
+        }
 
         var releasedRoundIds = releases.Select(value => value.GradeRoundId).ToArray();
         var rounds = await context.Set<GradeRound>()

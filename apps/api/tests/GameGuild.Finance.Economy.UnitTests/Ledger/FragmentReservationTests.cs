@@ -30,6 +30,7 @@ public sealed class FragmentReservationTests
     public void Reservation_ExhaustivelyEnforcesTheTransitionMatrix()
     {
         foreach (var current in Enum.GetValues<FragmentReservationStatus>())
+        {
             foreach (var next in Enum.GetValues<FragmentReservationStatus>())
             {
                 var reservation = CreateReservation(status: current);
@@ -41,10 +42,15 @@ public sealed class FragmentReservationTests
                 var transition = () => reservation.Transition(next, Time.AddMinutes(1));
 
                 if (allowed)
+                {
                     transition.Should().NotThrow();
+                }
                 else
+                {
                     transition.Should().Throw<InvalidOperationException>();
+                }
             }
+        }
     }
 
     [Fact]

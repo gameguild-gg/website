@@ -77,9 +77,15 @@ public sealed class ProgramContentDraft : EntityBase
     public void Update(int expectedRevision, string payloadJson, Guid authorId, DateTimeOffset now)
     {
         if (expectedRevision != Revision)
+        {
             throw new AuthoringRevisionConflictException(expectedRevision, Revision);
+        }
+
         if (authorId == Guid.Empty)
+        {
             throw new ArgumentException("Author ID is required.", nameof(authorId));
+        }
+
         ValidateJson(payloadJson);
 
         PayloadJson = payloadJson;
@@ -104,7 +110,9 @@ public sealed class ProgramContentDraft : EntityBase
     private static void ValidateIds(Guid id, Guid programId, Guid contentId, Guid authorId)
     {
         if (id == Guid.Empty || programId == Guid.Empty || contentId == Guid.Empty || authorId == Guid.Empty)
+        {
             throw new ArgumentException("Draft, program, content, and author IDs are required.");
+        }
     }
 
     private static void ValidateJson(string payloadJson)
@@ -146,7 +154,10 @@ public sealed class AiAuthoringProposal : EntityBase
         DateTimeOffset now)
     {
         if (runId == Guid.Empty || contentId == Guid.Empty)
+        {
             throw new ArgumentException("Run and content IDs are required.");
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(baseDraftRevision);
         ArgumentException.ThrowIfNullOrWhiteSpace(proposedContent);
 
@@ -169,9 +180,14 @@ public sealed class AiAuthoringProposal : EntityBase
     public void EnsureApplicableTo(int currentDraftRevision)
     {
         if (BaseDraftRevision != currentDraftRevision)
+        {
             throw new AuthoringRevisionConflictException(BaseDraftRevision, currentDraftRevision);
+        }
+
         if (Status != AiProposalStatus.Pending)
+        {
             throw new AiProposalStateConflictException(Status);
+        }
     }
 
     public void MarkApplied(Guid actorId, DateTimeOffset now)
@@ -187,9 +203,15 @@ public sealed class AiAuthoringProposal : EntityBase
     private void Resolve(AiProposalStatus status, Guid actorId, DateTimeOffset now)
     {
         if (Status != AiProposalStatus.Pending)
+        {
             throw new AiProposalStateConflictException(Status);
+        }
+
         if (actorId == Guid.Empty)
+        {
             throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
         Status = status;
         ResolvedBy = actorId;
         ResolvedAt = now;

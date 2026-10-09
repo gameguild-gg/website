@@ -118,7 +118,9 @@ public sealed class GetMyPayoutOperationQueryHandler(IPayoutOperationStore opera
         {
             var operation = operations.GetForTenant(request.TenantId, request.OperationId);
             if (operation.PayeeId != request.PayeeId)
+            {
                 return Task.FromResult<EconomyPayoutOperationDto?>(null);
+            }
 
             return Task.FromResult<EconomyPayoutOperationDto?>(new EconomyPayoutOperationDto(
                 operation.Id,

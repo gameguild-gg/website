@@ -65,6 +65,7 @@ export * from './modules/economy.gen.js';
 export * from './modules/economy-risk-review-administration.gen.js';
 export * from './modules/economy-treasury-administration.gen.js';
 export * from './modules/access-control-permission-compliance.gen.js';
+export * from './modules/access-control-permission-graph.gen.js';
 export * from './modules/access-control-resource-permissions.gen.js';
 export * from './modules/access-control-permission-restoration.gen.js';
 export * from './modules/access-control-permission-sync.gen.js';

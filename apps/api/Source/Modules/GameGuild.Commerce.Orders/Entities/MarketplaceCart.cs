@@ -23,7 +23,10 @@ public sealed class MarketplaceCart : EntityBase
     public static MarketplaceCart Create(Guid tenantId, Guid userId)
     {
         if (tenantId == Guid.Empty || userId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant and user are required for a marketplace cart.");
+        }
+
         return new MarketplaceCart { TenantId = tenantId, UserId = userId, State = MarketplaceCartState.Active };
     }
 
@@ -36,13 +39,23 @@ public sealed class MarketplaceCart : EntityBase
     {
         EnsureActive();
         if (productId == Guid.Empty || productPricingId == Guid.Empty || productPricingVersionId == Guid.Empty)
+        {
             throw new ArgumentException("Product and immutable pricing identifiers are required.");
+        }
+
         if (quantity is < 1 or > 100)
+        {
             throw new ArgumentOutOfRangeException(nameof(quantity));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
 
         var duplicate = Items.SingleOrDefault(item => item.IdempotencyKey == idempotencyKey);
-        if (duplicate is not null) return duplicate;
+        if (duplicate is not null)
+        {
+            return duplicate;
+        }
+
         var existing = Items.SingleOrDefault(item => item.ProductPricingVersionId == productPricingVersionId);
         if (existing is not null)
         {
@@ -79,7 +92,11 @@ public sealed class MarketplaceCart : EntityBase
     public void MarkCheckedOut(DateTime checkedOutAt)
     {
         EnsureActive();
-        if (Items.Count == 0) throw new InvalidOperationException("An empty cart cannot be checked out.");
+        if (Items.Count == 0)
+        {
+            throw new InvalidOperationException("An empty cart cannot be checked out.");
+        }
+
         State = MarketplaceCartState.CheckedOut;
         CheckedOutAt = checkedOutAt;
         Touch();
@@ -88,7 +105,9 @@ public sealed class MarketplaceCart : EntityBase
     private void EnsureActive()
     {
         if (State != MarketplaceCartState.Active)
+        {
             throw new InvalidOperationException("Only an active cart can be changed.");
+        }
     }
 }
 
@@ -125,7 +144,11 @@ public sealed class MarketplaceCartItem : EntityBase
 
     internal void SetQuantity(int quantity)
     {
-        if (quantity is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(quantity));
+        if (quantity is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity));
+        }
+
         Quantity = quantity;
         Touch();
     }

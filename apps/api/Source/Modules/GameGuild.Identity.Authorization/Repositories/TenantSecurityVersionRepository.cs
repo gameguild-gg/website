@@ -38,7 +38,9 @@ public class TenantSecurityVersionRepository(IApplicationDbContext context) : IT
         var existing = await GetByTenantIdAsync(tenantId, cancellationToken).ConfigureAwait(false);
         
         if (existing != null)
+        {
             return existing;
+        }
 
         var newVersion = new TenantSecurityVersion
         {

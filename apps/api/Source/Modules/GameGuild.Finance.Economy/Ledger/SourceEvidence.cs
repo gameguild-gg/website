@@ -64,9 +64,14 @@ public sealed class SourceEvidence
     public SourceEvidence Confirm(DateTimeOffset confirmedAt)
     {
         if (State != SourceConfirmationState.Observed)
+        {
             throw new InvalidOperationException("Only observed source evidence can be confirmed.");
+        }
+
         if (confirmedAt < ObservedAt)
+        {
             throw new ArgumentException("Confirmation cannot precede observation.", nameof(confirmedAt));
+        }
 
         return new SourceEvidence(
             Id, Provider, ProviderReference, EvidenceHash,
@@ -82,9 +87,14 @@ public sealed class SourceEvidence
     public SourceEvidence Dispute(DateTimeOffset disputedAt)
     {
         if (State is not (SourceConfirmationState.Confirmed or SourceConfirmationState.Disputed))
+        {
             throw new InvalidOperationException("Only confirmed or disputed source evidence can be disputed.");
+        }
+
         if (disputedAt < ConfirmedAt!.Value)
+        {
             throw new ArgumentException("Dispute cannot precede confirmation.", nameof(disputedAt));
+        }
 
         return new SourceEvidence(
             Id, Provider, ProviderReference, EvidenceHash,
@@ -94,9 +104,14 @@ public sealed class SourceEvidence
     public SourceEvidence ResolveDispute(DateTimeOffset resolvedAt)
     {
         if (State != SourceConfirmationState.Disputed)
+        {
             throw new InvalidOperationException("Only disputed source evidence can be resolved.");
+        }
+
         if (resolvedAt < ReversedAt!.Value)
+        {
             throw new ArgumentException("Resolution cannot precede the dispute.", nameof(resolvedAt));
+        }
 
         return new SourceEvidence(
             Id,
@@ -112,9 +127,14 @@ public sealed class SourceEvidence
     public SourceEvidence Reverse(DateTimeOffset reversedAt)
     {
         if (State is not (SourceConfirmationState.Confirmed or SourceConfirmationState.Disputed))
+        {
             throw new InvalidOperationException("Only confirmed or disputed source evidence can be reversed.");
+        }
+
         if (reversedAt < ConfirmedAt!.Value)
+        {
             throw new ArgumentException("Reversal cannot precede confirmation.", nameof(reversedAt));
+        }
 
         return new SourceEvidence(
             Id, Provider, ProviderReference, EvidenceHash,
@@ -124,9 +144,14 @@ public sealed class SourceEvidence
     private SourceEvidence CompleteObserved(SourceConfirmationState target, DateTimeOffset occurredAt)
     {
         if (State != SourceConfirmationState.Observed)
+        {
             throw new InvalidOperationException("Only observed source evidence can fail or expire.");
+        }
+
         if (occurredAt < ObservedAt)
+        {
             throw new ArgumentException("Terminal evidence cannot precede observation.", nameof(occurredAt));
+        }
 
         return new SourceEvidence(
             Id, Provider, ProviderReference, EvidenceHash,
@@ -158,7 +183,10 @@ public static class ConfirmedCreditFactory
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source.State != SourceConfirmationState.Confirmed || source.ConfirmedAt is null)
+        {
             throw new InvalidOperationException("Root credits require confirmed source evidence.");
+        }
+
         return CreateRootLot(
             lotId,
             walletId,
@@ -180,7 +208,10 @@ public static class ConfirmedCreditFactory
     {
         ArgumentNullException.ThrowIfNull(source);
         if (source.State != SourceConfirmationState.Confirmed || source.ConfirmedAt is null)
+        {
             throw new InvalidOperationException("Root credits require confirmed source evidence.");
+        }
+
         CreditLotMaturity.EnsureExactEarnedHard(
             amount.Currency,
             provenance,

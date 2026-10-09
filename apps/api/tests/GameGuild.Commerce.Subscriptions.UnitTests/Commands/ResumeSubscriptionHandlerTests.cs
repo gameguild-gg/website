@@ -10,16 +10,15 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Commands;
 
 public class ResumeSubscriptionHandlerTests
 {
-    private readonly Mock<IApplicationDbContext> _mockContext;
     private readonly Mock<DbSet<Subscription>> _mockDbSet;
     private readonly ResumeSubscriptionHandler _handler;
 
     public ResumeSubscriptionHandlerTests()
     {
-        _mockContext = new Mock<IApplicationDbContext>();
+        Mock<IApplicationDbContext> mockContext = new Mock<IApplicationDbContext>();
         _mockDbSet = new Mock<DbSet<Subscription>>();
-        _mockContext.Setup(c => c.Set<Subscription>()).Returns(_mockDbSet.Object);
-        _handler = new ResumeSubscriptionHandler(_mockContext.Object);
+        mockContext.Setup(c => c.Set<Subscription>()).Returns(_mockDbSet.Object);
+        _handler = new ResumeSubscriptionHandler(mockContext.Object);
     }
 
     [Fact]

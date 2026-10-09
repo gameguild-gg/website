@@ -218,7 +218,7 @@ function CodingActivitySession({
         schemaVersion: 1,
         contentType: "coding-assignment",
         payloadSchema: "code-files/v1",
-        payload: { files: JSON.parse(filesToCodePayload([...modified])) },
+        payload: { files: JSON.parse(filesToCodePayload([...modified])) as Record<string, { content: string; encoding: 'text' }> },
       }, submitKey.current);
       setResult(outcome.success ? { success: true } : { success: false, error: outcome.error });
       if (outcome.success) {

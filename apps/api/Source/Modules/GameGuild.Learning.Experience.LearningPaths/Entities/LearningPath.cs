@@ -60,12 +60,36 @@ public class LearningPath : EntityBase
         LearningPathDifficulty? difficulty,
         bool? isFeatured)
     {
-        if (title is not null) Title = title;
-        if (description is not null) Description = description;
-        if (imageUrl is not null) ImageUrl = imageUrl;
-        if (estimatedHours.HasValue) EstimatedHours = estimatedHours.Value;
-        if (difficulty.HasValue) Difficulty = difficulty.Value;
-        if (isFeatured.HasValue) IsFeatured = isFeatured.Value;
+        if (title is not null)
+        {
+            Title = title;
+        }
+
+        if (description is not null)
+        {
+            Description = description;
+        }
+
+        if (imageUrl is not null)
+        {
+            ImageUrl = imageUrl;
+        }
+
+        if (estimatedHours.HasValue)
+        {
+            EstimatedHours = estimatedHours.Value;
+        }
+
+        if (difficulty.HasValue)
+        {
+            Difficulty = difficulty.Value;
+        }
+
+        if (isFeatured.HasValue)
+        {
+            IsFeatured = isFeatured.Value;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 

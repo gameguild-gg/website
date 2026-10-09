@@ -229,7 +229,9 @@ public class PrerequisiteService : IPrerequisiteService
         List<CoursePrerequisite> chain)
     {
         if (visited.Contains(courseId))
+        {
             return;
+        }
 
         visited.Add(courseId);
 
@@ -253,10 +255,14 @@ public class PrerequisiteService : IPrerequisiteService
     private async Task<bool> IsReachableAsync(Guid from, Guid target, Guid? tenantId, HashSet<Guid> visited)
     {
         if (from == target)
+        {
             return true;
+        }
 
         if (visited.Contains(from))
+        {
             return false;
+        }
 
         visited.Add(from);
 
@@ -268,7 +274,9 @@ public class PrerequisiteService : IPrerequisiteService
         foreach (var prereqId in prerequisites)
         {
             if (await IsReachableAsync(prereqId, target, tenantId, visited))
+            {
                 return true;
+            }
         }
 
         return false;

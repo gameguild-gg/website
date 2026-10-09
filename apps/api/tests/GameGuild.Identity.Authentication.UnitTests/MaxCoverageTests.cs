@@ -22,7 +22,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using MockQueryable.Moq;
 using Moq;
 using System.Security.Claims;
 using Xunit;
@@ -448,7 +447,6 @@ public class AuthControllerBaseCovTests
 
 public class ApiKeyHandlersCovTests
 {
-    private readonly Mock<IApplicationDbContext> _dbContext = new();
     private readonly Mock<IActorContextAccessor> _actorAccessor = new();
 
     private ActorContext CreateAuthenticatedActor(Guid userId, Guid? tenantId = null)
@@ -472,7 +470,7 @@ public class ApiKeyHandlersCovTests
         _actorAccessor.Setup(a => a.ActorContext).Returns(ActorContext.Anonymous);
 
         var handler = new CreateApiKeyHandler(
-            _dbContext.Object,
+            Mock.Of<IApiKeyRepository>(),
             _actorAccessor.Object,
             NullLogger<CreateApiKeyHandler>.Instance);
 
@@ -492,12 +490,13 @@ public class ApiKeyHandlersCovTests
         var userId = Guid.NewGuid();
         _actorAccessor.Setup(a => a.ActorContext).Returns(CreateAuthenticatedActor(userId));
 
-        var mockDbSet = new Mock<DbSet<ApiKey>>();
-        _dbContext.Setup(x => x.Set<ApiKey>()).Returns(mockDbSet.Object);
-        _dbContext.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var repository = new Mock<IApiKeyRepository>();
+        repository
+            .Setup(r => r.AddAsync(It.IsAny<ApiKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ApiKey key, CancellationToken _) => key);
 
         var handler = new CreateApiKeyHandler(
-            _dbContext.Object,
+            repository.Object,
             _actorAccessor.Object,
             NullLogger<CreateApiKeyHandler>.Instance);
 
@@ -522,7 +521,7 @@ public class ApiKeyHandlersCovTests
         _actorAccessor.Setup(a => a.ActorContext).Returns(ActorContext.Anonymous);
 
         var handler = new ListApiKeysHandler(
-            _dbContext.Object,
+            Mock.Of<IApiKeyRepository>(),
             _actorAccessor.Object);
 
         var result = await handler.Handle(new ListApiKeysQuery(), CancellationToken.None);
@@ -535,11 +534,13 @@ public class ApiKeyHandlersCovTests
         var userId = Guid.NewGuid();
         _actorAccessor.Setup(a => a.ActorContext).Returns(CreateAuthenticatedActor(userId));
 
-        var keys = new List<ApiKey>().AsQueryable().BuildMockDbSet();
-        _dbContext.Setup(x => x.Set<ApiKey>()).Returns(keys.Object);
+        var repository = new Mock<IApiKeyRepository>();
+        repository
+            .Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ApiKey>());
 
         var handler = new ListApiKeysHandler(
-            _dbContext.Object,
+            repository.Object,
             _actorAccessor.Object);
 
         var result = await handler.Handle(new ListApiKeysQuery(), CancellationToken.None);
@@ -554,7 +555,7 @@ public class ApiKeyHandlersCovTests
         _actorAccessor.Setup(a => a.ActorContext).Returns(ActorContext.Anonymous);
 
         var handler = new RevokeApiKeyHandler(
-            _dbContext.Object,
+            Mock.Of<IApiKeyRepository>(),
             _actorAccessor.Object,
             NullLogger<RevokeApiKeyHandler>.Instance);
 
@@ -569,11 +570,13 @@ public class ApiKeyHandlersCovTests
         var userId = Guid.NewGuid();
         _actorAccessor.Setup(a => a.ActorContext).Returns(CreateAuthenticatedActor(userId));
 
-        var keys = new List<ApiKey>().AsQueryable().BuildMockDbSet();
-        _dbContext.Setup(x => x.Set<ApiKey>()).Returns(keys.Object);
+        var repository = new Mock<IApiKeyRepository>();
+        repository
+            .Setup(r => r.RevokeAsync(It.IsAny<Guid>(), userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ApiKey?)null);
 
         var handler = new RevokeApiKeyHandler(
-            _dbContext.Object,
+            repository.Object,
             _actorAccessor.Object,
             NullLogger<RevokeApiKeyHandler>.Instance);
 

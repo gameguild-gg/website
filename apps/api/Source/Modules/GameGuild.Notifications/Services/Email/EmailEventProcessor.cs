@@ -45,7 +45,7 @@ public sealed class EmailEventProcessor(
 
         logger.LogInformation(
             "Processed {EventType} delivery event. Recipient: {RecipientEmail}, SuppressionReason: {Reason}, DeadLettered: {DeadLettered}",
-            deliveryEvent.EventType, normalized, reason, deadLettered);
+            deliveryEvent.EventType, LogRedaction.MaskEmail(normalized), reason, deadLettered);
     }
 
     private static bool IsHardBounce(string? bounceType) =>

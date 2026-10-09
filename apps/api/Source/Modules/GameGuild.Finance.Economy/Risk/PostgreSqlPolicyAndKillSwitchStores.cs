@@ -25,11 +25,18 @@ public static class EconomyCanonicalJson
                 builder.Append('{');
                 var properties = value.EnumerateObject().ToArray();
                 if (properties.Select(property => property.Name).Distinct(StringComparer.Ordinal).Count() != properties.Length)
+                {
                     throw new ArgumentException("Canonical JSON cannot contain duplicate property names.", nameof(value));
+                }
+
                 var firstProperty = true;
                 foreach (var property in properties.OrderBy(property => property.Name, StringComparer.Ordinal))
                 {
-                    if (!firstProperty) builder.Append(',');
+                    if (!firstProperty)
+                    {
+                        builder.Append(',');
+                    }
+
                     firstProperty = false;
                     builder.Append(JsonSerializer.Serialize(property.Name)).Append(':');
                     Append(builder, property.Value);
@@ -41,7 +48,11 @@ public static class EconomyCanonicalJson
                 var firstItem = true;
                 foreach (var item in value.EnumerateArray())
                 {
-                    if (!firstItem) builder.Append(',');
+                    if (!firstItem)
+                    {
+                        builder.Append(',');
+                    }
+
                     firstItem = false;
                     Append(builder, item);
                 }
@@ -52,11 +63,18 @@ public static class EconomyCanonicalJson
                 break;
             case JsonValueKind.Number:
                 if (value.TryGetInt64(out var integer))
+                {
                     builder.Append(integer.ToString(CultureInfo.InvariantCulture));
+                }
                 else if (value.TryGetDecimal(out var decimalValue))
+                {
                     builder.Append(decimalValue.ToString("G29", CultureInfo.InvariantCulture));
+                }
                 else
+                {
                     builder.Append(value.GetDouble().ToString("R", CultureInfo.InvariantCulture));
+                }
+
                 break;
             case JsonValueKind.True:
                 builder.Append("true");
@@ -180,7 +198,10 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
             if (replay is not null)
             {
                 if (replay.RequestHash != requestHash)
+                {
                     throw new RiskDecisionReuseException("A policy proposal ID cannot be reused with different inputs.");
+                }
+
                 return Map(replay, proposal.ProposedAt);
             }
 
@@ -188,9 +209,14 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
                 .Where(row => row.ScopeKey == scopeKey)
                 .ToListAsync(token);
             if (existing.Any(row => row.Version >= proposal.Version))
+            {
                 throw new InvalidOperationException("Capability policy versions must increase monotonically.");
+            }
+
             if (existing.Any(row => row.ExpiresAt > proposal.EffectiveAt && row.EffectiveAt < proposal.ExpiresAt))
+            {
                 throw new InvalidOperationException("Capability policy effective windows cannot overlap.");
+            }
 
             var row = new EconomyCapabilityPolicyRow
             {
@@ -214,8 +240,16 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
         DateTimeOffset approvedAt,
         CancellationToken cancellationToken)
     {
-        if (policyId == Guid.Empty) throw new ArgumentException("Policy ID cannot be empty.", nameof(policyId));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        if (policyId == Guid.Empty)
+        {
+            throw new ArgumentException("Policy ID cannot be empty.", nameof(policyId));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(reauthenticationHash);
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async token =>
@@ -224,15 +258,26 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
                 .SingleOrDefaultAsync(item => item.Id == policyId, token)
                 ?? throw new KeyNotFoundException("Capability policy proposal was not found.");
             if (row.ProposedBy == actorId)
+            {
                 throw new InvalidOperationException("The policy proposer cannot approve their own policy.");
+            }
+
             if (row.ApprovedBy is not null)
+            {
                 throw new InvalidOperationException("Capability policy has already been approved.");
+            }
+
             if (approvedAt < row.ProposedAt || approvedAt > row.EffectiveAt)
+            {
                 throw new ArgumentException("Policy approval must occur between proposal and effective time.", nameof(approvedAt));
+            }
 
             var signed = await _signer.SignAsync(row.CanonicalPayload, token);
             if (string.IsNullOrWhiteSpace(signed.KeyId) || string.IsNullOrWhiteSpace(signed.Signature))
+            {
                 throw new InvalidOperationException("The policy signer returned an invalid signature.");
+            }
+
             row.KeyId = signed.KeyId.Trim();
             row.Signature = signed.Signature.Trim();
             row.ApprovedBy = actorId;
@@ -261,10 +306,18 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
                 var active = await _db.Set<EconomyCapabilityPolicyRow>()
                     .Where(item => item.ScopeKey == row.ScopeKey && item.IsActive)
                     .ToArrayAsync(token);
-                foreach (var previous in active) previous.IsActive = false;
+                foreach (var previous in active)
+                {
+                    previous.IsActive = false;
+                }
+
                 row.IsActive = true;
             }
-            if (due.Length > 0) await _db.SaveChangesAsync(token);
+            if (due.Length > 0)
+            {
+                await _db.SaveChangesAsync(token);
+            }
+
             return due.Length;
         }, cancellationToken);
     }
@@ -275,7 +328,11 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
         string jurisdictionCode,
         CancellationToken cancellationToken)
     {
-        if (!Enum.IsDefined(capability)) throw new ArgumentOutOfRangeException(nameof(capability));
+        if (!Enum.IsDefined(capability))
+        {
+            throw new ArgumentOutOfRangeException(nameof(capability));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(jurisdictionCode);
         var jurisdiction = jurisdictionCode.Trim().ToUpperInvariant();
         var scope = ScopeKey(tenantId, capability, jurisdiction);
@@ -287,17 +344,41 @@ public sealed class PostgreSqlEconomyCapabilityPolicyStore : IEconomyCapabilityP
     private static void ValidateProposal(EconomyCapabilityPolicyProposal proposal)
     {
         ArgumentNullException.ThrowIfNull(proposal);
-        if (proposal.Id == Guid.Empty) throw new ArgumentException("Policy ID cannot be empty.", nameof(proposal));
-        if (!Enum.IsDefined(proposal.Capability)) throw new ArgumentOutOfRangeException(nameof(proposal));
+        if (proposal.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Policy ID cannot be empty.", nameof(proposal));
+        }
+
+        if (!Enum.IsDefined(proposal.Capability))
+        {
+            throw new ArgumentOutOfRangeException(nameof(proposal));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(proposal.JurisdictionCode);
         if (proposal.JurisdictionCode.Trim() is "*" or "ALL")
+        {
             throw new ArgumentException("Capability policies require an explicit jurisdiction.", nameof(proposal));
-        if (proposal.Version <= 0) throw new ArgumentOutOfRangeException(nameof(proposal));
-        if (proposal.ProposedBy == Guid.Empty) throw new ArgumentException("Policy proposer cannot be empty.", nameof(proposal));
+        }
+
+        if (proposal.Version <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(proposal));
+        }
+
+        if (proposal.ProposedBy == Guid.Empty)
+        {
+            throw new ArgumentException("Policy proposer cannot be empty.", nameof(proposal));
+        }
+
         if (proposal.EffectiveAt < proposal.ProposedAt)
+        {
             throw new ArgumentException("Policy effective time cannot predate proposal.", nameof(proposal));
+        }
+
         if (proposal.ExpiresAt <= proposal.EffectiveAt)
+        {
             throw new ArgumentException("Policy expiry must follow effective time.", nameof(proposal));
+        }
     }
 
     private static string ScopeKey(Guid? tenantId, EconomyValueMovementCapability capability, string jurisdiction) =>
@@ -326,7 +407,11 @@ public sealed record EconomyKillSwitchScope(
 
     public static EconomyKillSwitchScope ForTenant(Guid tenantId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         return new EconomyKillSwitchScope($"tenant:{tenantId:N}", tenantId, null);
     }
 
@@ -334,8 +419,16 @@ public sealed record EconomyKillSwitchScope(
         Guid tenantId,
         EconomyValueMovementCapability capability)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (!Enum.IsDefined(capability)) throw new ArgumentOutOfRangeException(nameof(capability));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (!Enum.IsDefined(capability))
+        {
+            throw new ArgumentOutOfRangeException(nameof(capability));
+        }
+
         return new EconomyKillSwitchScope($"tenant:{tenantId:N}:capability:{(int)capability}", tenantId, capability);
     }
 }
@@ -410,10 +503,18 @@ public sealed class PostgreSqlEconomyKillSwitchStore : IEconomyKillSwitchStore
         DateTimeOffset activatedAt,
         CancellationToken cancellationToken)
     {
-        if (activationId == Guid.Empty) throw new ArgumentException("Activation ID cannot be empty.", nameof(activationId));
+        if (activationId == Guid.Empty)
+        {
+            throw new ArgumentException("Activation ID cannot be empty.", nameof(activationId));
+        }
+
         ValidateScope(scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        }
+
         var requestHash = Hash(string.Join('|', activationId.ToString("N"), scope.ScopeKey, reason.Trim(),
             actorId.ToString("N"), activatedAt.UtcTicks));
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
@@ -424,12 +525,18 @@ public sealed class PostgreSqlEconomyKillSwitchStore : IEconomyKillSwitchStore
             if (replay is not null)
             {
                 if (replay.RequestHash != requestHash)
+                {
                     throw new RiskDecisionReuseException("A kill-switch activation ID cannot be reused with different inputs.");
+                }
+
                 return await MapAsync(replay, token);
             }
             if (await _db.Set<EconomyKillSwitchRow>().AnyAsync(
                     row => row.ScopeKey == scope.ScopeKey && row.IsActive, token))
+            {
                 throw new InvalidOperationException("A kill switch is already active for this scope.");
+            }
+
             var epoch = (await _db.Set<EconomyKillSwitchRow>()
                 .Where(row => row.ScopeKey == scope.ScopeKey)
                 .Select(row => (long?)row.Epoch)
@@ -459,9 +566,15 @@ public sealed class PostgreSqlEconomyKillSwitchStore : IEconomyKillSwitchStore
         {
             var row = await ActiveAsync(killSwitchId, token);
             if (row.ReleaseProposedBy is not null)
+            {
                 throw new InvalidOperationException("A kill-switch release has already been proposed.");
+            }
+
             if (proposedAt < row.ActivatedAt)
+            {
                 throw new ArgumentException("Release proposal cannot predate activation.", nameof(proposedAt));
+            }
+
             row.ReleaseProposedBy = actorId;
             row.ReleaseProposalReauthenticationHash = reauthenticationHash.Trim();
             row.ReleaseProposedAt = proposedAt;
@@ -483,18 +596,33 @@ public sealed class PostgreSqlEconomyKillSwitchStore : IEconomyKillSwitchStore
         {
             var row = await ActiveAsync(killSwitchId, token);
             if (row.ReleaseProposedBy is null || row.ReleaseProposedAt is null)
+            {
                 throw new InvalidOperationException("Kill-switch release must be proposed before approval.");
+            }
+
             if (row.ReleaseProposedBy == actorId)
+            {
                 throw new InvalidOperationException("The release proposer cannot approve their own proposal.");
+            }
+
             if (approvedAt < row.ReleaseProposedAt)
+            {
                 throw new ArgumentException("Release approval cannot predate its proposal.", nameof(approvedAt));
+            }
+
             var approvals = await _db.Set<EconomyKillSwitchReleaseApprovalRow>()
                 .Where(item => item.KillSwitchId == killSwitchId)
                 .ToArrayAsync(token);
             if (approvals.Any(item => item.ActorId == actorId))
+            {
                 throw new InvalidOperationException("A release approver cannot approve twice.");
+            }
+
             if (approvals.Length >= 2)
+            {
                 throw new InvalidOperationException("Kill-switch release already has the required approvals.");
+            }
+
             _db.Set<EconomyKillSwitchReleaseApprovalRow>().Add(new EconomyKillSwitchReleaseApprovalRow
             {
                 Id = Guid.NewGuid(), KillSwitchId = killSwitchId, ActorId = actorId,
@@ -510,22 +638,38 @@ public sealed class PostgreSqlEconomyKillSwitchStore : IEconomyKillSwitchStore
         DateTimeOffset releasedAt,
         CancellationToken cancellationToken)
     {
-        if (killSwitchId == Guid.Empty) throw new ArgumentException("Kill switch ID cannot be empty.", nameof(killSwitchId));
+        if (killSwitchId == Guid.Empty)
+        {
+            throw new ArgumentException("Kill switch ID cannot be empty.", nameof(killSwitchId));
+        }
+
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async token =>
         {
             var row = await ActiveAsync(killSwitchId, token);
             if (row.ReleaseProposedBy is null || row.ReleaseProposedAt is null)
+            {
                 throw new InvalidOperationException("Kill-switch release has not been proposed.");
+            }
+
             var approvalCount = await _db.Set<EconomyKillSwitchReleaseApprovalRow>()
                 .CountAsync(item => item.KillSwitchId == killSwitchId, token);
             if (approvalCount != 2)
+            {
                 throw new InvalidOperationException("Kill-switch release requires exactly two independent approvals.");
+            }
+
             var scope = new EconomyKillSwitchScope(row.ScopeKey, row.TenantId, row.Capability);
             if (!await _readiness.IsReadyAsync(scope, token))
+            {
                 return await MapAsync(row, token);
+            }
+
             if (releasedAt < row.ReleaseProposedAt)
+            {
                 throw new ArgumentException("Release cannot predate its proposal.", nameof(releasedAt));
+            }
+
             row.IsActive = false;
             row.ReleasedAt = releasedAt;
             await _db.SaveChangesAsync(token);
@@ -557,15 +701,28 @@ public sealed class PostgreSqlEconomyKillSwitchStore : IEconomyKillSwitchStore
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(scope.ScopeKey);
         if (scope.Capability is not null && !Enum.IsDefined(scope.Capability.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(scope));
+        }
+
         if (scope.Capability is not null && scope.TenantId is null)
+        {
             throw new ArgumentException("Capability kill switches must be tenant-scoped.", nameof(scope));
+        }
     }
 
     private static void ValidateReleaseInput(Guid id, Guid actorId, string reauthenticationHash)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Kill switch ID cannot be empty.", nameof(id));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Kill switch ID cannot be empty.", nameof(id));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(reauthenticationHash);
     }
 

@@ -20,7 +20,10 @@ public sealed class AssessmentGradingSync(IApplicationDbContext context) : IAsse
                 .AsNoTracking()
                 .FirstOrDefaultAsync(value => value.Id == contentId && value.DeletedAt == null, ct)
                 .ConfigureAwait(false);
-            if (content is null || content.Type != ProgramContentType.Code) return;
+            if (content is null || content.Type != ProgramContentType.Code)
+            {
+                return;
+            }
 
             assessment = Assessment.Create(
                 content.ProgramId,

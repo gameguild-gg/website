@@ -14,8 +14,13 @@ internal sealed class CommandHandlerSender(params object[] dependencies) : ISend
     {
         var services = new ServiceCollection().AddLogging();
         foreach (var dependency in dependencies)
+        {
             foreach (var contract in dependency.GetType().GetInterfaces())
+            {
                 services.AddSingleton(contract, dependency);
+            }
+        }
+
         if (dependencies.OfType<IConfiguration>().FirstOrDefault() is { } configuration)
         {
             services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));

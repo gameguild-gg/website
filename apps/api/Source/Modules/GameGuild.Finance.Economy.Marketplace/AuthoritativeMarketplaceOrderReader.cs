@@ -49,7 +49,10 @@ public sealed class EfAuthoritativeMarketplaceOrderReader : IAuthoritativeMarket
         CancellationToken cancellationToken = default)
     {
         if (tenantId == Guid.Empty || buyerId == Guid.Empty || orderId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, buyer and order IDs are required.");
+        }
+
         var order = await _db.Set<Order>()
             .AsNoTracking()
             .Include(item => item.LineItems)
@@ -59,17 +62,26 @@ public sealed class EfAuthoritativeMarketplaceOrderReader : IAuthoritativeMarket
             ?? throw new MarketplaceOrderSnapshotException(
                 "The authoritative order was not found in the actor tenant.");
         if (order.Status is not (OrderStatus.Pending or OrderStatus.Processing))
+        {
             throw new MarketplaceOrderSnapshotException(
-                "The authoritative order is not eligible for Economy settlement.");
+            "The authoritative order is not eligible for Economy settlement.");
+        }
+
         if (order.LineItems.Count != 1)
+        {
             throw new MarketplaceOrderSnapshotException(
-                "An Economy marketplace order must contain exactly one immutable line item.");
+            "An Economy marketplace order must contain exactly one immutable line item.");
+        }
+
         var line = order.LineItems.Single();
         if (line.TenantId != tenantId || line.Quantity <= 0 || line.ProductPricingVersionId == Guid.Empty ||
             line.PriceVersionSnapshot <= 0 || line.UnitPriceSnapshot < 0 ||
             string.IsNullOrWhiteSpace(line.CurrencySnapshot))
+        {
             throw new MarketplaceOrderSnapshotException(
-                "The immutable order line snapshot is incomplete.");
+            "The immutable order line snapshot is incomplete.");
+        }
+
         var product = await _db.Set<Product>()
             .AsNoTracking()
             .SingleOrDefaultAsync(
@@ -78,8 +90,10 @@ public sealed class EfAuthoritativeMarketplaceOrderReader : IAuthoritativeMarket
             ?? throw new MarketplaceOrderSnapshotException(
                 "The authoritative product was not found in the actor tenant.");
         if (product.CreatorId is not { } sellerId || sellerId == Guid.Empty || sellerId == buyerId)
+        {
             throw new MarketplaceOrderSnapshotException(
-                "Marketplace self-purchase is prohibited and products require a creator.");
+            "Marketplace self-purchase is prohibited and products require a creator.");
+        }
 
         var canonical = string.Join('|',
             tenantId.ToString("N"),

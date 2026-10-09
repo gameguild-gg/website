@@ -289,7 +289,10 @@ public sealed class PostgreSqlPolicyAndKillSwitchStoreTests
         new DbContextOptionsBuilder<PolicyDbContext>()
             .UseNpgsql(connectionString, npgsql =>
             {
-                if (enableRetryOnFailure) npgsql.EnableRetryOnFailure();
+                if (enableRetryOnFailure)
+                {
+                    npgsql.EnableRetryOnFailure();
+                }
             })
             .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options);

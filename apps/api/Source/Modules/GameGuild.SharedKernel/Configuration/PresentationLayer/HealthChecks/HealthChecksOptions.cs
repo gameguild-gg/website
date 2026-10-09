@@ -16,7 +16,10 @@ public sealed class HealthChecksOptions : BaseOptions
     {
         base.Validate();
 
-        if (Endpoints == null || Endpoints.Length == 0) throw new InvalidOperationException("At least one health check endpoint must be configured.");
+        if (Endpoints == null || Endpoints.Length == 0)
+        {
+            throw new InvalidOperationException("At least one health check endpoint must be configured.");
+        }
     }
 
     public static HealthChecksOptions CreateDefault() { return new HealthChecksOptions(); }

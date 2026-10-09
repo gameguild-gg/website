@@ -216,7 +216,9 @@ public sealed class RulesetProvider : IRulesetProvider
     private (List<string> Values, bool IsValid) ParseJsonArray(string? json)
     {
         if (string.IsNullOrEmpty(json))
+        {
             return ([], true);
+        }
 
         try
         {

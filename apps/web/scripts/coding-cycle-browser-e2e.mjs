@@ -1065,7 +1065,12 @@ async function studentJourney(fixture, browser) {
       const body = await page.locator("body").innerText().catch(() => "");
       submitted = /Submission received/.test(body);
     }
-    record("student Submit → success (redirect to activities)", submitted, page.url());
+    const submissionAlerts = await page.getByRole("alert").allTextContents();
+    record(
+      "student Submit → success (redirect to activities)",
+      submitted,
+      `${page.url()} | alerts=${submissionAlerts.join(" | ") || "none"}`,
+    );
     await screenshot(page, "student-submitted");
 
     assertSharedAuthCookie(await context.cookies([WEB_BASE]));

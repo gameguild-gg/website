@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "@game-guild/typescript-config",
+  "extends": "../../tooling/typescript/tsconfig.json",
   "display": "Grading Adapter Quiz",
   "compilerOptions": {
     "module": "ESNext",

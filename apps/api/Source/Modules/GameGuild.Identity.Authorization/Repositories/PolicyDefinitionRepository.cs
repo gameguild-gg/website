@@ -26,7 +26,9 @@ public class PolicyDefinitionRepository(IApplicationDbContext context) : IPolicy
                 .ConfigureAwait(false);
 
             if (tenantPolicy != null)
+            {
                 return tenantPolicy;
+            }
         }
 
         // Fall back to global policy

@@ -91,10 +91,14 @@ public sealed class BlogPostService(
 
         var normalized = slugService.Normalize(newSlug);
         if (normalized == post.Slug)
+        {
             return post;
+        }
 
         if (!await slugService.IsSlugAvailableAsync(post.PrimaryAuthorId, normalized, ct).ConfigureAwait(false))
+        {
             throw new InvalidOperationException($"Slug '{normalized}' is already in use by this author.");
+        }
 
         // Exactly one history row per retired route (unique index backs this).
         context.Set<BlogSlugHistory>().Add(BlogSlugHistory.Create(post.Id, post.PrimaryAuthorId, post.Slug));
@@ -108,9 +112,14 @@ public sealed class BlogPostService(
         var post = await RequirePostAsync(postId, ct).ConfigureAwait(false);
         RequirePrimary(post, actorUserId, "Only the primary author manages co-authors.");
         if (coauthorUserId == post.PrimaryAuthorId)
+        {
             throw new InvalidOperationException("The primary author cannot be added as a co-author.");
+        }
+
         if (await IsCoauthorAsync(postId, coauthorUserId, ct).ConfigureAwait(false))
+        {
             return;
+        }
 
         context.Set<BlogPostAuthor>().Add(BlogPostAuthor.Create(postId, coauthorUserId, actorUserId));
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -125,7 +134,9 @@ public sealed class BlogPostService(
             .FirstOrDefaultAsync(a => a.BlogPostId == postId && a.UserId == coauthorUserId, ct)
             .ConfigureAwait(false);
         if (row is null)
+        {
             return;
+        }
 
         context.Set<BlogPostAuthor>().Remove(row);
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -136,9 +147,14 @@ public sealed class BlogPostService(
         var post = await RequirePostAsync(postId, ct).ConfigureAwait(false);
         RequirePrimary(post, actorUserId, "Only the primary author can transfer primary authorship.");
         if (newPrimaryUserId == post.PrimaryAuthorId)
+        {
             return post;
+        }
+
         if (!await IsCoauthorAsync(postId, newPrimaryUserId, ct).ConfigureAwait(false))
+        {
             throw new InvalidOperationException("The new primary must be a current co-author.");
+        }
 
         // Retire the old route (old primary, current slug) with exactly one history row.
         context.Set<BlogSlugHistory>().Add(BlogSlugHistory.Create(post.Id, post.PrimaryAuthorId, post.Slug));
@@ -150,7 +166,10 @@ public sealed class BlogPostService(
             .FirstOrDefaultAsync(a => a.BlogPostId == postId && a.UserId == newPrimaryUserId, ct)
             .ConfigureAwait(false);
         if (demotedRow is not null)
+        {
             context.Set<BlogPostAuthor>().Remove(demotedRow);
+        }
+
         context.Set<BlogPostAuthor>().Add(BlogPostAuthor.Create(postId, oldPrimary, actorUserId));
 
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -162,7 +181,9 @@ public sealed class BlogPostService(
         var post = await RequirePostAsync(postId, ct).ConfigureAwait(false);
         RequirePrimary(post, actorUserId, "Only the primary author can publish.");
         if (post.Status == BlogPostStatus.Published)
+        {
             return post;
+        }
 
         post.Publish();
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -199,9 +220,14 @@ public sealed class BlogPostService(
             .ConfigureAwait(false)
             ?? throw new KeyNotFoundException($"Blog post {postId} was not found.");
         if (post.Status != BlogPostStatus.Published)
+        {
             throw new InvalidOperationException("Comments are only allowed on published posts.");
+        }
+
         if (!post.AllowComments)
+        {
             throw new InvalidOperationException("Comments are disabled on this post.");
+        }
 
         if (parentCommentId is Guid parentId)
         {
@@ -213,7 +239,9 @@ public sealed class BlogPostService(
                 .ConfigureAwait(false)
                 ?? throw new KeyNotFoundException("Parent comment was not found on this post.");
             if (parent.ParentCommentId is not null)
+            {
                 throw new InvalidOperationException("Comment nesting is limited to one reply level.");
+            }
         }
 
         // Block enforcement: comment-author × primary author, either direction.
@@ -221,7 +249,9 @@ public sealed class BlogPostService(
         {
             var blocked = await moderationService.AreUsersBlockedAsync(actorUserId, post.PrimaryAuthorId, ct).ConfigureAwait(false);
             if (blocked.IsSuccess && blocked.Value)
+            {
                 throw new BlogAccessDeniedException("Comments are not allowed between blocked users.");
+            }
         }
 
         var comment = BlogComment.Create(postId, actorUserId, content, parentCommentId);
@@ -247,7 +277,9 @@ public sealed class BlogPostService(
         var isPrimary = post.PrimaryAuthorId == actorUserId;
         var isCoauthor = await IsCoauthorAsync(post.Id, actorUserId, ct).ConfigureAwait(false);
         if (!isCommentAuthor && !isPrimary && !isCoauthor)
+        {
             throw new BlogAccessDeniedException("Only the comment author or a post author can delete a comment.");
+        }
 
         comment.Delete(actorUserId);
         post.DecrementComments();
@@ -275,7 +307,9 @@ public sealed class BlogPostService(
     {
         var userId = await ResolveHandleAsync(handle, ct).ConfigureAwait(false);
         if (userId is null)
+        {
             return null;
+        }
 
         // Current route wins first.
         var current = await context.Set<BlogPost>()
@@ -283,7 +317,9 @@ public sealed class BlogPostService(
             .FirstOrDefaultAsync(p => p.PrimaryAuthorId == userId && p.Slug == slug && p.DeletedAt == null, ct)
             .ConfigureAwait(false);
         if (current is not null)
+        {
             return current;
+        }
 
         // Retired route: exactly one history row → the post it points to (if still live).
         var history = await context.Set<BlogSlugHistory>()
@@ -291,7 +327,9 @@ public sealed class BlogPostService(
             .FirstOrDefaultAsync(h => h.PreviousPrimaryAuthorId == userId && h.PreviousSlug == slug, ct)
             .ConfigureAwait(false);
         if (history is null)
+        {
             return null;
+        }
 
         return await context.Set<BlogPost>()
             .AsNoTracking()
@@ -303,7 +341,9 @@ public sealed class BlogPostService(
     {
         var userId = await ResolveHandleAsync(handle, ct).ConfigureAwait(false);
         if (userId is null)
+        {
             return null;
+        }
 
         return await context.Set<BlogPost>()
             .AsNoTracking()
@@ -343,14 +383,19 @@ public sealed class BlogPostService(
     {
         var post = await RequirePostAsync(postId, ct).ConfigureAwait(false);
         if (post.PrimaryAuthorId != actorUserId && !await IsCoauthorAsync(postId, actorUserId, ct).ConfigureAwait(false))
+        {
             throw new BlogAccessDeniedException("Only the primary author or a co-author can edit this post.");
+        }
+
         return post;
     }
 
     private static void RequirePrimary(BlogPost post, Guid actorUserId, string message)
     {
         if (post.PrimaryAuthorId != actorUserId)
+        {
             throw new BlogAccessDeniedException(message);
+        }
     }
 
     private Task<bool> IsCoauthorAsync(Guid postId, Guid userId, CancellationToken ct)

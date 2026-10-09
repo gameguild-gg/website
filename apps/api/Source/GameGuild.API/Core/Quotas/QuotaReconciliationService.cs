@@ -48,7 +48,9 @@ public sealed class QuotaReconciliationService
                 .ConfigureAwait(false);
             var delta = authoritativeUsage - quota.CurrentUsage;
             if (delta == 0)
+            {
                 continue;
+            }
 
             quota.CurrentUsage = authoritativeUsage;
             quota.Touch();
@@ -69,7 +71,9 @@ public sealed class QuotaReconciliationService
         }
 
         if (repairs > 0)
+        {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return repairs;
     }
@@ -104,7 +108,9 @@ public sealed class QuotaReconciliationBackgroundService(
     {
         var settings = options.Value;
         if (!settings.Enabled)
+        {
             return;
+        }
 
         await Task.Delay(TimeSpan.FromMinutes(Math.Max(0, settings.InitialDelayMinutes)), stoppingToken)
             .ConfigureAwait(false);
@@ -117,7 +123,9 @@ public sealed class QuotaReconciliationBackgroundService(
                 var service = scope.ServiceProvider.GetRequiredService<QuotaReconciliationService>();
                 var repairs = await service.ReconcileAsync(stoppingToken).ConfigureAwait(false);
                 if (repairs > 0)
+                {
                     logger.LogWarning("Quota reconciliation repaired {RepairCount} tenant counters", repairs);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

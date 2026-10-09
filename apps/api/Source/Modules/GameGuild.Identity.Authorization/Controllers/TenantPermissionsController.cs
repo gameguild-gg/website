@@ -39,9 +39,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     {
         logger.LogInformation(
             "Granting tenant permissions {Permissions} to user {UserId} in tenant {TenantId}",
-            string.Join(", ", command.Permissions),
-            command.UserId,
-            command.TenantId);
+            LogRedaction.Sanitize(string.Join(", ", command.Permissions)),
+            LogRedaction.RedactId(command.UserId, "uid"),
+            LogRedaction.RedactId(command.TenantId.Value, "tid"));
 
         var permissionId = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
@@ -67,9 +67,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     {
         logger.LogInformation(
             "Revoking tenant permissions {Permissions} from user {UserId} in tenant {TenantId}",
-            string.Join(", ", command.Permissions),
-            command.UserId,
-            command.TenantId);
+            LogRedaction.Sanitize(string.Join(", ", command.Permissions)),
+            LogRedaction.RedactId(command.UserId, "uid"),
+            LogRedaction.RedactId(command.TenantId.Value, "tid"));
 
         var success = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
@@ -169,7 +169,7 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     {
         logger.LogInformation(
             "Setting global default permissions: {Permissions}",
-            string.Join(", ", command.Permissions));
+            LogRedaction.Sanitize(string.Join(", ", command.Permissions)));
 
         var success = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
@@ -197,8 +197,8 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     {
         logger.LogInformation(
             "Setting tenant {TenantId} default permissions: {Permissions}",
-            command.TenantId,
-            string.Join(", ", command.Permissions));
+            LogRedaction.RedactId(command.TenantId.Value, "tid"),
+            LogRedaction.Sanitize(string.Join(", ", command.Permissions)));
 
         var success = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
@@ -230,9 +230,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     {
         logger.LogInformation(
             "Denying tenant permissions {Permissions} for user {UserId} in tenant {TenantId}",
-            string.Join(", ", command.Permissions),
-            command.UserId,
-            command.TenantId);
+            LogRedaction.Sanitize(string.Join(", ", command.Permissions)),
+            LogRedaction.RedactId(command.UserId, "uid"),
+            LogRedaction.RedactId(command.TenantId.Value, "tid"));
 
         var permissionId = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 
@@ -260,9 +260,9 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
     {
         logger.LogInformation(
             "Removing deny permissions {Permissions} from user {UserId} in tenant {TenantId}",
-            string.Join(", ", command.Permissions),
-            command.UserId,
-            command.TenantId);
+            LogRedaction.Sanitize(string.Join(", ", command.Permissions)),
+            LogRedaction.RedactId(command.UserId, "uid"),
+            LogRedaction.RedactId(command.TenantId.Value, "tid"));
 
         var success = await sender.Send(command, cancellationToken).ConfigureAwait(false);
 

@@ -46,7 +46,10 @@ public sealed class GetMyHardCoinTopUpQueryHandler(
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.TopUpId == Guid.Empty)
+        {
             throw new ArgumentException("Top-up ID is required.", nameof(request));
+        }
+
         var actor = EconomyTopUpActor.Require(actorContextAccessor);
         return await reader.GetAsync(
             actor.TenantId,
@@ -67,7 +70,10 @@ public sealed class ListMyHardCoinTopUpsQueryHandler(
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.Take is < 1 or > 100)
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
+
         var actor = EconomyTopUpActor.Require(actorContextAccessor);
         return await reader.ListAsync(
             actor.TenantId,
@@ -85,8 +91,11 @@ internal static class EconomyTopUpActor
         var actor = accessor.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
                 "Economy top-up access requires an authenticated tenant actor.");
+        }
+
         return (tenantId, actorId);
     }
 }

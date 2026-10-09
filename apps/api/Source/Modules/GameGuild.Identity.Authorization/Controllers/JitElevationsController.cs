@@ -96,7 +96,9 @@ public class JitElevationsController(ISender sender) : BaseApiController
         var result = await sender.Send(query, cancellationToken).ConfigureAwait(false);
 
         if (result == null)
+        {
             return NotFound();
+        }
 
         return Ok(result);
     }

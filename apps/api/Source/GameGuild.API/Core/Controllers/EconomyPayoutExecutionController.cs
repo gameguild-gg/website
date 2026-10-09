@@ -76,7 +76,11 @@ public sealed class EconomyPayoutAccountController(
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CreateOrRefreshOnboarding(CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(await sender.Send(
@@ -97,7 +101,11 @@ public sealed class EconomyPayoutAccountController(
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetAccount(CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(await payouts.GetAccountAsync(tenantId, actorId, cancellationToken).ConfigureAwait(false));
@@ -118,7 +126,10 @@ public sealed class EconomyPayoutAccountController(
         actorId = Guid.Empty;
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         actorId = actor.SubjectIdAsGuid.Value;
         return true;
@@ -148,7 +159,11 @@ public sealed class EconomyPayoutExecutionAdministrationController(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out var actorId, out _))
+        {
+            return Forbid();
+        }
+
         var transactionBinding = PayoutProtectedOperationBinding.Reservation(requestId);
         var operation = EconomyStepUpOperation.Create(
             "economy.payout.reserve",
@@ -176,7 +191,11 @@ public sealed class EconomyPayoutExecutionAdministrationController(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out var actorId, out _))
+        {
+            return Forbid();
+        }
+
         var transactionBinding = PayoutProtectedOperationBinding.Dispatch(
             operationId, request.ExpectedVersion);
         var operation = EconomyStepUpOperation.Create(
@@ -202,7 +221,11 @@ public sealed class EconomyPayoutExecutionAdministrationController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Reconcile(Guid operationId, CancellationToken cancellationToken)
     {
-        if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out var actorId, out _))
+        {
+            return Forbid();
+        }
+
         return await ExecuteAsync(sender.Send(new ReconcilePayoutExecutionEndpointCommand(
             new ReconcilePayoutOperationCommand(tenantId, actorId, operationId)), cancellationToken))
             .ConfigureAwait(false);
@@ -215,8 +238,16 @@ public sealed class EconomyPayoutExecutionAdministrationController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult List([FromQuery] int take = 100)
     {
-        if (!TryOperator(out var tenantId, out _, out _)) return Forbid();
-        if (take is < 1 or > 100) return BadRequest("Take must be between 1 and 100.");
+        if (!TryOperator(out var tenantId, out _, out _))
+        {
+            return Forbid();
+        }
+
+        if (take is < 1 or > 100)
+        {
+            return BadRequest("Take must be between 1 and 100.");
+        }
+
         return Ok(payouts.List(tenantId, take).Select(EconomyPayoutExecutionOperationDto.From).ToArray());
     }
 
@@ -227,7 +258,11 @@ public sealed class EconomyPayoutExecutionAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Get(Guid operationId)
     {
-        if (!TryOperator(out var tenantId, out _, out _)) return Forbid();
+        if (!TryOperator(out var tenantId, out _, out _))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(EconomyPayoutExecutionOperationDto.From(payouts.Get(tenantId, operationId)));
@@ -279,7 +314,10 @@ public sealed class EconomyPayoutExecutionAdministrationController(
         actorId = Guid.Empty;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue || !actor.SubjectIdAsGuid.HasValue ||
             !actor.HasPermission(EconomyPermission.Keys.OperatePayouts))
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         actorId = actor.SubjectIdAsGuid.Value;
         return true;
@@ -304,7 +342,10 @@ public sealed class EconomyStripeConnectWebhookController(
     {
         if (!Request.Headers.TryGetValue("Stripe-Signature", out var signature) ||
             string.IsNullOrWhiteSpace(signature.ToString()))
+        {
             return BadRequest("Stripe-Signature is required.");
+        }
+
         await using var payload = new MemoryStream();
         await Request.Body.CopyToAsync(payload, cancellationToken).ConfigureAwait(false);
         var providerEvent = await normalizer.NormalizeAsync(

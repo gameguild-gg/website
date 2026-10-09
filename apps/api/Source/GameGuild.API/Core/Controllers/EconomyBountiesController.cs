@@ -44,7 +44,11 @@ public sealed class EconomyBountiesController(
         [FromBody] CreateMyBountyRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         return await ExecuteProtectedAsync(
             () => sender.Send(new CreateBountyEndpointCommand(new CreateDurableBountyRequest(
@@ -66,7 +70,11 @@ public sealed class EconomyBountiesController(
         [FromQuery] BountyStatus? status,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out _)) return Forbid();
+        if (!TryActor(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await bounties.ListAsync(tenantId, status, cancellationToken));
     }
 
@@ -75,7 +83,11 @@ public sealed class EconomyBountiesController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid bountyId, CancellationToken cancellationToken)
     {
-        if (!TryActor(out var tenantId, out _)) return Forbid();
+        if (!TryActor(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         var result = await bounties.FindAsync(tenantId, new BountyId(bountyId), cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
@@ -87,7 +99,11 @@ public sealed class EconomyBountiesController(
         [FromBody] CompleteMyBountyRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         return await ExecuteProtectedAsync(
             () => sender.Send(new ClaimBountyEndpointCommand(new ClaimDurableBountyRequest(
@@ -104,7 +120,11 @@ public sealed class EconomyBountiesController(
         [FromBody] CompleteMyBountyRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         return await ExecuteProtectedAsync(
             () => sender.Send(new ReclaimBountyEndpointCommand(new ReclaimDurableBountyRequest(
@@ -142,7 +162,10 @@ public sealed class EconomyBountiesController(
         actorId = Guid.Empty;
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         actorId = actor.SubjectIdAsGuid.Value;
         return true;
@@ -164,7 +187,10 @@ public sealed class EconomyBountiesAdministrationController(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue ||
             !actor.HasPermission(EconomyPermission.Keys.OperateBounties))
+        {
             return Forbid();
+        }
+
         return Ok(await bounties.ListAsync(
             actor.TenantId.Value, BountyStatus.Expired, cancellationToken));
     }

@@ -270,7 +270,10 @@ public static class PipelineExtensions
 
     internal static void ConfigureHsts(WebApplication app)
     {
-        if (app.Environment.IsProduction()) app.UseHsts();
+        if (app.Environment.IsProduction())
+        {
+            app.UseHsts();
+        }
     }
 
     private static bool IsHealthRequest(HttpContext context)

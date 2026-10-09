@@ -168,14 +168,18 @@ public class SecureUploadService : ISecureUploadService
             if (requiresSyncModeration)
             {
                 if (content.CanSeek)
+                {
                     content.Position = 0;
+                }
 
                 moderationResult = await _moderationService
                     .ModerateAsync(assetContentId, content, mimeType, ct)
                     .ConfigureAwait(false);
 
                 if (content.CanSeek)
+                {
                     content.Position = 0;
+                }
             }
             else
             {
@@ -227,13 +231,19 @@ public class SecureUploadService : ISecureUploadService
     private bool RequiresSyncVirusScan(string mimeType)
     {
         if (!_virusScanOptions.Enabled)
+        {
             return false;
+        }
 
         if (_virusScanOptions.Mode == VirusScanMode.Sync)
+        {
             return true;
+        }
 
         if (_virusScanOptions.Mode == VirusScanMode.Async)
+        {
             return false;
+        }
 
         // Hybrid mode: check high-risk MIME types
         return _virusScanOptions.SyncScanMimeTypes.Contains(

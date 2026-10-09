@@ -100,7 +100,10 @@ public class AccessReviewService(
         EnsureAuthenticated();
         var campaign = await _campaignRepository.GetByIdAsync(campaignId, cancellationToken).ConfigureAwait(false);
 
-        if (campaign == null) return false;
+        if (campaign == null)
+        {
+            return false;
+        }
 
         EnsureCanManageTenant(GetTenantId(campaign));
         campaign.Start();
@@ -120,7 +123,10 @@ public class AccessReviewService(
         EnsureAuthenticated();
         var campaign = await _campaignRepository.GetByIdAsync(campaignId, cancellationToken).ConfigureAwait(false);
 
-        if (campaign == null) return false;
+        if (campaign == null)
+        {
+            return false;
+        }
 
         EnsureCanManageTenant(GetTenantId(campaign));
         EnsureReportedActor(completedBy);
@@ -140,7 +146,10 @@ public class AccessReviewService(
         EnsureAuthenticated();
         var campaign = await _campaignRepository.GetByIdAsync(campaignId, cancellationToken).ConfigureAwait(false);
 
-        if (campaign == null) return false;
+        if (campaign == null)
+        {
+            return false;
+        }
 
         EnsureCanManageTenant(GetTenantId(campaign));
         campaign.Cancel();
@@ -220,7 +229,9 @@ public class AccessReviewService(
         var item = await _itemRepository.GetByIdAsync(itemId, cancellationToken).ConfigureAwait(false);
 
         if (item == null)
+        {
             throw new InvalidOperationException($"Review item {itemId} not found");
+        }
 
         EnsureCanReviewItem(item);
         item.Approve(reason, notes);
@@ -242,7 +253,9 @@ public class AccessReviewService(
         var item = await _itemRepository.GetByIdAsync(itemId, cancellationToken).ConfigureAwait(false);
 
         if (item == null)
+        {
             throw new InvalidOperationException($"Review item {itemId} not found");
+        }
 
         EnsureCanReviewItem(item);
         item.Revoke(reason, notes);
@@ -261,7 +274,10 @@ public class AccessReviewService(
         EnsureAuthenticated();
         var campaign = await _campaignRepository.GetByIdAsync(campaignId, cancellationToken).ConfigureAwait(false);
 
-        if (campaign == null) return 0;
+        if (campaign == null)
+        {
+            return 0;
+        }
 
         EnsureCanManageTenant(GetTenantId(campaign));
         var items = await _itemRepository.GetByCampaignAsync(campaignId, cancellationToken).ConfigureAwait(false);

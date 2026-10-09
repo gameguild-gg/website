@@ -11,6 +11,7 @@ using Xunit;
 
 namespace GameGuild.Commerce.Payments.UnitTests;
 
+[Collection(StripeProcessConfigurationCollection.Name)]
 public sealed class PaymentsCoverageCompletionTests
 {
     [Theory]
@@ -102,11 +103,20 @@ public sealed class PaymentsCoverageCompletionTests
     [Fact]
     public void StripePaymentGateway_ShouldOnlySetApiKeyForRealConfiguredGateway()
     {
-        StripePaymentGateway.EnsureApiKey(new StripeGatewayOptions { UseSimulation = true, ApiKey = "sk_ignored" });
-        StripePaymentGateway.EnsureApiKey(new StripeGatewayOptions { UseSimulation = false, ApiKey = string.Empty });
-        StripePaymentGateway.EnsureApiKey(new StripeGatewayOptions { UseSimulation = false, ApiKey = "sk_test_set" });
-
-        Stripe.StripeConfiguration.ApiKey.Should().Be("sk_test_set");
+        var originalApiKey = Stripe.StripeConfiguration.ApiKey;
+        try
+        {
+            StripePaymentGateway.EnsureApiKey(new StripeGatewayOptions { UseSimulation = true, ApiKey = "sk_ignored" });
+            Stripe.StripeConfiguration.ApiKey.Should().Be(originalApiKey);
+            StripePaymentGateway.EnsureApiKey(new StripeGatewayOptions { UseSimulation = false, ApiKey = string.Empty });
+            Stripe.StripeConfiguration.ApiKey.Should().Be(originalApiKey);
+            StripePaymentGateway.EnsureApiKey(new StripeGatewayOptions { UseSimulation = false, ApiKey = "sk_test_set" });
+            Stripe.StripeConfiguration.ApiKey.Should().Be("sk_test_set");
+        }
+        finally
+        {
+            Stripe.StripeConfiguration.ApiKey = originalApiKey;
+        }
     }
 
     [Fact]

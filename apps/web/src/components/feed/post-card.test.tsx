@@ -293,4 +293,38 @@ describe("PostCard", () => {
         ?.querySelector('img[src="/testing-lab/seeded-games/mothlight.svg"]'),
     ).toBeInTheDocument();
   });
+
+  it("renders blog post announcements as a clickable embed card", () => {
+    const announcement = "📝 New blog post: Devlog September 2026! Read it here: /blogs/tolstenko/devlog-september-2026";
+    render(<PostCard item={{ ...item, post: { ...item.post!, content: announcement } }} />);
+
+    expect(screen.getByText("📝 Blog post")).toBeInTheDocument();
+    expect(screen.getByText("Devlog September 2026")).toBeInTheDocument();
+    expect(screen.queryByText(/Read it here/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Read post" })).toHaveAttribute(
+      "href",
+      "/blogs/tolstenko/devlog-september-2026",
+    );
+  });
+
+  it("renders blog post announcements with an excerpt", () => {
+    const announcement =
+      "📝 New blog post: Devlog September 2026! Behind the scenes of the autumn jam. Read it here: /blogs/tolstenko/devlog-september-2026";
+    render(<PostCard item={{ ...item, post: { ...item.post!, content: announcement } }} />);
+
+    expect(screen.getByText("Devlog September 2026")).toBeInTheDocument();
+    expect(screen.getByText("Behind the scenes of the autumn jam.")).toBeInTheDocument();
+    expect(screen.queryByText(/Read it here/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Read post" })).toHaveAttribute(
+      "href",
+      "/blogs/tolstenko/devlog-september-2026",
+    );
+  });
+
+  it("still renders the caption for normal posts", () => {
+    render(<PostCard item={item} />);
+
+    expect(screen.getByText("Ship the build")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Read post" })).not.toBeInTheDocument();
+  });
 });

@@ -21,7 +21,10 @@ public sealed class AggregateRiskLimitStore
     {
         get
         {
-            lock (_gate) return [.. _reservations.Values];
+            lock (_gate)
+            {
+                return [.. _reservations.Values];
+            }
         }
     }
 
@@ -34,12 +37,23 @@ public sealed class AggregateRiskLimitStore
         DateTimeOffset reservedAt,
         DateTimeOffset expiresAt)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Reservation ID cannot be empty.", nameof(id));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Reservation ID cannot be empty.", nameof(id));
+        }
+
         ArgumentNullException.ThrowIfNull(cluster);
-        if (!Enum.IsDefined(operation)) throw new ArgumentOutOfRangeException(nameof(operation));
+        if (!Enum.IsDefined(operation))
+        {
+            throw new ArgumentOutOfRangeException(nameof(operation));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount.Units);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
-        if (expiresAt <= reservedAt) throw new ArgumentException("Reservation expiry must follow creation.", nameof(expiresAt));
+        if (expiresAt <= reservedAt)
+        {
+            throw new ArgumentException("Reservation expiry must follow creation.", nameof(expiresAt));
+        }
 
         lock (_gate)
         {
@@ -47,19 +61,27 @@ public sealed class AggregateRiskLimitStore
                 id, cluster.Id, cluster.Version, operation, amount, reservedAt, expiresAt);
             if (_reservations.TryGetValue(id, out var existing))
             {
-                if (existing == candidate) return existing;
+                if (existing == candidate)
+                {
+                    return existing;
+                }
+
                 throw new RiskDecisionReuseException("A reservation ID cannot be reused with different inputs.");
             }
 
             if (_latestClusterVersions.TryGetValue(cluster.Id, out var latest) && cluster.Version < latest)
+            {
                 throw new StaleEntityGraphException("The entity graph version is stale.");
+            }
 
             var allocated = _reservations.Values
                 .Where(item => item.ClusterId == cluster.Id && item.Operation == operation &&
                                item.Amount.Currency == amount.Currency && item.ExpiresAt > reservedAt)
                 .Sum(item => item.Amount.Units);
             if (amount.Units > limit - allocated)
+            {
                 throw new AggregateRiskLimitExceededException("The normalized entity cluster limit was exceeded.");
+            }
 
             _reservations.Add(id, candidate);
             _latestClusterVersions[cluster.Id] = Math.Max(latest, cluster.Version);

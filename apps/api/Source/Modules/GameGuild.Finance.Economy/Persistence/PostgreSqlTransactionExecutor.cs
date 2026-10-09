@@ -32,7 +32,9 @@ public static class PostgreSqlTransactionExecutor
         ArgumentNullException.ThrowIfNull(operation);
 
         if (db.Database.CurrentTransaction is not null)
+        {
             return operation(cancellationToken);
+        }
 
         var strategy = db.Database.CreateExecutionStrategy();
         return strategy.ExecuteAsync(async () =>
