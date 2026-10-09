@@ -2,7 +2,6 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,15 +12,15 @@ namespace GameGuild.Identity.Authentication;
 /// </summary>
 public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IApiKeyRepository _apiKeyRepository;
     private readonly IAuthenticationAuditEventSink? _auditEventSink;
 
     public ApiKeyAuthenticationHandler(
         IOptionsMonitor<ApiKeyAuthenticationOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        IApplicationDbContext dbContext)
-        : this(options, logger, encoder, dbContext, null)
+        IApiKeyRepository apiKeyRepository)
+        : this(options, logger, encoder, apiKeyRepository, null)
     {
     }
 
@@ -29,11 +28,11 @@ public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAu
         IOptionsMonitor<ApiKeyAuthenticationOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        IApplicationDbContext dbContext,
+        IApiKeyRepository apiKeyRepository,
         IAuthenticationAuditEventSink? auditEventSink)
         : base(options, logger, encoder)
     {
-        _dbContext = dbContext;
+        _apiKeyRepository = apiKeyRepository;
         _auditEventSink = auditEventSink;
     }
 
@@ -82,9 +81,8 @@ public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAu
             // Compute hash of provided key
             var keyHash = ComputeHash(providedApiKey);
 
-            // Look up API key in database
-            apiKey = await _dbContext.Set<ApiKey>()
-                .FirstOrDefaultAsync(k => k.KeyHash == keyHash).ConfigureAwait(false);
+            // Look up API key through the credential repository
+            apiKey = await _apiKeyRepository.GetByKeyHashAsync(keyHash, Context.RequestAborted).ConfigureAwait(false);
 
             if (apiKey == null)
             {
@@ -97,10 +95,7 @@ public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAu
             {
                 // Lazily finalize rotation: once the overlap window closes, record the
                 // revocation so the lifecycle stays observable without a background job.
-                if (apiKey.FinalizeRotationRevocation())
-                {
-                    await _dbContext.SaveChangesAsync(Context.RequestAborted).ConfigureAwait(false);
-                }
+                await _apiKeyRepository.FinalizeRotationRevocationAsync(apiKey, Context.RequestAborted).ConfigureAwait(false);
 
                 Logger.LogWarning("Inactive or expired API key used: {KeyId}", apiKey.Id);
                 return await FailAsync("API key is inactive or expired", "InactiveOrExpiredApiKey", apiKey.UserId, apiKey.TenantId).ConfigureAwait(false);
@@ -119,8 +114,7 @@ public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAu
             }
 
             // Record usage
-            apiKey.RecordUsage();
-            await _dbContext.SaveChangesAsync(Context.RequestAborted).ConfigureAwait(false);
+            await _apiKeyRepository.RecordUsageAsync(apiKey, Context.RequestAborted).ConfigureAwait(false);
 
             // Create claims
             var claims = new List<Claim>

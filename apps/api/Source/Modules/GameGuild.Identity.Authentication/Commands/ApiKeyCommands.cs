@@ -1,7 +1,6 @@
 using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
@@ -56,18 +55,18 @@ public sealed class CreateApiKeyValidator : AbstractValidator<CreateApiKeyComman
 
 public sealed class CreateApiKeyHandler : ICommandHandler<CreateApiKeyCommand, Result<CreateApiKeyResponse>>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IApiKeyRepository _apiKeyRepository;
     private readonly IActorContextAccessor _actorContext;
     private readonly ILogger<CreateApiKeyHandler> _logger;
     private readonly IApiKeyAuditEventSink? _apiKeyAuditSink;
 
     public CreateApiKeyHandler(
-        IApplicationDbContext dbContext,
+        IApiKeyRepository apiKeyRepository,
         IActorContextAccessor actorContext,
         ILogger<CreateApiKeyHandler> logger,
         IApiKeyAuditEventSink? apiKeyAuditSink = null)
     {
-        _dbContext = dbContext;
+        _apiKeyRepository = apiKeyRepository;
         _actorContext = actorContext;
         _logger = logger;
         _apiKeyAuditSink = apiKeyAuditSink;
@@ -89,8 +88,7 @@ public sealed class CreateApiKeyHandler : ICommandHandler<CreateApiKeyCommand, R
             request.ExpiresAt,
             request.IpWhitelist);
 
-        _dbContext.Set<ApiKey>().Add(apiKey);
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await _apiKeyRepository.AddAsync(apiKey, cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("API key created: {KeyId} for user {UserId} with scopes {Scopes}",
             apiKey.Id, actor.SubjectIdAsGuid.Value, string.Join(", ", request.Scopes));
@@ -160,14 +158,14 @@ public sealed record ApiKeyDto
 
 public sealed class ListApiKeysHandler : IRequestHandler<ListApiKeysQuery, Result<List<ApiKeyDto>>>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IApiKeyRepository _apiKeyRepository;
     private readonly IActorContextAccessor _actorContext;
 
     public ListApiKeysHandler(
-        IApplicationDbContext dbContext,
+        IApiKeyRepository apiKeyRepository,
         IActorContextAccessor actorContext)
     {
-        _dbContext = dbContext;
+        _apiKeyRepository = apiKeyRepository;
         _actorContext = actorContext;
     }
 
@@ -179,10 +177,7 @@ public sealed class ListApiKeysHandler : IRequestHandler<ListApiKeysQuery, Resul
             return Result.Failure<List<ApiKeyDto>>(Error.Failure("Auth.Required", "User must be authenticated"));
         }
 
-        var keys = await _dbContext.Set<ApiKey>()
-            .Where(k => k.UserId == actor.SubjectIdAsGuid.Value)
-            .OrderByDescending(k => k.CreatedAt)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        var keys = await _apiKeyRepository.GetByUserIdAsync(actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
 
         return Result.Success(keys.Select(ApiKeyDto.FromEntity).ToList());
     }
@@ -198,18 +193,18 @@ public sealed record RevokeApiKeyCommand : ICommand<Result<bool>>
 
 public sealed class RevokeApiKeyHandler : ICommandHandler<RevokeApiKeyCommand, Result<bool>>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IApiKeyRepository _apiKeyRepository;
     private readonly IActorContextAccessor _actorContext;
     private readonly ILogger<RevokeApiKeyHandler> _logger;
     private readonly IApiKeyAuditEventSink? _apiKeyAuditSink;
 
     public RevokeApiKeyHandler(
-        IApplicationDbContext dbContext,
+        IApiKeyRepository apiKeyRepository,
         IActorContextAccessor actorContext,
         ILogger<RevokeApiKeyHandler> logger,
         IApiKeyAuditEventSink? apiKeyAuditSink = null)
     {
-        _dbContext = dbContext;
+        _apiKeyRepository = apiKeyRepository;
         _actorContext = actorContext;
         _logger = logger;
         _apiKeyAuditSink = apiKeyAuditSink;
@@ -223,16 +218,16 @@ public sealed class RevokeApiKeyHandler : ICommandHandler<RevokeApiKeyCommand, R
             return Result.Failure<bool>(Error.Failure("Auth.Required", "User must be authenticated"));
         }
 
-        var apiKey = await _dbContext.Set<ApiKey>()
-            .FirstOrDefaultAsync(k => k.Id == request.KeyId && k.UserId == actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
+        var apiKey = await _apiKeyRepository.RevokeAsync(
+            request.KeyId,
+            actor.SubjectIdAsGuid.Value,
+            request.Reason ?? "User revoked",
+            cancellationToken).ConfigureAwait(false);
 
         if (apiKey == null)
         {
             return Result.Failure<bool>(Error.NotFound("ApiKey.NotFound", "API key not found"));
         }
-
-        apiKey.Revoke(request.Reason ?? "User revoked");
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("API key revoked: {KeyId} by user {UserId}. Reason: {Reason}",
             request.KeyId, actor.SubjectIdAsGuid.Value, request.Reason);
@@ -331,20 +326,20 @@ public sealed class RotateApiKeyValidator : AbstractValidator<RotateApiKeyComman
 
 public sealed class RotateApiKeyHandler : ICommandHandler<RotateApiKeyCommand, Result<RotateApiKeyResponse>>
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IApiKeyRepository _apiKeyRepository;
     private readonly IActorContextAccessor _actorContext;
     private readonly ApiKeyLifecycleOptions _options;
     private readonly ILogger<RotateApiKeyHandler> _logger;
     private readonly IApiKeyAuditEventSink? _apiKeyAuditSink;
 
     public RotateApiKeyHandler(
-        IApplicationDbContext dbContext,
+        IApiKeyRepository apiKeyRepository,
         IActorContextAccessor actorContext,
         ILogger<RotateApiKeyHandler> logger,
         ApiKeyLifecycleOptions? options = null,
         IApiKeyAuditEventSink? apiKeyAuditSink = null)
     {
-        _dbContext = dbContext;
+        _apiKeyRepository = apiKeyRepository;
         _actorContext = actorContext;
         _options = options ?? new ApiKeyLifecycleOptions();
         _logger = logger;
@@ -357,8 +352,7 @@ public sealed class RotateApiKeyHandler : ICommandHandler<RotateApiKeyCommand, R
         if (!actor.SubjectIdAsGuid.HasValue)
             return Result.Failure<RotateApiKeyResponse>(Error.Failure("Auth.Required", "User must be authenticated"));
 
-        var oldKey = await _dbContext.Set<ApiKey>()
-            .FirstOrDefaultAsync(k => k.Id == request.KeyId && k.UserId == actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
+        var oldKey = await _apiKeyRepository.GetByIdForUserAsync(request.KeyId, actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
 
         if (oldKey == null)
             return Result.Failure<RotateApiKeyResponse>(Error.NotFound("ApiKey.NotFound", "API key not found"));
@@ -376,22 +370,15 @@ public sealed class RotateApiKeyHandler : ICommandHandler<RotateApiKeyCommand, R
             scopes,
             request.ExpiresAt ?? oldKey.ExpiresAt,
             oldKey.IpWhitelist);
-        newKey.ReplacesKeyId = oldKey.Id;
 
         DateTime? graceEndsAt = null;
         if (gracePeriod > TimeSpan.Zero)
         {
             graceEndsAt = SystemClock.UtcNow.Add(gracePeriod);
-            oldKey.BeginRotationGrace(graceEndsAt.Value);
-        }
-        else
-        {
-            oldKey.Revoke($"Rotated: superseded by {newKey.Id}");
         }
 
-        _dbContext.Set<ApiKey>().Add(newKey);
-        // Single save: new-key issuance and old-key transition are atomic.
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        // Single save inside the repository: new-key issuance and old-key transition are atomic.
+        await _apiKeyRepository.RotateAsync(oldKey, newKey, graceEndsAt, cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation(
             "API key rotated: {OldKeyId} superseded by {NewKeyId} (grace until {GraceEndsAt}) by user {UserId}",
