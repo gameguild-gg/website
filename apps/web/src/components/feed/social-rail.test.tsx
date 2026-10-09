@@ -69,6 +69,23 @@ describe("SocialRail", () => {
     );
   });
 
+  it("keeps the for-you trending tag on the default feed route without a redundant tab param", () => {
+    render(
+      <SocialRail
+        currentProfile={null}
+        sessions={[]}
+        creators={[]}
+        tags={[{ name: "indie dev", postCount: 7 }]}
+        activeTab="foryou"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /#indie dev/i })).toHaveAttribute(
+      "href",
+      "/feed?tag=indie%20dev",
+    );
+  });
+
   it("reconciles follow state with the authoritative response and rolls back failures", async () => {
     mocks.followCreator.mockResolvedValueOnce({ userId: creator.userId, isFollowing: false });
     render(
