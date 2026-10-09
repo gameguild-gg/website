@@ -128,14 +128,46 @@ public class SocialProfile : EntityBase
     public int CalculateCompleteness()
     {
         var score = 20;
-        if (!string.IsNullOrWhiteSpace(DisplayName)) score += 15;
-        if (!string.IsNullOrWhiteSpace(Handle)) score += 15;
-        if (!string.IsNullOrWhiteSpace(Bio)) score += 15;
-        if (!string.IsNullOrWhiteSpace(AvatarUrl)) score += 10;
-        if (!string.IsNullOrWhiteSpace(Headline)) score += 10;
-        if (!string.IsNullOrWhiteSpace(WebsiteUrl)) score += 5;
-        if (Skills.Count > 0) score += 5;
-        if (PortfolioItems.Count > 0) score += 5;
+        if (!string.IsNullOrWhiteSpace(DisplayName))
+        {
+            score += 15;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Handle))
+        {
+            score += 15;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Bio))
+        {
+            score += 15;
+        }
+
+        if (!string.IsNullOrWhiteSpace(AvatarUrl))
+        {
+            score += 10;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Headline))
+        {
+            score += 10;
+        }
+
+        if (!string.IsNullOrWhiteSpace(WebsiteUrl))
+        {
+            score += 5;
+        }
+
+        if (Skills.Count > 0)
+        {
+            score += 5;
+        }
+
+        if (PortfolioItems.Count > 0)
+        {
+            score += 5;
+        }
+
         return Math.Min(100, score);
     }
 

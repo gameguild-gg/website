@@ -13,6 +13,7 @@ import type {
   AssetUploadInput,
   RemoteAssetProvider,
 } from "@game-guild/assets/providers";
+import { assertSafeRemoteUrl } from "@/lib/security/safe-remote-url";
 
 interface ApiAssetContent {
   contentHash: string;
@@ -92,7 +93,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
     const scope = requiredScope(context);
     const records: AssetRecord[] = [];
     for (const file of files) {
-      const existing = await fetch(`/api/assets/${encodeURIComponent(file.id)}?includeContent=true`, {
+      const existing = await fetch(assertSafeRemoteUrl(`/api/assets/${encodeURIComponent(file.id)}?includeContent=true`), {
+        redirect: "error",
         cache: "no-store",
         signal: context.signal,
       });
@@ -115,7 +117,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
       });
       const body = new FormData();
       body.set("file", file.blob, file.name);
-      const uploaded = await fetch(`/api/assets?${query}`, {
+      const uploaded = await fetch(assertSafeRemoteUrl(`/api/assets?${query}`), {
+        redirect: "error",
         method: "POST",
         body,
         cache: "no-store",
@@ -126,9 +129,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
       if (result.assetReferenceId !== file.id) {
         throw new AssetError("corrupt", "The asset service changed the portable identifier");
       }
-      records.push(await readAsset(await fetch(
-        `/api/assets/${encodeURIComponent(file.id)}?includeContent=true`,
-        { cache: "no-store", signal: context.signal },
+      records.push(await readAsset(await fetch(assertSafeRemoteUrl(`/api/assets/${encodeURIComponent(file.id)}?includeContent=true`),
+        { cache: "no-store", signal: context.signal, redirect: "error" },
       )));
     }
     return records;
@@ -136,7 +138,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
 
   async get(uri: AssetRecord["uri"], context: AssetProviderContext): Promise<AssetRecord | null> {
     const id = uri.slice("asset://".length);
-    const response = await fetch(`/api/assets/${encodeURIComponent(id)}?includeContent=true`, {
+    const response = await fetch(assertSafeRemoteUrl(`/api/assets/${encodeURIComponent(id)}?includeContent=true`), {
+      redirect: "error",
       cache: "no-store",
       signal: context.signal,
     });
@@ -149,7 +152,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
     const params = new URLSearchParams({ resourceType: scope.type, resourceId: scope.id });
     if (query.search) params.set("search", query.search);
     if (query.limit) params.set("limit", String(query.limit));
-    const response = await fetch(`/api/assets?${params}`, {
+    const response = await fetch(assertSafeRemoteUrl(`/api/assets?${params}`), {
+      redirect: "error",
       cache: "no-store",
       signal: context.signal,
     });
@@ -159,7 +163,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
   }
 
   async download(record: AssetRecord, context: AssetProviderContext): Promise<AssetDownload> {
-    const response = await fetch(this.contentUrl(record.id), {
+    const response = await fetch(assertSafeRemoteUrl(this.contentUrl(record.id)), {
+      redirect: "error",
       cache: "no-store",
       signal: context.signal,
     });
@@ -173,7 +178,8 @@ export class GameGuildRemoteAssetProvider implements RemoteAssetProvider {
   }
 
   async delete(record: AssetRecord, context: AssetProviderContext): Promise<void> {
-    const response = await fetch(`/api/assets/${encodeURIComponent(record.id)}`, {
+    const response = await fetch(assertSafeRemoteUrl(`/api/assets/${encodeURIComponent(record.id)}`), {
+      redirect: "error",
       method: "DELETE",
       cache: "no-store",
       signal: context.signal,

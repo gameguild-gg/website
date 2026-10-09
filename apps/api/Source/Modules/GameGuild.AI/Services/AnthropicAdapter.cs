@@ -61,10 +61,15 @@ internal sealed class AnthropicAdapter(IHttpClientFactory httpClientFactory, ILo
             while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
             {
                 if (!line.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
+                }
+
                 var data = line[5..].Trim();
                 if (data.Length == 0 || data == "[DONE]")
+                {
                     continue;
+                }
 
                 using var document = JsonDocument.Parse(data);
                 var root = document.RootElement;
@@ -72,35 +77,56 @@ internal sealed class AnthropicAdapter(IHttpClientFactory httpClientFactory, ILo
                 if (type == "message_start" && root.TryGetProperty("message", out var message))
                 {
                     if (message.TryGetProperty("model", out var modelElement) && modelElement.ValueKind == JsonValueKind.String)
+                    {
                         model = modelElement.GetString() ?? model;
+                    }
+
                     if (message.TryGetProperty("usage", out var usageElement))
+                    {
                         inputTokens = AiJsonHelpers.TryGetInt(usageElement, "input_tokens");
+                    }
+
                     continue;
                 }
                 if (type == "message_delta")
                 {
                     if (root.TryGetProperty("usage", out var usageElement))
+                    {
                         outputTokens = AiJsonHelpers.TryGetInt(usageElement, "output_tokens");
+                    }
+
                     if (root.TryGetProperty("delta", out var messageDelta)
                         && messageDelta.TryGetProperty("stop_reason", out var stopReason)
                         && stopReason.ValueKind == JsonValueKind.String)
+                    {
                         finishReason = stopReason.GetString();
+                    }
+
                     continue;
                 }
                 if (type != "content_block_delta"
                     || !root.TryGetProperty("delta", out var contentDelta)
                     || !contentDelta.TryGetProperty("text", out var deltaText)
                     || deltaText.ValueKind != JsonValueKind.String)
+                {
                     continue;
+                }
+
                 var delta = deltaText.GetString();
                 if (string.IsNullOrEmpty(delta))
+                {
                     continue;
+                }
+
                 text.Append(delta);
                 await onDelta(delta, cancellationToken).ConfigureAwait(false);
             }
 
             if (text.Length == 0)
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.AnthropicEmptyResponse", "Anthropic returned an empty response."));
+            }
+
             var totalTokens = inputTokens.HasValue || outputTokens.HasValue
                 ? (int?)((inputTokens ?? 0) + (outputTokens ?? 0))
                 : null;
@@ -144,7 +170,9 @@ internal sealed class AnthropicAdapter(IHttpClientFactory httpClientFactory, ILo
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
+            {
                 return Result.Failure<AiProviderExecutionResult>(AiProviderErrorMapper.Map("Anthropic", response.StatusCode, responseBody));
+            }
 
             using var document = JsonDocument.Parse(responseBody);
             var root = document.RootElement;
@@ -166,7 +194,9 @@ internal sealed class AnthropicAdapter(IHttpClientFactory httpClientFactory, ILo
             }
 
             if (string.IsNullOrWhiteSpace(text))
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.AnthropicEmptyResponse", "Anthropic returned an empty response."));
+            }
 
             var usage = root.TryGetProperty("usage", out var usageElement) ? usageElement : default;
 

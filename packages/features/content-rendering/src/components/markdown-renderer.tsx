@@ -12,7 +12,9 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 import { MermaidDiagram } from './mermaid-diagram';
+import { sanitizeHastTree } from './sanitize-hast';
 import { VegaLiteDiagram } from './vega-lite-diagram';
+
 
 export type MarkdownRendererMode = 'markdown' | 'reveal';
 export type MarkdownRendererTone = 'default' | 'learning';
@@ -117,6 +119,10 @@ function getAdmonitionTone(type: string | undefined, tone: MarkdownRendererTone)
   if (type === 'info') return 'border-blue-400 bg-blue-50';
   return 'border-gray-400 bg-gray-50';
 }
+
+const sanitizeHastPlugin = () => (tree: unknown) => {
+  sanitizeHastTree(tree as Parameters<typeof sanitizeHastTree>[0]);
+};
 
 export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learning', components: componentOverrides, urlTransform }: MarkdownRendererProps) {
   if (renderer === 'reveal') {
@@ -258,7 +264,7 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
 
   return (
     <div className={isLearningTone ? 'prose dark:prose-invert max-w-none prose-pre:bg-transparent' : 'markdown-content'}>
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]} components={components} urlTransform={urlTransform}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, sanitizeHastPlugin, rehypeKatex]} components={components} urlTransform={urlTransform}>
         {processedContent}
       </ReactMarkdown>
     </div>

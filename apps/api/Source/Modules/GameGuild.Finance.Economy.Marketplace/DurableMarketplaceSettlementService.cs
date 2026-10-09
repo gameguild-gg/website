@@ -111,17 +111,23 @@ public sealed class DurableMarketplaceSettlementService : IDurableMarketplaceSet
         if (duplicate is not null)
         {
             if (!string.Equals(duplicate.IdempotencyKey, idempotencyHash, StringComparison.Ordinal))
-                throw new MarketplaceIdempotencyConflictException(
+                {
+                    throw new MarketplaceIdempotencyConflictException(
                     "The authoritative order is already bound to another settlement request.");
-            return await MapAsync(duplicate, true, transactionToken);
+                }
+
+                return await MapAsync(duplicate, true, transactionToken);
         }
 
         var policy = await _policies.GetEffectiveAsync(
             actor.TenantId, order.ProductId, request.SettledAt, transactionToken);
         if (policy.Policy.SellerId != order.SellerId)
-            throw new MarketplaceOrderSnapshotException(
+            {
+                throw new MarketplaceOrderSnapshotException(
                 "The signed coin policy does not match the authoritative product creator.");
-        var quote = ScaleQuote(
+            }
+
+            var quote = ScaleQuote(
             policy.Policy.Quote(request.CurrencyChoice),
             order.Quantity,
             policy.Policy.PlatformFeePpm);
@@ -134,10 +140,12 @@ public sealed class DurableMarketplaceSettlementService : IDurableMarketplaceSet
         if (buyerWallet.WalletId == sellerWallet.WalletId ||
             buyerWallet.WalletId == platformWallet.WalletId ||
             sellerWallet.WalletId == platformWallet.WalletId)
-            throw new MarketplaceOrderSnapshotException(
+            {
+                throw new MarketplaceOrderSnapshotException(
                 "Marketplace settlement wallets must be distinct.");
+            }
 
-        var settlementId = DeterministicId(order.OrderId, "settlement");
+            var settlementId = DeterministicId(order.OrderId, "settlement");
         var postingId = new PostingId(DeterministicId(settlementId, "posting"));
         var entitlementId = DeterministicId(settlementId, "entitlement");
         var reservations = _reservations.Reserve(new MarketplaceFifoReservationRequest(
@@ -205,8 +213,10 @@ public sealed class DurableMarketplaceSettlementService : IDurableMarketplaceSet
                 request.SettledAt + policy.RefundHold,
                 request.SettledAt));
             if (posting.PostingId != postingId)
+            {
                 throw new RegisteredPostingRejectedException(
-                    "The Marketplace writer returned an unexpected posting identity.");
+                "The Marketplace writer returned an unexpected posting identity.");
+            }
 
             var persisted = await _db.Set<MarketplaceSettlementRow>()
                 .AsNoTracking()
@@ -268,9 +278,14 @@ public sealed class DurableMarketplaceSettlementService : IDurableMarketplaceSet
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.OrderId == Guid.Empty)
+        {
             throw new ArgumentException("Order ID is required.", nameof(request));
+        }
+
         if (!Enum.IsDefined(request.CurrencyChoice))
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
     }
 
     private ProtectedActor RequiredActor()
@@ -278,8 +293,11 @@ public sealed class DurableMarketplaceSettlementService : IDurableMarketplaceSet
         var actor = _actorContexts.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
-                "Marketplace settlement requires an authenticated tenant actor.");
+            "Marketplace settlement requires an authenticated tenant actor.");
+        }
+
         return new ProtectedActor(tenantId, actorId);
     }
 
@@ -294,8 +312,10 @@ public sealed class DurableMarketplaceSettlementService : IDurableMarketplaceSet
             authorization.JurisdictionCode != jurisdiction.JurisdictionCode ||
             authorization.Receipt.ProviderHash != providerHash ||
             authorization.Receipt.DestinationHash != destinationHash)
+        {
             throw new MarketplaceOrderSnapshotException(
-                "The protected operation authorization does not match the Marketplace settlement.");
+            "The protected operation authorization does not match the Marketplace settlement.");
+        }
     }
 
     private static Guid DeterministicId(Guid source, string purpose)

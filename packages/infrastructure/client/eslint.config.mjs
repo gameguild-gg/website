@@ -1,5 +1,5 @@
 import baseConfig from '@game-guild/eslint-config';
-import prettierConfig from '@game-guild/prettier-config';
+import prettierConfig from '../../tooling/prettier/src/index.js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([

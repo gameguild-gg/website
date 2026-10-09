@@ -74,7 +74,9 @@ public class WebhookRetryPolicy
     public int CalculateDelaySeconds(int attemptNumber)
     {
         if (attemptNumber <= 0)
+        {
             return 0;
+        }
 
         var baseDelay = InitialDelaySeconds * Math.Pow(BackoffMultiplier, attemptNumber - 1);
         var delay = Math.Min(baseDelay, MaxDelaySeconds);

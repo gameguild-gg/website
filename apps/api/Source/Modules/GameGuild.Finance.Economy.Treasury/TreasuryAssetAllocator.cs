@@ -18,15 +18,24 @@ public static class TreasuryAssetAllocator
         {
             Validate(observation, now);
             if (!seen.Add(observation.AssetKey))
+            {
                 throw new DuplicateReserveAssetException(
-                    $"External reserve asset {observation.AssetKey} cannot back more than one reserve pool.");
-            if (observation.Finality != TreasurySettlementFinality.Final) continue;
+                $"External reserve asset {observation.AssetKey} cannot back more than one reserve pool.");
+            }
+
+            if (observation.Finality != TreasurySettlementFinality.Final)
+            {
+                continue;
+            }
 
             var eligible = observation.Kind == TreasuryAssetKind.SettledCash
                 ? observation.GrossUsdNanos
                 : (long)((BigInteger)observation.GrossUsdNanos * (PpmScale - observation.HaircutPpm) / PpmScale);
             if (eligible <= 0)
+            {
                 throw new ReserveInputUnknownException("A final reserve asset has no eligible value after haircut.");
+            }
+
             result.Add(new ExternalReserveAsset(observation.AssetKey, observation.Purpose, eligible));
         }
 
@@ -47,7 +56,9 @@ public static class TreasuryAssetAllocator
             observation.HaircutPpm is < 0 or >= PpmScale ||
             observation.ObservedAt > now || observation.ExpiresAt <= now ||
             observation.Kind == TreasuryAssetKind.SettledCash && observation.HaircutPpm != 0)
+        {
             throw new ReserveInputUnknownException("External reserve asset evidence is missing, stale, or invalid.");
+        }
     }
 
 }

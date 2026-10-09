@@ -58,21 +58,32 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         if (project == null)
+        {
             return false;
+        }
 
         if (permission == PermissionType.Read &&
             project.Visibility == ContentVisibility.Public &&
             project.Status == ContentStatus.Published)
+        {
             return true;
+        }
 
         if (!await IsActorActiveTenantMemberAsync(cancellationToken).ConfigureAwait(false))
+        {
             return false;
+        }
 
         if (project.TenantId != actor.TenantId)
+        {
             return false;
+        }
+
         var actorId = actor.SubjectIdAsGuid!.Value;
         if (CanManageProjects(actor))
+        {
             return true;
+        }
 
         var collaborators = await context.Set<ProjectCollaborator>()
             .AsNoTracking()
@@ -89,7 +100,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
         if (collaborators.Any(candidate =>
                 candidate.Role == ProjectRoles.Owner ||
                 HasExactPermission(candidate.Permissions, permission)))
+        {
             return true;
+        }
 
         var projectTeams = await context.Set<ProjectTeam>()
             .AsNoTracking()
@@ -113,7 +126,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
         {
             if (projectTeam.Role != ProjectTeamRole.Owner &&
                 !HasExactPermission(projectTeam.Permissions, permission))
+            {
                 continue;
+            }
 
             var activeMember = await context.Set<TeamMember>()
                 .AsNoTracking()
@@ -139,7 +154,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
                     cancellationToken)
                 .ConfigureAwait(false);
             if (activeMember)
+            {
                 return true;
+            }
         }
 
         var resourceTenantId = new ResourceTenantId(project.TenantId!.Value);
@@ -168,7 +185,10 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
             project.Status == ContentStatus.Published);
 
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid == null || actor.TenantId == null)
+        {
             return publicProjects;
+        }
+
         var actorId = actor.SubjectIdAsGuid.Value;
         var tenantId = actor.TenantId.Value;
         var isActiveUser = context.Set<User>().Any(user =>
@@ -177,15 +197,17 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
             !user.IsSuspended &&
             user.DeletedAt == null);
         if (CanManageProjects(actor))
+        {
             return query.Where(project =>
-                (project.Visibility == ContentVisibility.Public && project.Status == ContentStatus.Published) ||
-                (project.TenantId == tenantId &&
-                 isActiveUser &&
-                 context.Set<TenantMember>().Any(member =>
-                     member.UserId == actorId &&
-                     member.TenantId == tenantId &&
-                     member.IsActive &&
-                     member.DeletedAt == null)));
+            (project.Visibility == ContentVisibility.Public && project.Status == ContentStatus.Published) ||
+            (project.TenantId == tenantId &&
+             isActiveUser &&
+             context.Set<TenantMember>().Any(member =>
+                 member.UserId == actorId &&
+                 member.TenantId == tenantId &&
+                 member.IsActive &&
+                 member.DeletedAt == null)));
+        }
 
         var resourceTenantId = new ResourceTenantId(tenantId);
         return query.Where(project =>
@@ -252,7 +274,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             return query.Where(_ => false);
+        }
 
         var resourceTenantId = new ResourceTenantId(tenantId);
         return query.Where(project =>
@@ -310,9 +334,14 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
     {
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.SubjectIdAsGuid is not { } actorId || actor.TenantId is not { } tenantId)
+        {
             return query.Where(_ => false);
+        }
+
         if (!CanManageProjects(actor))
+        {
             return ApplyPersonalAccess(query, includeDeleted);
+        }
 
         return query.Where(project =>
             project.TenantId == tenantId &&
@@ -329,7 +358,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
         var actor = actorContextAccessor.ActorContext;
         var actorId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || actorId == null || actor.TenantId == null)
+        {
             return false;
+        }
 
         var activeUser = await context.Set<User>()
             .AsNoTracking()
@@ -341,7 +372,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
                 cancellationToken)
             .ConfigureAwait(false);
         if (!activeUser)
+        {
             return false;
+        }
 
         return await context.Set<TenantMember>()
             .AsNoTracking()
@@ -357,7 +390,9 @@ public sealed class ProjectAuthorizationService(IApplicationDbContext context, I
     private static bool HasExactPermission(string? permissions, PermissionType permission)
     {
         if (string.IsNullOrWhiteSpace(permissions))
+        {
             return false;
+        }
 
         return permissions
             .Split([',', ';', '|'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

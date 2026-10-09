@@ -164,11 +164,19 @@ public class TestingFeedback : EntityBase
         Guid? tenantId)
     {
         if (eventId == Guid.Empty || applicationId == Guid.Empty || testerUserId == Guid.Empty)
+        {
             throw new ArgumentException("Event, application, and tester are required.");
+        }
+
         if (string.IsNullOrWhiteSpace(feedbackData))
+        {
             throw new ArgumentException("Feedback data is required.", nameof(feedbackData));
+        }
+
         if (overallRating is < 1 or > 10)
+        {
             throw new ArgumentOutOfRangeException(nameof(overallRating), "Rating must be between 1 and 10.");
+        }
 
         return new TestingFeedback
         {
@@ -199,11 +207,20 @@ public class TestingFeedback : EntityBase
         Guid? tenantId)
     {
         if (questionnaireRevisionId == Guid.Empty)
+        {
             throw new ArgumentException("Questionnaire revision is required.", nameof(questionnaireRevisionId));
+        }
+
         if (!overallRating.HasValue || overallRating is < 1 or > 10)
+        {
             throw new ArgumentException("Overall rating from 1 to 10 is required.", nameof(overallRating));
+        }
+
         if (!wouldRecommend.HasValue)
+        {
             throw new ArgumentException("A recommendation answer is required.", nameof(wouldRecommend));
+        }
+
         QuestionnaireResponseValidator.EnsureValid(questionnaireSchema, responses);
 
         var feedback = CreateForEvent(
@@ -245,7 +262,9 @@ public class TestingFeedback : EntityBase
     public void SetOverallRating(int rating)
     {
         if (rating < 1 || rating > 10)
+        {
             throw new ArgumentOutOfRangeException(nameof(rating), "Rating must be between 1 and 10");
+        }
 
         OverallRating = rating;
         UpdatedAt = SystemClock.UtcNow;

@@ -66,6 +66,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "lint:baseline": "eslint . --suppress-all --prune-suppressions"
   }
 }

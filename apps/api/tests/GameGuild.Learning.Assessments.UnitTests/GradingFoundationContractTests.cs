@@ -46,8 +46,14 @@ public sealed class GradingFoundationContractTests
         for (var mask = 0; mask <= 31; mask++)
         {
             Action action = () => ((ReviewMethods)mask).EnsureValid(allowDraft: true);
-            if (valid.Contains(mask)) action.Should().NotThrow();
-            else action.Should().Throw<ArgumentOutOfRangeException>();
+            if (valid.Contains(mask))
+            {
+                action.Should().NotThrow();
+            }
+            else
+            {
+                action.Should().Throw<ArgumentOutOfRangeException>();
+            }
         }
     }
 

@@ -1,3 +1,5 @@
+using GameGuild.Notifications.Services.Email;
+using Microsoft.AspNetCore.DataProtection;
 using GameGuild.Identity.Tenants;
 using GameGuild.Notifications.Services.Email.Handlers;
 using GameGuild.Notifications.UnitTests.Infrastructure;
@@ -14,7 +16,8 @@ public sealed class TenantInviteRequestedHandlerTests
             new ApplicationDbContextAdapter(context),
             Mock.Of<INotificationPreferenceService>(),
             Mock.Of<INotificationTemplateService>(),
-            NullLogger<NotificationDeliveryService>.Instance);
+            NullLogger<NotificationDeliveryService>.Instance,
+            new NotificationMetadataProtector(new EphemeralDataProtectionProvider()));
         var notificationService = new NotificationService(
             deliveryService,
             Mock.Of<INotificationPreferenceService>(),

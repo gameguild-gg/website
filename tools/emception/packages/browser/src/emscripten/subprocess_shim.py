@@ -36,12 +36,6 @@ STDOUT = -2
 
 def _dispatch(cmd_str, cwd=None, input_data=None):
     """Dispatch a subprocess via file-based IPC + os.system JSPI bridge."""
-    # Log every dispatch for debugging
-    try:
-        with open('/tmp/subprocess_dispatch.log', 'a') as _dlog:
-            _dlog.write(f'_dispatch called: cmd={cmd_str}\n')
-    except: pass
-
     request = json.dumps({'cmd': cmd_str, 'cwd': cwd or ''})
     with open('/tmp/.subprocess_request', 'w') as f:
         f.write(request)

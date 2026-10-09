@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.Identity.Context.Actors;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,8 @@ namespace GameGuild.Features;
 public class FeatureFlagsController(
     IFeatureFlagEvaluationService evaluationService,
     ILogger<FeatureFlagsController> logger,
-    ISender? sender = null) : BaseApiController
+    IActorContextAccessor actorContextAccessor,
+    ISender sender) : BaseApiController
 {
     /// <summary>
     ///     Evaluate a feature flag for runtime decisions
@@ -24,18 +26,12 @@ public class FeatureFlagsController(
     [HttpPost(":evaluate")]
     public async Task<IActionResult> EvaluateFeature([FromBody] FeatureEvaluationRequest request, CancellationToken cancellationToken)
     {
-        var context = new FeatureContext
-        {
-            UserId = request.Context.UserId ?? GetCurrentUserId(),
-            TenantId = request.Context.TenantId ?? GetCurrentTenantId(),
-            Environment = request.Context.Environment,
-            Permissions = request.Context.Permissions,
-            CustomAttributes = request.Context.CustomAttributes,
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-            UserAgent = HttpContext.Request.Headers.UserAgent.ToString()
-        };
+        var actor = actorContextAccessor.ActorContext;
+        var error = ValidateEvaluationContext(actor, request.Context.UserId, request.Context.TenantId);
+        if (error is not null) return error;
+        var context = CreateEvaluationContext(actor, request.Context);
 
-        var result = await sender!.Send(
+        var result = await sender.Send(
             new EvaluateFeatureOperationCommand(request.FeatureKey, context),
             cancellationToken).ConfigureAwait(false);
 
@@ -55,15 +51,10 @@ public class FeatureFlagsController(
         CancellationToken cancellationToken = default
     )
     {
-        var context = new FeatureContext
-        {
-            UserId = userId ?? GetCurrentUserId(),
-            TenantId = tenantId ?? GetCurrentTenantId(),
-            Environment = environment,
-            Permissions = GetCurrentUserPermissions(),
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-            UserAgent = HttpContext.Request.Headers.UserAgent.ToString()
-        };
+        var actor = actorContextAccessor.ActorContext;
+        var error = ValidateEvaluationContext(actor, userId, tenantId);
+        if (error is not null) return error;
+        var context = CreateEvaluationContext(actor, new FeatureContext { Environment = environment });
 
         var result = await evaluationService.GetValueAsync(key, context, defaultValue, cancellationToken);
 
@@ -76,19 +67,13 @@ public class FeatureFlagsController(
     [HttpPost(":evaluate-bulk")]
     public async Task<IActionResult> BulkEvaluateFeatures([FromBody] BulkEvaluationRequest request, CancellationToken cancellationToken)
     {
+        var actor = actorContextAccessor.ActorContext;
+        var error = ValidateEvaluationContext(actor, request.Context.UserId, request.Context.TenantId);
+        if (error is not null) return error;
+        var context = CreateEvaluationContext(actor, request.Context);
         logger.LogDebug("Evaluating {FeatureCount} feature flags", request.FeatureKeys.Count);
-        // Use the context from request, or create a default one
-        var context = request.Context;
 
-        // Fill in missing values from current user context
-        context.UserId ??= GetCurrentUserId();
-        context.TenantId ??= GetCurrentTenantId();
-        context.IpAddress ??= HttpContext.Connection.RemoteIpAddress?.ToString();
-        context.UserAgent ??= HttpContext.Request.Headers.UserAgent.ToString();
-
-        if (context.Permissions.Count == 0) { context.Permissions = GetCurrentUserPermissions(); }
-
-        var result = await sender!.Send(
+        var result = await sender.Send(
             new BulkEvaluateFeatureOperationCommand(request.FeatureKeys, context),
             cancellationToken).ConfigureAwait(false);
         return Ok(result);
@@ -100,38 +85,51 @@ public class FeatureFlagsController(
     [HttpGet("enabled")]
     public async Task<IActionResult> GetEnabled([FromQuery] Guid? userId = null, [FromQuery] Guid? tenantId = null, [FromQuery] string environment = "production", CancellationToken cancellationToken = default)
     {
-        var context = new FeatureContext
-        {
-            UserId = userId ?? GetCurrentUserId(),
-            TenantId = tenantId ?? GetCurrentTenantId(),
-            Environment = environment,
-            Permissions = GetCurrentUserPermissions(),
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-            UserAgent = HttpContext.Request.Headers.UserAgent.ToString()
-        };
+        var actor = actorContextAccessor.ActorContext;
+        var error = ValidateEvaluationContext(actor, userId, tenantId);
+        if (error is not null) return error;
+        var context = CreateEvaluationContext(actor, new FeatureContext { Environment = environment });
 
         var result = await evaluationService.GetEnabledFeaturesAsync(context, cancellationToken).ConfigureAwait(false);
 
         return Ok(result);
     }
 
-    private Guid? GetCurrentUserId()
+    private IActionResult? ValidateEvaluationContext(ActorContext actor, Guid? requestedUserId, Guid? requestedTenantId)
     {
-        // Implementation would depend on your auth system
+        var userId = actor.ActorKind == ActorKind.User ? actor.SubjectIdAsGuid : null;
+        if (!actor.IsAuthenticated || actor.ActorKind == ActorKind.Anonymous ||
+            string.IsNullOrWhiteSpace(actor.SubjectId) ||
+            (actor.ActorKind == ActorKind.User && (userId is null || userId == Guid.Empty)))
+        {
+            return Unauthorized();
+        }
+
+        // These runtime routes evaluate the caller. Administrative preview requires a separate guarded surface.
+        if (actor.TenantId == Guid.Empty ||
+            (requestedUserId.HasValue && requestedUserId != userId) ||
+            (requestedTenantId.HasValue && requestedTenantId != actor.TenantId))
+        {
+            return Forbid();
+        }
+
         return null;
     }
 
-    private Guid? GetCurrentTenantId()
+    private FeatureContext CreateEvaluationContext(ActorContext actor, FeatureContext requestedContext)
     {
-        // Implementation would depend on your multi-tenancy setup
-        return null;
-    }
-
-    private List<string> GetCurrentUserPermissions()
-    {
-        // Implementation would depend on your auth system
-        // Example: return User?.FindAll("permission")?.Select(c => c.Value).ToList() ?? [];
-        return [];
+        return new FeatureContext
+        {
+            UserId = actor.ActorKind == ActorKind.User ? actor.SubjectIdAsGuid : null,
+            TenantId = actor.TenantId,
+            Permissions = [.. actor.Permissions],
+            SubscriptionPlanId = actor.GetAttribute("subscription_plan"),
+            Environment = requestedContext.Environment,
+            CustomAttributes = new Dictionary<string, object>(requestedContext.CustomAttributes),
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
+            RequestTime = SystemClock.UtcNow
+        };
     }
 }
 //   /// </summary>

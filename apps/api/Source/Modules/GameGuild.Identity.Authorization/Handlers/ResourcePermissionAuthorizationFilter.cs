@@ -24,12 +24,23 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         var endpoint = context.HttpContext.GetEndpoint();
-        if (endpoint == null) return;
-        if (endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null) return;
+        if (endpoint == null)
+        {
+            return;
+        }
+
+        if (endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+        {
+            return;
+        }
 
         // Get action descriptor for attribute discovery
         var actionDescriptor = context.ActionDescriptor as ControllerActionDescriptor;
-        if (actionDescriptor == null) return;
+        if (actionDescriptor == null)
+        {
+            return;
+        }
+
         if (actionDescriptor.MethodInfo.GetCustomAttributes(true).OfType<IAllowAnonymous>().Any() ||
             actionDescriptor.ControllerTypeInfo.GetCustomAttributes(true).OfType<IAllowAnonymous>().Any())
         {
@@ -311,14 +322,18 @@ public class ResourcePermissionAuthorizationFilter : IAsyncAuthorizationFilter
         if (httpContext.Request.RouteValues.TryGetValue(parameterName, out var routeValue))
         {
             if (Guid.TryParse(routeValue?.ToString(), out var routeGuid))
+            {
                 return routeGuid;
+            }
         }
 
         // Try query string
         if (httpContext.Request.Query.TryGetValue(parameterName, out var queryValue))
         {
             if (Guid.TryParse(queryValue.FirstOrDefault(), out var queryGuid))
+            {
                 return queryGuid;
+            }
         }
 
         return null;

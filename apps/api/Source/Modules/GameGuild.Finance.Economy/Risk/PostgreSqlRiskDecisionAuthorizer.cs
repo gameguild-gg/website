@@ -39,11 +39,15 @@ public sealed class PostgreSqlRiskDecisionAuthorizer : IRiskDecisionAuthorizer
             !string.Equals(persisted.OperationFingerprint, decision.OperationFingerprint, StringComparison.Ordinal) ||
             persisted.IssuedAt != decision.IssuedAt ||
             persisted.ExpiresAt != decision.ExpiresAt)
+        {
             throw new RiskDecisionBindingException(
                 "The supplied risk decision is not the durable decision bound to this operation.");
+        }
 
         if (persisted.Outcome != RiskOutcome.Allow)
+        {
             throw new RiskAuthorizationDeniedException("Only an Allow risk decision can authorize value movement.");
+        }
 
         return new RiskAuthorization(decision.Id, fingerprint, context.IdempotencyKey, now);
     }

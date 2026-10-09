@@ -16,10 +16,18 @@ internal static class QuizAuthoringEntryValidator
         RequiredString(entry, "stem", allowEmpty: true);
         if (entry.TryGetProperty("points", out var points))
         {
-            if (!points.TryGetInt32(out var units)) throw new JsonException("points must be a JSON integer.");
+            if (!points.TryGetInt32(out var units))
+            {
+                throw new JsonException("points must be a JSON integer.");
+            }
+
             ScoreValue.FromUnits(units);
         }
-        if (!entry.TryGetProperty("settings", out var settings)) throw new JsonException("settings is required.");
+        if (!entry.TryGetProperty("settings", out var settings))
+        {
+            throw new JsonException("settings is required.");
+        }
+
         ValidateSettings(settings);
         ValidateFeedback(entry);
         ValidateAttachments(entry);
@@ -35,7 +43,11 @@ internal static class QuizAuthoringEntryValidator
                 Exact(entry, ["options", "correctOptionIds", "selectionLimit"], ["options", "correctOptionIds"]);
                 ValidateChoiceOptions(entry.GetProperty("options"));
                 JsonContract.RequireStringArray(entry.GetProperty("correctOptionIds"));
-                if (entry.TryGetProperty("selectionLimit", out var selectionLimit)) PositiveInteger(selectionLimit, "selectionLimit");
+                if (entry.TryGetProperty("selectionLimit", out var selectionLimit))
+                {
+                    PositiveInteger(selectionLimit, "selectionLimit");
+                }
+
                 break;
             case "TRUE_FALSE":
                 Exact(entry, ["correctAnswer"], ["correctAnswer"]);
@@ -151,7 +163,11 @@ internal static class QuizAuthoringEntryValidator
 
     private static void ValidateFeedback(JsonElement entry)
     {
-        if (!entry.TryGetProperty("feedback", out var feedback)) return;
+        if (!entry.TryGetProperty("feedback", out var feedback))
+        {
+            return;
+        }
+
         JsonContract.RequireObject(feedback, "feedback");
         JsonContract.RequireExactProperties(feedback, JsonContract.Set("correct", "incorrect", "general"), JsonContract.Set());
         OptionalString(feedback, "correct");
@@ -161,7 +177,11 @@ internal static class QuizAuthoringEntryValidator
 
     private static void ValidateAttachments(JsonElement entry)
     {
-        if (!entry.TryGetProperty("attachments", out var attachments)) return;
+        if (!entry.TryGetProperty("attachments", out var attachments))
+        {
+            return;
+        }
+
         JsonContract.RequireObject(attachments, "attachments");
         JsonContract.RequireExactProperties(
             attachments,
@@ -169,13 +189,20 @@ internal static class QuizAuthoringEntryValidator
             JsonContract.Set());
         foreach (var field in new[] { "learnerVisible", "authorOnly" })
         {
-            if (!attachments.TryGetProperty(field, out var values)) continue;
+            if (!attachments.TryGetProperty(field, out var values))
+            {
+                continue;
+            }
+
             ValidateObjectArray(values, ["assetUri", "role", "label", "altText"], attachment =>
             {
                 RequiredString(attachment, "assetUri");
                 var role = RequiredString(attachment, "role");
                 if (role is not ("question" or "answer" or "feedback" or "source"))
+                {
                     throw new JsonException("Attachment role is unsupported.");
+                }
+
                 OptionalString(attachment, "label");
                 OptionalString(attachment, "altText");
             }, ["assetUri", "role"]);
@@ -258,7 +285,11 @@ internal static class QuizAuthoringEntryValidator
         });
         RequiredString(entry, "formula", allowEmpty: true);
         var toleranceType = RequiredString(entry, "toleranceType");
-        if (toleranceType is not ("absolute" or "percentage")) throw new JsonException("toleranceType is unsupported.");
+        if (toleranceType is not ("absolute" or "percentage"))
+        {
+            throw new JsonException("toleranceType is unsupported.");
+        }
+
         NonNegativeNumber(entry.GetProperty("tolerance"), "tolerance");
         NonNegativeInteger(entry.GetProperty("decimalPlaces"), "decimalPlaces");
     }
@@ -289,7 +320,11 @@ internal static class QuizAuthoringEntryValidator
         Action<JsonElement> validate,
         string[]? required = null)
     {
-        if (array.ValueKind != JsonValueKind.Array) throw new JsonException("Expected an array.");
+        if (array.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException("Expected an array.");
+        }
+
         foreach (var item in array.EnumerateArray())
         {
             JsonContract.RequireObject(item, "Array item");
@@ -300,61 +335,99 @@ internal static class QuizAuthoringEntryValidator
 
     private static string RequiredString(JsonElement owner, string property, bool allowEmpty = false)
     {
-        if (!owner.TryGetProperty(property, out var value)) throw new JsonException($"{property} is required.");
+        if (!owner.TryGetProperty(property, out var value))
+        {
+            throw new JsonException($"{property} is required.");
+        }
+
         JsonContract.RequireString(value, property);
         var text = value.GetString()!;
-        if (!allowEmpty && string.IsNullOrWhiteSpace(text)) throw new JsonException($"{property} must be non-empty.");
+        if (!allowEmpty && string.IsNullOrWhiteSpace(text))
+        {
+            throw new JsonException($"{property} must be non-empty.");
+        }
+
         return text;
     }
 
     private static void OptionalString(JsonElement owner, string property)
     {
-        if (owner.TryGetProperty(property, out var value)) JsonContract.RequireString(value, property);
+        if (owner.TryGetProperty(property, out var value))
+        {
+            JsonContract.RequireString(value, property);
+        }
     }
 
     private static void OptionalStringArray(JsonElement owner, string property)
     {
-        if (owner.TryGetProperty(property, out var value)) JsonContract.RequireStringArray(value);
+        if (owner.TryGetProperty(property, out var value))
+        {
+            JsonContract.RequireStringArray(value);
+        }
     }
 
     private static void RequireBoolean(JsonElement value, string label)
     {
-        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) throw new JsonException($"{label} must be a boolean.");
+        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            throw new JsonException($"{label} must be a boolean.");
+        }
     }
 
     private static void OptionalBoolean(JsonElement owner, string property)
     {
-        if (owner.TryGetProperty(property, out var value)) RequireBoolean(value, property);
+        if (owner.TryGetProperty(property, out var value))
+        {
+            RequireBoolean(value, property);
+        }
     }
 
     private static void OptionalNumber(JsonElement owner, string property)
     {
-        if (owner.TryGetProperty(property, out var value)) JsonContract.RequireNumber(value, property);
+        if (owner.TryGetProperty(property, out var value))
+        {
+            JsonContract.RequireNumber(value, property);
+        }
     }
 
     private static void OptionalNonNegativeNumber(JsonElement owner, string property)
     {
-        if (owner.TryGetProperty(property, out var value)) NonNegativeNumber(value, property);
+        if (owner.TryGetProperty(property, out var value))
+        {
+            NonNegativeNumber(value, property);
+        }
     }
 
     private static void NonNegativeNumber(JsonElement value, string label)
     {
         JsonContract.RequireNumber(value, label);
-        if (value.GetDouble() < 0) throw new JsonException($"{label} must be non-negative.");
+        if (value.GetDouble() < 0)
+        {
+            throw new JsonException($"{label} must be non-negative.");
+        }
     }
 
     private static void PositiveInteger(JsonElement value, string label)
     {
-        if (!value.TryGetInt32(out var result) || result <= 0) throw new JsonException($"{label} must be a positive integer.");
+        if (!value.TryGetInt32(out var result) || result <= 0)
+        {
+            throw new JsonException($"{label} must be a positive integer.");
+        }
     }
 
     private static void NonNegativeInteger(JsonElement value, string label)
     {
-        if (!value.TryGetInt32(out var result) || result < 0) throw new JsonException($"{label} must be a non-negative integer.");
+        if (!value.TryGetInt32(out var result) || result < 0)
+        {
+            throw new JsonException($"{label} must be a non-negative integer.");
+        }
     }
 
     private static void OptionalNonNegativeInteger(JsonElement owner, string property)
     {
-        if (owner.TryGetProperty(property, out var value)) NonNegativeInteger(value, property);
+        if (owner.TryGetProperty(property, out var value))
+        {
+            NonNegativeInteger(value, property);
+        }
     }
 }

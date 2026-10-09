@@ -40,7 +40,11 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
         var now = _timeProvider.GetUtcNow();
 
         var chainHeads = await _db.Set<EconomyChainHeadRow>().AsNoTracking().ToArrayAsync(cancellationToken);
-        if (chainHeads.Length != 1) return false;
+        if (chainHeads.Length != 1)
+        {
+            return false;
+        }
+
         var chainHead = chainHeads[0];
 
         var checkpoint = await _db.Set<EconomyJournalVerificationCheckpointRow>().AsNoTracking()
@@ -50,12 +54,18 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
         if (checkpoint is null || !checkpoint.IsValid || checkpoint.FailureCode is not null ||
             checkpoint.ToSequence != chainHead.Sequence ||
             !string.Equals(checkpoint.CurrentHash, chainHead.Hash, StringComparison.Ordinal))
+        {
             return false;
+        }
 
         var projections = await _db.Set<EconomyProjectionGenerationRow>().AsNoTracking()
             .Where(row => row.IsActive)
             .ToArrayAsync(cancellationToken);
-        if (projections.Length != 1) return false;
+        if (projections.Length != 1)
+        {
+            return false;
+        }
+
         var projection = projections[0];
         if (projection.ToSequence != chainHead.Sequence ||
             !string.Equals(projection.JournalHash, chainHead.Hash, StringComparison.Ordinal) ||
@@ -66,26 +76,40 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
             projection.ProposedBy == projection.ApprovedBy ||
             projection.ProposedBy == projection.SecondApprovedBy ||
             projection.ApprovedBy == projection.SecondApprovedBy)
+        {
             return false;
+        }
 
         var reserves = await _db.Set<EconomyReserveHeadRow>().AsNoTracking()
             .Where(row => row.IsActive)
             .ToArrayAsync(cancellationToken);
-        if (reserves.Length != 1) return false;
+        if (reserves.Length != 1)
+        {
+            return false;
+        }
+
         var reserve = reserves[0];
         if (reserve.Coverage != ReserveCoverageState.Covered ||
             reserve.ObservedAt > now || reserve.ExpiresAt <= now ||
             string.IsNullOrWhiteSpace(reserve.EvidenceHash))
+        {
             return false;
+        }
 
         var reconciliations = await _db.Set<EconomyCustodyReconciliationRow>().AsNoTracking()
             .Where(row => row.ReserveVersion == reserve.Version)
             .ToArrayAsync(cancellationToken);
-        if (reconciliations.Length != 1) return false;
+        if (reconciliations.Length != 1)
+        {
+            return false;
+        }
+
         var reconciliation = reconciliations[0];
         if (!reconciliation.IsReconciled || reconciliation.VarianceUsdNanos != 0 ||
             string.IsNullOrWhiteSpace(reconciliation.EvidenceHash))
+        {
             return false;
+        }
 
         Guid[] observationIds;
         try
@@ -97,7 +121,10 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
             return false;
         }
         if (observationIds.Length == 0 || observationIds.Distinct().Count() != observationIds.Length)
+        {
             return false;
+        }
+
         var observations = await _db.Set<EconomyCustodyObservationRow>().AsNoTracking()
             .Where(row => observationIds.Contains(row.Id))
             .ToArrayAsync(cancellationToken);
@@ -106,7 +133,9 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
                 string.IsNullOrWhiteSpace(row.PayloadHash) ||
                 string.IsNullOrWhiteSpace(row.KeyId) ||
                 string.IsNullOrWhiteSpace(row.Signature)))
+        {
             return false;
+        }
 
         var anchor = await _db.Set<EconomyExternalAnchorRow>().AsNoTracking()
             .Where(row => row.JournalSequence == chainHead.Sequence && row.JournalHash == chainHead.Hash)
@@ -115,7 +144,10 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
         if (anchor is null || string.IsNullOrWhiteSpace(anchor.Signature) ||
             string.IsNullOrWhiteSpace(anchor.WormReference) ||
             string.IsNullOrWhiteSpace(anchor.ProviderReference))
+        {
             return false;
+        }
+
         var anchorVerification = await _db.Set<EconomyAnchorVerificationRow>().AsNoTracking()
             .Where(row => row.ExternalAnchorId == anchor.Id)
             .OrderByDescending(row => row.VerifiedAt)
@@ -128,23 +160,37 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
             string.IsNullOrWhiteSpace(anchorVerification.ObjectVersion) ||
             string.IsNullOrWhiteSpace(anchorVerification.ETag) ||
             string.IsNullOrWhiteSpace(anchorVerification.ObjectHash))
+        {
             return false;
+        }
 
         var policiesQuery = _db.Set<EconomyCapabilityPolicyRow>().AsNoTracking()
             .Where(row => row.IsActive);
         if (scope.TenantId is Guid tenantId)
+        {
             policiesQuery = policiesQuery.Where(row => row.TenantId == null || row.TenantId == tenantId);
+        }
+
         if (scope.Capability is EconomyValueMovementCapability capability)
+        {
             policiesQuery = policiesQuery.Where(row => row.Capability == capability);
+        }
+
         var policies = await policiesQuery.ToArrayAsync(cancellationToken);
-        if (scope.Capability is not null && policies.Length == 0) return false;
+        if (scope.Capability is not null && policies.Length == 0)
+        {
+            return false;
+        }
+
         foreach (var policy in policies)
         {
             if (!policy.ProviderReady || policy.EffectiveAt > now || policy.ExpiresAt <= now ||
                 string.IsNullOrWhiteSpace(policy.KeyId) || string.IsNullOrWhiteSpace(policy.Signature) ||
                 !await _policySignatureVerifier.VerifyAsync(
                     policy.CanonicalPayload, policy.KeyId, policy.Signature, cancellationToken))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -155,10 +201,18 @@ public sealed class PostgreSqlKillSwitchReleaseReadinessGate : IKillSwitchReleas
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(scope.ScopeKey);
         if (scope.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant ID cannot be empty.", nameof(scope));
+        }
+
         if (scope.Capability is not null && scope.TenantId is null)
+        {
             throw new ArgumentException("Capability readiness must be tenant-scoped.", nameof(scope));
+        }
+
         if (scope.Capability is not null && !Enum.IsDefined(scope.Capability.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(scope));
+        }
     }
 }

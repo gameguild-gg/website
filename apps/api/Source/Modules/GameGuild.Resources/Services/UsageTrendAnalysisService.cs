@@ -180,14 +180,20 @@ public class UsageTrendAnalysisService(IResourceUsageTrendRepository trendReposi
 
         var recordsList = usageRecords.OrderBy(r => r.PeriodStart).ToList();
 
-        if (recordsList.Count < 2) return 0;
+        if (recordsList.Count < 2)
+        {
+            return 0;
+        }
 
         return CalculateGrowthRate(recordsList, startDate, endDate);
     }
 
     private static decimal CalculateStandardDeviation(List<long> values)
     {
-        if (values.Count <= 1) return 0;
+        if (values.Count <= 1)
+        {
+            return 0;
+        }
 
         var average = values.Average();
         var sumOfSquares = values.Sum(v => Math.Pow(v - average, 2));
@@ -197,26 +203,38 @@ public class UsageTrendAnalysisService(IResourceUsageTrendRepository trendReposi
 
     private static decimal CalculateGrowthRate(List<UsageRecord> records, DateTime periodStart, DateTime periodEnd)
     {
-        if (records.Count < 2) return 0;
+        if (records.Count < 2)
+        {
+            return 0;
+        }
 
         var midpoint = periodStart.AddTicks((periodEnd - periodStart).Ticks / 2);
 
         var firstHalf = records.Where(r => r.PeriodStart < midpoint).ToList();
         var secondHalf = records.Where(r => r.PeriodStart >= midpoint).ToList();
 
-        if (firstHalf.Count == 0 || secondHalf.Count == 0) return 0;
+        if (firstHalf.Count == 0 || secondHalf.Count == 0)
+        {
+            return 0;
+        }
 
         var firstAvg = firstHalf.Average(r => r.UsageAmount);
         var secondAvg = secondHalf.Average(r => r.UsageAmount);
 
-        if (firstAvg == 0) return 0;
+        if (firstAvg == 0)
+        {
+            return 0;
+        }
 
         return (decimal) ((secondAvg - firstAvg) / firstAvg);
     }
 
     private static int DetectAnomalyCount(List<long> values, double average, decimal stdDev)
     {
-        if (stdDev == 0 || values.Count < 3) return 0;
+        if (stdDev == 0 || values.Count < 3)
+        {
+            return 0;
+        }
 
         // Use Median Absolute Deviation (MAD) for robust anomaly detection
         // MAD is resistant to outlier contamination unlike mean/stddev
@@ -246,13 +264,31 @@ public class UsageTrendAnalysisService(IResourceUsageTrendRepository trendReposi
     private static string ClassifyPattern(decimal growthRate, decimal stdDev, double average)
     {
         // High variability
-        if (average > 0 && stdDev / (decimal) average > 0.5m) return "Volatile";
+        if (average > 0 && stdDev / (decimal) average > 0.5m)
+        {
+            return "Volatile";
+        }
 
         // Growth patterns
-        if (growthRate > 0.2m) return "Rapid Growth";
-        if (growthRate > 0.05m) return "Growing";
-        if (growthRate < -0.2m) return "Rapid Decline";
-        if (growthRate < -0.05m) return "Declining";
+        if (growthRate > 0.2m)
+        {
+            return "Rapid Growth";
+        }
+
+        if (growthRate > 0.05m)
+        {
+            return "Growing";
+        }
+
+        if (growthRate < -0.2m)
+        {
+            return "Rapid Decline";
+        }
+
+        if (growthRate < -0.05m)
+        {
+            return "Declining";
+        }
 
         // Stable pattern
         return "Stable";

@@ -1068,7 +1068,7 @@ public sealed class AuthenticationCoverageCompletionTests
         tokenInfoType.GetProperty("Type")!.SetValue(tokenInfo, type);
         tokenInfoType.GetProperty("ExpiresAt")!.SetValue(tokenInfo, expiresAt);
 
-        cache.Set("emailverify:token:" + token, tokenInfo);
+        cache.Set("emailverify:token:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token))), tokenInfo);
     }
 
     private static IApplicationDbContext ContextWithSet<TEntity>()

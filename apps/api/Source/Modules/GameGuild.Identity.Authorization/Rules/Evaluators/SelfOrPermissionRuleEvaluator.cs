@@ -126,7 +126,9 @@ public sealed class SelfOrPermissionRuleEvaluator : IRuleEvaluator
     private static Guid? GetTargetUserIdFromResource(object? resource, RuleParameters parameters)
     {
         if (resource is null)
+        {
             return null;
+        }
 
         var userIdPath = parameters.GetString("resourceUserIdPath") ?? "UserId";
 

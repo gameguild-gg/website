@@ -59,7 +59,10 @@ public sealed class EconomyGenesisChainHeadMigrationTests
             "SELECT \"Id\", \"Sequence\", length(\"Hash\") FROM public.economy_chain_head;",
             connection);
         await using var reader = await command.ExecuteReaderAsync();
-        if (!await reader.ReadAsync()) return null;
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
 
         return (reader.GetInt32(0), reader.GetInt64(1), reader.GetInt32(2));
     }

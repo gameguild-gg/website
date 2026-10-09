@@ -28,7 +28,11 @@ public sealed class EconomyAdRewardQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await adRewards.ListSessionsAsync(
             tenantId, state, network, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -38,7 +42,11 @@ public sealed class EconomyAdRewardQueryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSession(Guid sessionId, CancellationToken cancellationToken)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         var session = await adRewards.FindSessionAsync(
             tenantId, sessionId, cancellationToken).ConfigureAwait(false);
         return session is null ? NotFound() : Ok(session);
@@ -54,7 +62,11 @@ public sealed class EconomyAdRewardQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await adRewards.ListPendingClaimsAsync(
             tenantId, confirmed, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -69,7 +81,11 @@ public sealed class EconomyAdRewardQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await adRewards.ListReconciliationsAsync(
             tenantId, network, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -80,7 +96,10 @@ public sealed class EconomyAdRewardQueryAdministrationController(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue ||
             !actor.HasPermission(EconomyPermission.Keys.OperateAdRewards))
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         return true;
     }

@@ -141,6 +141,12 @@ function statusLabel(state: ActivityState) {
   return state.charAt(0).toUpperCase() + state.slice(1);
 }
 
+function stripTrailingSlashes(value: string) {
+  let result = value;
+  while (result.endsWith("/")) result = result.slice(0, -1);
+  return result;
+}
+
 export function LearnerActivityCenter({
   records,
   courseBasePath = "/courses",
@@ -148,7 +154,7 @@ export function LearnerActivityCenter({
   records: LearnerCourseRecord[];
   courseBasePath?: string;
 }) {
-  const normalizedCourseBasePath = courseBasePath.replace(/\/+$/, "");
+  const normalizedCourseBasePath = stripTrailingSlashes(courseBasePath);
   const rows = useMemo(
     () => buildRows(records, normalizedCourseBasePath),
     [records, normalizedCourseBasePath],

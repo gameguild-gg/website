@@ -41,11 +41,20 @@ public static class HealthChecksOptionsBuilder
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (string.IsNullOrWhiteSpace(options.HealthCheckPath)) throw new InvalidOperationException("Health check path cannot be null or empty.");
+        if (string.IsNullOrWhiteSpace(options.HealthCheckPath))
+        {
+            throw new InvalidOperationException("Health check path cannot be null or empty.");
+        }
 
-        if (!options.HealthCheckPath.StartsWith('/')) throw new InvalidOperationException("Health check path must start with '/'.");
+        if (!options.HealthCheckPath.StartsWith('/'))
+        {
+            throw new InvalidOperationException("Health check path must start with '/'.");
+        }
 
-        if (options.TimeoutSeconds <= 0) throw new InvalidOperationException("Timeout seconds must be greater than zero.");
+        if (options.TimeoutSeconds <= 0)
+        {
+            throw new InvalidOperationException("Timeout seconds must be greater than zero.");
+        }
     }
 
     /// <summary>

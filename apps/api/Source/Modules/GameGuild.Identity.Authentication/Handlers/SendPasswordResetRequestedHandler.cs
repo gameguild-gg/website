@@ -22,7 +22,7 @@ public sealed class SendPasswordResetRequestedHandler(
             var user = await userRepository.GetByEmailAsync(notification.Email, cancellationToken).ConfigureAwait(false);
             if (user is null)
             {
-                logger.LogWarning("Password reset email requested for unknown email {Email}", notification.Email);
+                logger.LogWarning("Password reset email requested for unknown email {Email}", LogRedaction.MaskEmail(notification.Email));
                 return;
             }
 
@@ -43,13 +43,16 @@ public sealed class SendPasswordResetRequestedHandler(
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (result is null || result.IsFailure)
+            {
                 throw new InvalidOperationException("Authentication notification was not durably queued.");
+            }
 
-            logger.LogInformation("Password reset email queued for {Email}", notification.Email);
+            logger.LogInformation("Password reset email queued for {Email}", LogRedaction.MaskEmail(notification.Email));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error queueing password reset email to {Email}", notification.Email);
+            logger.LogError("Error queueing password reset email to {Email}: {ErrorType}",
+                LogRedaction.MaskEmail(notification.Email), ex.GetType().Name);
             throw; // Queue persistence failed; do not acknowledge a lost notification.
         }
     }

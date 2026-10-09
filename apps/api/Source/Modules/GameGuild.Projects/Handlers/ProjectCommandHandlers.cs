@@ -212,19 +212,62 @@ public sealed class ProjectCommandHandlers
     }
 
     // Update fields
-    if (request.Title != null) project.Title = request.Title;
-    if (request.Description != null) project.Description = request.Description;
-    if (request.ShortDescription != null) project.ShortDescription = request.ShortDescription;
-    if (request.ImageUrl != null) project.ImageUrl = request.ImageUrl;
-    if (request.RepositoryUrl != null) project.RepositoryUrl = request.RepositoryUrl;
-    if (request.WebsiteUrl != null) project.WebsiteUrl = request.WebsiteUrl;
-    if (request.DownloadUrl != null) project.DownloadUrl = request.DownloadUrl;
-    if (request.Type.HasValue) project.Type = (GameGuild.Projects.ProjectType)request.Type.Value;
-    if (request.CategoryId.HasValue) project.CategoryId = request.CategoryId;
-    if (request.Visibility.HasValue) project.Visibility = request.Visibility.Value;
-    if (request.Status.HasValue) project.Status = request.Status.Value;
+    if (request.Title != null)
+        {
+            project.Title = request.Title;
+        }
 
-    project.Touch();
+        if (request.Description != null)
+        {
+            project.Description = request.Description;
+        }
+
+        if (request.ShortDescription != null)
+        {
+            project.ShortDescription = request.ShortDescription;
+        }
+
+        if (request.ImageUrl != null)
+        {
+            project.ImageUrl = request.ImageUrl;
+        }
+
+        if (request.RepositoryUrl != null)
+        {
+            project.RepositoryUrl = request.RepositoryUrl;
+        }
+
+        if (request.WebsiteUrl != null)
+        {
+            project.WebsiteUrl = request.WebsiteUrl;
+        }
+
+        if (request.DownloadUrl != null)
+        {
+            project.DownloadUrl = request.DownloadUrl;
+        }
+
+        if (request.Type.HasValue)
+        {
+            project.Type = (GameGuild.Projects.ProjectType)request.Type.Value;
+        }
+
+        if (request.CategoryId.HasValue)
+        {
+            project.CategoryId = request.CategoryId;
+        }
+
+        if (request.Visibility.HasValue)
+        {
+            project.Visibility = request.Visibility.Value;
+        }
+
+        if (request.Status.HasValue)
+        {
+            project.Status = request.Status.Value;
+        }
+
+        project.Touch();
 
     await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -256,9 +299,11 @@ public sealed class ProjectCommandHandlers
     }
 
     if (!await _lifecycleCoordinator.DeleteAsync(request.ProjectId, request.SoftDelete, cancellationToken).ConfigureAwait(false))
-      return Result.Failure<bool>(Error.NotFound("Project.NotFound", $"Project with ID {request.ProjectId} was not found"));
+        {
+            return Result.Failure<bool>(Error.NotFound("Project.NotFound", $"Project with ID {request.ProjectId} was not found"));
+        }
 
-    _logger.LogInformation("Project deleted successfully: {ProjectId}", project.Id);
+        _logger.LogInformation("Project deleted successfully: {ProjectId}", project.Id);
 
     return Result.Success(true);
   }
@@ -346,8 +391,11 @@ public sealed class ProjectCommandHandlers
     if (Actor.TypedAttributes.AuthenticatedAt is not { } authenticatedAt ||
         authenticatedAt < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(15)) ||
         UserId is not { } actorId)
-      return false;
-    var hasMfa = await _context.Set<UserMfaConfiguration>().AsNoTracking().AnyAsync(configuration =>
+        {
+            return false;
+        }
+
+        var hasMfa = await _context.Set<UserMfaConfiguration>().AsNoTracking().AnyAsync(configuration =>
       configuration.UserId == actorId && configuration.IsEnabled && configuration.IsSetupComplete,
       cancellationToken).ConfigureAwait(false);
     return !hasMfa || Actor.IsMfaVerified;

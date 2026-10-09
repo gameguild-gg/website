@@ -5,6 +5,7 @@ import {
   buildTestingLabFixtureUsername,
   collectAccessibilityFailures,
   cleanupTestingLabFixture,
+  createTestingLabFixtureUsername,
   createTestingLabFixtureIdentities,
   requireDisposableDatabaseMode,
   responseFailure,
@@ -231,4 +232,16 @@ test('returns every cleanup failure instead of masking teardown errors', async (
 
   assert.equal(failures.length, 1);
   assert.match(failures[0], /cannot clean \/v1\/testing\/events/);
+});
+
+test('all browser fixture usernames satisfy the API handle length and keep their unique suffix', () => {
+  const tag = '1791252567123-abcdef12';
+  const usernames = ['owner', 'reviewer', 'tester'].map((kind) => createTestingLabFixtureUsername(kind, tag));
+  assert.equal(new Set(usernames).size, 3);
+  for (const username of usernames) {
+    assert.match(username, /^[a-z0-9_]{3,50}$/);
+    assert.ok(username.endsWith('1791252567123_abcdef12'));
+  }
+  assert.notEqual(createTestingLabFixtureUsername('reviewer', tag),
+    createTestingLabFixtureUsername('reviewer', '1791252567123-abcdef13'));
 });

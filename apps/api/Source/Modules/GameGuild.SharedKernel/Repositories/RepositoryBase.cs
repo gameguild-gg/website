@@ -111,7 +111,9 @@ public abstract class RepositoryBase<T, TKey> : IRepository<T, TKey>
     {
         var query = Query;
         if (predicate is not null)
+        {
             query = query.Where(predicate);
+        }
 
         return await query
             .CountAsync(cancellationToken)

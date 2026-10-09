@@ -137,7 +137,7 @@ export class TenantsMetadataModule {
    *
    * Replaces all existing tags with the provided list of tags.
    */
-  async putTenantsMetadataTags(tenantId: string, body: Array<string>): Promise<Result<void, ApiError>> {
+  async putTenantsMetadataTags(tenantId: string, body: string[]): Promise<Result<void, ApiError>> {
     const url = `/v1/tenants/${tenantId}/metadata/tags`;
 
     const result = await this.client.request({

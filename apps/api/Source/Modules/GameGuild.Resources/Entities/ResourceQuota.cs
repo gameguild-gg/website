@@ -100,7 +100,10 @@ public class ResourceQuota : EntityBase
     /// </summary>
     public double GetUsagePercentage()
     {
-        if (!HardLimit.HasValue || HardLimit.Value == 0) return 0;
+        if (!HardLimit.HasValue || HardLimit.Value == 0)
+        {
+            return 0;
+        }
 
         return (double) CurrentUsage / HardLimit.Value * 100;
     }
@@ -120,7 +123,10 @@ public class ResourceQuota : EntityBase
     /// </summary>
     public long GetRemainingQuota()
     {
-        if (!HardLimit.HasValue) return long.MaxValue;
+        if (!HardLimit.HasValue)
+        {
+            return long.MaxValue;
+        }
 
         return Math.Max(0, HardLimit.Value - CurrentUsage);
     }
@@ -130,11 +136,17 @@ public class ResourceQuota : EntityBase
     /// </summary>
     public bool ShouldReset()
     {
-        if (!LastReset.HasValue) return true;
+        if (!LastReset.HasValue)
+        {
+            return true;
+        }
 
         var nextReset = GetNextResetTime();
 
-        if (!nextReset.HasValue) return false;
+        if (!nextReset.HasValue)
+        {
+            return false;
+        }
 
         return SystemClock.UtcNow >= nextReset.Value;
     }
@@ -144,7 +156,10 @@ public class ResourceQuota : EntityBase
     /// </summary>
     public DateTime? GetNextResetTime()
     {
-        if (!LastReset.HasValue) return null;
+        if (!LastReset.HasValue)
+        {
+            return null;
+        }
 
         var baseDate = LastReset.Value;
         var resetDateTime = baseDate;
@@ -190,7 +205,10 @@ public class ResourceQuota : EntityBase
     /// </summary>
     public void AddUsage(long amount)
     {
-        if (amount < 0) throw new ArgumentException("Usage amount cannot be negative", nameof(amount));
+        if (amount < 0)
+        {
+            throw new ArgumentException("Usage amount cannot be negative", nameof(amount));
+        }
 
         CurrentUsage += amount;
         UpdatedAt = SystemClock.UtcNow;
@@ -201,7 +219,10 @@ public class ResourceQuota : EntityBase
     /// </summary>
     public void RemoveUsage(long amount)
     {
-        if (amount < 0) throw new ArgumentException("Usage amount cannot be negative", nameof(amount));
+        if (amount < 0)
+        {
+            throw new ArgumentException("Usage amount cannot be negative", nameof(amount));
+        }
 
         CurrentUsage = Math.Max(0, CurrentUsage - amount);
         UpdatedAt = SystemClock.UtcNow;

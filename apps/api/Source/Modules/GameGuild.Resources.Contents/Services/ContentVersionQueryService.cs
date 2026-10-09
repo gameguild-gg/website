@@ -29,7 +29,9 @@ public class ContentVersionQueryService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         return Result.Success(version);
     }
@@ -48,7 +50,9 @@ public class ContentVersionQueryService(
                 !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         return Result.Success(version);
     }
@@ -63,7 +67,9 @@ public class ContentVersionQueryService(
                 !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         return Result.Success(version);
     }
@@ -79,10 +85,14 @@ public class ContentVersionQueryService(
             .FirstOrDefaultAsync(v => v.Id == versionId2 && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (v1 == null || v2 == null)
+        {
             return Result.Failure<ContentVersionDiff>(ContentVersioningErrors.NotFound);
+        }
 
         if (v1.EntityId != v2.EntityId || v1.EntityType != v2.EntityType)
+        {
             return Result.Failure<ContentVersionDiff>(ContentVersioningErrors.VersionsMustBeSameEntity);
+        }
 
         var diff = new ContentVersionDiff(
             versionId1,

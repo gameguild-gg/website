@@ -32,13 +32,19 @@ internal sealed class AiOrchestrator(
         ArgumentNullException.ThrowIfNull(request);
 
         if (request.Messages is null || request.Messages.Count == 0)
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.MessagesRequired", "At least one chat message is required."));
+        }
 
         if (request.Messages.Any(static message => string.IsNullOrWhiteSpace(message.Content)))
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.MessageContentRequired", "Chat message content cannot be empty."));
+        }
 
         if (request.Messages.Any(static message => string.IsNullOrWhiteSpace(message.Role) || !AllowedMessageRoles.Contains(message.Role)))
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.InvalidMessageRole", "Only 'user' and 'assistant' roles are supported."));
+        }
 
         var resolvedResult = await ResolveRequestAsync(
             requestContextAccessor.CurrentTenantId,
@@ -52,7 +58,9 @@ internal sealed class AiOrchestrator(
             cancellationToken).ConfigureAwait(false);
 
         if (resolvedResult.IsFailure)
+        {
             return Result.Failure<AiCompletionResponse>(resolvedResult.Error);
+        }
 
         return await ExecuteAsync(resolvedResult.Value, requestContextAccessor.CurrentUserId, cancellationToken).ConfigureAwait(false);
     }
@@ -62,7 +70,9 @@ internal sealed class AiOrchestrator(
         ArgumentNullException.ThrowIfNull(request);
 
         if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.PromptRequired", "A prompt is required."));
+        }
 
         var messages = new[]
         {
@@ -81,7 +91,9 @@ internal sealed class AiOrchestrator(
             cancellationToken).ConfigureAwait(false);
 
         if (resolvedResult.IsFailure)
+        {
             return Result.Failure<AiCompletionResponse>(resolvedResult.Error);
+        }
 
         return await ExecuteAsync(resolvedResult.Value, requestContextAccessor.CurrentUserId, cancellationToken).ConfigureAwait(false);
     }
@@ -120,7 +132,9 @@ internal sealed class AiOrchestrator(
         ValidateActor(actor);
         ArgumentNullException.ThrowIfNull(request);
         if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.PromptRequired", "A prompt is required."));
+        }
 
         var resolved = await ResolveRequestAsync(
             actor.TenantId,
@@ -147,7 +161,9 @@ internal sealed class AiOrchestrator(
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(onDelta);
         if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.PromptRequired", "A prompt is required."));
+        }
 
         var resolved = await ResolveRequestAsync(
             actor.TenantId,
@@ -174,7 +190,9 @@ internal sealed class AiOrchestrator(
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(onDelta);
         if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
             return Result.Failure<AiCompletionResponse>(Error.Validation("AI.PromptRequired", "A prompt is required."));
+        }
 
         var resolved = await ResolveRequestAsync(
             actor.TenantId,
@@ -200,9 +218,14 @@ internal sealed class AiOrchestrator(
     {
         ArgumentNullException.ThrowIfNull(actor);
         if (actor.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("A tenant is required for an AI execution.", nameof(actor));
+        }
+
         if (actor.UserId == Guid.Empty)
+        {
             throw new ArgumentException("A user is required for an AI execution.", nameof(actor));
+        }
     }
 
     private async Task<Result<AiResolvedRequest>> ResolveRequestAsync(
@@ -217,10 +240,14 @@ internal sealed class AiOrchestrator(
         CancellationToken cancellationToken)
     {
         if (!_aiOptions.Enabled)
+        {
             return Result.Failure<AiResolvedRequest>(Error.Forbidden("AI.Disabled", "AI functionality is disabled for this environment."));
+        }
 
         if (!tenantIdOverride.HasValue)
+        {
             return Result.Failure<AiResolvedRequest>(Error.Forbidden("AI.TenantContextRequired", "AI requests require an active tenant context."));
+        }
 
         var tenantId = tenantIdOverride.Value;
         var tenantSettings = await tenantSettingsRepository.GetByTenantIdAsync(tenantId, cancellationToken).ConfigureAwait(false);
@@ -230,11 +257,15 @@ internal sealed class AiOrchestrator(
         var tenantConfiguration = ParseTenantConfiguration(integrationSettings);
 
         if (!tenantConfiguration.Enabled)
+        {
             return Result.Failure<AiResolvedRequest>(Error.Forbidden("AI.TenantDisabled", "AI functionality is disabled for this tenant."));
+        }
 
         var providerResult = ResolveProvider(requestedProvider, tenantConfiguration);
         if (providerResult.IsFailure)
+        {
             return Result.Failure<AiResolvedRequest>(providerResult.Error);
+        }
 
         var provider = providerResult.Value;
 
@@ -310,7 +341,10 @@ internal sealed class AiOrchestrator(
         if (!_adapters.TryGetValue(resolvedRequest.Provider, out var adapter))
         {
             if (enforceQuota)
+            {
                 await quotaEnforcer.DecrementUsageAsync(resolvedRequest.TenantId, ResourceUsageType.AiRequests, 1, actorId, "AI.ProviderNotRegistered", cancellationToken).ConfigureAwait(false);
+            }
+
             await RecordBillingAsync(resolvedRequest, actorId, null, "Failed", "AI.ProviderNotRegistered", $"Provider '{AiProviderParser.ToResponseValue(resolvedRequest.Provider)}' is not registered.", cancellationToken).ConfigureAwait(false);
             return Result.Failure<AiCompletionResponse>(Error.Problem(
                 "AI.ProviderNotRegistered",
@@ -324,7 +358,10 @@ internal sealed class AiOrchestrator(
         if (executionResult.IsFailure)
         {
             if (enforceQuota)
+            {
                 await quotaEnforcer.DecrementUsageAsync(resolvedRequest.TenantId, ResourceUsageType.AiRequests, 1, actorId, "AI.ProviderExecutionFailed", cancellationToken).ConfigureAwait(false);
+            }
+
             await RecordBillingAsync(resolvedRequest, actorId, null, "Failed", executionResult.Error.Code, executionResult.Error.Description, cancellationToken).ConfigureAwait(false);
             await RecordHistoryAsync(resolvedRequest, actorId, null, "Failed", executionResult.Error.Code, executionResult.Error.Description, cancellationToken).ConfigureAwait(false);
             return Result.Failure<AiCompletionResponse>(executionResult.Error);
@@ -355,7 +392,9 @@ internal sealed class AiOrchestrator(
         // Tenant output moderation must complete before any text can leave the
         // orchestrator. In that mode the approved response is emitted once.
         if (onDelta is not null && !canStreamBeforeModeration)
+        {
             await onDelta(providerResult.Text, cancellationToken).ConfigureAwait(false);
+        }
 
         logger.LogInformation(
             "Completed AI request for tenant {TenantId} using provider {Provider} and model {Model}",
@@ -405,7 +444,9 @@ internal sealed class AiOrchestrator(
             .ConfigureAwait(false);
 
         if (success)
+        {
             return Result.Success(true);
+        }
 
         return Result.Failure<bool>(Error.Problem(
             type == ResourceUsageType.AiRequests ? "AI.RequestQuotaExceeded" : "AI.TokenQuotaExceeded",
@@ -417,7 +458,9 @@ internal sealed class AiOrchestrator(
     private static Result<bool> ModerateInput(AiResolvedRequest resolvedRequest)
     {
         if (!resolvedRequest.Moderation.Enabled)
+        {
             return Result.Success(true);
+        }
 
         var requestText = BuildRequestText(resolvedRequest.Messages, resolvedRequest.SystemPrompt);
         if (resolvedRequest.Moderation.MaxPromptCharacters.HasValue
@@ -441,7 +484,9 @@ internal sealed class AiOrchestrator(
     private static Result<bool> ModerateOutput(AiResolvedRequest resolvedRequest, AiProviderExecutionResult providerResult)
     {
         if (!resolvedRequest.Moderation.Enabled)
+        {
             return Result.Success(true);
+        }
 
         if (resolvedRequest.Moderation.MaxResponseCharacters.HasValue
             && providerResult.Text.Length > resolvedRequest.Moderation.MaxResponseCharacters.Value)
@@ -471,7 +516,9 @@ internal sealed class AiOrchestrator(
         CancellationToken cancellationToken)
     {
         if (!resolvedRequest.History.Enabled)
+        {
             return;
+        }
 
         var entry = new AiConversationLog
         {
@@ -501,7 +548,9 @@ internal sealed class AiOrchestrator(
         var parts = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(systemPrompt))
+        {
             parts.Add($"system: {systemPrompt.Trim()}");
+        }
 
         parts.AddRange(messages
             .Where(static message => !string.IsNullOrWhiteSpace(message.Content))
@@ -515,7 +564,9 @@ internal sealed class AiOrchestrator(
         foreach (var term in blockedTerms)
         {
             if (string.IsNullOrWhiteSpace(term))
+            {
                 continue;
+            }
 
             if (text.Contains(term, StringComparison.OrdinalIgnoreCase))
             {
@@ -550,10 +601,14 @@ internal sealed class AiOrchestrator(
         }
 
         if (tenantConfiguration.DefaultProvider.HasValue)
+        {
             return Result.Success(tenantConfiguration.DefaultProvider.Value);
+        }
 
         if (AiProviderParser.TryParse(_aiOptions.DefaultProvider, out var platformDefaultProvider))
+        {
             return Result.Success(platformDefaultProvider);
+        }
 
         return Result.Failure<AiProvider>(Error.Problem(
             "AI.ProviderNotConfigured",
@@ -563,12 +618,16 @@ internal sealed class AiOrchestrator(
     private AiProviderOptions? ResolvePlatformProviderOptions(AiProvider provider)
     {
         if (_aiOptions.Providers.TryGetValue(provider.ToString(), out var directMatch))
+        {
             return directMatch;
+        }
 
         foreach (var providerEntry in _aiOptions.Providers)
         {
             if (AiProviderParser.TryParse(providerEntry.Key, out var parsedProvider) && parsedProvider == provider)
+            {
                 return providerEntry.Value;
+            }
         }
 
         return null;
@@ -582,7 +641,9 @@ internal sealed class AiOrchestrator(
         AiProviderOptions? platformProviderOptions)
     {
         if (!string.IsNullOrWhiteSpace(requestedModel))
+        {
             return requestedModel;
+        }
 
         var tenantDefaultModel = requestKind switch
         {
@@ -592,7 +653,9 @@ internal sealed class AiOrchestrator(
         };
 
         if (!string.IsNullOrWhiteSpace(tenantDefaultModel))
+        {
             return tenantDefaultModel;
+        }
 
         if (tenantConfiguration.Providers.TryGetValue(provider, out var tenantProviderConfiguration)
             && !string.IsNullOrWhiteSpace(tenantProviderConfiguration.DefaultModel))
@@ -668,10 +731,14 @@ internal sealed class AiOrchestrator(
             foreach (var providerProperty in providerSettingsElement.EnumerateObject())
             {
                 if (!AiProviderParser.TryParse(providerProperty.Name, out var provider))
+                {
                     continue;
+                }
 
                 if (providerProperty.Value.ValueKind != JsonValueKind.Object)
+                {
                     continue;
+                }
 
                 var enabled = !AiJsonHelpers.TryGetBoolean(providerProperty.Value, "enabled", out var configuredEnabled) || configuredEnabled;
                 AiJsonHelpers.TryGetString(providerProperty.Value, "defaultModel", out var defaultModel);

@@ -32,6 +32,9 @@ public sealed class HealthCheckOptions : BaseOptions
     {
         base.Validate();
 
-        if (Timeout <= TimeSpan.Zero) throw new InvalidOperationException("Health check timeout must be greater than zero");
+        if (Timeout <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException("Health check timeout must be greater than zero");
+        }
     }
 }

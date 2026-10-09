@@ -81,7 +81,9 @@ public class AuthorizationBehavior<TRequest, TResponse>(
             if (attribute.RequireSystemAdmin)
             {
                 if (!Actor.IsSystemAdmin)
+                {
                     throw new UnauthorizedAccessException("System admin required");
+                }
 
                 continue;
             }
@@ -89,7 +91,9 @@ public class AuthorizationBehavior<TRequest, TResponse>(
             if (attribute.RequireTenantAdmin)
             {
                 if (!Actor.IsTenantAdmin)
+                {
                     throw new UnauthorizedAccessException("Tenant admin required");
+                }
 
                 continue;
             }
@@ -157,12 +161,22 @@ public class AuthorizationBehavior<TRequest, TResponse>(
             propertyName,
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
-        if (property == null) return Guid.Empty;
+        if (property == null)
+        {
+            return Guid.Empty;
+        }
 
         var value = property.GetValue(request);
 
-        if (value is Guid g) return g;
-        if (value is string s && Guid.TryParse(s, out var parsed)) return parsed;
+        if (value is Guid g)
+        {
+            return g;
+        }
+
+        if (value is string s && Guid.TryParse(s, out var parsed))
+        {
+            return parsed;
+        }
 
         return Guid.Empty;
     }
@@ -193,17 +207,23 @@ public class AuthorizationBehavior<TRequest, TResponse>(
         // Admin = full access including delete and sharing
         if (normalizedPermission.Contains("manage") || normalizedPermission.Contains("admin") ||
             normalizedPermission.Contains("delete") || normalizedPermission.Contains("remove"))
+        {
             return AccessLevel.Admin;
+        }
 
         // Write = read and write access
         if (normalizedPermission.Contains("write") || normalizedPermission.Contains("edit") ||
             normalizedPermission.Contains("update") || normalizedPermission.Contains("create"))
+        {
             return AccessLevel.Write;
+        }
 
         // Read = read-only access
         if (normalizedPermission.Contains("read") || normalizedPermission.Contains("view") ||
             normalizedPermission.Contains("get") || normalizedPermission.Contains("list"))
+        {
             return AccessLevel.Read;
+        }
 
         // Fail closed: unknown permission patterns are denied with an explicit error,
         // never defaulted to Write.

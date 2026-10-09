@@ -59,7 +59,10 @@ public class UsageRetentionPolicyRepository(IApplicationDbContext context) : IUs
     {
         var policy = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (policy == null) return false;
+        if (policy == null)
+        {
+            return false;
+        }
 
         UsageRetentionPolicies.Remove(policy);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

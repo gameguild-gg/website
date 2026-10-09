@@ -10,12 +10,28 @@ export interface WebVitalsProps {
 function sendMetric(endpoint: string, metric: {name: string; value: number; rating?: string; path: string}): void {
   const payload = JSON.stringify({...metric, timestamp: new Date().toISOString()});
 
+  // SSRF guard: this package is dependency-free, so only same-origin relative
+  // endpoints (the default) are accepted; absolute URLs must be https and must
+  // not target private/loopback hosts.
+  let target: string = endpoint;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(endpoint) || endpoint.startsWith('//')) {
+    const url = new URL(endpoint, 'https://gameguild.gg.invalid');
+    const host = url.hostname.toLowerCase();
+    const privateHost = host === 'localhost' || host.endsWith('.localhost') ||
+      /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(host) || host === '::1';
+    if (url.protocol !== 'https:' || privateHost) return;
+    target = url.toString();
+  }
+
   if (navigator.sendBeacon) {
-    navigator.sendBeacon(endpoint, new Blob([payload], {type: 'application/json'}));
+    navigator.sendBeacon(target, new Blob([payload], {type: 'application/json'}));
     return;
   }
 
-  void fetch(endpoint, {
+  // SSRF (Codacy rule-node-ssrf) — false positive: absolute endpoints are
+  // gated by the guard above (https-only, no private/loopback hosts) and the
+  // default target is a same-origin relative path.
+  void fetch(target, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: payload,

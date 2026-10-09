@@ -78,10 +78,14 @@ public sealed class ModuleRegistry
         ThrowIfSealed();
 
         if (_registeredModules.Contains(moduleType))
+        {
             return this;
+        }
 
         if (!typeof(IModule).IsAssignableFrom(moduleType))
+        {
             throw new ArgumentException($"Type {moduleType.Name} does not implement IModule", nameof(moduleType));
+        }
 
         var module = (IModule)Activator.CreateInstance(moduleType)!;
         var isEnabled = configuration.GetValue<bool?>($"Modules:{module.Name}:Enabled") ?? module.EnabledByDefault;
@@ -105,7 +109,9 @@ public sealed class ModuleRegistry
 
         var moduleType = module.GetType();
         if (_registeredModules.Contains(moduleType))
+        {
             return this;
+        }
 
         var descriptor = new ModuleDescriptor(moduleType, module, isEnabled);
         _modules.Add(descriptor);
@@ -144,10 +150,14 @@ public sealed class ModuleRegistry
         var moduleType = descriptor.ModuleType;
 
         if (visited.Contains(moduleType))
+        {
             return;
+        }
 
         if (visiting.Contains(moduleType))
+        {
             throw new InvalidOperationException($"Circular dependency detected for module {descriptor.Module.Name}");
+        }
 
         visiting.Add(moduleType);
 
@@ -221,7 +231,9 @@ public sealed class ModuleRegistry
     private void ThrowIfSealed()
     {
         if (_isSealed)
+        {
             throw new InvalidOperationException("Cannot modify module registry after dependencies have been resolved");
+        }
     }
 }
 

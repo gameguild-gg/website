@@ -84,7 +84,10 @@ public sealed class InMemoryLedgerKernelStore
 
     private T Read<T>(Func<LedgerKernelState, T> read)
     {
-        lock (_gate) return read(_state);
+        lock (_gate)
+        {
+            return read(_state);
+        }
     }
 }
 
@@ -116,25 +119,69 @@ internal sealed class LedgerKernelState
     {
         var clone = new LedgerKernelState { JournalEntries = [.. JournalEntries] };
         clone.Sources.AddRange(Sources);
-        foreach (var pair in FundingClaims) clone.FundingClaims.Add(pair.Key, pair.Value);
-        foreach (var pair in ProviderMonetaryLegs) clone.ProviderMonetaryLegs.Add(pair.Key, pair.Value);
-        foreach (var pair in ProviderReversalStates) clone.ProviderReversalStates.Add(pair.Key, pair.Value);
-        foreach (var pair in ProviderReversalResults) clone.ProviderReversalResults.Add(pair.Key, pair.Value);
-        foreach (var pair in ProviderDisputes) clone.ProviderDisputes.Add(pair.Key, pair.Value);
-        foreach (var pair in ProviderDisputeEvents) clone.ProviderDisputeEvents.Add(pair.Key, pair.Value);
-        foreach (var pair in DisputeFragmentFreezes) clone.DisputeFragmentFreezes.Add(pair.Key, pair.Value);
-        foreach (var pair in DebtPositions) clone.DebtPositions.Add(pair.Key, pair.Value);
+        foreach (var pair in FundingClaims)
+        {
+            clone.FundingClaims.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in ProviderMonetaryLegs)
+        {
+            clone.ProviderMonetaryLegs.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in ProviderReversalStates)
+        {
+            clone.ProviderReversalStates.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in ProviderReversalResults)
+        {
+            clone.ProviderReversalResults.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in ProviderDisputes)
+        {
+            clone.ProviderDisputes.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in ProviderDisputeEvents)
+        {
+            clone.ProviderDisputeEvents.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in DisputeFragmentFreezes)
+        {
+            clone.DisputeFragmentFreezes.Add(pair.Key, pair.Value);
+        }
+
+        foreach (var pair in DebtPositions)
+        {
+            clone.DebtPositions.Add(pair.Key, pair.Value);
+        }
+
         clone.DebtEvents.AddRange(DebtEvents);
-        foreach (var pair in FragmentReservations) clone.FragmentReservations.Add(pair.Key, pair.Value);
+        foreach (var pair in FragmentReservations)
+        {
+            clone.FragmentReservations.Add(pair.Key, pair.Value);
+        }
+
         clone.CreditLots.AddRange(CreditLots);
         clone.Consumptions.AddRange(Consumptions);
         clone.Lineages.AddRange(Lineages);
         clone.ProjectionUpdates.AddRange(ProjectionUpdates);
-        foreach (var pair in Idempotency) clone.Idempotency.Add(pair.Key, pair.Value);
+        foreach (var pair in Idempotency)
+        {
+            clone.Idempotency.Add(pair.Key, pair.Value);
+        }
+
         clone.Outbox.AddRange(Outbox);
         clone.Anchors.AddRange(Anchors);
         clone.HoldEvents.AddRange(HoldEvents);
-        foreach (var pair in Holds) clone.Holds.Add(pair.Key, pair.Value);
+        foreach (var pair in Holds)
+        {
+            clone.Holds.Add(pair.Key, pair.Value);
+        }
+
         return clone;
     }
 }
@@ -158,9 +205,15 @@ public sealed class LedgerKernelTransaction
     {
         ArgumentNullException.ThrowIfNull(claim);
         if (_state.FundingClaims.ContainsKey(claim.SourceId))
+        {
             throw new InvalidOperationException("Funding source already exists.");
+        }
+
         if (!_state.ProviderMonetaryLegs.TryAdd(claim.ProviderLeg.Key, claim.SourceId))
+        {
             throw new DuplicateProviderMonetaryLegException(claim.ProviderLeg);
+        }
+
         _state.FundingClaims.Add(claim.SourceId, claim);
     }
 
@@ -173,7 +226,10 @@ public sealed class LedgerKernelTransaction
     {
         ArgumentNullException.ThrowIfNull(claim);
         if (!_state.FundingClaims.ContainsKey(claim.SourceId))
+        {
             throw new KeyNotFoundException($"Funding source {claim.SourceId.Value:N} was not found.");
+        }
+
         _state.FundingClaims[claim.SourceId] = claim;
     }
 
@@ -202,7 +258,9 @@ public sealed class LedgerKernelTransaction
     {
         ArgumentNullException.ThrowIfNull(disputeEvent);
         if (!_state.ProviderDisputeEvents.TryAdd(disputeEvent.ProviderEventId, disputeEvent))
+        {
             throw new ProviderDisputeEventConflictException(disputeEvent.ProviderEventId);
+        }
     }
 
     public ProviderDisputeCase? FindProviderDisputeCase(string providerDisputeReference) =>
@@ -218,7 +276,9 @@ public sealed class LedgerKernelTransaction
     {
         ArgumentNullException.ThrowIfNull(freeze);
         if (!_state.DisputeFragmentFreezes.TryAdd(freeze.Id, freeze))
+        {
             throw new InvalidOperationException($"Dispute freeze {freeze.Id:N} already exists.");
+        }
     }
 
     public IReadOnlyList<DisputeFragmentFreeze> GetDisputeFreezes(IEnumerable<Guid> ids)
@@ -236,7 +296,9 @@ public sealed class LedgerKernelTransaction
         DateTimeOffset occurredAt)
     {
         foreach (var freeze in GetDisputeFreezes(ids).Where(item => item.Status == HoldStatus.Active))
+        {
             _state.DisputeFragmentFreezes[freeze.Id] = freeze.Transition(status, occurredAt);
+        }
     }
 
     public IReadOnlyList<CreditLot> GetAvailableRootLots(SourceStampId rootSourceId)
@@ -245,12 +307,23 @@ public sealed class LedgerKernelTransaction
         foreach (var lot in _state.CreditLots.Where(item => item.State == CreditLotState.Active))
         {
             var rootRanges = lot.Ranges.Where(range => range.Root == rootSourceId).ToArray();
-            if (rootRanges.Length == 0) continue;
+            if (rootRanges.Length == 0)
+            {
+                continue;
+            }
+
             var remaining = Subtract(rootRanges, ExcludedRanges(_state, lot.Id));
             var traceUnits = remaining.Aggregate(0L, static (total, range) => checked(total + range.Length));
-            if (traceUnits == 0) continue;
+            if (traceUnits == 0)
+            {
+                continue;
+            }
+
             if (traceUnits % lot.TraceUnitsPerCoinUnit != 0)
+            {
                 throw new LineageConservationException("Available root trace units must resolve to whole coin units.");
+            }
+
             result.Add(CopyAvailableLot(lot, remaining, traceUnits / lot.TraceUnitsPerCoinUnit));
         }
         return result;
@@ -259,15 +332,25 @@ public sealed class LedgerKernelTransaction
     public void EnsureWalletNotDebtRestricted(WalletId walletId)
     {
         if (_state.DebtPositions.TryGetValue(walletId, out var debt) && debt.OutstandingHardUnits > 0)
+        {
             throw new WalletDebtRestrictionException(walletId, debt.OutstandingHardUnits);
+        }
     }
 
     public void RecordDebt(WalletId walletId, SourceStampId sourceId, long deltaHardUnits, DateTimeOffset occurredAt)
     {
-        if (deltaHardUnits == 0) return;
+        if (deltaHardUnits == 0)
+        {
+            return;
+        }
+
         var current = _state.DebtPositions.GetValueOrDefault(walletId)?.OutstandingHardUnits ?? 0;
         var outstanding = checked(current + deltaHardUnits);
-        if (outstanding < 0) throw new InvalidOperationException("Wallet debt cannot become negative.");
+        if (outstanding < 0)
+        {
+            throw new InvalidOperationException("Wallet debt cannot become negative.");
+        }
+
         _state.DebtPositions[walletId] = new WalletDebtPosition(walletId, outstanding, occurredAt);
         _state.DebtEvents.Add(new WalletDebtEvent(
             checked(_state.DebtEvents.Count + 1L), walletId, sourceId, deltaHardUnits, outstanding, occurredAt));
@@ -277,15 +360,27 @@ public sealed class LedgerKernelTransaction
     {
         ArgumentNullException.ThrowIfNull(reservation);
         if (_state.FragmentReservations.ContainsKey(reservation.Id))
+        {
             throw new InvalidOperationException($"Fragment reservation {reservation.Id:N} already exists.");
+        }
+
         var lot = GetCreditLot(reservation.LotId);
         if (lot.WalletId != reservation.WalletId || lot.Amount.Currency != reservation.Amount.Currency)
+        {
             throw new InvalidOperationException("Fragment reservation does not match its credit lot.");
+        }
+
         var excluded = ExcludedRanges(_state, reservation.LotId);
         if (reservation.Ranges.Any(range => excluded.Any(item => Overlaps(range, item))))
+        {
             throw new InvalidOperationException("Fragment reservation overlaps unavailable lineage ranges.");
+        }
+
         if (reservation.Ranges.Any(range => !lot.Ranges.Any(parent => Contains(parent, range))))
+        {
             throw new InvalidOperationException("Fragment reservation range is outside its credit lot.");
+        }
+
         _state.FragmentReservations.Add(reservation.Id, reservation);
     }
 
@@ -300,11 +395,22 @@ public sealed class LedgerKernelTransaction
         DateTimeOffset occurredAt)
     {
         var current = GetFragmentReservations(operationId);
-        if (current.Count == 0) throw new KeyNotFoundException($"Fragment reservations for {operationId:N} were not found.");
+        if (current.Count == 0)
+        {
+            throw new KeyNotFoundException($"Fragment reservations for {operationId:N} were not found.");
+        }
+
         if (current.Any(item => item.Status != expected))
+        {
             throw new InvalidOperationException($"All fragment reservations must be {expected}.");
+        }
+
         var transitioned = current.Select(item => item.Transition(next, occurredAt)).ToArray();
-        foreach (var item in transitioned) _state.FragmentReservations[item.Id] = item;
+        foreach (var item in transitioned)
+        {
+            _state.FragmentReservations[item.Id] = item;
+        }
+
         return transitioned;
     }
 
@@ -322,8 +428,10 @@ public sealed class LedgerKernelTransaction
         {
             var reservations = GetFragmentReservations(operationId);
             foreach (var reservation in reservations.Where(item => item.Status == FragmentReservationStatus.Reserved))
+            {
                 _state.FragmentReservations[reservation.Id] = reservation.Transition(
                     FragmentReservationStatus.Released, occurredAt);
+            }
         }
         return operationIds;
     }
@@ -374,12 +482,19 @@ public sealed class LedgerKernelTransaction
         HoldReason reason,
         DateTimeOffset effectiveAt)
     {
-        if (_state.Holds.ContainsKey(id)) throw new InvalidOperationException($"Hold {id.Value:N} already exists.");
+        if (_state.Holds.ContainsKey(id))
+        {
+            throw new InvalidOperationException($"Hold {id.Value:N} already exists.");
+        }
+
         var available = GetAvailableLots(walletId, amount.Currency)
             .Aggregate(0L, static (total, lot) => checked(total + lot.Amount.Units));
         var alreadyHeld = ActiveHoldUnits(walletId, amount.Currency);
         var unheld = Math.Max(0, available - alreadyHeld);
-        if (amount.Units > unheld) throw new InsufficientFragmentsException(amount.Units - unheld);
+        if (amount.Units > unheld)
+        {
+            throw new InsufficientFragmentsException(amount.Units - unheld);
+        }
 
         var hold = new HoldContract(id, walletId, amount, reason, HoldStatus.Active, effectiveAt, null);
         _state.Holds.Add(id, hold);
@@ -395,9 +510,15 @@ public sealed class LedgerKernelTransaction
     {
         var current = CurrentHold(id);
         if (current.Status != HoldStatus.Active)
+        {
             throw new InvalidOperationException("Only an active hold can enter a terminal state.");
+        }
+
         if (occurredAt < current.EffectiveAt)
+        {
             throw new ArgumentException("A hold transition cannot precede placement.", nameof(occurredAt));
+        }
+
         var terminal = new HoldContract(
             current.Id,
             current.WalletId,
@@ -436,9 +557,16 @@ public sealed class LedgerKernelTransaction
 
     public PostingResult? FindIdempotent(IdempotencyKey key, string requestHash)
     {
-        if (!_state.Idempotency.TryGetValue(key.Value, out var existing)) return null;
+        if (!_state.Idempotency.TryGetValue(key.Value, out var existing))
+        {
+            return null;
+        }
+
         if (!StringComparer.Ordinal.Equals(existing.RequestHash, requestHash))
+        {
             throw new IdempotencyConflictException(key);
+        }
+
         return existing.Result;
     }
 
@@ -456,9 +584,16 @@ public sealed class LedgerKernelTransaction
         {
             var remaining = Subtract(lot.Ranges, ExcludedRanges(state, lot.Id));
             var remainingTraceUnits = remaining.Aggregate(0L, static (total, range) => checked(total + range.Length));
-            if (remainingTraceUnits == 0) continue;
+            if (remainingTraceUnits == 0)
+            {
+                continue;
+            }
+
             if (remainingTraceUnits % lot.TraceUnitsPerCoinUnit != 0)
+            {
                 throw new LineageConservationException("Available trace units must resolve to whole coin units.");
+            }
+
             var remainingUnits = remainingTraceUnits / lot.TraceUnitsPerCoinUnit;
             result.Add(CopyAvailableLot(lot, remaining, remainingUnits));
         }
@@ -507,13 +642,21 @@ public sealed class LedgerKernelTransaction
                          .OrderBy(range => range.Start))
             {
                 if (exclusion.Start > cursor)
+                {
                     result.Add(new RootTraceRange(source.Root, cursor, exclusion.Start - cursor, source.Epoch));
+                }
+
                 cursor = Math.Max(cursor, exclusion.EndExclusive);
-                if (cursor >= source.EndExclusive) break;
+                if (cursor >= source.EndExclusive)
+                {
+                    break;
+                }
             }
 
             if (cursor < source.EndExclusive)
+            {
                 result.Add(new RootTraceRange(source.Root, cursor, source.EndExclusive - cursor, source.Epoch));
+            }
         }
 
         return result;

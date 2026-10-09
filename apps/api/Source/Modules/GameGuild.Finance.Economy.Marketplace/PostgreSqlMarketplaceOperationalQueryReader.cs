@@ -22,11 +22,18 @@ public sealed class PostgreSqlMarketplaceOperationalQueryReader : IMarketplaceOp
     {
         ValidateTenantAndLimit(tenantId, limit);
         if (status is not null && !Enum.IsDefined(status.Value))
+        {
             throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
         var position = DecodeCursor(cursor, "Marketplace settlement");
         var query = _db.Set<MarketplaceSettlementRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
-        if (status is not null) query = query.Where(row => row.Status == status.Value);
+        if (status is not null)
+        {
+            query = query.Where(row => row.Status == status.Value);
+        }
+
         if (position is not null)
         {
             var at = position.Value.At;
@@ -53,7 +60,11 @@ public sealed class PostgreSqlMarketplaceOperationalQueryReader : IMarketplaceOp
         var settlement = await _db.Set<MarketplaceSettlementRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.Id == settlementId && row.TenantId == tenantId,
                 cancellationToken);
-        if (settlement is null) return null;
+        if (settlement is null)
+        {
+            return null;
+        }
+
         var legs = await _db.Set<MarketplaceSettlementLegRow>().AsNoTracking()
             .Where(row => row.SettlementId == settlementId)
             .OrderBy(row => row.Currency)
@@ -132,8 +143,15 @@ public sealed class PostgreSqlMarketplaceOperationalQueryReader : IMarketplaceOp
         var position = DecodeCursor(cursor, "Marketplace outbox");
         var query = _db.Set<MarketplaceOutboxRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);
-        if (published is true) query = query.Where(row => row.PublishedAt != null);
-        else if (published is false) query = query.Where(row => row.PublishedAt == null);
+        if (published is true)
+        {
+            query = query.Where(row => row.PublishedAt != null);
+        }
+        else if (published is false)
+        {
+            query = query.Where(row => row.PublishedAt == null);
+        }
+
         if (position is not null)
         {
             var at = position.Value.At;
@@ -170,24 +188,45 @@ public sealed class PostgreSqlMarketplaceOperationalQueryReader : IMarketplaceOp
 
     internal static (DateTimeOffset At, Guid Id)? DecodeCursor(string? cursor, string label)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var ticks) || !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException($"{label} cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 
     private static void ValidateTenantAndLimit(Guid tenantId, int limit)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
     }
 
     private static void ValidateTenantAndId(Guid tenantId, Guid id, string parameterName)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (id == Guid.Empty) throw new ArgumentException("Identifier cannot be empty.", parameterName);
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Identifier cannot be empty.", parameterName);
+        }
     }
 }

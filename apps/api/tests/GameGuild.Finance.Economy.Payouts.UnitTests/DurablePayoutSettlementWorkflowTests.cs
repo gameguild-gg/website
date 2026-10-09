@@ -174,16 +174,21 @@ public sealed class DurablePayoutSettlementWorkflowTests
                      validDispatch with { SourceRoots = null! },
                      validDispatch with { SourceRoots = [] }
                  })
+        {
             await FluentActions.Invoking(() => workflow.BeginDispatchAsync(invalid))
-                .Should().ThrowAsync<ArgumentException>();
+            .Should().ThrowAsync<ArgumentException>();
+        }
+
         foreach (var invalid in new[]
                  {
                      validDispatch with { ExpectedVersion = 0 },
                      validDispatch with { FencingToken = 0 },
                      validDispatch with { KillSwitchEpoch = -1 }
                  })
+        {
             await FluentActions.Invoking(() => workflow.BeginDispatchAsync(invalid))
-                .Should().ThrowAsync<ArgumentOutOfRangeException>();
+            .Should().ThrowAsync<ArgumentOutOfRangeException>();
+        }
 
         var eventWithNoOperation = CreateProviderEvent(operation, PayoutProviderOutcome.Failed) with { OperationId = Guid.Empty };
         await FluentActions.Invoking(() => workflow.ApplyProviderEventAsync(new DurablePayoutProviderEventRequest(

@@ -32,7 +32,9 @@ public sealed class TeamProjectsController(
         CancellationToken cancellationToken)
     {
         if (!await teamAuthorization.HasAuthorityAsync(teamId, TeamMemberAuthority.Viewer, cancellationToken).ConfigureAwait(false))
+        {
             return NotFound();
+        }
 
         var visibleProjects = projectAuthorization.ApplyWorkspaceAccess(
             context.Set<Project>().AsNoTracking().Where(project => project.DeletedAt == null));

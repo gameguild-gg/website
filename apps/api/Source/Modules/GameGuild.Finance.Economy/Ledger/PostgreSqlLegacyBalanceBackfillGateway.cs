@@ -44,14 +44,19 @@ public sealed class PostgreSqlLegacyBalanceBackfillGateway : ILegacyBalanceBackf
         ArgumentNullException.ThrowIfNull(request.Authority);
         ArgumentNullException.ThrowIfNull(request.CapabilityReceipt);
         if (request.LegacyWalletId == Guid.Empty)
+        {
             throw new ArgumentException("Legacy wallet ID is required.", nameof(request));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.HardUnits);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.SnapshotHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ProviderHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DestinationHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.SourceRootHash);
         if (request.CapabilityReceipt.Capability != EconomyValueMovementCapability.LegacyBalanceBackfill)
+        {
             throw new ArgumentException("A LegacyBalanceBackfill capability receipt is required.", nameof(request));
+        }
 
         try
         {

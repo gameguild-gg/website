@@ -71,7 +71,11 @@ public sealed class PostgreSqlEconomyLedgerQueryReader : IEconomyLedgerQueryRead
         ValidateTenantAndId(tenantId, anchorId, nameof(anchorId));
         var row = await _db.Set<EconomyExternalAnchorRow>().AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == anchorId, cancellationToken);
-        if (row is null) return null;
+        if (row is null)
+        {
+            return null;
+        }
+
         var latest = await _db.Set<EconomyAnchorVerificationRow>().AsNoTracking()
             .Where(item => item.ExternalAnchorId == anchorId)
             .OrderByDescending(item => item.VerifiedAt)
@@ -86,7 +90,11 @@ public sealed class PostgreSqlEconomyLedgerQueryReader : IEconomyLedgerQueryRead
         ValidateTenantAndId(tenantId, anchorId, nameof(anchorId));
         var exists = await _db.Set<EconomyExternalAnchorRow>().AsNoTracking()
             .AnyAsync(item => item.Id == anchorId, cancellationToken);
-        if (!exists) return Array.Empty<EconomyAnchorVerificationOperationalStatus>();
+        if (!exists)
+        {
+            return Array.Empty<EconomyAnchorVerificationOperationalStatus>();
+        }
+
         var rows = await _db.Set<EconomyAnchorVerificationRow>().AsNoTracking()
             .Where(item => item.ExternalAnchorId == anchorId)
             .OrderBy(item => item.VerifiedAt)
@@ -119,7 +127,11 @@ public sealed class PostgreSqlEconomyLedgerQueryReader : IEconomyLedgerQueryRead
         Guid tenantId, long generation, CancellationToken cancellationToken)
     {
         ValidateTenant(tenantId);
-        if (generation < 1) throw new ArgumentOutOfRangeException(nameof(generation));
+        if (generation < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(generation));
+        }
+
         var row = await _db.Set<EconomyProjectionGenerationRow>().AsNoTracking()
             .SingleOrDefaultAsync(item => item.Generation == generation, cancellationToken);
         return row is null ? null : MapProjection(row);
@@ -129,7 +141,11 @@ public sealed class PostgreSqlEconomyLedgerQueryReader : IEconomyLedgerQueryRead
         Guid tenantId, long generation, CancellationToken cancellationToken)
     {
         ValidateTenant(tenantId);
-        if (generation < 1) throw new ArgumentOutOfRangeException(nameof(generation));
+        if (generation < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(generation));
+        }
+
         var rows = await _db.Set<EconomyProjectionGenerationApprovalRow>().AsNoTracking()
             .Where(item => item.Generation == generation)
             .OrderBy(item => item.ApprovedAt)
@@ -142,7 +158,11 @@ public sealed class PostgreSqlEconomyLedgerQueryReader : IEconomyLedgerQueryRead
     private async Task<IReadOnlyDictionary<Guid, EconomyAnchorVerificationRow>> ReadLatestAnchorVerificationsAsync(
         Guid[] anchorIds, CancellationToken cancellationToken)
     {
-        if (anchorIds.Length == 0) return new Dictionary<Guid, EconomyAnchorVerificationRow>();
+        if (anchorIds.Length == 0)
+        {
+            return new Dictionary<Guid, EconomyAnchorVerificationRow>();
+        }
+
         var rows = await _db.Set<EconomyAnchorVerificationRow>().AsNoTracking()
             .Where(row => anchorIds.Contains(row.ExternalAnchorId))
             .OrderByDescending(row => row.VerifiedAt)
@@ -181,39 +201,62 @@ public sealed class PostgreSqlEconomyLedgerQueryReader : IEconomyLedgerQueryRead
 
     private static (DateTimeOffset At, Guid Id)? DecodeDateCursor(string? cursor, string label)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var ticks) || !Guid.TryParseExact(cursor[16..], "N", out var id) ||
             ticks < DateTimeOffset.MinValue.UtcTicks || ticks > DateTimeOffset.MaxValue.UtcTicks)
+        {
             throw new ArgumentException($"{label} cursor is invalid.", nameof(cursor));
+        }
+
         return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
     }
 
     private static (long Version, Guid Id)? DecodeVersionCursor(string? cursor, string label)
     {
-        if (string.IsNullOrWhiteSpace(cursor)) return null;
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
         if (cursor.Length != 48 ||
             !long.TryParse(cursor.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
                 out var version) || version < 1 || !Guid.TryParseExact(cursor[16..], "N", out var id))
+        {
             throw new ArgumentException($"{label} cursor is invalid.", nameof(cursor));
+        }
+
         return (version, id);
     }
 
     private static void ValidateTenantAndLimit(Guid tenantId, int limit)
     {
         ValidateTenant(tenantId);
-        if (limit is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
     }
 
     private static void ValidateTenantAndId(Guid tenantId, Guid id, string parameterName)
     {
         ValidateTenant(tenantId);
-        if (id == Guid.Empty) throw new ArgumentException("Identifier cannot be empty.", parameterName);
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Identifier cannot be empty.", parameterName);
+        }
     }
 
     private static void ValidateTenant(Guid tenantId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
     }
 }

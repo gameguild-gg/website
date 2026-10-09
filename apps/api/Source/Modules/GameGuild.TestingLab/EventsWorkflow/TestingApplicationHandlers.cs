@@ -46,29 +46,47 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<TestingProjectApplicationProjection>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(actor.Error);
+        }
+
         var testingEvent = await context.Set<TestingEvent>().FirstOrDefaultAsync(candidate =>
             candidate.Id == request.EventId && candidate.TenantId == actor.TenantId && candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
+
         if (!AcceptsApplicationChanges(testingEvent))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("This event is not accepting project application drafts."));
+        }
+
         if (!await projectAuthorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.NotFound("TestingLab.ProjectNotFound", "Project not found."));
+        }
+
         var projectExists = await context.Set<Project>().AsNoTracking().AnyAsync(project =>
             project.Id == request.ProjectId && project.TenantId == actor.TenantId && project.DeletedAt == null &&
             project.Status != ContentStatus.Archived && project.Status != ContentStatus.Deleted,
             cancellationToken).ConfigureAwait(false);
         if (!projectExists)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("The selected project is unavailable."));
+        }
+
         var duplicate = await context.Set<TestingProjectApplication>().AnyAsync(application =>
             application.EventId == request.EventId && application.ProjectId == request.ProjectId &&
             application.TenantId == actor.TenantId && application.DeletedAt == null &&
             application.Status != TestingApplicationStatus.Rejected && application.Status != TestingApplicationStatus.Withdrawn,
             cancellationToken).ConfigureAwait(false);
         if (duplicate)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.Conflict("TestingLab.ApplicationExists", "This project already has an active application for the event."));
+        }
 
         var application = TestingProjectApplication.CreateDraft(request.EventId, request.ProjectId, actor.UserId, actor.TenantId);
         context.Set<TestingProjectApplication>().Add(application);
@@ -81,19 +99,35 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var actor = loaded.Actor!;
         if (application.Status is not (TestingApplicationStatus.Draft or TestingApplicationStatus.Pending))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("The application package is frozen."));
+        }
+
         if (!await projectAuthorizationService.HasPermissionAsync(application.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.Forbidden("TestingLab.ProjectEditRequired", "Project edit access is required."));
+        }
+
         if (!AcceptsApplicationChanges(application.Event))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("This event is not accepting project application updates."));
+        }
+
         if (request.ProjectVersionId.HasValue && request.ProjectVersionId != application.ProjectVersionId &&
             application.Status == TestingApplicationStatus.Pending &&
             !ProjectVersionEligibility.CanReplaceAfterSubmission(application.SubmissionVersionPolicy))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("The submitted project version is immutable under this application's policy."));
+        }
+
         var policy = await GetCurrentVersionPolicyAsync(actor.TenantId, cancellationToken).ConfigureAwait(false);
         if (request.ProjectVersionId.HasValue)
         {
@@ -102,15 +136,23 @@ public sealed class TestingApplicationHandlers(
                 candidate.TenantId == actor.TenantId && candidate.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false);
             if (version == null || !ProjectVersionEligibility.IsEligible(version.Status, policy))
+            {
                 return Result.Failure<TestingProjectApplicationProjection>(Validation("Project version is not eligible under the current Testing Lab policy."));
+            }
         }
         try
         {
             var effectiveVersionId = request.ProjectVersionId ?? application.ProjectVersionId;
             if ((request.SubmittedAssetReferenceIds?.Count ?? 0) > 0 && !effectiveVersionId.HasValue)
+            {
                 throw new InvalidOperationException("A project version is required before assets can be attached.");
+            }
+
             if (effectiveVersionId.HasValue)
+            {
                 await ValidateSubmittedAssetsAsync(application.ProjectId, effectiveVersionId.Value, request.SubmittedAssetReferenceIds, actor.TenantId, cancellationToken).ConfigureAwait(false);
+            }
+
             application.UpdateDraftPackage(
                 request.ProjectVersionId,
                 request.Brief,
@@ -143,35 +185,60 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var actor = loaded.Actor!;
         if (!await projectAuthorizationService.HasPermissionAsync(application.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.Forbidden("TestingLab.ProjectEditRequired", "Project edit access is required."));
+        }
+
         if (!AcceptsApplicationChanges(application.Event))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("This event is not accepting project applications."));
+        }
+
         if (!application.ProjectVersionId.HasValue)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("A project version is required."));
+        }
+
         var policy = await GetCurrentVersionPolicyAsync(actor.TenantId, cancellationToken).ConfigureAwait(false);
         var version = await context.Set<ProjectVersion>().AsNoTracking().FirstOrDefaultAsync(candidate =>
             candidate.Id == application.ProjectVersionId.Value && candidate.ProjectId == application.ProjectId &&
             candidate.TenantId == actor.TenantId && candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (version == null || !ProjectVersionEligibility.IsEligible(version.Status, policy))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("Project version is not eligible under the current Testing Lab policy."));
+        }
+
         var questionnaire = application.QuestionnaireRevisions
             .SingleOrDefault(revision => revision.Id == application.CurrentQuestionnaireRevisionId);
         if (questionnaire == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("A feedback questionnaire is required."));
+        }
+
         if (application.Brief == null || application.EventApplicationResponse == null || !application.RulesAcceptedAt.HasValue)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation(
                 "Test brief, event application responses, and rules acceptance are required."));
+        }
+
         try
         {
             application.Brief.EnsureValid();
             questionnaire.Schema.EnsureValid();
             if (application.Event.RequiresFeedback && questionnaire.Schema.Questions.Count == 0)
+            {
                 throw new InvalidOperationException("At least one developer feedback question is required.");
+            }
+
             var eventSchema = application.Event.ProjectApplicationSchema
                 ?? throw new InvalidOperationException("The event application questionnaire is not configured.");
             QuestionnaireResponseValidator.EnsureValid(eventSchema, application.EventApplicationResponse);
@@ -190,7 +257,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return Result.Failure<TestingProjectApplicationProjection>(actor.Error);
+        if (actor.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(actor.Error);
+        }
+
         var testingEvent = await context.Set<TestingEvent>()
             .FirstOrDefaultAsync(candidate =>
                 candidate.Id == request.EventId &&
@@ -199,14 +270,22 @@ public sealed class TestingApplicationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
+
         var now = SystemClock.UtcNow;
         if (testingEvent.Status != TestingEventStatus.ApplicationsOpen ||
             now < testingEvent.ApplicationsOpenAt ||
             now > testingEvent.ApplicationsCloseAt)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("This event is not accepting project applications."));
+        }
+
         if (!await projectAuthorizationService.HasPermissionAsync(request.ProjectId, PermissionType.Edit, cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.NotFound("TestingLab.ProjectNotFound", "Project not found."));
+        }
 
         var projectTitle = await context.Set<Project>()
             .Where(project => project.Id == request.ProjectId &&
@@ -219,7 +298,10 @@ public sealed class TestingApplicationHandlers(
             .ConfigureAwait(false);
         var projectExists = projectTitle != null;
         if (!projectExists)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("The selected project is unavailable."));
+        }
+
         var version = await context.Set<ProjectVersion>().AsNoTracking().FirstOrDefaultAsync(version =>
                 version.Id == request.ProjectVersionId &&
                 version.ProjectId == request.ProjectId &&
@@ -227,10 +309,15 @@ public sealed class TestingApplicationHandlers(
                 version.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false);
         if (version == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("Project version must be active and belong to the selected project."));
+        }
+
         var submissionPolicy = await GetCurrentVersionPolicyAsync(actor.TenantId, cancellationToken).ConfigureAwait(false);
         if (!ProjectVersionEligibility.IsEligible(version.Status, submissionPolicy))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("Project version is not eligible under the Testing Lab submission policy."));
+        }
 
         var duplicate = await context.Set<TestingProjectApplication>().AnyAsync(application =>
             application.EventId == request.EventId &&
@@ -241,11 +328,15 @@ public sealed class TestingApplicationHandlers(
             application.Status != TestingApplicationStatus.Withdrawn,
             cancellationToken).ConfigureAwait(false);
         if (duplicate)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.Conflict("TestingLab.ApplicationExists", "This project already has an active application for the event."));
+        }
 
         if (request.Brief == null || request.FeedbackQuestionnaire == null || request.EventApplicationResponse == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation(
                 "Test brief, developer feedback questionnaire, and event application responses are required."));
+        }
 
         var application = TestingProjectApplication.CreateDraft(
             request.EventId,
@@ -271,7 +362,10 @@ public sealed class TestingApplicationHandlers(
                 actor.UserId,
                 actor.TenantId);
             if (testingEvent.RequiresFeedback && revision.Schema.Questions.Count == 0)
+            {
                 throw new InvalidOperationException("At least one developer feedback question is required.");
+            }
+
             application.UpdateDraftPackage(
                 request.ProjectVersionId,
                 request.Brief,
@@ -313,7 +407,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var actor = loaded.Actor!;
 
@@ -321,18 +419,24 @@ public sealed class TestingApplicationHandlers(
                 application.ProjectId,
                 PermissionType.Edit,
                 cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(
                 Error.Forbidden("TestingLab.ProjectEditRequired", "Project edit access is required to update its application."));
+        }
 
         var now = SystemClock.UtcNow;
         if (application.Event.Status != TestingEventStatus.ApplicationsOpen ||
             now < application.Event.ApplicationsOpenAt ||
             now > application.Event.ApplicationsCloseAt)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("This event is not accepting project application updates."));
+        }
 
         if (request.ProjectVersionId != application.ProjectVersionId &&
             !ProjectVersionEligibility.CanReplaceAfterSubmission(application.SubmissionVersionPolicy))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("The submitted project version is immutable under this application's policy."));
+        }
 
         var version = await context.Set<ProjectVersion>().AsNoTracking().FirstOrDefaultAsync(version =>
             version.Id == request.ProjectVersionId &&
@@ -341,10 +445,15 @@ public sealed class TestingApplicationHandlers(
             version.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (version == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("Project version must be active and belong to the applied project."));
+        }
+
         var currentPolicy = await GetCurrentVersionPolicyAsync(actor.TenantId, cancellationToken).ConfigureAwait(false);
         if (!ProjectVersionEligibility.IsEligible(version.Status, currentPolicy))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("Project version is not eligible under the current Testing Lab submission policy."));
+        }
 
         var submittedAssetIds = request.SubmittedAssetReferenceIds?
             .Where(id => id != Guid.Empty).Distinct().Take(100).ToArray() ?? [];
@@ -358,8 +467,10 @@ public sealed class TestingApplicationHandlers(
                  (asset.ParentResourceType == nameof(ProjectVersion) && asset.ParentResourceId == request.ProjectVersionId)),
                 cancellationToken).ConfigureAwait(false);
             if (validAssetCount != submittedAssetIds.Length)
+            {
                 return Result.Failure<TestingProjectApplicationProjection>(
                     Validation("Every submitted file must belong to the applied project or selected project version."));
+            }
         }
 
         try
@@ -384,21 +495,31 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         if (!await projectAuthorizationService.HasPermissionAsync(
                 loaded.Application!.ProjectId,
                 PermissionType.Edit,
                 cancellationToken).ConfigureAwait(false))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(
                 Error.Forbidden("TestingLab.ProjectEditRequired", "Project edit access is required to withdraw its application."));
+        }
+
         try
         {
             loaded.Application.Withdraw();
             if (assetScopedAccessService != null)
+            {
                 await assetScopedAccessService.RevokeScopeAsync(
                     TestingLabAssetScopes.ApplicationReview,
                     loaded.Application.Id,
                     cancellationToken).ConfigureAwait(false);
+            }
+
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return Result.Success(ToProjection(loaded.Application));
         }
@@ -417,7 +538,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadManagedApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         try
         {
             loaded.Application!.BeginReview();
@@ -435,13 +560,23 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingApplicationVoteProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingApplicationVoteProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var actor = loaded.Actor!;
         if (application.Event.ApprovalMode != TestingEventApprovalMode.Committee)
+        {
             return Result.Failure<TestingApplicationVoteProjection>(Validation("This event does not use committee review."));
+        }
+
         if (application.Status != TestingApplicationStatus.UnderReview)
+        {
             return Result.Failure<TestingApplicationVoteProjection>(Validation("The application must be under review before voting."));
+        }
+
         var isReviewer = await context.Set<TestingCommitteeMember>().AnyAsync(member =>
             member.EventId == application.EventId &&
             member.UserId == actor.UserId &&
@@ -449,14 +584,19 @@ public sealed class TestingApplicationHandlers(
             member.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (!isReviewer && !IsTenantAdmin)
+        {
             return Result.Failure<TestingApplicationVoteProjection>(Error.Forbidden("TestingLab.CommitteeMemberRequired", "Only active committee members can vote."));
+        }
+
         var duplicate = await context.Set<TestingApplicationVote>().AnyAsync(vote =>
             vote.ApplicationId == application.Id &&
             vote.ReviewerId == actor.UserId &&
             vote.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (duplicate)
+        {
             return Result.Failure<TestingApplicationVoteProjection>(Error.Conflict("TestingLab.DuplicateVote", "A reviewer can vote only once per application."));
+        }
 
         var vote = TestingApplicationVote.Cast(application.Id, actor.UserId, request.Decision, request.Comments, actor.TenantId);
         context.Set<TestingApplicationVote>().Add(vote);
@@ -469,10 +609,17 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadManagedApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var committeeDecision = await ValidateCommitteeDecisionAsync(application, TestingApplicationVoteDecision.Approve, cancellationToken).ConfigureAwait(false);
-        if (committeeDecision != null) return Result.Failure<TestingProjectApplicationProjection>(committeeDecision);
+        if (committeeDecision != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(committeeDecision);
+        }
 
         await using var lockHandle = await _capacityLock.AcquireAsync(request.SlotId, cancellationToken).ConfigureAwait(false);
         var slot = await context.Set<TestingEventSlot>().FirstOrDefaultAsync(candidate =>
@@ -482,9 +629,15 @@ public sealed class TestingApplicationHandlers(
             candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (slot == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.NotFound("TestingLab.EventSlotNotFound", "Testing event slot not found."));
+        }
+
         var capacityError = await ValidateProjectCapacityAsync(slot, application.Id, cancellationToken).ConfigureAwait(false);
-        if (capacityError != null) return Result.Failure<TestingProjectApplicationProjection>(capacityError);
+        if (capacityError != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(capacityError);
+        }
 
         try
         {
@@ -505,19 +658,33 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Rationale))
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Validation("A rejection rationale is required."));
+        }
+
         var loaded = await LoadManagedApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         var committeeDecision = await ValidateCommitteeDecisionAsync(loaded.Application!, TestingApplicationVoteDecision.Reject, cancellationToken).ConfigureAwait(false);
-        if (committeeDecision != null) return Result.Failure<TestingProjectApplicationProjection>(committeeDecision);
+        if (committeeDecision != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(committeeDecision);
+        }
+
         try
         {
             loaded.Application!.Reject(loaded.Actor!.UserId, request.Rationale);
             if (assetScopedAccessService != null)
+            {
                 await assetScopedAccessService.RevokeScopeAsync(
                     TestingLabAssetScopes.ApplicationReview,
                     loaded.Application.Id,
                     cancellationToken).ConfigureAwait(false);
+            }
+
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return Result.Success(ToProjection(loaded.Application));
         }
@@ -532,7 +699,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadManagedApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         try
         {
             loaded.Application!.PlaceOnWaitlist(loaded.Actor!.UserId, request.Rationale);
@@ -550,7 +721,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadManagedApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         await using var lockHandle = await _capacityLock.AcquireAsync(request.SlotId, cancellationToken).ConfigureAwait(false);
         var slot = await context.Set<TestingEventSlot>().FirstOrDefaultAsync(candidate =>
             candidate.Id == request.SlotId &&
@@ -559,9 +734,16 @@ public sealed class TestingApplicationHandlers(
             candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (slot == null)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.NotFound("TestingLab.EventSlotNotFound", "Testing event slot not found."));
+        }
+
         var capacityError = await ValidateProjectCapacityAsync(slot, loaded.Application!.Id, cancellationToken).ConfigureAwait(false);
-        if (capacityError != null) return Result.Failure<TestingProjectApplicationProjection>(capacityError);
+        if (capacityError != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(capacityError);
+        }
+
         try
         {
             loaded.Application.ReassignSlot(slot.Id);
@@ -580,7 +762,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingProjectApplicationProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var actor = loaded.Actor!;
         var canReview = IsTenantAdmin ||
@@ -597,7 +783,10 @@ public sealed class TestingApplicationHandlers(
             PermissionType.Read,
             cancellationToken).ConfigureAwait(false);
         if (!canReadProject && !canReview)
+        {
             return Result.Failure<TestingProjectApplicationProjection>(Error.Forbidden("TestingLab.ApplicationForbidden", "Application owner or reviewer access is required."));
+        }
+
         return Result.Success(ToProjection(application));
     }
 
@@ -606,9 +795,15 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var access = await ResolveEventApplicationAccessAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (access.Error != null) return Result.Failure<IReadOnlyList<TestingProjectApplicationProjection>>(access.Error);
+        if (access.Error != null)
+        {
+            return Result.Failure<IReadOnlyList<TestingProjectApplicationProjection>>(access.Error);
+        }
+
         if (!access.CanViewApplications)
+        {
             return Result.Failure<IReadOnlyList<TestingProjectApplicationProjection>>(Error.Forbidden("TestingLab.EventReviewerRequired", "Event manager or committee access is required."));
+        }
 
         var query = context.Set<TestingProjectApplication>()
             .AsNoTracking()
@@ -619,7 +814,11 @@ public sealed class TestingApplicationHandlers(
                 application.TenantId == access.Actor!.TenantId &&
                 application.DeletedAt == null &&
                 application.Status != TestingApplicationStatus.Draft);
-        if (request.Status.HasValue) query = query.Where(application => application.Status == request.Status.Value);
+        if (request.Status.HasValue)
+        {
+            query = query.Where(application => application.Status == request.Status.Value);
+        }
+
         var applications = await query
             .OrderBy(application => application.CreatedAt)
             .Skip(Math.Max(0, request.Skip))
@@ -634,9 +833,16 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var access = await ResolveEventApplicationAccessAsync(request.EventId, cancellationToken).ConfigureAwait(false);
-        if (access.Error != null) return Result.Failure<TestingEventApplicationAccessProjection>(access.Error);
+        if (access.Error != null)
+        {
+            return Result.Failure<TestingEventApplicationAccessProjection>(access.Error);
+        }
+
         if (!access.CanViewApplications)
+        {
             return Result.Failure<TestingEventApplicationAccessProjection>(Error.Forbidden("TestingLab.EventReviewerRequired", "Event manager or committee access is required."));
+        }
+
         return Result.Success(new TestingEventApplicationAccessProjection(
             access.CanViewApplications,
             access.CanManageApplications,
@@ -649,7 +855,10 @@ public sealed class TestingApplicationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingProjectApplicationProjection>>(actor.Error);
+        }
+
         var query = context.Set<TestingProjectApplication>()
             .AsNoTracking()
             .Include(application => application.Votes)
@@ -658,7 +867,10 @@ public sealed class TestingApplicationHandlers(
                 application.TenantId == actor.TenantId &&
                 application.DeletedAt == null);
         if (request.EventId.HasValue)
+        {
             query = query.Where(application => application.EventId == request.EventId.Value);
+        }
+
         var candidates = await query
             .OrderByDescending(application => application.CreatedAt)
             .ToListAsync(cancellationToken)
@@ -670,7 +882,9 @@ public sealed class TestingApplicationHandlers(
                     application.ProjectId,
                     PermissionType.Read,
                     cancellationToken).ConfigureAwait(false))
+            {
                 applications.Add(application);
+            }
         }
         return Result.Success<IReadOnlyList<TestingProjectApplicationProjection>>(
             applications.Select(ToProjection).ToList());
@@ -682,7 +896,9 @@ public sealed class TestingApplicationHandlers(
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
         if (actor.Error != null)
+        {
             return Result.Failure<IReadOnlyList<TestingApplicationTesterEligibilityProjection>>(actor.Error);
+        }
 
         var testingEvent = await context.Set<TestingEvent>()
             .AsNoTracking()
@@ -693,8 +909,10 @@ public sealed class TestingApplicationHandlers(
                 cancellationToken)
             .ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return Result.Failure<IReadOnlyList<TestingApplicationTesterEligibilityProjection>>(
                 Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
 
         var isCommitteeMember = await context.Set<TestingCommitteeMember>().AnyAsync(member =>
             member.EventId == request.EventId &&
@@ -708,8 +926,10 @@ public sealed class TestingApplicationHandlers(
             null,
             cancellationToken).ConfigureAwait(false);
         if (testingEvent.ManagerUserId != actor.UserId && !isCommitteeMember && !IsTenantAdmin && !hasApplicationRead)
+        {
             return Result.Failure<IReadOnlyList<TestingApplicationTesterEligibilityProjection>>(
                 Error.Forbidden("TestingLab.EventReviewerRequired", "Event manager or committee access is required."));
+        }
 
         var requestedTesterIds = request.TesterUserIds
             .Where(id => id != Guid.Empty)
@@ -717,7 +937,9 @@ public sealed class TestingApplicationHandlers(
             .Take(100)
             .ToArray();
         if (requestedTesterIds.Length == 0)
+        {
             return Result.Success<IReadOnlyList<TestingApplicationTesterEligibilityProjection>>([]);
+        }
 
         var activeTesterIds = await context.Set<TenantMember>()
             .AsNoTracking()
@@ -802,7 +1024,11 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(request.ApplicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return Result.Failure<TestingApplicationReviewPackageProjection>(loaded.Error);
+        if (loaded.Error != null)
+        {
+            return Result.Failure<TestingApplicationReviewPackageProjection>(loaded.Error);
+        }
+
         var application = loaded.Application!;
         var actor = loaded.Actor!;
         var isCommitteeMember = await context.Set<TestingCommitteeMember>().AnyAsync(member =>
@@ -819,19 +1045,26 @@ public sealed class TestingApplicationHandlers(
             isAssignedTester ||
             await HasApplicationPermissionAsync(actor, TestingLabActions.Read, application.Id, cancellationToken).ConfigureAwait(false);
         if (!canReview)
+        {
             return Result.Failure<TestingApplicationReviewPackageProjection>(
                 Error.Forbidden("TestingLab.EventReviewerRequired", "Only an event reviewer can open the submitted review package."));
+        }
+
         if (application.ProjectVersionId == null)
+        {
             return Result.Failure<TestingApplicationReviewPackageProjection>(
                 Error.NotFound("TestingLab.ProjectVersionNotFound", "The submitted project version is unavailable."));
+        }
 
         var version = await context.Set<ProjectVersion>().AsNoTracking().SingleOrDefaultAsync(candidate =>
             candidate.Id == application.ProjectVersionId && candidate.ProjectId == application.ProjectId &&
             candidate.TenantId == actor.TenantId && candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (version == null)
+        {
             return Result.Failure<TestingApplicationReviewPackageProjection>(
                 Error.NotFound("TestingLab.ProjectVersionNotFound", "The submitted project version is unavailable."));
+        }
 
         var assetIds = application.SubmittedAssetReferenceIds.ToArray();
         List<GameGuild.Assets.AssetReference> assets = assetIds.Length == 0
@@ -860,8 +1093,10 @@ public sealed class TestingApplicationHandlers(
                     actor.TenantId,
                     ct: cancellationToken).ConfigureAwait(false);
                 if (access != null)
+                {
                     assetResults.Add(new TestingApplicationReviewAssetProjection(
                         asset.Id, asset.DisplayName, access.MimeType, access.Url, access.ExpiresAt));
+                }
             }
         }
 
@@ -882,7 +1117,11 @@ public sealed class TestingApplicationHandlers(
     private async Task<LoadedApplication> LoadApplicationAsync(Guid applicationId, CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return new(null, null, actor.Error);
+        if (actor.Error != null)
+        {
+            return new(null, null, actor.Error);
+        }
+
         var application = await context.Set<TestingProjectApplication>()
             .Include(candidate => candidate.Event)
             .Include(candidate => candidate.Votes)
@@ -901,7 +1140,11 @@ public sealed class TestingApplicationHandlers(
     private async Task<LoadedApplication> LoadManagedApplicationAsync(Guid applicationId, CancellationToken cancellationToken)
     {
         var loaded = await LoadApplicationAsync(applicationId, cancellationToken).ConfigureAwait(false);
-        if (loaded.Error != null) return loaded;
+        if (loaded.Error != null)
+        {
+            return loaded;
+        }
+
         var actor = loaded.Actor!;
         var hasManagementPermission = await HasApplicationPermissionAsync(
             actor,
@@ -922,14 +1165,20 @@ public sealed class TestingApplicationHandlers(
         CancellationToken cancellationToken)
     {
         var actor = await RequireActorAsync(cancellationToken).ConfigureAwait(false);
-        if (actor.Error != null) return new(null, null, false, false, false, actor.Error);
+        if (actor.Error != null)
+        {
+            return new(null, null, false, false, false, actor.Error);
+        }
+
         var testingEvent = await context.Set<TestingEvent>().AsNoTracking().FirstOrDefaultAsync(candidate =>
             candidate.Id == eventId &&
             candidate.TenantId == actor.TenantId &&
             candidate.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
         if (testingEvent == null)
+        {
             return new(null, null, false, false, false, Error.NotFound("TestingLab.EventNotFound", "Testing event not found."));
+        }
 
         var isCommitteeMember = await context.Set<TestingCommitteeMember>().AnyAsync(member =>
             member.EventId == eventId &&
@@ -969,9 +1218,15 @@ public sealed class TestingApplicationHandlers(
         var actor = actorContextAccessor.ActorContext;
         var userId = actor.SubjectIdAsGuid;
         if (!actor.IsAuthenticated || userId == null || actor.TenantId == null)
+        {
             return new(Guid.Empty, Guid.Empty, Error.Unauthorized("TestingLab.Unauthenticated", "An authenticated tenant actor is required."));
+        }
+
         if (!await projectAuthorizationService.IsActorActiveTenantMemberAsync(cancellationToken).ConfigureAwait(false))
+        {
             return new(Guid.Empty, Guid.Empty, Error.Unauthorized("TestingLab.InactiveActor", "An active user and tenant membership are required."));
+        }
+
         return new(userId.Value, actor.TenantId.Value, null);
     }
 
@@ -980,21 +1235,37 @@ public sealed class TestingApplicationHandlers(
         TestingApplicationVoteDecision requestedDecision,
         CancellationToken cancellationToken)
     {
-        if (application.Event.ApprovalMode == TestingEventApprovalMode.ManagerOnly) return null;
+        if (application.Event.ApprovalMode == TestingEventApprovalMode.ManagerOnly)
+        {
+            return null;
+        }
+
         var reviewerCount = await context.Set<TestingCommitteeMember>().CountAsync(member =>
             member.EventId == application.EventId && member.IsActive && member.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (reviewerCount == 0) return Validation("Committee review requires at least one active reviewer.");
+        if (reviewerCount == 0)
+        {
+            return Validation("Committee review requires at least one active reviewer.");
+        }
+
         var votes = await context.Set<TestingApplicationVote>()
             .Where(vote => vote.ApplicationId == application.Id && vote.DeletedAt == null)
             .Select(vote => vote.Decision)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         var matchingVotes = votes.Count(vote => vote == requestedDecision);
-        if (matchingVotes > reviewerCount / 2) return null;
+        if (matchingVotes > reviewerCount / 2)
+        {
+            return null;
+        }
+
         var approveVotes = votes.Count(vote => vote == TestingApplicationVoteDecision.Approve);
         var rejectVotes = votes.Count(vote => vote == TestingApplicationVoteDecision.Reject);
-        if (votes.Count >= reviewerCount && approveVotes == rejectVotes) return null;
+        if (votes.Count >= reviewerCount && approveVotes == rejectVotes)
+        {
+            return null;
+        }
+
         return Validation("The committee has not reached the required majority for this decision.");
     }
 
@@ -1003,7 +1274,11 @@ public sealed class TestingApplicationHandlers(
         Guid currentApplicationId,
         CancellationToken cancellationToken)
     {
-        if (!slot.MaxProjects.HasValue) return null;
+        if (!slot.MaxProjects.HasValue)
+        {
+            return null;
+        }
+
         var approvedProjects = await context.Set<TestingProjectApplication>().CountAsync(application =>
             application.AssignedSlotId == slot.Id &&
             application.Id != currentApplicationId &&
@@ -1037,7 +1312,10 @@ public sealed class TestingApplicationHandlers(
             .Distinct()
             .Take(100)
             .ToArray() ?? [];
-        if (normalizedIds.Length == 0) return;
+        if (normalizedIds.Length == 0)
+        {
+            return;
+        }
 
         var validAssetCount = await context.Set<GameGuild.Assets.AssetReference>().AsNoTracking().CountAsync(asset =>
             normalizedIds.Contains(asset.Id) &&
@@ -1047,7 +1325,9 @@ public sealed class TestingApplicationHandlers(
              (asset.ParentResourceType == nameof(ProjectVersion) && asset.ParentResourceId == projectVersionId)),
             cancellationToken).ConfigureAwait(false);
         if (validAssetCount != normalizedIds.Length)
+        {
             throw new ArgumentException("Every submitted file must belong to the selected project or project version.");
+        }
     }
 
     private static TestingProjectApplicationProjection ToProjection(TestingProjectApplication application) => new(

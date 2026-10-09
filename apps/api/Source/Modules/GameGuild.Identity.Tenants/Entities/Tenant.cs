@@ -207,13 +207,19 @@ public class Tenant : EntityBase, ITenant
     public TenantMembershipResult ValidateForMemberAddition(Guid userId)
     {
         if (!IsActive)
+        {
             return TenantMembershipResult.Failure("Tenant is inactive.");
+        }
 
         if (IsArchived)
+        {
             return TenantMembershipResult.Failure("Tenant is archived.");
+        }
 
         if (TenantMembers.Any(m => m.UserId == userId && m.IsActive))
+        {
             return TenantMembershipResult.Failure("User is already a member of this tenant.");
+        }
 
         return TenantMembershipResult.Success();
     }
@@ -233,16 +239,24 @@ public class Tenant : EntityBase, ITenant
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(Name))
+        {
             errors.Add("Tenant name is required.");
+        }
 
         if (string.IsNullOrWhiteSpace(Slug))
+        {
             errors.Add("Tenant slug is required.");
+        }
 
         if (!IsValidSlug(Slug))
+        {
             errors.Add("Tenant slug must contain only lowercase letters, numbers, and hyphens.");
+        }
 
         if (errors.Count > 0)
+        {
             return TenantValidationResult.Failure(errors);
+        }
 
         return TenantValidationResult.Success();
     }
@@ -264,7 +278,9 @@ public class Tenant : EntityBase, ITenant
     public TenantArchiveResult ValidateForArchive()
     {
         if (IsArchived)
+        {
             return TenantArchiveResult.Failure("Tenant is already archived.");
+        }
 
         // Allow archiving even with active members - they'll lose access
         return TenantArchiveResult.Success(ActiveMemberCount);
@@ -277,17 +293,25 @@ public class Tenant : EntityBase, ITenant
     public TenantDeleteResult ValidateForDeletion()
     {
         if (!IsArchived)
+        {
             return TenantDeleteResult.Failure("Tenant must be archived before deletion.");
+        }
 
         if (HasActiveMembers)
+        {
             return TenantDeleteResult.Failure($"Tenant has {ActiveMemberCount} active members. Remove members before deletion.");
+        }
 
         return TenantDeleteResult.Success();
     }
 
     private static bool IsValidSlug(string slug)
     {
-        if (string.IsNullOrEmpty(slug)) return false;
+        if (string.IsNullOrEmpty(slug))
+        {
+            return false;
+        }
+
         return slug.All(c => char.IsLetterOrDigit(c) || c == '-') && 
                slug == slug.ToLowerInvariant();
     }

@@ -28,7 +28,11 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
 
     public async Task<UserSession> CreateAsync(UserSession session, CancellationToken cancellationToken = default)
     {
-        if (session.Id == Guid.Empty) session.Id = Guid.NewGuid();
+        if (session.Id == Guid.Empty)
+        {
+            session.Id = Guid.NewGuid();
+        }
+
         session.UpdatedAt = SystemClock.UtcNow;
         session.LastUsedAt = SystemClock.UtcNow;
 
@@ -59,7 +63,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         var session = await GetByIdAsync(sessionId, cancellationToken).ConfigureAwait(false);
 
-        if (session == null) return;
+        if (session == null)
+        {
+            return;
+        }
 
         session.IsActive = false;
         session.TerminationReason = reason;
@@ -73,7 +80,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         var activeSessions = await UserSessions.Where(s => s.UserId == userId && s.IsActive).ToListAsync(cancellationToken);
 
-        if (activeSessions.Count == 0) return;
+        if (activeSessions.Count == 0)
+        {
+            return;
+        }
 
         var now = SystemClock.UtcNow;
 
@@ -93,7 +103,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         var activeSessions = await UserSessions.Where(s => s.UserId == userId && s.IsActive && s.Id != keepSessionId).ToListAsync(cancellationToken);
 
-        if (activeSessions.Count == 0) return;
+        if (activeSessions.Count == 0)
+        {
+            return;
+        }
 
         var now = SystemClock.UtcNow;
 
@@ -115,7 +128,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
             (s.ExpiresAt < now || !s.IsActive && s.TerminatedAt.HasValue && s.TerminatedAt.Value.AddDays(30) < now) &&
             !context.Set<RefreshToken>().Any(token => token.SessionId == s.Id)).ToListAsync(cancellationToken);
 
-        if (expiredSessions.Count == 0) return;
+        if (expiredSessions.Count == 0)
+        {
+            return;
+        }
 
         UserSessions.RemoveRange(expiredSessions);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -147,7 +163,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         var query = UserSessions.Where(s => s.DeviceFingerprint == deviceFingerprint);
 
-        if (activeOnly) query = query.Where(s => s.IsActive && s.ExpiresAt > SystemClock.UtcNow);
+        if (activeOnly)
+        {
+            query = query.Where(s => s.IsActive && s.ExpiresAt > SystemClock.UtcNow);
+        }
 
         return await query.OrderByDescending(s => s.LastUsedAt).ToListAsync(cancellationToken);
     }
@@ -156,7 +175,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         var session = await GetByIdAsync(sessionId, cancellationToken).ConfigureAwait(false);
 
-        if (session is not { IsActive: true }) return false;
+        if (session is not { IsActive: true })
+        {
+            return false;
+        }
 
         session.LastUsedAt = SystemClock.UtcNow;
         session.UpdatedAt = SystemClock.UtcNow;
@@ -170,7 +192,10 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         var session = await GetByIdAsync(sessionId, cancellationToken).ConfigureAwait(false);
 
-        if (session == null) return false;
+        if (session == null)
+        {
+            return false;
+        }
 
         session.IsTrustedDevice = true;
         session.TrustedAt = SystemClock.UtcNow;

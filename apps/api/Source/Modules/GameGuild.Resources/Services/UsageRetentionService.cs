@@ -127,7 +127,10 @@ public class UsageRetentionService(IUsageRetentionPolicyRepository policyReposit
 
         var recordsList = records.ToList();
 
-        if (recordsList.Count == 0) return 0;
+        if (recordsList.Count == 0)
+        {
+            return 0;
+        }
 
         // Group by month and create aggregated records
         var monthlyGroups = recordsList.GroupBy(r => new { r.Type, r.PeriodStart.Year, r.PeriodStart.Month }).ToList();

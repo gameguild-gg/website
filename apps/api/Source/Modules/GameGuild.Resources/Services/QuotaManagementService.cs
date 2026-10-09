@@ -99,7 +99,10 @@ public class QuotaManagementService(
     {
         var quota = await quotaRepository.GetByTenantAndTypeAsync(tenantId, type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return false;
+        if (quota == null)
+        {
+            return false;
+        }
 
         var previousUsage = quota.CurrentUsage;
         var deleted = await quotaRepository.DeleteAsync(quota.Id, cancellationToken).ConfigureAwait(false);
@@ -128,7 +131,10 @@ public class QuotaManagementService(
     {
         var quota = await GetQuotaAsync(tenantId, type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return 0;
+        if (quota == null)
+        {
+            return 0;
+        }
 
         return quota.ShouldReset() ? 0 : quota.CurrentUsage;
     }

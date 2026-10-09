@@ -407,7 +407,9 @@ public class ProductBundleValidatorTests
         if (items != null)
         {
             foreach (var item in items)
+            {
                 bundle.BundleItems.Add(item);
+            }
         }
         return bundle;
     }

@@ -205,12 +205,12 @@ public class RedisDistributedRateLimiter(
                 var retryAfterMilliseconds = long.Parse(result[2].ToString()!, System.Globalization.CultureInfo.InvariantCulture);
                 logger.LogWarning(
                     "Fixed-window rate limit exceeded for key {Key}: {CurrentCount}/{MaxRequests} in {Window}; retry after {RetryAfterMilliseconds}ms",
-                    key, currentCount, maxRequests, window, retryAfterMilliseconds);
+                    LogRedaction.Sanitize(key), currentCount, maxRequests, window, retryAfterMilliseconds);
                 return false;
             }
 
             logger.LogDebug("Fixed-window rate limit passed for key {Key}: {CurrentCount}/{MaxRequests}",
-                key, currentCount, maxRequests);
+                LogRedaction.Sanitize(key), currentCount, maxRequests);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -265,12 +265,12 @@ public class RedisDistributedRateLimiter(
             {
                 logger.LogWarning(
                     "Token-bucket rate limit exceeded for key {Key}; retry after {RetryAfterMilliseconds}ms",
-                    key,
+                    LogRedaction.Sanitize(key),
                     retryAfterMilliseconds);
                 return decision;
             }
 
-            logger.LogDebug("Token-bucket rate limit passed for key {Key}", key);
+            logger.LogDebug("Token-bucket rate limit passed for key {Key}", LogRedaction.Sanitize(key));
             return decision;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -321,7 +321,7 @@ public class RedisDistributedRateLimiter(
             {
                 logger.LogWarning(
                     "Distributed concurrency limit exceeded for key {Key}: maximum {MaxConcurrent}; retry after {RetryAfterMilliseconds}ms",
-                    key,
+                    LogRedaction.Sanitize(key),
                     maxConcurrent,
                     retryAfterMilliseconds);
                 return new ConcurrencyLimitDecision(false, TimeSpan.FromMilliseconds(retryAfterMilliseconds));
@@ -445,12 +445,12 @@ public class RedisDistributedRateLimiter(
                 var retryAfterMilliseconds = long.Parse(result[2].ToString()!, System.Globalization.CultureInfo.InvariantCulture);
                 logger.LogWarning(
                     "Rate limit exceeded for key {Key}: {CurrentCount}/{MaxRequests} in {Window}; retry after {RetryAfterMilliseconds}ms",
-                    key, currentCount, maxRequests, window, retryAfterMilliseconds);
+                    LogRedaction.Sanitize(key), currentCount, maxRequests, window, retryAfterMilliseconds);
                 return false;
             }
 
             logger.LogDebug("Rate limit check passed for key {Key}: {CurrentCount}/{MaxRequests}",
-                key, currentCount, maxRequests);
+                LogRedaction.Sanitize(key), currentCount, maxRequests);
 
             return true;
         }
@@ -483,7 +483,7 @@ public class RedisDistributedRateLimiter(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error getting current count for key {Key}", key);
+            logger.LogError(ex, "Error getting current count for key {Key}", LogRedaction.Sanitize(key));
             return 0;
         }
     }
@@ -517,7 +517,7 @@ public class RedisDistributedRateLimiter(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error getting reset time for key {Key}", key);
+            logger.LogError(ex, "Error getting reset time for key {Key}", LogRedaction.Sanitize(key));
             return null;
         }
     }
@@ -532,11 +532,11 @@ public class RedisDistributedRateLimiter(
             await db.KeyDeleteAsync(redisKey).ConfigureAwait(false);
             await db.KeyDeleteAsync(GetRedisKey($"token-bucket:{key}")).ConfigureAwait(false);
             await db.KeyDeleteAsync(GetRedisKey($"concurrency:{key}")).ConfigureAwait(false);
-            logger.LogInformation("Rate limit reset for key {Key}", key);
+            logger.LogInformation("Rate limit reset for key {Key}", LogRedaction.Sanitize(key));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error resetting rate limit for key {Key}", key);
+            logger.LogError(ex, "Error resetting rate limit for key {Key}", LogRedaction.Sanitize(key));
             throw;
         }
     }
@@ -549,7 +549,7 @@ public class RedisDistributedRateLimiter(
             exception,
             "Redis rate-limit {Operation} failed for key {Key}; configured failure mode is {FailureMode}.",
             operation,
-            key,
+            LogRedaction.Sanitize(key),
             _failureMode);
 
         if (_failureMode == RedisRateLimitFailureMode.FailClosed)

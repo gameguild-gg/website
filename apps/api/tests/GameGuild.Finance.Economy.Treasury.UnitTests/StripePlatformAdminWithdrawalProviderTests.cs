@@ -124,12 +124,35 @@ public sealed class StripePlatformAdminWithdrawalProviderTests
     public async Task Provider_RemainsDisabledForEveryIncompleteConfiguration(string invalid)
     {
         var options = ValidOptions();
-        if (invalid == "disabled") options.Enabled = false;
-        if (invalid == "url") options.ApiBaseUrl = "relative";
-        if (invalid == "key") options.SecretKey = " ";
-        if (invalid == "webhook") options.WebhookSecret = " ";
-        if (invalid == "evidence") options.EvidenceSigningSecret = "short";
-        if (invalid == "tolerance") options.WebhookTolerance = TimeSpan.Zero;
+        if (invalid == "disabled")
+        {
+            options.Enabled = false;
+        }
+
+        if (invalid == "url")
+        {
+            options.ApiBaseUrl = "relative";
+        }
+
+        if (invalid == "key")
+        {
+            options.SecretKey = " ";
+        }
+
+        if (invalid == "webhook")
+        {
+            options.WebhookSecret = " ";
+        }
+
+        if (invalid == "evidence")
+        {
+            options.EvidenceSigningSecret = "short";
+        }
+
+        if (invalid == "tolerance")
+        {
+            options.WebhookTolerance = TimeSpan.Zero;
+        }
 
         var provider = new StripePlatformAdminWithdrawalProvider(
             new HttpClient(new RecordingHandler()), Options.Create(options), new FixedTimeProvider(Now));

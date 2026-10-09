@@ -942,7 +942,9 @@ public sealed class AuthoringAiServiceTests
         {
             received.Add(runId);
             if (received.Count == 2)
+            {
                 break;
+            }
         }
 
         received.Should().Equal(first, second);
@@ -974,7 +976,10 @@ public sealed class AuthoringAiServiceTests
     {
         var items = new List<AiStreamEvent>();
         await foreach (var item in stream)
+        {
             items.Add(item);
+        }
+
         return items;
     }
 
@@ -983,9 +988,15 @@ public sealed class AuthoringAiServiceTests
         LessonContentFormat? lessonFormat)
     {
         if (contentType == ProgramContentType.Questionnaire)
+        {
             return JsonDocument.Parse("{\"questions\":[{\"id\":\"q1\",\"prompt\":\"Old question\"}]}").RootElement.Clone();
+        }
+
         if (lessonFormat == LessonContentFormat.Lexical)
+        {
             return JsonDocument.Parse("{\"root\":{\"type\":\"root\",\"version\":1,\"children\":[{\"type\":\"paragraph\",\"version\":1,\"children\":[{\"type\":\"text\",\"version\":1,\"text\":\"Old\"}]}]}}").RootElement.Clone();
+        }
+
         return null;
     }
 
@@ -1115,7 +1126,10 @@ public sealed class AuthoringAiServiceTests
             StreamCalls++;
             LastStreamRequest = request;
             if (failGeneration)
+            {
                 return Result.Failure<AiCompletionResponse>(Error.Problem("AI.ProviderFailed", "Provider failed."));
+            }
+
             if (providerOutput == "# Improved lesson")
             {
                 await onDelta("# Improved ", cancellationToken);

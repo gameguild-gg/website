@@ -42,6 +42,7 @@
     "stage:core:cdn": "pnpm toolchain build release",
     "stage:toolchain:cdn": "pnpm toolchain build release",
     "verify:release": "node scripts/verify-release.mjs",
+    "test:curl-lite": "node scripts/verify-curl-lite-regressions.mjs",
     "typecheck": "tsc --noEmit",
     "clean": "tsx scripts/clean.ts",
     "toolchain": "tsx scripts/toolchain/cli.ts",
@@ -139,6 +140,7 @@
     }
   },
   "devDependencies": {
+    "@eslint/compat": "2.1.1",
     "@playwright/test": "^1.63.0",
     "@types/cli-progress": "^3.11.6",
     "@types/node": "^26",
@@ -146,6 +148,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "@xterm/xterm": "^6.0.0",
     "cli-progress": "^3.12.0",
+    "eslint-config-next": "16.3.8",
     "npm-run-all": "4.1.5",
     "shelljs": "^0.10.0",
     "tar": "^7.5.22",
