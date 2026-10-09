@@ -228,6 +228,7 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
 
             if (foundInL1)
             {
+                _keyTracker.Touch(key);
                 _metrics.RecordHit(CacheLevel.L1, cacheType);
                 return l1Value;
             }
@@ -238,9 +239,9 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
                 try
                 {
                     var l2Bytes = await _l2Cache!.GetAsync(key, cancellationToken).ConfigureAwait(false);
-                    if (l2Bytes != null && l2Bytes.Length > 0)
+                    if (l2Bytes != null && l2Bytes.Length > 0 && TryDecodeL2Payload(key, l2Bytes, out var plain))
                     {
-                        var l2Value = JsonSerializer.Deserialize<T>(l2Bytes);
+                        var l2Value = JsonSerializer.Deserialize<T>(plain);
                         if (l2Value != null)
                         {
                             _metrics.RecordHit(CacheLevel.L2, cacheType);
@@ -303,6 +304,7 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
 
                 if (foundInL1)
                 {
+                    _keyTracker.Touch(key);
                     _metrics.RecordHit(CacheLevel.L1, cacheType);
                     return CacheResult<T>.Hit(l1Value);
                 }
@@ -314,9 +316,9 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
                 try
                 {
                     var l2Bytes = await _l2Cache!.GetAsync(key, cancellationToken).ConfigureAwait(false);
-                    if (l2Bytes != null && l2Bytes.Length > 0)
+                    if (l2Bytes != null && l2Bytes.Length > 0 && TryDecodeL2Payload(key, l2Bytes, out var plain))
                     {
-                        var l2Value = JsonSerializer.Deserialize<T>(l2Bytes);
+                        var l2Value = JsonSerializer.Deserialize<T>(plain);
                         _metrics.RecordHit(CacheLevel.L2, cacheType);
 
                         // Promote to L1
@@ -387,6 +389,7 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
 
             if (foundInL1)
             {
+                _keyTracker.Touch(distinctKeys[index]);
                 _metrics.RecordHit(CacheLevel.L1, cacheType);
                 results[index] = CacheResult<T>.Hit(l1Value);
                 _metrics.RecordLookupDuration(Stopwatch.GetElapsedTime(startedAt), cacheType);
@@ -517,6 +520,7 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
             try
             {
                 var bytes = JsonSerializer.SerializeToUtf8Bytes(value);
+                bytes = EncodeL2Payload(key, bytes);
                 var distributedOptions = new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = l2Ttl
@@ -617,5 +621,57 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
         }
 
         return _options.PermissionTtlSeconds;
+    }
+
+    /// <summary>
+    ///     Compresses an L2 payload when compression is enabled, the algorithm is set, and the
+    ///     serialized value meets the configured threshold. Values below the threshold (and all
+    ///     values when compression is off) are stored as raw JSON, which stays readable across
+    ///     mixed-version fleets through <see cref="TryDecodeL2Payload"/>.
+    /// </summary>
+    private byte[] EncodeL2Payload(string key, byte[] serialized)
+    {
+        if (!_options.L2CompressionEnabled ||
+            _options.L2CompressionAlgorithm == L2CompressionAlgorithm.None ||
+            serialized.Length < _options.L2CompressionThresholdBytes)
+        {
+            return serialized;
+        }
+
+        try
+        {
+            var wrapped = PermissionCacheL2Payload.Wrap(serialized, _options.L2CompressionAlgorithm);
+            _logger.LogDebug(
+                "Compressed L2 cache payload for key {Key} from {RawBytes} to {StoredBytes} bytes using {Algorithm}",
+                key,
+                serialized.Length,
+                wrapped.Length,
+                _options.L2CompressionAlgorithm);
+            return wrapped;
+        }
+        catch (Exception ex)
+        {
+            // Compression is an optimization: fall back to the raw payload rather than failing the write.
+            _logger.LogWarning(ex, "L2 cache payload compression failed for key {Key}; storing the value uncompressed", key);
+            return serialized;
+        }
+    }
+
+    /// <summary>
+    ///     Decodes an L2 payload, transparently handling both compressed envelopes and raw JSON
+    ///     written by deployments predating compression.
+    /// </summary>
+    /// <returns><c>false</c> when the payload is enveloped but undecodable; the caller then treats the entry as a miss.</returns>
+    private bool TryDecodeL2Payload(string key, byte[] stored, out byte[] plain)
+    {
+        if (PermissionCacheL2Payload.TryUnwrap(stored, out plain))
+        {
+            return true;
+        }
+
+        _logger.LogWarning(
+            "L2 cache entry for key {Key} carries an unsupported or corrupted compression envelope; treating it as a miss",
+            key);
+        return false;
     }
 }

@@ -178,6 +178,15 @@ public sealed class ContentPermission : Permission
 
         /// <summary>Admin access to content</summary>
         public const string Admin = "content:admin";
+
+        /// <summary>Edit existing editorial content (editorial permission)</summary>
+        public const string Edit = "content:edit";
+
+        /// <summary>Create and maintain content drafts (editorial permission)</summary>
+        public const string Draft = "content:draft";
+
+        /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
+        public const string Schedule = "content:schedule";
     }
 
     /// <summary>Read content</summary>
@@ -188,6 +197,15 @@ public sealed class ContentPermission : Permission
 
     /// <summary>Admin access to content</summary>
     public static readonly ContentPermission Admin = new(Keys.Admin, "Admin access to content");
+
+    /// <summary>Edit existing editorial content (editorial permission)</summary>
+    public static readonly ContentPermission Edit = new(Keys.Edit, "Edit existing editorial content");
+
+    /// <summary>Create and maintain content drafts (editorial permission)</summary>
+    public static readonly ContentPermission Draft = new(Keys.Draft, "Create and maintain content drafts");
+
+    /// <summary>Schedule and cancel scheduled publication (editorial permission)</summary>
+    public static readonly ContentPermission Schedule = new(Keys.Schedule, "Schedule and cancel scheduled publication");
 }
 
 /// <summary>
@@ -596,6 +614,65 @@ public sealed class AssetsPermission : Permission
     public static readonly AssetsPermission Report = new(Keys.Report, "Report assets for moderation");
 }
 
+/// <summary>
+///     Strongly-typed permissions for moderation operations.
+///     Covers the cross-cutting moderation duties (moderate content, flag for
+///     review, ban members, warn members) that apply across content resources.
+/// </summary>
+/// <remarks>
+///     <para>
+///         Use <see cref="Keys"/> for attribute usage: [RequirePermission(ModerationPermission.Keys.Moderate)]
+///     </para>
+///     <para>
+///         Use the static readonly fields for runtime checks: actor.HasPermission(ModerationPermission.Moderate)
+///     </para>
+/// </remarks>
+public sealed class ModerationPermission : Permission
+{
+    private ModerationPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    /// <example>
+    ///     [RequirePermission(ModerationPermission.Keys.Moderate)]
+    ///     public IActionResult ReviewQueue() { }
+    /// </example>
+    public static class Keys
+    {
+        /// <summary>Moderate content (edit, hide, restore)</summary>
+        public const string Moderate = "moderation:moderate";
+
+        /// <summary>Flag content for review</summary>
+        public const string Flag = "moderation:flag";
+
+        /// <summary>Ban members</summary>
+        public const string Ban = "moderation:ban";
+
+        /// <summary>Warn members</summary>
+        public const string Warn = "moderation:warn";
+    }
+
+    /// <summary>Moderate content (edit, hide, restore)</summary>
+    public static readonly ModerationPermission Moderate = new(Keys.Moderate, "Moderate content (edit, hide, restore)");
+
+    /// <summary>Flag content for review</summary>
+    public static readonly ModerationPermission Flag = new(Keys.Flag, "Flag content for review");
+
+    /// <summary>Ban members</summary>
+    public static readonly ModerationPermission Ban = new(Keys.Ban, "Ban members");
+
+    /// <summary>Warn members</summary>
+    public static readonly ModerationPermission Warn = new(Keys.Warn, "Warn members");
+}
+
 /// <summary>Strongly-typed permission for platform-level wallet administration.</summary>
 public sealed class WalletsPermission : Permission
 {
@@ -658,4 +735,64 @@ public sealed class EconomyPermission : Permission
     public static readonly EconomyPermission OperateBounties = new(Keys.OperateBounties, "Operate Bounty expiration and conflicts");
     public static readonly EconomyPermission OperateTreasury = new(Keys.OperateTreasury, "Operate Treasury withdrawals and reconciliation");
     public static readonly EconomyPermission ManageLegacyMigration = new(Keys.ManageLegacyMigration, "Manage tenant-scoped Economy legacy migration and cutover");
+}
+
+/// <summary>
+///     Strongly-typed permissions for monetization and analytics authorization
+///     (issue #346: Monetize, ViewAnalytics, Configure).
+/// </summary>
+/// <remarks>
+///     <para>
+///         These permissions control access to revenue-generation features and
+///         platform business-intelligence data:
+///         <list type="bullet">
+///             <item><see cref="Monetize"/> — enable revenue generation, set pricing, manage monetization settings.</item>
+///             <item><see cref="ViewAnalytics"/> — access revenue reports, financial dashboards and performance metrics.</item>
+///             <item><see cref="Configure"/> — manage payment settings, subscription tiers and pricing models.</item>
+///         </list>
+///     </para>
+///     <para>
+///         The keys are ordinary tenant-level permission strings, so they flow through the
+///         existing grant/inheritance/precedence machinery (global defaults → tenant defaults →
+///         direct grants → role providers, deny-wins) without any special casing.
+///     </para>
+/// </remarks>
+public sealed class MonetizationPermission : Permission
+{
+    private MonetizationPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>
+    ///     Permission key constants for use in attributes.
+    /// </summary>
+    /// <example>
+    ///     [RequirePermission(MonetizationPermission.Keys.ViewAnalytics)]
+    ///     public IActionResult GetMetrics() { }
+    /// </example>
+    public static class Keys
+    {
+        /// <summary>Enable revenue generation, set pricing, manage monetization settings</summary>
+        public const string Monetize = "monetization:monetize";
+
+        /// <summary>Access revenue reports, financial dashboards, performance metrics</summary>
+        public const string ViewAnalytics = "monetization:view-analytics";
+
+        /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
+        public const string Configure = "monetization:configure";
+    }
+
+    /// <summary>Enable revenue generation, set pricing, manage monetization settings</summary>
+    public static readonly MonetizationPermission Monetize = new(Keys.Monetize, "Enable revenue generation, set pricing and manage monetization settings");
+
+    /// <summary>Access revenue reports, financial dashboards, performance metrics</summary>
+    public static readonly MonetizationPermission ViewAnalytics = new(Keys.ViewAnalytics, "Access revenue reports, financial dashboards and performance metrics");
+
+    /// <summary>Manage payment settings, subscription tiers, pricing models</summary>
+    public static readonly MonetizationPermission Configure = new(Keys.Configure, "Manage payment settings, subscription tiers and pricing models");
 }

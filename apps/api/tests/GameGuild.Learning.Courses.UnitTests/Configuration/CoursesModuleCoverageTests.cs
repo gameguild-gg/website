@@ -37,6 +37,8 @@ public sealed class CoursesModuleCoverageTests
         AssertRegistration<IAuthoringAiRunQueue, AuthoringAiRunQueue>(services, ServiceLifetime.Singleton);
         AssertRegistration<IAuthoringAiService, AuthoringAiService>(services, ServiceLifetime.Scoped);
         AssertRegistration<CourseContentAccessRuleEvaluator, CourseContentAccessRuleEvaluator>(services, ServiceLifetime.Scoped);
+        AssertRegistration<ICourseAccessEvaluator, CourseAccessEvaluator>(services, ServiceLifetime.Scoped);
+        AssertRegistration<ICourseEnrollmentAccessReader, FailClosedCourseEnrollmentAccessReader>(services, ServiceLifetime.Scoped);
         AssertRegistration<IProgramEnrollmentService, ProgramEnrollmentService>(services, ServiceLifetime.Scoped);
         AssertRegistration<IContentInteractionService, ContentInteractionService>(services, ServiceLifetime.Scoped);
         AssertRegistration<IActivityGradeService, ActivityGradeService>(services, ServiceLifetime.Scoped);

@@ -16,7 +16,19 @@ namespace GameGuild.Identity.Authentication;
 ///     analytics, audit trail, cache management, and permission templates.
 /// </summary>
 /// <remarks>
-///     Rate limited to 100 requests per minute per client to prevent DoS attacks on permission evaluation.
+///     <para>
+///         Rate limited to 100 requests per minute per client to prevent DoS attacks on permission evaluation.
+///     </para>
+///     <para>
+///         <b>Route reconciliation (issue #353):</b> the issue's requested
+///         <c>/api/cache/permissions/*</c> surface is implemented by this controller under the
+///         platform's versioned API convention as <c>v{version}/permissions/cache/*</c>
+///         (<c>cache/stats</c>, <c>cache:clear</c>, <c>cache:warm</c>, <c>cache/keys</c>,
+///         <c>cache/keys:inspect</c>). No <c>/api/cache/permissions</c> route alias is registered:
+///         the repository has no precedent for unversioned duplicate routes, and every public
+///         endpoint is versioned under <c>v{version}</c>. The mapping is also documented in
+///         <c>docs/api/authorization-cache-configuration.md</c>.
+///     </para>
 /// </remarks>
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/permissions")]
@@ -121,6 +133,56 @@ public class PermissionAdminController(IMediator mediator, ILogger<PermissionAdm
         CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     List tracked authorization L1 cache keys for cache-key debugging, most recently used first.
+    /// </summary>
+    /// <remarks>
+    ///     System-administrator only. Read-only inspection of the process-local key index: it
+    ///     exposes key shape, cache type, first-tracked/last-access timestamps, and L1 presence.
+    /// </remarks>
+    [HttpGet("cache/keys")]
+    [Authorize(Policy = Policies.SystemAdmin)]
+    [ProducesResponseType(typeof(PermissionCacheKeysDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PermissionCacheKeysDto>> GetTrackedCacheKeys(
+        [FromQuery] string? search = null,
+        [FromQuery] string? cacheType = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        var query = new GetPermissionCacheKeysQuery
+        {
+            Search = search,
+            CacheType = cacheType,
+            Page = page,
+            PageSize = pageSize
+        };
+        var result = await _mediator.Send(query).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Get tracking metadata for one authorization L1 cache key (cache-key debugging).
+    /// </summary>
+    /// <remarks>System-administrator only; returns 404 when the key is not tracked in this process.</remarks>
+    [HttpGet("cache/keys:inspect")]
+    [Authorize(Policy = Policies.SystemAdmin)]
+    [ProducesResponseType(typeof(PermissionCacheKeyInfoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PermissionCacheKeyInfoDto>> InspectTrackedCacheKey(
+        [FromQuery(Name = "key")] string key)
+    {
+        var query = new GetPermissionCacheKeyQuery { Key = key };
+        var result = await _mediator.Send(query).ConfigureAwait(false);
+        if (result is null)
+        {
+            return NotFound(new { message = "Cache key is not tracked in this process." });
+        }
+
         return Ok(result);
     }
 

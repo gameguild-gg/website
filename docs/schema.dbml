@@ -4161,6 +4161,81 @@ Table "ScheduledAuditExports" {
   }
 }
 
+Table "SecurityAlerts" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "RuleId" "character varying(100)" [not null]
+  "Kind" integer [not null]
+  "Severity" integer [not null]
+  "Title" "character varying(200)" [not null]
+  "Description" "character varying(1000)" [not null]
+  "SourceActionType" "character varying(100)" [not null]
+  "SourceAuditLogId" uuid
+  "SubjectUserId" uuid
+  "IpAddress" "character varying(45)"
+  "DeduplicationKey" "character varying(400)" [not null]
+  "Status" integer [not null]
+  "OccurrenceCount" integer [not null]
+  "FirstSeenAtUtc" timestamp [not null]
+  "LastSeenAtUtc" timestamp [not null]
+  "AcknowledgedByUserId" uuid
+  "AcknowledgedAtUtc" timestamp
+  "AcknowledgementNotes" "character varying(1000)"
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SecurityAlerts"]
+    DeduplicationKey [name: "IX_SecurityAlerts_DeduplicationKey"]
+    (Status, Severity, LastSeenAtUtc) [name: "IX_SecurityAlerts_Status_Severity_LastSeenAtUtc"]
+    (TenantId, Status, LastSeenAtUtc) [name: "IX_SecurityAlerts_TenantId_Status_LastSeenAtUtc"]
+  }
+}
+
+Table "SecurityLogRetentionExecutions" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "ExecutedAtUtc" timestamp [not null]
+  "TriggeredByUserId" uuid
+  "CutoffUtc" timestamp [not null]
+  "PolicyRetentionDays" integer [not null]
+  "LegalHoldActive" boolean [not null]
+  "DryRun" boolean [not null]
+  "DeletedCount" integer [not null]
+  "EvaluatedCount" integer [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SecurityLogRetentionExecutions"]
+    (TenantId, ExecutedAtUtc) [name: "IX_SecurityLogRetentionExecutions_TenantId_ExecutedAtUtc"]
+  }
+}
+
+Table "SecurityLogRetentionPolicies" {
+  "Id" uuid [not null]
+  "TenantId" uuid [not null]
+  "Revision" integer [not null]
+  "RetentionDays" integer [not null]
+  "CategoryOverridesJson" text
+  "LegalHoldUntilUtc" timestamp
+  "UpdatedByUserId" uuid [not null]
+  "ConfiguredAtUtc" timestamp [not null]
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+
+  Indexes {
+    Id [pk, name: "PK_SecurityLogRetentionPolicies"]
+    TenantId [unique, name: "IX_SecurityLogRetentionPolicies_TenantId"]
+  }
+}
+
 Table "social_blog_ai_conversations" {
   "Id" uuid [not null]
   "BlogPostId" uuid [not null]
@@ -12200,6 +12275,7 @@ Table "auth"."UserWebAuthnCredentials" {
   "RegisteredFromIp" "character varying(45)"
   "RegisteredUserAgent" "character varying(500)"
   "IsActive" boolean [not null]
+  "DeactivatedAt" timestamp
   "RevokedAt" timestamp
 
   Indexes {

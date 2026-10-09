@@ -1,10 +1,17 @@
-# Parte 3. Expansão de reviews e operação
+# Parte 4. Expansão de reviews e operação
+
+Status: não iniciada; gate de entrada `04-0` aprovado em 2026-10-08.
 
 ## Objetivo
 
 Expandir o E2E principal com `SelfReview`, `PeerReview`, a porta durável de
-`AIReview` e a operação acadêmica avançada. Esta parte contém `SEQ-12` a
-`SEQ-16` e não redefine os contratos centrais aprovados nas partes anteriores.
+`AIReview` e a operação acadêmica avançada. Esta parte contém a preparação
+`SEQ-12A` e os marcos `SEQ-12` a `SEQ-16`. Ela preserva os invariantes de
+domínio, ownership, autorização, rounds, release e gradebook aprovados nas
+partes anteriores, mas começa reconciliando a porta interna de stages com o
+lifecycle assíncrono já especificado para reviews humanos e externos. Essa
+evolução é única e genérica; não cria runtimes por método. A parte usa as
+personas e capacidades contextuais comprovadas na Parte 3.
 
 Regras globais: [`08-implementation-sequence.md`](../08-implementation-sequence.md).
 
@@ -14,18 +21,23 @@ Regras globais: [`08-implementation-sequence.md`](../08-implementation-sequence.
 - primeira implementação da Parte 2 concluída e o plano de
   [`fechamento da Parte 2`](./02a-core-grading-e2e-closeout.md) integralmente
   aprovado;
+- caminho crítico da
+  [`Parte 3`](./03-contextual-access-and-personas.md) concluído, com
+  `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados; a delegação operacional de
+  equipe em `ACCESS-03B` não bloqueia esta parte;
 - fluxo oficial individual e coletivo sem autoridade paralela;
 - gradebook mínimo, release e auditoria básica funcionando de forma
   idempotente.
 
-## Gate de entrada `03-0`
+## Gate de entrada `04-0`
 
-Gate aprovado: `CLOSE-01` a `CLOSE-04` estão concluídos e `SEQ-12` pode
-começar. O fechamento resolveu somente o delta encontrado após a implementação
-da Parte 2; ele não antecipou `SelfReview`, o handler canônico de `PeerReview`,
-a porta de `AIReview` ou a operação avançada desta parte.
+Gate aprovado em 2026-10-08. `CLOSE-01` a `CLOSE-04`, `ACCESS-03A`,
+`ACCESS-04` e `ACCESS-05` estão concluídos. A delegação operacional
+`ACCESS-03B` permanece externa e não bloqueante. A aprovação libera somente
+`SEQ-12A`; ela não autoriza schema, migration, capability oficial nova nem
+provider de produção.
 
-O gate deve trazer como evidência:
+A aprovação está sustentada pelas seguintes evidências:
 
 - ausência de submit, score, agregação ou notificação peer autoritativos fora da
   `GradingExecution`;
@@ -34,13 +46,130 @@ O gate deve trazer como evidência:
 - E2Es oficiais individual e coletivo via HTTP + PostgreSQL;
 - criação limpa e upgrade populado pela cadeia real, sem editar migrations
   históricas;
+- owner, ao menos dois learners e outsider comprovados por sessões e
+  autorização contextuais, sem role de produto ou bypass administrativo;
+- `StaffReview` restrito à equipe e ausente da autorização contextual de
+  `SelfReview` e `PeerReview`;
 - suíte acumulada aprovada.
+
+As evidências concretas do gate, incluindo os E2Es PostgreSQL com sessões reais
+e a suíte acumulada, permanecem registradas na
+[`Parte 3`](./03-contextual-access-and-personas.md#evidências-executadas).
+
+## Execução e gates de persistência
+
+Executar um marco por vez. Cada marco encerra contrato, API, surface e testes
+aplicáveis antes do seguinte; esta parte não deve ser implementada como um único
+corte. Todo `SCHEMA-GATE` interrompe a execução e exige apresentação e aprovação
+explícita antes de editar entidades EF, configurações, migrations, snapshot ou
+tabelas.
+
+O estado atual já permite classificar os gates:
+
+- `SEQ-12A`: nenhuma mudança relacional é prevista. Se a evolução do lifecycle
+  ou do test run multipersona demonstrar necessidade de schema, interromper e
+  apresentar o delta;
+- `SEQ-12`: gate realmente condicional. `ReviewEvidence` e
+  `GradingCommandReceipt` podem permitir um event stream append-only de draft,
+  mas isso deve ser provado sob concorrência antes de concluir delta zero;
+- `SEQ-13`: existe delta relacional esperado. `AssessmentPeerReview` atual não
+  representa lease, expiração, reatribuição, ownership pelo stage/round nem os
+  estados operacionais exigidos. O desenho exato continua não aprovado;
+- `SEQ-14`: gate condicional. O módulo possui outbox acadêmica e receipts, mas
+  não pode importar o inbox do host `GameGuild.API`;
+- `SEQ-15`: existe delta relacional esperado para agendamento por rodada.
+  `Assessment.ResultReleaseScheduledFor` guarda a policy autoral, enquanto
+  `GradeResultRelease` representa apenas uma liberação final append-only. O
+  desenho exato continua não aprovado.
+
+Nenhuma das duas propostas esperadas autoriza antecipadamente uma migration.
+Cada uma deve listar ownership, lifecycle, campos, constraints, índices,
+retenção, concorrência, alternativa rejeitada e impacto no catálogo PostgreSQL.
 
 ## Fora do escopo
 
 - reabrir decisões centrais sem novo ADR e avaliação de impacto;
 - substituir o runtime entregue na Parte 2 por implementações por método;
 - disponibilizar `AIReview` em produção sem provider real aprovado.
+
+## `SEQ-12A`. Generalizar stages e test run
+
+### Resultado
+
+Todos os métodos usam a mesma máquina de estados para iniciar, aguardar
+evidência, aceitar evidência, retomar e concluir. O test run representa um ou
+vários sujeitos sem enrollment, submission oficial ou efeitos acadêmicos. Essa
+fundação é concluída antes de implementar `SelfReview`.
+
+### Lifecycle genérico
+
+- evoluir `IReviewStageHandler` do contrato exclusivamente síncrono
+  `ExecuteAsync -> GradeResultV1` para operações equivalentes a `StartAsync`,
+  `AcceptEvidenceAsync` e `TryCompleteAsync`, com uma transição versionada que
+  possa representar conclusão, espera por evidência, espera por resolução
+  docente e falha retryable ou terminal;
+- manter o orquestrador responsável por ordem, rounds, idempotência,
+  persistência e avanço entre stages. Ele reage à transição retornada e não
+  contém branches por `ReviewMethod`;
+- manter cada handler responsável por validar a evidência e decidir quando seu
+  método está completo;
+- adaptar `AutomatedReview` para normalmente concluir em `StartAsync` e
+  `InstructorReview` para aguardar e aceitar evidência docente pelo mesmo
+  lifecycle;
+- preservar os casos de uso autenticados e idempotentes atuais de resolução
+  docente, fazendo-os entregar evidência ao dispatcher genérico em vez de
+  chamar uma mutação exclusiva do orquestrador;
+- resolver handler, key, versão, provider e contexto exclusivamente pelo
+  manifest congelado. Capability atual nunca troca o handler de uma execução já
+  criada;
+- não criar um service, orquestrador ou tabela por método.
+
+### Test run multipersona
+
+- ampliar os contratos e views de test run para uma coleção explícita de
+  subjects e execuções; o caso de uma persona continua sendo a mesma estrutura
+  com um elemento;
+- criar deterministicamente as personas sintéticas exigidas pela policy e
+  materializar uma entrega imutável por subject;
+- manter respostas, evidências, claims e resultados vinculados à execução do
+  subject correto, sem payload global que duplique essas relações;
+- concluir o `AssessmentTestRun` somente quando todas as execuções obrigatórias
+  estiverem terminais; a conclusão de uma execução não pode concluir o run
+  multipersona inteiro;
+- manter o instrutor como ator autenticado do test run e as personas como
+  sujeitos simulados. Não criar enrollment, `AssessmentSubmission`, gradebook,
+  release, progresso, notificação ou passback;
+- atualizar restart, reload/resume e cancelamento para operar sobre o conjunto
+  completo de subjects e execuções.
+
+### Regra de regrade para os métodos adicionais
+
+- `AutomatedReview` e `AIReview` executam novamente usando revisão, manifest,
+  entrega, resposta e versões já congelados;
+- `SelfReview` e `PeerReview` reutilizam por referência as evidências humanas
+  finalizadas da rodada substituída. A nova rodada registra explicitamente a
+  origem e o hash dessas evidências, sem copiá-las como nova ação humana e sem
+  convocar novamente aluno ou peers;
+- `InstructorReview` sempre exige uma nova resolução docente para a nova rodada,
+  podendo apresentar o resultado anterior como contexto somente leitura;
+- solicitar uma nova coleta de self ou peer review é outro caso de uso,
+  explicitamente fora deste corte. Um regrade comum nunca o faz implicitamente;
+- os `SCHEMA-GATE`s de `SEQ-12` e `SEQ-13` devem provar que referências
+  cross-round são íntegras e auditáveis ou apresentar o delta necessário.
+
+### Gate
+
+- os E2Es atuais de `AutomatedReview`, `InstructorReview` e da combinação entre
+  ambos continuam aprovados em `AuthorTest` e `OfficialSubmission`;
+- o orquestrador não possui branch por método para iniciar ou aceitar evidência;
+- resolução docente passa pelo contrato genérico sem perder autorização,
+  idempotência ou auditoria;
+- test run com uma persona preserva o comportamento atual;
+- test run com múltiplos subjects não conclui prematuramente e retoma cada
+  execução correta após reload;
+- regrade não solicita silenciosamente nova evidência humana e preserva a
+  proveniência da evidência reutilizada;
+- nenhuma mudança de schema é realizada sem um novo gate explícito.
 
 ## `SEQ-12`. Completar `SelfReview`
 
@@ -62,7 +191,9 @@ garante:
 - deduplicação durável de save e submit por escopo, idempotency key e request
   hash, com outcome persistido e sem evento duplicado em replay;
 - ator, instante e versão registrados na finalização;
-- imutabilidade da evidência finalizada.
+- imutabilidade da evidência finalizada;
+- referência íntegra e auditável à evidência finalizada da rodada anterior
+  quando um regrade reutilizá-la.
 
 Se o núcleo atender integralmente, registrar o gate com delta relacional zero.
 Se não atender, apresentar tabelas, colunas, constraints e índices necessários
@@ -73,6 +204,9 @@ de dados e artefatos SQL ativos.
 ### Implementação
 
 - criar contrato próprio de autoavaliação por item;
+- criar um comando idempotente de submit individual e manter os comandos
+  versionados de save/submit coletivo; ambos entregam evidência ao dispatcher
+  genérico concluído em `SEQ-12A`;
 - validar ator, sujeito, escala, limites e momento de envio;
 - manter resposta acadêmica e evidência de self review separadas;
 - produzir resultado direto ou encaminhar ao instrutor;
@@ -101,7 +235,12 @@ de dados e artefatos SQL ativos.
 - no contexto coletivo, mostrar o estado compartilhado mais recente e atribuir
   cada mutação ao participante autenticado, sem apresentar uma evidência por
   integrante;
-- aplicar release e gradebook já entregues aos dois tipos de sujeito.
+- em regrade, referenciar a evidência finalizada da rodada substituída e
+  recalcular o resultado do novo stage sem solicitar outra ação do aluno;
+- aplicar release e gradebook já entregues aos dois tipos de sujeito;
+- executar o fluxo oficial individual com a sessão learner comprovada em
+  `ACCESS-05`; no coletivo, cada mutação usa a sessão do participante real e o
+  snapshot de participantes da submission única;
 
 ### Gate
 
@@ -116,6 +255,8 @@ de dados e artefatos SQL ativos.
   depois dos E2Es oficiais individual e coletivo;
 - direto e combinado com instrutor passam no test run e nos E2Es individual e
   coletivo;
+- regrade individual e coletivo reutiliza a evidência humana correta, preserva
+  sua autoria e não cria um segundo submit do aluno;
 - testes de interface cobrem reload/resume, conflito de versão, retry, submit
   final e bloqueio de edição posterior nos contextos de teste e oficial;
 - não existe implementação paralela específica da UI ou do runtime.
@@ -134,14 +275,21 @@ Antes de alterar a persistência, inventariar explicitamente
 `PeerReviewsController`, `IPeerReviewAssignmentService`,
 `PeerReviewAssignmentService`, `actions-peer-review.ts`, o workspace atual, os
 clients gerados, `GradingQueueService`, `TasksService`, actions e painéis do
-SpeedGrader, projeções de tarefas/fila e os produtores de notificação.
+SpeedGrader, projeções de tarefas/fila e os produtores de notificação. Incluir
+também `GameGuild.Learning.Courses.IPeerReviewService` e seus modelos no
+inventário: ausência de implementação ou uso ativo deve ser documentada, não
+presumida como autorização para remoção.
 Consumir a evidência de `CLOSE-01` de que dependências de `CanonicalRow`,
 submissions irmãs e submit peer autoritativo anterior foram eliminadas ou
 tornadas fail-closed. Se qualquer uma reaparecer, interromper `SEQ-13` e retornar
-ao fechamento da Parte 2. Com essa base comprovada, apresentar apenas eventuais
-mudanças necessárias para:
+ao fechamento da Parte 2. Com essa base comprovada, apresentar uma proposta
+relacional obrigatória para:
 
 - lease, expiração, reatribuição e idempotência de claims;
+- ownership canônico do claim pelo `ReviewStage`, derivando round, execução e
+  alvo sem duplicar IDs capazes de divergir;
+- identidade exclusiva do revisor real em `OfficialSubmission` ou da persona
+  sintética em `AuthorTest`, sem confundir sujeito e ator autenticado;
 - cota do revisor separada do limiar recebido pela submission;
 - evidências e agregação versionada;
 - preservação de `AssessmentPeerReview.Score` como unidades inteiras de
@@ -153,6 +301,11 @@ mudanças necessárias para:
   mínimo de evidências, além dos comandos idempotentes de extensão,
   reatribuição e resolução docente final. Se stages/evidências genéricos não
   representarem isso sem ambiguidade, apresentar o delta relacional neste gate.
+
+O estado atual de `AssessmentPeerReview`, limitado a `Assigned`/`Submitted` e
+sem lease ou vínculo com stage/round, não satisfaz esse contrato. O gate deve
+decidir explicitamente entre evoluir essa entidade ou introduzir um owner
+canônico novo. Essa constatação não pré-aprova nenhuma das alternativas.
 
 Reutilizar tabelas atuais quando possuírem ownership e invariantes corretos.
 `AssessmentPeerReview` pode permanecer como registro individual de claim e
@@ -178,11 +331,13 @@ específicas, não apenas a classificação de que ela é antiga.
   cria evidência docente e evento de auditoria próprios, registra que o limiar
   peer não foi alcançado e não altera retroativamente `ReviewMethods`;
 - transformar cada submit autorizado do workspace em `ReviewEvidence` da
-  `GradingExecution`; somente o handler de `PeerReview` aceita, agrega e
-  conclui o stage;
+  `GradingExecution`, entregue pelo dispatcher genérico; somente o handler de
+  `PeerReview` aceita, agrega e conclui o stage;
 - agregar resultados por submission conforme policy versionada;
 - encaminhar opcionalmente o agregado para `InstructorReview`;
 - exercitar múltiplas personas no test run;
+- usar o agregado multipersona de `SEQ-12A`; não criar um payload ou runtime
+  paralelo exclusivo de peer;
 - registrar inicialmente somente `AuthorTest` e concluir os fluxos direto e
   combinado no test run multipersona;
 - conectar claims, distribuição e agregação às submissions oficiais individuais
@@ -197,7 +352,12 @@ específicas, não apenas a classificação de que ela é antiga.
   necessários aos efeitos posteriores; notificações externas e passback
   permanecem desligados até os consumers de `SEQ-15`;
 - remover ou adaptar, no mesmo E2E, rotas e métodos antigos que permitam
-  concluir peer review fora da `GradingExecution`.
+  concluir peer review fora da `GradingExecution`;
+- em regrade, reutilizar por referência claims submetidos e evidências
+  finalizadas da rodada substituída, recalcular a agregação no novo stage e não
+  distribuir novos claims implicitamente;
+- executar os E2Es oficiais com ao menos dois learners matriculados em sessões
+  distintas; o peer é contextual ao curso e nunca uma role de tenant;
 
 ### Gate
 
@@ -212,6 +372,8 @@ específicas, não apenas a classificação de que ela é antiga.
   de extensão, reatribuição ou resolução docente altera esse estado;
 - resolução docente de insuficiência preserva claims/evidências recebidos,
   motivo, ator e antes/depois, sem declarar falsamente conclusão peer;
+- regrade preserva a proveniência das evidências peer reutilizadas e não exige
+  nova participação dos revisores;
 - busca, testes de rota e testes de service comprovam que submit antigo não
   atribui score nem dispara notificação direta; existe uma única autoridade
   para evidência individual, agregação e resultado;
@@ -230,6 +392,12 @@ porta e sua durabilidade, não uma IA concreta de produção.
 ### `SCHEMA-GATE` condicional de AI
 
 Primeiro provar se outbox, inbox e deduplicação do núcleo atendem ao contrato.
+O inbox de transporte existente em `GameGuild.API` pertence ao host e não pode
+ser importado por `GameGuild.Learning.Assessments`. A proposta deve preservar a
+direção de dependência: Learning expõe portas e comandos genéricos; o host
+compõe o adapter do provider e entrega respostas ao caso de uso idempotente de
+Learning. Deduplicação autoritativa da resposta fica em receipts já adequados ou
+em persistência do próprio módulo aprovada neste gate.
 Somente se não atenderem, apresentar mudanças para:
 
 - request estável e correlação com stage/round;
@@ -244,19 +412,28 @@ limpa e upgrade populado testados.
 
 - criar interface, registry específico, capability descriptor e configuração
   de provider sobre `IReviewCapabilityRegistry`;
+- manter `IAIReviewProvider`, requests, responses e transições no módulo de
+  Assessments; integrações concretas e credenciais ficam em adapters compostos
+  pelo host, sem referência do módulo para `GameGuild.API`;
 - versionar request, response, evidência e identidade do modelo/provider;
 - persistir stage e `AIReviewRequested` antes de qualquer chamada externa;
 - despachar por outbox e receber por inbox deduplicada;
+- entregar a resposta deduplicada ao lifecycle genérico de `SEQ-12A`, sem
+  branch de `AIReview` no orquestrador;
 - aplicar timeout, retry e estado pendente sem score de fallback;
 - bloquear publish sem provider compatível registrado;
 - usar provider controlado somente nos contract tests e test runs;
 - provar que o handler permanece indiferente ao sujeito individual ou coletivo;
+- em regrade, gerar uma nova solicitação com correlação ao novo stage, mantendo
+  provider e policy fixados pelo manifest;
 - manter produção indisponível até existir provider real configurado.
 
 ### Gate
 
 - nenhuma chamada externa ocorre dentro da transação de submit;
 - resposta duplicada não duplica evidência nem resultado;
+- testes de arquitetura comprovam ausência de dependência
+  `GameGuild.Learning.Assessments -> GameGuild.API` ou para provider concreto;
 - indisponibilidade transitória mantém a execução pendente;
 - ausência de provider bloqueia publish e nunca produz nota;
 - provider controlado prova os fluxos direto e seguido por instrutor;
@@ -269,19 +446,31 @@ limpa e upgrade populado testados.
 O E2E acadêmico já existe. Este marco acrescenta políticas e consumidores
 operacionais avançados sem redefinir resultado, tentativa ou workflow.
 
-### `SCHEMA-GATE` condicional de operação
+### `SCHEMA-GATE` de operação
 
 `Program.PassingScore` e os demais campos acadêmicos existentes já foram
-convertidos em `SEQ-03`. Usar outbox e projeções existentes primeiro e somente
-propor persistência nova quando consulta, retenção ou idempotência operacional
-não puderem ser atendidas corretamente. Toda proposta exige aprovação e edição
-por migration incremental; se não houver delta relacional, registrar o gate com
-delta zero.
+convertidos em `SEQ-03`. Para consumers, filas, métricas e projeções, usar outbox
+e estruturas existentes primeiro e somente propor persistência nova quando
+consulta, retenção ou idempotência operacional não puderem ser atendidas
+corretamente. O agendamento por rodada possui o delta esperado descrito abaixo.
+Toda proposta exige aprovação e migration incremental própria; componentes sem
+delta registram essa conclusão separadamente.
 
-Para release agendado, o gate deve provar se `AssessmentResultRelease` já
-suporta `ScheduledFor` em UTC, versão de concorrência e índice eficiente por
-`(State, ScheduledFor)`. Qualquer delta permanece pertencente à rodada pelo
-único `GradeRoundId`; não adicionar `AssessmentSubmissionId` redundante.
+Para release agendado, o gate parte do estado já comprovado:
+
+- `Assessment.ResultReleaseScheduledFor` congela a policy autoral no snapshot;
+- `GradeResultRelease` é o registro final append-only e aceita somente
+  `Released`;
+- ainda não existe owner persistente do agendamento de uma rodada.
+
+Portanto, apresentar uma proposta relacional obrigatória para o schedule por
+`GradeRoundId`, com `ScheduledFor` em UTC, estado operacional, versão de
+concorrência e índices eficientes para vencimento e retry. A proposta deve
+manter `GradeResultRelease` como fato final append-only, preferindo um owner de
+agendamento separado em vez de transformar ausência de release, agendamento e
+release final em uma única linha mutável. Não adicionar
+`AssessmentSubmissionId` redundante; a submission continua derivada pela
+execução da rodada.
 
 ### Implementação
 
@@ -292,14 +481,16 @@ suporta `ScheduledFor` em UTC, versão de concorrência e índice eficiente por
   `CancelScheduledGradeResultRelease` com ator, permissão, rodada esperada,
   versão de concorrência, idempotency key, motivo e auditoria. Reagendamento é
   uma nova execução idempotente de schedule sobre a versão esperada;
-- persistir `ScheduledFor` em UTC e usar `TimeProvider` injetável. O worker busca
-  releases vencidos por índice, mas executa o mesmo `ReleaseGradeResult` com
-  identidade de serviço autorizada; nunca altera o estado diretamente;
+- depois da aprovação do gate, persistir `ScheduledFor` em UTC no owner de
+  schedule e usar `TimeProvider` injetável. O worker busca schedules vencidos
+  por índice, mas executa o mesmo `ReleaseGradeResult` com identidade de serviço
+  autorizada; nunca cria ou altera `GradeResultRelease` diretamente;
 - quando a rodada finalizar depois do horário configurado, a policy solicita
   release imediato pelo mesmo comando. Quando finalizar antes, cria o estado
   `Scheduled`. Cada nova rodada de regrade reaplica a policy sem alterar o
   agendamento ou a liberação das rodadas anteriores;
-- cancelar um agendamento retorna a rodada a `Withheld`; não retira resultado já
+- cancelar um agendamento deixa a rodada derivadamente `Withheld` e preserva o
+  histórico auditável do schedule; não cria release e não retira resultado já
   liberado. Retirada de release continua sendo outro caso de uso explicitamente
   fora deste corte;
 - ampliar, se necessário, as policies além da seleção mínima entregue em
@@ -310,6 +501,9 @@ suporta `ScheduledFor` em UTC, versão de concorrência e índice eficiente por
   tardia ou cast para tipos fracionários;
 - manter projeções agregadas precomputadas sem aritmética decimal em SQL;
 - construir filas docentes por estado de review;
+- autorizar filas e operações docentes pela capability `StaffReview` aprovada
+  na Parte 3; edição ou publicação continuam exigindo suas próprias
+  capabilities;
 - implementar os consumers de notificação e passback, que permaneceram
   deliberadamente desligados na Parte 2, consumindo somente os eventos
   canônicos adequados e nunca comandos ou services de grading diretamente;
@@ -360,6 +554,11 @@ restaram autoridades concorrentes, referências obsoletas ou lacunas na matriz.
 - atualizar mapas de serialização e documentação arquitetural;
 - executar a matriz dos nove workflows no test run;
 - executar todos os workflows oficialmente implementados na jornada de aluno;
+- repetir a matriz contextual obrigatória de owner, ao menos dois learners e
+  outsider com sessões separadas;
+- quando `ACCESS-03B` estiver disponível, repetir adicionalmente os cenários de
+  collaborator e reviewer da equipe sem torná-los autoridade de `SelfReview`
+  ou `PeerReview`;
 - confirmar bloqueio de `AIReview` sem provider real;
 - confirmar bloqueio de automated-only parcial enquanto a decisão de produto
   permanecer pendente;
@@ -378,9 +577,11 @@ restaram autoridades concorrentes, referências obsoletas ou lacunas na matriz.
   bloqueiam este gate;
 - observabilidade distingue falha técnica, espera legítima e revisão humana.
 
-## Definição de pronto da Parte 3
+## Definição de pronto da Parte 4
 
-- todos os gates de `SEQ-12` a `SEQ-16` estão satisfeitos;
+- o gate de `SEQ-12A` e todos os gates de `SEQ-12` a `SEQ-16` estão satisfeitos;
+- todos os métodos usam o mesmo lifecycle de stage e o test run multipersona
+  não possui efeitos acadêmicos;
 - reviews adicionais reutilizam o mesmo orquestrador, autorização, rounds,
   evidências, resultado e release do E2E principal;
 - `SelfReview` e `PeerReview` passam nos contextos de teste e oficial
@@ -395,16 +596,19 @@ restaram autoridades concorrentes, referências obsoletas ou lacunas na matriz.
   consumer obrigatório;
 - auditoria, observabilidade, mapas de serialização e matriz E2E estão
   completos;
-- toda a suíte de grading acumulada das Partes 1, 2 e 3 passa em CI com banco
+- toda a suíte de grading acumulada das Partes 1, 2, 3 e 4 passa em CI com banco
   criado do zero e diff global sem drift depois de cada `SCHEMA-GATE`.
 
 ## Acompanhamento
 
 | Marco | Status | Evidência |
 | --- | --- | --- |
-| gate `03-0` | aprovado | `CLOSE-01` a `CLOSE-04` aprovados; Parte 3 liberada |
+| gate `04-0` | aprovado | `ACCESS-03A`, `ACCESS-04` e `ACCESS-05` aprovados em 2026-10-08; `ACCESS-03B` não bloqueante |
+| `SEQ-12A` | pendente | lifecycle genérico, test run multipersona e regra de regrade |
 | `SEQ-12` | pendente | `SelfReview` individual e coletivo |
-| `SEQ-13` | pendente | `PeerReview` individual e coletivo |
+| schema de `SEQ-13` | aguardando proposta e aprovação | lease, ownership de stage, identidades e estados de claim |
+| `SEQ-13` | bloqueado pelo schema gate | `PeerReview` individual e coletivo |
 | `SEQ-14` | pendente | contract test de provider e gate condicional |
-| `SEQ-15` | pendente | integração global, operação e projeções idempotentes |
+| schema de schedule em `SEQ-15` | aguardando proposta e aprovação | owner por rodada, UTC, concorrência e índice de vencimento |
+| `SEQ-15` | bloqueado pelo schema gate | integração global, operação e projeções idempotentes |
 | `SEQ-16` | pendente | CI, auditoria e checklist global |
