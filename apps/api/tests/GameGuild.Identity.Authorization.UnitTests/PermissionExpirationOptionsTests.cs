@@ -140,7 +140,8 @@ public class PermissionExpirationOptionsTests
             VersionStoreMock(),
             AnonymousActor(),
             NullLogger<PermissionGrantService>.Instance,
-            Options.Create(options));
+            changeNotifiers: null,
+            expirationOptions: Options.Create(options));
 
         var result = await sut.GrantTenantPermissionAsync(
             Guid.NewGuid(), Guid.NewGuid(), new[] { "courses:create" });
@@ -170,7 +171,8 @@ public class PermissionExpirationOptionsTests
             VersionStoreMock(),
             AnonymousActor(),
             NullLogger<PermissionGrantService>.Instance,
-            Options.Create(options));
+            changeNotifiers: null,
+            expirationOptions: Options.Create(options));
 
         var result = await sut.GrantTenantPermissionAsync(
             Guid.NewGuid(), Guid.NewGuid(), new[] { "courses:create" }, expiresAt: explicitExpiry);
@@ -198,7 +200,8 @@ public class PermissionExpirationOptionsTests
             VersionStoreMock(),
             AnonymousActor(),
             NullLogger<PermissionGrantService>.Instance,
-            Options.Create(options));
+            changeNotifiers: null,
+            expirationOptions: Options.Create(options));
 
         var result = await sut.GrantTenantPermissionAsync(
             Guid.NewGuid(), Guid.NewGuid(), new[] { "courses:create" });
