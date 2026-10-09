@@ -375,6 +375,11 @@ public static class AuthorizationModuleExtensions
         // callers (issue #330): docs/effective-permission-resolution.md
         services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
 
+        // Read-only graph visualization and impact analysis over the same
+        // RBAC/defaults data as the effective resolver (issue #334).
+        services.AddScoped<IPermissionGraphService, PermissionGraphService>();
+        services.AddScoped<IPermissionImpactAnalysisService, PermissionImpactAnalysisService>();
+
         return services;
     }
 }
