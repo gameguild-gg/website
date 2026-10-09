@@ -58,7 +58,7 @@ public sealed class MonetizationPermissionTests
     public void PermissionOperationType_HasCheckMember_ForDecisionAuditing()
     {
         // Endpoint-level permission decisions are audited as Check entries.
-        ((int)PermissionOperationType.Check).Should().Be(11);
+        ((int)PermissionOperationType.Check).Should().Be(12);
         Enum.GetNames<PermissionOperationType>().Should().Contain("Check");
     }
 

@@ -6032,6 +6032,83 @@ export const postAuthorizationTenantsGrantEndpoint = {
 } as const;
 
 /**
+ * Gets permission grants expiring within a window (administrative visibility
+ * for upcoming expirations).
+ */
+export interface GetAuthorizationTenantsPermissionsExpiringInput {
+  tenantId: string;
+  query?: {
+    expiresBefore?: string;
+  };
+}
+export type GetAuthorizationTenantsPermissionsExpiringOutput = Types.IdentityAuthorizationGetExpiringTenantPermissionsOutput;
+export const getAuthorizationTenantsPermissionsExpiringEndpoint = {
+  operationId: 'getAuthorizationTenantsPermissionsExpiring' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/tenants/permissions:expiring' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-extends the expiration of permission grants in a tenant by a time period.
+ */
+export interface PostAuthorizationTenantsPermissionsExtendExpirationInput {
+  body?: Types.IdentityAuthorizationExtendTenantPermissionExpirationCommand;
+}
+export type PostAuthorizationTenantsPermissionsExtendExpirationOutput = number;
+export const postAuthorizationTenantsPermissionsExtendExpirationEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsExtendExpiration' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:extend-expiration' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Processes (deactivates, audits, notifies) all expired permission grants now,
+ * without waiting for the background worker. System admin only.
+ */
+export type PostAuthorizationTenantsPermissionsProcessExpiredInput = void;
+export type PostAuthorizationTenantsPermissionsProcessExpiredOutput = number;
+export const postAuthorizationTenantsPermissionsProcessExpiredEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsProcessExpired' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:process-expired' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Publishes upcoming-expiration notifications for grants expiring within the
+ * configured window, without waiting for the background worker. System admin only.
+ */
+export type PostAuthorizationTenantsPermissionsSendExpirationRemindersInput = void;
+export type PostAuthorizationTenantsPermissionsSendExpirationRemindersOutput = number;
+export const postAuthorizationTenantsPermissionsSendExpirationRemindersEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsSendExpirationReminders' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:send-expiration-reminders' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-sets an absolute expiration for permission grants in a tenant.
+ */
+export interface PostAuthorizationTenantsPermissionsSetExpirationInput {
+  body?: Types.IdentityAuthorizationSetTenantPermissionExpirationCommand;
+}
+export type PostAuthorizationTenantsPermissionsSetExpirationOutput = number;
+export const postAuthorizationTenantsPermissionsSetExpirationEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsSetExpiration' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:set-expiration' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Revokes tenant-level permissions from a user.
  */
 export interface PostAuthorizationTenantsRevokeInput {
@@ -25953,6 +26030,11 @@ export const endpoints = {
   postAuthorizationTenantsDenyRemove: postAuthorizationTenantsDenyRemoveEndpoint,
   postAuthorizationTenantsGlobalDefaults: postAuthorizationTenantsGlobalDefaultsEndpoint,
   postAuthorizationTenantsGrant: postAuthorizationTenantsGrantEndpoint,
+  getAuthorizationTenantsPermissionsExpiring: getAuthorizationTenantsPermissionsExpiringEndpoint,
+  postAuthorizationTenantsPermissionsExtendExpiration: postAuthorizationTenantsPermissionsExtendExpirationEndpoint,
+  postAuthorizationTenantsPermissionsProcessExpired: postAuthorizationTenantsPermissionsProcessExpiredEndpoint,
+  postAuthorizationTenantsPermissionsSendExpirationReminders: postAuthorizationTenantsPermissionsSendExpirationRemindersEndpoint,
+  postAuthorizationTenantsPermissionsSetExpiration: postAuthorizationTenantsPermissionsSetExpirationEndpoint,
   postAuthorizationTenantsRevoke: postAuthorizationTenantsRevokeEndpoint,
   getBillingCharges: getBillingChargesEndpoint,
   postBillingCharges: postBillingChargesEndpoint,

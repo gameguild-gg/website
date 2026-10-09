@@ -579,3 +579,105 @@ public sealed class GetResourceUsersQueryHandler(
         };
     }
 }
+
+// ==================== GET EXPIRING TENANT PERMISSIONS (issue #331) ====================
+
+/// <summary>
+///     Query to get active tenant permission grants that expire within a cutoff
+///     (defaults to the configured upcoming-expiration window).
+/// </summary>
+public sealed record GetExpiringTenantPermissionsQuery : IQuery<GetExpiringTenantPermissionsResponse>
+{
+    /// <summary>
+    ///     Gets the tenant ID.
+    /// </summary>
+    public required TenantId TenantId { get; init; }
+
+    /// <summary>
+    ///     Gets the optional cutoff instant; grants expiring after it are excluded.
+    ///     Defaults to <c>now + Authorization:PermissionExpiration:UpcomingNotificationWindow</c>.
+    /// </summary>
+    public DateTime? ExpiresBefore { get; init; }
+}
+
+/// <summary>
+///     A tenant permission grant that is about to expire.
+/// </summary>
+public sealed record ExpiringTenantPermission
+{
+    /// <summary>
+    ///     Gets the grant ID.
+    /// </summary>
+    public required Guid PermissionId { get; init; }
+
+    /// <summary>
+    ///     Gets the user ID the grant belongs to (null for tenant defaults).
+    /// </summary>
+    public Guid? UserId { get; init; }
+
+    /// <summary>
+    ///     Gets the grant's permission strings.
+    /// </summary>
+    public required string[] Permissions { get; init; }
+
+    /// <summary>
+    ///     Gets the expiration instant.
+    /// </summary>
+    public required DateTime ExpiresAt { get; init; }
+}
+
+/// <summary>
+///     Response containing grants that are about to expire in a tenant.
+/// </summary>
+public sealed record GetExpiringTenantPermissionsResponse
+{
+    /// <summary>
+    ///     Gets the tenant ID.
+    /// </summary>
+    public required Guid TenantId { get; init; }
+
+    /// <summary>
+    ///     Gets the grants expiring within the requested window, ordered by expiration instant.
+    /// </summary>
+    public required List<ExpiringTenantPermission> Expiring { get; init; }
+}
+
+/// <summary>
+///     Handler for GetExpiringTenantPermissionsQuery.
+/// </summary>
+public sealed class GetExpiringTenantPermissionsQueryHandler(
+    IPermissionExpirationService expirationService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<GetExpiringTenantPermissionsQueryHandler> logger)
+    : IQueryHandler<GetExpiringTenantPermissionsQuery, GetExpiringTenantPermissionsResponse>
+{
+    private ActorContext Actor => actorContextAccessor.ActorContext;
+
+    public async Task<GetExpiringTenantPermissionsResponse> Handle(GetExpiringTenantPermissionsQuery request, CancellationToken cancellationToken)
+    {
+        PermissionExpirationCommandGuards.EnsureCanManageTenant(Actor, request.TenantId.Value, "view expiring permissions");
+
+        logger.LogInformation(
+            "Getting permissions expiring before {Cutoff} in tenant {TenantId}",
+            request.ExpiresBefore,
+            request.TenantId);
+
+        var expiring = await expirationService
+            .GetExpiringAsync(request.TenantId.Value, request.ExpiresBefore, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new GetExpiringTenantPermissionsResponse
+        {
+            TenantId = request.TenantId.Value,
+            Expiring = expiring
+                .Select(p => new ExpiringTenantPermission
+                {
+                    PermissionId = p.Id,
+                    UserId = p.UserId,
+                    Permissions = p.Permissions.ToArray(),
+                    ExpiresAt = p.ExpiresAt!.Value
+                })
+                .ToList()
+        };
+    }
+}
