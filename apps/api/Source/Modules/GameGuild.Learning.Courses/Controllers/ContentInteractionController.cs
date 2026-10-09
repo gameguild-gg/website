@@ -1,6 +1,5 @@
 using Asp.Versioning;
 using GameGuild.CQRS;
-using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -17,10 +16,10 @@ namespace GameGuild.Learning.Courses;
 public class ContentInteractionController(IContentInteractionService contentInteractionService, IProgramContentService programContentService, ILogger<ContentInteractionController> _logger, ISender sender) : BaseApiController {
   /// <summary>
   /// Create or resume a content interaction
-  /// Requires Read permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpPost]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<ContentInteractionDto>> CreateInteraction([FromQuery] Guid programId, [FromBody] StartContentRequest request) {
     _logger.LogDebug("Creating content interaction: ProgramId={ProgramId}, ContentId={ContentId}", programId, request.ContentId);
 
@@ -36,10 +35,10 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>
   /// Update progress for a content interaction
-  /// Requires Edit permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpPut("{interactionId}/progress")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<ContentInteractionDto>> UpdateProgress([FromRoute] Guid interactionId, [FromQuery] Guid programId, [FromBody] UpdateProgressRequest request) {
     try {
       // Get the interaction to verify it belongs to the specified program
@@ -56,10 +55,10 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>
   /// Submit content interaction (makes it immutable)
-  /// Requires Edit permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpPost("{interactionId}/submit")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<ContentInteractionDto>> SubmitContent([FromRoute] Guid interactionId, [FromQuery] Guid programId, [FromBody] SubmitContentRequest request) {
     try {
       // Verify the interaction belongs to the specified program
@@ -76,10 +75,10 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>
   /// Mark content as completed
-  /// Requires Edit permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpPost("{interactionId}/complete")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<ContentInteractionDto>> CompleteContent([FromRoute] Guid interactionId, [FromQuery] Guid programId, [FromBody] CompleteContentRequest request) {
     try {
       // Verify the interaction belongs to the specified program
@@ -96,10 +95,10 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>
   /// Get interaction for specific user and content
-  /// Requires Read permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpGet("user/{programUserId}/content/{contentId}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<ContentInteractionDto>> GetInteraction([FromRoute] Guid programUserId, [FromRoute] Guid contentId, [FromQuery] Guid programId) {
     // Verify content belongs to the specified program
     var content = await programContentService.GetContentByIdAsync(contentId).ConfigureAwait(false);
@@ -115,10 +114,10 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>
   /// Get all interactions for a user in a program
-  /// Requires Read permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpGet("user/{programUserId}")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Read, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<IEnumerable<ContentInteractionDto>>> GetUserInteractions([FromRoute] Guid programUserId, [FromQuery] Guid programId) {
     var interactions = await contentInteractionService.GetUserInteractionsAsync(programUserId).ConfigureAwait(false);
 
@@ -130,7 +129,7 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>Get identity-free survey result records for course managers.</summary>
   [HttpGet("content/{contentId}/survey-results")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Review, "programId")]
+  [RequireCourseCapability(CourseCapability.StaffReview, "programId")]
   public async Task<ActionResult<IEnumerable<SurveyResponseResultDto>>> GetSurveyResults([FromRoute] Guid contentId, [FromQuery] Guid programId) {
     var content = await programContentService.GetContentByIdAsync(contentId).ConfigureAwait(false);
     if (content is null || content.ProgramId != programId) return NotFound();
@@ -144,6 +143,7 @@ public class ContentInteractionController(IContentInteractionService contentInte
   }
 
   [HttpGet("content/{contentId}/survey-results/visible")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<IEnumerable<SurveyResponseResultDto>>> GetVisibleSurveyResults([FromRoute] Guid contentId, [FromQuery] Guid programId) {
     try {
       return Ok(await contentInteractionService.GetVisibleSurveyResponsesAsync(programId, contentId).ConfigureAwait(false));
@@ -154,13 +154,14 @@ public class ContentInteractionController(IContentInteractionService contentInte
   }
 
   [HttpGet("content/{contentId}/reflection-responses")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Review, "programId")]
+  [RequireCourseCapability(CourseCapability.StaffReview, "programId")]
   public async Task<ActionResult<IEnumerable<ReflectionResponseResultDto>>> GetReflectionResponses([FromRoute] Guid contentId, [FromQuery] Guid programId) {
     try { return Ok(await contentInteractionService.GetReflectionResponsesAsync(programId, contentId).ConfigureAwait(false)); }
     catch (RequestValidationException exception) { return BadRequest(exception.Message); }
   }
 
   [HttpGet("content/{contentId}/reflection-responses/visible")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<IEnumerable<ReflectionResponseResultDto>>> GetVisibleReflectionResponses([FromRoute] Guid contentId, [FromQuery] Guid programId) {
     try { return Ok(await contentInteractionService.GetVisibleReflectionResponsesAsync(programId, contentId).ConfigureAwait(false)); }
     catch (RequestValidationException exception) { return BadRequest(exception.Message); }
@@ -168,10 +169,10 @@ public class ContentInteractionController(IContentInteractionService contentInte
 
   /// <summary>
   /// Update time spent on content
-  /// Requires Edit permission on the parent Program
+  /// Requires an active enrollment in the parent Program.
   /// </summary>
   [HttpPut("{interactionId}/time-spent")]
-  [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "programId")]
+  [RequireCourseCapability(CourseCapability.Learn, "programId")]
   public async Task<ActionResult<ContentInteractionDto>> UpdateTimeSpent([FromRoute] Guid interactionId, [FromQuery] Guid programId, [FromBody] UpdateTimeSpentRequest request) {
     try {
       // Verify the interaction belongs to the specified program

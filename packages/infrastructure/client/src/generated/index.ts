@@ -118,6 +118,7 @@ export * from './modules/commerce-subscriptions-clients.gen.js';
 export * from './modules/content-pages-resources.gen.js';
 export * from './modules/learning-courses-content-interaction.gen.js';
 export * from './modules/learning-courses-program.gen.js';
+export * from './modules/learning-courses-access.gen.js';
 export * from './modules/learning-cohorts-schedules.gen.js';
 export * from './modules/learning-assessments-group-sets.gen.js';
 export * from './modules/learning-courses-students.gen.js';
