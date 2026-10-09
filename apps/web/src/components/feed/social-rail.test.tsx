@@ -65,7 +65,7 @@ describe("SocialRail", () => {
 
     expect(screen.getByRole("link", { name: /#indie dev/i })).toHaveAttribute(
       "href",
-      "/?tab=community&tag=indie%20dev",
+      "/feed?tab=community&tag=indie%20dev",
     );
   });
 
