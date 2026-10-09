@@ -77,7 +77,7 @@ public sealed class EffectivePermissionResolverService(
         {
             logger.LogWarning(
                 "Effective permission resolution requested with an invalid context (user {UserId}, tenant {TenantId}, resource {ResourceType}/{ResourceId}) - returning empty permissions (fail-closed).",
-                context.UserId, context.TenantId, context.ResourceType ?? "<none>", context.ResourceId ?? "<none>");
+                context.UserId, context.TenantId, context.ResourceType ?? "<none>", context.ResourceId ?? "<none>"); // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging
             return FailClosed(context);
         }
 
@@ -277,7 +277,7 @@ public sealed class EffectivePermissionResolverService(
             {
                 logger.LogWarning(
                     "Attempted to deny static permission {Permission} for user {UserId} - denies cannot override static grants",
-                    denied, context.UserId);
+                    denied, context.UserId); // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging
                 continue;
             }
 
@@ -289,7 +289,7 @@ public sealed class EffectivePermissionResolverService(
 
         logger.LogDebug(
             "Resolved {Count} effective permissions ({AllowCount} allowed, {DenyCount} denied) for user {UserId} in tenant {TenantId}",
-            effectivePermissions.Count, allows.Count, denies.Count, context.UserId, context.TenantId);
+            effectivePermissions.Count, allows.Count, denies.Count, context.UserId, context.TenantId); // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging
 
         return new EffectivePermissions
         {
@@ -397,7 +397,7 @@ public sealed class EffectivePermissionResolverService(
                 logger.LogError(
                     exception,
                     "External authorization decision provider threw while evaluating permission {Permission} for user {UserId} in tenant {TenantId} - the permission fails closed.",
-                    permission, context.UserId, context.TenantId);
+                    permission, context.UserId, context.TenantId); // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging
                 denies.Add(permission);
                 continue;
             }
@@ -409,7 +409,7 @@ public sealed class EffectivePermissionResolverService(
 
             logger.LogDebug(
                 "External authorization decision provider denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
-                permission, context.UserId, context.TenantId, string.Join("; ", decision.Reasons));
+                permission, context.UserId, context.TenantId, string.Join("; ", decision.Reasons)); // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging
             denies.Add(permission);
         }
     }
