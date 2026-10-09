@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -16,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.API.IntegrationTests;
 
@@ -87,7 +89,8 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     public async Task BruteForceAgainstKnownAccountAlertsOwnerEvenWhenTheAttemptFails()
     {
         var clock = new AdvancingTimeProvider();
-        using var factory = CreateFactory(clock);
+        var recorder = new RecordingLoggerProvider();
+        using var factory = CreateFactory(clock, recorder: recorder);
         var account = await SeedAsync(factory, bruteForceHistory: true);
         using var client = factory.CreateClient();
         SetStableClientIdentity(client);
@@ -95,8 +98,12 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         using var response = await client.PostAsJsonAsync(Endpoint,
             new { email = account.Email, password = "wrong-password", deviceFingerprint = "current-request-fingerprint" });
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var message = await AlertEventAsync(factory, account.UserId);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var message = await AlertEventOrNullAsync(factory, account.UserId);
+        if (message is null)
+        {
+            Assert.Fail(await DescribePipelineStateAsync(factory, account, response.StatusCode, responseBody, recorder));
+        }
         Assert.Contains(SecurityAlertKinds.BruteForceDetected, message.Payload, StringComparison.Ordinal);
         Assert.DoesNotContain(account.Email, message.Payload, StringComparison.Ordinal);
 
@@ -188,7 +195,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     }
 
     private WebApplicationFactory<Program> CreateFactory(AdvancingTimeProvider clock,
-        string? enabled = null, string? minimumRiskLevel = null) =>
+        string? enabled = null, string? minimumRiskLevel = null, RecordingLoggerProvider? recorder = null) =>
         fixture.Factory.WithWebHostBuilder(builder =>
         {
             if (enabled is not null)
@@ -201,6 +208,10 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
             }
             builder.ConfigureTestServices(services =>
             {
+                if (recorder is not null)
+                {
+                    services.AddSingleton<ILoggerProvider>(recorder);
+                }
                 services.PostConfigure<AuthenticationOptions>(options =>
                 {
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -281,6 +292,61 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
             .SingleAsync(value => value.EventName == EventName && value.AggregateId == userId.ToString());
     }
 
+    private static async Task<OutboxMessage?> AlertEventOrNullAsync(WebApplicationFactory<Program> factory, Guid userId)
+    {
+        using var scope = factory.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Set<OutboxMessage>().AsNoTracking()
+            .SingleOrDefaultAsync(value => value.EventName == EventName && value.AggregateId == userId.ToString());
+    }
+
+    /// <summary>
+    ///     Dumps every observable of the suspicious-login pipeline (response, stored attempts, outbox
+    ///     rows, captured host logs) so a missing alert event can be diagnosed from the CI failure
+    ///     message alone - the PostgreSQL suites cannot be executed under the local build gate.
+    /// </summary>
+    private static async Task<string> DescribePipelineStateAsync(
+        WebApplicationFactory<Program> factory,
+        Account account,
+        HttpStatusCode statusCode,
+        string responseBody,
+        RecordingLoggerProvider recorder)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var attempts = await db.Set<AuthenticationAttempt>().AsNoTracking()
+            .Where(value => value.Email == account.Email)
+            .OrderByDescending(value => value.AttemptedAt).Take(10)
+            .Select(value => $"{value.AttemptedAt:HH:mm:ss} success={value.IsSuccessful} reason={value.FailureReason ?? "-"} ip={value.IpAddress}")
+            .ToListAsync();
+        var outbox = await db.Set<OutboxMessage>().AsNoTracking()
+            .Where(value => value.AggregateId == account.UserId.ToString())
+            .Select(value => $"{value.EventName} at {value.CreatedAtUtc:HH:mm:ss}")
+            .ToListAsync();
+
+        var keywordFilters = new[]
+        {
+            "brute", "Brute", "lockout", "Lockout", "suspicious", "Suspicious", "throttl", "Throttl",
+            "Could not record", "Could not analyze", "Could not forward", "Anomalous", "Invalid password",
+            "User not found", "SIEM", "error while", " failed"
+        };
+        var logs = recorder.Entries
+            .Where(entry => keywordFilters.Any(keyword => entry.Message.Contains(keyword, StringComparison.Ordinal)))
+            .Select(entry => $"{entry.Timestamp:HH:mm:ss.fff} {entry.Level} [{entry.Category}] {entry.Message}")
+            .TakeLast(60);
+
+        return string.Join(Environment.NewLine,
+        [
+            $"No '{EventName}' outbox event for user {account.UserId}.",
+            $"Response {(int)statusCode}: {responseBody}",
+            $"Stored attempts for {account.Email}:",
+            .. attempts,
+            "Outbox rows for the user aggregate:",
+            .. outbox,
+            "Relevant host logs:",
+            .. logs
+        ]);
+    }
+
     private static async Task FlushAsync(WebApplicationFactory<Program> factory)
     {
         for (var attempt = 0; attempt < 10; attempt++)
@@ -295,6 +361,42 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     }
 
     private sealed record Account(Guid UserId, string Email);
+
+    /// <summary>Captures host log output so failing assertions can embed the pipeline's own diagnostics.</summary>
+    private sealed class RecordingLoggerProvider : ILoggerProvider
+    {
+        private readonly ConcurrentQueue<RecordedEntry> _entries = new();
+
+        public IReadOnlyList<RecordedEntry> Entries => _entries.ToList();
+
+        public ILogger CreateLogger(string categoryName) => new RecordingLogger(this, categoryName);
+
+        public void Dispose() { }
+
+        public sealed record RecordedEntry(DateTimeOffset Timestamp, string Category, LogLevel Level, string Message);
+
+        private sealed class RecordingLogger(RecordingLoggerProvider owner, string category) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(
+                LogLevel logLevel,
+                EventId eventId,
+                TState state,
+                Exception? exception,
+                Func<TState, Exception?, string> formatter)
+            {
+                var text = formatter(state, exception);
+                if (exception is not null)
+                {
+                    text += $" | {exception.GetType().Name}: {exception.Message}";
+                }
+                owner._entries.Enqueue(new RecordedEntry(DateTimeOffset.UtcNow, category, logLevel, text));
+            }
+        }
+    }
 
     private sealed class AdvancingTimeProvider : TimeProvider
     {
