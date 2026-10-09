@@ -105,7 +105,7 @@ public class RoleRepository(IApplicationDbContext context) : IRoleRepository
     {
         var query = UserRoles
             .AsNoTracking()
-            .Where(ur => ur.UserId == userId);
+            .Where(ur => ur.UserId == userId && ur.DeletedAt == null);
 
         if (!includeExpired)
         {
@@ -122,17 +122,26 @@ public class RoleRepository(IApplicationDbContext context) : IRoleRepository
 
     public async Task<UserRole> AssignRoleToUserAsync(UserRole userRole, CancellationToken cancellationToken = default)
     {
-        // Check if the role is already assigned to the user
+        // Check if the role is already assigned to the user (soft-deleted assignments are
+        // included so they can be restored instead of hitting the unique index).
         var existingUserRole = await UserRoles
             .FirstOrDefaultAsync(ur => ur.UserId == userRole.UserId && ur.RoleId == userRole.RoleId, cancellationToken).ConfigureAwait(false);
 
         if (existingUserRole != null)
         {
-            if (existingUserRole.IsExpired())
+            if (existingUserRole.IsExpired() || existingUserRole.IsDeleted)
             {
                 existingUserRole.AssignedBy = userRole.AssignedBy;
                 existingUserRole.AssignedAt = SystemClock.UtcNow;
                 existingUserRole.ExpiresAt = userRole.ExpiresAt;
+
+                // Restore soft-deleted assignments (#357): permission history is preserved,
+                // the row is reactivated and audited through the normal update path.
+                if (existingUserRole.IsDeleted)
+                {
+                    existingUserRole.Restore();
+                }
+
                 existingUserRole.Touch();
                 await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -175,7 +184,7 @@ public class RoleRepository(IApplicationDbContext context) : IRoleRepository
         {
             if (existingAssignments.TryGetValue(userId, out var existing))
             {
-                if (!existing.ExpiresAt.HasValue || existing.ExpiresAt.Value > now)
+                if (!existing.IsDeleted && (!existing.ExpiresAt.HasValue || existing.ExpiresAt.Value > now))
                 {
                     results.Add(new BulkRoleAssignmentItemResult(
                         userId, existing.Id, BulkRoleAssignmentStatus.AlreadyAssigned, existing.AssignedAt, existing.ExpiresAt));
@@ -185,6 +194,13 @@ public class RoleRepository(IApplicationDbContext context) : IRoleRepository
                 existing.AssignedBy = assignedBy;
                 existing.AssignedAt = now;
                 existing.ExpiresAt = expiresAt;
+
+                // Restore soft-deleted assignments (#357) instead of failing the unique index.
+                if (existing.IsDeleted)
+                {
+                    existing.Restore();
+                }
+
                 existing.Touch();
                 hasChanges = true;
                 results.Add(new BulkRoleAssignmentItemResult(
@@ -212,14 +228,23 @@ public class RoleRepository(IApplicationDbContext context) : IRoleRepository
         return results;
     }
 
+    /// <summary>
+    ///     Removes a role assignment from a user using a soft delete (#357): the
+    ///     <c>UserRole</c> row is preserved for permission-history tracking instead of being
+    ///     physically deleted. The centralized permission-audit hook in
+    ///     <c>ApplicationDbContext</c> captures the resulting Modified entry as a permission
+    ///     change, and re-assignment restores the soft-deleted row (see
+    ///     <see cref="AssignRoleToUserAsync"/> and <see cref="BulkAssignRoleToUsersAsync"/>).
+    /// </summary>
     public async Task RemoveRoleFromUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default)
     {
         var userRole = await UserRoles
-            .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId, cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId && ur.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (userRole != null)
         {
-            UserRoles.Remove(userRole);
+            userRole.SoftDelete();
+            UserRoles.Update(userRole);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
@@ -229,9 +254,10 @@ public class RoleRepository(IApplicationDbContext context) : IRoleRepository
         var now = SystemClock.UtcNow;
         return await UserRoles
             .AsNoTracking()
-            .AnyAsync(ur => ur.UserId == userId 
-                && ur.RoleId == roleId 
-                && (ur.ExpiresAt == null || ur.ExpiresAt > now), 
+            .AnyAsync(ur => ur.UserId == userId
+                && ur.RoleId == roleId
+                && ur.DeletedAt == null
+                && (ur.ExpiresAt == null || ur.ExpiresAt > now),
                 cancellationToken).ConfigureAwait(false);
     }
 }
