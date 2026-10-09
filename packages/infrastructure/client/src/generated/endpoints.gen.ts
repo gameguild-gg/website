@@ -13383,7 +13383,7 @@ export const getContentResourcesBySlugEndpoint = {
 
 /**
  * Create or resume a content interaction
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsInput {
   query?: {
@@ -13402,7 +13402,7 @@ export const postCourseInteractionsEndpoint = {
 
 /**
  * Mark content as completed
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsCompleteInput {
   interactionId: string;
@@ -13422,7 +13422,7 @@ export const postCourseInteractionsCompleteEndpoint = {
 
 /**
  * Update progress for a content interaction
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsProgressInput {
   interactionId: string;
@@ -13442,7 +13442,7 @@ export const putCourseInteractionsProgressEndpoint = {
 
 /**
  * Submit content interaction (makes it immutable)
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsSubmitInput {
   interactionId: string;
@@ -13462,7 +13462,7 @@ export const postCourseInteractionsSubmitEndpoint = {
 
 /**
  * Update time spent on content
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsTimeSpentInput {
   interactionId: string;
@@ -13545,7 +13545,7 @@ export const getCourseInteractionsContentSurveyResultsVisibleEndpoint = {
 
 /**
  * Get all interactions for a user in a program
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserInput {
   programUserId: string;
@@ -13564,7 +13564,7 @@ export const getCourseInteractionsUserEndpoint = {
 
 /**
  * Get interaction for specific user and content
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserContentInput {
   programUserId: string;
@@ -13618,6 +13618,18 @@ export const postCoursesEndpoint = {
   method: 'POST' as const,
   path: '/v1/courses' as const,
   tags: ['LearningCoursesProgram'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesAccessCapabilitiesInput {
+  courseId: string;
+}
+export type GetCoursesAccessCapabilitiesOutput = Types.LearningCoursesCourseAccessCapabilities;
+export const getCoursesAccessCapabilitiesEndpoint = {
+  operationId: 'getCoursesAccessCapabilities' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{courseId}/access/capabilities' as const,
+  tags: ['LearningCoursesAccess'] as const,
   requiresAuth: true,
 } as const;
 
@@ -26097,6 +26109,7 @@ export const endpoints = {
   getCourseInteractionsUserContent: getCourseInteractionsUserContentEndpoint,
   getCoursesForGetCourses: getCoursesForGetCoursesEndpoint,
   postCourses: postCoursesEndpoint,
+  getCoursesAccessCapabilities: getCoursesAccessCapabilitiesEndpoint,
   getCoursesCohortsSchedule: getCoursesCohortsScheduleEndpoint,
   putCoursesCohortsSchedule: putCoursesCohortsScheduleEndpoint,
   getCoursesCohortsScheduleAvailableContent: getCoursesCohortsScheduleAvailableContentEndpoint,
