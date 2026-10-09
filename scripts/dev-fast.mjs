@@ -156,6 +156,23 @@ if (!existsSync("apps/web/public/emception/manifest.json")) {
   );
 }
 
+if (!existsSync("apps/web/public/langs/quickjs-asyncify.wasm.gz")) {
+  console.log("[dev:fast] QuickJS runtime is missing; synchronizing once");
+  const javascriptRuntimeSync = run("pnpm", [
+    "--filter",
+    "@game-guild/web",
+    "run",
+    "sync:javascript-runtime",
+  ]);
+  preparationChildren.push(javascriptRuntimeSync);
+  preparation.push(
+    waitForSuccessfulExit(
+      javascriptRuntimeSync,
+      "JavaScript runtime synchronization",
+    ),
+  );
+}
+
 let web = null;
 let shuttingDown = false;
 const shutdown = (exitCode = 0) => {
