@@ -3,6 +3,7 @@ using FluentAssertions;
 using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Authoring;
 using GameGuild.Learning.Assessments.Grading.Capabilities;
+using GameGuild.Learning.Assessments.Grading.Code;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.Grading.Persistence;
 using GameGuild.Learning.Assessments.Grading.Runtime;
@@ -20,6 +21,81 @@ namespace GameGuild.Learning.Assessments.Tests;
 
 public sealed class AssessmentGradingRuntimeTests
 {
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", "")]
+    [InlineData(" \t", " \t")]
+    [InlineData("Instructor summary", "Instructor item feedback")]
+    [InlineData("Instructor summary", null)]
+    [InlineData(null, "Instructor item feedback")]
+    public async Task OfficialCode_InstructorReviewPreservesTrustedFeedbackUnlessInstructorSuppliesIt(
+        string? feedback, string? itemFeedback)
+    {
+        const string trustedFeedback = "Code tests completed by the trusted grading worker.";
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(
+            ReviewMethods.AutomatedReview | ReviewMethods.InstructorReview,
+            CodeDefinition(), ContentType: ProgramContentType.Code));
+        var started = await harness.StartIndividualAsync("code-feedback-start");
+        var submitted = await harness.Runtime.SubmitOfficialAsync(started.SubmissionId, harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(CodeAnswer(), "code-feedback-submit"));
+        submitted.Execution.RequiresInstructorReview.Should().BeTrue();
+        var resolution = new InstructorReviewResolutionV1(1,
+            [new(CodeAssessmentContracts.ItemId, ScoreValue.FromUnits(200), itemFeedback)], feedback);
+        var reviewed = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId, harness.InstructorId, resolution, "code-feedback-review");
+        var replay = await harness.Runtime.ResolveOfficialInstructorReviewAsync(
+            started.SubmissionId, harness.InstructorId, resolution, "code-feedback-review");
+
+        var expectedFeedback = string.IsNullOrWhiteSpace(feedback) ? trustedFeedback : feedback;
+        var expectedItemFeedback = string.IsNullOrWhiteSpace(itemFeedback) ? trustedFeedback : itemFeedback;
+        reviewed.Status.Should().Be(SubmissionStatus.Graded);
+        reviewed.Execution.InstructorVisibleResult!.Feedback.Should().Be(expectedFeedback);
+        reviewed.Execution.InstructorVisibleResult.Items.Single().Feedback.Should().Be(expectedItemFeedback);
+        replay.Execution.InstructorVisibleResult.Should().BeEquivalentTo(reviewed.Execution.InstructorVisibleResult);
+        replay.Execution.ActiveRoundId.Should().Be(reviewed.Execution.ActiveRoundId);
+        var persisted = await harness.Context.Set<AssessmentSubmission>().AsNoTracking()
+            .SingleAsync(value => value.Id == started.SubmissionId);
+        persisted.Feedback.Should().Be(expectedFeedback);
+        persisted.Score.Should().Be(ScoreValue.FromUnits(200));
+        var evidence = await harness.Context.Set<ReviewEvidence>()
+            .SingleAsync(value => value.ProducedByActorId == harness.InstructorId);
+        using var payload = JsonDocument.Parse(evidence.CanonicalJson);
+        (payload.RootElement.TryGetProperty("feedback", out var originalFeedback) ? originalFeedback.GetString() : null)
+            .Should().Be(feedback);
+        (payload.RootElement.GetProperty("items")[0].TryGetProperty("feedback", out var originalItemFeedback)
+            ? originalItemFeedback.GetString() : null).Should().Be(itemFeedback);
+        payload.RootElement.GetProperty("previousResult").GetProperty("items")[0]
+            .GetProperty("feedback").GetString().Should().Be(trustedFeedback);
+
+        await harness.Release.ReleaseByActorAsync(started.SubmissionId, reviewed.Execution.ActiveRoundId!.Value,
+            reviewed.Version, harness.InstructorId, "code-feedback-release", "Release reviewed Code feedback");
+        var learner = await harness.Runtime.GetSubmissionAsync(started.SubmissionId, harness.Learner1Id, false);
+        learner.Execution.LearnerVisibleResult!.Feedback.Should().Be(expectedFeedback);
+        JsonSerializer.Serialize(learner.Execution.LearnerVisibleResult, GradingJson.Options)
+            .Should().NotContain("private-code-secret");
+    }
+
+    [Theory]
+    [InlineData(ProgramContentType.Code, ReviewMethods.InstructorReview)]
+    [InlineData(ProgramContentType.Questionnaire, ReviewMethods.AutomatedReview | ReviewMethods.InstructorReview)]
+    public async Task OfficialInstructorReview_DoesNotInventCodeFeedbackWithoutATrustedCodeResult(
+        ProgramContentType contentType, ReviewMethods methods)
+    {
+        var code = contentType == ProgramContentType.Code;
+        await using var harness = await RuntimeHarness.CreateAsync(new RuntimeOptions(methods,
+            code ? CodeDefinition() : TrueFalseQuiz(), ContentType: contentType));
+        var started = await harness.StartIndividualAsync("no-code-feedback-start");
+        await harness.Runtime.SubmitOfficialAsync(started.SubmissionId, harness.Learner1Id,
+            new SubmitAssessmentResponseCommand(code ? CodeAnswer() : TrueFalseAnswer(true), "no-code-feedback-submit"));
+        var reviewed = await harness.Runtime.ResolveOfficialInstructorReviewAsync(started.SubmissionId,
+            harness.InstructorId, new InstructorReviewResolutionV1(1,
+                [new(code ? CodeAssessmentContracts.ItemId : "q1", ScoreValue.FromUnits(200))]), "no-code-feedback-review");
+        reviewed.Execution.InstructorVisibleResult!.Feedback.Should().BeNull();
+        reviewed.Execution.InstructorVisibleResult.Items.Single().Feedback.Should().BeNull();
+        (await harness.Context.Set<AssessmentSubmission>().SingleAsync(value => value.Id == started.SubmissionId))
+            .Feedback.Should().BeNull();
+    }
+
     [Fact]
     public async Task AuthorTest_InstructorReviewIsIdempotentIsolatedAndRestartedAsANewExecution()
     {
@@ -741,6 +817,44 @@ public sealed class AssessmentGradingRuntimeTests
         return document.RootElement.Clone();
     }
 
+    private static JsonElement CodeDefinition() => JsonSerializer.SerializeToElement(new CodingAssignmentContent
+    {
+        Environment = new CodingEnvironment { Language = "cpp", Tools = "clang" },
+        Data = new WorkspaceData { Files = new Dictionary<string, BundleFileMeta>
+        {
+            ["main.cpp"] = new() { Content = "int main(){return 0;}" },
+            ["hidden.h"] = new() { Content = "private-code-secret", Visibility = "Private", Modifiable = false },
+        } },
+        Tests = new TestSuite
+        {
+            Public = [new StandardTest { Stdout = "", Weight = 1 }],
+            Private = [new StandardTest { Stdout = "private-code-secret", Weight = 1 }],
+        },
+        Grading = new GradingConfig { MaxScore = 2 },
+    }, CodeAssessmentContracts.ContentJson);
+
+    private static AssessmentResponseEnvelopeV1 CodeAnswer() => new(1,
+        CodeAssessmentContracts.ContentType, CodeAssessmentContracts.PayloadSchema,
+        JsonSerializer.SerializeToElement(new { files = new Dictionary<string, object>
+        {
+            ["main.cpp"] = new { content = "// submitted-code\nint main(){return 0;}", encoding = "text" },
+        } }));
+
+    private sealed class PassingCodeExecutor : ICodeAssessmentExecutor
+    {
+        public Task<CodeExecutionReceipt> ExecuteAsync(CodingAssignmentContent definition, JsonElement files,
+            CodeToolchainIdentity toolchain, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            toolchain.Should().Be(CodeToolchainIdentity.Version1);
+            definition.Tests.Private.Should().ContainSingle().Which.Should().BeOfType<StandardTest>()
+                .Which.Stdout.Should().Be("private-code-secret");
+            files.GetProperty("main.cpp").GetProperty("content").GetString().Should().Contain("submitted-code");
+            return Task.FromResult(new CodeExecutionReceipt(
+                definition.Tests.Public.Concat(definition.Tests.Private).Select(_ => true).ToArray(), new string('a', 64)));
+        }
+    }
+
     private sealed record RuntimeOptions(
         ReviewMethods ReviewMethods,
         JsonElement Document,
@@ -749,7 +863,8 @@ public sealed class AssessmentGradingRuntimeTests
         int PassingScoreUnits = 100,
         int? GradebookWeightUnits = null,
         bool Publish = true,
-        bool Collective = false);
+        bool Collective = false,
+        ProgramContentType ContentType = ProgramContentType.Questionnaire);
 
     private sealed class RuntimeHarness : IAsyncDisposable
     {
@@ -819,7 +934,7 @@ public sealed class AssessmentGradingRuntimeTests
                 ProgramId = courseId,
                 Title = "Quiz",
                 Slug = "quiz",
-                Type = ProgramContentType.Questionnaire,
+                Type = options.ContentType,
                 JsonBody = "{\"schemaVersion\":1,\"order\":[],\"blocks\":{}}",
                 LessonFormat = null,
             };
@@ -829,6 +944,7 @@ public sealed class AssessmentGradingRuntimeTests
             var registry = new ReviewCapabilityRegistry();
             new CoreGradingCapabilityRegistration().Register(registry);
             new QuizCapabilityRegistration().Register(registry);
+            new CodeCapabilityRegistration().Register(registry);
             var quizAdapter = new QuizAssessmentTypeAdapter(
                 new QuizAuthoringAdapter(new QuizItemProjector()),
                 new QuizDeliveryGenerator(),
@@ -836,8 +952,9 @@ public sealed class AssessmentGradingRuntimeTests
                 new QuizDeterministicReviewAlgorithm());
             var instructorHandler = new InstructorReviewStageHandler();
             var automatedHandler = new QuizAutomatedReviewStageHandler(quizAdapter);
-            IReviewStageHandler[] handlers = [instructorHandler, automatedHandler];
-            var adapters = new AssessmentTypeAdapterResolver(registry, [quizAdapter]);
+            var codeAdapter = new CodeAssessmentTypeAdapter(new PassingCodeExecutor());
+            IReviewStageHandler[] handlers = [instructorHandler, automatedHandler, new CodeAutomatedReviewStageHandler(codeAdapter)];
+            var adapters = new AssessmentTypeAdapterResolver(registry, [quizAdapter, codeAdapter]);
             var policies = new AssessmentExecutionPolicyResolver(registry);
             var stages = new ReviewStageHandlerResolver(registry, handlers);
             var outbox = new AcademicOutboxWriter(context, [new RouteOnlyReleaseConsumer()]);
@@ -868,7 +985,10 @@ public sealed class AssessmentGradingRuntimeTests
                     ScoreValue.FromUnits(options.PassingScoreUnits),
                     MaxAttempts: 1,
                     ContentCompletionMode: options.CompletionMode,
-                    ResultReleaseMode: options.ReleaseMode));
+                    ResultReleaseMode: options.ReleaseMode,
+                    ReviewConfigurationCanonicalJson: options.ContentType == ProgramContentType.Code &&
+                        options.ReviewMethods.HasFlag(ReviewMethods.InstructorReview)
+                        ? "{\"schemaVersion\":1,\"instructor\":{\"requireOverrideReason\":false}}" : null));
             saved.IsSuccess.Should().BeTrue();
             var assessment = await context.Set<Assessment>().SingleAsync();
 

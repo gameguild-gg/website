@@ -79,6 +79,7 @@ public static class OpenTelemetryExtensions
                     .AddMeter(
                         "GameGuild.API.RateLimiting",
                         "GameGuild.Identity.Authentication.PermissionBulkCheck",
+                        "GameGuild.Identity.Authentication.RefreshTokens",
                         "GameGuild.Identity.Authorization.Cache");
 
                 if (options.ConsoleExporterEnabled)

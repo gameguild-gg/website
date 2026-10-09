@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Repository implementation for user session data access operations
 /// </summary>
-public class UserSessionRepository(IApplicationDbContext context) : IUserSessionRepository
+public class UserSessionRepository(IApplicationDbContext context) : IUserSessionRepository, IUserSessionCleanupRepository
 {
     private DbSet<UserSession> UserSessions { get => context.Set<UserSession>(); }
 
@@ -42,7 +42,14 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
     {
         session.UpdatedAt = SystemClock.UtcNow;
 
-        UserSessions.Update(session);
+        var entry = UserSessions.Update(session);
+        if (session.IsActive)
+        {
+            // Active metadata writes cannot undo a concurrent committed termination.
+            entry.Property(value => value.IsActive).IsModified = false;
+            entry.Property(value => value.TerminatedAt).IsModified = false;
+            entry.Property(value => value.TerminationReason).IsModified = false;
+        }
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return session;
@@ -112,6 +119,20 @@ public class UserSessionRepository(IApplicationDbContext context) : IUserSession
 
         UserSessions.RemoveRange(expiredSessions);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<int> DeleteRetainedSessionBatchAsync(DateTime cutoffUtc, int batchSize, CancellationToken cancellationToken)
+    {
+        if (batchSize is < 1 or > 1000) { throw new ArgumentOutOfRangeException(nameof(batchSize)); }
+        var expiredSessions = await UserSessions.Where(session =>
+                (session.ExpiresAt < cutoffUtc || !session.IsActive && session.TerminatedAt.HasValue && session.TerminatedAt.Value < cutoffUtc) &&
+                !context.Set<RefreshToken>().Any(token => token.SessionId == session.Id))
+            .OrderBy(session => session.ExpiresAt).ThenBy(session => session.Id).Take(batchSize)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        if (expiredSessions.Count == 0) { return 0; }
+        UserSessions.RemoveRange(expiredSessions);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return expiredSessions.Count;
     }
 
     public async Task<int> CountActiveSessionsAsync(Guid userId, CancellationToken cancellationToken = default)

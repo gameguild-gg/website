@@ -1,5 +1,6 @@
 using GameGuild.API.Authorization;
 using GameGuild.API.Controllers;
+using GameGuild.API.Core.Integration;
 using GameGuild.API.Database;
 using GameGuild.API.HealthChecks;
 using GameGuild.API.HostedServices;
@@ -7,6 +8,8 @@ using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Payments;
 using GameGuild.Compliance.FERPA;
 using GameGuild.Compliance.KYC;
+using GameGuild.Configuration;
+using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Finance.Economy;
 using GameGuild.Finance.Economy.AdRewards;
 using GameGuild.Finance.Economy.AiCredits;
@@ -20,6 +23,7 @@ using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using GameGuild.LaunchPad;
 using GameGuild.Learning.Assessments;
+using GameGuild.Learning.Assessments.Grading.Code;
 using GameGuild.Learning.Assessments.QuizAdapter;
 using GameGuild.Learning.Certificates;
 using GameGuild.Learning.Cohorts;
@@ -127,10 +131,13 @@ internal sealed class ApiProductComposition : IApiProductComposition
         new GameGuild.Social.Announcements.AnnouncementsModule().ConfigureServices(builder.Services, builder.Configuration);
         builder.Services.AddCoursesModule();
         builder.Services.AddAssessmentsModule();
+        builder.Services.Configure<CodeGradingWorkerOptions>(builder.Configuration.GetSection(CodeGradingWorkerOptions.Section));
+        builder.Services.AddSingleton<ICodeAssessmentExecutor, CodeGradingWorker>();
         builder.Services.AddQuizGradingAdapter();
         builder.Services.AddLearningEnrollmentsModule();
         builder.Services.AddCohortsModule();
         builder.Services.AddCertificatesModule();
+        AddCertificateBlockchainAnchoring(builder);
         builder.Services.AddLearningWorkspacesModule();
         builder.Services.AddLtiModule();
         builder.Services.AddDiscoveryModule();
@@ -167,6 +174,28 @@ internal sealed class ApiProductComposition : IApiProductComposition
     {
         options.SchemaFilter<LearningContractSchemaFilter>();
         options.SchemaFilter<LegacyProgramContentTypeSchemaFilter>();
+    }
+
+    /// <summary>
+    ///     Wires the Learning.Certificates anchoring port to the platform blockchain service.
+    ///     Safe default: while <c>BlockchainCertificates:Provider</c> is <c>"none"</c> the module keeps
+    ///     its no-op implementation and nothing is registered here. When a provider is enabled, this
+    ///     registration (added after <see cref="CertificatesModule" />) takes precedence as the last
+    ///     <c>ICertificateAnchoring</c> registration.
+    /// </summary>
+    private static void AddCertificateBlockchainAnchoring(WebApplicationBuilder builder)
+    {
+        var options = OptionBuilderUtilities.CreateAndBind(
+            builder.Configuration,
+            BlockchainCertificateOptions.SectionName,
+            BlockchainCertificateOptions.CreateDefault);
+
+        if (string.Equals(options.Provider, BlockchainCertificateOptions.ProviderNone, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        builder.Services.AddScoped<ICertificateAnchoring, BlockchainCertificateAnchoringAdapter>();
     }
 
     public async Task SeedAsync(IServiceProvider services, CancellationToken cancellationToken)

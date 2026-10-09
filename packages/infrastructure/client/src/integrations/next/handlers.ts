@@ -81,6 +81,27 @@ export function serializeCookie(name: string, value: string, options: CookieSeri
   return str;
 }
 
+/** Attach authentication cookies without mutating immutable Fetch responses. */
+export function applyResponseCookies(
+  response: Response,
+  cookies: ReadonlyArray<{ name: string; value: string; options: CookieSerializeOptions }>,
+): Response {
+  if (cookies.length === 0) return response;
+
+  // NextResponse's public setter also maintains its middleware cookie metadata.
+  const cookieResponse = response as Response & {
+    cookies?: { set(name: string, value: string, options: CookieSerializeOptions): unknown };
+  };
+  if (typeof cookieResponse.cookies?.set === 'function') {
+    for (const cookie of cookies) cookieResponse.cookies.set(cookie.name, cookie.value, cookie.options);
+    return response;
+  }
+
+  const headers = new Headers(response.headers);
+  for (const cookie of cookies) headers.append('Set-Cookie', serializeCookie(cookie.name, cookie.value, cookie.options));
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 /**
  * Parse cookies from a Request
  */
@@ -347,6 +368,8 @@ export function createHandlers(config: ResolvedAuthConfig) {
       const newEncrypted = await encodeSession(token, config);
       sessionStore.write(newEncrypted, responseCookies.set.bind(responseCookies));
     }
+
+    if (!session) sessionStore.delete(responseCookies.set.bind(responseCookies));
 
     return buildResponse(session ?? {}, 200, responseCookies);
     /* v8 ignore stop */

@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Repository implementation for refresh token data access operations
 /// </summary>
-public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTokenRepository, IRefreshTokenLineageRepository
+public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTokenRepository, IRefreshTokenLineageRepository, IRefreshTokenCleanupRepository
 {
     private DbSet<RefreshToken> RefreshTokens { get => context.Set<RefreshToken>(); }
 
@@ -65,6 +65,10 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
         }
         var tokenLink = TrackForMetadata(token);
         tokenLink.SessionId = sessionId;
+        if (tokenLink.ExpiresAt > session.ExpiresAt)
+        {
+            tokenLink.ExpiresAt = session.ExpiresAt;
+        }
         tokenLink.UpdatedAt = SystemClock.UtcNow;
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
@@ -103,6 +107,10 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
         parentLink.SessionId = sessionId;
         childLink.SessionId = sessionId;
         childLink.ParentTokenId = parent.Id;
+        if (childLink.ExpiresAt > session.ExpiresAt)
+        {
+            childLink.ExpiresAt = session.ExpiresAt;
+        }
         parentLink.UpdatedAt = childLink.UpdatedAt = SystemClock.UtcNow;
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -116,6 +124,50 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
         }
         RefreshTokens.Attach(stored);
         return stored;
+    }
+
+    public async Task<Guid?> RevokeFamilyAsync(Guid userId, Guid tokenId, string? revokedByIp, CancellationToken cancellationToken)
+    {
+        var token = await RefreshTokens.AsNoTracking().SingleOrDefaultAsync(
+            value => value.Id == tokenId && value.UserId == userId, cancellationToken).ConfigureAwait(false);
+        if (token is null) { throw new UnauthorizedAccessException("Invalid refresh-token family"); }
+        if (!token.SessionId.HasValue) { return null; }
+        var sessionId = token.SessionId.Value;
+        RequireIdentity(userId, sessionId);
+        var session = await context.Set<UserSession>().AsNoTracking().SingleOrDefaultAsync(
+            value => value.Id == sessionId && value.UserId == userId, cancellationToken).ConfigureAwait(false);
+        if (session is null) { return null; }
+
+        var now = SystemClock.UtcNow;
+        var reason = SessionTerminationReason.SecurityViolation.ToString();
+        // Lock the session before querying descendants. A waiting stale refresh may
+        // update metadata, but cannot reactivate this session or bind a usable child.
+        var terminated = await context.Set<UserSession>().Where(value => value.Id == sessionId && value.UserId == userId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(value => value.IsActive, false)
+                .SetProperty(value => value.TerminatedAt, now)
+                .SetProperty(value => value.TerminationReason, reason)
+                .SetProperty(value => value.UpdatedAt, now), cancellationToken).ConfigureAwait(false);
+        if (terminated != 1) { throw new UnauthorizedAccessException("Invalid refresh-token family"); }
+        var trackedSession = context.Set<UserSession>().Local.SingleOrDefault(value => value.Id == sessionId);
+        if (trackedSession is not null)
+        {
+            trackedSession.IsActive = false;
+            trackedSession.TerminatedAt = now;
+            trackedSession.TerminationReason = reason;
+            trackedSession.UpdatedAt = now;
+        }
+        var activeTokens = await RefreshTokens.Where(value => value.UserId == userId && value.SessionId == sessionId && !value.IsRevoked)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var activeToken in activeTokens)
+        {
+            activeToken.IsRevoked = true;
+            activeToken.RevokedAt = now;
+            activeToken.RevokedByIp = revokedByIp;
+            activeToken.UpdatedAt = now;
+        }
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return sessionId;
     }
 
     private static void RequireIdentity(Guid userId, Guid sessionId)
@@ -201,20 +253,27 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
 
     public async Task DeleteExpiredAndRevokedAsync(DateTime cutoffDate, CancellationToken cancellationToken = default)
     {
+        // Keep replay markers through original expiry and retention, even when revoked earlier.
         // Delete leaves first. Retain predecessors while any child is retained, including an active descendant.
-        while (true)
+        int deletedRows;
+        do
         {
-            var expiredTokens = await RefreshTokens.Where(r =>
-                (r.IsRevoked && r.RevokedAt.HasValue && r.RevokedAt.Value < cutoffDate || !r.IsRevoked && r.ExpiresAt < cutoffDate) &&
-                !RefreshTokens.Any(child => child.ParentTokenId == r.Id)).Take(500).ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-            if (expiredTokens.Count == 0)
-            {
-                return;
-            }
-            RefreshTokens.RemoveRange(expiredTokens);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
+            deletedRows = await DeleteExpiredAndRevokedBatchAsync(cutoffDate, 500, cancellationToken).ConfigureAwait(false);
+        } while (deletedRows != 0);
+    }
+
+    public async Task<int> DeleteExpiredAndRevokedBatchAsync(DateTime cutoffUtc, int batchSize, CancellationToken cancellationToken)
+    {
+        if (batchSize is < 1 or > 1000) { throw new ArgumentOutOfRangeException(nameof(batchSize)); }
+        var expiredTokens = await RefreshTokens.Where(r =>
+            r.ExpiresAt < cutoffUtc && (!r.IsRevoked || r.RevokedAt.HasValue && r.RevokedAt.Value < cutoffUtc) &&
+            !RefreshTokens.Any(child => child.ParentTokenId == r.Id))
+            .OrderBy(r => r.ExpiresAt).ThenBy(r => r.Id).Take(batchSize).ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (expiredTokens.Count == 0) { return 0; }
+        RefreshTokens.RemoveRange(expiredTokens);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return expiredTokens.Count;
     }
 
     public async Task<RefreshToken?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) { return await RefreshTokens.FirstOrDefaultAsync(r => r.Id == id, cancellationToken); }

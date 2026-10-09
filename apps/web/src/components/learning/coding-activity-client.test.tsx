@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   seedFiles: vi.fn(),
   submit: vi.fn(),
+  start: vi.fn(),
   storageKey: vi.fn(),
   banner: vi.fn(() => null),
 }));
@@ -27,8 +28,9 @@ vi.mock("@/i18n/navigation", () => ({
 vi.mock("@/lib/coding-assignment/code-payload", () => ({
   filesToCodePayload: mocks.filesToPayload,
 }));
-vi.mock("@/lib/learner/activity-actions", () => ({
-  submitAssessment: mocks.submit,
+vi.mock("@/lib/learning/grading-runtime-actions", () => ({
+  startIndividualRuntimeSubmission: mocks.start,
+  submitRuntimeSubmission: mocks.submit,
 }));
 vi.mock("@game-guild/emception-ui/assessment/editor", () => ({
   CodingAssessmentEditor: mocks.editor,
@@ -63,7 +65,11 @@ import { CodingActivityClient } from "./coding-activity-client";
 
 function assignment(language: string | undefined = "cpp") {
   return {
+    Type: 'coding-assignment',
+    Version: 1,
     Environment: { Language: language },
+    Data: { Files: {} },
+    Tests: { Public: [], Private: [] },
     Grading: { MaxScore: 100 },
   } as unknown as CodingAssignmentContent;
 }
@@ -110,7 +116,14 @@ describe("CodingActivityClient", () => {
     mocks.storageKey.mockImplementation(
       (token, workspaceId) => `${token}:${workspaceId}`,
     );
-    mocks.filesToPayload.mockImplementation((files) => JSON.stringify(files));
+    mocks.filesToPayload.mockImplementation((files) => JSON.stringify(Object.fromEntries(
+      files.map((file: { path: string; content: string }) => [file.path, { content: file.content, encoding: 'text' }]))));
+    mocks.start.mockResolvedValue({ success: true, data: {
+      submissionId: 'official-submission-1',
+      execution: { delivery: { itemOrder: ['code'], items: { code: {
+        adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: { definition: assignment() },
+      } } } },
+    } });
     mocks.editor.mockImplementation(() => <div data-testid="mock-editor" />);
   });
 
@@ -137,6 +150,12 @@ describe("CodingActivityClient", () => {
   });
 
   it("overlays prior submissions and namespaces local drafts by user", async () => {
+    mocks.start.mockResolvedValue({ success: true, data: {
+      submissionId: 'official-submission-1',
+      execution: { delivery: { itemOrder: ['code'], items: { code: {
+        adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: { definition: assignment('rust') },
+      } } } },
+    } });
     renderActivity({
       userId: "user-1",
       manifestUrl: "/manifest.json",
@@ -201,17 +220,10 @@ describe("CodingActivityClient", () => {
     );
     expect(session.getSubmissionDelta).toHaveBeenCalledOnce();
     expect(mocks.filesToPayload).toHaveBeenCalledWith(delta);
-    const [initialState, formData] = mocks.submit.mock.calls[0] as [
-      unknown,
-      FormData,
-    ];
-    expect(initialState).toEqual({ success: false });
-    expect(Object.fromEntries(formData.entries())).toMatchObject({
-      assessmentId: "assessment-1",
-      enrollmentId: "enrollment-1",
-      modality: "Code",
-      response: JSON.stringify(delta),
-    });
+    expect(mocks.submit).toHaveBeenCalledWith('official-submission-1', {
+      schemaVersion: 1, contentType: 'coding-assignment', payloadSchema: 'code-files/v1',
+      payload: { files: { 'main.cpp': { content: 'int main(){}', encoding: 'text' } } },
+    }, expect.any(String));
     expect(mocks.push).toHaveBeenCalledWith(
       "/learn/courses/game-ai/activities",
     );
@@ -233,6 +245,59 @@ describe("CodingActivityClient", () => {
     expect(mocks.filesToPayload).toHaveBeenCalledWith([]);
     expect(mocks.push).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();
+  });
+
+  it('fails closed without a published Code revision', async () => {
+    mocks.start.mockResolvedValue({ success: false, error: 'No published executable revision.' });
+    renderActivity();
+    expect(await screen.findByRole('alert')).toHaveTextContent('No published executable revision.');
+    expect(mocks.editor).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+    expect(mocks.start).toHaveBeenCalledWith('assessment-1', 'enrollment-1', expect.any(String));
+  });
+
+  it('uses the frozen official definition instead of the current authoring draft', async () => {
+    const frozen = assignment();
+    frozen.Grading.MaxScore = 80;
+    mocks.start.mockResolvedValue({ success: true, data: {
+      submissionId: 'official-submission-1',
+      execution: { delivery: { itemOrder: ['code'], items: { code: {
+        adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: { definition: frozen },
+      } } } },
+    } });
+    renderActivity({ assignment: assignment() });
+    expect(await editorProps()).toMatchObject({ definition: frozen, maxScore: 80 });
+  });
+
+  it.each([false, true])('restores submitted files and exposes only released feedback (released=%s)', async (released) => {
+    mocks.start.mockResolvedValue({ success: true, data: {
+      submissionId: 'official-submission-1',
+      execution: {
+        delivery: { itemOrder: ['code'], items: { code: {
+          adapterKey: 'code-assessment-type', adapterVersion: '1', learnerPayload: { definition: assignment() },
+        } } },
+        submittedResponse: { payload: { files: { 'main.cpp': { content: '// official submission', encoding: 'text' } } } },
+        instructorVisibleResult: { score: 9000, maxScore: 10000, feedback: 'Private draft feedback' },
+        learnerVisibleResult: released ? { score: 7500, maxScore: 10000, feedback: 'Released feedback' } : null,
+      },
+    } });
+    renderActivity({ submissionFiles: [{ path: 'main.cpp', content: '// mutable legacy', encoding: 'text' }] });
+    readySession(await editorProps());
+    expect(mocks.createWorkspace).toHaveBeenLastCalledWith('cpp', {
+      'main.cpp': { content: '// official submission', encoding: 'text' },
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('Submission received');
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('button', { name: 'Submit' }).closest('form')!);
+    expect(mocks.submit).not.toHaveBeenCalled();
+    expect(screen.queryByText('Private draft feedback')).not.toBeInTheDocument();
+    if (released) {
+      expect(screen.getByRole('status')).toHaveTextContent('Score: 75 / 100');
+      expect(screen.getByRole('status')).toHaveTextContent('Released feedback');
+    } else {
+      expect(screen.getByRole('status')).toHaveTextContent('when available');
+      expect(screen.queryByText('Released feedback')).not.toBeInTheDocument();
+    }
   });
 
   it.each([
@@ -258,6 +323,31 @@ describe("CodingActivityClient", () => {
   ])("shows a stable editor loading failure", async (error, expected) => {
     renderActivity({ loadEditor: vi.fn().mockRejectedValue(error) });
     expect(await screen.findByRole("alert")).toHaveTextContent(expected);
+  });
+
+  it("requires a fresh editor session when the enrollment changes", async () => {
+    const view = renderActivity();
+    readySession(await editorProps());
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
+    const firstRuntime = await mocks.start.mock.results[0]!.value;
+    const pending = Promise.withResolvers<typeof firstRuntime>();
+    mocks.start.mockReturnValueOnce(pending.promise);
+
+    view.rerender(<CodingActivityClient assessmentId="assessment-1" enrollmentId="enrollment-2"
+      courseId="course-1" slug="game-ai" assignment={assignment()} />);
+    expect(screen.queryByTestId('mock-editor')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+    await waitFor(() => expect(mocks.start).toHaveBeenCalledTimes(2));
+    expect(mocks.start.mock.calls[1]![1]).toBe('enrollment-2');
+    expect(mocks.start.mock.calls[1]![2]).not.toBe(mocks.start.mock.calls[0]![2]);
+
+    await act(async () => {
+      pending.resolve({ ...firstRuntime, data: { ...firstRuntime.data, submissionId: 'official-submission-2' } });
+    });
+    const nextEditor = await editorProps();
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+    readySession(nextEditor);
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
   });
 
   it("does not update state after unmounting while a successful editor import settles", async () => {

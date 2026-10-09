@@ -80,9 +80,11 @@ public class Web3AuthService(
         var refresh = await jwtTokenService.GenerateRefreshTokenAsync(user.Id, deviceInfo, cancellationToken).ConfigureAwait(false);
         var access = await jwtTokenService.GenerateAccessTokenAsync(
             user.Id, user.Email, tenantContext.Roles.ToArray(), tenantContext.TenantId, user.TokenVersion, sessionId, cancellationToken).ConfigureAwait(false);
-        await sessionManagementService.CreateSessionAsync(
+        var refreshTokenHash = refreshTokenHasher.HashToken(refresh);
+        var session = await sessionManagementService.CreateSessionAsync(
             sessionId, user.Id, ipAddress ?? "unknown", userAgent ?? string.Empty,
-            refreshTokenHasher.HashToken(refresh), refreshExpires, deviceInfo.Fingerprint, cancellationToken).ConfigureAwait(false);
+            refreshTokenHash, refreshExpires, deviceInfo.Fingerprint, cancellationToken).ConfigureAwait(false);
+        refreshExpires = AuthenticatedSessionDeadline.Require(session, user.Id, sessionId, refreshTokenHash, refreshExpires);
         await authAttemptService.RecordSuccessfulAttemptAsync(
             user.Email, user.Id, ipAddress ?? "unknown", userAgent, stopwatch.Elapsed, "Web3").ConfigureAwait(false);
         logger.LogInformation("Verified wallet authentication established session {SessionId} for account {UserId}", sessionId, user.Id);

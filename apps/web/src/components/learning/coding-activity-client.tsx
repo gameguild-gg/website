@@ -3,10 +3,10 @@
 import { useRouter } from "@/i18n/navigation";
 import { filesToCodePayload } from "@/lib/coding-assignment/code-payload";
 import type { CodingAssignmentContent } from "@/lib/coding-assignment/types";
-import {
-  submitAssessment,
-  type LearnerMutationResult,
-} from "@/lib/learner/activity-actions";
+import type { LearnerMutationResult } from "@/lib/learner/activity-actions";
+import { startIndividualRuntimeSubmission, submitRuntimeSubmission } from "@/lib/learning/grading-runtime-actions";
+import { readCodeRuntimeDefinition } from "@/lib/coding-assignment/runtime";
+import type { AssessmentSubmissionRuntimeViewV1 } from "@game-guild/grading";
 import { buildAssessmentExecutionPlan } from "@game-guild/emception-ui/assessment/plan";
 import type {
   AssessmentRunResult,
@@ -20,6 +20,7 @@ import {
 } from "@game-guild/emception-ui/assessment/presets";
 import { workspaceStorageKey } from "@game-guild/emception-ui/assessment/storage";
 import { Button } from "@game-guild/ui/components/button";
+import { scoreUnitsToPoints } from "@/lib/learning/academic-values";
 import type { TestReport, WorkspaceConfig } from "emception";
 import Script from "next/script";
 import {
@@ -75,11 +76,15 @@ export interface CodingActivityClientProps {
   loadEditor?: CodingEditorLoader;
 }
 
-export function CodingActivityClient({
+export function CodingActivityClient(props: CodingActivityClientProps) {
+  return <CodingActivitySession key={`${props.assessmentId}:${props.enrollmentId}`} {...props} />;
+}
+
+function CodingActivitySession({
   assessmentId,
   enrollmentId,
   slug,
-  assignment,
+  assignment: initialAssignment,
   manifestUrl,
   userId,
   submissionFiles,
@@ -91,9 +96,31 @@ export function CodingActivityClient({
   const [report, setReport] = useState<TestReport | null>(null);
   const [result, setResult] = useState<LearnerMutationResult | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
+  const [assignment, setAssignment] = useState(initialAssignment);
+  const [runtime, setRuntime] = useState<AssessmentSubmissionRuntimeViewV1 | null>(null);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
+  const [startKey] = useState(() => crypto.randomUUID());
+  const submitKey = useRef<string | null>(null);
   const [Editor, setEditor] =
     useState<ComponentType<CodingAssessmentEditorProps> | null>(null);
   const [editorLoadError, setEditorLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void startIndividualRuntimeSubmission(assessmentId, enrollmentId, startKey).then((result) => {
+      if (!active) return;
+      if (!result.success) { setRuntimeError(result.error); return; }
+      try {
+        setAssignment(readCodeRuntimeDefinition(result.data));
+        setRuntime(result.data);
+      } catch (error) {
+        setRuntimeError(error instanceof Error ? error.message : "The Code attempt is unavailable.");
+      }
+    }).catch((error: unknown) => {
+      if (active) setRuntimeError(error instanceof Error ? error.message : "The Code attempt is unavailable.");
+    });
+    return () => { active = false; };
+  }, [assessmentId, enrollmentId, startKey]);
 
   // The neutral IDE owns browser-only APIs (Monaco, Worker and WASM). Import it
   // after hydration so the server never evaluates its module graph. This avoids
@@ -140,6 +167,13 @@ export function CodingActivityClient({
 
   const language =
     (assignment.Environment.Language as CodingLanguage | undefined) ?? "cpp";
+  const restoredFiles = useMemo(() => {
+    const response = runtime?.execution.submittedResponse;
+    if (!response) return submissionFiles ?? [];
+    const payload = response.payload as { files: Record<string, { content: string; encoding: 'text' }> };
+    return Object.entries(payload.files).map(([path, file]) => ({ path, ...file }));
+  }, [runtime, submissionFiles]);
+  const alreadySubmitted = runtime?.execution.submittedResponse != null;
   // The host template supplies language-specific compiler/runtime settings.
   // Its files are the public seed overlaid by a previous server submission;
   // the neutral IDE restores a newer local draft from workspaceStorageKey.
@@ -150,11 +184,11 @@ export function CodingActivityClient({
         { encoding, content },
       ]),
     );
-    for (const file of submissionFiles ?? []) {
+    for (const file of restoredFiles) {
       files.set(file.path, { encoding: file.encoding, content: file.content });
     }
     return createAssessmentWorkspaceConfig(language, Object.fromEntries(files));
-  }, [language, seedFiles, submissionFiles]);
+  }, [language, seedFiles, restoredFiles]);
 
   if (result?.success) {
     return (
@@ -170,7 +204,7 @@ export function CodingActivityClient({
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || !runtime || alreadySubmitted) return;
     setSubmitting(true);
     try {
       // Submission serializes the current editor state without recompiling it.
@@ -179,14 +213,14 @@ export function CodingActivityClient({
       // The assessment session returns only editable public changes plus
       // permitted student-created text files.
       const modified = (await sessionRef.current?.getSubmissionDelta()) ?? [];
-      const fd = new FormData();
-      fd.set("assessmentId", assessmentId);
-      fd.set("enrollmentId", enrollmentId);
-      fd.set("modality", "Code");
-      // Wire shape (Metis #29): Record<path, {content, encoding: 'text'}>
-      fd.set("response", filesToCodePayload([...modified]));
-      const outcome = await submitAssessment({ success: false }, fd);
-      setResult(outcome);
+      submitKey.current ??= crypto.randomUUID();
+      const outcome = await submitRuntimeSubmission(runtime.submissionId, {
+        schemaVersion: 1,
+        contentType: "coding-assignment",
+        payloadSchema: "code-files/v1",
+        payload: { files: JSON.parse(filesToCodePayload([...modified])) },
+      }, submitKey.current);
+      setResult(outcome.success ? { success: true } : { success: false, error: outcome.error });
       if (outcome.success) {
         router.push(`/learn/courses/${slug}/activities`);
       }
@@ -208,7 +242,7 @@ export function CodingActivityClient({
       <Script src="/coi-serviceworker.js" strategy="afterInteractive" />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="h-[70vh] min-h-[500px]">
-          {Editor ? (
+          {Editor && runtime ? (
             <Editor
               mode="learner"
               definition={assignment}
@@ -223,9 +257,9 @@ export function CodingActivityClient({
               onSessionReady={receiveSession}
               onRunResult={receiveRunResult}
             />
-          ) : editorLoadError ? (
+          ) : runtimeError || editorLoadError ? (
             <p role="alert" className="text-sm text-destructive">
-              {editorLoadError}
+              {runtimeError || editorLoadError}
             </p>
           ) : (
             <IdeSkeleton />
@@ -244,8 +278,26 @@ export function CodingActivityClient({
             {result.error}
           </p>
         ) : null}
+        {alreadySubmitted ? (
+          <div role="status" className="rounded-md border p-4 text-sm">
+            <p>Submission received.</p>
+            {runtime?.execution.learnerVisibleResult ? (
+              <>
+                <p>
+                  Score: {scoreUnitsToPoints(runtime.execution.learnerVisibleResult.score ?? 0)} /{' '}
+                  {scoreUnitsToPoints(runtime.execution.learnerVisibleResult.maxScore)}
+                </p>
+                {runtime.execution.learnerVisibleResult.feedback ? (
+                  <p>{runtime.execution.learnerVisibleResult.feedback}</p>
+                ) : null}
+              </>
+            ) : (
+              <p>Grades and instructor feedback will appear here when available.</p>
+            )}
+          </div>
+        ) : null}
         <div className="flex justify-end">
-          <Button type="submit" disabled={submitting || !sessionReady}>
+          <Button type="submit" disabled={submitting || !sessionReady || !runtime || alreadySubmitted}>
             {submitting ? "Submitting…" : "Submit"}
           </Button>
         </div>

@@ -11,6 +11,7 @@ using GameGuild.Learning.Assessments.Grading.Persistence;
 using GameGuild.Learning.Assessments.Grading.Runtime;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using GameGuild.Assets;
+using GameGuild.Learning.Assessments.Grading.Code;
 
 namespace GameGuild.Learning.Assessments;
 
@@ -40,6 +41,16 @@ public static class AssessmentsModule
         services.AddScoped<GameGuild.Learning.Courses.IAssessmentGradingSync, AssessmentGradingSync>();
         services.AddScoped<IAssetParentAuthorizationResolver, AssessmentSubmissionAssetAuthorizationResolver>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IReviewCapabilityRegistration, CoreGradingCapabilityRegistration>());
+        services.TryAddSingleton<ICodeAssessmentExecutor, UnconfiguredCodeAssessmentExecutor>();
+        services.AddSingleton<CodeAssessmentTypeAdapter>();
+        services.AddSingleton<IAssessmentTypeAdapter>(provider => provider.GetRequiredService<CodeAssessmentTypeAdapter>());
+        services.AddSingleton<IReviewStageHandler, CodeAutomatedReviewStageHandler>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IReviewCapabilityRegistration, CodeCapabilityRegistration>());
+        services.AddScoped<IProgramContentPublicationParticipant, CodeProgramContentPublicationParticipant>();
+        services.AddScoped<IProgramContentDeleteParticipant, CodeProgramContentDeleteParticipant>();
+        services.AddSingleton<CodeProgramContentBoundary>();
+        services.AddSingleton<IProgramContentLearnerProjector>(provider => provider.GetRequiredService<CodeProgramContentBoundary>());
+        services.AddSingleton<IProgramContentAcademicMutationGuard>(provider => provider.GetRequiredService<CodeProgramContentBoundary>());
         services.AddSingleton<IReviewCapabilityRegistry>(provider =>
         {
             var registry = new ReviewCapabilityRegistry();

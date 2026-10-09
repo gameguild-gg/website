@@ -127,9 +127,13 @@ export class InvalidSessionError extends AuthError {
  * Token refresh failed
  */
 export class TokenRefreshError extends AuthError {
-  constructor(message = 'Token refresh failed', cause?: Error) {
+  /** Actual backend response status, absent for transport failures. */
+  readonly responseStatus?: number;
+
+  constructor(message = 'Token refresh failed', cause?: Error, responseStatus?: number) {
     super(message, { type: 'TokenRefreshError', status: 401, cause });
     this.name = 'TokenRefreshError';
+    this.responseStatus = responseStatus;
   }
 }
 

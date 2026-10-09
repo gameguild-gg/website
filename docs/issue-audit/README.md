@@ -1,5 +1,87 @@
 # GameGuild issue closeout inventory
 
+## 2026-10-06 published scanner corrections and LLVM verification
+
+[PR #699](https://github.com/gameguild-gg/gameguild/pull/699) remains draft.
+Published revision `3991ff703bef0fc85f71b701a99ce962654df0e3` passed Codacy with
+zero annotations. Its API source matches the clean build and passed all 5,764
+module cases plus 73 focused host cases. Complete final-source host suites are
+running. The dependency-updated SDK passed all 1,135 cases, typecheck and build;
+the site passed all 2,982 cases and typecheck.
+
+The exact further LLVM archive rejected by CI has now been verified: its 175,014
+files reconstruct the pinned upstream Git tree, with only the known Git describe
+abbreviation differing. The 191,207 archive headers also match, except that
+file's size. The exact checksum is explicitly reviewed with regression coverage;
+unknown checksums still fail before extraction. Matching-head CI remains required.
+#263 remains open with every original acceptance criterion retained. Earlier
+dated checkpoints below preserve the failed runs and their subsequent corrections.
+
+## 2026-10-06 refresh lifecycle draft — #263
+
+[PR #699](https://github.com/gameguild-gg/gameguild/pull/699) is a draft against
+develop. Both owner-requested replay policies are implemented: family containment
+by default or account containment, with account fallback for unprovable legacy
+families. Lifecycle audit, durable alerts, bounded cleanup, metrics, capped
+provider deadlines and client cookie recovery are included.
+
+Four complete module suites passed 5,764 cases with zero failures/skips;
+50 focused HTTP/PostgreSQL cases and all 1,135 SDK cases passed. Full host/site
+regression and matching-revision CI remain required. The first policy gate found
+three newly published dependency advisories; the corrected lock audit excludes
+all three, while frozen installation and policy acceptance remain pending.
+Codacy annotations are retained for remediation. The #697 exception applies only
+to that accepted merge. #263 remains open with all 19 original criteria.
+
+The annotations have now been corrected locally. A fresh warning/error-clean
+Release build, all four complete module suites and 73 focused API cases passed.
+The previous full API unit run passed all 1,079 cases before those corrections;
+complete final-source host regression remains pending. The full site repetition
+passed all 2,982 cases, and CI verified them again after installing the corrected
+dependencies. Emception CI found a further LLVM archive digest that requires
+upstream tree verification before acceptance. No scanner/checksum rule is disabled.
+
+The fixed scope remains 328 IDs. The snapshot verified at
+`2026-10-06T18:02:19.756077+00:00` retained 72 closed and 256 open, including
+historical/administrative closures.
+All 55 unrelated primary file bytes/statuses are preserved. The same worktree
+is reused, with three worktrees, four local branches and zero stashes.
+
+## 2026-10-06 accepted Web3 backend merge and closure
+
+[PR #697](https://github.com/gameguild-gg/gameguild/pull/697) is merged into
+develop at `295ee212828ab1cc233ce7ed61f2a2b81eb39ed4` from tested revision
+`af8595b63e5cbd4229de622909036c4b2df02349`.
+[#292](https://github.com/gameguild-gg/gameguild/issues/292#issuecomment-6016888510)
+is officially closed as completed: its five backend criteria have matching-head
+CI and 20 actual Web3 HTTP/PostgreSQL cases within 327 full API integration cases,
+all passed with zero skips. #291 and wallet/provider/UI children retain their work.
+
+The owner explicitly accepted the [documented preexisting native CI failure](https://github.com/gameguild-gg/gameguild/pull/697#issuecomment-6016849454)
+for this merge. Its enrollment rejection was reproduced with freshly compiled
+develop production source. Native packaging/deployment and later browser steps
+remain unverified; no CI assertion or rule was disabled.
+
+The fixed original scope retains **328 IDs: 72 closed /256 open**, verified at
+`2026-10-06T13:05:59.977381+00:00`. This includes historical/duplicate/administrative
+closures and does not mean 72 new implementations. Empty #271 was explicitly
+cancelled by its owner and closed as **not planned**, with its original body retained.
+The matrix preserves every scoped ID and original acceptance field.
+
+Both the primary develop and reused implementation worktree were fast-forwarded
+to the merged revision. All 55 unrelated primary file bytes/statuses and the
+unfinished #263 draft were preserved. The merged remote branch was removed.
+Three worktrees remain (primary, this reused checkout and another code-quality
+chat's checkout), four local branches and zero stashes; no worktree or stash was
+created for this delivery.
+
+#263 remains open. The current local candidate has passing expiration and client
+denial regressions, full authentication/client tests and typecheck; complete host
+regression and publication/merge acceptance are separate. Its retained 19 criteria
+and security boundaries are mapped in
+[refresh-token reconciliation](../architecture/refresh-token-rotation-reconciliation.md).
+Earlier dated sections below retain their historical status/counts.
+
 ## 2026-10-05 Web3 backend local acceptance — #292
 
 The native five-criterion child #292 now has actual bounded-host-cache HTTP,
@@ -569,3 +651,21 @@ confirm all 55 local files were preserved.
 Canonical #171 and #173 closed **COMPLETED** after their original-route gaps were reproduced, fixed and covered by executed acceptance evidence. #170 and #172 closed as native GitHub **DUPLICATE** links to #171 and #173. Each issue retains its original description, source review and comments, with a final public closeout. Local evidence totals **5,248 successful cases** (4,136 C# and 1,112 client), a warning-clean full solution build, client TypeScript and generated-output consistency. The full local solution build belongs to the unchanged production/client implementation commit 22732e81de72fa02deaee1ab061e85fef3d85fc1. Final-head edited test projects built locally without warnings/errors; the final-head Release API build and 2,946 API-related cases passed on GitHub. Subsequent capped local full-build attempts hit compiler memory limits; failed/aborted resource or fixture attempts are excluded from successful evidence.
 
 A fresh GitHub query verifies all **328** original scope IDs: **64 closed / 264 open**. The entire matrix now reflects those live states and timestamps. Other rows only received state metadata and explicit historical reconciliation notes; all 328 acceptance fields and their existing implementation evidence are preserved. A GitHub closed-state count alone does not establish feature implementation. Primary-checkout snapshots verify preservation of all 55 local files.
+# 2026-10-06 canonical assessment membership candidate
+
+PR #699's published `d9309fcf621d3dbef6941b232e1c3dad2b362a20` passes native API,
+web, OpenAPI/client, policy and scanner checks; native Emception remains in
+progress. Native API acceptance includes full integration376/APIunit1079 and
+15 repeated OpenAPI HTTP cases. This is not complete PR or issue acceptance.
+
+The actual current SDK/API coding flow exposed a canonical course enrollment
+mapping gap. The local correction passes11 actual HTTP/PostgreSQL cases,
+all1254 Learning module cases and a zero-warning/error Release solution build.
+Complete current-source API regression is still in progress. The SDK now reaches
+a separate preexisting Code grading boundary; the native browser cycle remains
+unaccepted. [Evidence and required integration](../architecture/coding-assessment-runtime-reconciliation.md).
+
+No additional issue was closed by these checks. The fixed328-ID snapshot remains
+72closed/256open, verified `2026-10-06T19:36:07.854893Z`; #263 retains all19
+original criteria and is OPEN. Historical sections below keep their dated
+results and limits.

@@ -101,6 +101,9 @@ public sealed class RefreshTokenLineageFailurePostgreSqlHttpTests(ApiPostgreSqlF
     private sealed class FailureAfterPersistedLineage(IRefreshTokenLineageRepository inner, string failureStage,
         PersistedWriteEvidence evidence) : IRefreshTokenLineageRepository
     {
+        public Task<Guid?> RevokeFamilyAsync(Guid userId, Guid tokenId, string? revokedByIp, CancellationToken cancellationToken) =>
+            inner.RevokeFamilyAsync(userId, tokenId, revokedByIp, cancellationToken);
+
         public async Task<bool> BindSessionAsync(Guid userId, string tokenHash, Guid sessionId, CancellationToken cancellationToken)
         {
             var result = await inner.BindSessionAsync(userId, tokenHash, sessionId, cancellationToken);

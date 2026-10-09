@@ -9,7 +9,7 @@ using SesContent = Amazon.SimpleEmailV2.Model.Content;
 namespace GameGuild.API.Email;
 
 /// <summary>Amazon SES provider used by the shared, configurable email sender.</summary>
-public sealed class SesEmailSender : IEmailSender
+public sealed class SesEmailSender : IConfirmedEmailSender
 {
     private readonly Func<string, IAmazonSimpleEmailServiceV2> sesClientFactory;
     private readonly IOptions<EmailDeliveryOptions> options;
@@ -32,7 +32,15 @@ public sealed class SesEmailSender : IEmailSender
         this.sesClientFactory = sesClientFactory;
     }
 
-    public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
+    public Task<string?> SendAsync(EmailMessage message) => SendAsync(message, CancellationToken.None);
+
+    public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken) =>
+        (await SendWithReceiptAsync(message, cancellationToken).ConfigureAwait(false)).ProviderMessageId;
+
+    public Task<EmailDeliveryReceipt> SendWithReceiptAsync(EmailMessage message) =>
+        SendWithReceiptAsync(message, CancellationToken.None);
+
+    public async Task<EmailDeliveryReceipt> SendWithReceiptAsync(EmailMessage message, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -40,7 +48,7 @@ public sealed class SesEmailSender : IEmailSender
         if (!currentOptions.Enabled)
         {
             logger.LogInformation("Email delivery is disabled. Skipping email to {RecipientEmail}.", message.ToEmail);
-            return null;
+            return new EmailDeliveryReceipt(false, null);
         }
 
         if (string.IsNullOrWhiteSpace(currentOptions.FromEmail))
@@ -95,7 +103,7 @@ public sealed class SesEmailSender : IEmailSender
             message.ToEmail,
             message.Attachments?.Count ?? 0);
 
-        return response.MessageId;
+        return new EmailDeliveryReceipt(true, response.MessageId);
     }
 
     /// <summary>SES v2 simple content does not support attachments, so attachment sends use a raw MIME message.</summary>

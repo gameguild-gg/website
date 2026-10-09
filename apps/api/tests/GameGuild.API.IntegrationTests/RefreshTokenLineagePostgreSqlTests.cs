@@ -16,6 +16,10 @@ public sealed class RefreshTokenLineagePostgreSqlTests(ApiPostgreSqlFixture fixt
         using var scope = fixture.Factory.Services.CreateScope();
         Assert.Same(scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>(),
             scope.ServiceProvider.GetRequiredService<IRefreshTokenLineageRepository>());
+        Assert.Same(scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>(),
+            scope.ServiceProvider.GetRequiredService<IRefreshTokenCleanupRepository>());
+        Assert.Same(scope.ServiceProvider.GetRequiredService<IUserSessionRepository>(),
+            scope.ServiceProvider.GetRequiredService<IUserSessionCleanupRepository>());
     }
 
     [Theory]
@@ -231,6 +235,7 @@ public sealed class RefreshTokenLineagePostgreSqlTests(ApiPostgreSqlFixture fixt
         foreach (var token in new[] { root, child, leaf }) { token.SessionId = session.Id; }
         root.IsRevoked = child.IsRevoked = true;
         root.RevokedAt = child.RevokedAt = DateTime.UtcNow.AddDays(-40);
+        root.ExpiresAt = child.ExpiresAt = DateTime.UtcNow.AddDays(-40);
         await SeedAsync([root, child, leaf], [session]);
         using (var scope = fixture.Factory.Services.CreateScope())
         {
@@ -249,6 +254,43 @@ public sealed class RefreshTokenLineagePostgreSqlTests(ApiPostgreSqlFixture fixt
         var context = verification.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.False(await context.Set<RefreshToken>().AnyAsync(value => value.UserId == userId));
         Assert.False(await context.Set<UserSession>().AnyAsync(value => value.Id == session.Id));
+    }
+
+    [Theory]
+    [InlineData(7, -40, true)]
+    [InlineData(-1, -40, true)]
+    [InlineData(-40, -40, false)]
+    [InlineData(-30, -40, true)]
+    [InlineData(-40, -1, true)]
+    [InlineData(-40, -30, true)]
+    public async Task CleanupRetainsRevokedReplayMarkersUntilOriginalExpiryAndRetentionWindowEnd(
+        int expiryDaysFromNow, int revocationDaysFromNow, bool retain)
+    {
+        // PostgreSQL stores microsecond precision; use the same precision for exact cutoff cases.
+        var now = new DateTime(DateTime.UtcNow.Ticks / 10 * 10, DateTimeKind.Utc);
+        var userId = Guid.NewGuid();
+        var token = Token(userId);
+        token.CreatedAt = now.AddDays(-60);
+        token.IsRevoked = true;
+        token.RevokedAt = now.AddDays(revocationDaysFromNow);
+        token.ExpiresAt = now.AddDays(expiryDaysFromNow);
+        var session = Session(userId, token.Token);
+        session.IsActive = false;
+        session.ExpiresAt = now.AddDays(-40);
+        token.SessionId = session.Id;
+        await SeedAsync([token], [session]);
+
+        using (var scope = fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await new RefreshTokenRepository(db).DeleteExpiredAndRevokedAsync(now.AddDays(-30));
+            await new UserSessionRepository(db).DeleteExpiredAsync(now);
+        }
+
+        using var verification = fixture.Factory.Services.CreateScope();
+        var context = verification.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(retain, await context.Set<RefreshToken>().AsNoTracking().AnyAsync(value => value.Id == token.Id));
+        Assert.Equal(retain, await context.Set<UserSession>().AsNoTracking().AnyAsync(value => value.Id == session.Id));
     }
 
     [Fact]

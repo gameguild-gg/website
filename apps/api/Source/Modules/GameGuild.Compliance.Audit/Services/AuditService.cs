@@ -9,53 +9,79 @@ namespace GameGuild.Compliance.Audit;
 
 public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContextAccessor httpContextAccessor, ILogger<AuditService> logger) : IAuditService
 {
-    public async Task LogAsync(CreateAuditLogRequest request)
+    private const int MaxPersistenceAttempts = 2;
+
+    public Task LogAsync(CreateAuditLogRequest request)
     {
-        try
-        {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-            var httpContext = httpContextAccessor.HttpContext;
+        return TryLogAsync(request);
+    }
 
-            var auditLog = new AuditLog
+    public async Task<bool> TryLogAsync(CreateAuditLogRequest request)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
             {
-                ActionType = request.ActionType,
-                ResourceType = request.ResourceType,
-                ResourceId = request.ResourceId,
-                UserId = request.UserId,
-                TenantId = request.TenantId,
-                IpAddress = request.IpAddress ?? GetClientIpAddress(httpContext),
-                UserAgent = request.UserAgent ?? httpContext?.Request.Headers.UserAgent.ToString(),
-                SessionId = request.SessionId ?? GetSessionId(httpContext),
-                Description = request.Description,
-                Metadata = request.Metadata != null ? JsonSerializer.Serialize(request.Metadata) : null,
-                Success = request.Success,
-                ErrorMessage = request.ErrorMessage,
-                RiskLevel = request.RiskLevel,
-                Category = request.Category,
-                CorrelationId = request.CorrelationId ?? GetCorrelationId(httpContext)
-            };
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+                var httpContext = httpContextAccessor.HttpContext;
 
-            context.Set<AuditLog>().Add(auditLog);
-            await context.SaveChangesAsync().ConfigureAwait(false);
+                var auditLog = AuditLogEntryFactory.Create(request, httpContext);
 
-            // Log to structured logging as well for real-time monitoring
-            var logLevel = GetLogLevel(request.RiskLevel, request.Success);
+                context.Set<AuditLog>().Add(auditLog);
+                await context.SaveChangesAsync().ConfigureAwait(false);
 
-            logger.Log(
-                logLevel,
-                "Audit: {ActionType} on {ResourceType} {ResourceId} by User {UserId} - {Success}",
-                request.ActionType,
-                request.ResourceType,
-                request.ResourceId,
-                request.UserId,
-                request.Success ? "Success" : "Failed"
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to create audit log for action {ActionType}", request.ActionType);
-            // Don't throw - audit logging should not break business operations
+                // Log to structured logging as well for real-time monitoring
+                var logLevel = GetLogLevel(request.RiskLevel, request.Success);
+
+                logger.Log(
+                    logLevel,
+                    "Audit: {ActionType} on {ResourceType} {ResourceId} by User {UserId} - {Success}",
+                    request.ActionType,
+                    request.ResourceType,
+                    request.ResourceId,
+                    request.UserId,
+                    request.Success ? "Success" : "Failed"
+                );
+
+                return true;
+            }
+            catch (Exception ex) when (attempt < MaxPersistenceAttempts)
+            {
+                logger.LogWarning(ex,
+                    "Transient failure persisting audit log for action {ActionType} (attempt {Attempt}/{MaxAttempts}); retrying",
+                    request.ActionType, attempt, MaxPersistenceAttempts);
+            }
+            catch (Exception ex)
+            {
+                // Audit persistence must not break business operations, but the event may not
+                // silently vanish either (issue #346: durable audit logging). Escalate to a
+                // critical structured-log entry that carries the full audit payload so the
+                // durable logging pipeline retains the record for later reconciliation.
+                logger.LogCritical(ex,
+                    "Audit log persistence FAILED after {Attempts} attempts for action {ActionType}; durable fallback payload: {AuditPayload}",
+                    MaxPersistenceAttempts,
+                    request.ActionType,
+                    JsonSerializer.Serialize(new
+                    {
+                        request.ActionType,
+                        request.ResourceType,
+                        request.ResourceId,
+                        request.UserId,
+                        request.TenantId,
+                        request.Success,
+                        request.ErrorMessage,
+                        request.RiskLevel,
+                        request.Category,
+                        request.CorrelationId,
+                        request.Description
+                    }));
+
+                // Don't throw - audit logging should not break business operations, but the
+                // observable false return lets callers that must not swallow audit delivery
+                // failures surface them.
+                return false;
+            }
         }
     }
 
@@ -385,34 +411,6 @@ public sealed class AuditService(IServiceScopeFactory scopeFactory, IHttpContext
 
         return queryable;
     }
-
-    private string? GetClientIpAddress(HttpContext? httpContext)
-    {
-        if (httpContext == null) return null;
-
-        // Check for X-Forwarded-For header (reverse proxy/load balancer)
-        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(forwardedFor)) { return forwardedFor.Split(',')[0].Trim(); }
-
-        // Check for X-Real-IP header (Nginx)
-        var realIp = httpContext.Request.Headers["X-Real-IP"].FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(realIp)) { return realIp; }
-
-        // Fallback to remote IP
-        return httpContext.Connection.RemoteIpAddress?.ToString();
-    }
-
-    private Guid? GetSessionId(HttpContext? httpContext)
-    {
-        if (httpContext == null) { return null; }
-
-        var sessionIdValue = httpContext.User.FindFirst("session_id")?.Value;
-        return Guid.TryParse(sessionIdValue, out var sessionId) ? sessionId : null;
-    }
-
-    private string? GetCorrelationId(HttpContext? httpContext) { return httpContext?.Request.Headers["X-Correlation-ID"].FirstOrDefault(); }
 
     private LogLevel GetLogLevel(AuditRiskLevel riskLevel, bool success)
     {

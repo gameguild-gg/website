@@ -37,7 +37,10 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
     [InlineData(30)]
     public async Task ActualSequentialRotationPreservesSessionAuthTimeHashedReplacementAndConfiguredExpiry(int days)
     {
-        using var factory = CreateFactory(days);
+        // Exercise each configured TTL below an explicit session ceiling. The
+        // expiration suite separately verifies shorter absolute session limits.
+        const int absoluteTimeoutMinutes = 60 * 24 * 60;
+        using var factory = CreateFactory(days, absoluteTimeoutMinutes: absoluteTimeoutMinutes);
         var account = await SeedAsync(factory);
         using var client = factory.CreateClient();
         var current = account.RawRefreshToken;
@@ -77,6 +80,7 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
             Assert.Equal(account.Session.Id, successor.SessionId);
             Assert.Equal(account.Token.CreatedAt, successor.CreatedAt);
             Assert.InRange(successor.ExpiresAt, before.AddDays(days).AddSeconds(-1), after.AddDays(days).AddSeconds(1));
+            Assert.True(successor.ExpiresAt <= account.Session.CreatedAt.AddMinutes(absoluteTimeoutMinutes));
             Assert.InRange(result.GetProperty("refreshTokenExpiresAt").GetDateTime(), before.AddDays(days).AddSeconds(-1), after.AddDays(days).AddSeconds(1));
             Assert.DoesNotContain(replacement, (await db.Set<RefreshToken>().Where(value => value.UserId == account.User.Id).Select(value => value.Token).ToListAsync()));
             var storedSession = await db.Set<UserSession>().AsNoTracking().SingleAsync(value => value.Id == account.Session.Id);
@@ -140,11 +144,13 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
         await AssertUnchangedAsync(factory, account);
     }
 
-    [Fact]
-    public async Task TwoActualRequestsThatReadSameActiveTokenProduceOneRotationAndCommittedGlobalContainment()
+    [Theory]
+    [InlineData(RefreshTokenReplayScope.Family)]
+    [InlineData(RefreshTokenReplayScope.Account)]
+    public async Task TwoActualRequestsThatReadSameActiveTokenProduceOneRotationAndCommittedContainment(RefreshTokenReplayScope policy)
     {
         var rendezvous = new RefreshReadRendezvous();
-        using var factory = CreateFactory(7, rendezvous);
+        using var factory = CreateFactory(7, rendezvous, replayScope: policy);
         var account = await SeedAsync(factory);
         var unrelated = await SeedAsync(factory);
         rendezvous.TokenHash = account.Token.Token;
@@ -173,7 +179,7 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
         Assert.All(await db.Set<UserSession>().AsNoTracking().Where(value => value.UserId == account.User.Id).ToListAsync(),
             value => Assert.False(value.IsActive));
         var user = await db.Set<User>().AsNoTracking().SingleAsync(value => value.Id == account.User.Id);
-        Assert.Equal(account.User.TokenVersion + 1, user.TokenVersion);
+        Assert.Equal(account.User.TokenVersion + (policy == RefreshTokenReplayScope.Account ? 1 : 0), user.TokenVersion);
         using var bearer = factory.CreateClient();
         bearer.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme,
             winner.RootElement.GetProperty("accessToken").GetString());
@@ -187,7 +193,8 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
         await AssertUnchangedAsync(factory, unrelated);
     }
 
-    private WebApplicationFactory<Program> CreateFactory(int days, RefreshReadRendezvous? rendezvous = null) => fixture.Factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> CreateFactory(int days, RefreshReadRendezvous? rendezvous = null, int? absoluteTimeoutMinutes = null,
+        RefreshTokenReplayScope replayScope = RefreshTokenReplayScope.Family) => fixture.Factory.WithWebHostBuilder(builder =>
         builder.ConfigureTestServices(services =>
         {
             services.PostConfigure<AuthenticationOptions>(options =>
@@ -197,6 +204,12 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             });
             services.PostConfigure<JwtOptions>(options => options.RefreshTokenExpirationDays = days);
+            services.PostConfigure<JwtOptions>(options => options.RefreshTokenReplayContainmentScope = replayScope);
+            if (absoluteTimeoutMinutes.HasValue)
+            {
+                // SessionManagementService consumes the validated singleton, not IOptions<SessionOptions>.
+                services.AddSingleton(new SessionOptions { AbsoluteTimeoutMinutes = absoluteTimeoutMinutes.Value });
+            }
             if (rendezvous is not null)
             {
                 services.AddDbContext<ApplicationDbContext>(options => options.AddInterceptors(rendezvous));

@@ -23,14 +23,11 @@
  *     - TYPE real code into Monaco (keyboard.type) → Run public tests → public
  *       tests PASS → Submit → success redirect
  *
- *   Phase 3 PAYLOAD CHECK (API): GET the submission → assert codePayload
- *     CONTAINS the typed code. THIS IS THE EXPECTED-RED ASSERTION — the
- *     student write flow currently writes an empty payload ('{}'). The
- *     spec goes red here; a follow-up agent fixes the product bug with
- *     this run as the repro.
+ *   Phase 3 PAYLOAD CHECK (API): GET the official submission → assert
+ *     codePayload CONTAINS the typed code from the immutable response.
  *
- *   Phase 4 INSTRUCTOR UI (best-effort): sign in → SpeedGrader → IDE shows
- *     student submission (typed content — also red initially) → Run Tests
+ *   Phase 4 INSTRUCTOR UI: sign in → SpeedGrader → IDE shows
+ *     student submission and its frozen private definition → Run Tests
  *     → full plan (public+private; assert private name appears, 3 rows) →
  *     rubric grid → fill points → submit grade.
  *
@@ -53,6 +50,7 @@ import { existsSync, readFileSync, createWriteStream, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient, GeneratedApi } from "@game-guild/client";
 import { chromium } from "playwright";
+import { scoreValueFromPoints } from "../../../packages/features/grading/src/values.ts";
 import { resolveChromiumExecutablePath } from "./browser-executable.mjs";
 import {
   assertSharedAuthCookie,
@@ -70,6 +68,13 @@ const REPO_ROOT = resolve(WEB_DIR, "../..");
 const PG_PORT = Number(process.env.CODING_CYCLE_PG_PORT ?? 5433);
 const API_PORT = Number(process.env.CODING_CYCLE_API_PORT ?? 8180);
 const WEB_PORT = Number(process.env.CODING_CYCLE_WEB_PORT ?? 3012);
+// The Ubuntu runner's installed Chrome has a root-owned AppArmor userns profile.
+// The grading worker keeps its mandatory sandbox; no host security setting changes.
+const CODE_GRADING_BROWSER_CHANNEL = process.env.CODING_CYCLE_GRADING_BROWSER_CHANNEL ??
+  (process.platform === "linux" && process.env.GITHUB_ACTIONS === "true" ? "chrome" : undefined);
+if (CODE_GRADING_BROWSER_CHANNEL !== undefined && CODE_GRADING_BROWSER_CHANNEL !== "chrome") {
+  throw new Error("The Code cycle supports only its bundled browser or the installed Chrome channel.");
+}
 const PG_USER = "gameguild_e2e";
 const PG_PASSWORD = "gameguild_e2e_password";
 const PG_DB = "gameguild_e2e";
@@ -270,6 +275,12 @@ function readTail(file, lines) {
 }
 
 async function bootStack() {
+  // Build the runtime used by official Code submissions. The existing release
+  // gate stages verified compiler artifacts before this isolated browser cycle.
+  const gradingBuild = spawnSync(process.execPath, ["grading/build.mjs"], {
+    cwd: resolve(REPO_ROOT, "tools/emception"), stdio: "inherit",
+  });
+  if (gradingBuild.status !== 0) throw new Error("Trusted Code runtime build failed.");
   await mkdir(ARTIFACTS, { recursive: true });
   await mkdir(EVIDENCE, { recursive: true });
   await mkdir(RUNTIME, { recursive: true });
@@ -349,6 +360,13 @@ async function bootStack() {
     `Jwt__SecretKey=coding-cycle-e2e-jwt-secret-key-at-least-32-characters`,
     `Authentication__JwtSecretKey=coding-cycle-e2e-jwt-secret-key-at-least-32-characters`,
     `EmailDelivery__Enabled=false`,
+    `CodeGradingWorker__NodeExecutable=${process.execPath}`,
+    `CodeGradingWorker__ScriptPath=${resolve(REPO_ROOT, "tools/emception/grading/worker.mjs")}`,
+    `CodeGradingWorker__RuntimeDirectory=${resolve(REPO_ROOT, "tools/emception/artifacts/grading/runtime")}`,
+    `CodeGradingWorker__CdnDirectory=${resolve(REPO_ROOT, "apps/web/public/emception")}`,
+    ...(CODE_GRADING_BROWSER_CHANNEL ? [`CodeGradingWorker__BrowserChannel=${CODE_GRADING_BROWSER_CHANNEL}`] : []),
+    ...(process.env.PLAYWRIGHT_BROWSERS_PATH
+      ? [`CodeGradingWorker__BrowserDirectory=${resolve(process.env.PLAYWRIGHT_BROWSERS_PATH)}`] : []),
   ];
   log(`starting API on ${API_PORT}`);
   const api = spawn(
@@ -676,6 +694,16 @@ async function seedFixture() {
     "PUT rubric",
   );
   const criterionIds = (rubric.criteria ?? []).map((c) => c.id).filter(Boolean);
+
+  // Publishing a course does not publish an executable assessment. Freeze the
+  // Code definition and the concrete rubric, then activate that exact revision.
+  const state = await rawRequest(adminClient, `/v1.0/assessments/${assessment.id}/authoring-state`);
+  const prepared = await rawRequest(adminClient, `/v1.0/assessments/${assessment.id}/revisions/prepare`, {
+    method: "POST", body: { expectedAssessmentVersion: state.assessmentVersion },
+  });
+  await rawRequest(adminClient, `/v1.0/assessments/${assessment.id}/revisions/publish`, {
+    method: "POST", body: { revisionId: prepared.revisionId, expectedAssessmentVersion: state.assessmentVersion },
+  });
 
   // Student sign-up, then a fresh sign-in for a fully-activated session
   // (sign-up may return a temp token; sign-in guarantees a usable one and
@@ -1027,7 +1055,9 @@ async function studentJourney(fixture, browser) {
       await page.waitForURL(
         (url) => /\/learn\/courses\/[^/]+\/activities\/?$/.test(url.pathname + url.search) ||
           /\/learn\/courses\/[^/]+\/activities$/.test(url.pathname),
-        { timeout: 45_000 },
+        // The submission now includes trusted compilation and full test execution.
+        // Preserve the success assertion while matching the bounded API deadline.
+        { timeout: 330_000 },
       );
       submitted = true;
     } catch {
@@ -1236,7 +1266,10 @@ async function gradeCheck(fixture) {
   const result = { phase: "Phase 5 — Grade check", assertions: [] };
   const record = (name, ok, detail) => result.assertions.push({ name, ok, detail });
   record("submission status Graded", sub?.status === "Graded", sub?.status ?? "no submission");
-  record("submission score == 100", sub?.score === 100, `score=${sub?.score}`);
+  // Keep the exact 100-point requirement. The API's ScoreValue wire contract
+  // contains hundredths, so the required stored value is 10,000 units.
+  record("submission score == 100", sub?.score === scoreValueFromPoints(String(fixture.maxScore)),
+    `scoreUnits=${sub?.score}; expectedPoints=${fixture.maxScore}`);
   record("submission feedback non-null", Boolean(sub?.feedback), `feedback=${sub?.feedback ? "present" : "null"}`);
 
   // RubricScoresPayload is not exposed on the submission DTO — probe the DB.

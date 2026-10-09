@@ -51,6 +51,17 @@ public sealed record EmailMessage(
 
 public interface IEmailSender
 {
-    /// <summary>Sends the message and returns the provider message id, or null when email delivery is disabled (skip).</summary>
+    /// <summary>Returns the optional provider message identifier. A null identifier alone does not establish acceptance; use IConfirmedEmailSender when confirmation is required.</summary>
     Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Provider acceptance is independent of the optional provider message identifier.</summary>
+public sealed record EmailDeliveryReceipt(bool Accepted, string? ProviderMessageId);
+
+/// <summary>Optional capability for notifications that require explicit provider acceptance.</summary>
+public interface IConfirmedEmailSender : IEmailSender
+{
+    Task<EmailDeliveryReceipt> SendWithReceiptAsync(EmailMessage message) => SendWithReceiptAsync(message, CancellationToken.None);
+
+    Task<EmailDeliveryReceipt> SendWithReceiptAsync(EmailMessage message, CancellationToken cancellationToken);
 }

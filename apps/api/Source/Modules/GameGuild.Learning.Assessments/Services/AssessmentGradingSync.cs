@@ -36,6 +36,10 @@ public sealed class AssessmentGradingSync(IApplicationDbContext context) : IAsse
             assessment.SetDeliveryContract(
                 SubmissionModality.Code,
                 AssessmentPresentationMode.SingleStep);
+            assessment.SetReviewPolicy(assessment.ReviewMethods,
+                "{\"schemaVersion\":1,\"instructor\":{\"requireOverrideReason\":false}}",
+                assessment.AttemptContributionMode, assessment.ContentCompletionMode,
+                assessment.ResultReleaseMode, assessment.ResultReleaseScheduledFor);
             context.Set<Assessment>().Add(assessment);
             await context.SaveChangesAsync(ct).ConfigureAwait(false);
             return;

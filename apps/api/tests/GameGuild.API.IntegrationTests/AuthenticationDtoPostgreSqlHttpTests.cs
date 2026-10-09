@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using GameGuild.API.Database;
 using GameGuild.API.IntegrationTests.Infrastructure;
+using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
@@ -34,7 +35,7 @@ public sealed class AuthenticationDtoPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         Assert.Equal("Ana", result.GetProperty("user").GetProperty("firstName").GetString());
         Assert.Equal($"Maria {marker}", result.GetProperty("user").GetProperty("lastName").GetString());
         Assert.Equal(id, result.GetProperty("user").GetProperty("id").GetGuid());
-        AssertCompletedTokens(result);
+        await AssertCompletedTokensAsync(result, fixture.Factory);
         using var scope = fixture.Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var persisted = await context.Set<User>().SingleAsync(user => user.Id == id);
@@ -54,12 +55,12 @@ public sealed class AuthenticationDtoPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         using var loginResponse = await client.PostAsJsonAsync("/v1/auth/sign-in", new { account.Email, account.Password });
         using var login = await ReadResponseAsync(loginResponse, HttpStatusCode.OK);
         AssertProfile(login.RootElement, account.User);
-        AssertCompletedTokens(login.RootElement);
+        await AssertCompletedTokensAsync(login.RootElement, factory);
         var firstRefresh = login.RootElement.GetProperty("refreshToken").GetString();
         using var refreshResponse = await client.PostAsJsonAsync("/v1/auth/tokens:refresh", new { refreshToken = firstRefresh });
         using var refresh = await ReadResponseAsync(refreshResponse, HttpStatusCode.OK);
         AssertProfile(refresh.RootElement, account.User);
-        AssertCompletedTokens(refresh.RootElement);
+        await AssertCompletedTokensAsync(refresh.RootElement, factory);
         Assert.NotEqual(firstRefresh, refresh.RootElement.GetProperty("refreshToken").GetString());
         Assert.Equal(login.RootElement.GetProperty("tenantId").GetRawText(), refresh.RootElement.GetProperty("tenantId").GetRawText());
         Assert.Equal(login.RootElement.GetProperty("sessionId").GetGuid(), refresh.RootElement.GetProperty("sessionId").GetGuid());
@@ -185,7 +186,7 @@ public sealed class AuthenticationDtoPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         Assert.Equal(user.CreatedAt, profile.GetProperty("createdAt").GetDateTime());
     }
 
-    private static void AssertCompletedTokens(JsonElement result)
+    private static async Task AssertCompletedTokensAsync(JsonElement result, WebApplicationFactory<Program> factory)
     {
         Assert.True(result.GetProperty("success").GetBoolean());
         Assert.False(string.IsNullOrWhiteSpace(result.GetProperty("accessToken").GetString()));
@@ -195,7 +196,20 @@ public sealed class AuthenticationDtoPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         var refreshExpiry = result.GetProperty("refreshTokenExpiresAt").GetDateTime();
         Assert.Equal(refreshExpiry, result.GetProperty("expiresAt").GetDateTime());
         Assert.True(accessExpiry > DateTime.UtcNow);
-        Assert.True(refreshExpiry > accessExpiry);
+        Assert.True(refreshExpiry > DateTime.UtcNow);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sessionId = result.GetProperty("sessionId").GetGuid();
+        var session = await db.Set<UserSession>().AsNoTracking().SingleAsync(value => value.Id == sessionId);
+        var hash = scope.ServiceProvider.GetRequiredService<IRefreshTokenHasher>()
+            .HashToken(result.GetProperty("refreshToken").GetString()!);
+        var token = await db.Set<RefreshToken>().AsNoTracking().SingleAsync(value => value.Token == hash);
+        Assert.Equal(result.GetProperty("userId").GetGuid(), session.UserId);
+        Assert.Equal(sessionId, token.SessionId);
+        Assert.Equal(session.ExpiresAt, token.ExpiresAt);
+        Assert.InRange(Math.Abs((refreshExpiry - token.ExpiresAt).Ticks), 0, 9);
+        Assert.True(refreshExpiry <= session.CreatedAt.AddMinutes(
+            scope.ServiceProvider.GetRequiredService<SessionOptions>().AbsoluteTimeoutMinutes).AddTicks(9));
         Assert.True(result.GetProperty("expiresIn").GetInt32() > 0);
     }
 

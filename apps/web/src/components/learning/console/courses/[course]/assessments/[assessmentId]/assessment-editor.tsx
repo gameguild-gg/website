@@ -198,6 +198,9 @@ export function AssessmentEditor({
   const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const isQuiz = assessment.type === "Quiz";
   const isLinkedQuiz = isQuiz && assessment.contentId != null;
+  const isLinkedCode = assessment.contentId != null && courseContent.some(
+    (content) => content.id === assessment.contentId && content.type === "Code",
+  );
   const [versionOverride, setVersionOverride] = useState<{
     source: number;
     value: number;
@@ -1046,7 +1049,7 @@ export function AssessmentEditor({
 
               <Separator />
 
-              {isLinkedQuiz && authoringState && (
+              {(isLinkedQuiz || isLinkedCode) && authoringState && (
                 <>
                   <div
                     className="space-y-3"
@@ -1124,7 +1127,7 @@ export function AssessmentEditor({
                         )}
                         Prepare
                       </Button>
-                      {authoringState.candidate && (
+                      {isLinkedQuiz && authoringState.candidate && (
                         <RuntimeQuizTestRun
                           assessmentId={assessment.id}
                           revisionId={authoringState.candidate.revisionId}

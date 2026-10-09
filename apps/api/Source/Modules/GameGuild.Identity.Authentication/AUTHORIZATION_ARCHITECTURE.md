@@ -1857,6 +1857,47 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### Refresh-token lifecycle audit and metrics
+
+The identity module emits credential-free `RefreshTokenLifecycleEvent` records through
+`IRefreshTokenLifecycleRecorder`. The host stores issuance, rotation, explicit revocation,
+account-wide revocation and completed replay containment in the same database transaction
+as the token and session mutations. A failed transaction retains neither these audit rows
+nor a committed-operation metric. Pure rejections use a separate scoped context so a
+denied command cannot erase their audit evidence. Replay containment still returns the
+server-only commit-on-denial result; it never returns credentials.
+
+Audit records contain opaque owner/token/parent/session identifiers and bounded reasons.
+An owner identifier recovered from storage does not authenticate the requester. Tenant
+context comes from resolved membership or an already authenticated owner, never an
+unverified requested tenant. Raw credentials, hashes, emails and request headers are
+excluded from lifecycle metadata. Audit storage failures propagate; the existing
+best-effort authentication transport cannot erase this transactional evidence.
+
+`GameGuild.Identity.Authentication.RefreshTokens` is registered in the host's OpenTelemetry
+meter provider. The attempt counter counts entry to an operation. The persisted-outcome
+counter is emitted only after `SaveChanges` has committed independently or the owning EF
+transaction has committed. Rollback and transaction failure discard staged counts.
+Tags are limited to operation, outcome and reason enums; no account, tenant, session,
+credential or IP appears in metric dimensions. Metrics describe the current process;
+the database audit is the authoritative history, including across restarts. A failing
+telemetry listener cannot reverse a successful database commit.
+
+### Security email acceptance
+
+Security email rows require a rendered message and an `IConfirmedEmailSender`
+receipt whose `Accepted` flag is true before the dispatcher marks them Sent.
+A disabled sender, missing message or sender without that capability follows the
+existing retry and dead-letter path. Provider acceptance is distinct from its
+optional message identifier; a successful response without an identifier is valid.
+SMTP, SES and SendGrid expose that distinction without changing `IEmailSender.SendAsync`.
+
+The registered Security renderer HTML-encodes the message, excludes persisted
+metadata and directs the recipient to the ordinary trusted application address.
+Provider acceptance does not prove inbox placement or that the recipient read it.
+The durable replay producer, retry/idempotence integration and the full #263
+acceptance remain under validation; this delivery boundary alone does not close it.
+
 ### Persisted refresh-token parent and session lineage
 
 Refresh tokens have nullable `ParentTokenId` and `SessionId` foreign keys to the
@@ -1893,6 +1934,26 @@ This covers credential/session flows and local refresh rotation. It does not
 establish complete issuance metadata for every external authentication provider,
 nor all original #263 audit, alert, scheduled cleanup and metrics requirements.
 Those original criteria remain open until their separate evidence is accepted.
+
+### Refresh credential expiration and session limits
+
+`Jwt:RefreshTokenSlidingExpiration` defaults to `true`, retaining renewal on each
+successful refresh. With `false`, rotation preserves the predecessor's deadline
+or a shorter configured TTL. Both modes retain `SessionOptions.AbsoluteTimeoutMinutes`
+measured from the original session creation; rotation cannot reset that boundary.
+The existing idle timeout and active-session checks remain mandatory.
+
+Session binding and rotation cap the stored refresh credential at the actual
+persisted session deadline. Credential sign-in, sign-up, OAuth/Discord and Web3
+report that deadline in both refresh expiration response fields. A null, foreign,
+inactive, expired or wrongly bound session cannot return successful credentials.
+The provider issuer for magic-link/WebAuthn retains its persisted-token/session
+checks. `RefreshTokenExpirationDays` remains the canonical TTL configuration;
+the historical `RefreshTokenExpiryInDays` fallback remains supported.
+
+This boundary is validated by real HTTP/PostgreSQL cases for both sliding modes
+and one-day/thirty-day absolute limits. Complete #263 acceptance remains separate
+from those four expiration cases.
 
 ### Authenticated self revocation across all sessions
 
@@ -1963,13 +2024,26 @@ This repository correction does not establish family lineage, complete service
 rotation atomicity or revocation consumption in the host's bearer pipeline.
 
 Refresh replay containment returns a server-only denial only after required token,
-session and user-version writes succeed. Its explicit `ICommitOnFailureOutcome`
+session and applicable account-version writes succeed. Its explicit `ICommitOnFailureOutcome`
 preserves those mutations through the command transaction while the endpoint still
 returns generic 401. Business failure classification remains unchanged. Ordinary
 failed outcomes and exceptions keep rollback behavior; request data cannot supply
 the commit contract. Profile mapping preserves the internal denial without fetching
 or exposing an account. Separate PostgreSQL HTTP and transaction cases verify
 containment persistence and ordinary failure/exception rollback.
+
+`Jwt:RefreshTokenReplayContainmentScope` selects `Family` (default) or `Account`.
+Family containment uses the persisted, owner-checked session binding, terminates
+that session, and revokes its descendants without changing the account token
+version. Signed bearers from that family are denied by the session guard; other
+owned sessions remain usable. Account containment retains the existing all-session
+revocation and version increment. A legacy token without a provable persisted
+family falls back to account containment. Explicit revoke-all is independent.
+Session metadata updates cannot clear committed termination state or reactivate a
+family from a stale tracked object. Family termination locks its session before
+querying descendants; a waiting refresh must pass the current persisted binding
+checks and cannot acknowledge an orphan replacement. Unknown policy values fail
+configuration validation.
 
 [Scope and remaining acceptance](../../../../../docs/architecture/refresh-token-rotation-reconciliation.md).
 
@@ -2218,7 +2292,49 @@ and writes an audit entry on **every mutation path** (grants, revokes, defaults,
 content-type and resource grants, expired-permission cleanup). Invalidation failures
 propagate — a mutation whose cache invalidation failed is never reported as successful.
 
+### Scheduled refresh-token retention
+
+The host registers an enabled `RefreshTokenCleanupWorker` with a fresh scoped
+operation per cycle. `Authentication:RefreshTokenCleanup` validates retention
+(default 30 days), batch size (default 500), batches per store (default 10), startup
+delay (default two minutes), interval (default one hour), and execution deadline
+(default one minute). Cycles run sequentially; failures and timeouts retry at the
+next interval, and shutdown cancels both database work and the timer.
+
+Token deletion requires both the original expiration and any revocation timestamp
+to precede the retention cutoff. A predecessor survives while a child survives;
+an unexpired revoked leaf remains evidence for reuse detection. Sessions survive
+while any stored token references them. Each cycle bounds writes in both stores.
+Deletion and a redacted system audit row commit in one database transaction.
+Audit/storage/cancellation failure rolls the cycle back. Cleanup counters report
+committed row counts only after commit, with bounded resource/outcome dimensions.
+The scheduler is an internal system operation and exposes no public cleanup API.
+Tests disable automatic scheduling explicitly and exercise the worker separately.
+
 ### Architecture Rules (enforced by build/tests)
+
+### Verified provider session issuance
+
+Magic-link consumption and WebAuthn authentication completion delegate credential
+issuance to `IAuthenticatedSessionIssuer` after verifying the provider identity and
+loading an available stored account. Issuance requires an active membership in an
+active tenant; pending or cancelled invitations and revoked memberships grant no
+access. Login does not provision or reactivate memberships. Requested foreign tenants
+are rejected before writing credentials. Roles come from the existing tenant resolver.
+
+The issuer persists a hashed root refresh token, creates its owned session, and checks
+the stored binding before generating an access token carrying that session and tenant.
+The refresh deadline is capped to the persisted session's absolute deadline. Response
+lifetimes come from the actual JWT and stored deadlines. Provider commands run inside
+the host command transaction: a binding, persistence, cancellation or issuance failure
+must escape that transaction so its writes roll back. Credentials are returned only
+after the transaction succeeds. Missing issuer configuration fails closed.
+
+These invariants cover initial session issuance. They do not certify provider delivery,
+browser authenticator ceremonies, enterprise federation, or the complete refresh-token
+lifecycle requirements; those retain their separate acceptance evidence.
+
+### Architecture enforcement
 
 - **Controller authorization (GGARCH008 + `ControllerAuthorizationArchitectureTests`)**:
   every MVC endpoint must carry `[Authorize]` (class or action) or an explicit

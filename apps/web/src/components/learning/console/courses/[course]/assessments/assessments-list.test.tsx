@@ -7,9 +7,9 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { AnchorHTMLAttributes, ReactNode } from "react";
+import type { AnchorHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AssessmentsList } from "./assessments-list";
+import { AssessmentsList as AssessmentsListComponent } from "./assessments-list";
 import {
   createAssessment,
   createAssessmentGroup,
@@ -21,6 +21,12 @@ import type {
   AssessmentGroup,
   CourseAssessmentAnalytics,
 } from "@/lib/learning/queries/assessments";
+
+function AssessmentsList(
+  props: ComponentProps<typeof AssessmentsListComponent>,
+) {
+  return <AssessmentsListComponent canManage {...props} />;
+}
 
 Object.defineProperties(HTMLElement.prototype, {
   hasPointerCapture: { value: vi.fn(() => false) },
@@ -791,15 +797,15 @@ describe("AssessmentsList weighted groups", () => {
     expect(screen.getByText("33.3% of Total")).toBeInTheDocument();
   });
 
-  describe("AssessmentsList instructor grade links", () => {
-    it("renders a grade link per assessment for instructors", () => {
+  describe("AssessmentsList staff-review grade links", () => {
+    it("renders a grade link per assessment for staff reviewers", () => {
       render(
         <AssessmentsList
           courseId="course-1"
           assessments={groupedAssessments}
           total={groupedAssessments.length}
           assessmentGroups={assessmentGroups}
-          canManage
+          canReviewAsStaff
         />,
       );
 
@@ -815,13 +821,13 @@ describe("AssessmentsList weighted groups", () => {
       expect(quizGradeLink).toHaveTextContent(/grade/i);
     });
 
-    it("renders an ungrouped grade link for instructors", () => {
+    it("renders an ungrouped grade link for staff reviewers", () => {
       render(
         <AssessmentsList
           courseId="course-1"
           assessments={[assignmentAssessment]}
           total={1}
-          canManage
+          canReviewAsStaff
         />,
       );
 
@@ -831,7 +837,7 @@ describe("AssessmentsList weighted groups", () => {
       );
     });
 
-    it("hides grade links from non-instructors", () => {
+    it("hides grade links without review capability", () => {
       render(
         <AssessmentsList
           courseId="course-1"
@@ -847,14 +853,15 @@ describe("AssessmentsList weighted groups", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("hides grade links when canManage is explicitly false", () => {
+    it("does not derive review capability from edit capability", () => {
       render(
         <AssessmentsList
           courseId="course-1"
           assessments={groupedAssessments}
           total={groupedAssessments.length}
           assessmentGroups={assessmentGroups}
-          canManage={false}
+          canManage
+          canReviewAsStaff={false}
         />,
       );
 

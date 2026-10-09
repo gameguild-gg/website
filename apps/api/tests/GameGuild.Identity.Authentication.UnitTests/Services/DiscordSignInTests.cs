@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
+using GameGuild.Identity.Authentication.UnitTests.Infrastructure;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Http;
@@ -36,6 +37,7 @@ public class DiscordSignInTests
 
     public DiscordSignInTests()
     {
+        PersistedAuthenticationSessions.Configure(_sessionManagementServiceMock);
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {

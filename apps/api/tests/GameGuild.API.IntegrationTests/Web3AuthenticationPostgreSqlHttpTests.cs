@@ -363,6 +363,9 @@ public sealed class Web3AuthenticationPostgreSqlHttpTests(Web3PostgreSqlFixture 
     }
     private sealed class PostBindingFailure(IRefreshTokenLineageRepository inner, BindingEvidence evidence) : IRefreshTokenLineageRepository
     {
+        public Task<Guid?> RevokeFamilyAsync(Guid userId, Guid tokenId, string? revokedByIp, CancellationToken cancellationToken) =>
+            inner.RevokeFamilyAsync(userId, tokenId, revokedByIp, cancellationToken);
+
         public async Task<bool> BindSessionAsync(Guid userId, string tokenHash, Guid sessionId, CancellationToken cancellationToken)
         {
             var bound = await inner.BindSessionAsync(userId, tokenHash, sessionId, cancellationToken);

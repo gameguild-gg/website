@@ -218,7 +218,8 @@ public sealed class RevokeAllUserTokensPostgreSqlHttpTests(ApiPostgreSqlFixture 
             });
         var handler = new RevokeAllUserTokensHandler(actor.Object,
             scope.ServiceProvider.GetRequiredService<IUserRepository>(), scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>(),
-            scope.ServiceProvider.GetRequiredService<ISessionManagementService>(), store.Object);
+            scope.ServiceProvider.GetRequiredService<ISessionManagementService>(), store.Object,
+            scope.ServiceProvider.GetRequiredService<IRefreshTokenLifecycleRecorder>());
         var behavior = new UseCaseOperationBehavior<RevokeAllUserTokensCommand, int>(db, actor.Object,
             scope.ServiceProvider.GetRequiredService<IUseCaseOperationContextAccessor>());
         var command = new RevokeAllUserTokensCommand("127.0.0.1");

@@ -17,6 +17,24 @@ afterEach(() => {
 });
 
 describe('TokenRefreshManager — full branch coverage', () => {
+  it.each([401, 403])('requests authentication once without retrying a denied %s refresh', async (status) => {
+    const onAuthenticationRequired = vi.fn();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const manager = new TokenRefreshManager({
+      getAccessToken: async () => 'synthetic-access',
+      getRefreshToken: async () => 'synthetic-refresh',
+      onAuthenticationRequired,
+    }, 'http://localhost', { maxRetries: 3, backoffBase: 0 });
+    mockFetch.mockResolvedValue({ ok: false, status, statusText: 'Denied' });
+    try {
+      expect(await manager.refresh()).toBeNull();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(onAuthenticationRequired).toHaveBeenCalledTimes(1);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   it('shouldRefresh returns false when no expiry set', () => {
     const manager = new TokenRefreshManager({ getAccessToken: async () => 'tok' }, 'http://localhost');
     expect(manager.shouldRefresh()).toBe(false);
@@ -99,11 +117,11 @@ describe('TokenRefreshManager — full branch coverage', () => {
       { maxRetries: 2, backoffBase: 100 },
     );
 
-    // Both attempts fail
+    // Both attempts receive a temporary service failure.
     mockFetch.mockResolvedValue({
       ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
+      status: 503,
+      statusText: 'Service Unavailable',
     });
 
     const refreshPromise = manager.refresh();

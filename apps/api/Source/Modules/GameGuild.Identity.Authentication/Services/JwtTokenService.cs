@@ -25,7 +25,8 @@ public sealed class JwtTokenService(
     IHttpContextAccessor httpContextAccessor,
     IOptions<JwtOptions> jwtOptions,
     IAuthorizationGroupMembershipProvider? groupMembershipProvider = null,
-    IOptions<AuthorizationTokenOptions>? authorizationTokenOptions = null) : IJwtTokenService
+    IOptions<AuthorizationTokenOptions>? authorizationTokenOptions = null,
+    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null) : IJwtTokenService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly AuthorizationTokenOptions _authorizationTokenOptions = authorizationTokenOptions?.Value ?? new AuthorizationTokenOptions();
@@ -203,6 +204,8 @@ public sealed class JwtTokenService(
         CancellationToken cancellationToken = default)
     {
         if (deviceInfo == null) throw new ArgumentNullException(nameof(deviceInfo));
+        cancellationToken.ThrowIfCancellationRequested();
+        RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.Issued);
 
         logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, deviceInfo.DeviceId);
 
@@ -246,6 +249,11 @@ public sealed class JwtTokenService(
                 try
                 {
                     await refreshTokenRepository.CreateAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+                    if (lifecycleRecorder is not null)
+                    {
+                        await lifecycleRecorder.RecordMutationAsync(new RefreshTokenLifecycleEvent(RefreshTokenLifecycleOperation.Issued,
+                            userId, refreshToken.Id), cancellationToken).ConfigureAwait(false);
+                    }
 
                     logger.LogInformation("Refresh token generated and stored: {TokenId}, Expires: {ExpiresAt}", refreshToken.Id, refreshToken.ExpiresAt);
 
@@ -363,6 +371,8 @@ public sealed class JwtTokenService(
     /// </summary>
     public async Task<bool> RevokeRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.Revoked);
         logger.LogInformation("Revoking refresh token");
 
         try
@@ -389,6 +399,11 @@ public sealed class JwtTokenService(
             refreshToken.RevokedAt = SystemClock.UtcNow;
 
             await refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+            if (lifecycleRecorder is not null)
+            {
+                await lifecycleRecorder.RecordMutationAsync(new RefreshTokenLifecycleEvent(RefreshTokenLifecycleOperation.Revoked,
+                    refreshToken.UserId, refreshToken.Id, refreshToken.SessionId), cancellationToken).ConfigureAwait(false);
+            }
 
             logger.LogInformation("Refresh token revoked: {TokenId}", refreshToken.Id);
 

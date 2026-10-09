@@ -15,10 +15,10 @@ pós-merge confirmou o núcleo entregue, mas encontrou pendências de autoridade
 peer paralela, E2E HTTP + PostgreSQL e upgrade pela cadeia real de migrations.
 
 O fechamento corretivo foi implementado em 30 de setembro de 2026. Os gates de
-grading estão aprovados e a Parte 3 está liberada. Erros preexistentes do
-typecheck web em módulos mantidos por outros desenvolvedores estão registrados
-como diagnósticos não bloqueantes no plano de fechamento. A solução completa da
-API compila sem erros.
+grading estão aprovados e a Parte 3 de acesso contextual está liberada. Erros
+preexistentes do typecheck web em módulos mantidos por outros desenvolvedores
+estão registrados como diagnósticos não bloqueantes no plano de fechamento. A
+solução completa da API compila sem erros.
 
 Não reexecutar esta Parte 2 nem seu
 [`plano de fechamento`](./02a-core-grading-e2e-closeout.md). Ambos estão
@@ -367,7 +367,7 @@ preservando a cadeia, os dados e os artefatos SQL fora do `IModel`.
   atividade sem contribuição e peso positivo aplica a contribuição canônica;
 - manter nesta parte a fila docente oficial mínima e o deep link necessários
   ao `InstructorReview`; filtros e operação entre assessments permanecem na
-  Parte 3;
+  Parte 4;
 - bloquear temporariamente start e submit de assessment coletivo no novo
   runtime até `SEQ-11` substituir o fan-out atual; não permitir que o caminho
   coletivo anterior continue produzindo resultado oficial.
@@ -582,6 +582,9 @@ autoridade paralela passam a ser executados exclusivamente em
 [`02a-core-grading-e2e-closeout.md`](./02a-core-grading-e2e-closeout.md). Concluir
 esse documento é parte obrigatória deste gate, não uma reexecução de `SEQ-07` a
 `SEQ-11`.
+
+Este gate libera `ACCESS-01`, não `SEQ-12`. A expansão dos métodos de review
+permanece bloqueada até a Parte 3 comprovar sessões e capacidades contextuais.
 
 ## Acompanhamento
 

@@ -9,6 +9,7 @@ using GameGuild.API.Database;
 using GameGuild.API.Eventing;
 using GameGuild.API.Core.Quotas;
 using GameGuild.API.Core.CostAccounting;
+using GameGuild.API.Core.Security;
 using GameGuild.Assets.Extensions;
 using GameGuild.Assets.Storage;
 using GameGuild.Commerce.Billing;
@@ -215,6 +216,12 @@ public static class InfrastructureLayerExtensions
         services.AddUnifiedAuthorizationLayer();
         logger.LogInformation("Unified Authorization Layer registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
+        // 10.0 Permission Evaluation Engine (issue #358): evaluation throttle, webhooks,
+        // external sync, restoration, compliance reporting.
+        stepStopwatch.Restart();
+        services.AddPermissionEngineServices();
+        logger.LogInformation("Permission Evaluation Engine registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
+
         // 10a. Resources Module (quota, usage tracking, SLA services)
         stepStopwatch.Restart();
         services.AddResourcesInfrastructure(configuration);
@@ -331,9 +338,19 @@ public static class InfrastructureLayerExtensions
         services.AddScoped<CostTelemetryContext>();
         services.AddScoped<ICostTelemetryRecorder>(provider => provider.GetRequiredService<CostTelemetryContext>());
         services.AddScoped<CostTelemetryDbCommandInterceptor>();
+        services.AddScoped<RefreshTokenLifecycleMetricBuffer>();
+        services.AddScoped<IRefreshTokenLifecycleRecorder, RefreshTokenLifecycleRecorder>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddOptions<RefreshTokenCleanupOptions>()
+            .Bind(configuration.GetSection(RefreshTokenCleanupOptions.SectionName))
+            .Validate(policy => policy.Validate().Count == 0, "Invalid refresh-token cleanup configuration.")
+            .ValidateOnStart();
+        services.AddScoped<IRefreshTokenCleanupOperation, RefreshTokenCleanupOperation>();
+        services.AddHostedService<RefreshTokenCleanupWorker>();
         services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
             options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());
+            options.AddInterceptors(provider.GetRequiredService<RefreshTokenLifecycleMetricBuffer>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

@@ -79,7 +79,7 @@ public sealed class AuthFacadeApiRegistrationTests(AuthFacadeApiFactory factory)
         parameters.Select(parameter => parameter.ParameterType).Should().BeEquivalentTo(new[]
         {
             typeof(IActorContextAccessor), typeof(IUserRepository), typeof(IRefreshTokenRepository),
-            typeof(ISessionManagementService), typeof(IVersionedUserTokenRevocationService)
+            typeof(ISessionManagementService), typeof(IVersionedUserTokenRevocationService), typeof(IRefreshTokenLifecycleRecorder)
         });
         foreach (var parameter in parameters)
         {

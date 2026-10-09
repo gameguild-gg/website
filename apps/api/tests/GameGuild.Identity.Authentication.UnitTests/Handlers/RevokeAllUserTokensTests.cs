@@ -79,6 +79,8 @@ public sealed class RevokeAllUserTokensTests
             fixture.Owner, SessionTerminationReason.UserLogout, null, cancellation.Token), Times.Once);
         fixture.Revocations.Verify(value => value.RevokeAllUserTokensAsync(
             fixture.Owner, 8, "User initiated logout everywhere", cancellation.Token), Times.Once);
+        fixture.Audit.Verify(value => value.RecordMutationAsync(It.Is<RefreshTokenLifecycleEvent>(audit =>
+            audit.Operation == RefreshTokenLifecycleOperation.AllRevoked && audit.UserId == fixture.Owner), cancellation.Token), Times.Once);
         fixture.VerifyNoStoreCalls();
     }
 
@@ -98,6 +100,18 @@ public sealed class RevokeAllUserTokensTests
         Assert.Equal("Synthetic store failure", exception.Message);
         var order = new[] { "refresh", "sessions", "user-update", "user-save", "legacy-store" };
         Assert.Equal(order.Take(Array.IndexOf(order, failure) + 1), calls);
+    }
+
+    [Fact]
+    public async Task AuditStorageFailureStopsBeforeLegacyRevocationAndDoesNotReturnSuccess()
+    {
+        var fixture = new HandlerFixture();
+        var calls = ConfigureSuccess(fixture, new User { Id = fixture.Owner, TokenVersion = 7 }, 2, CancellationToken.None);
+        fixture.Audit.Setup(value => value.RecordMutationAsync(It.IsAny<RefreshTokenLifecycleEvent>(), CancellationToken.None))
+            .ThrowsAsync(new InvalidOperationException("Synthetic audit storage failure"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Handler.Handle(new RevokeAllUserTokensCommand("127.0.0.1"), CancellationToken.None));
+        Assert.Equal(new[] { "refresh", "sessions", "user-update", "user-save" }, calls);
+        fixture.Revocations.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -150,6 +164,7 @@ public sealed class RevokeAllUserTokensTests
         public Mock<IRefreshTokenRepository> Tokens { get; } = new(MockBehavior.Strict);
         public Mock<ISessionManagementService> Sessions { get; } = new(MockBehavior.Strict);
         public Mock<IVersionedUserTokenRevocationService> Revocations { get; } = new(MockBehavior.Strict);
+        public Mock<IRefreshTokenLifecycleRecorder> Audit { get; } = new();
         public RevokeAllUserTokensHandler Handler { get; }
 
         public HandlerFixture()
@@ -159,7 +174,7 @@ public sealed class RevokeAllUserTokensTests
                 ActorKind = ActorKind.User, IsAuthenticated = true, SubjectId = Owner.ToString(),
                 Roles = new HashSet<string> { "SystemAdmin" }
             });
-            Handler = new RevokeAllUserTokensHandler(Actor.Object, Users.Object, Tokens.Object, Sessions.Object, Revocations.Object);
+            Handler = new RevokeAllUserTokensHandler(Actor.Object, Users.Object, Tokens.Object, Sessions.Object, Revocations.Object, Audit.Object);
         }
 
         public void VerifyNoStoreCalls()
@@ -168,6 +183,7 @@ public sealed class RevokeAllUserTokensTests
             Tokens.VerifyNoOtherCalls();
             Sessions.VerifyNoOtherCalls();
             Revocations.VerifyNoOtherCalls();
+            Audit.VerifyNoOtherCalls();
         }
     }
 }

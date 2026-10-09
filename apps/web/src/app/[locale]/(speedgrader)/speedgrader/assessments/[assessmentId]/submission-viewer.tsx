@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import type { AssessmentSubmissionRuntimeViewV1 } from '@game-guild/grading';
 import {
   parseQuizAnswerEnvelope,
@@ -12,6 +12,10 @@ import { QuizPlayer, type QuizSubmissionResult } from '@game-guild/quiz-surface/
 import { Badge } from '@game-guild/ui/components/badge';
 import { getRuntimeSubmission } from '@/lib/learning/grading-runtime-actions';
 import { scoreUnitsToPoints } from '@/lib/learning/academic-values';
+import { readCodeRuntimeDefinition } from '@/lib/coding-assignment/runtime';
+import { codePayloadToFiles } from '@/lib/coding-assignment/code-payload';
+import { EMCEPTION_MANIFEST_URL } from '@/lib/emception/manifest-url';
+import type { AssessmentGraderProps } from '@/components/learning/assessment-grading/assessment-grader';
 
 export interface SubmissionViewerProps {
   submissionId: string;
@@ -21,7 +25,11 @@ export interface SubmissionViewerProps {
  * Instructor view of the exact delivery and response bound to the official
  * grading execution. The authored content is intentionally not consulted.
  */
-export function SubmissionViewer({
+export function SubmissionViewer(props: SubmissionViewerProps): React.JSX.Element {
+  return <SubmissionViewerSession key={props.submissionId} {...props} />;
+}
+
+function SubmissionViewerSession({
   submissionId,
 }: SubmissionViewerProps): React.JSX.Element {
   const [submission, setSubmission] =
@@ -30,8 +38,6 @@ export function SubmissionViewer({
 
   useEffect(() => {
     let cancelled = false;
-    setSubmission(null);
-    setError(null);
     getRuntimeSubmission(submissionId).then((result) => {
       if (cancelled) return;
       if (result.success) {
@@ -88,7 +94,9 @@ function RuntimeSubmission({
         <span>Revision {submission.definitionRevisionId.slice(0, 8)}</span>
       </div>
 
-      {quiz ? (
+      {submission.execution.delivery.items.code?.adapterKey === 'code-assessment-type' ? (
+        <CodeRuntimeSubmission submission={submission} />
+      ) : quiz ? (
         <div className="space-y-4" data-testid="runtime-quiz-submission">
           {quiz.items.map((item, index) => (
             <section
@@ -120,6 +128,39 @@ function RuntimeSubmission({
       )}
     </div>
   );
+}
+
+function CodeRuntimeSubmission({ submission }: { submission: AssessmentSubmissionRuntimeViewV1 }) {
+  const [Grader, setGrader] = useState<ComponentType<AssessmentGraderProps> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    void import('@/components/learning/assessment-grading/assessment-grader').then((module) => {
+      if (active) setGrader(() => module.AssessmentGrader);
+    }).catch((failure: unknown) => {
+      if (active) setError(failure instanceof Error ? failure.message : 'The Code grading editor is unavailable.');
+    });
+    return () => { active = false; };
+  }, []);
+  const content = useMemo(() => readFrozenCodeSubmission(submission), [submission]);
+  if (error) return <p role="alert">{error}</p>;
+  if (!content.success) return <p role="alert">{content.error}</p>;
+  if (!Grader) return <p>Loading Code grading editor...</p>;
+  return <Grader assignment={content.definition} submittedFiles={content.files}
+    maxScore={content.definition.Grading.MaxScore} manifestUrl={EMCEPTION_MANIFEST_URL}
+    submissionId={submission.submissionId} />;
+}
+
+function readFrozenCodeSubmission(submission: AssessmentSubmissionRuntimeViewV1) {
+  try {
+    const definition = readCodeRuntimeDefinition(submission, true);
+    const payload = submission.execution.submittedResponse?.payload as { files?: unknown } | undefined;
+    const files = payload?.files ? codePayloadToFiles(JSON.stringify(payload.files)) : [];
+    return { success: true as const, definition, files };
+  } catch (failure) {
+    return { success: false as const,
+      error: failure instanceof Error ? failure.message : 'The frozen Code submission is unavailable.' };
+  }
 }
 
 function readQuizSubmission(submission: AssessmentSubmissionRuntimeViewV1): {

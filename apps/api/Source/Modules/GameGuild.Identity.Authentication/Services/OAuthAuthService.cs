@@ -212,15 +212,18 @@ public class OAuthAuthService(
             user.TokenVersion,
             sessionId,
             cancellationToken).ConfigureAwait(false);
-        await sessionManagementService.CreateSessionAsync(
+        var refreshTokenHash = refreshTokenHasher.HashToken(refreshToken);
+        var session = await sessionManagementService.CreateSessionAsync(
             sessionId,
             user.Id,
             ipAddress ?? "unknown",
             userAgent ?? string.Empty,
-            refreshTokenHasher.HashToken(refreshToken),
+            refreshTokenHash,
             refreshTokenExpiresAt,
             deviceInfo.Fingerprint,
             cancellationToken).ConfigureAwait(false);
+        refreshTokenExpiresAt = AuthenticatedSessionDeadline.Require(
+            session, user.Id, sessionId, refreshTokenHash, refreshTokenExpiresAt);
 
         await authAttemptService.RecordSuccessfulAttemptAsync(
             user.Email,

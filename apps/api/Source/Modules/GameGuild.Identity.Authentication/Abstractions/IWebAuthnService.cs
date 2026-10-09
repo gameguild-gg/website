@@ -56,9 +56,28 @@ public interface IWebAuthnService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Delete a credential.
+    ///     Delete a credential. Deletion performs a terminal revocation: the deleted
+    ///     credential can never be restored afterwards.
     /// </summary>
     Task<bool> DeleteCredentialAsync(
+        Guid userId,
+        Guid credentialId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Temporarily deactivate an active credential. Reversible via
+    ///     <see cref="ActivateCredentialAsync" />; never applies to revoked credentials.
+    /// </summary>
+    Task<WebAuthnCredentialTransitionResult> DeactivateCredentialAsync(
+        Guid userId,
+        Guid credentialId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Reverse a temporary deactivation. A revoked credential is never reactivated:
+    ///     revocation is terminal.
+    /// </summary>
+    Task<WebAuthnCredentialTransitionResult> ActivateCredentialAsync(
         Guid userId,
         Guid credentialId,
         CancellationToken cancellationToken = default);
@@ -236,6 +255,21 @@ public class WebAuthnCredentialInfo
     public bool IsPasswordless { get; set; }
     public bool IsDefault { get; set; }
     public bool BackedUp { get; set; }
+
+    /// <summary>
+    ///     Lifecycle status of the credential (Active, Deactivated, or Revoked).
+    /// </summary>
+    public WebAuthnCredentialStatus Status { get; set; } = WebAuthnCredentialStatus.Active;
+
+    /// <summary>
+    ///     When the credential was temporarily deactivated, if applicable.
+    /// </summary>
+    public DateTime? DeactivatedAt { get; set; }
+
+    /// <summary>
+    ///     When the credential was revoked (terminal), if applicable.
+    /// </summary>
+    public DateTime? RevokedAt { get; set; }
 }
 
 /// <summary>
@@ -248,6 +282,17 @@ public class WebAuthnCredentialVerifyResult
     public bool IsValid { get; set; }
     public bool IsExpired { get; set; }
     public bool IsRevoked { get; set; }
+
+    /// <summary>
+    ///     Whether the credential is temporarily deactivated (reversible, unlike revocation).
+    /// </summary>
+    public bool IsDeactivated { get; set; }
+
+    /// <summary>
+    ///     Lifecycle status of the credential (Active, Deactivated, or Revoked).
+    /// </summary>
+    public WebAuthnCredentialStatus Status { get; set; }
+
     public DateTime? LastUsedAt { get; set; }
     /// <summary>
     ///     Signature counter for replay attack protection (increases with each use).

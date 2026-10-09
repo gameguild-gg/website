@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { Script } from 'node:vm';
 
 import {
   applyCanvasRuntimePatches,
@@ -17,11 +18,15 @@ const CMAKE_PIPE_POLL_LEGACY = 'poll(stream,timeout,notifyCallback){var pipe=str
 const CMAKE_SYSCALL_POLL_LEGACY = 'if(stream.stream_ops.poll){flags=stream.stream_ops.poll(stream,-1)}else{flags=5}';
 const CMAKE_PIPE_POLL_ASYNC = 'if(notifyCallback)pipe.registerReadableHandler(notifyCallback);return 0';
 const CMAKE_SYSCALL_POLL_ASYNC = 'if(isAsyncContext&&timeout){flags=stream.stream_ops.poll(stream,timeout,makeNotifyCallback(stream,pollfd))}else flags=stream.stream_ops.poll(stream,-1)';
+const EM_ASM = 'var runEmAsmFunction=(code,sigPtr,argbuf)=>{var args=readEmAsmArgs(sigPtr,argbuf);return ASM_CONSTS[code](...args)}';
+const MAIN_THREAD_EM_ASM = 'var runMainThreadEmAsm=(emAsmAddr,sigPtr,argbuf,sync)=>{var args=readEmAsmArgs(sigPtr,argbuf);return ASM_CONSTS[emAsmAddr](...args)}';
 const CANVAS_COMMON = [
   'var wasmBinary;var ABORT=false',
   'instantiateAsync(binary,binaryFile,imports){if(!binary){try{var response=fetch(',
   'var callUserCallback=func=>{if(ABORT){return}try{return func()}catch(e){handleException(e)}finally{maybeExit()}}',
   'var handleException=e=>{if(e instanceof ExitStatus||e=="unwind"){return EXITSTATUS}quit_(1,e)}',
+  EM_ASM,
+  'var wasmImports={proc_exit:_proc_exit};',
 ].join(';');
 const SDL_RUNTIME = [
   CANVAS_COMMON,
@@ -29,10 +34,106 @@ const SDL_RUNTIME = [
   '_malloc=wasmExports["malloc"]',
   '_SDL_free=Module["_SDL_free"]=wasmExports["SDL_free"]',
   'var stringToNewUTF8=str=>{var size=lengthBytesUTF8(str)+1;var ret=_malloc(size)',
-  'var runEmAsmFunction=(code,sigPtr,argbuf)=>{var args=readEmAsmArgs(sigPtr,argbuf);return ASM_CONSTS[code](...args)}',
-  'var runMainThreadEmAsm=(emAsmAddr,sigPtr,argbuf,sync)=>{var args=readEmAsmArgs(sigPtr,argbuf);return ASM_CONSTS[emAsmAddr](...args)}',
+  MAIN_THREAD_EM_ASM,
   'var keyEventHandlerFunc=e=>{var keyEventData=JSEvents.keyEvent',
 ].join(';');
+const ALLEGRO_RUNTIME = [CANVAS_COMMON, MAIN_THREAD_EM_ASM].join(';');
+
+// These dispatcher shapes are taken from the pinned generated runtime factories.
+// Exercise them with addresses from a separately linked application's memory.
+function dispatch(content, name, constants, sourceAt, repeats = 1) {
+  const start = content.indexOf(`var ${name}=`);
+  assert.notEqual(start, -1);
+  const bodyStart = content.indexOf('{', start);
+  let depth = 0;
+  let end = bodyStart;
+  do {
+    if (content[end] === '{') depth += 1;
+    if (content[end] === '}') depth -= 1;
+    end += 1;
+  } while (depth > 0);
+  const invocations = Array.from({ length: repeats }, () => `${name}(512,0,0,1)`);
+  const script = new Script(`${content.slice(start, end)};[${invocations.join(',')}];`, {
+    filename: 'canvas-glue-dispatch-regression.js',
+  });
+  return Array.from(script.runInNewContext({
+    ASM_CONSTS: constants, UTF8ToString: sourceAt, readEmAsmArgs: () => [7],
+  }, { timeout: 1000 }));
+}
+
+for (const [filename, source] of [
+  ['sdl3-runtime.mjs', SDL_RUNTIME],
+  ['raylib-runtime.mjs', CANVAS_COMMON],
+  ['allegro-runtime.mjs', ALLEGRO_RUNTIME],
+]) {
+  test(`${filename} resolves EM_ASM at a separately linked application's address`, () => {
+    const patched = applyCanvasRuntimePatches(source, filename).content;
+    assert.deepEqual(dispatch(patched, 'runEmAsmFunction', {}, () => 'return $0 + 5;'), [12]);
+  });
+
+  test(`${filename} replaces a colliding stub EM_ASM address with application code`, () => {
+    const patched = applyCanvasRuntimePatches(source, filename).content;
+    const constants = { 512: () => -999 };
+    assert.deepEqual(dispatch(patched, 'runEmAsmFunction', constants, () => 'return $0 + 5;', 2), [12, 12]);
+  });
+
+  test(`${filename} exposes the actual Emscripten exit implementation to C imports`, () => {
+    const patched = applyCanvasRuntimePatches(source, filename).content;
+    const imports = patched.match(/var wasmImports=\{[^;]+\};/)[0];
+    const statuses = [];
+    const termination = new Error('exit boundary');
+    const env = new Script(`${imports};wasmImports;`, {
+      filename: 'canvas-glue-exit-regression.js',
+    }).runInNewContext({
+      _exit: (status) => { statuses.push(status); throw termination; }, _proc_exit: () => {},
+    }, { timeout: 1000 });
+    assert.equal(typeof env.exit, 'function');
+    assert.throws(() => env.exit(17), (error) => error === termination);
+    assert.deepEqual(statuses, [17]);
+  });
+}
+
+test('the previous SDL patch is upgraded without retaining stub address collisions', () => {
+  const legacy = SDL_RUNTIME.replace(EM_ASM,
+    'var runEmAsmFunction=(code,sigPtr,argbuf)=>{var args=readEmAsmArgs(sigPtr,argbuf);if(!ASM_CONSTS[code]){var _s=UTF8ToString(code);ASM_CONSTS[code]=eval("(function($0,$1,$2,$3,$4,$5,$6,$7,$8,$9){"+_s+"})");}return ASM_CONSTS[code](...args)}');
+  const first = applyCanvasRuntimePatches(legacy, 'sdl3-runtime.mjs');
+  const second = applyCanvasRuntimePatches(first.content, 'sdl3-runtime.mjs');
+  assert.deepEqual(dispatch(first.content, 'runEmAsmFunction', { 512: () => -999 }, () => 'return $0 + 5;'), [12]);
+  assert.equal(second.content, first.content);
+  assert.deepEqual(second.applied, []);
+});
+
+test('SDL3 links the C abort import and preserves the actual runtime abort failure', async () => {
+  const patched = applyCanvasRuntimePatches(SDL_RUNTIME, 'sdl3-runtime.mjs').content;
+  const imports = patched.match(/var wasmImports=\{[^;]+\};/)[0];
+  const reasons = [];
+  const termination = new WebAssembly.RuntimeError('synthetic actual abort boundary');
+  const env = new Script(`${imports};wasmImports;`, {
+    filename: 'canvas-glue-abort-regression.js',
+  }).runInNewContext({
+    _exit: () => {}, _proc_exit: () => {},
+    abort: (reason) => { reasons.push(reason); throw termination; },
+  }, { timeout: 1000 });
+  // This actual WASM module imports env._abort_js and re-exports that void C function.
+  const wasm = new Uint8Array([
+    0,97,115,109,1,0,0,0,
+    1,4,1,96,0,0,
+    2,17,1,3,101,110,118,9,95,97,98,111,114,116,95,106,115,0,0,
+    7,9,1,5,97,98,111,114,116,0,0,
+  ]);
+  const { instance } = await WebAssembly.instantiate(wasm, { env });
+  assert.throws(() => instance.exports.abort(), (error) => error === termination);
+  assert.deepEqual(reasons, ['']);
+});
+
+for (const [filename, source] of [
+  ['sdl3-runtime.mjs', SDL_RUNTIME], ['allegro-runtime.mjs', ALLEGRO_RUNTIME],
+]) {
+  test(`${filename} resolves main-thread EM_ASM from the application`, () => {
+    const patched = applyCanvasRuntimePatches(source, filename).content;
+    assert.deepEqual(dispatch(patched, 'runMainThreadEmAsm', {}, () => 'return $0 + 5;'), [12]);
+  });
+}
 
 test('applyCanvasRuntimePatches freezes runtime-only fixes into release glue', () => {
   const first = applyCanvasRuntimePatches(SDL_RUNTIME, 'sdl3-runtime.mjs');
@@ -148,7 +249,7 @@ test('patch-glue CLI patches only the frozen staged sysroot', async (context) =>
   await writeFile(path.join(stagedLib, 'clang.wasm'), new Uint8Array([0, 97, 115, 109]));
   await writeFile(path.join(stagedRuntimes, 'sdl3-runtime.mjs'), SDL_RUNTIME);
   await writeFile(path.join(stagedRuntimes, 'raylib-runtime.mjs'), CANVAS_COMMON);
-  await writeFile(path.join(stagedRuntimes, 'allegro-runtime.mjs'), CANVAS_COMMON);
+  await writeFile(path.join(stagedRuntimes, 'allegro-runtime.mjs'), ALLEGRO_RUNTIME);
   await writeFile(path.join(stagedRuntimes, 'sdl3-runtime.wasm'), new Uint8Array([0, 97, 115, 109]));
   await writeFile(path.join(stagedRuntimes, 'raylib-runtime.wasm'), new Uint8Array([0, 97, 115, 109]));
   await writeFile(path.join(stagedRuntimes, 'allegro-runtime.wasm'), new Uint8Array([0, 97, 115, 109]));

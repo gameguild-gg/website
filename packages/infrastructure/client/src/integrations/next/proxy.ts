@@ -24,9 +24,9 @@
  */
 
 import type { Session, ResolvedAuthConfig } from '../../runtime/auth/types.js';
-import { processSession } from '../../runtime/auth/session.js';
-import { SessionStore, resolveCookieOptions } from '../../runtime/auth/cookies.js';
-import { parseCookieHeader } from './handlers.js';
+import { encodeSession, processSession } from '../../runtime/auth/session.js';
+import { SessionStore, resolveCookieOptions, type CookieSerializeOptions } from '../../runtime/auth/cookies.js';
+import { applyResponseCookies, parseCookieHeader } from './handlers.js';
 
 /**
  * Create a proxy-compatible auth checker.
@@ -51,12 +51,20 @@ export function createProxy(config: ResolvedAuthConfig) {
       const cookieMap = parseCookieHeader(cookieHeader);
 
       const encryptedToken = sessionStore.read((name) => cookieMap.get(name));
+      const responseCookies: Array<{ name: string; value: string; options: CookieSerializeOptions }> = [];
+      const setCookie = (name: string, value: string, options: CookieSerializeOptions) => {
+        responseCookies.push({ name, value, options });
+      };
 
       let session: Session | null = null;
 
       if (encryptedToken) {
         const result = await processSession(encryptedToken, config);
         session = result.session;
+        if (result.updated && result.token) {
+          sessionStore.write(await encodeSession(result.token, config), setCookie);
+        }
+        if (!session) sessionStore.delete(setCookie);
       }
 
       // Check the authorized callback
@@ -70,7 +78,7 @@ export function createProxy(config: ResolvedAuthConfig) {
         const signInPage = config.pages.signIn || '/sign-in';
         const signInUrl = new URL(signInPage, url.origin);
         signInUrl.searchParams.set('callbackUrl', url.pathname);
-        return Response.redirect(signInUrl.toString());
+        return applyResponseCookies(Response.redirect(signInUrl.toString()), responseCookies);
       }
 
       // If the user provided a handler, call it with the augmented request
@@ -79,11 +87,11 @@ export function createProxy(config: ResolvedAuthConfig) {
         augmentedRequest.auth = session;
 
         const result = await handler(augmentedRequest);
-        if (result) return result;
+        if (result) return applyResponseCookies(result, responseCookies);
       }
 
       // Continue to the next handler
-      return new Response(null, { status: 200 });
+      return applyResponseCookies(new Response(null, { status: 200 }), responseCookies);
     };
   };
 }

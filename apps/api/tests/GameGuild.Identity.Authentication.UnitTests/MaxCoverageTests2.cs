@@ -34,7 +34,7 @@ public class SessionControllerCovTests
             .ReturnsAsync(new User { Id = _userId });
         _controller = new SessionController(_sessionService.Object, new CommandHandlerSender(
             _sessionService.Object, actor.Object, users.Object,
-            Mock.Of<IRefreshTokenRepository>(), Mock.Of<IVersionedUserTokenRevocationService>()));
+            Mock.Of<IRefreshTokenRepository>(), Mock.Of<IVersionedUserTokenRevocationService>(), Mock.Of<IRefreshTokenLifecycleRecorder>()));
         SetUser(_userId);
     }
 

@@ -350,8 +350,22 @@ registered-service diagnostics identified missing cache sizes, plaintext duplica
 refresh storage and absent account/session persistence. Failed intermediate receipts
 and the passing preliminary 14-case subset are retained and excluded from final
 counts. Logs, TRX/source hashes and `local-proof.json` remain under
-`artifacts/test-results/issue-292-web3-20261005/`. Matching-head CI and merge are
-pending; #292 stays OPEN until accepted. #291/#263 retain their remaining criteria.
+`artifacts/test-results/issue-292-web3-20261005/`.
+
+Revision `af8595b63e5cbd4229de622909036c4b2df02349` passed matching-head
+[PR Verify 37442150591](https://github.com/gameguild-gg/gameguild/actions/runs/37442150591),
+including 327 API integration cases (20 Web3 HTTP/PostgreSQL cases included),
+2,256 authentication unit cases, API/Web/OpenAPI, Economy, Testing Lab and policy
+gates. [PR #697](https://github.com/gameguild-gg/gameguild/pull/697) was merged into
+develop as `295ee212828ab1cc233ce7ed61f2a2b81eb39ed4` on 2026-10-06. #292's five
+backend criteria were accepted and the issue closed. #291/#263 and provider/UI
+children retain their remaining criteria.
+
+The Emception native job remains failed. Its assessment enrollment rejection was
+reproduced using freshly compiled develop production API source at `45941e7`;
+the owner explicitly [accepted this preexisting failure for the merge](https://github.com/gameguild-gg/gameguild/pull/697#issuecomment-6016849454).
+Later native browser/consumer/package/deployment steps remain unverified. No
+failing assertion or CI gate was disabled, and no native success is claimed.
 
 ## Standards
 
