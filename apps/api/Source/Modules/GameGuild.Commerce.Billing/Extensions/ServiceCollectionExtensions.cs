@@ -1,6 +1,7 @@
 using GameGuild.CQRS;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Billing;
@@ -17,6 +18,10 @@ public static class ServiceCollectionExtensions
     {
         // Register CQRS handlers from this assembly
         services.AddCqrs(typeof(ServiceCollectionExtensions).Assembly);
+
+        // Short-TTL query cache backing the webhook security summary handler and its
+        // eviction hook in WebhookSecurityEventPublisher (issue #394).
+        AddBillingQueryCaching(services);
 
         // Register configuration
         services.AddSingleton<IValidateOptions<BillingConfiguration>, BillingConfigurationProductionValidator>();
@@ -62,11 +67,29 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddBillingWebhookSourceSecurity(this IServiceCollection services)
     {
+        // The publisher registered here evicts the cached webhook security summary, so a
+        // cache service must be resolvable even when only the security controls are wired.
+        AddBillingQueryCaching(services);
+
         services.AddSingleton<WebhookSourceIpAllowlist>();
         services.AddSingleton<IWebhookSuspiciousActivityMonitor, WebhookSuspiciousActivityMonitor>();
         services.AddScoped<IWebhookSecurityEventPublisher, WebhookSecurityEventPublisher>();
         services.AddScoped<WebhookSourceSecurityFilter>();
         return services;
+    }
+
+    /// <summary>
+    ///     Ensures an <see cref="ICacheService"/> is resolvable for the short-TTL webhook
+    ///     security summary query cache (issue #394). The API host registers its own
+    ///     implementation first via SetupMemoryCaching (Redis when enabled, in-process
+    ///     otherwise) and wins; standalone hosts and tests fall back to the SharedKernel
+    ///     in-process implementation. Idempotent (TryAdd + AddMemoryCache are both no-ops
+    ///     when the host already configured the cache).
+    /// </summary>
+    private static void AddBillingQueryCaching(IServiceCollection services)
+    {
+        services.AddMemoryCache();
+        services.TryAddSingleton<ICacheService, GameGuild.CQRS.Implementation.MemoryCacheService>();
     }
 
     /// <summary>

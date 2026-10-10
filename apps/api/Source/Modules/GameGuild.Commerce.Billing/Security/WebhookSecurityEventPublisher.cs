@@ -1,4 +1,5 @@
 using GameGuild.Compliance.Audit;
+using GameGuild.CQRS;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Commerce.Billing;
@@ -40,6 +41,7 @@ public interface IWebhookSecurityEventPublisher
 
 public sealed class WebhookSecurityEventPublisher(
     ISecurityEventLogger securityEventLogger,
+    ICacheService cacheService,
     ILogger<WebhookSecurityEventPublisher> logger) : IWebhookSecurityEventPublisher
 {
     private static readonly IReadOnlyDictionary<WebhookSecurityEventKind, string> ActionTypes =
@@ -86,6 +88,15 @@ public sealed class WebhookSecurityEventPublisher(
         try
         {
             await securityEventLogger.RecordAsync(request, cancellationToken).ConfigureAwait(false);
+
+            // Every webhook security event can change the state aggregated by the webhook
+            // security summary (blocked sources, open alerts, pipeline health). Evict the
+            // cached summary so the SystemAdmin monitoring surface reflects the event
+            // immediately instead of waiting out the short TTL (issue #394). Best-effort:
+            // a cache failure is caught below like any other publishing failure.
+            await cacheService
+                .RemoveAsync(GetBillingWebhookSecuritySummaryQuery.CacheKey, cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

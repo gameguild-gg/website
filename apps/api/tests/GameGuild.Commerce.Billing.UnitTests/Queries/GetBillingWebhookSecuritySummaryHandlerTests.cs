@@ -1,5 +1,8 @@
 using FluentAssertions;
 using GameGuild.Compliance.Audit;
+using GameGuild.CQRS;
+using GameGuild.CQRS.Implementation;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -119,11 +122,20 @@ public class GetBillingWebhookSecuritySummaryHandlerTests
         IWebhookSuspiciousActivityMonitor monitor,
         BillingConfiguration configuration,
         ISecurityEventQueryService queryService) =>
+        CreateHandler(allowlist, monitor, configuration, queryService, new MemoryCacheService(new MemoryCache(new MemoryCacheOptions())));
+
+    internal static GetBillingWebhookSecuritySummaryHandler CreateHandler(
+        WebhookSourceIpAllowlist allowlist,
+        IWebhookSuspiciousActivityMonitor monitor,
+        BillingConfiguration configuration,
+        ISecurityEventQueryService queryService,
+        ICacheService cacheService) =>
         new(
             allowlist,
             monitor,
             Options.Create(configuration),
             queryService,
+            cacheService,
             NullLogger<GetBillingWebhookSecuritySummaryHandler>.Instance);
 
     private static SecurityAlertResponse CreateAlert(Guid id, string ruleId, string title, SecurityAlertStatus status) =>

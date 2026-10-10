@@ -135,7 +135,11 @@ public sealed class MonetizationPermissionHttpTests(ApiPostgreSqlFixture fixture
         var monetizerId = Guid.NewGuid();
         var expiredConfiguratorId = Guid.NewGuid();
         var systemAdminId = Guid.NewGuid();
-        var slug = $"monetization-http-{Guid.NewGuid():N}";
+        // Keep the base slug short enough that the "-admin" variant also satisfies the
+        // CreateSubscriptionPlan validator's 50-character Slug limit: with the CQRS
+        // ValidationBehavior now registered (issue #394), registered validators are
+        // enforced at dispatch time and an oversized slug fails with 400 instead of 201.
+        var slug = $"monetization-http-{Guid.NewGuid().ToString("N")[..24]}";
 
         await SeedTenantAsync(tenantId, [
             (configuratorId, "Member"),

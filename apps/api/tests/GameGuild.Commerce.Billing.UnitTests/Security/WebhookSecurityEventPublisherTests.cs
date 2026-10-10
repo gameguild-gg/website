@@ -1,5 +1,8 @@
 using FluentAssertions;
 using GameGuild.Compliance.Audit;
+using GameGuild.CQRS;
+using GameGuild.CQRS.Implementation;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -8,6 +11,8 @@ namespace GameGuild.Commerce.Billing.UnitTests.Security;
 
 public class WebhookSecurityEventPublisherTests
 {
+    private static ICacheService CreateCache() => new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()));
+
     [Theory]
     [InlineData(WebhookSecurityEventKind.SignatureFailed, AuditActionTypes.WebhookSignatureFailed, AuditRiskLevel.High)]
     [InlineData(WebhookSecurityEventKind.SourceIpRejected, AuditActionTypes.WebhookSourceIpRejected, AuditRiskLevel.High)]
@@ -28,7 +33,7 @@ public class WebhookSecurityEventPublisherTests
             .Callback<CreateAuditLogRequest, CancellationToken>((request, _) => captured = request)
             .ReturnsAsync(new SecurityEventCaptureResult(SecurityEventCaptureOutcome.PersistedToDatabase, classification, Guid.NewGuid()));
 
-        var publisher = new WebhookSecurityEventPublisher(logger.Object, NullLogger<WebhookSecurityEventPublisher>.Instance);
+        var publisher = new WebhookSecurityEventPublisher(logger.Object, CreateCache(), NullLogger<WebhookSecurityEventPublisher>.Instance);
 
         await publisher.PublishAsync(kind, "stripe", "198.51.100.7", "detail", "evt-1");
 
@@ -54,7 +59,7 @@ public class WebhookSecurityEventPublisherTests
             .Setup(l => l.RecordAsync(It.IsAny<CreateAuditLogRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("pipeline down"));
 
-        var publisher = new WebhookSecurityEventPublisher(logger.Object, NullLogger<WebhookSecurityEventPublisher>.Instance);
+        var publisher = new WebhookSecurityEventPublisher(logger.Object, CreateCache(), NullLogger<WebhookSecurityEventPublisher>.Instance);
 
         var act = () => publisher.PublishAsync(
             WebhookSecurityEventKind.SignatureFailed, "stripe", null, "detail");
@@ -68,7 +73,7 @@ public class WebhookSecurityEventPublisherTests
     public async Task PublishAsync_Rejects_Blank_Providers(string provider)
     {
         var publisher = new WebhookSecurityEventPublisher(
-            Mock.Of<ISecurityEventLogger>(), NullLogger<WebhookSecurityEventPublisher>.Instance);
+            Mock.Of<ISecurityEventLogger>(), CreateCache(), NullLogger<WebhookSecurityEventPublisher>.Instance);
 
         var act = () => publisher.PublishAsync(WebhookSecurityEventKind.SignatureFailed, provider, null, "detail");
 
