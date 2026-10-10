@@ -65,13 +65,16 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     }
 
     [Fact]
-    public async Task RequestWithoutClientCertificate_IsNotAuthenticated()
+    public async Task RequestWithoutClientCertificate_IsRejectedAtTheTlsLayer()
     {
         await using var host = await _fixture.StartHostAsync();
 
-        var (statusCode, _, _) = await host.SendRawHttpsRequestAsync(clientCertificate: null);
-
-        Assert.Equal((int)HttpStatusCode.Unauthorized, statusCode);
+        // The test host requires a client certificate during the handshake, so a
+        // certificate-less client cannot even establish the connection.
+        var exception = await Record.ExceptionAsync(() => host.SendRawHttpsRequestAsync(clientCertificate: null));
+        Assert.True(
+            exception is System.Security.Authentication.AuthenticationException or IOException,
+            $"Expected the TLS handshake to fail without a client certificate, got: {exception}");
     }
 
     [Fact]
@@ -131,9 +134,12 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
         builder.WebHost.ConfigureKestrel(kestrel => kestrel.Listen(IPAddress.Loopback, 0, listenOptions => listenOptions.UseHttps(httpsOptions =>
         {
             httpsOptions.ServerCertificate = _serverCertificate;
-            // Negotiate certificates when offered; chain/binding validation stays in the
-            // authentication handler so its fail-closed rules govern the outcome.
-            httpsOptions.ClientCertificateMode = ClientCertificateMode.AllowCertificate;
+            // Require the certificate during the handshake so the TLS layer itself
+            // negotiates it (the AllowCertificate mode defers the request, which the
+            // Linux stack cannot satisfy after the handshake). Chain/binding validation
+            // stays in the authentication handler so its fail-closed rules govern the
+            // authorization outcome.
+            httpsOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
             httpsOptions.ClientCertificateValidation = (_, _, _) => true;
         })));
 
