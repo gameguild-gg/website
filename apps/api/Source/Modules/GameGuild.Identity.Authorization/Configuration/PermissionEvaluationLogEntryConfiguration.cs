@@ -20,6 +20,9 @@ public class PermissionEvaluationLogEntryConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.ResourceId)
             .HasMaxLength(200);
 
+        builder.Property(e => e.Roles)
+            .IsRequired();
+
         builder.Property(e => e.RequiredPermissions)
             .IsRequired();
 

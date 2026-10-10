@@ -420,8 +420,12 @@ async function finalizeServerAction(
   const adapter = await getNextCookies();
   /* v8 ignore start */
   if (adapter) {
+    // Storage policy: an explicit non-remember sign-in gets a browser-session cookie;
+    // remember-me (or the configured default) keeps the durable Max-Age cookie.
     sessionStore.write(encrypted, (name, value, opts) => {
       adapter.set(name, value, opts);
+    }, {
+      storage: token.rememberMe === false ? 'session' : 'persistent',
     });
   }
   /* v8 ignore stop */

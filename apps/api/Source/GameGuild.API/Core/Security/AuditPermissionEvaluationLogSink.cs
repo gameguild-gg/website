@@ -22,6 +22,9 @@ internal sealed class AuditPermissionEvaluationLogSink(IAuditService auditServic
 
         var granted = record.Outcome == PermissionEvaluationOutcome.Allow;
         var permissions = record.RequiredPermissions as IReadOnlyCollection<string> ?? record.RequiredPermissions.ToArray();
+        // Role attribution is user-context audit data (issue #359): normalized so the durable
+        // metadata always carries a non-null, capped role list even for records built directly.
+        var roles = PermissionEvaluationRoles.Normalize(record.Roles);
 
         return await auditService.TryLogAsync(new CreateAuditLogRequest
         {
@@ -42,6 +45,7 @@ internal sealed class AuditPermissionEvaluationLogSink(IAuditService auditServic
                 record.Source,
                 record.Reason,
                 RequiredPermissions = permissions,
+                Roles = roles,
             },
             Success = granted,
             ErrorMessage = granted ? null : record.Reason,

@@ -16092,6 +16092,10 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.PrimitiveCollection<string[]>("Roles")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasMaxLength(100)

@@ -10,6 +10,9 @@ public class GoogleIdTokenRequestDto
     [Required]
     public string IdToken { get; set; } = string.Empty;
     public Guid? TenantId { get; set; }
+
+    /// <summary>When true, issues a persistent ("remember me") refresh token using the persistent lifetime.</summary>
+    public bool? RememberMe { get; set; }
 }
 
 /// <summary>

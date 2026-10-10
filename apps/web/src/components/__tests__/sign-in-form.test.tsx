@@ -121,6 +121,23 @@ describe('SignInForm', () => {
     expect(mockAuth.signIn).toHaveBeenCalledWith('credentials', {
       email: 'test@example.com',
       password: 'password123',
+      rememberMe: false,
+      redirectTo: '/',
+    });
+  });
+
+  it('forwards remember-me opt-in to signIn', async () => {
+    const { user } = renderWithUser(<SignInForm />);
+
+    await user.type(screen.getByLabelText('Email'), 'test@example.com');
+    await user.type(screen.getByLabelText('Password'), 'password123');
+    await user.click(screen.getByLabelText('Remember me on this device'));
+    await user.click(screen.getByRole('button', { name: /sign in$/i }));
+
+    expect(mockAuth.signIn).toHaveBeenCalledWith('credentials', {
+      email: 'test@example.com',
+      password: 'password123',
+      rememberMe: true,
       redirectTo: '/',
     });
   });

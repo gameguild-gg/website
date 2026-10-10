@@ -19,9 +19,15 @@ public sealed class PermissionEvaluationLogService(
     {
         ArgumentNullException.ThrowIfNull(record);
 
-        if (record.EvaluatedAtUtc == default)
+        if (record.EvaluatedAtUtc == default || record.Roles is null)
         {
-            record = record with { EvaluatedAtUtc = SystemClock.UtcNow };
+            record = record with
+            {
+                EvaluatedAtUtc = record.EvaluatedAtUtc == default ? SystemClock.UtcNow : record.EvaluatedAtUtc,
+                // Roles are user-context audit facts (issue #359): they are never null and
+                // always capped before any sink or monitoring event observes the record.
+                Roles = PermissionEvaluationRoles.Normalize(record.Roles)
+            };
         }
 
         LogMonitoringEvent(record);
@@ -90,10 +96,11 @@ public sealed class PermissionEvaluationLogService(
         var level = record.Outcome == PermissionEvaluationOutcome.Allow ? LogLevel.Debug : LogLevel.Warning;
         logger.Log(
             level,
-            "Permission evaluation: outcome={Outcome} user={UserId} tenant={TenantId} resource={ResourceType}/{ResourceId} permissions=[{Permissions}] source={Source} operation={Operation} reason={Reason}",
+            "Permission evaluation: outcome={Outcome} user={UserId} tenant={TenantId} roles=[{Roles}] resource={ResourceType}/{ResourceId} permissions=[{Permissions}] source={Source} operation={Operation} reason={Reason}",
             record.Outcome,
             record.UserId,
             record.TenantId,
+            string.Join(",", record.Roles),
             record.ResourceType,
             record.ResourceId,
             string.Join(",", record.RequiredPermissions),

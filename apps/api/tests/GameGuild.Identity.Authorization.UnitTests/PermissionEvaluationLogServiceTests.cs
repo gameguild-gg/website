@@ -8,9 +8,11 @@ public sealed class PermissionEvaluationLogServiceTests
 {
     private static PermissionEvaluationRecord CreateRecord(
         PermissionEvaluationOutcome outcome = PermissionEvaluationOutcome.Allow,
-        DateTime? evaluatedAtUtc = null) => new(
+        DateTime? evaluatedAtUtc = null,
+        IReadOnlyCollection<string>? roles = null) => new(
         Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
         Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
+        roles ?? ["Contributor", "Moderator (inherited)"],
         "Project",
         "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
         ["Read", "Edit"],
@@ -39,11 +41,90 @@ public sealed class PermissionEvaluationLogServiceTests
                     record.ResourceType == "Project" &&
                     record.ResourceId == "b659b7bf-6281-42e6-a7ef-23d296cff5dd" &&
                     record.RequiredPermissions.SequenceEqual(new[] { "Read", "Edit" }) &&
+                    record.Roles.SequenceEqual(new[] { "Contributor", "Moderator (inherited)" }) &&
                     record.Outcome == PermissionEvaluationOutcome.Allow &&
                     record.Source == "graphql" &&
                     record.Operation == "guarded" &&
                     record.EvaluatedAtUtc != default);
         }
+    }
+
+    [Fact]
+    public async Task RecordAsync_ReplacesNullRolesWithTheEmptyAttributionForEverySink()
+    {
+        var sink = new RecordingSink(persisted: true);
+        var service = CreateService(sink);
+        // CreateRecord coalesces an unset roles argument to the default attribution, so the
+        // null-roles path has to build the record directly to exercise the normalization.
+        var record = new PermissionEvaluationRecord(
+            Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
+            Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
+            null!,
+            "Project",
+            "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
+            ["Read", "Edit"],
+            PermissionEvaluationOutcome.Allow,
+            "graphql",
+            "guarded");
+
+        await service.RecordAsync(record, CancellationToken.None);
+
+        var received = sink.Received.Should().ContainSingle().Which;
+        received.Roles.Should().NotBeNull();
+        received.Roles.Should().BeEmpty("anonymous or unattributed users carry an empty, never-null role list");
+    }
+
+    [Fact]
+    public async Task RecordAsync_CapsRoleAttributionAtThirtyTwoEntriesWithAnOverflowMarker()
+    {
+        var sink = new RecordingSink(persisted: true);
+        var service = CreateService(sink);
+        var roles = Enumerable.Range(1, 40).Select(index => $"Role{index}").ToArray();
+        var record = CreateRecord(roles: roles);
+
+        await service.RecordAsync(record, CancellationToken.None);
+
+        var received = sink.Received.Should().ContainSingle().Which;
+        received.Roles.Should().HaveCount(33);
+        received.Roles.Take(32).Should().Equal(Enumerable.Range(1, 32).Select(index => $"Role{index}"));
+        received.Roles.Last().Should().Be("+8 more roles");
+    }
+
+    [Fact]
+    public void PermissionEvaluationRoles_FromContributionsMarksInheritedRolesAndDeduplicates()
+    {
+        var contributions = new[]
+        {
+            new RoleContribution(
+                Guid.NewGuid(),
+                "Moderator",
+                ["projects:read"],
+                IsInherited: false,
+                InheritedFromRoleId: null),
+            new RoleContribution(
+                Guid.NewGuid(),
+                "Admin",
+                ["projects:delete"],
+                IsInherited: true,
+                InheritedFromRoleId: Guid.NewGuid()),
+            new RoleContribution(
+                Guid.NewGuid(),
+                "moderator",
+                ["projects:list"],
+                IsInherited: false,
+                InheritedFromRoleId: null)
+        };
+
+        var roles = PermissionEvaluationRoles.FromContributions(contributions);
+
+        roles.Should().Equal("Moderator", "Admin (inherited)");
+    }
+
+    [Fact]
+    public void PermissionEvaluationRoles_FromContributionsOfNullYieldsTheEmptyAttribution()
+    {
+        PermissionEvaluationRoles.FromContributions(null).Should().BeEmpty();
+        PermissionEvaluationRoles.Normalize(null).Should().BeEmpty();
     }
 
     [Fact]
