@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
@@ -126,6 +127,77 @@ public sealed class ServiceAccountService : IServiceAccountService
         _logger.LogInformation(
             "Service account {ServiceAccountId} authenticated successfully from IP {IpAddress}",
             serviceAccount.Id, ipAddress);
+
+        return serviceAccount;
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceAccount?> AuthenticateWithCertificateAsync(
+        string clientId,
+        X509Certificate2 clientCertificate,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(clientCertificate);
+
+        var serviceAccount = await _repository.GetByClientIdAsync(clientId, cancellationToken).ConfigureAwait(false);
+
+        if (serviceAccount == null)
+        {
+            _logger.LogWarning("Authentication failed: service account with client ID {ClientId} not found", clientId);
+            return null;
+        }
+
+        if (!serviceAccount.CanAuthenticate)
+        {
+            _logger.LogWarning(
+                "Authentication failed: service account {ServiceAccountId} cannot authenticate (IsActive={IsActive}, IsLocked={IsLocked}, Expired={Expired})",
+                serviceAccount.Id, serviceAccount.IsActive, serviceAccount.IsLocked,
+                serviceAccount.ExpiresAt.HasValue && serviceAccount.ExpiresAt <= SystemClock.UtcNow);
+            return null;
+        }
+
+        // Validate IP address if restrictions are set
+        if (!string.IsNullOrEmpty(serviceAccount.AllowedIpAddresses) && !string.IsNullOrEmpty(ipAddress))
+        {
+            if (!IsIpAllowed(ipAddress, serviceAccount.AllowedIpAddresses))
+            {
+                _logger.LogWarning(
+                    "Authentication failed: IP {IpAddress} not in allowed list for service account {ServiceAccountId}",
+                    ipAddress, serviceAccount.Id);
+                serviceAccount.RecordFailedAuthentication(LockThreshold);
+                await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
+                return null;
+            }
+        }
+
+        // SECURITY: fail closed when no certificate is bound, or when the presented
+        // certificate matches neither the bound thumbprint nor the bound SPKI key pin.
+        var thumbprint = ClientCertificateAuthenticationUtilities.GetNormalizedThumbprint(clientCertificate);
+        var spkiSha256 = ClientCertificateAuthenticationUtilities.ComputeSpkiSha256Hex(clientCertificate);
+
+        var thumbprintMatches = !string.IsNullOrWhiteSpace(serviceAccount.CertificateThumbprint)
+                                && string.Equals(serviceAccount.CertificateThumbprint, thumbprint, StringComparison.OrdinalIgnoreCase);
+        var spkiMatches = !string.IsNullOrWhiteSpace(serviceAccount.CertificateSpkiSha256)
+                          && string.Equals(serviceAccount.CertificateSpkiSha256, spkiSha256, StringComparison.OrdinalIgnoreCase);
+
+        if (!thumbprintMatches && !spkiMatches)
+        {
+            _logger.LogWarning(
+                "Authentication failed: client certificate {Thumbprint} does not match the certificate bound to service account {ServiceAccountId}",
+                thumbprint, serviceAccount.Id);
+            serviceAccount.RecordFailedAuthentication(LockThreshold);
+            await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+
+        // Record successful authentication
+        serviceAccount.RecordSuccessfulAuthentication(ipAddress);
+        await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
+
+        _logger.LogInformation(
+            "Service account {ServiceAccountId} authenticated successfully with client certificate {Thumbprint} from IP {IpAddress}",
+            serviceAccount.Id, thumbprint, ipAddress);
 
         return serviceAccount;
     }

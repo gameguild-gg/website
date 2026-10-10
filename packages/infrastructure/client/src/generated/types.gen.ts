@@ -7323,7 +7323,7 @@ export interface IdentityAuthenticationCreateStepUpChallengeInput {
 }
 
 /** Credential type detection */
-export type IdentityAuthenticationCredentialType = 'Email' | 'Username' | 'Phone' | 'WalletAddress';
+export type IdentityAuthenticationCredentialType = 'Email' | 'Username' | 'Phone' | 'WalletAddress' | 'Certificate';
 
 /** Represents detailed device information for security tracking. */
 export interface IdentityAuthenticationDeviceInfo {
@@ -28779,7 +28779,7 @@ IdentityAuthenticationCreateStepUpChallengeInputSchema = z.object({
 });
 
 /** Zod schema for IdentityAuthenticationCredentialType. Credential type detection */
-IdentityAuthenticationCredentialTypeSchema = z.enum(['Email', 'Username', 'Phone', 'WalletAddress']);
+IdentityAuthenticationCredentialTypeSchema = z.enum(['Email', 'Username', 'Phone', 'WalletAddress', 'Certificate']);
 
 /** Zod schema for IdentityAuthenticationDeviceInfo. Represents detailed device information for security tracking. */
 IdentityAuthenticationDeviceInfoSchema = z.object({

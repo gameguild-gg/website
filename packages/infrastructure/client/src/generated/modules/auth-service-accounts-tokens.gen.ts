@@ -19,6 +19,8 @@ export class AuthServiceAccountsTokensModule {
    * OAuth2 client_credentials grant - authenticates a service account and returns a JWT token.
    *
    * This endpoint implements the OAuth2 client_credentials flow for machine-to-machine authentication.
+   * Authentication uses the `client_secret` form field, or an X.509 client certificate
+   * negotiated over TLS in lieu of the secret when one is bound to the service account.
    * The returned access token can be used to authenticate API requests.
    */
   async postOauthToken(): Promise<Result<Types.IdentityAuthenticationClientCredentialsTokenOutput, ApiError>> {
