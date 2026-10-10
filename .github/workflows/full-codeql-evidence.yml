@@ -13,17 +13,24 @@ permissions:
 
 jobs:
   analyze:
-    name: Full source CodeQL (${{ matrix.language }})
+    name: Full source CodeQL (${{ matrix.variant }})
     if: github.repository == 'gameguild-gg/gameguild'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        language: [actions, csharp, javascript-typescript, python]
+        include:
+          - { language: actions, build_mode: none, variant: actions }
+          - { language: csharp, build_mode: none, variant: csharp }
+          - { language: javascript-typescript, build_mode: none, variant: javascript-typescript }
+          - { language: python, build_mode: none, variant: python }
+          - { language: csharp, build_mode: manual, variant: csharp-compiled }
     env:
       SCAN_LANGUAGE: ${{ matrix.language }}
+      SCAN_BUILD_MODE: ${{ matrix.build_mode }}
+      SCAN_VARIANT: ${{ matrix.variant }}
     steps:
       - name: Checkout the source commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -40,38 +47,63 @@ jobs:
           const { execFileSync } = require("node:child_process");
           const event = process.env.GITHUB_EVENT_NAME;
           const language = process.env.SCAN_LANGUAGE;
+          const buildMode = process.env.SCAN_BUILD_MODE;
+          const variant = process.env.SCAN_VARIANT;
           if (!["push", "workflow_dispatch"].includes(event)) {
             throw new Error("Full source evidence requires a non-PR event");
           }
           if (!["actions", "csharp", "javascript-typescript", "python"].includes(language)) {
             throw new Error("Unexpected scan language");
           }
+          if (!((buildMode === "none" && variant === language) ||
+                (language === "csharp" && buildMode === "manual" && variant === "csharp-compiled"))) {
+            throw new Error("Unexpected scan build mode or variant");
+          }
+          const projectFiles = language === "csharp"
+            ? execFileSync("git", ["ls-files", "-z", "--", "*.csproj"], { encoding: "utf8" }).split("\0").filter(Boolean)
+            : [];
           const head = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
           if (!/^[0-9a-f]{40}$/.test(head) || head !== process.env.GITHUB_SHA) {
             throw new Error("Checkout does not match the requested source commit");
           }
           fs.mkdirSync("artifacts/codeql-full", { recursive: true });
           fs.writeFileSync("artifacts/codeql-full/source-identity.json", JSON.stringify({
-            recordedUtc: new Date().toISOString(), event, language, head,
+            recordedUtc: new Date().toISOString(), event, language, buildMode, variant, head, projectFiles,
             ref: process.env.GITHUB_REF, repository: process.env.GITHUB_REPOSITORY,
-            requestedScope: "complete checkout", acceptance: "pending full SARIF and extraction review",
+            requestedScope: buildMode === "none" ? "complete checkout" : "solution and supplemental C# project builds",
+            acceptance: "pending full SARIF, extraction and compiled project coverage review",
           }, null, 2) + "\n");
           NODE
+
+      - name: Set up the pinned SDK for compiled C# evidence
+        if: matrix.build_mode == 'manual'
+        uses: ./.github/actions/setup-dotnet
 
       - name: Initialize full source analysis
         id: init
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
         with:
           languages: ${{ matrix.language }}
-          build-mode: none
+          build-mode: ${{ matrix.build_mode }}
           source-root: .
           tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.2/codeql-bundle-linux64.tar.zst
+
+      # Keep the buildless C# job alongside this trace; compilation does not
+      # replace source coverage. These commands build code without running tests.
+      - name: Compile the solution and supplemental C# projects under CodeQL
+        if: matrix.build_mode == 'manual'
+        shell: bash
+        run: |
+          dotnet build apps/api/GameGuild.sln -c Release --no-incremental --nologo -m:1 -p:TreatWarningsAsErrors=true -bl:artifacts/codeql-full/solution.binlog
+          dotnet build apps/api/tests/GameGuild.API.RateLimiting.PerformanceTests/GameGuild.API.RateLimiting.PerformanceTests.csproj -c Release --no-incremental --nologo -m:1 -p:TreatWarningsAsErrors=true -bl:artifacts/codeql-full/rate-limiting.binlog
+          dotnet build scripts/analysis/OfflineOpenApiExport/OfflineOpenApiExport.csproj -c Release --no-incremental --nologo -m:1 -p:TreatWarningsAsErrors=true -bl:artifacts/codeql-full/openapi-export.binlog
+          dotnet build packages/infrastructure/wasm/dotnet/dotnet-runtime/RoslynWrapper.csproj -c Release --no-incremental --nologo -m:1 -p:TreatWarningsAsErrors=true -bl:artifacts/codeql-full/roslyn-wrapper.binlog
 
       - name: Analyze the complete checkout
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
         with:
           output: artifacts/codeql-full/results
-          category: /language:${{ matrix.language }}/full-source
+          category: /language:${{ matrix.language }}/full-source/${{ matrix.build_mode }}
           upload: never
           upload-database: false
 
@@ -79,7 +111,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: full-codeql-${{ matrix.language }}-${{ github.sha }}
+          name: full-codeql-${{ matrix.variant }}-${{ github.sha }}
           path: artifacts/codeql-full
           if-no-files-found: error
           retention-days: 14
