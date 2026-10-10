@@ -90,7 +90,9 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     {
         var clock = new AdvancingTimeProvider();
         var recorder = new RecordingLoggerProvider();
-        using var factory = CreateFactory(clock, recorder: recorder);
+        using var factory = CreateFactory(clock,
+            maxFailedAttemptsPerHour: "10", // above the seeded five so the lockout filter lets the request through
+            recorder: recorder);
         var account = await SeedAsync(factory, bruteForceHistory: true);
         using var client = factory.CreateClient();
         SetStableClientIdentity(client);
@@ -195,7 +197,8 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     }
 
     private WebApplicationFactory<Program> CreateFactory(AdvancingTimeProvider clock,
-        string? enabled = null, string? minimumRiskLevel = null, RecordingLoggerProvider? recorder = null) =>
+        string? enabled = null, string? minimumRiskLevel = null, RecordingLoggerProvider? recorder = null,
+        string? maxFailedAttemptsPerHour = null) =>
         fixture.Factory.WithWebHostBuilder(builder =>
         {
             if (enabled is not null)
@@ -205,6 +208,10 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
             if (minimumRiskLevel is not null)
             {
                 builder.UseSetting("Authentication:SecurityNotifications:MinimumRiskLevel", minimumRiskLevel);
+            }
+            if (maxFailedAttemptsPerHour is not null)
+            {
+                builder.UseSetting("AuthenticationSecurity:MaxFailedAttemptsPerHour", maxFailedAttemptsPerHour);
             }
             builder.ConfigureTestServices(services =>
             {
@@ -259,13 +266,13 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         });
         if (bruteForceHistory)
         {
-            // Seed exactly four failures so the request under test is the fifth failed attempt.
-            // The lockout action filter (MaxFailedAttemptsPerHour = 5) counts stored failures
-            // BEFORE the sign-in action runs, while the brute-force detector also counts the
-            // attempt the failing request itself records: seeding five would engage the lockout
-            // short-circuit and the action - and its owner alert - would never run. In
-            // production the alert therefore fires on the attempt that reaches the threshold.
-            for (var index = 0; index < 4; index++)
+            // Seed five committed failures so the brute-force detector (threshold 5 within
+            // 15 minutes) fires from stored history alone: the attempt the failing request
+            // records shares the request transaction, which the sign-in failure rolls back.
+            // The lockout action filter shares the same threshold (MaxFailedAttemptsPerHour),
+            // so tests that seed this history raise that limit via factory configuration to
+            // keep the request reaching the sign-in action and its owner alert.
+            for (var index = 0; index < 5; index++)
             {
                 db.Set<AuthenticationAttempt>().Add(new AuthenticationAttempt
                 {
@@ -329,10 +336,19 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
             "Could not record", "Could not analyze", "Could not forward", "Anomalous", "Invalid password",
             "User not found", "SIEM", "error while", " failed"
         };
-        var logs = recorder.Entries
+        var relevantLogs = recorder.Entries
             .Where(entry => keywordFilters.Any(keyword => entry.Message.Contains(keyword, StringComparison.Ordinal)))
             .Select(entry => $"{entry.Timestamp:HH:mm:ss.fff} {entry.Level} [{entry.Category}] {entry.Message}")
             .TakeLast(60);
+        var allLogs = recorder.Entries
+            .Select(entry =>
+            {
+                var category = entry.Category.Length <= 40
+                    ? entry.Category
+                    : "..." + entry.Category[^37..];
+                return $"{entry.Timestamp:HH:mm:ss.fff} {entry.Level} [{category}] {entry.Message}";
+            })
+            .TakeLast(80);
 
         return string.Join(Environment.NewLine,
         [
@@ -342,8 +358,10 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
             .. attempts,
             "Outbox rows for the user aggregate:",
             .. outbox,
-            "Relevant host logs:",
-            .. logs
+            $"Relevant host logs (of {recorder.Entries.Count} captured):",
+            .. relevantLogs,
+            "Last captured host logs, unfiltered:",
+            .. allLogs
         ]);
     }
 
