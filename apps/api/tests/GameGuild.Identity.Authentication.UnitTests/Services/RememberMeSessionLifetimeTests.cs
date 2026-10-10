@@ -124,6 +124,9 @@ public class RememberMeSessionLifetimeTests
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(LocalRememberMeHarness.Password);
         var user = User.CreateWithPassword(LocalRememberMeHarness.Email, "localuser", passwordHash);
         harness.ArrangeUser(user);
+        // Read the clock the service itself uses, before the act: parallel test classes in
+        // this project freeze SystemClock globally, so DateTime.UtcNow drifts against it.
+        var now = SystemClock.UtcNow;
 
         var response = await harness.Sut.LocalSignInAsync(new LocalSignInRequest
         {
@@ -133,13 +136,13 @@ public class RememberMeSessionLifetimeTests
         });
 
         response.Success.Should().BeTrue();
-        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(DateTime.UtcNow.AddDays(expectedDays));
+        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(now.AddDays(expectedDays));
         harness.Jwt.Verify(
             x => x.GenerateRefreshTokenAsync(
                 user.Id,
                 It.IsAny<DeviceInfo>(),
                 It.IsAny<DateTimeOffset>(),
-                It.Is<DateTime?>(value => value != null && value > DateTime.UtcNow.AddDays(expectedDays - 1)),
+                It.Is<DateTime?>(value => value != null && value > now.AddDays(expectedDays - 1)),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         harness.Sessions.Verify(
@@ -149,7 +152,7 @@ public class RememberMeSessionLifetimeTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.Is<DateTime>(value => value > DateTime.UtcNow.AddDays(expectedDays - 1)),
+                It.Is<DateTime>(value => value > now.AddDays(expectedDays - 1)),
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
@@ -165,6 +168,7 @@ public class RememberMeSessionLifetimeTests
     {
         var harness = new OAuthRememberMeHarness();
         harness.ArrangeNewGoogleUser();
+        var now = SystemClock.UtcNow;
 
         var response = await harness.Sut.GoogleIdTokenSignInAsync(new GoogleIdTokenRequest
         {
@@ -173,13 +177,13 @@ public class RememberMeSessionLifetimeTests
         });
 
         response.Success.Should().BeTrue();
-        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(DateTime.UtcNow.AddDays(expectedDays));
+        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(now.AddDays(expectedDays));
         harness.Jwt.Verify(
             x => x.GenerateRefreshTokenAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<DeviceInfo>(),
                 It.IsAny<DateTimeOffset>(),
-                It.Is<DateTime?>(value => value != null && value > DateTime.UtcNow.AddDays(expectedDays - 1)),
+                It.Is<DateTime?>(value => value != null && value > now.AddDays(expectedDays - 1)),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -193,6 +197,7 @@ public class RememberMeSessionLifetimeTests
     public async Task Web3SignatureSignIn_RefreshDeadlineFollowsRememberMeFlag(bool? rememberMe, int expectedDays)
     {
         var harness = new Web3RememberMeHarness();
+        var now = SystemClock.UtcNow;
 
         var response = await harness.Sut.VerifyWeb3SignatureAsync(new Web3VerificationRequest
         {
@@ -203,13 +208,13 @@ public class RememberMeSessionLifetimeTests
         });
 
         response.Success.Should().BeTrue();
-        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(DateTime.UtcNow.AddDays(expectedDays));
+        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(now.AddDays(expectedDays));
         harness.Jwt.Verify(
             x => x.GenerateRefreshTokenAsync(
                 harness.Identity.User.Id,
                 It.IsAny<DeviceInfo>(),
                 It.IsAny<DateTimeOffset>(),
-                It.Is<DateTime?>(value => value != null && value > DateTime.UtcNow.AddDays(expectedDays - 1)),
+                It.Is<DateTime?>(value => value != null && value > now.AddDays(expectedDays - 1)),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -222,7 +227,7 @@ public class RememberMeSessionLifetimeTests
         var harness = new LocalRememberMeHarness();
         var user = User.Create("refresh-persistent@example.test", "Refresh persistent user");
         harness.ArrangeUser(user);
-        var now = DateTime.UtcNow;
+        var now = SystemClock.UtcNow;
         var storedToken = new RefreshToken
         {
             UserId = user.Id,
@@ -250,7 +255,7 @@ public class RememberMeSessionLifetimeTests
         var harness = new LocalRememberMeHarness();
         var user = User.Create("refresh-legacy@example.test", "Refresh legacy user");
         harness.ArrangeUser(user);
-        var now = DateTime.UtcNow;
+        var now = SystemClock.UtcNow;
         var storedToken = new RefreshToken
         {
             UserId = user.Id,
@@ -313,7 +318,7 @@ public class RememberMeSessionLifetimeTests
         var harness = new LocalRememberMeHarness();
         var user = User.Create("revoked-persistent@example.test", "Revoked persistent user");
         harness.ArrangeUser(user);
-        var now = DateTime.UtcNow;
+        var now = SystemClock.UtcNow;
         var storedToken = new RefreshToken
         {
             UserId = user.Id,
@@ -327,8 +332,13 @@ public class RememberMeSessionLifetimeTests
         harness.Tokens.Setup(x => x.GetByTokenAsync("hashed-revoked", It.IsAny<CancellationToken>())).ReturnsAsync(storedToken);
         harness.Hashes.Setup(x => x.HashToken("revoked-token")).Returns("hashed-revoked");
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => harness.Sut.RefreshTokenAsync(new RefreshTokenRequest { RefreshToken = "revoked-token" }));
+        // Revoked (logged-out) tokens are denied through replay containment: no identity,
+        // no tokens, and the containing session family is invalidated instead of a throw.
+        var response = await harness.Sut.RefreshTokenAsync(new RefreshTokenRequest { RefreshToken = "revoked-token" });
+
+        response.Success.Should().BeFalse();
+        response.AccessToken.Should().BeNull();
+        response.RefreshToken.Should().BeNull();
     }
 
     // ── Harnesses ─────────────────────────

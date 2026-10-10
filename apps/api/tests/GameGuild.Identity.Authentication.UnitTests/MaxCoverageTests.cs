@@ -1091,7 +1091,7 @@ public class Web3AuthServiceCovTests
             .ReturnsAsync(true);
         _jwtService.Setup(s => s.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("jwt-token");
-        _jwtService.Setup(s => s.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+        _jwtService.Setup(s => s.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("refresh-token");
 
         var result = await _svc.VerifyWeb3SignatureAsync(
