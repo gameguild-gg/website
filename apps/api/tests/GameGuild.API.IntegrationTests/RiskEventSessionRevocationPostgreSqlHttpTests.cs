@@ -166,8 +166,10 @@ public sealed class RiskEventSessionRevocationPostgreSqlHttpTests(ApiPostgreSqlF
             (await db.Set<User>().AsNoTracking().SingleAsync(value => value.Id == account.UserId)).TokenVersion);
         // The revocation consumer still completes its inbox receipt (idempotent no-op), so the
         // event settles: only the notify-only consumer remains as a receipt for the alert.
-        var receipt = await db.Set<InboxReceipt>().AsNoTracking()
-            .SingleAsync(value => value.EventId == eventId && value.ConsumerName.Contains("RiskEventSessionRevocationHandler", StringComparison.Ordinal));
+        var receipts = await db.Set<InboxReceipt>().AsNoTracking()
+            .Where(value => value.EventId == eventId).ToListAsync();
+        var receipt = Assert.Single(receipts,
+            value => value.ConsumerName.Contains("RiskEventSessionRevocationHandler", StringComparison.Ordinal));
         Assert.Equal(1, receipt.AttemptCount);
         Assert.NotNull(receipt.CompletedAtUtc);
     }
