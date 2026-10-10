@@ -53,7 +53,7 @@ public class OAuthAuthService(
 
         logger.LogInformation("GitHub OAuth sign-in successful for {Email}", LogRedaction.MaskEmail(email));
 
-        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "GitHub sign-in successful", "GitHub", stopwatch, cancellationToken).ConfigureAwait(false);
+        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "GitHub sign-in successful", "GitHub", stopwatch, request.RememberMe == true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<SignInResponse> GoogleSignInAsync(OAuthSignInRequest request, CancellationToken cancellationToken = default)
@@ -79,7 +79,7 @@ public class OAuthAuthService(
 
         logger.LogInformation("Google OAuth sign-in successful for {Email}", LogRedaction.MaskEmail(email));
 
-        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Google sign-in successful", "Google", stopwatch, cancellationToken).ConfigureAwait(false);
+        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Google sign-in successful", "Google", stopwatch, request.RememberMe == true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<SignInResponse> MicrosoftSignInAsync(OAuthSignInRequest request, CancellationToken cancellationToken = default)
@@ -113,7 +113,7 @@ public class OAuthAuthService(
         logger.LogInformation("Microsoft OAuth sign-in successful for {Email}", LogRedaction.MaskEmail(email));
 
         return await CompleteSignInAsync(
-            user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Microsoft sign-in successful", "Microsoft", stopwatch, cancellationToken)
+            user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Microsoft sign-in successful", "Microsoft", stopwatch, request.RememberMe == true, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -151,7 +151,7 @@ public class OAuthAuthService(
 
         logger.LogInformation("Google ID token sign-in successful for {Email}", LogRedaction.MaskEmail(email));
 
-        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Google ID token sign-in successful", "GoogleIdToken", stopwatch, cancellationToken).ConfigureAwait(false);
+        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Google ID token sign-in successful", "GoogleIdToken", stopwatch, request.RememberMe == true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<SignInResponse> DiscordSignInAsync(DiscordSignInRequest request, CancellationToken cancellationToken = default)
@@ -183,7 +183,7 @@ public class OAuthAuthService(
 
         logger.LogInformation("Discord OAuth sign-in successful for {Email}", LogRedaction.MaskEmail(email));
 
-        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Discord sign-in successful", "Discord", stopwatch, cancellationToken).ConfigureAwait(false);
+        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Discord sign-in successful", "Discord", stopwatch, request.RememberMe == true, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<SignInResponse> CompleteSignInAsync(
@@ -195,15 +195,19 @@ public class OAuthAuthService(
         string successMessage,
         string authenticationMethod,
         Stopwatch stopwatch,
+        bool rememberMe,
         CancellationToken cancellationToken)
     {
-        var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                     ?? int.Parse(
-                                         configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7",
-                                         CultureInfo.InvariantCulture);
+        var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+            jwtOptions, configuration, rememberMe);
         var refreshTokenExpiresAt = SystemClock.UtcNow.AddDays(refreshTokenExpiryDays);
         var sessionId = Guid.NewGuid();
-        var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(user.Id, deviceInfo, cancellationToken).ConfigureAwait(false);
+        var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+            user.Id,
+            deviceInfo,
+            new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+            refreshTokenExpiresAt,
+            cancellationToken).ConfigureAwait(false);
         var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
             user.Id,
             user.Email,

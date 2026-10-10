@@ -21,6 +21,7 @@ internal sealed class AuditingAuthorizationPermissionService(
     IConfiguration configuration,
     ISiemIntegrationService siemService,
     IMemoryCache alertCache,
+    IRbacPermissionResolver rbacResolver,
     ILogger<AuditingAuthorizationPermissionService> logger)
     : IAuthorizationPermissionService
 {
@@ -35,7 +36,8 @@ internal sealed class AuditingAuthorizationPermissionService(
     {
         var granted = await inner.HasPermissionAsync(userId, tenantId, permission, cancellationToken)
             .ConfigureAwait(false);
-        await LogDecisionSafelyAsync(userId, tenantId, permission, granted, "HasPermission")
+        var roles = await GetSubjectRolesSafelyAsync(userId, tenantId).ConfigureAwait(false);
+        await LogDecisionSafelyAsync(userId, tenantId, permission, granted, "HasPermission", roles)
             .ConfigureAwait(false);
 
         return granted;
@@ -50,12 +52,14 @@ internal sealed class AuditingAuthorizationPermissionService(
         var permissionList = permissions.ToArray();
         var result = await inner.HasAllPermissionsAsync(userId, tenantId, permissionList, cancellationToken)
             .ConfigureAwait(false);
+        var roles = await GetSubjectRolesSafelyAsync(userId, tenantId).ConfigureAwait(false);
         await LogBatchDecisionsSafelyAsync(
                 userId,
                 tenantId,
                 permissionList,
                 result.PresentPermissions,
-                "HasAllPermissions")
+                "HasAllPermissions",
+                roles)
             .ConfigureAwait(false);
 
         return result;
@@ -70,12 +74,14 @@ internal sealed class AuditingAuthorizationPermissionService(
         var permissionList = permissions.ToArray();
         var result = await inner.HasAnyPermissionAsync(userId, tenantId, permissionList, cancellationToken)
             .ConfigureAwait(false);
+        var roles = await GetSubjectRolesSafelyAsync(userId, tenantId).ConfigureAwait(false);
         await LogBatchDecisionsSafelyAsync(
                 userId,
                 tenantId,
                 permissionList,
                 result.PresentPermissions,
-                "HasAnyPermission")
+                "HasAnyPermission",
+                roles)
             .ConfigureAwait(false);
 
         return result;
@@ -92,7 +98,8 @@ internal sealed class AuditingAuthorizationPermissionService(
         Guid tenantId,
         IReadOnlyCollection<string> requestedPermissions,
         IReadOnlyCollection<string> grantedPermissions,
-        string evaluationType)
+        string evaluationType,
+        IReadOnlyCollection<string> roles)
     {
         var granted = new HashSet<string>(grantedPermissions, StringComparer.OrdinalIgnoreCase);
 
@@ -103,8 +110,42 @@ internal sealed class AuditingAuthorizationPermissionService(
                     tenantId,
                     permission,
                     granted.Contains(permission),
-                    evaluationType)
+                    evaluationType,
+                    roles)
                 .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    ///     Resolves the evaluated user's role attribution (issue #359 user-context logging) from
+    ///     the RBAC resolver — the same attribution the effective-permission engine feeds into
+    ///     decisions (direct roles by name, hierarchy-inherited roles marked, per the #330
+    ///     contract). Best-effort: resolution failures and anonymous requests yield an empty
+    ///     attribution and never change the audited decision.
+    /// </summary>
+    private async Task<IReadOnlyCollection<string>> GetSubjectRolesSafelyAsync(Guid subjectUserId, Guid tenantId)
+    {
+        var principal = httpContextAccessor.HttpContext?.User;
+        if (subjectUserId == Guid.Empty || principal?.Identity?.IsAuthenticated != true)
+        {
+            return PermissionEvaluationRoles.Empty;
+        }
+
+        try
+        {
+            var rbacResult = await rbacResolver
+                .ResolvePermissionsAsync(subjectUserId, tenantId)
+                .ConfigureAwait(false);
+            return PermissionEvaluationRoles.FromContributions(rbacResult.RoleContributions);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Could not resolve role attribution for the permission-evaluation audit of user {UserId} in tenant {TenantId}; the decision is unaffected.",
+                subjectUserId,
+                tenantId);
+            return PermissionEvaluationRoles.Empty;
         }
     }
 
@@ -113,7 +154,8 @@ internal sealed class AuditingAuthorizationPermissionService(
         Guid tenantId,
         string permission,
         bool granted,
-        string evaluationType)
+        string evaluationType,
+        IReadOnlyCollection<string> roles)
     {
         var context = httpContextAccessor.HttpContext;
         var actorUserId = GetActorUserId(context?.User);
@@ -137,6 +179,7 @@ internal sealed class AuditingAuthorizationPermissionService(
                 {
                     Permission = permission,
                     SubjectUserId = subjectUserId,
+                    Roles = roles,
                     EvaluationType = evaluationType,
                     HttpMethod = context?.Request.Method,
                     RouteTemplate = (context?.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText

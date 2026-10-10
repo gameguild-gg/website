@@ -7376,6 +7376,8 @@ export interface IdentityAuthenticationDiscordCallbackRequestDto {
   code: string;
   /** The same redirect URI used in the authorization request */
   redirectUri: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
   state: string;
   /** Optional tenant context */
@@ -7440,6 +7442,8 @@ export interface IdentityAuthenticationGitHubSignInOutput {
 /** Request for Google ID token sign-in */
 export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   idToken: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   tenantId?: string | null;
 }
 
@@ -7468,6 +7472,10 @@ export interface IdentityAuthenticationLocalSignInInput {
   /** Alias for Email to support polymorphic sign-in scenarios */
   emailOrUsername?: string | null;
   password: string;
+  /** When true, the session is persistent ("remember me"): the refresh token uses the
+configurable persistent lifetime (`Jwt:PersistentRefreshTokenExpirationDays`)
+instead of the standard one. Null or false keeps the standard lifetime. */
+  rememberMe?: boolean | null;
   /** Optional tenant ID to use for the sign-in. If not provided, will use the first available tenant for the user */
   tenantId?: string | null;
   username?: string | null;
@@ -7658,6 +7666,8 @@ export interface IdentityAuthenticationPolymorphicSignInInput {
   credentialType?: IdentityAuthenticationCredentialType;
   deviceFingerprint?: string | null;
   password?: string | null;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   tenantId?: string | null;
 }
 
@@ -8009,6 +8019,8 @@ export interface IdentityAuthenticationWeb3VerifyInput {
   deviceFingerprint?: string | null;
   /** Nonce contained in the SIWE challenge message */
   nonce: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   /** EIP-191 signature over the SIWE challenge message */
   signature: string;
   /** Optional tenant context */
@@ -28773,6 +28785,7 @@ IdentityAuthenticationDiscordAuthorizeInputSchema = z.object({
 IdentityAuthenticationDiscordCallbackRequestDtoSchema = z.object({
   code: z.string().min(1),
   redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   state: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
 });
@@ -28823,6 +28836,7 @@ IdentityAuthenticationGitHubSignInOutputSchema = z.object({
 /** Zod schema for IdentityAuthenticationGoogleIdTokenRequestDto. Request for Google ID token sign-in */
 IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   idToken: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -28849,6 +28863,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
   email: z.string().email().min(1),
   emailOrUsername: z.string().nullable().optional(),
   password: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
   username: z.string().nullable().optional(),
 });
@@ -28999,6 +29014,7 @@ IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
   credentialType: z.lazy(() => IdentityAuthenticationCredentialTypeSchema).optional(),
   deviceFingerprint: z.string().nullable().optional(),
   password: z.string().nullable().optional(),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -29308,6 +29324,7 @@ IdentityAuthenticationWeb3VerifyInputSchema = z.object({
   challenge: z.string().min(1),
   deviceFingerprint: z.string().nullable().optional(),
   nonce: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   signature: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
   walletAddress: z.string().min(1),

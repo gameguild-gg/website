@@ -58,6 +58,22 @@ public interface IJwtTokenService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Generates and persists a refresh token whose stored deadline is the caller-resolved
+    ///     session policy deadline (persistent "remember me" vs standard lifetime).
+    /// </summary>
+    /// <param name="userId">User the token is issued for.</param>
+    /// <param name="deviceInfo">Device the token is bound to.</param>
+    /// <param name="authenticatedAt">Authentication instant recorded as the token's creation time.</param>
+    /// <param name="expiresAt">Resolved expiration for the persisted token row; null falls back to the standard lifetime.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<string> GenerateRefreshTokenAsync(
+        Guid userId,
+        DeviceInfo deviceInfo,
+        DateTimeOffset authenticatedAt,
+        DateTime? expiresAt,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Generates an access token for a service account (client_credentials flow).
     /// </summary>
     /// <param name="serviceAccountId">The service account ID.</param>

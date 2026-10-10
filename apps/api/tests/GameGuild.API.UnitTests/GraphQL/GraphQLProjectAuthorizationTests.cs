@@ -162,6 +162,7 @@ public sealed class GraphQLProjectAuthorizationTests
             new PermissionEvaluationRecord(
                 Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
                 Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
+                ["Contributor", "Admin (inherited)"],
                 "Project",
                 "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
                 [PermissionType.Read.ToString(), PermissionType.Edit.ToString()],
@@ -188,6 +189,8 @@ public sealed class GraphQLProjectAuthorizationTests
         metadata.GetProperty("Source").GetString().Should().Be("graphql");
         metadata.GetProperty("RequiredPermissions").EnumerateArray().Select(item => item.GetString())
             .Should().Equal("Read", "Edit");
+        metadata.GetProperty("Roles").EnumerateArray().Select(item => item.GetString())
+            .Should().Equal("Contributor", "Admin (inherited)");
         metadata.GetProperty("Reason").GetString().Should().Be("permission_denied");
     }
 
@@ -204,8 +207,9 @@ public sealed class GraphQLProjectAuthorizationTests
 
         var persisted = await sink.TryRecordAsync(
             new PermissionEvaluationRecord(
-                Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
-                Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
+                null,
+                null,
+                PermissionEvaluationRoles.Empty,
                 "Project",
                 "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
                 [PermissionType.Read.ToString()],
@@ -218,6 +222,9 @@ public sealed class GraphQLProjectAuthorizationTests
         recordedRequest.Success.Should().BeTrue();
         recordedRequest.RiskLevel.Should().Be(AuditRiskLevel.Medium);
         recordedRequest.ErrorMessage.Should().BeNull();
+        using var anonymousMetadata = JsonDocument.Parse(JsonSerializer.Serialize(recordedRequest.Metadata));
+        anonymousMetadata.RootElement.GetProperty("Roles").EnumerateArray().Should().BeEmpty(
+            "anonymous records serialize an empty, never-null role attribution");
     }
 
     [Fact]
@@ -383,6 +390,33 @@ public sealed class GraphQLProjectAuthorizationTests
         counters.ResolverCount.Should().Be(0);
     }
 
+    [Fact]
+    public async Task PermissionDirective_RecordsResolverRoleAttributionOnAllowedAndDeniedEvaluations()
+    {
+        var projectId = Guid.Parse("b659b7bf-6281-42e6-a7ef-23d296cff5dd");
+        var authorization = new GraphQLProjectAuthorizationFake((projectId, PermissionType.Read));
+        var counters = new GraphQLProjectAuthorizationCounters();
+        var evaluationLog = new GraphQLPermissionEvaluationLogFake();
+        var roleAttribution = new GraphQLRoleAttributionFake();
+        await using var app = await CreateApplicationAsync(authorization, counters, evaluationLog, roleAttribution);
+        using var client = app.GetTestClient();
+
+        // "guarded" requires Read (allowed); "all" requires Edit+Delete with Mode=All (denied),
+        // so one query produces both an Allow and a Deny evaluation record.
+        using var request = CreateRequest(
+            "{ guarded(projectId: \"b659b7bf-6281-42e6-a7ef-23d296cff5dd\") all(projectId: \"b659b7bf-6281-42e6-a7ef-23d296cff5dd\") }");
+        using var response = await client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, body);
+        evaluationLog.Records.Should().HaveCount(2);
+        evaluationLog.Records.Should().Contain(record => record.Outcome == PermissionEvaluationOutcome.Allow)
+            .Which.Roles.Should().Equal("Member", "Admin (inherited)");
+        evaluationLog.Records.Should().Contain(record => record.Outcome == PermissionEvaluationOutcome.Deny)
+            .Which.Roles.Should().Equal("Member", "Admin (inherited)");
+        roleAttribution.ResolveCount.Should().Be(1, "role attribution is resolved once per request and cached");
+    }
+
     private static HttpRequestMessage CreateRequest(string query)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/graphql")
@@ -396,7 +430,8 @@ public sealed class GraphQLProjectAuthorizationTests
     private static async Task<WebApplication> CreateApplicationAsync(
         GraphQLProjectAuthorizationFake authorization,
         GraphQLProjectAuthorizationCounters counters,
-        GraphQLPermissionEvaluationLogFake? evaluationLog = null)
+        GraphQLPermissionEvaluationLogFake? evaluationLog = null,
+        IRbacPermissionResolver? rbacResolver = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
@@ -406,6 +441,10 @@ public sealed class GraphQLProjectAuthorizationTests
         builder.Services.AddSingleton<IProjectAuthorizationService>(authorization);
         builder.Services.AddSingleton(counters);
         builder.Services.AddSingleton<IActorContextAccessor>(new GraphQLTestActorContextAccessor());
+        if (rbacResolver is not null)
+        {
+            builder.Services.AddSingleton(rbacResolver);
+        }
         // Route through the real log service so captured records get the same
         // stamping and sink fan-out behavior as production; the fake only acts
         // as the capture sink.
@@ -441,6 +480,44 @@ public sealed class GraphQLProjectAuthorizationTests
         public void SetActorContext(ActorContext context) => _actorContext = context;
 
         public void ClearActorContext() => _actorContext = GameGuild.Identity.Context.Actors.ActorContext.Anonymous;
+    }
+
+    /// <summary>
+    ///     Stands in for the RBAC resolver on the GraphQL role-attribution path (issue #359):
+    ///     reports one direct role and one hierarchy-inherited role so records and their
+    ///     inheritance markers can be asserted end to end.
+    /// </summary>
+    private sealed class GraphQLRoleAttributionFake : IRbacPermissionResolver
+    {
+        private int _resolveCount;
+
+        public int ResolveCount => Volatile.Read(ref _resolveCount);
+
+        public Task<RbacResolutionResult> ResolvePermissionsAsync(
+            Guid userId,
+            Guid? tenantId,
+            CancellationToken ct = default)
+        {
+            Interlocked.Increment(ref _resolveCount);
+            return Task.FromResult(new RbacResolutionResult(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                new[]
+                {
+                    new RoleContribution(
+                        Guid.NewGuid(),
+                        "Member",
+                        Array.Empty<string>(),
+                        IsInherited: false,
+                        InheritedFromRoleId: null),
+                    new RoleContribution(
+                        Guid.NewGuid(),
+                        "Admin",
+                        Array.Empty<string>(),
+                        IsInherited: true,
+                        InheritedFromRoleId: Guid.NewGuid())
+                }));
+        }
     }
 
     private sealed class GraphQLPermissionEvaluationLogFake : IPermissionEvaluationLogSink

@@ -160,7 +160,7 @@ public class LoginAttemptAnalysisService(
                         if (isImpossibleTravel)
                         {
                             result.RiskScore += 50;
-                            result.DetectedAnomalies.Add("ImpossibleTravel");
+                            result.DetectedAnomalies.Add(SecurityAlertKinds.ImpossibleTravel);
                         }
                     }
                 }
@@ -183,7 +183,7 @@ public class LoginAttemptAnalysisService(
                 if (isBruteForce)
                 {
                     result.RiskScore += 40;
-                    result.DetectedAnomalies.Add("BruteForceDetected");
+                    result.DetectedAnomalies.Add(SecurityAlertKinds.BruteForceDetected);
                 }
             }
 

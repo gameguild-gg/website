@@ -22,6 +22,14 @@ public enum PermissionEvaluationOutcome
 /// </summary>
 /// <param name="UserId">Actor whose permissions were evaluated; taken from the trusted actor context.</param>
 /// <param name="TenantId">Tenant scope the evaluation ran in; taken from the request context, never from input.</param>
+/// <param name="Roles">
+///     Role attribution of the evaluated user per the effective-permission contract (issue #330):
+///     the role contributions the resolver would feed into the decision, with hierarchy-inherited
+///     roles marked by <see cref="PermissionEvaluationRoles.InheritedSuffix"/>. Direct user grants
+///     are not roles and never appear here. Never null; empty for anonymous or unattributed users.
+///     Capped by <see cref="PermissionEvaluationRoles.Normalize"/> at 32 distinct entries with an
+///     overflow marker when truncated.
+/// </param>
 /// <param name="ResourceType">Resource type identifier, for example <c>Project</c>.</param>
 /// <param name="ResourceId">Optional resource identifier the permission was evaluated against.</param>
 /// <param name="RequiredPermissions">Permission set the evaluation required.</param>
@@ -33,6 +41,7 @@ public enum PermissionEvaluationOutcome
 public sealed record PermissionEvaluationRecord(
     Guid? UserId,
     Guid? TenantId,
+    IReadOnlyCollection<string> Roles,
     string ResourceType,
     string? ResourceId,
     IReadOnlyCollection<string> RequiredPermissions,
@@ -41,6 +50,87 @@ public sealed record PermissionEvaluationRecord(
     string? Operation = null,
     string? Reason = null,
     DateTime EvaluatedAtUtc = default);
+
+/// <summary>
+///     Normalization and formatting rules for the role attribution carried on
+///     <see cref="PermissionEvaluationRecord.Roles"/> (issue #359). Attribution follows the
+///     effective-permission contract (issue #330): direct role assignments and roles reached
+///     through role-hierarchy inheritance, the latter marked so auditors can distinguish
+///     assigned from inherited authority.
+/// </summary>
+public static class PermissionEvaluationRoles
+{
+    /// <summary>Maximum number of distinct role entries retained on a record.</summary>
+    public const int MaxRoles = 32;
+
+    /// <summary>Suffix marking a role reached through hierarchy inheritance rather than direct assignment.</summary>
+    public const string InheritedSuffix = " (inherited)";
+
+    /// <summary>The empty, never-null role attribution used for anonymous or unattributed users.</summary>
+    public static readonly IReadOnlyCollection<string> Empty = Array.Empty<string>();
+
+    /// <summary>
+    ///     Formats resolver role contributions (issue #330 contract) into record entries:
+    ///     direct contributions use the role name, inherited ones append
+    ///     <see cref="InheritedSuffix"/>. The result is deduplicated and capped by
+    ///     <see cref="Normalize"/>.
+    /// </summary>
+    /// <param name="contributions">Role contributions reported by the permission resolver; null yields <see cref="Empty"/>.</param>
+    public static IReadOnlyCollection<string> FromContributions(IEnumerable<RoleContribution>? contributions)
+    {
+        if (contributions is null)
+        {
+            return Empty;
+        }
+
+        return Normalize(contributions.Select(FormatContribution));
+
+        static string FormatContribution(RoleContribution contribution)
+            => contribution.IsInherited ? contribution.RoleName + InheritedSuffix : contribution.RoleName;
+    }
+
+    /// <summary>
+    ///     Normalizes a role list for durable logging: drops null/blank entries, deduplicates
+    ///     case-insensitively preserving first-seen order, and caps the result at
+    ///     <see cref="MaxRoles"/> distinct entries; truncation is signalled by a trailing
+    ///     <c>+N more roles</c> overflow marker. Never returns null; a null input yields
+    ///     <see cref="Empty"/> (anonymous or unattributed users).
+    /// </summary>
+    /// <param name="roles">Raw role entries; may be null or contain blanks and duplicates.</param>
+    public static IReadOnlyCollection<string> Normalize(IEnumerable<string>? roles)
+    {
+        if (roles is null)
+        {
+            return Empty;
+        }
+
+        var distinct = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var role in roles)
+        {
+            var trimmed = role?.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+            {
+                continue;
+            }
+
+            if (seen.Add(trimmed))
+            {
+                distinct.Add(trimmed);
+            }
+        }
+
+        if (distinct.Count <= MaxRoles)
+        {
+            return distinct;
+        }
+
+        var overflow = distinct.Count - MaxRoles;
+        var capped = distinct.Take(MaxRoles).ToList();
+        capped.Add($"+{overflow} more roles");
+        return capped;
+    }
+}
 
 /// <summary>
 ///     Durable persistence target for permission evaluation records. Implementations

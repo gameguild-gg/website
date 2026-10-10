@@ -36,6 +36,7 @@ public class LocalAuthService(
     IOptions<JwtOptions>? jwtOptions = null,
     IAuthenticationAuditEventSink? auditEventSink = null,
     IRefreshTokenLifecycleRecorder? lifecycleRecorder = null,
+    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null,
     IOptions<SignInComplianceGateOptions>? complianceGateOptions = null,
     ISignInCompliancePolicy? compliancePolicy = null
 ) : ILocalAuthService
@@ -80,12 +81,15 @@ public class LocalAuthService(
             // Verify password if user exists
             if (user != null)
             {
+                // The account is known even when the password is wrong: risk analysis, failed-attempt
+                // persistence, and brute-force owner alerts on failed sign-ins all need the user id.
+                userId = user.Id;
+
                 var passwordValid = user.HasPassword && passwordHasher.VerifyPassword(user.PasswordHash!, request.Password);
 
                 if (passwordValid)
                 {
                     authenticationSucceeded = true;
-                    userId = user.Id;
                     logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", LogRedaction.MaskEmail(user.Email), userId);
                 }
                 else
@@ -130,6 +134,16 @@ public class LocalAuthService(
                         failedAttemptAnalysis).ConfigureAwait(false);
                 }
 
+                // Brute force against a known account must reach the owner even when the attempt
+                // fails. The publisher gates on the configured severity (High by default).
+                if (failedAttemptAnalysis is not null
+                    && userId.HasValue
+                    && failedAttemptAnalysis.DetectedAnomalies.Contains(SecurityAlertKinds.BruteForceDetected, StringComparer.Ordinal))
+                {
+                    await RecordSuspiciousLoginAlertAsync(
+                        userId, request.TenantId, failedAttemptAnalysis, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
+                }
+
                 throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
             }
 
@@ -155,6 +169,10 @@ public class LocalAuthService(
                     anomalyResult,
                     authenticationSucceeded: false,
                     behavioralAnalysis: behavioralAnalysis).ConfigureAwait(false);
+
+                // The step-up challenge is a confirmed high-risk signal: alert the account owner.
+                await RecordSuspiciousLoginAlertAsync(
+                    userId, request.TenantId, anomalyResult, SecurityAlertKinds.LoginStepUpRequired, cancellationToken).ConfigureAwait(false);
             }
 
             // Require step-up authentication for high-risk logins
@@ -247,11 +265,16 @@ public class LocalAuthService(
                 }
             }
 
-            var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                         ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
+            var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+                jwtOptions, configuration, request.RememberMe == true);
             var refreshTokenExpiresAt = SystemClock.UtcNow.AddDays(refreshTokenExpiryDays);
             var sessionId = Guid.NewGuid();
-            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(authenticatedUserId, deviceInfo, cancellationToken).ConfigureAwait(false);
+            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+                authenticatedUserId,
+                deviceInfo,
+                new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+                refreshTokenExpiresAt,
+                cancellationToken).ConfigureAwait(false);
             var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
                 authenticatedUserId,
                 authenticatedUser?.Email ?? request.Email,
@@ -285,6 +308,20 @@ public class LocalAuthService(
                     anomalyResult,
                     authenticationSucceeded: true,
                     behavioralAnalysis: behavioralAnalysis).ConfigureAwait(false);
+            }
+
+            // Confirmed signals on a successful sign-in: impossible travel, and brute force that
+            // eventually succeeded (classic account-takeover pattern). Both must reach the owner.
+            if (anomalyResult.DetectedAnomalies.Contains(SecurityAlertKinds.ImpossibleTravel, StringComparer.Ordinal))
+            {
+                await RecordSuspiciousLoginAlertAsync(
+                    authenticatedUserId, request.TenantId, anomalyResult, SecurityAlertKinds.ImpossibleTravel, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (anomalyResult.DetectedAnomalies.Contains(SecurityAlertKinds.BruteForceDetected, StringComparer.Ordinal))
+            {
+                await RecordSuspiciousLoginAlertAsync(
+                    authenticatedUserId, request.TenantId, anomalyResult, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
             }
 
             // Record successful login attempt
@@ -379,6 +416,27 @@ public class LocalAuthService(
             logger.LogError(exception, "Could not analyze authentication behavior for user {UserId}", userId);
             return null;
         }
+    }
+
+    /// <summary>
+    ///     Forwards a confirmed suspicious-login signal to the (optional) alert publisher, which
+    ///     records a redacted durable event consumed host-side to queue the owner notification.
+    ///     Absent publisher (hosts without the durable transport) degrades to a no-op.
+    /// </summary>
+    private async Task RecordSuspiciousLoginAlertAsync(
+        Guid? userId,
+        Guid? tenantId,
+        AuthenticationAnomalyResult analysis,
+        string alertKind,
+        CancellationToken cancellationToken)
+    {
+        if (suspiciousLoginAlerts is null || userId is not { } alertUserId)
+        {
+            return;
+        }
+
+        await suspiciousLoginAlerts.RecordAsync(
+            alertUserId, tenantId, alertKind, analysis.RiskLevel, analysis.RiskScore, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RecordRiskAuditEventAsync(
@@ -536,11 +594,16 @@ public class LocalAuthService(
 
             var tenantAccessContext = await ResolveTenantAccessContextAsync(userId, request.TenantId, cancellationToken).ConfigureAwait(false);
 
-            var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                         ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
+            var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+                jwtOptions, configuration, persistent: false);
             var refreshTokenExpiresAt = SystemClock.UtcNow.AddDays(refreshTokenExpiryDays);
             var sessionId = Guid.NewGuid();
-            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(userId, deviceInfo, cancellationToken).ConfigureAwait(false);
+            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+                userId,
+                deviceInfo,
+                new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+                refreshTokenExpiresAt,
+                cancellationToken).ConfigureAwait(false);
             var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
                 userId,
                 newUser.Email,
@@ -687,10 +750,19 @@ public class LocalAuthService(
 
         var existingSession = await sessionManagementService.GetSessionByRefreshTokenAsync(hashedToken, cancellationToken).ConfigureAwait(false);
         var sessionId = existingSession?.Id ?? Guid.NewGuid();
-        var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                     ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
-        var newRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(userId, deviceInfo, authenticatedAt, cancellationToken).ConfigureAwait(false);
-        var refreshTokenExpiresAt = now.AddDays(refreshTokenExpiryDays);
+        var configuredExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+            jwtOptions, configuration, persistent: false);
+        // Rotation renews the session's originating duration, so a persistent ("remember me")
+        // session keeps its persistent lifetime instead of collapsing onto the standard one.
+        // The raw stored CreatedAt is passed through so the resolver's malformed/legacy-row
+        // fallback (rows without a creation instant) engages instead of deriving a bogus
+        // duration from a sanitized clock value.
+        var refreshTokenExpiresAt = now.Add(RefreshTokenLifetimeResolver.ResolveOriginatingLifetime(
+            DateTime.SpecifyKind(storedToken.CreatedAt, DateTimeKind.Utc),
+            DateTime.SpecifyKind(storedToken.ExpiresAt, DateTimeKind.Utc),
+            TimeSpan.FromDays(configuredExpiryDays)));
+        var newRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+            userId, deviceInfo, authenticatedAt, refreshTokenExpiresAt, cancellationToken).ConfigureAwait(false);
         var slidingExpiration = jwtOptions?.Value.RefreshTokenSlidingExpiration
                                 ?? bool.Parse(configuration["Jwt:RefreshTokenSlidingExpiration"] ?? bool.TrueString);
         if (!slidingExpiration && refreshTokenExpiresAt > storedToken.ExpiresAt)
