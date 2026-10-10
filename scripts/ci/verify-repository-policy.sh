@@ -35,7 +35,7 @@ bash "$script_dir/install-and-audit-pnpm.sh"
 
 gate_stage='policy-tests'
 bash "$script_dir/tests/verify-economy.sh"
-node --test "$script_dir/tests/validate-pnpm-audit.test.mjs" "$script_dir/tests/learning-process-security.test.mjs" "$script_dir/tests/dev-stop-process-security.test.mjs" "$script_dir/tests/orchestration-process-security.test.mjs" "$script_dir/tests/editor-content-security.test.mjs" "$script_dir/tests/dependency-advisory-upgrades.test.mjs"
+node --test "$script_dir/tests/validate-pnpm-audit.test.mjs" "$script_dir/tests/learning-process-security.test.mjs" "$script_dir/tests/dev-stop-process-security.test.mjs" "$script_dir/tests/orchestration-process-security.test.mjs" "$script_dir/tests/editor-content-security.test.mjs" "$script_dir/tests/embed-url-security.test.mjs" "$script_dir/tests/dependency-advisory-upgrades.test.mjs"
 
 gate_stage='deployment-contracts'
 bash -n "$repository_root/scripts/deploy/promote-candidates.sh"
