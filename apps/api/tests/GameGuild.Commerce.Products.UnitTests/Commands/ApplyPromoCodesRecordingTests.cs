@@ -76,7 +76,7 @@ public class ApplyPromoCodesRecordingTests
             null,
             null,
             It.IsAny<CancellationToken>()), Times.Once);
-        _audit.Verify(a => a.LogRedemptionAsync(command.UserId.Value, "SAVE20", 20m, "USD", recordedUsage.Id, It.IsAny<CancellationToken>()), Times.Once);
+        _audit.Verify(a => a.LogRedemptionAsync(command.UserId!.Value, "SAVE20", 20m, "USD", recordedUsage.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
