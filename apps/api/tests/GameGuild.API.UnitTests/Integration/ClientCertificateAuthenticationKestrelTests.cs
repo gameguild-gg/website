@@ -236,7 +236,14 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
                 RemoteCertificateValidationCallback = (_, _, _, _) => true,
                 ClientCertificates = clientCertificate is null
                     ? new X509CertificateCollection()
-                    : new X509CertificateCollection { clientCertificate }
+                    : new X509CertificateCollection { clientCertificate },
+                // Select the certificate explicitly: the Linux TLS client's automatic
+                // selection can decline to offer a certificate (e.g. when filtering by
+                // the server's acceptable-issuer list), which would silently downgrade
+                // the mTLS request to an anonymous one.
+                LocalCertificateSelectionCallback = clientCertificate is null
+                    ? null
+                    : (_, _, _, _, _) => clientCertificate
             }
         };
         return new HttpClient(handler);
