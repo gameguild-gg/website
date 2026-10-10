@@ -73,7 +73,7 @@ public sealed class PermissionExpirationAlertLoggingTests
         }
         logs.Select(log => Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.State)
                 .Single(property => property.Key == "Channel").Value)
-            .Should().Equal(NotificationChannel.InApp, NotificationChannel.Email);
+            .Should().Equal("InApp", "Email");
     }
 
     private sealed class CapturingLogger<T> : ILogger<T>
