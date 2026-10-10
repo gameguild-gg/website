@@ -508,7 +508,7 @@ public sealed class JwtTokenServiceRetryTests
 
         var callCount = 0;
         _refreshRepo.Setup(r => r.CreateAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
-            .Returns<RefreshToken, CancellationToken>((rt, ct) =>
+            .Returns<RefreshToken, CancellationToken>((_, _) =>
             {
                 callCount++;
                 if (callCount == 1)

@@ -562,7 +562,7 @@ public sealed class DurableMarketplaceServicesTests
         public IReadOnlyList<PersistedFragmentReservation> Reserve(MarketplaceFifoReservationRequest request)
         {
             Requests.Add(request);
-            Last = request.Legs.Select((leg, index) =>
+            Last = request.Legs.Select((leg, _) =>
             {
                 var root = SourceStampId.New();
                 var range = new RootTraceRange(root, 0, leg.Units * CurrencyTraceScale.For(leg.Currency), 0);
