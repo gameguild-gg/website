@@ -15902,6 +15902,73 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("JitElevationRequest");
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("text");
+
+                    b.Property<int>("OperationType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PerformedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PermissionDetails")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PermissionType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResourceType")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex(new[] { "UserId", "PermissionType", "Timestamp" }, "IX_PermissionAuditLogs_User_Permission_Timestamp");
+
+                    b.ToTable("PermissionAuditLog");
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionDelegation", b =>
                 {
                     b.Property<Guid>("Id")

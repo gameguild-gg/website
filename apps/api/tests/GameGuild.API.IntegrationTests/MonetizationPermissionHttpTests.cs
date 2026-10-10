@@ -198,6 +198,9 @@ public sealed class MonetizationPermissionHttpTests(ApiPostgreSqlFixture fixture
             (noGrantUserId, "Member"),
             (manageOnlyUserId, "Member"),
             (monetizerUserId, "Member"),
+            // Seeded as a user row so the product-creator foreign key holds; the
+            // SystemAdmin role arrives via the test-auth claim, not the membership.
+            (systemAdminId, "Member"),
         ]);
         // The pricing mutation passes the controller only with products:pricing:manage,
         // and the SetProductPricingCommand additionally requires monetization:monetize
