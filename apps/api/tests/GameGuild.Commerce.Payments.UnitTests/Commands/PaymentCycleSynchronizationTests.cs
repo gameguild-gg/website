@@ -1,5 +1,7 @@
 using FluentAssertions;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -26,6 +28,9 @@ public sealed class PaymentCycleSynchronizationTests
             repository.Object,
             gateway.Object,
             syncService.Object,
+            Options.Create(new PaymentRetryOptions()),
+            CreateRevenueAuditService(),
+            CreateActorAccessor(),
             Mock.Of<ILogger<RetryPaymentCommandHandler>>());
 
         var result = await handler.Handle(new RetryPaymentCommand(payment.Id), CancellationToken.None);
@@ -54,6 +59,7 @@ public sealed class PaymentCycleSynchronizationTests
         var handler = new UpdatePaymentStatusCommandHandler(
             repository.Object,
             syncService.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<UpdatePaymentStatusCommandHandler>>());
 
         var result = await handler.Handle(
@@ -91,6 +97,9 @@ public sealed class PaymentCycleSynchronizationTests
             repository.Object,
             gateway.Object,
             syncService.Object,
+            Options.Create(new PaymentRetryOptions()),
+            CreateRevenueAuditService(),
+            CreateActorAccessor(),
             Mock.Of<ILogger<RetryPaymentCommandHandler>>());
 
         var result = await handler.Handle(new RetryPaymentCommand(payment.Id), CancellationToken.None);
@@ -119,6 +128,7 @@ public sealed class PaymentCycleSynchronizationTests
         var handler = new UpdatePaymentStatusCommandHandler(
             repository.Object,
             syncService.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<UpdatePaymentStatusCommandHandler>>());
 
         var result = await handler.Handle(
@@ -172,6 +182,44 @@ public sealed class PaymentCycleSynchronizationTests
             .ReturnsAsync((Payment updatedPayment, CancellationToken _) => updatedPayment);
 
         return repository;
+    }
+
+    internal static IRevenueAuditService CreateRevenueAuditService()
+    {
+        var revenueAuditService = new Mock<IRevenueAuditService>();
+        revenueAuditService
+            .Setup(service => service.RecordAuditTrailAsync(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        return revenueAuditService.Object;
+    }
+
+    internal static IActorContextAccessor CreateActorAccessor()
+    {
+        var actorContext = new ActorContext
+        {
+            ActorKind = ActorKind.User,
+            SubjectId = Guid.NewGuid().ToString(),
+            TenantId = Guid.NewGuid(),
+            Roles = new HashSet<string>(),
+            Permissions = new HashSet<string>(),
+            TypedAttributes = ActorAttributes.Empty,
+            AuthScheme = "Test",
+            IsAuthenticated = true
+        };
+
+        var accessor = new Mock<IActorContextAccessor>();
+        accessor.SetupGet(value => value.ActorContext).Returns(actorContext);
+        return accessor.Object;
     }
 
     private static GatewayPaymentResult SuccessfulGatewayResult()

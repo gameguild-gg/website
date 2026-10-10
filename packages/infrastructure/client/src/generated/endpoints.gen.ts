@@ -7634,6 +7634,53 @@ export const postPaymentsRetryEndpoint = {
 } as const;
 
 /**
+ * Payment success and failed-payment recovery metrics for an inclusive window.
+ *
+ * Aggregates the recovery analytics that billing administrators need to steer retry and
+ * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
+ * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
+ * exhausted). Non-admin actors are scoped to their own tenant.
+ */
+export interface GetPaymentsRecoveryMetricsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetPaymentsRecoveryMetricsOutput = Types.CommercePaymentsPaymentRecoveryMetrics;
+export const getPaymentsRecoveryMetricsEndpoint = {
+  operationId: 'getPaymentsRecoveryMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/recovery-metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Failed payments that are due for a retry right now (retry-queue candidates).
+ *
+ * Returns the candidate set an automated retry queue would consume (issue #403; the queue
+ * itself is tracked in #415): failed payments with retry budget left whose configured
+ * backoff has elapsed, ordered by the scheduled next-retry time. Non-admin actors are
+ * scoped to their own tenant.
+ */
+export interface GetPaymentsRetryingCandidatesInput {
+  query?: {
+    tenantId?: string;
+    take?: number;
+  };
+}
+export type GetPaymentsRetryingCandidatesOutput = Types.CommercePaymentsPaymentResult[];
+export const getPaymentsRetryingCandidatesEndpoint = {
+  operationId: 'getPaymentsRetryingCandidates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/retrying-candidates' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Creates a Stripe SetupIntent for a subscription checkout.
  *
  * Creates or reuses a Stripe customer for the subscription and returns a SetupIntent client secret for PaymentElement-based card collection.
@@ -26983,6 +27030,8 @@ export const endpoints = {
   postPaymentsCancel: postPaymentsCancelEndpoint,
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
+  getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
+  getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,
   postPaymentsSubscriptionCheckoutsComplete: postPaymentsSubscriptionCheckoutsCompleteEndpoint,
   postPaymentsTaxCalculate: postPaymentsTaxCalculateEndpoint,

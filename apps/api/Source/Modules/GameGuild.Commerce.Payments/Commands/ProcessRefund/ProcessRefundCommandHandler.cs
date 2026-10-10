@@ -1,4 +1,6 @@
+using System.Text.Json;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Commerce.Payments;
@@ -9,6 +11,8 @@ namespace GameGuild.Commerce.Payments;
 public sealed class ProcessRefundCommandHandler(
     IPaymentRepository paymentRepository,
     IPaymentGateway paymentGateway,
+    IRevenueAuditService revenueAuditService,
+    IActorContextAccessor actorContextAccessor,
     ILogger<ProcessRefundCommandHandler> logger) : ICommandHandler<ProcessRefundCommand, ProcessRefundResult>
 {
     public async Task<ProcessRefundResult> Handle(ProcessRefundCommand request, CancellationToken cancellationToken)
@@ -63,7 +67,6 @@ public sealed class ProcessRefundCommandHandler(
         {
             logger.LogWarning("Refund amount {Amount} exceeds maximum refundable {MaxRefundable} for payment {PaymentId}",
                 request.Amount, maxRefundable, request.PaymentId);
-
             return new ProcessRefundResult
             {
                 RefundId = Guid.Empty,
@@ -93,7 +96,6 @@ public sealed class ProcessRefundCommandHandler(
         {
             logger.LogWarning("Refund failed for payment {PaymentId}: {ErrorMessage}",
                 request.PaymentId, gatewayResult.ErrorMessage);
-
             return new ProcessRefundResult
             {
                 RefundId = Guid.Empty,
@@ -108,6 +110,8 @@ public sealed class ProcessRefundCommandHandler(
             };
         }
 
+        var statusBeforeRefund = payment.Status;
+
         // 5. Update payment with refund details
         var refundId = gatewayResult.RefundId ?? Guid.NewGuid().ToString();
         payment.ProcessRefund(request.Amount, refundId, request.Reason);
@@ -116,7 +120,16 @@ public sealed class ProcessRefundCommandHandler(
         logger.LogInformation("Refund {RefundId} processed successfully for payment {PaymentId}",
             refundId, request.PaymentId);
 
-        // 6. Return result
+        // 6. Record the RefundProcessed revenue event and post the balancing ledger
+        //    entry so refunds reduce accounted revenue (issue #403).
+        await RecordRefundRevenueAsync(payment, request.Amount, refundId, request.Reason, cancellationToken)
+            .ConfigureAwait(false);
+
+        // 7. Persist an audit-trail entry for the refund (issue #403)
+        await RecordRefundAuditTrailAsync(payment, statusBeforeRefund, request.Amount, refundId, request.Reason, cancellationToken)
+            .ConfigureAwait(false);
+
+        // 8. Return result
         return new ProcessRefundResult
         {
             RefundId = Guid.TryParse(refundId, out var parsedId) ? parsedId : Guid.NewGuid(),
@@ -132,4 +145,74 @@ public sealed class ProcessRefundCommandHandler(
             IsSuccess = true
         };
     }
+
+    private async Task RecordRefundRevenueAsync(
+        Payment payment,
+        decimal refundAmount,
+        string refundId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        var metadata = JsonSerializer.Serialize(new
+        {
+            paymentId = payment.Id.ToString(),
+            refundId,
+            reason,
+            paymentStatusAfterRefund = payment.Status.ToString(),
+            cumulativeRefundedAmount = payment.RefundedAmount
+        });
+
+        var revenueEvent = await revenueAuditService.RecordRevenueEventAsync(
+            eventType: RevenueEventType.RefundProcessed,
+            amount: refundAmount,
+            currency: payment.Currency,
+            source: payment.SubscriptionId.HasValue ? RevenueSource.Subscription : RevenueSource.OneTimePayment,
+            referenceId: payment.Id.ToString(),
+            metadata: metadata,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        await revenueAuditService.CreateLedgerEntryAsync(
+            entryType: LedgerEntryType.Refund,
+            debitAccount: LedgerAccount.RefundsAndChargebacks.ToAccountCode(),
+            creditAccount: LedgerAccount.Cash.ToAccountCode(),
+            amount: refundAmount,
+            currency: payment.Currency,
+            description: $"Refund {refundId} for payment {payment.Id}",
+            revenueEventId: revenueEvent.Id,
+            referenceNumber: refundId,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task RecordRefundAuditTrailAsync(
+        Payment payment,
+        PaymentStatus statusBeforeRefund,
+        decimal refundAmount,
+        string refundId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        var oldValue = JsonSerializer.Serialize(new
+        {
+            status = statusBeforeRefund.ToString(),
+            refundedAmount = payment.RefundedAmount - refundAmount
+        });
+        var newValue = JsonSerializer.Serialize(new
+        {
+            status = payment.Status.ToString(),
+            refundedAmount = payment.RefundedAmount
+        });
+
+        await revenueAuditService.RecordAuditTrailAsync(
+            entityType: "Payment",
+            entityId: payment.Id,
+            action: "StatusChanged",
+            changedBy: RequireActorId(),
+            oldValue: oldValue,
+            newValue: newValue,
+            reason: $"Refund {refundId} of {refundAmount} {payment.Currency} processed: {reason}",
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private Guid RequireActorId() => actorContextAccessor.ActorContext.SubjectIdAsGuid
+        ?? throw new UnauthorizedAccessException("An authenticated administrator is required.");
 }

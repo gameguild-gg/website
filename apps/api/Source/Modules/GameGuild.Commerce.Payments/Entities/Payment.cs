@@ -14,6 +14,10 @@ namespace GameGuild.Commerce.Payments;
 [Index(nameof(IdempotencyKey), IsUnique = true)]
 public class Payment : EntityBase
 {
+    private const int DefaultMaxRetries = 3;
+    private const double DefaultBackoffBaseMinutes = 1.0;
+    private const double DefaultBackoffMultiplier = 5.0;
+
     private static readonly Dictionary<PaymentStatus, HashSet<PaymentStatus>> ValidTransitions = new()
     {
         { PaymentStatus.Pending, new() { PaymentStatus.Processing, PaymentStatus.Cancelled, PaymentStatus.Failed } },
@@ -130,8 +134,8 @@ public class Payment : EntityBase
     /// <summary>Number of retry attempts</summary>
     public int RetryCount { get; private set; }
 
-    /// <summary>Maximum retry attempts allowed</summary>
-    public int MaxRetries { get; private set; } = 3;
+    /// <summary>Maximum retry attempts allowed; sourced from <c>Payments:Retry</c> at creation, legacy default as fallback</summary>
+    public int MaxRetries { get; private set; } = DefaultMaxRetries;
 
     /// <summary>Next retry date if failed</summary>
     public DateTime? NextRetryAt { get; private set; }
@@ -167,7 +171,8 @@ public class Payment : EntityBase
         Guid? invoiceId = null,
         string? externalCustomerId = null,
         string? paymentMethodId = null,
-        string? description = null)
+        string? description = null,
+        int? maxRetries = null)
     {
         if (tenantId == Guid.Empty)
         {
@@ -197,6 +202,7 @@ public class Payment : EntityBase
             ExternalCustomerId = externalCustomerId,
             PaymentMethodId = paymentMethodId,
             Description = description,
+            MaxRetries = maxRetries ?? DefaultMaxRetries,
             Status = PaymentStatus.Pending
         };
     }
@@ -320,8 +326,17 @@ public class Payment : EntityBase
             ProcessedAt.Value));
     }
 
-    /// <summary>Marks the payment as failed</summary>
-    public void MarkAsFailed(string failureReason, string? errorCode = null)
+    /// <summary>
+    ///     Marks the payment as failed. Retry-policy parameters may be supplied by the caller from
+    ///     <c>Payments:Retry</c> options (issue #403); when omitted the legacy entity defaults apply
+    ///     (max 3 retries, exponential backoff of <c>Math.Pow(5, RetryCount)</c> minutes).
+    /// </summary>
+    public void MarkAsFailed(
+        string failureReason,
+        string? errorCode = null,
+        int? maxRetries = null,
+        double? backoffBaseMinutes = null,
+        double? backoffMultiplier = null)
     {
         TransitionTo(PaymentStatus.Failed);
         FailureReason = failureReason;
@@ -329,10 +344,18 @@ public class Payment : EntityBase
         ProcessedAt = SystemClock.UtcNow;
 
         // Calculate next retry if retries remaining
-        if (RetryCount < MaxRetries)
+        var effectiveMaxRetries = maxRetries ?? MaxRetries;
+        if (maxRetries.HasValue && maxRetries.Value != MaxRetries)
         {
-            // Exponential backoff: 1 min, 5 min, 30 min, etc.
-            var delayMinutes = Math.Pow(5, RetryCount) * 1;
+            MaxRetries = maxRetries.Value;
+        }
+
+        if (RetryCount < effectiveMaxRetries)
+        {
+            // Exponential backoff: legacy default is 1 min, 5 min, 25 min, etc.
+            var baseMinutes = backoffBaseMinutes ?? DefaultBackoffBaseMinutes;
+            var multiplier = backoffMultiplier ?? DefaultBackoffMultiplier;
+            var delayMinutes = baseMinutes * Math.Pow(multiplier, RetryCount);
             NextRetryAt = SystemClock.UtcNow.AddMinutes(delayMinutes);
         }
     }

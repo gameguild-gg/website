@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
@@ -35,6 +36,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
         var charge = new AuthoritativeOrderCharge(
             Guid.NewGuid(),
@@ -83,6 +85,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             Mock.Of<IPaymentGateway>(),
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var exact = await service.IsSettledAsync(new OrderPaymentBinding(orderId, payment.Id, tenantId, 75m, "USD"));
@@ -118,6 +121,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(charge);
@@ -156,6 +160,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(charge);
@@ -203,6 +208,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(charge);
@@ -254,6 +260,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(charge);
@@ -292,6 +299,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -337,6 +345,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(charge);
@@ -382,6 +391,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(charge);
@@ -429,6 +439,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -477,6 +488,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -523,6 +535,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -570,6 +583,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -609,6 +623,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -653,6 +668,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -707,6 +723,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -770,6 +787,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(
@@ -788,6 +806,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             Mock.Of<IPaymentRepository>(),
             Mock.Of<IPaymentGateway>(),
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         service.GetPaymentMethodValidationError("attacker-controlled")
@@ -815,6 +834,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var action = () => service.ProcessAsync(
@@ -852,6 +872,7 @@ public sealed class OrderPaymentServiceTests
         var service = new OrderPaymentService(
             repository.Object,
             gateway.Object,
+            Options.Create(new PaymentRetryOptions()),
             Mock.Of<ILogger<OrderPaymentService>>());
 
         var result = await service.ProcessAsync(

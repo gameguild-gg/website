@@ -42,6 +42,13 @@ public static class PaymentsModule
             .ValidateOnStart();
         services.AddHostedService<RevenueAnomalyDetectionBackgroundService>();
 
+        // Configurable retry schedule (issue #403): max retries + exponential backoff
+        // parameters, previously hardcoded in the Payment entity.
+        services.AddSingleton<IValidateOptions<PaymentRetryOptions>, PaymentRetryOptionsValidator>();
+        services.AddOptions<PaymentRetryOptions>()
+            .Bind(configuration.GetSection(PaymentRetryOptions.SectionName))
+            .ValidateOnStart();
+
         // Register services
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IRevenueAuditService, RevenueAuditService>();

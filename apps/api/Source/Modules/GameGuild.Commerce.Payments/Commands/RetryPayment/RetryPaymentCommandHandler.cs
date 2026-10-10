@@ -1,5 +1,8 @@
+using System.Text.Json;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -10,6 +13,9 @@ public sealed class RetryPaymentCommandHandler(
     IPaymentRepository paymentRepository,
     IPaymentGateway paymentGateway,
     IPaymentSubscriptionSyncService paymentSubscriptionSyncService,
+    IOptions<PaymentRetryOptions> retryOptions,
+    IRevenueAuditService revenueAuditService,
+    IActorContextAccessor actorContextAccessor,
     ILogger<RetryPaymentCommandHandler> logger) : ICommandHandler<RetryPaymentCommand, PaymentRetryResult>
 {
     public async Task<PaymentRetryResult> Handle(RetryPaymentCommand request, CancellationToken cancellationToken)
@@ -49,6 +55,9 @@ public sealed class RetryPaymentCommandHandler(
             };
         }
 
+        var statusBeforeRetry = payment.Status;
+        var retryCountBeforeRetry = payment.RetryCount;
+
         // 3. Prepare for retry (increments retry count, resets status)
         payment.PrepareForRetry();
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
@@ -78,7 +87,7 @@ public sealed class RetryPaymentCommandHandler(
             .ConfigureAwait(false);
         GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
 
-        // 6. Update payment based on gateway result
+        // 6. Update payment based on gateway result (retry schedule resolved from Payments:Retry, issue #403)
         PaymentResult? paymentResult = null;
 
         if (gatewayResult.Success)
@@ -105,7 +114,10 @@ public sealed class RetryPaymentCommandHandler(
         {
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Payment retry failed",
-                gatewayResult.ErrorCode);
+                gatewayResult.ErrorCode,
+                maxRetries: retryOptions.Value.MaxRetries,
+                backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier);
 
             logger.LogWarning("Payment {PaymentId} retry failed on attempt {RetryCount}: {ErrorMessage}",
                 request.PaymentId, payment.RetryCount, gatewayResult.ErrorMessage);
@@ -114,6 +126,14 @@ public sealed class RetryPaymentCommandHandler(
         }
 
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+        // 7. Persist an audit-trail entry for the retry attempt (issue #403)
+        await RecordRetryAuditTrailAsync(
+            payment,
+            statusBeforeRetry,
+            retryCountBeforeRetry,
+            gatewayResult.ErrorMessage,
+            cancellationToken).ConfigureAwait(false);
 
         if (gatewayResult.Success && payment.ProcessedAt.HasValue)
         {
@@ -137,7 +157,7 @@ public sealed class RetryPaymentCommandHandler(
             }
         }
 
-        // 7. Return retry result
+        // 8. Return retry result
         return new PaymentRetryResult
         {
             Success = gatewayResult.Success,
@@ -148,4 +168,39 @@ public sealed class RetryPaymentCommandHandler(
             FailureReason = gatewayResult.Success ? null : gatewayResult.ErrorMessage
         };
     }
+
+    private async Task RecordRetryAuditTrailAsync(
+        Payment payment,
+        PaymentStatus statusBeforeRetry,
+        int retryCountBeforeRetry,
+        string? failureReason,
+        CancellationToken cancellationToken)
+    {
+        var oldValue = JsonSerializer.Serialize(new
+        {
+            status = statusBeforeRetry.ToString(),
+            retryCount = retryCountBeforeRetry
+        });
+        var newValue = JsonSerializer.Serialize(new
+        {
+            status = payment.Status.ToString(),
+            retryCount = payment.RetryCount,
+            nextRetryAt = payment.NextRetryAt
+        });
+
+        await revenueAuditService.RecordAuditTrailAsync(
+            entityType: "Payment",
+            entityId: payment.Id,
+            action: "StatusChanged",
+            changedBy: RequireActorId(),
+            oldValue: oldValue,
+            newValue: newValue,
+            reason: failureReason is null
+                ? $"Payment retry attempt {payment.RetryCount} succeeded"
+                : $"Payment retry attempt {payment.RetryCount} failed: {failureReason}",
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private Guid RequireActorId() => actorContextAccessor.ActorContext.SubjectIdAsGuid
+        ?? throw new UnauthorizedAccessException("An authenticated administrator is required.");
 }

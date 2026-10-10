@@ -449,6 +449,97 @@ public sealed class PaymentsController(
         return Ok(r);
     }
 
+    /// <summary>
+    ///     Payment success and failed-payment recovery metrics for an inclusive window.
+    /// </summary>
+    /// <param name="fromUtc">Inclusive window start (UTC)</param>
+    /// <param name="toUtc">Inclusive window end (UTC)</param>
+    /// <param name="tenantId">Optional tenant ID filter</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Success rate, retry-recovery rate, recovered amounts per currency and dunning outcomes</returns>
+    /// <remarks>
+    ///     Aggregates the recovery analytics that billing administrators need to steer retry and
+    ///     dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
+    ///     amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
+    ///     exhausted). Non-admin actors are scoped to their own tenant.
+    /// </remarks>
+    [HttpGet("recovery-metrics")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("Get payment recovery metrics for a period")]
+    [EndpointDescription(
+        "Returns payment success and failed-payment recovery metrics for an inclusive window: first-attempt success rate, retry-recovery rate, recovered amounts grouped by currency and dunning outcome counters. Non-admin actors are scoped to their own tenant."
+    )]
+    [ProducesResponseType<PaymentRecoveryMetrics>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRecoveryMetrics(
+        [FromQuery] DateTimeOffset fromUtc,
+        [FromQuery] DateTimeOffset toUtc,
+        [FromQuery] Guid? tenantId = null,
+        CancellationToken ct = default)
+    {
+        if (fromUtc > toUtc)
+        {
+            return BadRequest(new { error = "fromUtc must be earlier than or equal to toUtc" });
+        }
+
+        var actorContext = actorContextAccessor.ActorContext;
+        if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
+        {
+            var requestedTenantId = tenantId ?? actorContext.TenantId ?? Guid.Empty;
+            var validationError = ValidateTenantAccess(requestedTenantId, "read payment recovery metrics");
+            if (validationError != null) return validationError;
+
+            tenantId = actorContext.TenantId;
+        }
+
+        var metrics = await sender.Send(
+            new GetPaymentRecoveryMetricsQuery(fromUtc.UtcDateTime, toUtc.UtcDateTime, tenantId), ct).ConfigureAwait(false);
+
+        return Ok(metrics);
+    }
+
+    /// <summary>
+    ///     Failed payments that are due for a retry right now (retry-queue candidates).
+    /// </summary>
+    /// <param name="tenantId">Optional tenant ID filter</param>
+    /// <param name="take">Maximum number of candidates to return (1–100, default 50)</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Failed payments with retries remaining whose scheduled next-retry time has passed, soonest first</returns>
+    /// <remarks>
+    ///     Returns the candidate set an automated retry queue would consume (issue #403; the queue
+    ///     itself is tracked in #415): failed payments with retry budget left whose configured
+    ///     backoff has elapsed, ordered by the scheduled next-retry time. Non-admin actors are
+    ///     scoped to their own tenant.
+    /// </remarks>
+    [HttpGet("retrying-candidates")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
+    [EndpointSummary("List failed payments due for retry")]
+    [EndpointDescription(
+        "Returns failed payments that still have retry budget left and whose scheduled next-retry time has passed, soonest first. This is the candidate set for an automated retry queue. Non-admin actors are scoped to their own tenant."
+    )]
+    [ProducesResponseType<IEnumerable<PaymentResult>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRetryingCandidates(
+        [FromQuery] Guid? tenantId = null,
+        [FromQuery] int take = 50,
+        CancellationToken ct = default)
+    {
+        var actorContext = actorContextAccessor.ActorContext;
+        if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
+        {
+            var requestedTenantId = tenantId ?? actorContext.TenantId ?? Guid.Empty;
+            var validationError = ValidateTenantAccess(requestedTenantId, "list retrying payment candidates");
+            if (validationError != null) return validationError;
+
+            tenantId = actorContext.TenantId;
+        }
+
+        var candidates = await sender.Send(new GetRetryingPaymentCandidatesQuery(tenantId, take), ct).ConfigureAwait(false);
+
+        return Ok(candidates);
+    }
+
     public sealed record ProcessPaymentRequest(Guid TenantId, Guid SubscriptionId, decimal Amount, string PaymentMethodId);
 
     public sealed record CreateSetupIntentRequest(Guid TenantId, Guid SubscriptionId, string? CustomerEmail, string? CustomerName);

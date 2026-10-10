@@ -1,5 +1,6 @@
 using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -9,6 +10,7 @@ namespace GameGuild.Commerce.Payments;
 public sealed class OrderPaymentService(
     IPaymentRepository paymentRepository,
     IPaymentGateway paymentGateway,
+    IOptions<PaymentRetryOptions> retryOptions,
     ILogger<OrderPaymentService> logger) : IOrderPaymentProcessor, IOrderPaymentAuthority
 {
     internal static readonly TimeSpan SafeProviderReplayWindow = TimeSpan.FromHours(23);
@@ -41,7 +43,8 @@ public sealed class OrderPaymentService(
             paymentGateway.ProviderId,
             orderId: charge.OrderId,
             paymentMethodId: charge.PaymentMethodId,
-            description: $"Payment for order {charge.OrderId}");
+            description: $"Payment for order {charge.OrderId}",
+            maxRetries: retryOptions.Value.MaxRetries);
         var payment = await paymentRepository.AddAsync(proposedPayment, cancellationToken).ConfigureAwait(false);
         if (payment.Id != proposedPayment.Id)
             return await ProcessExistingAsync(payment, charge, cancellationToken).ConfigureAwait(false);
@@ -221,7 +224,10 @@ public sealed class OrderPaymentService(
         {
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Order payment failed.",
-                gatewayResult.ErrorCode);
+                gatewayResult.ErrorCode,
+                maxRetries: retryOptions.Value.MaxRetries,
+                backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier);
             stateChanged = true;
         }
 
@@ -274,7 +280,8 @@ public sealed class OrderPaymentService(
             paymentGateway.ProviderId,
             orderId: charge.OrderId,
             paymentMethodId: charge.PaymentMethodId,
-            description: $"Replacement payment for order {charge.OrderId}");
+            description: $"Replacement payment for order {charge.OrderId}",
+            maxRetries: retryOptions.Value.MaxRetries);
         var payment = await paymentRepository.AddAsync(proposedPayment, cancellationToken).ConfigureAwait(false);
         if (payment.Id != proposedPayment.Id)
             return await ProcessExistingAsync(payment, charge, cancellationToken).ConfigureAwait(false);

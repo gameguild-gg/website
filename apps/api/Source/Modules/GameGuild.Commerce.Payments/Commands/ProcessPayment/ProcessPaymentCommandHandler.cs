@@ -1,6 +1,7 @@
 using GameGuild.CQRS;
 using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -12,6 +13,7 @@ public sealed class ProcessPaymentCommandHandler(
     IPaymentGateway paymentGateway,
     IPaymentSubscriptionSyncService paymentSubscriptionSyncService,
     ISubscriptionPaymentContextService subscriptionPaymentContextService,
+    IOptions<PaymentRetryOptions> retryOptions,
     ILogger<ProcessPaymentCommandHandler> logger) : ICommandHandler<ProcessPaymentCommand, PaymentResult>
 {
     public async Task<PaymentResult> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
@@ -68,7 +70,7 @@ public sealed class ProcessPaymentCommandHandler(
 
         var externalCustomerId = subscription.ExternalCustomerId;
 
-        // 2. Create payment record
+        // 2. Create payment record (retry budget comes from Payments:Retry options, issue #403)
         var payment = Payment.Create(
             tenantId: subscription.TenantId,
             amount: subscription.Amount,
@@ -77,7 +79,8 @@ public sealed class ProcessPaymentCommandHandler(
             provider: paymentGateway.ProviderId,
             subscriptionId: request.SubscriptionId,
             externalCustomerId: externalCustomerId,
-            paymentMethodId: request.PaymentMethodId);
+            paymentMethodId: request.PaymentMethodId,
+            maxRetries: retryOptions.Value.MaxRetries);
 
         await paymentRepository.AddAsync(payment, cancellationToken).ConfigureAwait(false);
 
@@ -123,7 +126,10 @@ public sealed class ProcessPaymentCommandHandler(
         {
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Payment processing failed",
-                gatewayResult.ErrorCode);
+                gatewayResult.ErrorCode,
+                maxRetries: retryOptions.Value.MaxRetries,
+                backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier);
 
             logger.LogWarning("Payment {PaymentId} failed: {ErrorMessage} ({ErrorCode})",
                 payment.Id, gatewayResult.ErrorMessage, gatewayResult.ErrorCode);

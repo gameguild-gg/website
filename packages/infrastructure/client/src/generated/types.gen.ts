@@ -1895,6 +1895,18 @@ export interface CommercePaymentsPatchTaxRuleInput {
   rate?: number | null;
 }
 
+/** First-attempt outcome counters for payments created in the window. */
+export interface CommercePaymentsPaymentAttemptMetrics {
+  /** Payments currently in GameGuild.Commerce.Payments.PaymentStatus.Failed. */
+  failedPayments?: number;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Succeeded (including later refunded/disputed). */
+  succeededPayments?: number;
+  /** Succeeded / total as a percentage (0–100); 0 when there are no payments. */
+  successRate?: number;
+  /** Payments created in the window. */
+  totalPayments?: number;
+}
+
 /** Result of a payment cancellation operation */
 export interface CommercePaymentsPaymentCancellationResult {
   /** When the payment was canceled */
@@ -1915,6 +1927,37 @@ export interface CommercePaymentsPaymentCancellationResult {
   success: boolean;
 }
 
+/** An amount total for one currency; currency totals are kept separate (issue #404 mixed-currency rule). */
+export interface CommercePaymentsPaymentCurrencyAmount {
+  amount?: number;
+  currency?: string | null;
+  paymentCount?: number;
+}
+
+/** Dunning outcomes for failed payments in the window, as of the query execution time. */
+export interface CommercePaymentsPaymentDunningOutcomeMetrics {
+  /** Failed payments with retries remaining whose next-retry time has passed (retry-queue candidates). */
+  dueForRetryPayments?: number;
+  /** Failed payments with no retries left (dunning escalation terminal). */
+  exhaustedPayments?: number;
+  /** Failed payments with retries remaining and a future next-retry time (recovery in flight). */
+  pendingRetryPayments?: number;
+}
+
+/** Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
+Powers `GET api/v{v}/payments/recovery-metrics`. */
+export interface CommercePaymentsPaymentRecoveryMetrics {
+  attempts?: CommercePaymentsPaymentAttemptMetrics;
+  dunning?: CommercePaymentsPaymentDunningOutcomeMetrics;
+  /** Inclusive window start. */
+  fromUtc?: string;
+  retries?: CommercePaymentsPaymentRetryRecoveryMetrics;
+  /** Tenant the metrics were scoped to, or null for all tenants. */
+  tenantId?: string | null;
+  /** Inclusive window end. */
+  toUtc?: string;
+}
+
 /** Result of payment processing */
 export interface CommercePaymentsPaymentResult {
   amount?: Money;
@@ -1931,6 +1974,20 @@ Links payment to specific invoice for audit trail and preventing duplicate appli
   /** Tenant that owns the payment. Required for authorization at API boundaries. */
   tenantId?: string;
   transactionId?: string | null;
+}
+
+/** Retry-recovery counters for payments that failed at least once. */
+export interface CommercePaymentsPaymentRetryRecoveryMetrics {
+  /** Payments that failed at least once (currently failed or with retry history). */
+  everFailedPayments?: number;
+  /** Recovered charge amounts grouped by currency (mixed currencies are never summed into one figure). */
+  recoveredAmounts?: CommercePaymentsPaymentCurrencyAmount[] | null;
+  /** Payments that failed at least once and eventually succeeded. */
+  recoveredPayments?: number;
+  /** Payments with at least one retry attempt. */
+  retriedPayments?: number;
+  /** Recovered / ever-failed as a percentage (0–100); 0 when none ever failed. */
+  retryRecoveryRate?: number;
 }
 
 /** Result of payment retry */
@@ -20398,8 +20455,13 @@ export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaym
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
 export let CommercePaymentsPatchTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsPatchTaxJurisdictionInput>;
 export let CommercePaymentsPatchTaxRuleInputSchema: z.ZodType<CommercePaymentsPatchTaxRuleInput>;
+export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymentsPaymentAttemptMetrics>;
 export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePaymentsPaymentCancellationResult>;
+export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
+export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRecoveryMetrics>;
 export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymentResult>;
+export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
 export let CommercePaymentsPaymentRetryResultSchema: z.ZodType<CommercePaymentsPaymentRetryResult>;
 export let CommercePaymentsPaymentsControllerCancelPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCancelPaymentInput>;
 export let CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInput>;
@@ -23915,6 +23977,14 @@ CommercePaymentsPatchTaxRuleInputSchema = z.object({
   rate: z.number().nullable().optional(),
 });
 
+/** Zod schema for CommercePaymentsPaymentAttemptMetrics. First-attempt outcome counters for payments created in the window. */
+CommercePaymentsPaymentAttemptMetricsSchema = z.object({
+  failedPayments: z.number().int().optional(),
+  succeededPayments: z.number().int().optional(),
+  successRate: z.number().optional(),
+  totalPayments: z.number().int().optional(),
+});
+
 /** Zod schema for CommercePaymentsPaymentCancellationResult. Result of a payment cancellation operation */
 CommercePaymentsPaymentCancellationResultSchema = z.object({
   canceledAt: z.string().datetime(),
@@ -23925,6 +23995,31 @@ CommercePaymentsPaymentCancellationResultSchema = z.object({
   refundAmount: z.number().nullable().optional(),
   refundProcessed: z.boolean().optional(),
   success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsPaymentCurrencyAmount. An amount total for one currency; currency totals are kept separate (issue #404 mixed-currency rule). */
+CommercePaymentsPaymentCurrencyAmountSchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  paymentCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentDunningOutcomeMetrics. Dunning outcomes for failed payments in the window, as of the query execution time. */
+CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
+  dueForRetryPayments: z.number().int().optional(),
+  exhaustedPayments: z.number().int().optional(),
+  pendingRetryPayments: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRecoveryMetrics. Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
+Powers `GET api/v{v}/payments/recovery-metrics`. */
+CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
+  attempts: z.lazy(() => CommercePaymentsPaymentAttemptMetricsSchema).optional(),
+  dunning: z.lazy(() => CommercePaymentsPaymentDunningOutcomeMetricsSchema).optional(),
+  fromUtc: z.string().datetime().optional(),
+  retries: z.lazy(() => CommercePaymentsPaymentRetryRecoveryMetricsSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  toUtc: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentResult. Result of payment processing */
@@ -23939,6 +24034,18 @@ CommercePaymentsPaymentResultSchema = z.object({
   success: z.boolean().optional(),
   tenantId: z.string().uuid().optional(),
   transactionId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRetryRecoveryMetrics. Retry-recovery counters for payments that failed at least once. */
+CommercePaymentsPaymentRetryRecoveryMetricsSchema = z.object({
+  everFailedPayments: z.number().int().optional(),
+  recoveredAmounts: z
+    .array(z.lazy(() => CommercePaymentsPaymentCurrencyAmountSchema))
+    .nullable()
+    .optional(),
+  recoveredPayments: z.number().int().optional(),
+  retriedPayments: z.number().int().optional(),
+  retryRecoveryRate: z.number().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentRetryResult. Result of payment retry */

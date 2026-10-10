@@ -1820,6 +1820,7 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentGateway>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
             new Mock<ISubscriptionPaymentContextService>().Object,
+            Options.Create(new PaymentRetryOptions()),
             NullLogger<ProcessPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1831,6 +1832,9 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentRepository>().Object,
             new Mock<IPaymentGateway>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
+            Options.Create(new PaymentRetryOptions()),
+            new Mock<IRevenueAuditService>().Object,
+            new Mock<IActorContextAccessor>().Object,
             NullLogger<RetryPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1851,6 +1855,8 @@ public class PaymentCommandHandlerConstructorTests
         var handler = new ProcessRefundCommandHandler(
             new Mock<IPaymentRepository>().Object,
             new Mock<IPaymentGateway>().Object,
+            new Mock<IRevenueAuditService>().Object,
+            new Mock<IActorContextAccessor>().Object,
             NullLogger<ProcessRefundCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1861,6 +1867,7 @@ public class PaymentCommandHandlerConstructorTests
         var handler = new UpdatePaymentStatusCommandHandler(
             new Mock<IPaymentRepository>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
+            Options.Create(new PaymentRetryOptions()),
             NullLogger<UpdatePaymentStatusCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
