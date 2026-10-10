@@ -9,16 +9,22 @@ namespace GameGuild.Commerce.Products;
 /// <param name="Description">Description of the promo</param>
 /// <param name="Type">Type of discount</param>
 /// <param name="DiscountPercentage">Percentage discount (for percentage type)</param>
-/// <param name="DiscountAmount">Fixed amount discount (for fixed type)</param>
+/// <param name="DiscountAmount">Fixed amount discount (target price for SetPrice)</param>
+/// <param name="MaxDiscountAmount">Cap for percentage discounts</param>
 /// <param name="Currency">Currency code</param>
 /// <param name="MinimumOrderAmount">Minimum order amount required</param>
 /// <param name="MaxUses">Maximum total uses</param>
 /// <param name="MaxUsesPerUser">Maximum uses per user</param>
+/// <param name="CurrentUses">Number of recorded uses</param>
+/// <param name="FreeTrialExtensionDays">Trial days granted by FreeTrialExtension codes</param>
+/// <param name="DurationMonths">Free months granted / discount duration</param>
+/// <param name="ApplyToRenewal">Whether the discount applies to renewals</param>
 /// <param name="ValidFrom">Start date</param>
 /// <param name="ValidUntil">End date</param>
 /// <param name="IsActive">Whether the code is active</param>
 /// <param name="IsExclusive">Whether the code cannot be stacked</param>
 /// <param name="StackingPriority">Priority for stacking</param>
+/// <param name="CampaignId">Campaign identifier for tracking</param>
 /// <param name="ProductId">Specific product ID (null = all products)</param>
 /// <param name="UsageCount">Current usage count</param>
 /// <param name="CreatedAt">Creation timestamp</param>
@@ -31,15 +37,21 @@ public sealed record PromoCodeDto(
     PromoCodeType Type,
     decimal? DiscountPercentage,
     decimal? DiscountAmount,
+    decimal? MaxDiscountAmount,
     string Currency,
     decimal? MinimumOrderAmount,
     int? MaxUses,
     int? MaxUsesPerUser,
+    int CurrentUses,
+    int? FreeTrialExtensionDays,
+    int? DurationMonths,
+    bool ApplyToRenewal,
     DateTime? ValidFrom,
     DateTime? ValidUntil,
     bool IsActive,
     bool IsExclusive,
     int StackingPriority,
+    string? CampaignId,
     Guid? ProductId,
     int UsageCount,
     DateTime CreatedAt,
@@ -70,12 +82,16 @@ public sealed record PromoCodeValidationResult(
 /// <param name="TotalDiscount">Total discount applied</param>
 /// <param name="AppliedCodes">List of codes that were applied</param>
 /// <param name="RejectedCodes">List of codes that were rejected with reasons</param>
+/// <param name="StackingRuleName">Name of the stacking rule that governed resolution (null = single-code default)</param>
+/// <param name="UsageRecorded">Whether usage rows were persisted for the applied codes</param>
 public sealed record PromoCodeApplicationResult(
     decimal OriginalAmount,
     decimal FinalAmount,
     decimal TotalDiscount,
     List<AppliedPromoCode> AppliedCodes,
-    List<RejectedPromoCode> RejectedCodes
+    List<RejectedPromoCode> RejectedCodes,
+    string? StackingRuleName = null,
+    bool UsageRecorded = false
 );
 
 /// <summary>
@@ -84,10 +100,16 @@ public sealed record PromoCodeApplicationResult(
 /// <param name="Code">The promo code</param>
 /// <param name="DiscountAmount">Discount amount from this code</param>
 /// <param name="DiscountPercentage">Discount percentage from this code</param>
+/// <param name="Type">Discount type of the applied code</param>
+/// <param name="TrialExtensionDays">Trial days granted (FreeTrialExtension only)</param>
+/// <param name="FreeMonthsGranted">Billing periods granted (FreeMonths only)</param>
 public record AppliedPromoCode(
     string Code,
     decimal DiscountAmount,
-    decimal? DiscountPercentage
+    decimal? DiscountPercentage,
+    PromoCodeType? Type = null,
+    int? TrialExtensionDays = null,
+    int? FreeMonthsGranted = null
 );
 
 /// <summary>
@@ -144,6 +166,62 @@ public sealed record PricingCalculationResult(
     decimal FinalPrice,
     string Currency,
     List<string> AppliedPromoCodes
+);
+
+/// <summary>
+/// Aggregated performance for a promo campaign within a window
+/// </summary>
+/// <param name="CampaignId">Campaign identifier</param>
+/// <param name="WindowStart">Window start (null = unbounded)</param>
+/// <param name="WindowEnd">Window end (null = unbounded)</param>
+/// <param name="TotalCodes">Number of codes in the campaign</param>
+/// <param name="ActiveCodes">Number of currently active codes</param>
+/// <param name="TotalUses">Recorded uses within the window</param>
+/// <param name="UniqueUsers">Distinct users within the window</param>
+/// <param name="TotalDiscountGiven">Sum of discounts given within the window</param>
+/// <param name="AverageDiscountPerUse">Average discount per use</param>
+/// <param name="RedemptionRate">Uses divided by total MaxUses capacity (null when no code declares limits)</param>
+/// <param name="TopCodes">Codes ranked by uses within the window</param>
+/// <param name="ExpiringCodes">Campaign codes expiring within the next 30 days</param>
+public sealed record CampaignPerformanceDto(
+    string CampaignId,
+    DateTime? WindowStart,
+    DateTime? WindowEnd,
+    int TotalCodes,
+    int ActiveCodes,
+    int TotalUses,
+    int UniqueUsers,
+    decimal TotalDiscountGiven,
+    decimal AverageDiscountPerUse,
+    decimal? RedemptionRate,
+    IReadOnlyList<CampaignTopCodeDto> TopCodes,
+    IReadOnlyList<CampaignExpiringCodeDto> ExpiringCodes
+);
+
+/// <summary>
+/// A campaign code ranked by usage
+/// </summary>
+/// <param name="Code">Promo code string</param>
+/// <param name="PromoCodeId">Promo code ID</param>
+/// <param name="Uses">Recorded uses within the window</param>
+/// <param name="DiscountGiven">Discount given within the window</param>
+public sealed record CampaignTopCodeDto(
+    string Code,
+    Guid PromoCodeId,
+    int Uses,
+    decimal DiscountGiven
+);
+
+/// <summary>
+/// A campaign code approaching expiry
+/// </summary>
+/// <param name="Code">Promo code string</param>
+/// <param name="PromoCodeId">Promo code ID</param>
+/// <param name="ValidUntil">Expiry timestamp</param>
+public sealed record CampaignExpiringCodeDto(
+    string Code,
+    Guid PromoCodeId,
+    DateTime ValidUntil
 );
 
 /// <summary>

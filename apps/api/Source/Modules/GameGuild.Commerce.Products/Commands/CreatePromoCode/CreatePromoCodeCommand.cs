@@ -21,6 +21,12 @@ namespace GameGuild.Commerce.Products;
 /// <param name="IsActive">Whether the code is active</param>
 /// <param name="IsExclusive">Whether the code cannot be stacked</param>
 /// <param name="StackingPriority">Priority for stacking (higher = applied first)</param>
+/// <param name="DiscountAmount">Fixed amount discount (for fixed type; target price for SetPrice)</param>
+/// <param name="MaxDiscountAmount">Cap for percentage discounts (null = no cap)</param>
+/// <param name="FreeTrialExtensionDays">Trial days granted by FreeTrialExtension codes</param>
+/// <param name="DurationMonths">Free months granted by FreeMonths codes / discount duration</param>
+/// <param name="ApplyToRenewal">Whether the discount also applies to renewals</param>
+/// <param name="CampaignId">Campaign identifier for tracking (null = none)</param>
 /// <param name="ProductId">Specific product ID (null = all products)</param>
 /// <param name="CreatedBy">User ID of the creator</param>
 [RequiresQuota(ResourceUsageType.PromoCodes, 1, Source = "CreatePromoCode")]
@@ -31,15 +37,20 @@ public sealed record CreatePromoCodeCommand(
     PromoCodeType Type = PromoCodeType.PercentageOff,
     decimal? DiscountPercentage = null,
     decimal? DiscountAmount = null,
+    decimal? MaxDiscountAmount = null,
     string Currency = "USD",
     decimal? MinimumOrderAmount = null,
     int? MaxUses = null,
     int? MaxUsesPerUser = null,
+    int? FreeTrialExtensionDays = null,
+    int? DurationMonths = null,
+    bool ApplyToRenewal = false,
     DateTime? ValidFrom = null,
     DateTime? ValidUntil = null,
     bool IsActive = true,
     bool IsExclusive = false,
     int StackingPriority = 0,
+    string? CampaignId = null,
     Guid? ProductId = null,
     Guid? CreatedBy = null
 ) : ICommand<PromoCodeDto>;

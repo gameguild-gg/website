@@ -5,7 +5,8 @@ namespace GameGuild.Commerce.Products;
 /// </summary>
 public class PricingEngineService(
     IProductRepository productRepository,
-    IPromoCodeRepository promoCodeRepository) : IPricingEngineService
+    IPromoCodeRepository promoCodeRepository,
+    IPromoStackingRuleRepository stackingRuleRepository) : IPricingEngineService
 {
     /// <inheritdoc />
     public async Task<PricingCalculationResult> CalculatePriceAsync(
@@ -109,22 +110,38 @@ public class PricingEngineService(
     {
         var appliedCodes = new List<AppliedPromoCode>();
         var rejectedCodes = new List<RejectedPromoCode>();
-        var totalDiscount = 0m;
-        var remainingAmount = orderAmount;
-        var hasExclusiveCode = false;
 
-        foreach (var codeString in promoCodes.Distinct())
+        // Normalize (trim + uppercase) end to end so lookups are case-insensitive.
+        var normalizedCodes = promoCodes
+            .Select(PromoCodeNormalizer.Normalize)
+            .Where(c => c is not null)
+            .Select(c => c!)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (normalizedCodes.Count == 0)
         {
-            // Skip if we already applied an exclusive code
-            if (hasExclusiveCode)
+            return new PromoCodeApplicationResult(orderAmount, orderAmount, 0, appliedCodes, rejectedCodes);
+        }
+
+        var fetchedCodes = await promoCodeRepository.GetByCodesAsync(normalizedCodes, cancellationToken)
+            .ConfigureAwait(false);
+
+        var byCode = fetchedCodes.ToDictionary(c => c.Code, StringComparer.OrdinalIgnoreCase);
+
+        // Validate each requested code; only valid codes participate in stacking resolution.
+        var candidates = new List<PromoCode>();
+        foreach (var codeString in normalizedCodes)
+        {
+            if (!byCode.TryGetValue(codeString, out var promoCode))
             {
-                rejectedCodes.Add(new RejectedPromoCode(codeString, "Cannot stack with exclusive promo code"));
+                rejectedCodes.Add(new RejectedPromoCode(codeString, "Code not found"));
                 continue;
             }
 
             var validation = await ValidatePromoCodeAsync(
                 codeString,
-                remainingAmount,
+                orderAmount,
                 productId,
                 userId,
                 cancellationToken).ConfigureAwait(false);
@@ -135,38 +152,23 @@ public class PricingEngineService(
                 continue;
             }
 
-            var promoCode = await promoCodeRepository.GetByCodeAsync(codeString, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (promoCode == null)
-            {
-                rejectedCodes.Add(new RejectedPromoCode(codeString, "Code not found"));
-                continue;
-            }
-
-            if (promoCode.IsExclusive)
-            {
-                hasExclusiveCode = true;
-            }
-
-            var discountAmount = promoCode.CalculateDiscount(remainingAmount);
-
-            appliedCodes.Add(new AppliedPromoCode(
-                codeString,
-                discountAmount,
-                promoCode.DiscountPercentage
-            ));
-
-            totalDiscount += discountAmount;
-            remainingAmount = Math.Max(0, remainingAmount - discountAmount);
+            candidates.Add(promoCode);
         }
+
+        var rule = await stackingRuleRepository.GetActiveRuleAsync(cancellationToken).ConfigureAwait(false);
+        var (applied, rejected, ruleName) = PromoStackingResolver.Resolve(orderAmount, candidates, rule);
+        appliedCodes.AddRange(applied);
+        rejectedCodes.AddRange(rejected);
+
+        var totalDiscount = appliedCodes.Sum(c => c.DiscountAmount);
 
         return new PromoCodeApplicationResult(
             OriginalAmount: orderAmount,
             FinalAmount: Math.Max(0, orderAmount - totalDiscount),
             TotalDiscount: totalDiscount,
             AppliedCodes: appliedCodes,
-            RejectedCodes: rejectedCodes
+            RejectedCodes: rejectedCodes,
+            StackingRuleName: ruleName
         );
     }
 

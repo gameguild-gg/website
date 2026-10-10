@@ -74,6 +74,7 @@ public sealed class DeactivatePromoCodeHandler(IPromoCodeRepository repository) 
 /// <param name="IsActive">Optional active flag</param>
 /// <param name="IsExclusive">Optional exclusive flag</param>
 /// <param name="StackingPriority">Optional stacking priority</param>
+/// <param name="CampaignId">Optional campaign identifier</param>
 /// <param name="ProductId">Optional product ID</param>
 public sealed record PatchPromoCodeCommand(
     Guid PromoCodeId,
@@ -82,15 +83,20 @@ public sealed record PatchPromoCodeCommand(
     PromoCodeType? Type = null,
     decimal? DiscountPercentage = null,
     decimal? DiscountAmount = null,
+    decimal? MaxDiscountAmount = null,
     string? Currency = null,
     decimal? MinimumOrderAmount = null,
     int? MaxUses = null,
     int? MaxUsesPerUser = null,
+    int? FreeTrialExtensionDays = null,
+    int? DurationMonths = null,
+    bool? ApplyToRenewal = null,
     DateTime? ValidFrom = null,
     DateTime? ValidUntil = null,
     bool? IsActive = null,
     bool? IsExclusive = null,
     int? StackingPriority = null,
+    string? CampaignId = null,
     Guid? ProductId = null
 ) : ICommand<PromoCodeDto>;
 
@@ -113,15 +119,20 @@ public sealed class PatchPromoCodeHandler(IPromoCodeRepository repository) : ICo
         if (request.Type.HasValue) promoCode.Type = request.Type.Value;
         if (request.DiscountPercentage.HasValue) promoCode.DiscountPercentage = request.DiscountPercentage;
         if (request.DiscountAmount.HasValue) promoCode.DiscountAmount = request.DiscountAmount;
+        if (request.MaxDiscountAmount.HasValue) promoCode.MaxDiscountAmount = request.MaxDiscountAmount;
         if (request.Currency != null) promoCode.Currency = request.Currency;
         if (request.MinimumOrderAmount.HasValue) promoCode.MinimumOrderAmount = request.MinimumOrderAmount;
         if (request.MaxUses.HasValue) promoCode.MaxUses = request.MaxUses;
         if (request.MaxUsesPerUser.HasValue) promoCode.MaxUsesPerUser = request.MaxUsesPerUser;
+        if (request.FreeTrialExtensionDays.HasValue) promoCode.FreeTrialExtensionDays = request.FreeTrialExtensionDays;
+        if (request.DurationMonths.HasValue) promoCode.DurationMonths = request.DurationMonths;
+        if (request.ApplyToRenewal.HasValue) promoCode.ApplyToRenewal = request.ApplyToRenewal.Value;
         if (request.ValidFrom.HasValue) promoCode.ValidFrom = request.ValidFrom;
         if (request.ValidUntil.HasValue) promoCode.ValidUntil = request.ValidUntil;
         if (request.IsActive.HasValue) promoCode.IsActive = request.IsActive.Value;
         if (request.IsExclusive.HasValue) promoCode.IsExclusive = request.IsExclusive.Value;
         if (request.StackingPriority.HasValue) promoCode.StackingPriority = request.StackingPriority.Value;
+        if (request.CampaignId != null) promoCode.CampaignId = string.IsNullOrWhiteSpace(request.CampaignId) ? null : request.CampaignId;
         if (request.ProductId.HasValue) promoCode.ProductId = request.ProductId;
         
         promoCode.Touch();

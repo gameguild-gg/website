@@ -18,12 +18,15 @@ public static class ProductsModule
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductPricingRepository, ProductPricingRepository>();
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
+        services.AddScoped<IPromoStackingRuleRepository, PromoStackingRuleRepository>();
         services.AddScoped<IUserProductRepository, UserProductRepository>();
 
         // Register services
         services.AddScoped<IPricingEngineService, PricingEngineService>();
         services.AddScoped<IProductPricingService, ProductPricingService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
+        services.AddScoped<IPromoCodeUsageRecorder, PromoCodeUsageRecorder>();
+        services.AddScoped<IPromoCodeAuditLogger, PromoCodeAuditLogger>();
         services.AddScoped<IUserProductService, UserProductService>();
         services.AddScoped<IEntitlementService, EntitlementService>();
 
@@ -101,11 +104,15 @@ public static class ProductsModule
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.Type);
             entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.CampaignId);
+            entity.HasIndex(e => new { e.IsActive, e.ValidUntil });
             entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.DiscountPercentage).HasPrecision(5, 2);
             entity.Property(e => e.DiscountAmount).HasPrecision(10, 2);
+            entity.Property(e => e.MaxDiscountAmount).HasPrecision(10, 2);
             entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("USD");
+            entity.Property(e => e.CampaignId).HasMaxLength(100);
         });
 
         modelBuilder.Entity<PromoCodeUse>(entity =>
@@ -113,7 +120,19 @@ public static class ProductsModule
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.PromoCodeId);
             entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.PromoCodeId, e.UserId });
+            entity.HasIndex(e => e.UsedAt);
+            // Unique nullable index: a repeated idempotency key is a replay, never a second use.
+            entity.HasIndex(e => e.IdempotencyKey).IsUnique();
             entity.Property(e => e.DiscountApplied).HasPrecision(10, 2);
+            entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("USD");
+            entity.Property(e => e.IdempotencyKey).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<PromoCodeUserUsageCounter>(entity =>
+        {
+            entity.HasKey(e => new { e.PromoCodeId, e.UserId });
+            entity.Property(e => e.UseCount).HasDefaultValue(0);
         });
 
         modelBuilder.Entity<ProductSubscriptionPlan>(entity =>

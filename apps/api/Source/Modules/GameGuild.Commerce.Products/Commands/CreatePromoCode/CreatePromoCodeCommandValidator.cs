@@ -3,21 +3,23 @@ using FluentValidation;
 namespace GameGuild.Commerce.Products;
 
 /// <summary>
-/// Validator for CreatePromoCodeCommand
+/// Validator for CreatePromoCodeCommand. Codes are validated on their normalized
+/// form (trim + uppercase) so lowercase input is accepted and normalized, while the
+/// stored format must match the pattern <c>^[A-Z0-9-]{3,50}$</c> (no underscores).
 /// </summary>
 public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePromoCodeCommand>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CreatePromoCodeCommandValidator"/> class.
+    /// </summary>
     public CreatePromoCodeCommandValidator()
     {
         RuleFor(x => x.Code)
+            .Transform(c => PromoCodeNormalizer.Normalize(c))
             .NotEmpty()
             .WithMessage("Promo code is required.")
-            .MinimumLength(3)
-            .WithMessage("Promo code must be at least 3 characters.")
-            .MaximumLength(50)
-            .WithMessage("Promo code cannot exceed 50 characters.")
-            .Matches(@"^[A-Za-z0-9_-]+$")
-            .WithMessage("Promo code can only contain letters, numbers, hyphens, and underscores.");
+            .Matches(PromoCodeNormalizer.Pattern)
+            .WithMessage("Promo code must be 3-50 characters and contain only uppercase letters, numbers, and hyphens (input is trimmed and uppercased).");
 
         RuleFor(x => x.Name)
             .NotEmpty()
@@ -31,8 +33,8 @@ public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePr
             .When(x => !string.IsNullOrWhiteSpace(x.Description));
 
         RuleFor(x => x.DiscountPercentage)
-            .InclusiveBetween(0.01m, 100m)
-            .WithMessage("Discount percentage must be between 0.01 and 100.")
+            .InclusiveBetween(1m, 100m)
+            .WithMessage("Discount percentage must be between 1 and 100.")
             .When(x => x.Type == PromoCodeType.PercentageOff);
 
         RuleFor(x => x.DiscountPercentage)
@@ -41,14 +43,49 @@ public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePr
             .When(x => x.Type == PromoCodeType.PercentageOff);
 
         RuleFor(x => x.DiscountAmount)
-            .GreaterThan(0)
-            .WithMessage("Discount amount must be greater than 0.")
-            .When(x => x.Type == PromoCodeType.FixedAmountOff);
-
-        RuleFor(x => x.DiscountAmount)
             .NotNull()
             .WithMessage("Discount amount is required for fixed amount discounts.")
             .When(x => x.Type == PromoCodeType.FixedAmountOff);
+
+        RuleFor(x => x.DiscountAmount)
+            .GreaterThan(0)
+            .WithMessage("Discount amount must be greater than 0.")
+            .When(x => x.Type == PromoCodeType.FixedAmountOff && x.DiscountAmount.HasValue);
+
+        RuleFor(x => x.DiscountAmount)
+            .NotNull()
+            .WithMessage("Set price is required for set-price discounts.")
+            .When(x => x.Type == PromoCodeType.SetPrice);
+
+        RuleFor(x => x.DiscountAmount)
+            .GreaterThan(0)
+            .WithMessage("Set price must be greater than 0.")
+            .When(x => x.Type == PromoCodeType.SetPrice && x.DiscountAmount.HasValue);
+
+        RuleFor(x => x.FreeTrialExtensionDays)
+            .NotNull()
+            .WithMessage("Trial extension days are required for free trial extension codes.")
+            .When(x => x.Type == PromoCodeType.FreeTrialExtension);
+
+        RuleFor(x => x.FreeTrialExtensionDays)
+            .InclusiveBetween(1, 365)
+            .WithMessage("Trial extension days must be between 1 and 365.")
+            .When(x => x.FreeTrialExtensionDays.HasValue);
+
+        RuleFor(x => x.DurationMonths)
+            .NotNull()
+            .WithMessage("Duration months are required for free months codes.")
+            .When(x => x.Type == PromoCodeType.FreeMonths);
+
+        RuleFor(x => x.DurationMonths)
+            .InclusiveBetween(1, 36)
+            .WithMessage("Duration months must be between 1 and 36.")
+            .When(x => x.DurationMonths.HasValue);
+
+        RuleFor(x => x.MaxDiscountAmount)
+            .GreaterThan(0)
+            .WithMessage("Maximum discount amount must be greater than 0.")
+            .When(x => x.MaxDiscountAmount.HasValue);
 
         RuleFor(x => x.Currency)
             .NotEmpty()
@@ -77,7 +114,12 @@ public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePr
             .When(x => x.ValidFrom.HasValue && x.ValidUntil.HasValue);
 
         RuleFor(x => x.StackingPriority)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("Stacking priority cannot be negative.");
+            .InclusiveBetween(0, 100)
+            .WithMessage("Stacking priority must be between 0 and 100.");
+
+        RuleFor(x => x.CampaignId)
+            .MaximumLength(100)
+            .WithMessage("Campaign identifier cannot exceed 100 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.CampaignId));
     }
 }
