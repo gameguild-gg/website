@@ -582,6 +582,24 @@ export const getApiAuditSecurityEventsAlertsEndpoint = {
 } as const;
 
 /**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostApiAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostApiAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postApiAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postApiAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/alerts/{alertId}:resolve' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Acknowledges an open security alert. The acting administrator is derived from the request context.
  */
 export interface PostApiAuditSecurityEventsAlertsAcknowledgeInput {
@@ -5668,6 +5686,58 @@ export const getAuthorizationComplianceReportEndpoint = {
   method: 'GET' as const,
   path: '/api/v1/authorization/compliance/report' as const,
   tags: ['AccessControlPermissionCompliance'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds the permission graph of the caller's tenant: users, dynamic roles, and
+ * permission keys connected by assignment, inheritance, grant, and deny edges,
+ * with a data-quality summary (cycles, unregistered keys, orphaned roles).
+ */
+export interface GetAuthorizationPermissionGraphInput {
+  query?: {
+    includeUsers?: boolean;
+    format?: Types.IdentityAuthorizationGraphExportFormat;
+  };
+}
+export type GetAuthorizationPermissionGraphOutput = Types.IdentityAuthorizationModelsPermissionGraph;
+export const getAuthorizationPermissionGraphEndpoint = {
+  operationId: 'getAuthorizationPermissionGraph' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Simulates deleting a dynamic role and reports which users would lose permissions.
+ */
+export interface GetAuthorizationPermissionGraphRolesDeletionImpactInput {
+  roleId: string;
+}
+export type GetAuthorizationPermissionGraphRolesDeletionImpactOutput = Types.IdentityAuthorizationModelsRoleDeletionImpact;
+export const getAuthorizationPermissionGraphRolesDeletionImpactEndpoint = {
+  operationId: 'getAuthorizationPermissionGraphRolesDeletionImpact' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph/roles/{roleId}/deletion-impact' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Simulates removing a permission key from a dynamic role and reports which users
+ * would lose or retain the key.
+ */
+export interface GetAuthorizationPermissionGraphRolesPermissionRemovalImpactInput {
+  roleId: string;
+  permissionKey: string;
+}
+export type GetAuthorizationPermissionGraphRolesPermissionRemovalImpactOutput = Types.IdentityAuthorizationModelsPermissionRemovalImpact;
+export const getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint = {
+  operationId: 'getAuthorizationPermissionGraphRolesPermissionRemovalImpact' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph/roles/{roleId}/permission-removal-impact/{permissionKey}' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12344,6 +12414,24 @@ export const getAuditSecurityEventsAlertsEndpoint = {
   operationId: 'getAuditSecurityEventsAlerts' as const,
   method: 'GET' as const,
   path: '/v1/audit/security-events/alerts' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/alerts/{alertId}:resolve' as const,
   tags: ['ComplianceAuditSecurityEvents'] as const,
   requiresAuth: true,
 } as const;
@@ -25862,6 +25950,7 @@ export const endpoints = {
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
   getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
+  postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
   postApiAuditSecurityEventsRetentionEnforce: postApiAuditSecurityEventsRetentionEnforceEndpoint,
@@ -26229,6 +26318,9 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  getAuthorizationPermissionGraph: getAuthorizationPermissionGraphEndpoint,
+  getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
+  getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -26632,6 +26724,7 @@ export const endpoints = {
   putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
   getAuditRetentionSimulationTemplates: getAuditRetentionSimulationTemplatesEndpoint,
   getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
+  postAuditSecurityEventsAlertsResolve: postAuditSecurityEventsAlertsResolveEndpoint,
   postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
   postAuditSecurityEventsRetentionEnforce: postAuditSecurityEventsRetentionEnforceEndpoint,

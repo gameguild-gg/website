@@ -49,8 +49,13 @@ public class AdaptiveAnomalyDetectionService(
             var subjectKey = BuildSubjectKey(context.TenantId, context.UserId, context.Identifier);
             var baseline = await baselineRepository.GetBySubjectKeyAsync(subjectKey, cancellationToken).ConfigureAwait(false);
 
-            var isColdStart = baseline is null || IsStale(baseline);
-            var state = isColdStart ? null : LoadState(baseline!);
+            // Cold start spans the whole learning window: until the baseline reaches the minimum
+            // observation count the learned model has too little support to score against, so the
+            // assessment must stay on the cold-start fallback while observations keep accumulating.
+            var isColdStart = baseline is null
+                || IsStale(baseline)
+                || baseline.ObservationCount < _options.MinimumObservations;
+            var state = baseline is null || IsStale(baseline) ? null : LoadState(baseline!);
             sampleCount = state?.ObservationCount ?? baseline?.ObservationCount ?? 0;
 
             var observedAt = context.AttemptedAt == default ? SystemClock.UtcNow : context.AttemptedAt;

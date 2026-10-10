@@ -40,6 +40,36 @@ export class ComplianceAuditSecurityEventsModule {
   }
 
   /**
+   * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+   * resolution). The acting administrator is derived from the request context and recorded together
+   * with the resolution instant and note; the resolution is audited as a security event.
+   */
+  async postApiAuditSecurityEventsAlertsResolve(
+    alertId: string,
+    body: Types.ComplianceAuditResolveSecurityAlertInput,
+  ): Promise<Result<Types.ComplianceAuditSecurityAlertOutput, ApiError>> {
+    const url = `/api/audit/security-events/alerts/${alertId}:resolve`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditResolveSecurityAlertInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditSecurityAlertOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Acknowledges an open security alert. The acting administrator is derived from the request context.
    */
   async postApiAuditSecurityEventsAlertsAcknowledge(
@@ -226,6 +256,36 @@ export class ComplianceAuditSecurityEventsModule {
     });
 
     return result as Result<Types.ComplianceAuditSecurityAlertOutput[], ApiError>;
+  }
+
+  /**
+   * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+   * resolution). The acting administrator is derived from the request context and recorded together
+   * with the resolution instant and note; the resolution is audited as a security event.
+   */
+  async postAuditSecurityEventsAlertsResolve(
+    alertId: string,
+    body: Types.ComplianceAuditResolveSecurityAlertInput,
+  ): Promise<Result<Types.ComplianceAuditSecurityAlertOutput, ApiError>> {
+    const url = `/v1/audit/security-events/alerts/${alertId}:resolve`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.ComplianceAuditResolveSecurityAlertInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.ComplianceAuditSecurityAlertOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 
   /**
