@@ -2537,11 +2537,6 @@
       "count": 1
     }
   },
-  "src/components/connected-accounts-card.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
   "src/components/console/platform/email-deliverability/email-deliverability.tsx": {
     "@typescript-eslint/no-misused-promises": {
       "count": 1

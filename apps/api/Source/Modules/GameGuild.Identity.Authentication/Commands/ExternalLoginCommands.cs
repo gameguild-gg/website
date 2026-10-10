@@ -22,6 +22,12 @@ public sealed class LastSignInMethodException(string message) : Exception(messag
 public sealed class ExternalLoginNotFoundException(string message) : Exception(message);
 
 /// <summary>
+///     Thrown when a caller-supplied scope token is not a valid scope token
+///     (empty, whitespace, or control characters). Callers surface this as 400.
+/// </summary>
+public sealed class InvalidOAuthScopeException(string message) : Exception(message);
+
+/// <summary>
 ///     Links the authenticated user's Google identity, verified from a Google ID token.
 /// </summary>
 public sealed record LinkGoogleAccountCommand : ICommand
@@ -63,4 +69,17 @@ public sealed record UnlinkExternalLoginCommand : ICommand
     public required Guid UserId { get; init; }
 
     public required string Provider { get; init; }
+}
+
+/// <summary>
+///     Revokes individual OAuth scope grants on a linked provider without unlinking it.
+///     Idempotent: scope tokens that are not currently granted are ignored.
+/// </summary>
+public sealed record RevokeExternalLoginScopesCommand : ICommand<RevokeExternalLoginScopesResponse>
+{
+    public required Guid UserId { get; init; }
+
+    public required string Provider { get; init; }
+
+    public required IReadOnlyList<string> Scopes { get; init; }
 }

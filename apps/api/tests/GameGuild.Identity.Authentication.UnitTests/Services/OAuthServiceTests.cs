@@ -297,4 +297,82 @@ public class OAuthServiceTests
             .ThrowAsync<NotSupportedException>()
             .WithMessage("*Provider not supported*");
     }
+
+    // ── ResolveAuthorizationScopes (issue #250) ──────────────────────────
+
+    [Fact]
+    public void ResolveAuthorizationScopes_WithoutConfiguration_ReturnsProviderSafeDefaults()
+    {
+        _oauthService.ResolveAuthorizationScopes("github").Should().Equal("read:user", "user:email");
+        _oauthService.ResolveAuthorizationScopes("google").Should().Equal("openid", "email", "profile");
+        _oauthService.ResolveAuthorizationScopes("discord").Should().Equal("identify", "email");
+        _oauthService.ResolveAuthorizationScopes("microsoft").Should().Equal("openid", "email", "profile");
+    }
+
+    [Fact]
+    public void ResolveAuthorizationScopes_UsesConfiguredTypedProviderScopes_WhenNoScopesRequested()
+    {
+        var options = new AuthenticationOptions
+        {
+            ExternalProviders = new ExternalProviderOptions
+            {
+                Providers = new Dictionary<string, OAuthProviderOptions>
+                {
+                    ["discord"] = new() { Enabled = true, ClientId = "c", ClientSecret = "s", Scopes = ["identify"] }
+                }
+            }
+        };
+        var service = new OAuthService(_httpClient, _configurationMock.Object, _loggerMock.Object, options);
+
+        service.ResolveAuthorizationScopes("discord").Should().Equal("identify");
+    }
+
+    [Fact]
+    public void ResolveAuthorizationScopes_RequestedScopesWin_OverConfiguration()
+    {
+        var options = new AuthenticationOptions
+        {
+            ExternalProviders = new ExternalProviderOptions
+            {
+                Providers = new Dictionary<string, OAuthProviderOptions>
+                {
+                    ["github"] = new() { Enabled = true, ClientId = "c", ClientSecret = "s", Scopes = ["read:user"] }
+                }
+            }
+        };
+        var service = new OAuthService(_httpClient, _configurationMock.Object, _loggerMock.Object, options);
+
+        service.ResolveAuthorizationScopes("github", ["user:email"]).Should().Equal("user:email");
+    }
+
+    [Fact]
+    public void ResolveAuthorizationScopes_Microsoft_UnionsRequiredOidcScopes_AndDeduplicates()
+    {
+        _oauthService.ResolveAuthorizationScopes("microsoft", ["User.Read", "user.read"])
+            .Should().Equal("User.Read", "openid", "email", "profile");
+    }
+
+    [Fact]
+    public void ResolveAuthorizationScopes_UnsupportedProvider_Throws()
+    {
+        var act = () => _oauthService.ResolveAuthorizationScopes("steam");
+
+        act.Should().Throw<NotSupportedException>().WithMessage("*OAuth provider not supported*");
+    }
+
+    [Fact]
+    public async Task ResolveAuthorizationScopes_MatchesTheScopeParameterOfTheAuthorizationUrl()
+    {
+        // The recorded grant must be exactly what the authorization request asks for.
+        foreach (var provider in new[] { "github", "google", "discord", "microsoft" })
+        {
+            _configurationMock.Setup(x => x[$"OAuth:{provider}:ClientId"]).Returns("client-id");
+
+            var url = await _oauthService.GetAuthorizationUrlAsync(provider, "https://example.com/callback", "state");
+            var scopes = _oauthService.ResolveAuthorizationScopes(provider);
+
+            var scopeQuery = Uri.UnescapeDataString(url.Split('&').Single(p => p.StartsWith("scope=", StringComparison.Ordinal))["scope=".Length..]);
+            scopeQuery.Should().Be(string.Join(" ", scopes), $"provider {provider}: URL scope parameter must equal the resolved grant list");
+        }
+    }
 }

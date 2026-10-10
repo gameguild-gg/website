@@ -17,6 +17,18 @@ public interface IOAuthService
     Task<string> GetAuthorizationUrlAsync(string provider, string redirectUri, string state, string[ ]? scopes = null);
 
     /// <summary>
+    ///     Resolves the exact scope list an authorization request for the provider will ask
+    ///     for: explicitly requested scopes win, else the configured provider scopes, else
+    ///     the provider's safe defaults (Microsoft always unions openid/email/profile).
+    ///     Callback and link handlers persist this list as the granted scopes — the single
+    ///     source of truth shared with <see cref="GetAuthorizationUrlAsync" />.
+    /// </summary>
+    /// <param name="provider">The OAuth provider (Google, GitHub, etc.)</param>
+    /// <param name="requestedScopes">Optional caller-requested scopes</param>
+    /// <returns>The scope tokens embedded in the authorization URL, order preserved</returns>
+    string[] ResolveAuthorizationScopes(string provider, string[]? requestedScopes = null);
+
+    /// <summary>
     ///     Handles the OAuth callback and exchanges authorization code for access token.
     /// </summary>
     /// <param name="provider">The OAuth provider</param>
