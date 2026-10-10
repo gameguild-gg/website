@@ -118,7 +118,9 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
     {
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
-        builder.WebHost.ConfigureKestrel(kestrel => kestrel.ListenLocalhost(0, listenOptions => listenOptions.UseHttps(httpsOptions =>
+        // Bind 127.0.0.1:0 explicitly: ListenLocalhost(0) cannot allocate a dynamic
+        // port because it would have to bind the IPv4 and IPv6 loopback together.
+        builder.WebHost.ConfigureKestrel(kestrel => kestrel.Listen(IPAddress.Loopback, 0, listenOptions => listenOptions.UseHttps(httpsOptions =>
         {
             httpsOptions.ServerCertificate = _serverCertificate;
             // Negotiate certificates when offered; chain/binding validation stays in the
