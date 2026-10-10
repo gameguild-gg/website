@@ -41,9 +41,38 @@ public static class RefreshTokenLifetimeResolver
     }
 
     /// <summary>
-    ///     Recovers the lifetime a session was issued with so rotation renews the originating
-    ///     duration instead of collapsing persistent sessions onto the standard lifetime.
-    ///     Falls back to the configured duration for legacy or malformed rows.
+    ///     Resolves the lifetime (in days) a replacement refresh token must be minted with
+    ///     during rotation. The session is classified by its originating policy — a stored
+    ///     originating duration at or beyond the configured persistent lifetime marks a
+    ///     persistent ("remember me") session, which renews at the configured persistent
+    ///     lifetime; every other row (standard sessions, legacy or malformed rows, and rows
+    ///     minted under different configuration) renews at the configured standard lifetime.
+    ///     The raw stored duration itself is never copied into the replacement: rotation
+    ///     preserves the originating CreatedAt while advancing ExpiresAt, so replaying the
+    ///     stored span would compound elapsed time and drift past every configured deadline
+    ///     (short-lived or absolute-session-capped rows would renew with a stale lifetime).
+    /// </summary>
+    /// <param name="jwtOptions">Typed JWT options when the host binds them; otherwise null.</param>
+    /// <param name="configuration">Raw configuration for the legacy fallback chain.</param>
+    /// <param name="createdAt">UTC creation time of the stored refresh token.</param>
+    /// <param name="expiresAt">UTC expiration time of the stored refresh token.</param>
+    public static int ResolveRenewalDays(
+        IOptions<JwtOptions>? jwtOptions,
+        IConfiguration configuration,
+        DateTime createdAt,
+        DateTime expiresAt)
+    {
+        var standardDays = ResolveExpirationDays(jwtOptions, configuration, persistent: false);
+        var persistentDays = ResolveExpirationDays(jwtOptions, configuration, persistent: true);
+        var originatingLifetime = ResolveOriginatingLifetime(createdAt, expiresAt, TimeSpan.FromDays(standardDays));
+
+        return originatingLifetime >= TimeSpan.FromDays(persistentDays) ? persistentDays : standardDays;
+    }
+
+    /// <summary>
+    ///     Recovers the lifetime a session was issued with so rotation can classify the
+    ///     session (persistent vs standard). Falls back to the configured duration for
+    ///     legacy or malformed rows.
     /// </summary>
     /// <param name="createdAt">UTC creation time of the stored refresh token.</param>
     /// <param name="expiresAt">UTC expiration time of the stored refresh token.</param>

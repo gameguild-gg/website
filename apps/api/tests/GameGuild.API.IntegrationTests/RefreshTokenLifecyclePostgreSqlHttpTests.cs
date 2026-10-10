@@ -111,6 +111,35 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
         Assert.False((await context.Set<UserSession>().AsNoTracking().SingleAsync(value => value.Id == account.Session.Id)).IsActive);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(30)]
+    public async Task RotationRenewsShortLivedSeededRowsAtTheConfiguredLifetime(int days)
+    {
+        // Regression guard (develop breakage 2026-10-10, PR #758 follow-up): rotation must
+        // mint the replacement with the configured lifetime and must never copy the stored
+        // seeded window (8 hours here) into the new token or the reported deadline.
+        const int absoluteTimeoutMinutes = 60 * 24 * 60;
+        using var factory = CreateFactory(days, absoluteTimeoutMinutes: absoluteTimeoutMinutes);
+        var account = await SeedAsync(factory);
+        using var client = factory.CreateClient();
+        var before = DateTime.UtcNow;
+        using var response = await client.PostAsJsonAsync(RefreshEndpoint, new { refreshToken = account.RawRefreshToken, account.TenantId });
+        var after = DateTime.UtcNow;
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var replacement = payload.RootElement.GetProperty("refreshToken").GetString()!;
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var hash = scope.ServiceProvider.GetRequiredService<IRefreshTokenHasher>().HashToken(replacement);
+        var successor = await db.Set<RefreshToken>().AsNoTracking().SingleAsync(value => value.Token == hash);
+        Assert.InRange(successor.ExpiresAt, before.AddDays(days).AddSeconds(-1), after.AddDays(days).AddSeconds(1));
+        Assert.InRange(payload.RootElement.GetProperty("refreshTokenExpiresAt").GetDateTime(), before.AddDays(days).AddSeconds(-1), after.AddDays(days).AddSeconds(1));
+        // The seeded 8-hour window must not leak into the replacement lifetime.
+        Assert.True(successor.ExpiresAt - after > TimeSpan.FromHours(12), $"replacement renewed at the seeded short window instead of the configured {days} day(s)");
+    }
+
     [Fact]
     public async Task UnjoinedTenantRequestDeniesBeforeIssuanceAndPreservesOldTokenAndSession()
     {

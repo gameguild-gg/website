@@ -21,12 +21,137 @@ namespace GameGuild.Identity.Authentication.UnitTests.Services;
 ///     Remember-me / persistent session coverage (issue #265):
 ///     - the single policy-aware lifetime resolver (standard vs persistent);
 ///     - every issuing path (local/polymorphic funnels into local, OAuth, Web3) honors the flag;
-///     - refresh rotation renews the session's originating duration instead of collapsing onto the standard one;
+///     - refresh rotation renews at the configured lifetime for the session's class (persistent
+///       rows keep the persistent lifetime) and never copies a stale stored duration;
 ///     - logout revokes persistent refresh tokens.
 /// </summary>
 public class RememberMeSessionLifetimeTests
 {
     private static readonly TimeSpan Tolerance = TimeSpan.FromMinutes(30);
+
+    // ── RefreshTokenLifetimeResolver.Renewal classification (2026-10-10 regression) ─────────────────────────
+
+    [Fact]
+    public void ResolveRenewalDays_RenewsShortLivedRowsAtTheConfiguredStandardLifetime()
+    {
+        // Regression: an 8-hour stored row (seeded, capped, or minted under older
+        // configuration) must renew at the configured standard days, not at 8 hours.
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "Jwt:RefreshTokenExpiryInDays", "7" },
+                { "Jwt:PersistentRefreshTokenExpirationDays", "30" }
+            })
+            .Build();
+        var now = DateTime.UtcNow;
+
+        RefreshTokenLifetimeResolver.ResolveRenewalDays(null, configuration, now.AddHours(-2), now.AddHours(6))
+            .Should().Be(7);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(30)]
+    public void ResolveRenewalDays_RenewsAtEachConfiguredStandardLifetime(int configuredDays)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "Jwt:RefreshTokenExpirationDays", configuredDays.ToString() },
+                { "Jwt:PersistentRefreshTokenExpirationDays", "45" }
+            })
+            .Build();
+        var now = DateTime.UtcNow;
+
+        // A short stored row always renews at the configured standard lifetime.
+        RefreshTokenLifetimeResolver.ResolveRenewalDays(null, configuration, now.AddHours(-2), now.AddHours(6))
+            .Should().Be(configuredDays);
+    }
+
+    [Fact]
+    public void ResolveRenewalDays_RenewsPersistentRowsAtTheConfiguredPersistentLifetime()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "Jwt:RefreshTokenExpiryInDays", "7" },
+                { "Jwt:PersistentRefreshTokenExpirationDays", "30" }
+            })
+            .Build();
+        var now = DateTime.UtcNow;
+
+        // A stored duration longer than the standard lifetime marks a persistent session
+        // and renews at the configured persistent lifetime.
+        RefreshTokenLifetimeResolver.ResolveRenewalDays(null, configuration, now.AddDays(-1), now.AddDays(29))
+            .Should().Be(30);
+    }
+
+    [Fact]
+    public void ResolveRenewalDays_HonorsTypedOptions()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
+        var options = Options.Create(new JwtOptions { RefreshTokenExpirationDays = 3, PersistentRefreshTokenExpirationDays = 14 });
+        var now = DateTime.UtcNow;
+
+        RefreshTokenLifetimeResolver.ResolveRenewalDays(options, configuration, now.AddHours(-2), now.AddHours(6))
+            .Should().Be(3);
+        RefreshTokenLifetimeResolver.ResolveRenewalDays(options, configuration, now.AddDays(-1), now.AddDays(13))
+            .Should().Be(14);
+    }
+
+    [Fact]
+    public void ResolveRenewalDays_MalformedRowsRenewAtTheConfiguredStandardLifetime()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "Jwt:RefreshTokenExpiryInDays", "7" },
+                { "Jwt:PersistentRefreshTokenExpirationDays", "30" }
+            })
+            .Build();
+
+        RefreshTokenLifetimeResolver.ResolveRenewalDays(null, configuration, DateTime.UnixEpoch, DateTime.UtcNow.AddDays(30))
+            .Should().Be(7);
+    }
+
+    // ── Refresh rotation mints configured-day lifetimes (2026-10-10 regression) ─────────────────────────
+
+    [Fact]
+    public async Task RefreshToken_ShortLivedRowRenewsAtTheConfiguredStandardDaysInsteadOfCopyingTheStoredLifetime()
+    {
+        var harness = new LocalRememberMeHarness();
+        var user = User.Create("refresh-shortlived@example.test", "Refresh short-lived user");
+        harness.ArrangeUser(user);
+        var now = SystemClock.UtcNow;
+        var storedToken = new RefreshToken
+        {
+            UserId = user.Id,
+            Token = "hashed-shortlived",
+            // Seeded row with an 8-hour lifetime, mirroring the integration fixtures that
+            // caught the regression: renewal must mint the configured 7 days, not 8 hours.
+            CreatedAt = now.AddHours(-2),
+            ExpiresAt = now.AddHours(6),
+            IsRevoked = false,
+            CreatedByIp = "127.0.0.1"
+        };
+        harness.Tokens.Setup(x => x.GetByTokenAsync("hashed-shortlived", It.IsAny<CancellationToken>())).ReturnsAsync(storedToken);
+        harness.Hashes.Setup(x => x.HashToken("shortlived-token")).Returns("hashed-shortlived");
+
+        var response = await harness.Sut.RefreshTokenAsync(new RefreshTokenRequest { RefreshToken = "shortlived-token" });
+
+        response.Success.Should().BeTrue();
+        response.RefreshTokenExpiresAt.Should().BeWithin(Tolerance).After(now.AddDays(7));
+        response.RefreshTokenExpiresAt.Should().BeAfter(now.AddHours(12));
+        harness.Jwt.Verify(
+            x => x.GenerateRefreshTokenAsync(
+                user.Id,
+                It.IsAny<DeviceInfo>(),
+                It.IsAny<DateTimeOffset>(),
+                It.Is<DateTime?>(value => value > now.AddDays(6)),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 
     // ── RefreshTokenLifetimeResolver ─────────────────────────
 
