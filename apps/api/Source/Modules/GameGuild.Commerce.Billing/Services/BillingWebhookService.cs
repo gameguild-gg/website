@@ -14,6 +14,7 @@ public abstract class BillingWebhookService : IBillingWebhookService
     private readonly ISubscriptionQueryService _queryService;
     private readonly ISubscriptionBillingService _billingService;
     private readonly ISubscriptionExternalIdService _externalIdService;
+    private readonly IBillingIntegrationEventPublisher? _billingEvents;
 
     /// <summary>
     ///     Initializes a new instance of the BillingWebhookService.
@@ -23,19 +24,27 @@ public abstract class BillingWebhookService : IBillingWebhookService
     /// <param name="queryService">Subscription query service</param>
     /// <param name="billingService">Subscription billing service</param>
     /// <param name="externalIdService">Subscription external ID service</param>
+    /// <param name="billingEvents">Optional named-event publisher for billing integration events</param>
     protected BillingWebhookService(
         ILogger<BillingWebhookService> logger,
         ISubscriptionLifecycleService lifecycleService,
         ISubscriptionQueryService queryService,
         ISubscriptionBillingService billingService,
-        ISubscriptionExternalIdService externalIdService)
+        ISubscriptionExternalIdService externalIdService,
+        IBillingIntegrationEventPublisher? billingEvents = null)
     {
         _logger = logger;
         _lifecycleService = lifecycleService;
         _queryService = queryService;
         _billingService = billingService;
         _externalIdService = externalIdService;
+        _billingEvents = billingEvents;
     }
+
+    /// <summary>
+    ///     The payment provider identifier used on published billing integration events.
+    /// </summary>
+    protected abstract string ProviderName { get; }
 
     /// <inheritdoc />
     public async Task HandleSubscriptionCreatedAsync(SubscriptionWebhookPayload payload)
@@ -138,6 +147,12 @@ public abstract class BillingWebhookService : IBillingWebhookService
                 payload.EndDate
             ).ConfigureAwait(false);
 
+            await PublishSubscriptionCancelledAsync(
+                    subscription.Id,
+                    ((ISubscription)subscription).TenantId,
+                    payload.ExternalSubscriptionId)
+                .ConfigureAwait(false);
+
             _logger.LogInformation("Successfully canceled subscription {SubscriptionId} from webhook",
                 subscription.Id);
         }
@@ -168,6 +183,10 @@ public abstract class BillingWebhookService : IBillingWebhookService
                 return;
             }
 
+            // A payment against an already-active subscription is a billing renewal;
+            // capture the pre-payment status before the payment is recorded.
+            var wasActiveBeforePayment = subscription.Status == SubscriptionStatus.Active;
+
             // Record the payment
             await _billingService.RecordPaymentAsync(
                 subscription.Id,
@@ -175,6 +194,24 @@ public abstract class BillingWebhookService : IBillingWebhookService
                 payload.Currency,
                 payload.PaidAt ?? SystemClock.UtcNow
             ).ConfigureAwait(false);
+
+            var tenantId = ((ISubscription)subscription).TenantId;
+            await PublishInvoicePaidAsync(
+                    subscription.Id,
+                    tenantId,
+                    payload.ExternalSubscriptionId,
+                    payload.Amount,
+                    payload.Currency)
+                .ConfigureAwait(false);
+
+            if (wasActiveBeforePayment)
+            {
+                await PublishSubscriptionRenewedAsync(
+                        subscription.Id,
+                        tenantId,
+                        payload.ExternalSubscriptionId)
+                    .ConfigureAwait(false);
+            }
 
             _logger.LogInformation("Successfully recorded payment {PaymentId} for subscription {SubscriptionId}",
                 payload.PaymentId, subscription.Id);
@@ -222,6 +259,67 @@ public abstract class BillingWebhookService : IBillingWebhookService
                 payload.TenantId, payload.PaymentId);
             throw;
         }
+    }
+
+    /// <summary>
+    ///     Publishes the invoice-paid (and optionally renewal) named events for a recorded payment.
+    /// </summary>
+    private async Task PublishInvoicePaidAsync(
+        Guid subscriptionId,
+        Guid tenantId,
+        string externalSubscriptionId,
+        decimal amount,
+        string currency)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        await _billingEvents.PublishInvoicePaidAsync(
+                subscriptionId,
+                tenantId,
+                ProviderName,
+                externalSubscriptionId,
+                amount,
+                string.IsNullOrWhiteSpace(currency) ? CurrencyCodes.Default : currency)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Publishes the subscription-renewed named event for a recurring payment.
+    /// </summary>
+    private async Task PublishSubscriptionRenewedAsync(Guid subscriptionId, Guid tenantId, string externalSubscriptionId)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        await _billingEvents.PublishSubscriptionRenewedAsync(
+                subscriptionId,
+                tenantId,
+                ProviderName,
+                externalSubscriptionId)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Publishes the subscription-cancelled named event for a provider-driven cancellation.
+    /// </summary>
+    private async Task PublishSubscriptionCancelledAsync(Guid subscriptionId, Guid tenantId, string externalSubscriptionId)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        await _billingEvents.PublishSubscriptionCancelledAsync(
+                subscriptionId,
+                tenantId,
+                ProviderName,
+                externalSubscriptionId)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

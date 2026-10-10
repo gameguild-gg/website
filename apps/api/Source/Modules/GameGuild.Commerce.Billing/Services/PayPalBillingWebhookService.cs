@@ -13,7 +13,11 @@ public class PayPalBillingWebhookService : BillingWebhookService
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly IPayPalSignatureVerificationService _signatureVerificationService;
     private readonly IWebhookSecurityEventPublisher? _securityEvents;
+    private readonly IBillingIntegrationEventPublisher? _billingEvents;
     private readonly ILogger<PayPalBillingWebhookService> _logger;
+
+    /// <inheritdoc />
+    protected override string ProviderName => PaymentProviders.PayPal;
 
     public PayPalBillingWebhookService(
         IBillingWebhookRepository webhookRepository,
@@ -23,12 +27,14 @@ public class PayPalBillingWebhookService : BillingWebhookService
         ISubscriptionQueryService queryService,
         ISubscriptionBillingService billingService,
         ISubscriptionExternalIdService externalIdService,
-        IWebhookSecurityEventPublisher? securityEvents = null)
-        : base(logger, lifecycleService, queryService, billingService, externalIdService)
+        IWebhookSecurityEventPublisher? securityEvents = null,
+        IBillingIntegrationEventPublisher? billingEvents = null)
+        : base(logger, lifecycleService, queryService, billingService, externalIdService, billingEvents)
     {
         _webhookRepository = webhookRepository;
         _signatureVerificationService = signatureVerificationService;
         _securityEvents = securityEvents;
+        _billingEvents = billingEvents;
         _logger = logger;
     }
 
@@ -113,6 +119,7 @@ public class PayPalBillingWebhookService : BillingWebhookService
                     .ConfigureAwait(false);
                 webhookEvent.MarkAsFailed($"Invalid webhook signature: {verificationResult.ErrorMessage}");
                 await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+                await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
                 return WebhookProcessingResult.Failed(eventId, verificationResult.ErrorMessage ?? "Invalid webhook signature");
             }
 
@@ -122,6 +129,7 @@ public class PayPalBillingWebhookService : BillingWebhookService
             // Mark as processed
             webhookEvent.MarkAsProcessed();
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: true, cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Successfully processed PayPal webhook: {TransmissionId} ({EventType})", transmissionId, eventType);
             return WebhookProcessingResult.Success(eventId);
@@ -132,8 +140,33 @@ public class PayPalBillingWebhookService : BillingWebhookService
 
             webhookEvent.MarkAsFailed(ex.Message);
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
 
             return WebhookProcessingResult.Failed(eventId, ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     Publishes the named inbox-transition event for the processed/failed outcome.
+    ///     Best-effort: a publication failure never changes the processing result.
+    /// </summary>
+    private async Task PublishBillingEventAsync(
+        BillingWebhookEvent webhookEvent,
+        bool processed,
+        CancellationToken cancellationToken)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        if (processed)
+        {
+            await _billingEvents.PublishWebhookProcessedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await _billingEvents.PublishWebhookFailedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
         }
     }
 

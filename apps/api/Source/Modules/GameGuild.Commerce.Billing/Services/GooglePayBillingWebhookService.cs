@@ -14,7 +14,11 @@ public class GooglePayBillingWebhookService : BillingWebhookService
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly IGooglePayWebhookVerificationService _verificationService;
     private readonly IWebhookSecurityEventPublisher? _securityEvents;
+    private readonly IBillingIntegrationEventPublisher? _billingEvents;
     private readonly ILogger<GooglePayBillingWebhookService> _logger;
+
+    /// <inheritdoc />
+    protected override string ProviderName => PaymentProviders.GooglePay;
 
     public GooglePayBillingWebhookService(
         IBillingWebhookRepository webhookRepository,
@@ -24,12 +28,14 @@ public class GooglePayBillingWebhookService : BillingWebhookService
         ISubscriptionQueryService queryService,
         ISubscriptionBillingService billingService,
         ISubscriptionExternalIdService externalIdService,
-        IWebhookSecurityEventPublisher? securityEvents = null)
-        : base(logger, lifecycleService, queryService, billingService, externalIdService)
+        IWebhookSecurityEventPublisher? securityEvents = null,
+        IBillingIntegrationEventPublisher? billingEvents = null)
+        : base(logger, lifecycleService, queryService, billingService, externalIdService, billingEvents)
     {
         _webhookRepository = webhookRepository;
         _verificationService = verificationService;
         _securityEvents = securityEvents;
+        _billingEvents = billingEvents;
         _logger = logger;
     }
 
@@ -105,6 +111,7 @@ public class GooglePayBillingWebhookService : BillingWebhookService
 
             webhookEvent.MarkAsProcessed();
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: true, cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Successfully processed Google Pay webhook: {EventId} ({EventType})", eventId, eventType);
             return WebhookProcessingResult.Success(eventId);
@@ -115,8 +122,33 @@ public class GooglePayBillingWebhookService : BillingWebhookService
 
             webhookEvent.MarkAsFailed(ex.Message);
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
 
             return WebhookProcessingResult.Failed(eventId, ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     Publishes the named inbox-transition event for the processed/failed outcome.
+    ///     Best-effort: a publication failure never changes the processing result.
+    /// </summary>
+    private async Task PublishBillingEventAsync(
+        BillingWebhookEvent webhookEvent,
+        bool processed,
+        CancellationToken cancellationToken)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        if (processed)
+        {
+            await _billingEvents.PublishWebhookProcessedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await _billingEvents.PublishWebhookFailedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
         }
     }
 

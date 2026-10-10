@@ -1,6 +1,22 @@
 namespace GameGuild.Commerce.Billing;
 
 /// <summary>
+///     Filter criteria for searching the durable billing webhook inbox (issue #396).
+///     Null members are not filtered.
+/// </summary>
+/// <param name="Status">Normalized status filter: processed, failed or pending.</param>
+/// <param name="Provider">Lowercase provider filter.</param>
+/// <param name="EventType">Exact provider event type filter.</param>
+/// <param name="FromUtc">Inclusive lower bound on CreatedAt.</param>
+/// <param name="ToUtc">Inclusive upper bound on CreatedAt.</param>
+public sealed record BillingWebhookEventSearchCriteria(
+    string? Status = null,
+    string? Provider = null,
+    string? EventType = null,
+    DateTime? FromUtc = null,
+    DateTime? ToUtc = null);
+
+/// <summary>
 ///     Repository for managing billing webhook events
 /// </summary>
 public interface IBillingWebhookRepository
@@ -33,6 +49,25 @@ public interface IBillingWebhookRepository
     ///     Get failed webhook events that need retry
     /// </summary>
     Task<IEnumerable<BillingWebhookEvent>> GetFailedEventsAsync(int maxAttempts = 3, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Get failed webhook events that are candidates for the asynchronous retry worker:
+    ///     failed, not yet processed, and below the retry attempt ceiling.
+    /// </summary>
+    Task<IEnumerable<BillingWebhookEvent>> GetRetryCandidatesAsync(
+        int maxAttempts,
+        int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Search the webhook inbox with the given criteria, newest first, and count the
+    ///     total matching rows for pagination.
+    /// </summary>
+    Task<(IReadOnlyList<BillingWebhookEvent> Items, int TotalCount)> SearchEventsAsync(
+        BillingWebhookEventSearchCriteria criteria,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Create a new webhook event

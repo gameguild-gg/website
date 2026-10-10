@@ -1483,6 +1483,32 @@ export interface BulkOperationOutput {
   totalRequested?: number;
 }
 
+/** Read model over a durable billing integration event published through the platform outbox. */
+export interface CommerceBillingBillingOutboxEventDto {
+  /** Aggregate identifier the event refers to. */
+  aggregateId?: string | null;
+  /** Aggregate the event refers to. */
+  aggregateType?: string | null;
+  /** Correlation identifier of the emitting operation. */
+  correlationId?: string;
+  /** Durable event identifier. */
+  eventId?: string;
+  /** Stable event name, e.g. commerce.billing.invoice-paid.v1. */
+  eventName?: string | null;
+  /** Stable CLR type name of the event payload. */
+  eventType?: string | null;
+  /** When the event occurred. */
+  occurredAtUtc?: string;
+  /** Schema version of the event payload. */
+  schemaVersion?: number;
+  status?: CommerceBillingBillingOutboxEventStatus;
+  /** Tenant scope of the event. */
+  tenantId?: string;
+}
+
+/** Delivery status of a durable billing event in the platform outbox. */
+export type CommerceBillingBillingOutboxEventStatus = 'Pending' | 'Completed' | 'DeadLettered';
+
 /** State of the CIDR source allowlist enforced on the provider callback endpoints. */
 export interface CommerceBillingBillingWebhookAllowlistStatusDto {
   /** Number of configured CIDR entries. */
@@ -1498,6 +1524,50 @@ export interface CommerceBillingBillingWebhookBlockedSourceDto {
   blockedUntilUtc?: string;
   failureCount?: number;
   sourceKey?: string | null;
+}
+
+/** DTO for webhook event response */
+export interface CommerceBillingBillingWebhookEventDto {
+  id?: string;
+  createdAt?: string;
+  errorMessage?: string | null;
+  eventType?: string | null;
+  externalEventId?: string | null;
+  isFailed?: boolean;
+  isProcessed?: boolean;
+  processedAt?: string | null;
+  processingAttempts?: number;
+  provider?: string | null;
+  subscriptionId?: string | null;
+  tenantId?: string | null;
+}
+
+/** List item of the billing webhook inbox event feed (issue #396). Payloads are excluded. */
+export interface CommerceBillingBillingWebhookEventListItemDto {
+  /** Local inbox row identifier. */
+  id?: string;
+  /** When the event was accepted into the inbox. */
+  createdAt?: string;
+  /** Error of the last failed attempt, when present. */
+  errorMessage?: string | null;
+  /** Provider event type, e.g. invoice.payment_succeeded. */
+  eventType?: string | null;
+  /** Provider-scoped event identifier. */
+  externalEventId?: string | null;
+  /** Whether the last attempt failed. */
+  isFailed?: boolean;
+  /** Whether processing completed. */
+  isProcessed?: boolean;
+  /** When processing completed. */
+  processedAt?: string | null;
+  /** Number of processing attempts. */
+  processingAttempts?: number;
+  /** Payment provider that emitted the webhook. */
+  provider?: string | null;
+  /** Related subscription, when known. */
+  subscriptionId?: string | null;
+  /** Related tenant, when known. */
+  tenantId?: string | null;
 }
 
 /** A security alert surfaced from the Compliance.Audit pipeline. */
@@ -14985,6 +15055,52 @@ export type ObjectsUserVerificationRequirement = 'Required' | 'Preferred' | 'Dis
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultBillingOutboxEventDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingBillingOutboxEventDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultBillingWebhookEventListItemDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingBillingWebhookEventListItemDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultDeadLetterDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -19984,8 +20100,12 @@ export let AssetsVirusScanStatusSchema: z.ZodType<AssetsVirusScanStatus>;
 export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
+export let CommerceBillingBillingOutboxEventDtoSchema: z.ZodType<CommerceBillingBillingOutboxEventDto>;
+export let CommerceBillingBillingOutboxEventStatusSchema: z.ZodType<CommerceBillingBillingOutboxEventStatus>;
 export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookAllowlistStatusDto>;
 export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
+export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
+export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventListItemDto>;
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
@@ -21206,6 +21326,8 @@ export let ObjectsPublicKeyCredentialHintSchema: z.ZodType<ObjectsPublicKeyCrede
 export let ObjectsPublicKeyCredentialTypeSchema: z.ZodType<ObjectsPublicKeyCredentialType>;
 export let ObjectsResidentKeyRequirementSchema: z.ZodType<ObjectsResidentKeyRequirement>;
 export let ObjectsUserVerificationRequirementSchema: z.ZodType<ObjectsUserVerificationRequirement>;
+export let PagedResultBillingOutboxEventDtoSchema: z.ZodType<PagedResultBillingOutboxEventDto>;
+export let PagedResultBillingWebhookEventListItemDtoSchema: z.ZodType<PagedResultBillingWebhookEventListItemDto>;
 export let PagedResultDeadLetterDtoSchema: z.ZodType<PagedResultDeadLetterDto>;
 export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDeliveryEventDto>;
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
@@ -23104,6 +23226,23 @@ BulkOperationOutputSchema = z.object({
   totalRequested: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingOutboxEventDto. Read model over a durable billing integration event published through the platform outbox. */
+CommerceBillingBillingOutboxEventDtoSchema = z.object({
+  aggregateId: z.string().nullable().optional(),
+  aggregateType: z.string().nullable().optional(),
+  correlationId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
+  eventName: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  schemaVersion: z.number().int().optional(),
+  status: z.lazy(() => CommerceBillingBillingOutboxEventStatusSchema).optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingOutboxEventStatus. Delivery status of a durable billing event in the platform outbox. */
+CommerceBillingBillingOutboxEventStatusSchema = z.enum(['Pending', 'Completed', 'DeadLettered']);
+
 /** Zod schema for CommerceBillingBillingWebhookAllowlistStatusDto. State of the CIDR source allowlist enforced on the provider callback endpoints. */
 CommerceBillingBillingWebhookAllowlistStatusDtoSchema = z.object({
   configuredNetworkCount: z.number().int().optional(),
@@ -23116,6 +23255,38 @@ CommerceBillingBillingWebhookBlockedSourceDtoSchema = z.object({
   blockedUntilUtc: z.string().datetime().optional(),
   failureCount: z.number().int().optional(),
   sourceKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookEventDto. DTO for webhook event response */
+CommerceBillingBillingWebhookEventDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorMessage: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  externalEventId: z.string().nullable().optional(),
+  isFailed: z.boolean().optional(),
+  isProcessed: z.boolean().optional(),
+  processedAt: z.string().datetime().nullable().optional(),
+  processingAttempts: z.number().int().optional(),
+  provider: z.string().nullable().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookEventListItemDto. List item of the billing webhook inbox event feed (issue #396). Payloads are excluded. */
+CommerceBillingBillingWebhookEventListItemDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorMessage: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  externalEventId: z.string().nullable().optional(),
+  isFailed: z.boolean().optional(),
+  isProcessed: z.boolean().optional(),
+  processedAt: z.string().datetime().nullable().optional(),
+  processingAttempts: z.number().int().optional(),
+  provider: z.string().nullable().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
@@ -35977,6 +36148,40 @@ ObjectsResidentKeyRequirementSchema = z.enum(['Required', 'Preferred', 'Discoura
 /** Zod schema for ObjectsUserVerificationRequirement. OpenAPI schema for Objects User Verification Requirement. */
 ObjectsUserVerificationRequirementSchema = z.enum(['Required', 'Preferred', 'Discouraged']);
 
+/** Zod schema for PagedResultBillingOutboxEventDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultBillingOutboxEventDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingBillingOutboxEventDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultBillingWebhookEventListItemDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultBillingWebhookEventListItemDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookEventListItemDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultDeadLetterDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultDeadLetterDtoSchema = z.object({
@@ -40349,10 +40554,16 @@ export type APITeamsTeamInvitation = APITeamsTeamInvitationDto;
 export { APITeamsTeamInvitationDtoSchema as APITeamsTeamInvitationSchema };
 export type APITeamsTeamMember = APITeamsTeamMemberDto;
 export { APITeamsTeamMemberDtoSchema as APITeamsTeamMemberSchema };
+export type CommerceBillingBillingOutboxEvent = CommerceBillingBillingOutboxEventDto;
+export { CommerceBillingBillingOutboxEventDtoSchema as CommerceBillingBillingOutboxEventSchema };
 export type CommerceBillingBillingWebhookAllowlistStatus = CommerceBillingBillingWebhookAllowlistStatusDto;
 export { CommerceBillingBillingWebhookAllowlistStatusDtoSchema as CommerceBillingBillingWebhookAllowlistStatusSchema };
 export type CommerceBillingBillingWebhookBlockedSource = CommerceBillingBillingWebhookBlockedSourceDto;
 export { CommerceBillingBillingWebhookBlockedSourceDtoSchema as CommerceBillingBillingWebhookBlockedSourceSchema };
+export type CommerceBillingBillingWebhookEvent = CommerceBillingBillingWebhookEventDto;
+export { CommerceBillingBillingWebhookEventDtoSchema as CommerceBillingBillingWebhookEventSchema };
+export type CommerceBillingBillingWebhookEventListItem = CommerceBillingBillingWebhookEventListItemDto;
+export { CommerceBillingBillingWebhookEventListItemDtoSchema as CommerceBillingBillingWebhookEventListItemSchema };
 export type CommerceBillingBillingWebhookSecurityAlert = CommerceBillingBillingWebhookSecurityAlertDto;
 export { CommerceBillingBillingWebhookSecurityAlertDtoSchema as CommerceBillingBillingWebhookSecurityAlertSchema };
 export type CommerceBillingBillingWebhookSecuritySummary = CommerceBillingBillingWebhookSecuritySummaryDto;
@@ -40833,6 +41044,10 @@ export type NotificationsControllersNotificationPreference = NotificationsContro
 export { NotificationsControllersNotificationPreferenceDtoSchema as NotificationsControllersNotificationPreferenceSchema };
 export type NotificationsControllersNotificationTimeline = NotificationsControllersNotificationTimelineDto;
 export { NotificationsControllersNotificationTimelineDtoSchema as NotificationsControllersNotificationTimelineSchema };
+export type PagedResultBillingOutboxEvent = PagedResultBillingOutboxEventDto;
+export { PagedResultBillingOutboxEventDtoSchema as PagedResultBillingOutboxEventSchema };
+export type PagedResultBillingWebhookEventListItem = PagedResultBillingWebhookEventListItemDto;
+export { PagedResultBillingWebhookEventListItemDtoSchema as PagedResultBillingWebhookEventListItemSchema };
 export type PagedResultDeadLetter = PagedResultDeadLetterDto;
 export { PagedResultDeadLetterDtoSchema as PagedResultDeadLetterSchema };
 export type PagedResultEmailDeliveryEvent = PagedResultEmailDeliveryEventDto;
