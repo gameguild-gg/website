@@ -142,7 +142,7 @@ public sealed class RevenueAuditingController(
     [EnableRateLimiting(RateLimitPolicies.ExpensiveOperations)]
     [EndpointSummary("Run revenue anomaly detection")]
     [EndpointDescription(
-        "Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Detection is idempotent per kind and day.")]
+        "Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Baselines and z-scores are computed per currency; detection is idempotent per kind, day and currency.")]
     [ProducesResponseType<AnomalyDetectionResult>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DetectAnomalies([FromBody] DetectRevenueAnomaliesRequest? request, CancellationToken ct)
@@ -222,7 +222,7 @@ public sealed class RevenueAuditingController(
     [HttpGet("compliance-report")]
     [EndpointSummary("Get the revenue compliance report for a period")]
     [EndpointDescription(
-        "Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status, uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.")]
+        "Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status with a per-currency breakdown (amounts are never consolidated across currencies), uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.")]
     [ProducesResponseType<RevenueComplianceReport>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetComplianceReport(
@@ -243,7 +243,7 @@ public sealed class RevenueAuditingController(
     [HttpGet("trends")]
     [EndpointSummary("Get the daily revenue trend for a period")]
     [EndpointDescription(
-        "Returns one net-revenue point per UTC day in the inclusive period (credit total, debit total, net total and event count), including days without activity, plus range totals.")]
+        "Returns one net-revenue point per UTC day and currency in the inclusive period (credit total, debit total, net total and event count, in that point's currency), including days without activity for every observed currency, plus range totals per currency. Amounts are never consolidated across currencies.")]
     [ProducesResponseType<RevenueTrendReport>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetTrendReport(

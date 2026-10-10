@@ -22,12 +22,13 @@ public class RevenueAuditingPersistenceTests
         DateTime timestamp,
         Guid? tenantId = null,
         RevenueEventType eventType = RevenueEventType.PaymentReceived,
-        RevenueEventStatus status = RevenueEventStatus.Processed)
+        RevenueEventStatus status = RevenueEventStatus.Processed,
+        string currency = "USD")
         => new()
         {
             ReferenceId = referenceId,
             Amount = amount,
-            Currency = "USD",
+            Currency = currency,
             Source = RevenueSource.Subscription,
             EventType = eventType,
             Status = status,
@@ -83,9 +84,40 @@ public class RevenueAuditingPersistenceTests
         byType.Should().BeInAscendingOrder(total => total.Key);
         byType.Should().BeEquivalentTo(
         [
-            new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), 2, 40m),
-            new RevenueEventGroupTotal(nameof(RevenueEventType.RefundProcessed), 1, 5m)
+            new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "USD", 2, 40m),
+            new RevenueEventGroupTotal(nameof(RevenueEventType.RefundProcessed), "USD", 1, 5m)
         ]);
+    }
+
+    [Fact]
+    public async Task GetGroupedTotalsAsync_MixedCurrencies_NeverSumAcrossUnits()
+    {
+        await using var context = await CreateContextAsync();
+        var tenant = Guid.NewGuid();
+        var day = new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Utc);
+        context.Set<RevenueEvent>().AddRange(
+            Event("usd-1", 100m, day, tenant, currency: "USD"),
+            Event("usd-2", 50m, day, tenant, currency: "USD"),
+            Event("eur-1", 100m, day, tenant, currency: "EUR"),
+            Event("brl-1", 100m, day, tenant, currency: "BRL"));
+        await context.SaveChangesAsync();
+
+        var repository = new RevenueEventRepository(context);
+        var byType = await repository.GetGroupedTotalsAsync(
+            new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 30, 23, 59, 59, DateTimeKind.Utc),
+            tenant,
+            RevenueEventTotalGrouping.EventType);
+
+        // Regression (issue #404 verifier gap 1): 100 USD + 100 EUR must never surface
+        // as a unitless 200 — each currency keeps its own group row.
+        byType.Should().BeEquivalentTo(
+        [
+            new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "BRL", 1, 100m),
+            new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "EUR", 1, 100m),
+            new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "USD", 2, 150m)
+        ]);
+        byType.Should().NotContain(total => total.Total == 200m || total.Total == 350m);
     }
 
     [Fact]
@@ -110,10 +142,41 @@ public class RevenueAuditingPersistenceTests
 
         var total = totals.Should().ContainSingle().Subject;
         total.DateUtc.Should().Be(new DateTime(2026, 9, 10, 0, 0, 0, DateTimeKind.Utc));
+        total.Currency.Should().Be("USD");
         total.CreditTotal.Should().Be(150m);
         total.DebitTotal.Should().Be(35m);
         total.NetTotal.Should().Be(115m);
         total.EventCount.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetDailyTotalsAsync_MixedCurrenciesInSameDay_KeepSeparateSeries()
+    {
+        await using var context = await CreateContextAsync();
+        var tenant = Guid.NewGuid();
+        var day = new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Utc);
+        context.Set<RevenueEvent>().AddRange(
+            Event("usd-pay", 100m, day, tenant, eventType: RevenueEventType.PaymentReceived, currency: "USD"),
+            Event("usd-refund", 30m, day, tenant, eventType: RevenueEventType.RefundProcessed, currency: "USD"),
+            Event("eur-pay", 100m, day, tenant, eventType: RevenueEventType.PaymentReceived, currency: "EUR"),
+            Event("eur-refund", 25m, day, tenant, eventType: RevenueEventType.RefundProcessed, currency: "EUR"));
+        await context.SaveChangesAsync();
+
+        var repository = new RevenueEventRepository(context);
+        var totals = await repository.GetDailyTotalsAsync(
+            new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 30, 23, 59, 59, DateTimeKind.Utc),
+            tenant);
+
+        // Regression (issue #404 verifier gap 1): same day/type/status/tenant with two
+        // currencies must produce two per-currency rows, never one merged row.
+        totals.Should().HaveCount(2);
+        totals.Should().BeInAscendingOrder(total => total.Currency);
+        totals.Should().Contain(total => total.Currency == "USD"
+            && total.CreditTotal == 100m && total.DebitTotal == 30m && total.NetTotal == 70m && total.EventCount == 2);
+        totals.Should().Contain(total => total.Currency == "EUR"
+            && total.CreditTotal == 100m && total.DebitTotal == 25m && total.NetTotal == 75m && total.EventCount == 2);
+        totals.Should().NotContain(total => total.NetTotal == 145m || total.NetTotal == 170m);
     }
 
     [Fact]
@@ -184,9 +247,12 @@ public class RevenueAuditingPersistenceTests
         await repository.AddAsync(alert);
         await repository.SaveChangesAsync();
 
-        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Spike, day, tenant)).Should().BeTrue();
-        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Drop, day, tenant)).Should().BeFalse();
-        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Spike, day, null)).Should().BeFalse();
+        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Spike, day, "USD", tenant)).Should().BeTrue();
+        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Drop, day, "USD", tenant)).Should().BeFalse();
+        // Currency is part of the alert identity: a same-kind alert for another
+        // currency on the same day is a separate anomaly, not a duplicate.
+        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Spike, day, "EUR", tenant)).Should().BeFalse();
+        (await repository.ExistsForDayAsync(RevenueAnomalyKind.Spike, day, "USD", null)).Should().BeFalse();
 
         var fetched = await repository.GetByIdAsync(alert.Id);
         fetched!.Acknowledge(Guid.NewGuid(), "handled");

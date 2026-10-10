@@ -65,10 +65,11 @@ public interface IRevenueAnomalyAlertRepository
         int take,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Check whether an alert already exists for a (kind, day) pair, in any state.</summary>
+    /// <summary>Check whether an alert already exists for a (kind, day, currency) pair, in any state.</summary>
     Task<bool> ExistsForDayAsync(
         RevenueAnomalyKind kind,
         DateTime detectedForDateUtc,
+        string currency,
         Guid? tenantId,
         CancellationToken cancellationToken = default);
 

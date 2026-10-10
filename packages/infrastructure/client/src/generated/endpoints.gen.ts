@@ -6439,7 +6439,7 @@ export const postBillingRevenueAuditingEndpoint = {
  * SystemAdmin role; the periodic worker performs the same pass automatically when
  * `RevenueAuditing:WorkerEnabled` is set.
  *
- * Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Detection is idempotent per kind and day.
+ * Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Baselines and z-scores are computed per currency; detection is idempotent per kind, day and currency.
  */
 export interface PostBillingRevenueAuditingAnomaliesDetectInput {
   body?: Types.CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput;
@@ -6498,7 +6498,7 @@ export const postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint = {
  * Compliance report for an inclusive period: totals by event type, source and status,
  * uncounted events, reconciliation coverage and an attestation statement.
  *
- * Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status, uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.
+ * Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status with a per-currency breakdown (amounts are never consolidated across currencies), uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.
  */
 export interface GetBillingRevenueAuditingComplianceReportInput {
   query?: {
@@ -6581,7 +6581,7 @@ export const getBillingRevenueAuditingRunsDiscrepanciesEndpoint = {
 /**
  * Historical daily net-revenue trend for an inclusive period, with zero-activity days included.
  *
- * Returns one net-revenue point per UTC day in the inclusive period (credit total, debit total, net total and event count), including days without activity, plus range totals.
+ * Returns one net-revenue point per UTC day and currency in the inclusive period (credit total, debit total, net total and event count, in that point's currency), including days without activity for every observed currency, plus range totals per currency. Amounts are never consolidated across currencies.
  */
 export interface GetBillingRevenueAuditingTrendsInput {
   query?: {

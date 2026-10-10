@@ -6,8 +6,9 @@ namespace GameGuild.Commerce.Payments;
 
 /// <summary>
 ///     Durable alert raised when daily net revenue deviates abnormally from its trailing
-///     baseline. Detection is idempotent per (kind, day): re-running detection for the same
-///     day never duplicates an alert.
+///     baseline. Baselines are computed per currency; detection is idempotent per
+///     (kind, day, currency): re-running detection for the same day and currency never
+///     duplicates an alert.
 /// </summary>
 [Table("revenue_anomaly_alerts")]
 [Index(nameof(Status))]
@@ -22,14 +23,19 @@ public class RevenueAnomalyAlert : EntityBase
     /// <summary>UTC day (midnight) the anomalous net revenue belongs to.</summary>
     public DateTime DetectedForDateUtc { get; set; }
 
+    /// <summary>ISO-4217 currency code of the daily net revenue series evaluated. Amounts are never compared across currencies.</summary>
+    [Required]
+    [MaxLength(3)]
+    public string Currency { get; set; } = "USD";
+
     /// <summary>Moment the anomaly was detected (UTC).</summary>
     public DateTime DetectedAtUtc { get; set; } = SystemClock.UtcNow;
 
-    /// <summary>Net revenue observed for the evaluated day.</summary>
+    /// <summary>Net revenue observed for the evaluated day, in <see cref="Currency" />.</summary>
     [Column(TypeName = "decimal(18,2)")]
     public decimal ObservedNetRevenue { get; set; }
 
-    /// <summary>Baseline (mean) net revenue expected for the evaluated day.</summary>
+    /// <summary>Baseline (mean) net revenue expected for the evaluated day, in <see cref="Currency" />.</summary>
     [Column(TypeName = "decimal(18,2)")]
     public decimal ExpectedNetRevenue { get; set; }
 
