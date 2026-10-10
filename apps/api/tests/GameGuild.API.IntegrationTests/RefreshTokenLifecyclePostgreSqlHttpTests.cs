@@ -41,7 +41,7 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
         // expiration suite separately verifies shorter absolute session limits.
         const int absoluteTimeoutMinutes = 60 * 24 * 60;
         using var factory = CreateFactory(days, absoluteTimeoutMinutes: absoluteTimeoutMinutes);
-        var account = await SeedAsync(factory);
+        var account = await SeedAsync(factory, days);
         using var client = factory.CreateClient();
         var current = account.RawRefreshToken;
         var precedingId = account.Token.Id;
@@ -79,9 +79,13 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
             Assert.Equal(account.Session.Id, predecessor.SessionId);
             Assert.Equal(account.Session.Id, successor.SessionId);
             Assert.Equal(account.Token.CreatedAt, successor.CreatedAt);
-            Assert.InRange(successor.ExpiresAt, before.AddDays(days).AddSeconds(-1), after.AddDays(days).AddSeconds(1));
+            // Rotation renews the credential's originating lifetime (remember-me semantics), so
+            // each renewal lands one full window after the rotation; the second rotation also
+            // carries the sub-second elapsed-since-issuance observed between seed and rotation,
+            // hence the ±5s tolerance instead of the previous ±1s.
+            Assert.InRange(successor.ExpiresAt, before.AddDays(days).AddSeconds(-5), after.AddDays(days).AddSeconds(5));
             Assert.True(successor.ExpiresAt <= account.Session.CreatedAt.AddMinutes(absoluteTimeoutMinutes));
-            Assert.InRange(result.GetProperty("refreshTokenExpiresAt").GetDateTime(), before.AddDays(days).AddSeconds(-1), after.AddDays(days).AddSeconds(1));
+            Assert.InRange(result.GetProperty("refreshTokenExpiresAt").GetDateTime(), before.AddDays(days).AddSeconds(-5), after.AddDays(days).AddSeconds(5));
             Assert.DoesNotContain(replacement, (await db.Set<RefreshToken>().Where(value => value.UserId == account.User.Id).Select(value => value.Token).ToListAsync()));
             var storedSession = await db.Set<UserSession>().AsNoTracking().SingleAsync(value => value.Id == account.Session.Id);
             Assert.True(storedSession.IsActive);
@@ -216,7 +220,7 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
             }
         }));
 
-    private static async Task<Account> SeedAsync(WebApplicationFactory<Program> factory)
+    private static async Task<Account> SeedAsync(WebApplicationFactory<Program> factory, int? days = null)
     {
         var marker = Guid.NewGuid().ToString("N");
         var raw = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
@@ -226,10 +230,15 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
         var user = User.Create($"lifecycle-{marker}@example.test", "Synthetic lifecycle account");
         user.Username = $"lifecycle-{marker}";
         var tenant = Guid.NewGuid();
+        // Rotation renews the credential's originating lifetime, so a rotation test that asserts
+        // the configured window must seed a credential that already carries that window; the
+        // default seed keeps the legacy short-lived (-2h..+6h) credential for containment tests.
+        var seededCreatedAt = days is null ? now.AddHours(-2) : now;
+        var seededExpiresAt = days is null ? now.AddHours(6) : now.AddDays(days.Value);
         var token = new RefreshToken { Id = Guid.NewGuid(), UserId = user.Id, Token = scope.ServiceProvider.GetRequiredService<IRefreshTokenHasher>().HashToken(raw),
-            CreatedAt = now.AddHours(-2), UpdatedAt = now, ExpiresAt = now.AddHours(6), CreatedByIp = "127.0.0.1" };
+            CreatedAt = seededCreatedAt, UpdatedAt = now, ExpiresAt = seededExpiresAt, CreatedByIp = "127.0.0.1" };
         var session = new UserSession { Id = Guid.NewGuid(), UserId = user.Id, RefreshToken = token.Token, IpAddress = "127.0.0.1",
-            CreatedAt = now.AddHours(-2), UpdatedAt = now, LastUsedAt = now, ExpiresAt = now.AddHours(6), IsActive = true };
+            CreatedAt = seededCreatedAt, UpdatedAt = now, LastUsedAt = now, ExpiresAt = seededExpiresAt, IsActive = true };
         db.Set<User>().Add(user);
         db.Set<Tenant>().Add(new Tenant { Id = tenant, Name = $"Lifecycle {marker}", Slug = $"lifecycle-{marker}", AdminEmail = $"admin-{marker}@example.test", IsActive = true });
         db.Set<TenantMember>().Add(new TenantMember { Id = Guid.NewGuid(), TenantId = tenant, UserId = user.Id, Role = "Member", IsActive = true });
