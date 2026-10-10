@@ -171,6 +171,16 @@ public sealed class RateLimitingOptions : BaseOptions
 
     public TimeSpan IpWindow { get; set; } = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    ///     Provider callback endpoint rate limit (requests per minute), applied by the
+    ///     <see cref="RateLimitPolicies.Webhook"/> policy on anonymous webhook endpoints.
+    ///     Default: 120 req/min to absorb provider retry bursts while throttling spoofed floods.
+    ///     Partitioned by: IP address.
+    /// </summary>
+    public int WebhookRequestsPerMinute { get; set; } = 120;
+
+    public TimeSpan WebhookWindow { get; set; } = TimeSpan.FromMinutes(1);
+
     public int SlidingWindowSegments { get; set; } = 4;
 
     /// <summary>
@@ -292,6 +302,7 @@ public sealed class RateLimitingOptions : BaseOptions
         ValidatePositive(AuthorizationRequestsPerMinute, nameof(AuthorizationRequestsPerMinute));
         ValidatePositive(ApiRequestsPerMinute, nameof(ApiRequestsPerMinute));
         ValidatePositive(IpRequestsPerMinute, nameof(IpRequestsPerMinute));
+        ValidatePositive(WebhookRequestsPerMinute, nameof(WebhookRequestsPerMinute));
         ValidatePositive(TenantRequestsPerMinute, nameof(TenantRequestsPerMinute));
         ValidatePositive(UserRequestsPerMinute, nameof(UserRequestsPerMinute));
         ValidatePositive(StandardApiKeyRequestsPerMinute, nameof(StandardApiKeyRequestsPerMinute));
@@ -304,6 +315,7 @@ public sealed class RateLimitingOptions : BaseOptions
         ValidatePositive(AuthorizationWindow, nameof(AuthorizationWindow));
         ValidatePositive(ApiWindow, nameof(ApiWindow));
         ValidatePositive(IpWindow, nameof(IpWindow));
+        ValidatePositive(WebhookWindow, nameof(WebhookWindow));
         ValidatePositive(TenantWindow, nameof(TenantWindow));
         ValidatePositive(UserWindow, nameof(UserWindow));
         ValidatePositive(ApiKeyWindow, nameof(ApiKeyWindow));
@@ -366,7 +378,8 @@ public sealed class RateLimitingOptions : BaseOptions
             RateLimitPolicies.Bursty,
             RateLimitPolicies.ApiKey,
             RateLimitPolicies.ExpensiveOperations,
-            RateLimitPolicies.PerIp
+            RateLimitPolicies.PerIp,
+            RateLimitPolicies.Webhook
         };
         var configuredNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (name, policy) in Policies)

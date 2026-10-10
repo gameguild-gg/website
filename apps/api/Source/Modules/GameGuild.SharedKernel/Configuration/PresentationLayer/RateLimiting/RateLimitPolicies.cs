@@ -95,4 +95,15 @@ public static class RateLimitPolicies
     ///     Purpose: Protect against anonymous abuse.
     /// </summary>
     public const string PerIp = "per-ip";
+
+    // ============ Webhook Callback Policy (provider flood protection) ============
+
+    /// <summary>
+    ///     Per-IP rate limiting for anonymous provider callback endpoints (e.g. billing webhooks).
+    ///     Algorithm: Fixed Window, Partitioned by: IP Address.
+    ///     Default: 120 requests per minute.
+    ///     Purpose: Absorb legitimate provider retry bursts while throttling spoofed request
+    ///     floods before payload signature verification runs.
+    /// </summary>
+    public const string Webhook = "webhook";
 }

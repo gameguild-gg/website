@@ -15914,6 +15914,83 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("JitElevationRequest");
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("text");
+
+                    b.Property<int>("OperationType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PerformedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PermissionDetails")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PermissionType")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("ResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResourceType")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperationType")
+                        .HasDatabaseName("IX_PermissionAuditLogs_OperationType");
+
+                    b.HasIndex("Timestamp")
+                        .HasDatabaseName("IX_PermissionAuditLogs_Time");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_PermissionAuditLogs_UserId");
+
+                    b.HasIndex("TenantId", "Timestamp")
+                        .HasDatabaseName("IX_PermissionAuditLogs_Tenant_Time");
+
+                    b.ToTable("PermissionAuditLogs", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionDelegation", b =>
                 {
                     b.Property<Guid>("Id")

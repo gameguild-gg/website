@@ -1483,6 +1483,59 @@ export interface BulkOperationOutput {
   totalRequested?: number;
 }
 
+/** State of the CIDR source allowlist enforced on the provider callback endpoints. */
+export interface CommerceBillingBillingWebhookAllowlistStatusDto {
+  /** Number of configured CIDR entries. */
+  configuredNetworkCount?: number;
+  /** Configured CIDR entries (admin-visible; providers rotate egress ranges). */
+  configuredNetworks?: string[] | null;
+  /** Whether any allowlist entry is configured (fail closed when true). */
+  isEnabled?: boolean;
+}
+
+/** A webhook source currently blocked for suspicious activity. */
+export interface CommerceBillingBillingWebhookBlockedSourceDto {
+  blockedUntilUtc?: string;
+  failureCount?: number;
+  sourceKey?: string | null;
+}
+
+/** A security alert surfaced from the Compliance.Audit pipeline. */
+export interface CommerceBillingBillingWebhookSecurityAlertDto {
+  id?: string;
+  kind?: string | null;
+  raisedAtUtc?: string | null;
+  ruleId?: string | null;
+  severity?: string | null;
+  title?: string | null;
+}
+
+/** Admin-facing summary of the billing webhook security posture: allowlist state,
+suspicious-activity blocking, and the delivery health of the security event pipeline. */
+export interface CommerceBillingBillingWebhookSecuritySummaryDto {
+  /** UTC moment the summary was produced. */
+  generatedAtUtc?: string;
+  /** Open (unacknowledged) security alerts raised by the pipeline. */
+  openSecurityAlerts?: CommerceBillingBillingWebhookSecurityAlertDto[] | null;
+  securityEventPipeline?: ComplianceAuditSecurityEventDeliveryStatusOutput;
+  sourceIpAllowlist?: CommerceBillingBillingWebhookAllowlistStatusDto;
+  suspiciousActivity?: CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
+}
+
+/** State of the suspicious-activity auto-blocking monitor. */
+export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
+  /** How long (seconds) a blocked source stays blocked. */
+  blockDurationSeconds?: number;
+  /** Sources currently blocked, ordered by remaining block duration. */
+  blockedSources?: CommerceBillingBillingWebhookBlockedSourceDto[] | null;
+  /** Failures within the window that trigger a temporary block. */
+  failureThreshold?: number;
+  /** Whether threshold blocking is enabled (fail open when false). */
+  isEnabled?: boolean;
+  /** Sliding window (seconds) in which failures are counted per source. */
+  windowSeconds?: number;
+}
+
 /** Data model for Commerce Billing Invoice Payment Retry Result. */
 export interface CommerceBillingInvoicePaymentRetryResult {
   accepted?: boolean;
@@ -19826,6 +19879,11 @@ export let AssetsVirusScanStatusSchema: z.ZodType<AssetsVirusScanStatus>;
 export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
+export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookAllowlistStatusDto>;
+export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
+export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
+export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
+export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
@@ -22929,6 +22987,55 @@ BulkOperationOutputSchema = z.object({
   successfulOperations: z.number().int().optional(),
   successRate: z.number().optional(),
   totalRequested: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookAllowlistStatusDto. State of the CIDR source allowlist enforced on the provider callback endpoints. */
+CommerceBillingBillingWebhookAllowlistStatusDtoSchema = z.object({
+  configuredNetworkCount: z.number().int().optional(),
+  configuredNetworks: z.array(z.string()).nullable().optional(),
+  isEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookBlockedSourceDto. A webhook source currently blocked for suspicious activity. */
+CommerceBillingBillingWebhookBlockedSourceDtoSchema = z.object({
+  blockedUntilUtc: z.string().datetime().optional(),
+  failureCount: z.number().int().optional(),
+  sourceKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
+CommerceBillingBillingWebhookSecurityAlertDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  kind: z.string().nullable().optional(),
+  raisedAtUtc: z.string().datetime().nullable().optional(),
+  ruleId: z.string().nullable().optional(),
+  severity: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSecuritySummaryDto. Admin-facing summary of the billing webhook security posture: allowlist state,
+suspicious-activity blocking, and the delivery health of the security event pipeline. */
+CommerceBillingBillingWebhookSecuritySummaryDtoSchema = z.object({
+  generatedAtUtc: z.string().datetime().optional(),
+  openSecurityAlerts: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookSecurityAlertDtoSchema))
+    .nullable()
+    .optional(),
+  securityEventPipeline: z.lazy(() => ComplianceAuditSecurityEventDeliveryStatusOutputSchema).optional(),
+  sourceIpAllowlist: z.lazy(() => CommerceBillingBillingWebhookAllowlistStatusDtoSchema).optional(),
+  suspiciousActivity: z.lazy(() => CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema).optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSuspiciousActivityStatusDto. State of the suspicious-activity auto-blocking monitor. */
+CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema = z.object({
+  blockDurationSeconds: z.number().int().optional(),
+  blockedSources: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookBlockedSourceDtoSchema))
+    .nullable()
+    .optional(),
+  failureThreshold: z.number().int().optional(),
+  isEnabled: z.boolean().optional(),
+  windowSeconds: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceBillingInvoicePaymentRetryResult. Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -40051,6 +40158,16 @@ export type APITeamsTeamInvitation = APITeamsTeamInvitationDto;
 export { APITeamsTeamInvitationDtoSchema as APITeamsTeamInvitationSchema };
 export type APITeamsTeamMember = APITeamsTeamMemberDto;
 export { APITeamsTeamMemberDtoSchema as APITeamsTeamMemberSchema };
+export type CommerceBillingBillingWebhookAllowlistStatus = CommerceBillingBillingWebhookAllowlistStatusDto;
+export { CommerceBillingBillingWebhookAllowlistStatusDtoSchema as CommerceBillingBillingWebhookAllowlistStatusSchema };
+export type CommerceBillingBillingWebhookBlockedSource = CommerceBillingBillingWebhookBlockedSourceDto;
+export { CommerceBillingBillingWebhookBlockedSourceDtoSchema as CommerceBillingBillingWebhookBlockedSourceSchema };
+export type CommerceBillingBillingWebhookSecurityAlert = CommerceBillingBillingWebhookSecurityAlertDto;
+export { CommerceBillingBillingWebhookSecurityAlertDtoSchema as CommerceBillingBillingWebhookSecurityAlertSchema };
+export type CommerceBillingBillingWebhookSecuritySummary = CommerceBillingBillingWebhookSecuritySummaryDto;
+export { CommerceBillingBillingWebhookSecuritySummaryDtoSchema as CommerceBillingBillingWebhookSecuritySummarySchema };
+export type CommerceBillingBillingWebhookSuspiciousActivityStatus = CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
+export { CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema as CommerceBillingBillingWebhookSuspiciousActivityStatusSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
