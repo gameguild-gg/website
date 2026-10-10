@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Http.Json;
+using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using GameGuild;
 using GameGuild.Identity.Authentication;
@@ -39,15 +41,13 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     public async Task BoundTrustedClientCertificate_AuthenticatesAsServiceActor()
     {
         await using var host = await _fixture.StartHostAsync();
-        using var client = host.CreateClient(_fixture.BoundClientCertificate);
+        var (statusCode, body, negotiatedCertificate) = await host.SendRawHttpsRequestAsync(_fixture.BoundClientCertificate);
 
-        using var response = await client.GetAsync("/cert-whoami");
-        var body = await response.Content.ReadAsStringAsync();
-
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (statusCode != (int)HttpStatusCode.OK)
         {
             Assert.Fail(
-                $"Expected OK got {(int)response.StatusCode} '{body}'.\n" +
+                $"Expected OK got {statusCode} '{body}'.\n" +
+                $"Client negotiated certificate: {negotiatedCertificate}\n" +
                 $"Server logs:\n{host.DumpRecentLogs()}");
         }
 
@@ -68,33 +68,30 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     public async Task RequestWithoutClientCertificate_IsNotAuthenticated()
     {
         await using var host = await _fixture.StartHostAsync();
-        using var client = host.CreateClient(clientCertificate: null);
 
-        using var response = await client.GetAsync("/cert-whoami");
+        var (statusCode, _, _) = await host.SendRawHttpsRequestAsync(clientCertificate: null);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal((int)HttpStatusCode.Unauthorized, statusCode);
     }
 
     [Fact]
     public async Task ClientCertificateFromUntrustedAuthority_IsRejected()
     {
         await using var host = await _fixture.StartHostAsync();
-        using var client = host.CreateClient(_fixture.RogueClientCertificate);
 
-        using var response = await client.GetAsync("/cert-whoami");
+        var (statusCode, _, _) = await host.SendRawHttpsRequestAsync(_fixture.RogueClientCertificate);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal((int)HttpStatusCode.Unauthorized, statusCode);
     }
 
     [Fact]
     public async Task TrustedClientCertificateWithoutBinding_IsRejected()
     {
         await using var host = await _fixture.StartHostAsync();
-        using var client = host.CreateClient(_fixture.UnboundClientCertificate);
 
-        using var response = await client.GetAsync("/cert-whoami");
+        var (statusCode, _, _) = await host.SendRawHttpsRequestAsync(_fixture.UnboundClientCertificate);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal((int)HttpStatusCode.Unauthorized, statusCode);
     }
 }
 
@@ -227,32 +224,6 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
             + $" bound={ClientCertificateAuthenticationUtilities.GetNormalizedThumbprint(BoundClientCertificate)}";
     }
 
-    public HttpClient CreateClient(X509Certificate2? clientCertificate)
-    {
-        var handler = new SocketsHttpHandler
-        {
-            SslOptions = new System.Net.Security.SslClientAuthenticationOptions
-            {
-                // Restrict to TLS 1.2: the Linux TLS stack does not reliably surface
-                // optional client certificates negotiated with TLS 1.3, which would
-                // leave Connection.ClientCertificate null on the server.
-                EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12,
-                RemoteCertificateValidationCallback = (_, _, _, _) => true,
-                ClientCertificates = clientCertificate is null
-                    ? new X509CertificateCollection()
-                    : new X509CertificateCollection { clientCertificate },
-                // Select the certificate explicitly: the Linux TLS client's automatic
-                // selection can decline to offer a certificate (e.g. when filtering by
-                // the server's acceptable-issuer list), which would silently downgrade
-                // the mTLS request to an anonymous one.
-                LocalCertificateSelectionCallback = clientCertificate is null
-                    ? null
-                    : (_, _, _, _, _) => clientCertificate
-            }
-        };
-        return new HttpClient(handler);
-    }
-
     public Task DisposeAsync() => Task.CompletedTask;
 
     public void Dispose()
@@ -324,11 +295,53 @@ public sealed class TestKestrelHost(
         "\n",
         logCollector.Entries.TakeLast(50).Select(entry => $"[{entry.Level}] {entry.Category}: {entry.Message}"));
 
-    public HttpClient CreateClient(X509Certificate2? clientCertificate)
+    /// <summary>
+    ///     Performs a raw HTTPS/1.1 GET over an explicit <see cref="SslStream"/> handshake so the
+    ///     test controls (and can report) exactly which client certificate was negotiated. The
+    ///     HttpClient stack performs the same handshake but hides the negotiation outcome, which
+    ///     made Linux-side failures invisible.
+    /// </summary>
+    public async Task<(int StatusCode, string Body, string NegotiatedCertificate)> SendRawHttpsRequestAsync(
+        X509Certificate2? clientCertificate)
     {
-        var client = fixture.CreateClient(clientCertificate);
-        client.BaseAddress = new Uri(app.Urls.Single(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)));
-        return client;
+        var baseAddress = app.Urls.Single(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+        var uri = new Uri(baseAddress);
+
+        using var tcpClient = new TcpClient();
+        await tcpClient.ConnectAsync(IPAddress.Loopback, uri.Port).ConfigureAwait(false);
+
+        using var sslStream = new SslStream(tcpClient.GetStream(), leaveInnerStreamOpen: false);
+        var authenticationOptions = new SslClientAuthenticationOptions
+        {
+            TargetHost = uri.Host,
+            RemoteCertificateValidationCallback = (_, _, _, _) => true,
+            ClientCertificates = clientCertificate is null
+                ? new X509CertificateCollection()
+                : new X509CertificateCollection { clientCertificate },
+            LocalCertificateSelectionCallback = clientCertificate is null
+                ? null
+                : (_, _, _, _, _) => clientCertificate
+        };
+        await sslStream.AuthenticateAsClientAsync(authenticationOptions).ConfigureAwait(false);
+
+        var negotiatedCertificate = sslStream.LocalCertificate is null
+            ? "<none>"
+            : $"{sslStream.LocalCertificate.Subject} [{sslStream.LocalCertificate.GetCertHashString()}]";
+
+        var request = Encoding.ASCII.GetBytes("GET /cert-whoami HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+        await sslStream.WriteAsync(request).ConfigureAwait(false);
+        await sslStream.FlushAsync().ConfigureAwait(false);
+
+        using var memory = new MemoryStream();
+        await sslStream.CopyToAsync(memory).ConfigureAwait(false);
+        var raw = Encoding.UTF8.GetString(memory.ToArray());
+
+        var separator = raw.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+        var head = separator < 0 ? raw : raw[..separator];
+        var body = separator < 0 ? string.Empty : raw[(separator + 4)..];
+
+        var statusCode = int.Parse(head.Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture);
+        return (statusCode, body, negotiatedCertificate);
     }
 
     public async ValueTask DisposeAsync()
