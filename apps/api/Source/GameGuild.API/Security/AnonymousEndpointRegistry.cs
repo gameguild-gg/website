@@ -153,7 +153,10 @@ public static class AnonymousEndpointRegistry
             ["AssetsCdnController.*"] = "CDN asset routes authorized per request by embedded path tokens.",
 
             // ── Provider webhooks (signature/secret verified inside the handler) ──
-            ["BillingWebhooksController.*"] = "Provider billing webhooks; verified by provider signatures/secrets inside the handler.",
+            ["BillingWebhooksController.HandleGooglePayWebhook"] = "Provider billing webhook; bearer-JWT signature verified with the configured Google Pay keys inside the handler.",
+            ["BillingWebhooksController.HandleApplePayWebhook"] = "Provider billing webhook; receipt/signature verified inside the handler.",
+            ["BillingWebhooksController.HandleStripeWebhook"] = "Provider billing webhook; Stripe signature verified with the webhook secret inside the handler.",
+            ["BillingWebhooksController.HandlePayPalWebhook"] = "Provider billing webhook; PayPal transmission signature verified inside the handler.",
             ["EmailEventsController.*"] = "Email delivery-events webhook; SNS signature verified with a pinned signing-cert host.",
             ["EconomySumSubWebhookController.Ingest"] = "KYC provider webhook; request signature is validated against the provider secret.",
             ["EconomyStripeConnectWebhookController.Ingest"] = "Payout provider webhook; Stripe signature is validated against the configured secret.",

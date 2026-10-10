@@ -45,7 +45,27 @@ public static class ServiceCollectionExtensions
         services.AddScoped<StripeBillingWebhookService>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
+        services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();
+        services.AddScoped<GooglePayBillingWebhookService>();
 
+        // Register webhook source security controls (IP allowlist, threshold monitor,
+        // security-event publishing, and the authorization filter that enforces them).
+        services.AddBillingWebhookSourceSecurity();
+
+        return services;
+    }
+
+    /// <summary>
+    ///     Register the webhook source security controls shared by the provider callback
+    ///     endpoints: CIDR allowlist, suspicious-activity auto-blocking, and security-event
+    ///     publishing into the Compliance.Audit security event pipeline.
+    /// </summary>
+    public static IServiceCollection AddBillingWebhookSourceSecurity(this IServiceCollection services)
+    {
+        services.AddSingleton<WebhookSourceIpAllowlist>();
+        services.AddSingleton<IWebhookSuspiciousActivityMonitor, WebhookSuspiciousActivityMonitor>();
+        services.AddScoped<IWebhookSecurityEventPublisher, WebhookSecurityEventPublisher>();
+        services.AddScoped<WebhookSourceSecurityFilter>();
         return services;
     }
 
@@ -66,6 +86,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<StripeBillingWebhookService>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
+        services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();
+        services.AddScoped<GooglePayBillingWebhookService>();
+
+        // Register webhook source security controls (IP allowlist, threshold monitor,
+        // security-event publishing, and the authorization filter that enforces them).
+        services.AddBillingWebhookSourceSecurity();
 
         return services;
     }
