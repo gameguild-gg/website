@@ -85,6 +85,7 @@ public class AuthorizationModule : ModuleBase
         modelBuilder.ApplyConfiguration(new DataMaskingRuleConfiguration());
         modelBuilder.ApplyConfiguration(new TenantPermissionConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionTemplateConfiguration());
+        modelBuilder.ApplyConfiguration(new PermissionAuditLogConfiguration());
 
         // RBAC: Dynamic roles with deny permission support
         modelBuilder.ApplyConfiguration(new DynamicRoleConfiguration());

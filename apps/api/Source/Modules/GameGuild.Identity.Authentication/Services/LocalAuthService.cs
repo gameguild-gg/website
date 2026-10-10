@@ -35,9 +35,14 @@ public class LocalAuthService(
     ISessionManagementService sessionManagementService,
     IOptions<JwtOptions>? jwtOptions = null,
     IAuthenticationAuditEventSink? auditEventSink = null,
-    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null
+    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null,
+    IOptions<SignInComplianceGateOptions>? complianceGateOptions = null,
+    ISignInCompliancePolicy? compliancePolicy = null
 ) : ILocalAuthService
 {
+    private const string ComplianceDeniedAuditAction = "Authentication.ComplianceDenied";
+    private const string ComplianceChallengeAuditAction = "Authentication.ComplianceChallengeRequired";
+
     public async Task<SignInResponse> LocalSignInAsync(LocalSignInRequest request, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -186,6 +191,61 @@ public class LocalAuthService(
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, authenticatedUserId, cancellationToken).ConfigureAwait(false);
             var tenantAccessContext = await ResolveTenantAccessContextAsync(authenticatedUserId, request.TenantId, cancellationToken).ConfigureAwait(false);
             RequireActiveTenantAccess(tenantAccessContext);
+
+            // Sign-in compliance gate (issue #267): after credential validation and tenant
+            // access are confirmed, but before any token is generated or any session is
+            // created, the compliance policy decides whether the sign-in may proceed.
+            var complianceGate = complianceGateOptions?.Value ?? SignInComplianceGateOptions.Disabled;
+            if (complianceGate.IsActive)
+            {
+                var complianceDecision = await EvaluateSignInComplianceGateAsync(
+                    new SignInComplianceContext(authenticatedUserId, tenantAccessContext.TenantId, ipAddress, deviceFingerprint),
+                    complianceGate,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (complianceDecision.Outcome == SignInComplianceOutcome.Deny)
+                {
+                    await RecordComplianceAuditEventAsync(
+                        ComplianceDeniedAuditAction,
+                        authenticatedUserId,
+                        tenantAccessContext.TenantId,
+                        ipAddress,
+                        userAgent,
+                        complianceDecision.Reason,
+                        complianceGate.Mode).ConfigureAwait(false);
+                    logger.LogWarning(
+                        "Sign-in denied by the compliance gate for user {UserId} with reason {Reason}",
+                        authenticatedUserId, complianceDecision.Reason);
+                    throw new AccessDeniedException("Sign-in denied by the compliance gate.");
+                }
+
+                if (complianceDecision.Outcome == SignInComplianceOutcome.Challenge)
+                {
+                    await RecordComplianceAuditEventAsync(
+                        ComplianceChallengeAuditAction,
+                        authenticatedUserId,
+                        tenantAccessContext.TenantId,
+                        ipAddress,
+                        userAgent,
+                        complianceDecision.Reason,
+                        complianceGate.Mode).ConfigureAwait(false);
+                    logger.LogInformation(
+                        "Sign-in requires compliance step-up for user {UserId} with reason {Reason}",
+                        authenticatedUserId, complianceDecision.Reason);
+
+                    return new SignInResponse
+                    {
+                        Success = false,
+                        Message = "Additional verification required",
+                        RequiresStepUp = true,
+                        StepUpToken = Guid.NewGuid().ToString("N"),
+                        StepUpExpiresAt = SystemClock.UtcNow.AddMinutes(5),
+                        UserId = authenticatedUserId,
+                        Email = authenticatedUser?.Email ?? request.Email,
+                        TenantId = tenantAccessContext.TenantId
+                    };
+                }
+            }
 
             var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
                 jwtOptions, configuration, request.RememberMe == true);
@@ -785,6 +845,83 @@ public class LocalAuthService(
         }
 
         throw new AccessDeniedException("Authenticated user has no active tenant membership.");
+    }
+
+    /// <summary>
+    ///     Evaluates the sign-in compliance policy for an authenticated user. In
+    ///     <see cref="SignInComplianceGateMode.ChallengeOnly" /> the gate may only challenge,
+    ///     so deny-class decisions are downgraded to a step-up challenge. When the policy
+    ///     cannot produce a decision the gate fails closed only in
+    ///     <see cref="SignInComplianceGateMode.Enforce" />; other modes fail open.
+    /// </summary>
+    private async Task<SignInComplianceDecision> EvaluateSignInComplianceGateAsync(
+        SignInComplianceContext context,
+        SignInComplianceGateOptions gate,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var decision = await (compliancePolicy ?? AllowAllSignInCompliancePolicy.Instance)
+                .EvaluateAsync(context, cancellationToken).ConfigureAwait(false);
+
+            if (gate.Mode == SignInComplianceGateMode.ChallengeOnly && decision.Outcome == SignInComplianceOutcome.Deny)
+            {
+                return SignInComplianceDecision.Challenge(decision.Reason);
+            }
+
+            return decision;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Sign-in compliance evaluation failed for user {UserId}", context.UserId);
+
+            return gate.FailClosed
+                ? SignInComplianceDecision.Deny(SignInComplianceReasons.EvaluationFailed)
+                : SignInComplianceDecision.Allow;
+        }
+    }
+
+    /// <summary>
+    ///     Audits a non-allow compliance decision. Reason codes are coarse by contract, so
+    ///     no verification detail (provider, documents, case references) is ever leaked.
+    /// </summary>
+    private async Task RecordComplianceAuditEventAsync(
+        string actionType,
+        Guid userId,
+        Guid? tenantId,
+        string? ipAddress,
+        string? userAgent,
+        string reason,
+        SignInComplianceGateMode gateMode)
+    {
+        if (auditEventSink is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await auditEventSink.RecordAsync(new AuthenticationAuditEvent(
+                actionType,
+                userId,
+                Success: false,
+                Method: "Password",
+                IpAddress: ipAddress,
+                UserAgent: userAgent,
+                TenantId: tenantId,
+                ErrorMessage: reason,
+                Metadata: new
+                {
+                    Reason = reason,
+                    GateMode = gateMode.ToString(),
+                    CorrelationId = httpContextAccessor.HttpContext?.TraceIdentifier
+                }),
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Could not record authentication compliance event {ActionType}", actionType);
+        }
     }
 
     private async Task<TenantAccessContext> ResolveTenantAccessContextAsync(Guid userId, Guid? requestedTenantId, CancellationToken cancellationToken)
