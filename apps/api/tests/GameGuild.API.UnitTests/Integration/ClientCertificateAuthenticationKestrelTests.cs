@@ -233,6 +233,10 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
         {
             SslOptions = new System.Net.Security.SslClientAuthenticationOptions
             {
+                // Restrict to TLS 1.2: the Linux TLS stack does not reliably surface
+                // optional client certificates negotiated with TLS 1.3, which would
+                // leave Connection.ClientCertificate null on the server.
+                EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12,
                 RemoteCertificateValidationCallback = (_, _, _, _) => true,
                 ClientCertificates = clientCertificate is null
                     ? new X509CertificateCollection()
