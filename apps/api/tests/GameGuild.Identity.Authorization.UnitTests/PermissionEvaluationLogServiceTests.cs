@@ -54,7 +54,18 @@ public sealed class PermissionEvaluationLogServiceTests
     {
         var sink = new RecordingSink(persisted: true);
         var service = CreateService(sink);
-        var record = CreateRecord(roles: null!);
+        // CreateRecord coalesces an unset roles argument to the default attribution, so the
+        // null-roles path has to build the record directly to exercise the normalization.
+        var record = new PermissionEvaluationRecord(
+            Guid.Parse("4b50fdd6-2e85-42bb-a9fa-27f6cb7e97c6"),
+            Guid.Parse("7b37d70c-6ecd-4eb2-9f21-c08fc9563e85"),
+            null!,
+            "Project",
+            "b659b7bf-6281-42e6-a7ef-23d296cff5dd",
+            ["Read", "Edit"],
+            PermissionEvaluationOutcome.Allow,
+            "graphql",
+            "guarded");
 
         await service.RecordAsync(record, CancellationToken.None);
 
