@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -41,9 +42,17 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
         using var client = host.CreateClient(_fixture.BoundClientCertificate);
 
         using var response = await client.GetAsync("/cert-whoami");
+        var body = await response.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            Assert.Fail(
+                $"Expected OK got {(int)response.StatusCode} '{body}'.\n" +
+                $"Server logs:\n{host.DumpRecentLogs()}");
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var payload = document.RootElement;
         Assert.Equal(host.BoundAccountId.ToString(), payload.GetProperty("sub").GetString());
         Assert.Equal("svc-kestrel-bound", payload.GetProperty("clientId").GetString());
         Assert.Equal("Service", payload.GetProperty("actorKind").GetString());
@@ -117,7 +126,9 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
     public async Task<TestKestrelHost> StartHostAsync()
     {
         var builder = WebApplication.CreateBuilder();
+        var logCollector = new CollectingLoggerProvider();
         builder.Logging.ClearProviders();
+        builder.Logging.AddProvider(logCollector);
         // Bind 127.0.0.1:0 explicitly: ListenLocalhost(0) cannot allocate a dynamic
         // port because it would have to bind the IPv4 and IPv6 loopback together.
         builder.WebHost.ConfigureKestrel(kestrel => kestrel.Listen(IPAddress.Loopback, 0, listenOptions => listenOptions.UseHttps(httpsOptions =>
@@ -145,7 +156,7 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
             if (!result.Succeeded || result.Principal is null)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync("unauthenticated");
+                await context.Response.WriteAsync($"unauthenticated [{DescribeFailure(context)}]");
                 return;
             }
 
@@ -180,7 +191,40 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
         await dbContext.SaveChangesAsync();
 
         await app.StartAsync();
-        return new TestKestrelHost(app, this);
+        return new TestKestrelHost(app, this, logCollector);
+    }
+
+    /// <summary>
+    ///     Re-runs the handler's chain policy outside the authentication pipeline so a
+    ///     failing integration test reports which stage denied the certificate.
+    /// </summary>
+    private string DescribeFailure(HttpContext context)
+    {
+        var clientCertificate = context.Connection.ClientCertificate;
+        if (clientCertificate is null)
+        {
+            return "no client certificate reached the application";
+        }
+
+        using var chain = new X509Chain
+        {
+            ChainPolicy =
+            {
+                TrustMode = X509ChainTrustMode.CustomRootTrust,
+                RevocationMode = X509RevocationMode.NoCheck,
+                VerificationFlags = X509VerificationFlags.NoFlag,
+                VerificationTime = DateTime.UtcNow
+            }
+        };
+        chain.ChainPolicy.CustomTrustStore.Add(CertificateAuthority);
+        var built = chain.Build(clientCertificate);
+        var statuses = string.Join(
+            ", ",
+            chain.ChainStatus.Select(status => $"{status.Status}: {status.StatusInformation.Trim()}"));
+        return $"chain built={built}"
+            + (string.IsNullOrEmpty(statuses) ? string.Empty : $" statuses=[{statuses}]")
+            + $" thumbprint={ClientCertificateAuthenticationUtilities.GetNormalizedThumbprint(clientCertificate)}"
+            + $" bound={ClientCertificateAuthenticationUtilities.GetNormalizedThumbprint(BoundClientCertificate)}";
     }
 
     public HttpClient CreateClient(X509Certificate2? clientCertificate)
@@ -258,9 +302,16 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
     }
 }
 
-public sealed class TestKestrelHost(WebApplication app, KestrelClientCertificateFixture fixture) : IAsyncDisposable
+public sealed class TestKestrelHost(
+    WebApplication app,
+    KestrelClientCertificateFixture fixture,
+    CollectingLoggerProvider logCollector) : IAsyncDisposable
 {
     public Guid BoundAccountId => fixture.BoundAccountId;
+
+    public string DumpRecentLogs() => string.Join(
+        "\n",
+        logCollector.Entries.TakeLast(50).Select(entry => $"[{entry.Level}] {entry.Category}: {entry.Message}"));
 
     public HttpClient CreateClient(X509Certificate2? clientCertificate)
     {
@@ -273,6 +324,45 @@ public sealed class TestKestrelHost(WebApplication app, KestrelClientCertificate
     {
         await app.StopAsync();
         await app.DisposeAsync();
+    }
+}
+
+/// <summary>
+///     Captures server-side log entries so failing integration tests can print why
+///     the authentication handler rejected a certificate.
+/// </summary>
+public sealed class CollectingLoggerProvider : ILoggerProvider
+{
+    public sealed record LogEntry(string Category, LogLevel Level, string Message);
+
+    private readonly ConcurrentQueue<LogEntry> _entries = new();
+
+    public IReadOnlyCollection<LogEntry> Entries => _entries.ToArray();
+
+    public ILogger CreateLogger(string categoryName) => new CollectingLogger(this, categoryName);
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class CollectingLogger(CollectingLoggerProvider provider, string category) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (IsEnabled(logLevel))
+            {
+                provider._entries.Enqueue(new LogEntry(category, logLevel, formatter(state, exception)));
+            }
+        }
     }
 }
 
