@@ -140,6 +140,10 @@ public static class DataDependencyInjection
         // Google ID token verifier — cryptographic signature + iss/aud/exp via Google.Apis.Auth.
         // Supersedes OAuthService.ValidateGoogleIdTokenInternalAsync (Todo 3 swaps the only caller).
         services.AddScoped<IGoogleIdTokenVerifier, GoogleIdTokenVerifier>();
+        // Generic OIDC federation (enterprise IdPs) — discovery + authorization-code + JWKS ID-token
+        // validation, config-gated per Authentication:ExternalProviders:Oidc:<slug> (fail closed).
+        services.AddHttpClient(OidcFederationService.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(10));
+        services.AddScoped<IOidcFederationService, OidcFederationService>();
         services.AddScoped<IWeb3Service, Web3Service>();
         services.AddScoped<IServiceAccountService, ServiceAccountService>();
 

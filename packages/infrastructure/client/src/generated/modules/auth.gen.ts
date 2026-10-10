@@ -477,6 +477,117 @@ export class AuthModule {
   }
 
   /**
+   * Discover federation providers for an email domain
+   *
+   * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+   */
+  async getAuthOidcDiscoverProvider(query?: { email?: string }): Promise<Result<Types.IdentityAuthenticationOidcDiscoverProviderOutput, ApiError>> {
+    const url = '/v1/auth/oidc:discover-provider';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOidcDiscoverProviderOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolve the provider's front-channel logout URL
+   *
+   * Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+   */
+  async getAuthOidcEndSessionUrl(
+    slug: string,
+    query?: { postLogoutRedirectUri?: string },
+  ): Promise<Result<Types.IdentityAuthenticationOidcEndSessionUrlOutput, ApiError>> {
+    const url = `/v1/auth/oidc/${slug}:end-session-url`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOidcEndSessionUrlOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Initiate OIDC federation provider sign-in
+   *
+   * Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.
+   */
+  async postAuthOidcSignInAuthorize(
+    slug: string,
+    body: Types.IdentityAuthenticationOidcAuthorizeRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationOidcSignInOutput, ApiError>> {
+    const url = `/v1/auth/oidc/${slug}:sign-in-authorize`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationOidcAuthorizeRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOidcSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle OIDC federation provider callback
+   *
+   * Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).
+   */
+  async postAuthOidcSignInCallback(
+    slug: string,
+    body: Types.IdentityAuthenticationOidcCallbackRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = `/v1/auth/oidc/${slug}:sign-in-callback`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationOidcCallbackRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Change password for authenticated user
    *
    * Changes the password for the currently authenticated user.

@@ -1,9 +1,10 @@
 namespace GameGuild.Configuration.PresentationLayer.Authentication;
 
 /// <summary>
-///     Configuration for OAuth 2.0 identity providers supported by GameGuild.
+///     Configuration for OAuth 2.0 identity providers supported by GameGuild, plus
+///     config-gated generic OIDC federation providers (see <see cref="Oidc" />).
 /// </summary>
-public sealed class ExternalProviderOptions
+public sealed partial class ExternalProviderOptions
 {
     private static readonly HashSet<string> SupportedProviders = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -34,6 +35,17 @@ public sealed class ExternalProviderOptions
 
             (providerOptions ?? throw new InvalidOperationException($"External provider settings for '{providerName}' are required."))
                 .Validate(providerName);
+        }
+
+        if (Oidc is null)
+        {
+            throw new InvalidOperationException("OIDC federation provider settings are required.");
+        }
+
+        foreach (var (slug, oidcOptions) in Oidc)
+        {
+            (oidcOptions ?? throw new InvalidOperationException($"OIDC federation settings for '{slug}' are required."))
+                .Validate(slug);
         }
     }
 }

@@ -272,6 +272,8 @@ public sealed class OAuthAuthServiceUrlTests
             Mock.Of<IRefreshTokenHasher>(),
             Mock.Of<IOAuthService>(),
             Mock.Of<IGoogleIdTokenVerifier>(),
+            Mock.Of<IOidcFederationService>(),
+            Mock.Of<IMfaService>(),
             Mock.Of<IExternalLoginRepository>(),
             config,
             Mock.Of<IAuthAttemptService>(),

@@ -629,6 +629,8 @@ public class RememberMeSessionLifetimeTests
                 Hashes.Object,
                 Oauth.Object,
                 GoogleVerifier.Object,
+                new Mock<IOidcFederationService>().Object,
+                new Mock<IMfaService>().Object,
                 ExternalLogins.Object,
                 configuration,
                 Attempts.Object,
