@@ -5,6 +5,7 @@ using GameGuild.Identity.Users;
 using GameGuild.Notifications;
 using GameGuild.Notifications.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -57,6 +58,7 @@ public sealed class PermissionExpirationAlertLoggingTests
         foreach (var log in logs)
         {
             log.Level.Should().Be(LogLevel.Warning);
+            log.EventId.Id.Should().Be(0);
             log.Exception.Should().BeNull();
             var state = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.State).ToArray();
             state.Select(property => property.Key).Should().Equal("Kind", "Channel", "Outcome", "{OriginalFormat}");
@@ -78,11 +80,11 @@ public sealed class PermissionExpirationAlertLoggingTests
 
     private sealed class CapturingLogger<T> : ILogger<T>
     {
-        public List<(LogLevel Level, object? State, Exception? Exception, string Text)> Messages { get; } = [];
+        public List<(LogLevel Level, EventId EventId, object? State, Exception? Exception, string Text)> Messages { get; } = [];
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullLogger<T>.Instance.BeginScope(state);
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
 
         public void Log<TState>(
             LogLevel logLevel,
@@ -91,14 +93,8 @@ public sealed class PermissionExpirationAlertLoggingTests
             Exception? exception,
             Func<TState, Exception?, string> formatter)
         {
-            Messages.Add((logLevel, state, exception, formatter(state, exception)));
+            Messages.Add((logLevel, eventId, state, exception, formatter(state, exception)));
         }
 
-        private sealed class NullScope : IDisposable
-        {
-            public static NullScope Instance { get; } = new();
-
-            public void Dispose() { }
-        }
     }
 }
