@@ -33,9 +33,9 @@ public sealed class PermissionExpirationAlertLoggingTests
                 It.IsAny<string?>(), It.IsAny<NotificationPriority>(), It.IsAny<Guid?>(), It.IsAny<string?>(),
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(nullResult ? null! : Result.Failure<Notification>(Error.Failure(privateFailureCode, privateFailureDescription)));
-        var logger = new Mock<ILogger<PermissionExpirationAlertHandler>>();
+        var logger = new CapturingLogger<PermissionExpirationAlertHandler>();
         var handler = new PermissionExpirationAlertHandler(users.Object, notifications.Object,
-            Options.Create(new PermissionExpirationOptions { Enabled = true }), logger.Object);
+            Options.Create(new PermissionExpirationOptions { Enabled = true }), logger);
         var notification = new PermissionExpirationNotification(permissionId, userId, null, ["permissions:read"],
             DateTime.UtcNow.AddDays(3), PermissionExpirationKind.Upcoming);
 
@@ -52,14 +52,16 @@ public sealed class PermissionExpirationAlertLoggingTests
         sends[1].Arguments[8].Should().Be(permissionId);
         sends[1].Arguments[11].Should().Be(recipientEmail);
 
-        var logs = logger.Invocations.Where(invocation => invocation.Method.Name == nameof(ILogger.Log)).ToArray();
+        var logs = logger.Messages.ToArray();
         logs.Should().HaveCount(2);
         foreach (var log in logs)
         {
-            log.Arguments[0].Should().Be(LogLevel.Warning);
-            log.Arguments[3].Should().BeNull();
-            var state = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.Arguments[2]).ToArray();
+            log.Level.Should().Be(LogLevel.Warning);
+            log.Exception.Should().BeNull();
+            var state = Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.State).ToArray();
             state.Select(property => property.Key).Should().Equal("Kind", "Channel", "Outcome", "{OriginalFormat}");
+            var channel = state.Single(property => property.Key == "Channel").Value;
+            log.Text.Should().Be($"Failed to queue Upcoming permission-expiration alert on channel {channel}: {expectedOutcome}.");
             state.Single(property => property.Key == "Kind").Value.Should().Be(PermissionExpirationKind.Upcoming);
             state.Single(property => property.Key == "Outcome").Value.Should().Be(expectedOutcome);
             foreach (var property in state)
@@ -69,8 +71,34 @@ public sealed class PermissionExpirationAlertLoggingTests
                     .And.NotContain(userId.ToString()).And.NotContain("private-value");
             }
         }
-        logs.Select(log => Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.Arguments[2])
+        logs.Select(log => Assert.IsAssignableFrom<IEnumerable<KeyValuePair<string, object?>>>(log.State)
                 .Single(property => property.Key == "Channel").Value)
             .Should().Equal(NotificationChannel.InApp, NotificationChannel.Email);
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<(LogLevel Level, object? State, Exception? Exception, string Text)> Messages { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add((logLevel, state, exception, formatter(state, exception)));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static NullScope Instance { get; } = new();
+
+            public void Dispose() { }
+        }
     }
 }
