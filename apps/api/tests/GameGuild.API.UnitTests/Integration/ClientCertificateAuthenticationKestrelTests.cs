@@ -350,7 +350,9 @@ public sealed class TestKestrelHost(
             ? "<none>"
             : $"{sslStream.LocalCertificate.Subject} [{sslStream.LocalCertificate.GetCertHashString()}]";
 
-        var request = Encoding.ASCII.GetBytes("GET /cert-whoami HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+        // HTTP/1.0 keeps the response close-delimited (no chunked encoding), which
+        // keeps the raw-response parsing below trivial.
+        var request = Encoding.ASCII.GetBytes("GET /cert-whoami HTTP/1.0\r\nHost: localhost\r\n\r\n");
         await sslStream.WriteAsync(request).ConfigureAwait(false);
         await sslStream.FlushAsync().ConfigureAwait(false);
 
