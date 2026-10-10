@@ -32,6 +32,14 @@ public class RememberMeSessionLifetimeTests
     // ── RefreshTokenLifetimeResolver.Renewal classification (2026-10-10 regression) ─────────────────────────
 
     [Fact]
+    public void LocalSignInFixture_UsesEphemeralPolicyCompatiblePassword()
+    {
+        Assert.StartsWith("aB7!", LocalRememberMeHarness.Password);
+        Assert.Equal(52, LocalRememberMeHarness.Password.Length);
+        Assert.Equal(24, Convert.FromHexString(LocalRememberMeHarness.Password[4..]).Length);
+    }
+
+    [Fact]
     public void ResolveRenewalDays_RenewsShortLivedRowsAtTheConfiguredStandardLifetime()
     {
         // Regression: an 8-hour stored row (seeded, capped, or minted under older
@@ -471,7 +479,7 @@ public class RememberMeSessionLifetimeTests
     private sealed class LocalRememberMeHarness
     {
         public const string Email = "remember@example.com";
-        public const string Password = "Password1!";
+        public static readonly string Password = $"aB7!{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24))}";
 
         public readonly Mock<IUserRepository> Users = new();
         public readonly Mock<IRefreshTokenRepository> Tokens = new();

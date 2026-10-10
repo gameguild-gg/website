@@ -32,7 +32,15 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
 {
     private const string EventName = "identity.authentication.suspicious-login-detected.v1";
     private const string Endpoint = "/v1/auth/sign-in";
-    private const string Password = "S3cure-Alert-Password!";
+    private static readonly string Password = $"aB7!{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24))}";
+
+    [Fact]
+    public void OwnerAlertFixture_UsesEphemeralPolicyCompatiblePassword()
+    {
+        Assert.StartsWith("aB7!", Password);
+        Assert.Equal(52, Password.Length);
+        Assert.Equal(24, Convert.FromHexString(Password[4..]).Length);
+    }
 
     [Fact]
     public async Task HighRiskStepUpSignInProducesRedactedOwnerAlertsOnceThroughActualInbox()
