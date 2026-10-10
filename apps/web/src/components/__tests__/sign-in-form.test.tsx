@@ -61,7 +61,12 @@ describe('SignInForm', () => {
   });
 
   it('renders navigation links', () => {
-    renderWithUser(<SignInForm magicLinkLabel="Sign in with an email link" />);
+    renderWithUser(
+      <SignInForm
+        magicLinkLabel="Sign in with an email link"
+        emailCodeLabel="Sign in with an email code"
+      />,
+    );
 
     expect(screen.getByText('Sign up')).toHaveAttribute('href', '/sign-up?redirectTo=%2F');
     expect(screen.getByText('Forgot your password?')).toHaveAttribute(
@@ -71,6 +76,10 @@ describe('SignInForm', () => {
     expect(screen.getByText('Sign in with an email link')).toHaveAttribute(
       'href',
       '/magic-link'
+    );
+    expect(screen.getByText('Sign in with an email code')).toHaveAttribute(
+      'href',
+      '/email-code'
     );
     // Terms of Service / Privacy Policy moved to the shared (auth) layout footer.
   });

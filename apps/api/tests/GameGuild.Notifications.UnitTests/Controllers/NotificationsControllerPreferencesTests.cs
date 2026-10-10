@@ -112,7 +112,7 @@ public class NotificationsControllerPreferencesTests
         catalog.Should().OnlyContain(e => knownCategories.Contains(e.Category));
 
         var transactional = catalog.Where(e => !e.Suppressible).Select(e => e.Type).ToList();
-        transactional.Should().BeEquivalentTo(["EmailVerification", "PasswordReset", "MagicLink", "TenantInvite"]);
+        transactional.Should().BeEquivalentTo(["EmailVerification", "PasswordReset", "MagicLink", "EmailCode", "TenantInvite"]);
 
         var monthlyStatement = catalog.Single(e => e.Type == "MonthlyStatement");
         monthlyStatement.Category.Should().Be("Billing");

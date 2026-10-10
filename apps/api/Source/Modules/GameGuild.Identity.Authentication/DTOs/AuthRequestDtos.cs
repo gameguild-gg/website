@@ -78,6 +78,54 @@ public sealed record ConsumeMagicLinkRequest
 }
 
 /// <summary>
+///     Request to send a one-time email sign-in code.
+/// </summary>
+public sealed record RequestEmailCodeRequest
+{
+    /// <summary>
+    ///     Email address to send the sign-in code to.
+    /// </summary>
+    [Required]
+    [EmailAddress]
+    public required string Email { get; init; }
+
+    /// <summary>
+    ///     Optional tenant context.
+    /// </summary>
+    public Guid? TenantId { get; init; }
+}
+
+/// <summary>
+///     Request to consume a one-time email sign-in code.
+/// </summary>
+public sealed record ConsumeEmailCodeRequest
+{
+    /// <summary>
+    ///     Email address the code belongs to.
+    /// </summary>
+    [Required]
+    [EmailAddress]
+    public required string Email { get; init; }
+
+    /// <summary>
+    ///     Six-digit one-time code received by email.
+    /// </summary>
+    [Required]
+    [RegularExpression("^[0-9]{6}$", ErrorMessage = "The code must be exactly six digits.")]
+    public required string Code { get; init; }
+
+    /// <summary>
+    ///     Optional tenant context.
+    /// </summary>
+    public Guid? TenantId { get; init; }
+
+    /// <summary>
+    ///     Optional device fingerprint for refresh-token session tracking.
+    /// </summary>
+    public string? DeviceFingerprint { get; init; }
+}
+
+/// <summary>
 ///     Request to complete password reset
 /// </summary>
 public sealed record CompletePasswordResetRequest

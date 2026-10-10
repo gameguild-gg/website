@@ -10,7 +10,7 @@ public sealed class NotificationMetadataProtector(IDataProtectionProvider provid
     private const string Purpose = "GameGuild.Notifications.IdentityEmailMetadata.v1";
 
     public static bool RequiresProtection(NotificationType type) =>
-        type is NotificationType.EmailVerification or NotificationType.PasswordReset or NotificationType.MagicLink;
+        type is NotificationType.EmailVerification or NotificationType.PasswordReset or NotificationType.MagicLink or NotificationType.EmailCode;
 
     public bool ProtectForStorage(Notification notification)
     {

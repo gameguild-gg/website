@@ -10,7 +10,8 @@
   },
   "signIn": {
     "continueWithDiscord": "Continue with Discord",
-    "magicLink": "Sign in with an email link"
+    "magicLink": "Sign in with an email link",
+    "emailCode": "Sign in with an email code"
   },
   "magicLink": {
     "request": {
@@ -33,6 +34,31 @@
     },
     "backToSignIn": "Back to sign in",
     "requestAnother": "Request another sign-in link"
+  },
+  "emailCode": {
+    "request": {
+      "title": "Sign in with an email code",
+      "description": "Enter the email address for your GameGuild account. We will send a one-time six-digit sign-in code if an account matches.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "name@example.com",
+      "submit": "Send sign-in code",
+      "pending": "Sending...",
+      "successTitle": "Check your email",
+      "successDescription": "If an account matches that email, a sign-in code is on its way.",
+      "error": "We could not send the sign-in code right now. Please try again."
+    },
+    "consume": {
+      "title": "Enter your sign-in code",
+      "description": "Enter the six-digit code we sent to",
+      "codeLabel": "Sign-in code",
+      "codePlaceholder": "123456",
+      "submit": "Sign in",
+      "pending": "Checking...",
+      "useDifferentEmail": "Use a different email",
+      "errorTitle": "This sign-in code cannot be used",
+      "error": "It may have expired or already been used. Request a new code and try again."
+    },
+    "backToSignIn": "Back to sign in"
   },
   "settings": {
     "accountTitle": "Account settings",

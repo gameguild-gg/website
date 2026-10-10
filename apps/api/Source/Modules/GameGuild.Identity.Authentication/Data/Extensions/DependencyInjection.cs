@@ -231,6 +231,7 @@ public static class DataDependencyInjection
         // Facade that preserves the original IAuthenticationAnomalyDetectionService contract
         services.AddScoped<AuthenticationAnomalyDetectionService>();
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+        services.AddScoped<IEmailCodeService, EmailCodeService>();
         services.AddScoped<IAuthenticationAnomalyDetectionService, AuthenticationAnomalyDetectionService>();
         services.AddScoped<IUserEnumerationProtectionService, UserEnumerationProtectionService>();
         services.AddScoped<IEncryptionService, EncryptionService>();
@@ -374,6 +375,8 @@ public static class DataDependencyInjection
         services.AddScoped<IRequestHandler<ChangePasswordCommand, PasswordChangeResult>, ChangePasswordCommandHandler>();
         services.AddScoped<IRequestHandler<RequestMagicLinkCommand, MagicLinkRequestResult>, RequestMagicLinkCommandHandler>();
         services.AddScoped<IRequestHandler<ConsumeMagicLinkCommand, SignInResponse>, ConsumeMagicLinkCommandHandler>();
+        services.AddScoped<IRequestHandler<RequestEmailCodeCommand, EmailCodeRequestResult>, RequestEmailCodeCommandHandler>();
+        services.AddScoped<IRequestHandler<ConsumeEmailCodeCommand, SignInResponse>, ConsumeEmailCodeCommandHandler>();
         
         // Logout handler with immediate token revocation
         services.AddScoped<IRequestHandler<LogoutCommand, LogoutResponse>, LogoutHandler>();

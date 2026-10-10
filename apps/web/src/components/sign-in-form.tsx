@@ -29,11 +29,13 @@ export function SignInForm({
   className,
   redirectTo = "/",
   magicLinkLabel,
+  emailCodeLabel,
   providers,
   ...props
 }: React.ComponentProps<"div"> & {
   redirectTo?: string
   magicLinkLabel?: string
+  emailCodeLabel?: string
   providers?: React.ReactNode
 }) {
   const { signIn, isLoading, error, clearError } = useAuth()
@@ -188,6 +190,16 @@ export function SignInForm({
                       className="text-sky-200 underline-offset-4 hover:underline"
                     >
                       {magicLinkLabel}
+                    </Link>
+                  </FieldDescription>
+                ) : null}
+                {emailCodeLabel ? (
+                  <FieldDescription className="text-center text-slate-300">
+                    <Link
+                      href="/email-code"
+                      className="text-sky-200 underline-offset-4 hover:underline"
+                    >
+                      {emailCodeLabel}
                     </Link>
                   </FieldDescription>
                 ) : null}

@@ -13,6 +13,7 @@ import {
 import { cookies } from "next/headers";
 import { createSharedAuthCookieConfig } from "@/lib/auth/cross-domain-auth";
 import { createMagicLinkCredentialsAuthorize } from "@/lib/auth/magic-link-credentials";
+import { createEmailCodeCredentialsAuthorize } from "@/lib/auth/email-code-credentials";
 
 const passwordCredentials = CredentialsProvider();
 const apiUrl =
@@ -24,7 +25,7 @@ const result = GameGuildAuth({
   providers: [
     CredentialsProvider({
       authorize: createMagicLinkCredentialsAuthorize(
-        passwordCredentials.authorize,
+        createEmailCodeCredentialsAuthorize(passwordCredentials.authorize, apiUrl),
         apiUrl,
       ),
     }),

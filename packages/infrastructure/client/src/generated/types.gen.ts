@@ -7268,6 +7268,18 @@ export interface IdentityAuthenticationCompleteWebAuthnRegistrationInput {
   isPasswordless?: boolean;
 }
 
+/** Request to consume a one-time email sign-in code. */
+export interface IdentityAuthenticationConsumeEmailCodeInput {
+  /** Six-digit one-time code received by email. */
+  code: string;
+  /** Optional device fingerprint for refresh-token session tracking. */
+  deviceFingerprint?: string | null;
+  /** Email address the code belongs to. */
+  email: string;
+  /** Optional tenant context. */
+  tenantId?: string | null;
+}
+
 /** Request to consume a passwordless magic sign-in link. */
 export interface IdentityAuthenticationConsumeMagicLinkInput {
   /** Optional device fingerprint for refresh-token session tracking. */
@@ -7411,6 +7423,13 @@ export interface IdentityAuthenticationDiscordSignInOutput {
   /** CSRF state parameter embedded in the authorization URL (also returned separately
 so the caller can stash it in its state cookie) */
   state: string | null;
+}
+
+/** Data model for Identity Authentication Email Code Request Result. */
+export interface IdentityAuthenticationEmailCodeRequestResult {
+  expiresInMinutes?: number;
+  message?: string | null;
+  success?: boolean;
 }
 
 /** Response for email verification request */
@@ -7689,6 +7708,14 @@ export interface IdentityAuthenticationRefreshTokenInput {
 export interface IdentityAuthenticationRemoveRoleFromUserInput {
   roleId?: string;
   userId?: string;
+}
+
+/** Request to send a one-time email sign-in code. */
+export interface IdentityAuthenticationRequestEmailCodeInput {
+  /** Email address to send the sign-in code to. */
+  email: string;
+  /** Optional tenant context. */
+  tenantId?: string | null;
 }
 
 /** Request to send a passwordless magic sign-in link. */
@@ -20437,6 +20464,7 @@ export let IdentityAuthenticationCompleteMfaSetupInputSchema: z.ZodType<Identity
 export let IdentityAuthenticationCompletePasswordResetInputSchema: z.ZodType<IdentityAuthenticationCompletePasswordResetInput>;
 export let IdentityAuthenticationCompleteWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnRegistrationInput>;
+export let IdentityAuthenticationConsumeEmailCodeInputSchema: z.ZodType<IdentityAuthenticationConsumeEmailCodeInput>;
 export let IdentityAuthenticationConsumeMagicLinkInputSchema: z.ZodType<IdentityAuthenticationConsumeMagicLinkInput>;
 export let IdentityAuthenticationCreateApiKeyCommandSchema: z.ZodType<IdentityAuthenticationCreateApiKeyCommand>;
 export let IdentityAuthenticationCreateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationCreateApiKeyOutput>;
@@ -20452,6 +20480,7 @@ export let IdentityAuthenticationDiscordLinkAuthorizeInputSchema: z.ZodType<Iden
 export let IdentityAuthenticationDiscordLinkAuthorizeOutputSchema: z.ZodType<IdentityAuthenticationDiscordLinkAuthorizeOutput>;
 export let IdentityAuthenticationDiscordLinkCallbackInputSchema: z.ZodType<IdentityAuthenticationDiscordLinkCallbackInput>;
 export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAuthenticationDiscordSignInOutput>;
+export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<IdentityAuthenticationEmailCodeRequestResult>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
 export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
@@ -20481,6 +20510,7 @@ export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<Ident
 export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
+export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
 export let IdentityAuthenticationRequestMagicLinkInputSchema: z.ZodType<IdentityAuthenticationRequestMagicLinkInput>;
 export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<IdentityAuthenticationRequestPasswordResetInput>;
 export let IdentityAuthenticationRevokeApiKeyInputSchema: z.ZodType<IdentityAuthenticationRevokeApiKeyInput>;
@@ -28727,6 +28757,17 @@ IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema = z.object({
   isPasswordless: z.boolean().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationConsumeEmailCodeInput. Request to consume a one-time email sign-in code. */
+IdentityAuthenticationConsumeEmailCodeInputSchema = z.object({
+  code: z
+    .string()
+    .min(1)
+    .regex(/^[0-9]{6}$/),
+  deviceFingerprint: z.string().nullable().optional(),
+  email: z.string().email().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationConsumeMagicLinkInput. Request to consume a passwordless magic sign-in link. */
 IdentityAuthenticationConsumeMagicLinkInputSchema = z.object({
   deviceFingerprint: z.string().nullable().optional(),
@@ -28841,6 +28882,13 @@ IdentityAuthenticationDiscordLinkCallbackInputSchema = z.object({
 IdentityAuthenticationDiscordSignInOutputSchema = z.object({
   authUrl: z.string().nullable(),
   state: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationEmailCodeRequestResult. Data model for Identity Authentication Email Code Request Result. */
+IdentityAuthenticationEmailCodeRequestResultSchema = z.object({
+  expiresInMinutes: z.number().int().optional(),
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationEmailVerificationOutput. Response for email verification request */
@@ -29064,6 +29112,12 @@ IdentityAuthenticationRefreshTokenInputSchema = z.object({
 IdentityAuthenticationRemoveRoleFromUserInputSchema = z.object({
   roleId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRequestEmailCodeInput. Request to send a one-time email sign-in code. */
+IdentityAuthenticationRequestEmailCodeInputSchema = z.object({
+  email: z.string().email().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationRequestMagicLinkInput. Request to send a passwordless magic sign-in link. */

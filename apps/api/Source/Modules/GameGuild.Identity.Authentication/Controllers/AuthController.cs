@@ -208,6 +208,63 @@ public sealed class AuthController(ISender sender) : BaseApiController
         return Ok(result);
     }
 
+    /// <summary>
+    ///     Request a one-time email sign-in code.
+    /// </summary>
+    /// <param name="body">Email-code request with email and optional tenant context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Generic confirmation; does not reveal whether the account exists</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/email-code:request")]
+    [EndpointSummary("Request a one-time email sign-in code")]
+    [EndpointDescription("Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.")]
+    [ProducesResponseType<EmailCodeRequestResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RequestEmailCode([FromBody] RequestEmailCodeRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new RequestEmailCodeCommand
+        {
+            Email = body.Email,
+            TenantId = body.TenantId,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = Request.Headers.UserAgent.ToString()
+        };
+
+        var result = await sender.Send(command, ct).ConfigureAwait(false);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Consume a one-time email sign-in code.
+    /// </summary>
+    /// <param name="body">Email, six-digit code, and optional tenant/device context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Authentication response with access and refresh tokens</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/email-code:consume")]
+    [EndpointSummary("Consume a one-time email sign-in code")]
+    [EndpointDescription("Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ConsumeEmailCode([FromBody] ConsumeEmailCodeRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new ConsumeEmailCodeCommand
+        {
+            Email = body.Email,
+            Code = body.Code,
+            TenantId = body.TenantId,
+            DeviceFingerprint = body.DeviceFingerprint,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = Request.Headers.UserAgent.ToString()
+        };
+
+        return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
+    }
+
     #endregion
 
     #region Discord OAuth sign-in - /v1/auth/discord
