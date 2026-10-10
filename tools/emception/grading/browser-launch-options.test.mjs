@@ -4,14 +4,17 @@ import { createCodeBrowserLaunchOptions } from './browser-launch-options.mjs';
 
 test('bundled browser configuration retains the mandatory sandbox', () => {
   assert.deepEqual(createCodeBrowserLaunchOptions(undefined), {
-    headless: true, chromiumSandbox: true,
+    headless: true,
+    chromiumSandbox: true,
     args: ['--js-flags=--max-old-space-size=512'],
   });
 });
 
 test('installed Chrome configuration retains the mandatory sandbox', () => {
   assert.deepEqual(createCodeBrowserLaunchOptions('chrome'), {
-    headless: true, chromiumSandbox: true, channel: 'chrome',
+    headless: true,
+    chromiumSandbox: true,
+    channel: 'chrome',
     args: ['--js-flags=--max-old-space-size=512'],
   });
 });

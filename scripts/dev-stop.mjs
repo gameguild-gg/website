@@ -1,17 +1,13 @@
 #!/usr/bin/env node
 
-import { execFileSync, spawn } from "node:child_process";
-import { readlinkSync, realpathSync } from "node:fs";
-import path from "node:path";
-import {
-  listRegisteredDevProcesses,
-  removeDevProcessRegistration,
-  repositoryRoot,
-} from "./dev-runtime.mjs";
+import { execFileSync, spawn } from 'node:child_process';
+import { readlinkSync, realpathSync } from 'node:fs';
+import path from 'node:path';
+import { listRegisteredDevProcesses, removeDevProcessRegistration, repositoryRoot } from './dev-runtime.mjs';
 
 const PORTS = [3000, 8080];
-const dryRun = process.argv.includes("--dry-run");
-const skipCompose = process.argv.includes("--skip-compose");
+const dryRun = process.argv.includes('--dry-run');
+const skipCompose = process.argv.includes('--skip-compose');
 
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -22,25 +18,21 @@ function isAlive(pid) {
     process.kill(pid, 0);
     return true;
   } catch (error) {
-    return error?.code === "EPERM";
+    return error?.code === 'EPERM';
   }
 }
 
 function isManagedCommand(command) {
-  const normalized = command.replaceAll("\\", "/");
-  return /^(?:\S*\/)?node(?:\.exe)?\s+(?:\S*\/)?scripts\/dev(?:-fast)?\.mjs(?:\s|$)/i.test(
-    normalized,
-  );
+  const normalized = command.replaceAll('\\', '/');
+  return /^(?:\S*\/)?node(?:\.exe)?\s+(?:\S*\/)?scripts\/dev(?:-fast)?\.mjs(?:\s|$)/i.test(normalized);
 }
 
 function modeFromCommand(command) {
-  return command.replaceAll("\\", "/").includes("scripts/dev-fast.mjs")
-    ? "dev:fast"
-    : "dev";
+  return command.replaceAll('\\', '/').includes('scripts/dev-fast.mjs') ? 'dev:fast' : 'dev';
 }
 
 function processCwd(pid) {
-  if (process.platform === "linux") {
+  if (process.platform === 'linux') {
     try {
       return realpathSync(readlinkSync(`/proc/${pid}/cwd`));
     } catch {
@@ -48,16 +40,12 @@ function processCwd(pid) {
     }
   }
 
-  if (process.platform === "darwin") {
+  if (process.platform === 'darwin') {
     try {
-      const output = execFileSync(
-        "lsof",
-        ["-a", "-p", String(pid), "-d", "cwd", "-Fn"],
-        { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
-      );
+      const output = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
       const cwd = output
-        .split("\n")
-        .find((line) => line.startsWith("n"))
+        .split('\n')
+        .find((line) => line.startsWith('n'))
         ?.slice(1);
       return cwd ? realpathSync(cwd) : null;
     } catch {
@@ -69,16 +57,13 @@ function processCwd(pid) {
 }
 
 function listPosixProcesses() {
-  if (process.platform === "win32") return [];
+  if (process.platform === 'win32') return [];
 
-  const args =
-    process.platform === "darwin"
-      ? ["-axo", "pid=,ppid=,command="]
-      : ["-eo", "pid=,ppid=,args="];
-  const output = execFileSync("ps", args, { encoding: "utf8" });
+  const args = process.platform === 'darwin' ? ['-axo', 'pid=,ppid=,command='] : ['-eo', 'pid=,ppid=,args='];
+  const output = execFileSync('ps', args, { encoding: 'utf8' });
   const processes = [];
 
-  for (const line of output.split("\n")) {
+  for (const line of output.split('\n')) {
     const match = line.match(/^\s*(\d+)\s+(\d+)\s+(.+)$/);
     if (!match) continue;
     processes.push({
@@ -99,9 +84,7 @@ function discoverDevProcesses() {
 
   for (const registration of registrations) {
     const entry = processByPid.get(registration.pid);
-    const commandMatches =
-      process.platform === "win32" ||
-      (entry && isManagedCommand(entry.command));
+    const commandMatches = process.platform === 'win32' || (entry && isManagedCommand(entry.command));
 
     if (isAlive(registration.pid) && commandMatches) {
       candidates.set(registration.pid, {
@@ -143,12 +126,8 @@ async function waitForExit(pids, timeoutMilliseconds) {
 function signalProcess(pid, signal) {
   if (!isAlive(pid)) return;
 
-  if (process.platform === "win32") {
-    execFileSync(
-      "taskkill",
-      ["/pid", String(pid), "/T", ...(signal === "SIGKILL" ? ["/F"] : [])],
-      { stdio: "ignore" },
-    );
+  if (process.platform === 'win32') {
+    execFileSync('taskkill', ['/pid', String(pid), '/T', ...(signal === 'SIGKILL' ? ['/F'] : [])], { stdio: 'ignore' });
     return;
   }
 
@@ -158,22 +137,20 @@ function signalProcess(pid, signal) {
 async function stopOrchestrators() {
   const processes = discoverDevProcesses();
   if (processes.length === 0) {
-    console.log("[dev:stop] no managed development orchestrator is running");
+    console.log('[dev:stop] no managed development orchestrator is running');
     return;
   }
 
   for (const entry of processes) {
-    console.log(
-      `[dev:stop] ${dryRun ? "would stop" : "stopping"} ${entry.mode} orchestrator (pid ${entry.pid})`,
-    );
+    console.log(`[dev:stop] ${dryRun ? 'would stop' : 'stopping'} ${entry.mode} orchestrator (pid ${entry.pid})`);
   }
   if (dryRun) return;
 
   for (const entry of processes) {
     try {
-      signalProcess(entry.pid, "SIGTERM");
+      signalProcess(entry.pid, 'SIGTERM');
     } catch (error) {
-      if (error?.code !== "ESRCH") throw error;
+      if (error?.code !== 'ESRCH') throw error;
     }
   }
 
@@ -184,9 +161,9 @@ async function stopOrchestrators() {
   for (const pid of remaining) {
     console.log(`[dev:stop] forcing orchestrator shutdown (pid ${pid})`);
     try {
-      signalProcess(pid, "SIGKILL");
+      signalProcess(pid, 'SIGKILL');
     } catch (error) {
-      if (error?.code !== "ESRCH") throw error;
+      if (error?.code !== 'ESRCH') throw error;
     }
   }
 
@@ -198,18 +175,14 @@ async function stopOrchestrators() {
 }
 
 function listenersForPort(port) {
-  if (process.platform === "win32") {
-    const output = execFileSync("netstat", ["-ano", "-p", "tcp"], {
-      encoding: "utf8",
+  if (process.platform === 'win32') {
+    const output = execFileSync('netstat', ['-ano', '-p', 'tcp'], {
+      encoding: 'utf8',
     });
     const pids = new Set();
-    for (const line of output.split("\n")) {
+    for (const line of output.split('\n')) {
       const columns = line.trim().split(/\s+/);
-      if (
-        columns.length >= 5 &&
-        columns[1]?.endsWith(`:${port}`) &&
-        columns[3] === "LISTENING"
-      ) {
+      if (columns.length >= 5 && columns[1]?.endsWith(`:${port}`) && columns[3] === 'LISTENING') {
         pids.add(Number(columns[4]));
       }
     }
@@ -217,14 +190,14 @@ function listenersForPort(port) {
   }
 
   try {
-    const output = execFileSync("lsof", [`-tiTCP:${port}`, "-sTCP:LISTEN"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
+    const output = execFileSync('lsof', [`-tiTCP:${port}`, '-sTCP:LISTEN'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
     });
     return [
       ...new Set(
         output
-          .split("\n")
+          .split('\n')
           .map(Number)
           .filter((pid) => Number.isInteger(pid) && pid > 0),
       ),
@@ -247,22 +220,20 @@ async function stopPortListeners() {
   }
 
   if (listeners.size === 0) {
-    console.log("[dev:stop] ports 3000 and 8080 are free");
+    console.log('[dev:stop] ports 3000 and 8080 are free');
     return;
   }
 
   for (const [pid, ports] of listeners) {
-    console.log(
-      `[dev:stop] ${dryRun ? "would stop" : "stopping"} fallback listener on ${ports.join(", ")} (pid ${pid})`,
-    );
+    console.log(`[dev:stop] ${dryRun ? 'would stop' : 'stopping'} fallback listener on ${ports.join(', ')} (pid ${pid})`);
   }
   if (dryRun) return;
 
   for (const pid of listeners.keys()) {
     try {
-      signalProcess(pid, "SIGTERM");
+      signalProcess(pid, 'SIGTERM');
     } catch (error) {
-      if (error?.code !== "ESRCH") throw error;
+      if (error?.code !== 'ESRCH') throw error;
     }
   }
 
@@ -270,9 +241,9 @@ async function stopPortListeners() {
   for (const pid of remaining) {
     console.log(`[dev:stop] forcing listener shutdown (pid ${pid})`);
     try {
-      signalProcess(pid, "SIGKILL");
+      signalProcess(pid, 'SIGKILL');
     } catch (error) {
-      if (error?.code !== "ESRCH") throw error;
+      if (error?.code !== 'ESRCH') throw error;
     }
   }
 }
@@ -283,17 +254,13 @@ function run(command, args) {
       cwd: repositoryRoot,
       shell: false,
       windowsHide: true,
-      stdio: "inherit",
+      stdio: 'inherit',
     });
-    child.once("error", reject);
-    child.once("exit", (code, signal) => {
+    child.once('error', reject);
+    child.once('exit', (code, signal) => {
       if (code === 0) resolve();
       else {
-        reject(
-          new Error(
-            `${command} failed (${signal ?? `exit ${code ?? "unknown"}`})`,
-          ),
-        );
+        reject(new Error(`${command} failed (${signal ?? `exit ${code ?? 'unknown'}`})`));
       }
     });
   });
@@ -305,23 +272,15 @@ async function main() {
 
   if (skipCompose) return;
   if (dryRun) {
-    console.log("[dev:stop] would run docker compose down --remove-orphans");
+    console.log('[dev:stop] would run docker compose down --remove-orphans');
     return;
   }
 
-  console.log("[dev:stop] stopping Docker infrastructure");
-  await run("docker", [
-    "compose",
-    "-f",
-    path.join(repositoryRoot, "compose.yaml"),
-    "down",
-    "--remove-orphans",
-  ]);
+  console.log('[dev:stop] stopping Docker infrastructure');
+  await run('docker', ['compose', '-f', path.join(repositoryRoot, 'compose.yaml'), 'down', '--remove-orphans']);
 }
 
 main().catch((error) => {
-  console.error(
-    `[dev:stop] ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`[dev:stop] ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });
