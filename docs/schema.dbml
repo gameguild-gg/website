@@ -3400,34 +3400,6 @@ Table "payments" {
   }
 }
 
-Table "PermissionAuditLog" {
-  "Id" uuid [not null]
-  "TenantId" uuid
-  "OperationType" integer [not null]
-  "UserId" uuid
-  "ResourceId" uuid
-  "ResourceType" text
-  "PermissionType" text
-  "PermissionDetails" text
-  "OldValue" text
-  "NewValue" text
-  "PerformedBy" uuid [not null]
-  "IpAddress" text
-  "UserAgent" text
-  "Reason" text
-  "Success" boolean [not null]
-  "ErrorMessage" text
-  "Timestamp" timestamp [not null]
-
-  Indexes {
-    Id [pk, name: "PK_PermissionAuditLog"]
-    TenantId [name: "IX_PermissionAuditLog_TenantId"]
-    Timestamp [name: "IX_PermissionAuditLog_Timestamp"]
-    UserId [name: "IX_PermissionAuditLog_UserId"]
-    (UserId, PermissionType, Timestamp) [name: "IX_PermissionAuditLogs_User_Permission_Timestamp"]
-  }
-}
-
 Table "PermissionDelegation" {
   "Id" uuid [not null]
   "DelegatorUserId" uuid [not null]
@@ -6756,7 +6728,7 @@ Table "Notifications" {
   "Priority" "character varying(20)" [not null]
   "ReferenceEntityId" uuid
   "ReferenceEntityType" "character varying(100)"
-  "Metadata" text
+  "Metadata" "character varying(4000)"
   "TemplateId" uuid
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]

@@ -30,6 +30,11 @@ public class BillingConfiguration : IValidatableObject
     public ApplePaySettings ApplePay { get; set; } = new ApplePaySettings();
 
     /// <summary>
+    ///     Google Pay webhook verification settings
+    /// </summary>
+    public GooglePaySettings GooglePay { get; set; } = new GooglePaySettings();
+
+    /// <summary>
     ///     Webhook configuration settings
     /// </summary>
     public WebhookSettings Webhook { get; set; } = new WebhookSettings();
@@ -163,6 +168,60 @@ public class BillingConfiguration : IValidatableObject
             yield return new ValidationResult(
                 "RetryPolicy.BackoffMultiplier must be at least 1.0",
                 new[] { $"{nameof(Webhook)}.{nameof(Webhook.RetryPolicy)}.{nameof(Webhook.RetryPolicy.BackoffMultiplier)}" });
+        }
+
+        // Webhook source security: allowlist entries must be valid CIDR networks.
+        foreach (var entry in Webhook.Security.SourceIpAllowlist)
+        {
+            if (!WebhookIpNetwork.TryParse(entry, out _))
+            {
+                yield return new ValidationResult(
+                    $"SourceIpAllowlist entry '{entry}' is not a valid IPv4/IPv6 CIDR network",
+                    new[] { $"{nameof(Webhook)}.{nameof(Webhook.Security)}.{nameof(Webhook.Security.SourceIpAllowlist)}" });
+            }
+        }
+
+        // Webhook source security: suspicious-activity thresholds must be positive when enabled.
+        if (Webhook.Security.SuspiciousActivity.Enabled)
+        {
+            if (Webhook.Security.SuspiciousActivity.FailureThreshold < 1)
+            {
+                yield return new ValidationResult(
+                    "SuspiciousActivity.FailureThreshold must be at least 1",
+                    new[] { $"{nameof(Webhook)}.{nameof(Webhook.Security)}.SuspiciousActivity.FailureThreshold" });
+            }
+
+            if (Webhook.Security.SuspiciousActivity.WindowSeconds < 1)
+            {
+                yield return new ValidationResult(
+                    "SuspiciousActivity.WindowSeconds must be at least 1 second",
+                    new[] { $"{nameof(Webhook)}.{nameof(Webhook.Security)}.SuspiciousActivity.WindowSeconds" });
+            }
+
+            if (Webhook.Security.SuspiciousActivity.BlockDurationSeconds < 1)
+            {
+                yield return new ValidationResult(
+                    "SuspiciousActivity.BlockDurationSeconds must be at least 1 second",
+                    new[] { $"{nameof(Webhook)}.{nameof(Webhook.Security)}.SuspiciousActivity.BlockDurationSeconds" });
+            }
+        }
+
+        // Google Pay verification: configured keys must be importable RSA public keys.
+        foreach (var key in GooglePay.VerificationKeys)
+        {
+            if (!GooglePayWebhookVerificationService.IsValidVerificationKey(key))
+            {
+                yield return new ValidationResult(
+                    "GooglePay.VerificationKeys contains an entry that is not a valid PEM or base64 SPKI RSA public key",
+                    new[] { $"{nameof(GooglePay)}.{nameof(GooglePay.VerificationKeys)}" });
+            }
+        }
+
+        if (GooglePay.TimestampToleranceSeconds is < 1 or > 900)
+        {
+            yield return new ValidationResult(
+                "GooglePay.TimestampToleranceSeconds must be between 1 and 900 seconds",
+                new[] { $"{nameof(GooglePay)}.{nameof(GooglePay.TimestampToleranceSeconds)}" });
         }
     }
 

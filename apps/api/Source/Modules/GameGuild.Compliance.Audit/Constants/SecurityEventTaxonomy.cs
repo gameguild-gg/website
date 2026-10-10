@@ -85,6 +85,13 @@ public static class SecurityEventTaxonomy
         [AuditActionTypes.SuspiciousActivity] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.High, false, "Suspicious activity detected."),
         [AuditActionTypes.PolicyViolation] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.High, false, "Security policy violated."),
 
+        // Webhook security (provider callback verification pipeline)
+        [AuditActionTypes.WebhookSignatureFailed] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.High, false, "Billing webhook failed provider signature or timestamp verification."),
+        [AuditActionTypes.WebhookSourceIpRejected] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.High, false, "Billing webhook rejected by the source IP allowlist."),
+        [AuditActionTypes.WebhookReplayDetected] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.Low, false, "Duplicate billing webhook delivery detected by idempotency checks."),
+        [AuditActionTypes.WebhookRateLimitExceeded] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.Medium, false, "Billing webhook endpoint rate limit exceeded."),
+        [AuditActionTypes.WebhookSourceBlocked] = new(SecurityEventKind.ThreatDetection, AuditRiskLevel.High, false, "Billing webhook source temporarily blocked for suspicious activity."),
+
         // Tenant isolation
         [AuditActionTypes.TenantIsolationBypassed] = new(SecurityEventKind.TenantIsolation, AuditRiskLevel.Critical, false, "Tenant isolation boundary bypassed."),
 

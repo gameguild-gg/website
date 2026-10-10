@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GameGuild.API.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261010005722_AddPermissionAuditLogs")]
-    partial class AddPermissionAuditLogs
+    [Migration("20261009233152_AddPermissionAuditLog")]
+    partial class AddPermissionAuditLog
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -15912,10 +15912,12 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("ErrorMessage")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("IpAddress")
-                        .HasColumnType("text");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("NewValue")
                         .HasColumnType("text");
@@ -15933,16 +15935,19 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PermissionType")
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Reason")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<Guid?>("ResourceId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ResourceType")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<bool>("Success")
                         .HasColumnType("boolean");
@@ -15954,22 +15959,27 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserAgent")
-                        .HasColumnType("text");
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("OperationType")
+                        .HasDatabaseName("IX_PermissionAuditLogs_OperationType");
 
-                    b.HasIndex("Timestamp");
+                    b.HasIndex("Timestamp")
+                        .HasDatabaseName("IX_PermissionAuditLogs_Time");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_PermissionAuditLogs_UserId");
 
-                    b.HasIndex(new[] { "UserId", "PermissionType", "Timestamp" }, "IX_PermissionAuditLogs_User_Permission_Timestamp");
+                    b.HasIndex("TenantId", "Timestamp")
+                        .HasDatabaseName("IX_PermissionAuditLogs_Tenant_Time");
 
-                    b.ToTable("PermissionAuditLog");
+                    b.ToTable("PermissionAuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authorization.PermissionDelegation", b =>

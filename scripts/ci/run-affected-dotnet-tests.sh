@@ -5,6 +5,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repository_root="$(cd "$script_dir/../.." && pwd)"
 # shellcheck source=disposable-postgres.sh
 source "$script_dir/disposable-postgres.sh"
+# shellcheck source=pull-ci-image.sh
+source "$script_dir/pull-ci-image.sh"
 cd "$repository_root"
 
 # Capture selection before starting infrastructure; a failed selector must fail
@@ -44,6 +46,7 @@ prepare_economy_template() {
   local mapping postgres_port template_connection candidate_id attempt password ready=false
   password="$(new_disposable_postgres_password)"
   register_disposable_postgres_password "$password"
+  pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
   candidate_id="$(docker run --detach --rm --name "$container_name" \
     --label gameguild.ci=affected-api \
     --env POSTGRES_DB=economy_tests \

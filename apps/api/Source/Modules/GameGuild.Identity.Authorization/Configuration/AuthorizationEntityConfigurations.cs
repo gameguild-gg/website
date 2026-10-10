@@ -313,47 +313,6 @@ public class PermissionTemplateConfiguration : IEntityTypeConfiguration<Permissi
     }
 }
 
-/// <summary>
-///     EF Core configuration for the PermissionAuditLog entity (issues #331, #346).
-///     The audit trail was written through <c>PermissionAuditLogRepository</c> but the
-///     entity was never part of the EF model, so every write failed with "type is not
-///     included in the model" and was swallowed by the callers' best-effort catches —
-///     permission decision audits (including <see cref="PermissionOperationType.Check"/>
-///     endpoint decisions) silently never persisted.
-/// </summary>
-public class PermissionAuditLogConfiguration : IEntityTypeConfiguration<PermissionAuditLog>
-{
-    public void Configure(EntityTypeBuilder<PermissionAuditLog> builder)
-    {
-        builder.HasKey(e => e.Id);
-        builder.HasIndex(e => e.TenantId);
-        builder.HasIndex(e => e.UserId);
-        builder.HasIndex(e => e.Timestamp);
-        builder.HasIndex(e => new { e.UserId, e.PermissionType, e.Timestamp }, "IX_PermissionAuditLogs_User_Permission_Timestamp");
-
-        // TenantId value conversion (same pattern as AccessReviewCampaignConfiguration)
-        builder.Property(e => e.TenantId)
-            .HasConversion(
-                v => v.HasValue ? v.Value.Value : (Guid?)null,
-                v => v.HasValue ? new TenantId(v.Value) : null);
-
-        builder.Property(e => e.OperationType).HasConversion<int>();
-
-        // Free-form audit payloads (reasons, errors, old/new values, user agents) are
-        // deliberately uncapped text columns: an audit write must never fail because a
-        // caller-supplied string exceeded a length limit.
-        builder.Property(e => e.ResourceType);
-        builder.Property(e => e.PermissionType);
-        builder.Property(e => e.PermissionDetails);
-        builder.Property(e => e.Reason);
-        builder.Property(e => e.ErrorMessage);
-        builder.Property(e => e.IpAddress);
-        builder.Property(e => e.UserAgent);
-        builder.Property(e => e.OldValue);
-        builder.Property(e => e.NewValue);
-    }
-}
-
 internal static class JsonDictionaryValueComparers
 {
     public static ValueComparer<Dictionary<string, object>?> ObjectDictionaryComparer { get; } =

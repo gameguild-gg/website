@@ -6649,6 +6649,24 @@ export const postBillingWebhooksPaypalEndpoint = {
 } as const;
 
 /**
+ * Get the billing webhook security monitoring summary
+ *
+ * Admin-facing monitoring surface for the billing webhook security controls: the state of
+ * the source IP allowlist, the suspicious-activity threshold blocking (currently blocked
+ * sources), and the delivery health of the central security event pipeline that persists
+ * verification failures, allowlist rejections, and replay detections.
+ */
+export type GetBillingWebhooksSecurityInput = void;
+export type GetBillingWebhooksSecurityOutput = Types.CommerceBillingBillingWebhookSecuritySummaryDto;
+export const getBillingWebhooksSecurityEndpoint = {
+  operationId: 'getBillingWebhooksSecurity' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/webhooks/security' as const,
+  tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Handle Stripe webhook events with signature verification
  *
  * Processes Stripe webhook notifications with enhanced security through signature verification.
@@ -6689,7 +6707,7 @@ export const getBillingWebhooksWebhookEventsEndpoint = {
   method: 'GET' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}' as const,
   tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -6714,7 +6732,7 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}:retry' as const,
   tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
+  requiresAuth: true,
 } as const;
 
 export interface PostEconomyAdRewardsSessionsInput {
@@ -26336,6 +26354,7 @@ export const endpoints = {
   postBillingWebhooksApplePay: postBillingWebhooksApplePayEndpoint,
   postBillingWebhooksGooglePay: postBillingWebhooksGooglePayEndpoint,
   postBillingWebhooksPaypal: postBillingWebhooksPaypalEndpoint,
+  getBillingWebhooksSecurity: getBillingWebhooksSecurityEndpoint,
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
   postBillingWebhooksWebhookEventsRetry: postBillingWebhooksWebhookEventsRetryEndpoint,

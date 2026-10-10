@@ -85,10 +85,6 @@ public class AuthorizationModule : ModuleBase
         modelBuilder.ApplyConfiguration(new DataMaskingRuleConfiguration());
         modelBuilder.ApplyConfiguration(new TenantPermissionConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionTemplateConfiguration());
-
-        // Permission change/decision audit trail (issues #331, #346): without this
-        // mapping every PermissionAuditLog write failed against the model and was
-        // swallowed by best-effort catches, so audits never persisted.
         modelBuilder.ApplyConfiguration(new PermissionAuditLogConfiguration());
 
         // RBAC: Dynamic roles with deny permission support
