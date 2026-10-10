@@ -1,0 +1,85 @@
+name: Full source CodeQL evidence
+
+on:
+  push:
+    branches:
+      - feature/security-codeql-followup-20261009
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Full source CodeQL (${{ matrix.language }})
+    if: github.repository == 'gameguild-gg/gameguild'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        language: [actions, csharp, javascript-typescript, python]
+    env:
+      SCAN_LANGUAGE: ${{ matrix.language }}
+    steps:
+      - name: Checkout the source commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Push and manual events avoid the default PR diff-range restriction.
+      - name: Record exact source identity
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const { execFileSync } = require("node:child_process");
+          const event = process.env.GITHUB_EVENT_NAME;
+          const language = process.env.SCAN_LANGUAGE;
+          if (!["push", "workflow_dispatch"].includes(event)) {
+            throw new Error("Full source evidence requires a non-PR event");
+          }
+          if (!["actions", "csharp", "javascript-typescript", "python"].includes(language)) {
+            throw new Error("Unexpected scan language");
+          }
+          const head = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          if (!/^[0-9a-f]{40}$/.test(head) || head !== process.env.GITHUB_SHA) {
+            throw new Error("Checkout does not match the requested source commit");
+          }
+          fs.mkdirSync("artifacts/codeql-full", { recursive: true });
+          fs.writeFileSync("artifacts/codeql-full/source-identity.json", JSON.stringify({
+            recordedUtc: new Date().toISOString(), event, language, head,
+            ref: process.env.GITHUB_REF, repository: process.env.GITHUB_REPOSITORY,
+            requestedScope: "complete checkout", acceptance: "pending full SARIF and extraction review",
+          }, null, 2) + "\n");
+          NODE
+
+      - name: Initialize full source analysis
+        id: init
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          source-root: .
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.2/codeql-bundle-linux64.tar.zst
+
+      - name: Analyze the complete checkout
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        with:
+          output: artifacts/codeql-full/results
+          category: /language:${{ matrix.language }}/full-source
+          upload: never
+          upload-database: false
+
+      - name: Preserve the full SARIF report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: full-codeql-${{ matrix.language }}-${{ github.sha }}
+          path: artifacts/codeql-full
+          if-no-files-found: error
+          retention-days: 14
