@@ -80,9 +80,15 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         Assert.Equal(account.Email, Assert.Single(notifications, value => value.Channel == NotificationChannel.Email).RecipientEmail);
         Assert.True(Assert.Single(notifications, value => value.Channel == NotificationChannel.InApp).IsSent);
         Assert.NotNull((await db.Set<OutboxMessage>().SingleAsync(value => value.EventId == message.EventId)).CompletedAtUtc);
-        var receipt = Assert.Single(await db.Set<InboxReceipt>().Where(value => value.EventId == message.EventId).ToListAsync());
-        Assert.Equal(1, receipt.AttemptCount);
-        Assert.NotNull(receipt.CompletedAtUtc);
+        // Step-up events run both notify-side consumers: the owner alert and the (no-op for this
+        // kind) risk-event revocation consumer, each delivered exactly once.
+        var receipts = await db.Set<InboxReceipt>().Where(value => value.EventId == message.EventId).ToListAsync();
+        Assert.Equal(2, receipts.Count);
+        Assert.All(receipts, value =>
+        {
+            Assert.Equal(1, value.AttemptCount);
+            Assert.NotNull(value.CompletedAtUtc);
+        });
     }
 
     [Fact]
@@ -153,9 +159,15 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         Assert.Equal(2, notifications.Count);
         Assert.All(notifications, value => Assert.Contains("successful sign-in", value.Message, StringComparison.Ordinal));
         Assert.Equal(account.Email, Assert.Single(notifications, value => value.Channel == NotificationChannel.Email).RecipientEmail);
-        var receipt = Assert.Single(await db.Set<InboxReceipt>().Where(value => value.EventId == eventId).ToListAsync());
-        Assert.Equal(1, receipt.AttemptCount);
-        Assert.NotNull(receipt.CompletedAtUtc);
+        // Impossible travel additionally drives the risk-event revocation consumer; both
+        // consumers must complete exactly once for the recorded event.
+        var receipts = await db.Set<InboxReceipt>().Where(value => value.EventId == eventId).ToListAsync();
+        Assert.Equal(2, receipts.Count);
+        Assert.All(receipts, value =>
+        {
+            Assert.Equal(1, value.AttemptCount);
+            Assert.NotNull(value.CompletedAtUtc);
+        });
     }
 
     [Fact]
