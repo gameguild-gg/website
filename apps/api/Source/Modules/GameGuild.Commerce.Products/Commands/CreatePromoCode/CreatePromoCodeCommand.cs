@@ -11,7 +11,6 @@ namespace GameGuild.Commerce.Products;
 /// <param name="Description">Optional description</param>
 /// <param name="Type">Type of discount</param>
 /// <param name="DiscountPercentage">Percentage discount (for percentage type)</param>
-/// <param name="DiscountAmount">Fixed amount discount (for fixed type)</param>
 /// <param name="Currency">Currency code</param>
 /// <param name="MinimumOrderAmount">Minimum order amount required</param>
 /// <param name="MaxUses">Maximum total uses (null = unlimited)</param>

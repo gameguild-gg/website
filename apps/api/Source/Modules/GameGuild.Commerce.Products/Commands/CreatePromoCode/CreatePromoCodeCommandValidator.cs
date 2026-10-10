@@ -15,10 +15,9 @@ public sealed class CreatePromoCodeCommandValidator : AbstractValidator<CreatePr
     public CreatePromoCodeCommandValidator()
     {
         RuleFor(x => x.Code)
-            .Transform(c => PromoCodeNormalizer.Normalize(c))
             .NotEmpty()
             .WithMessage("Promo code is required.")
-            .Matches(PromoCodeNormalizer.Pattern)
+            .Must(c => PromoCodeNormalizer.IsValidFormat(PromoCodeNormalizer.Normalize(c)))
             .WithMessage("Promo code must be 3-50 characters and contain only uppercase letters, numbers, and hyphens (input is trimmed and uppercased).");
 
         RuleFor(x => x.Name)

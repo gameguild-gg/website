@@ -18,11 +18,10 @@ public sealed class GenerateBulkPromoCodesCommandValidator : AbstractValidator<G
 
         // Prefix is validated on its normalized form (trim + uppercase), mirroring the create validator.
         RuleFor(x => x.Prefix)
-            .Transform(p => PromoCodeNormalizer.Normalize(p))
             .NotEmpty()
             .WithMessage("Prefix is required.")
-            .Matches("^[A-Z0-9]{2,40}$")
-            .WithMessage("Prefix must be 2-40 uppercase letters or digits (normalized from lowercase input).");
+            .Must(p => PromoCodeNormalizer.IsValidFormat($"{PromoCodeNormalizer.Normalize(p)}-X"))
+            .WithMessage("Prefix must be 2-40 uppercase letters or digits (normalized from lowercase input); a hyphenated suffix is appended.");
 
         RuleFor(x => x.Name)
             .NotEmpty()

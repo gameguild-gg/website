@@ -64,11 +64,15 @@ public sealed class DeactivatePromoCodeHandler(IPromoCodeRepository repository) 
 /// <param name="Description">Optional new description</param>
 /// <param name="Type">Optional new type</param>
 /// <param name="DiscountPercentage">Optional discount percentage</param>
-/// <param name="DiscountAmount">Optional discount amount</param>
+/// <param name="DiscountAmount">Optional discount amount (target price for SetPrice)</param>
+/// <param name="MaxDiscountAmount">Optional cap for percentage discounts</param>
 /// <param name="Currency">Optional currency</param>
 /// <param name="MinimumOrderAmount">Optional minimum order</param>
 /// <param name="MaxUses">Optional max uses</param>
 /// <param name="MaxUsesPerUser">Optional max uses per user</param>
+/// <param name="FreeTrialExtensionDays">Optional trial extension days</param>
+/// <param name="DurationMonths">Optional free months / discount duration</param>
+/// <param name="ApplyToRenewal">Optional apply-to-renewal flag</param>
 /// <param name="ValidFrom">Optional valid from date</param>
 /// <param name="ValidUntil">Optional valid until date</param>
 /// <param name="IsActive">Optional active flag</param>

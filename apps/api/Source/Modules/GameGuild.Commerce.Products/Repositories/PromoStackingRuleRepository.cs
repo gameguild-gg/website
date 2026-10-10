@@ -56,7 +56,7 @@ public class PromoStackingRuleRepository(IApplicationDbContext context)
     }
 
     /// <inheritdoc />
-    public Task UpdateAsync(PromoStackingRule rule, CancellationToken cancellationToken = default)
+    public new Task UpdateAsync(PromoStackingRule rule, CancellationToken cancellationToken = default)
     {
         Entities.Update(rule);
         return Task.CompletedTask;
