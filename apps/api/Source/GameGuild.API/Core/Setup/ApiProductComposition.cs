@@ -115,6 +115,12 @@ internal sealed class ApiProductComposition : IApiProductComposition
         builder.Services.AddEconomyCapabilityComposition(builder.Configuration);
         builder.Services.AddEconomyCoreComposition(builder.Configuration);
         builder.Services.AddScoped<global::GameGuild.Compliance.KYC.IKycEvidenceStore, global::GameGuild.API.Core.Integration.EconomyKycEvidenceStore>();
+        // Sign-in compliance gate adapter (issue #267): composes the KYC module with the
+        // economy compliance hold store behind the platform's ISignInCompliancePolicy
+        // contract. Registered after the identity module's allow-all default so this
+        // implementation wins; the gate itself stays disabled until
+        // Authentication:Compliance:SignInGate is enabled by configuration.
+        builder.Services.AddScoped<global::GameGuild.Identity.Authentication.ISignInCompliancePolicy, global::GameGuild.API.Core.Compliance.KycAndHoldSignInCompliancePolicy>();
         builder.Services.AddScoped<IEconomyStepUpExecutor, EconomyStepUpExecutor>();
         builder.Services.AddScoped<IAdRewardRequestRiskContextResolver, AdRewardRequestRiskContextResolver>();
         builder.Services.AddAdRewardsComposition(builder.Configuration);
