@@ -8,7 +8,15 @@ public sealed class CertificateCredentialDataTests
 {
     private static JsonSerializerOptions CreateOptions()
     {
-        var options = new JsonSerializerOptions();
+        // Mirror the API's contract JSON options (camelCase naming, case-insensitive
+        // binding): the polymorphic converter discriminates on the camelCase "type"
+        // property the platform serializer emits, so raw PascalCase options cannot
+        // round-trip any credential DTO.
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
         options.Converters.Add(new PolymorphicCredentialConverter());
         return options;
     }
