@@ -511,6 +511,64 @@ public sealed class RateLimitingServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public async Task SetupRateLimiting_RegistersTheWebhookCallbackPolicyPartitionedByIp()
+    {
+        var options = RateLimitingOptions.CreateDefault();
+        options.Limit = 100;
+        options.WebhookRequestsPerMinute = 2;
+        options.WebhookWindow = TimeSpan.FromHours(1);
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webHost => webHost
+                .UseTestServer()
+                .ConfigureServices(services =>
+                {
+                    services.AddRouting();
+                    services.SetupRateLimiting(new ConfigurationBuilder().Build(), options);
+                })
+                .Configure(app =>
+                {
+                    app.UseRouting();
+                    app.UseRateLimiter();
+                    app.UseEndpoints(endpoints => endpoints
+                        .MapGet("/api/v1/billing/webhooks/stripe", () => Results.Ok())
+                        .RequireRateLimiting(RateLimitPolicies.Webhook));
+                }))
+            .StartAsync();
+
+        using var client = host.GetTestClient();
+        using var first = await client.GetAsync("/api/v1/billing/webhooks/stripe");
+        using var second = await client.GetAsync("/api/v1/billing/webhooks/stripe");
+        using var third = await client.GetAsync("/api/v1/billing/webhooks/stripe");
+
+        first.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        second.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        third.StatusCode.Should().Be(System.Net.HttpStatusCode.TooManyRequests,
+            "the webhook policy must throttle floods on provider callbacks before signature verification");
+    }
+
+    [Fact]
+    public void RateLimitingOptions_RejectInvalidWebhookPolicySettings()
+    {
+        var options = RateLimitingOptions.CreateDefault();
+        options.WebhookRequestsPerMinute = 0;
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*WebhookRequestsPerMinute*");
+    }
+
+    [Fact]
+    public void RateLimitingOptions_ReserveTheWebhookPolicyNameForTheBuiltInPolicy()
+    {
+        var options = RateLimitingOptions.CreateDefault();
+        options.Policies[RateLimitPolicies.Webhook] = new RateLimitPolicyOptions();
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*reserved*");
+    }
+
+    [Fact]
     public void SetupRateLimiting_RejectsInvalidAccessControlIpAddress()
     {
         var configuration = new ConfigurationBuilder()
