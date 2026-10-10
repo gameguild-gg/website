@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ course: s
   if (!result.success) {
     if (result.reason === 'unavailable') {
       return {
-        title: 'Course Catalog Temporarily Unavailable | Game Guild',
+        title: 'Course Catalog Temporarily Unavailable | GameGuild',
         description: 'The learning catalog is temporarily unavailable. Please try again shortly.',
       };
     }

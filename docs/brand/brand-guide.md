@@ -1,14 +1,18 @@
 # GameGuild visual identity
 
-**Version:** 1.0 (proposed from repository assets) | **Updated:** 2026-10-03
+**Version:** 1.1 | **Updated:** 2026-10-10
 
-This guide turns the existing four-color GameGuild mark into a consistent, editable logo set for product and campaign material. The naming service and possible domain change mentioned in the original issue have no approved decision attached in the repository; these files retain **GameGuild** as the current header wordmark. The product also uses “Game Guild” in locale metadata and public copy, so the naming service still needs to settle the official spelling before a broad marketing rollout. Revisit the wordmark if that decision changes.
+This guide turns the existing four-color GameGuild mark into a consistent, editable logo set for product and campaign material. **GameGuild** is the official product name and spelling approved by Matheus Martins on 2026-10-10 for [issue #109](https://github.com/gameguild-gg/gameguild/issues/109#issuecomment-6101254443). Use one word, with a capital G in each part, in logos, metadata, and public copy.
+
+## Naming decision
+
+Matheus chose to retain **GameGuild**, the spelling in the delivered logos. The name combines game and guild, reflecting a community dedicated to games and learning. Keep the existing wordmark and use the same spelling in product and campaign text. No tagline is defined. Domain names and technical identifiers keep their existing values; this decision approves the displayed name and spelling.
 
 ## Identity
 
 Use the four-circle mark already present in `apps/web/public/assets/images/logo-icon.png` as the starting point. The vector source keeps its four positions and color order, removes raster shading, and adds primary, stacked, reversed, and monochrome lockups. “Friendly, energetic, and community-oriented” is a design interpretation of the existing multi-color mark and the product description, not an approved brand tagline. No tagline is defined here.
 
-The supplied header lockup follows the current **GameGuild** spelling: one word, capital G in each part. In body copy, follow the spelling approved by the naming service; the repository currently also uses “Game Guild”. Do not add a domain suffix to either mark.
+The supplied header lockup follows the approved **GameGuild** spelling. Use **GameGuild** in body copy as well. Do not add a domain suffix to the mark.
 
 ## Logo files
 
@@ -77,4 +81,4 @@ Use the light logo on light backgrounds and the reversed logo on dark background
 
 ## Rollout note
 
-The shared authentication logo and site favicon now use the repository-owned four-color mark. The older PNGs remain in place as historical source material. Campaign teams can use the supplied full-color, stacked, reversed, and monochrome SVGs directly; the naming or domain decision can replace the wordmark later without changing the mark geometry.
+The shared authentication logo and site favicon use the repository-owned four-color mark. The older PNGs remain in place as historical source material. Campaign teams can use the supplied full-color, stacked, reversed, and monochrome SVGs directly with the approved **GameGuild** wordmark. Metadata and public product copy use the same spelling.

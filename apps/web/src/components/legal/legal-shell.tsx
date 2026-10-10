@@ -50,7 +50,7 @@ export async function LegalShell({ children }: { readonly children: ReactNode })
               </Link>
             ))}
           </nav>
-          <p className="text-xs text-slate-500">© 2026 Game Guild. All rights reserved.</p>
+          <p className="text-xs text-slate-500">© 2026 GameGuild. All rights reserved.</p>
         </div>
       </footer>
     </div>

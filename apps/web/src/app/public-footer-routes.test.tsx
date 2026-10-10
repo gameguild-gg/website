@@ -49,7 +49,7 @@ describe('PublicWebsiteFooter routes', () => {
     expect(screen.queryByRole('heading', { name: 'Legal' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Cookies' })).toBeNull();
     expect(screen.queryByTestId('footer-cta')).toBeNull();
-    expect(screen.getByText('Game Guild')).toBeInTheDocument();
+    expect(screen.getByText('GameGuild')).toBeInTheDocument();
     expect(screen.getByText(/A thriving gaming community dedicated to education/i)).toBeInTheDocument();
     expect(screen.getByText('Community-driven learning and development')).toBeInTheDocument();
     expect(screen.getByText('Open source and collaborative')).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('PublicWebsiteFooter routes', () => {
     expect(screen.getByRole('link', { name: 'Twitter' })).toHaveAttribute('href', 'https://twitter.com/gameguild_gg');
     expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/gameguild-gg/gameguild');
     expect(screen.getByRole('link', { name: 'YouTube' })).toHaveAttribute('href', 'https://youtube.com/@gameguild');
-    const copyright = screen.getByText('© 2026 Game Guild. All rights reserved.');
+    const copyright = screen.getByText('© 2026 GameGuild. All rights reserved.');
     const legalNavigation = screen.getByRole('navigation', { name: 'Legal' });
 
     expect(copyright).toBeInTheDocument();

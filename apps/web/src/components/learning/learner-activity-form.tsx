@@ -236,7 +236,7 @@ export function LearnerActivityForm({
               ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            Only existing Game Guild projects can be attached.
+            Only existing GameGuild projects can be attached.
           </p>
         </div>
       ) : projectSubmissionUnavailable ? (
@@ -248,8 +248,7 @@ export function LearnerActivityForm({
                 Create a project before submitting
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Project assessments only accept projects owned by your Game
-                Guild account.
+                Project assessments only accept projects owned by your GameGuild account.
               </p>
             </div>
           </div>

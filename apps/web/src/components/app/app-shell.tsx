@@ -285,7 +285,7 @@ export function PublicWebsiteFooter() {
           <div className="max-w-sm lg:col-span-2">
             <div className="flex items-center gap-3">
               <FooterBrandMark />
-              <span className="bg-gradient-to-r from-primary to-highlight bg-clip-text text-xl font-bold text-transparent">Game Guild</span>
+              <span className="bg-gradient-to-r from-primary to-highlight bg-clip-text text-xl font-bold text-transparent">GameGuild</span>
             </div>
             <p className="mt-5 text-sm leading-6 text-muted-foreground">
               A thriving gaming community dedicated to education, collaboration, and innovation. Join us as we grow together and shape the future of gaming.
@@ -343,7 +343,7 @@ export function PublicWebsiteFooter() {
           </div>
 
           <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-border pt-5 text-sm text-muted-foreground/70 sm:flex-row lg:mt-8 lg:pt-6">
-            <p className="text-center sm:text-left">© 2026 Game Guild. All rights reserved.</p>
+            <p className="text-center sm:text-left">© 2026 GameGuild. All rights reserved.</p>
             <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-6 gap-y-3 sm:justify-end">
               <Link href="/legal/licenses" className="transition-colors hover:text-primary">
                 Licenses
