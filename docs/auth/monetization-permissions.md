@@ -100,6 +100,12 @@ monetization:*            (family wildcard — validates against the registry)
 
 ## Tests
 
+- `GameGuild.API.IntegrationTests/MonetizationPermissionHttpTests.cs` — end-to-end HTTP
+  coverage against real PostgreSQL: `GET /api/metrics/product` (ViewAnalytics),
+  `POST /v1/subscription-plans` (Configure) and `PUT /v1/products/{id}/pricing`
+  (Monetize, both the endpoint and command gates), asserting 200-with-grant,
+  403-without, cross-tenant and expired-grant fail-closed behavior, SystemAdmin
+  bypass, no mutation on denial, and `PermissionOperationType.Check` decision-audit rows.
 - `GameGuild.Identity.Authorization.UnitTests/MonetizationPermissionTests.cs` — registry,
   facade, wildcard, and CQRS `AuthorizationBehavior` enforcement (allow / deny /
   unauthenticated / system-admin bypass).
