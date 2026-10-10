@@ -28,6 +28,7 @@ public class LocalAuthServiceTests
     private readonly Mock<IAuthAttemptService> _authAttemptServiceMock = new();
     private readonly Mock<IAuthenticationAnomalyDetectionService> _anomalyDetectionMock = new();
     private readonly Mock<IAuthenticationAuditEventSink> _authenticationAuditEventSinkMock = new();
+    private readonly Mock<ISuspiciousLoginAlertPublisher> _suspiciousLoginAlertsMock = new();
     private readonly Mock<IUserEnumerationProtectionService> _enumerationProtectionMock = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
     private readonly Mock<IPublisher> _publisherMock = new();
@@ -111,7 +112,8 @@ public class LocalAuthServiceTests
             NullLogger<LocalAuthService>.Instance,
             _senderMock.Object,
             _sessionManagementServiceMock.Object,
-            auditEventSink: _authenticationAuditEventSinkMock.Object
+            auditEventSink: _authenticationAuditEventSinkMock.Object,
+            suspiciousLoginAlerts: _suspiciousLoginAlertsMock.Object
         );
     }
 
@@ -153,6 +155,57 @@ public class LocalAuthServiceTests
         var request = new LocalSignInRequest { Email = "user@example.com", Password = "WrongPassword!" };
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LocalSignInAsync(request));
+    }
+
+    [Fact]
+    public async Task LocalSignInAsync_InvalidPasswordWithBruteForce_AlertsKnownAccountOwner()
+    {
+        var user = User.CreateWithPassword("user@example.com", "testuser", BCrypt.Net.BCrypt.HashPassword("CorrectPassword1!"));
+        _userRepoMock.Setup(x => x.GetByEmailAsync("user@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _anomalyDetectionMock.Setup(x => x.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult
+            {
+                IsAnomalous = true,
+                RiskLevel = RiskLevel.High,
+                RiskScore = 90,
+                DetectedAnomalies = new List<string> { SecurityAlertKinds.BruteForceDetected }
+            });
+
+        var request = new LocalSignInRequest { Email = "user@example.com", Password = "WrongPassword!" };
+
+        // The failed attempt must still end with the generic 401...
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LocalSignInAsync(request));
+
+        // ...while the known account owner is alerted about the brute-force pattern: the user id
+        // is resolved from the account, not from successful authentication.
+        _suspiciousLoginAlertsMock.Verify(
+            x => x.RecordAsync(user.Id, It.IsAny<Guid?>(), SecurityAlertKinds.BruteForceDetected, RiskLevel.High, 90, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LocalSignInAsync_InvalidPasswordWithoutBruteForce_DoesNotAlert()
+    {
+        var user = User.CreateWithPassword("user@example.com", "testuser", BCrypt.Net.BCrypt.HashPassword("CorrectPassword1!"));
+        _userRepoMock.Setup(x => x.GetByEmailAsync("user@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _anomalyDetectionMock.Setup(x => x.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult
+            {
+                IsAnomalous = false,
+                RiskLevel = RiskLevel.Low,
+                RiskScore = 10,
+                DetectedAnomalies = new List<string>()
+            });
+
+        var request = new LocalSignInRequest { Email = "user@example.com", Password = "WrongPassword!" };
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.LocalSignInAsync(request));
+
+        _suspiciousLoginAlertsMock.Verify(
+            x => x.RecordAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<string>(), It.IsAny<RiskLevel>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

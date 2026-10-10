@@ -81,12 +81,15 @@ public class LocalAuthService(
             // Verify password if user exists
             if (user != null)
             {
+                // The account is known even when the password is wrong: risk analysis, failed-attempt
+                // persistence, and brute-force owner alerts on failed sign-ins all need the user id.
+                userId = user.Id;
+
                 var passwordValid = user.HasPassword && passwordHasher.VerifyPassword(user.PasswordHash!, request.Password);
 
                 if (passwordValid)
                 {
                     authenticationSucceeded = true;
-                    userId = user.Id;
                     logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", LogRedaction.MaskEmail(user.Email), userId);
                 }
                 else
