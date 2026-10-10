@@ -998,15 +998,21 @@ public class ValidatorValidationTests5
 
 public class SimpleServiceHandlerTests5
 {
-    // JIT Elevation handlers - all take IJitElevationService
+    // JIT Elevation handlers - take IJitElevationService (+ actor/repo deps on the guarded ones)
     [Fact]
     public void JitElevationHandlers_CanBeCreated()
     {
         var service = new Mock<IJitElevationService>();
-        new RequestJitElevationHandler(service.Object).Should().NotBeNull();
-        new ApproveJitElevationHandler(service.Object).Should().NotBeNull();
-        new DenyJitElevationHandler(service.Object).Should().NotBeNull();
-        new RevokeJitElevationHandler(service.Object).Should().NotBeNull();
+        var accessor = new Mock<IActorContextAccessor>();
+        var repository = new Mock<IJitElevationRequestRepository>();
+        var loggerRequest = NullLogger<RequestJitElevationHandler>.Instance;
+        var loggerApprove = NullLogger<ApproveJitElevationHandler>.Instance;
+        var loggerDeny = NullLogger<DenyJitElevationHandler>.Instance;
+        var loggerRevoke = NullLogger<RevokeJitElevationHandler>.Instance;
+        new RequestJitElevationHandler(service.Object, accessor.Object, loggerRequest).Should().NotBeNull();
+        new ApproveJitElevationHandler(service.Object, repository.Object, accessor.Object, loggerApprove).Should().NotBeNull();
+        new DenyJitElevationHandler(service.Object, accessor.Object, loggerDeny).Should().NotBeNull();
+        new RevokeJitElevationHandler(service.Object, accessor.Object, loggerRevoke).Should().NotBeNull();
         new CleanupExpiredElevationsHandler(service.Object).Should().NotBeNull();
     }
 
