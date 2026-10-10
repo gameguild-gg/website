@@ -219,8 +219,8 @@ public class RevenueAnomalyServiceTests
             NullLogger<RevenueAnomalyService>.Instance);
     }
 
-    private static RevenueDailyTotal Day(string date, decimal net)
-        => new(DateTime.Parse(date, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal), 10m, 10m - net, net, 3);
+    private static RevenueDailyTotal Day(string date, decimal net, string currency = "USD")
+        => new(DateTime.Parse(date, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal), currency, 10m, 10m - net, net, 3);
 
     [Fact]
     public async Task DetectAsync_SkipsEvaluation_WhenBaselineIsTooThin()
@@ -253,10 +253,40 @@ public class RevenueAnomalyServiceTests
 
         var candidate = candidates.Should().ContainSingle().Subject;
         candidate.Kind.Should().Be(RevenueAnomalyKind.Spike);
+        candidate.Currency.Should().Be("USD");
         candidate.ObservedNetRevenue.Should().Be(1000m);
         candidate.ExpectedNetRevenue.Should().Be(100m);
         candidate.ZScore.Should().BePositive().And.BeGreaterThan(3m);
         candidate.BaselineDays.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task DetectAsync_ComputesZScoresPerCurrency_MixedCurrenciesNeverContaminate()
+    {
+        // Regression (issue #404 verifier gap 1): a 1000 USD spike must not merge with
+        // flat EUR revenue, and the observed amount must be 1000 USD — never a unitless
+        // 1000 + 100 = 1100.
+        var totals = new List<RevenueDailyTotal>();
+        for (var day = 21; day <= 27; day++)
+        {
+            totals.Add(Day($"2026-09-{day}", 100m, "USD")); // flat USD baseline
+            totals.Add(Day($"2026-09-{day}", 100m, "EUR")); // flat EUR baseline
+        }
+
+        totals.Add(Day("2026-09-28", 1000m, "USD")); // USD spike day
+        totals.Add(Day("2026-09-28", 100m, "EUR"));   // EUR stays normal
+
+        _revenueEvents
+            .Setup(repository => repository.GetDailyTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(totals);
+
+        var candidates = await CreateService().DetectAsync(new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), null);
+
+        var candidate = candidates.Should().ContainSingle().Subject;
+        candidate.Kind.Should().Be(RevenueAnomalyKind.Spike);
+        candidate.Currency.Should().Be("USD");
+        candidate.ObservedNetRevenue.Should().Be(1000m);
+        candidate.ExpectedNetRevenue.Should().Be(100m);
     }
 
     [Fact]
@@ -293,7 +323,7 @@ public class RevenueAnomalyServiceTests
                 Day("2026-09-28", 900m),
             ]);
         _alerts
-            .Setup(alerts => alerts.ExistsForDayAsync(RevenueAnomalyKind.Spike, It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .Setup(alerts => alerts.ExistsForDayAsync(RevenueAnomalyKind.Spike, It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var created = await CreateService().DetectAndPersistAsync(new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), null);
@@ -316,7 +346,7 @@ public class RevenueAnomalyServiceTests
                 Day("2026-09-28", 900m),
             ]);
         _alerts
-            .Setup(alerts => alerts.ExistsForDayAsync(It.IsAny<RevenueAnomalyKind>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .Setup(alerts => alerts.ExistsForDayAsync(It.IsAny<RevenueAnomalyKind>(), It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var created = await CreateService().DetectAndPersistAsync(new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), tenantId: Guid.NewGuid());
@@ -326,6 +356,7 @@ public class RevenueAnomalyServiceTests
             alerts => alerts.AddAsync(
                 It.Is<RevenueAnomalyAlert>(alert =>
                     alert.Kind == RevenueAnomalyKind.Spike
+                    && alert.Currency == "USD"
                     && alert.ObservedNetRevenue == 900m
                     && alert.ExpectedNetRevenue == 100m
                     && alert.Status == RevenueAnomalyStatus.Open),
@@ -348,16 +379,16 @@ public class RevenueReportServiceTests
     {
         _revenueEvents
             .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), RevenueEventTotalGrouping.EventType, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), 2, 150m)]);
+            .ReturnsAsync([new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "USD", 2, 150m)]);
         _revenueEvents
             .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), RevenueEventTotalGrouping.Source, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new RevenueEventGroupTotal(nameof(RevenueSource.Subscription), 2, 150m)]);
+            .ReturnsAsync([new RevenueEventGroupTotal(nameof(RevenueSource.Subscription), "USD", 2, 150m)]);
         _revenueEvents
             .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), RevenueEventTotalGrouping.Status, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
-                new RevenueEventGroupTotal(nameof(RevenueEventStatus.Processed), 2, 150m),
-                new RevenueEventGroupTotal(nameof(RevenueEventStatus.Pending), 1, 30m)
+                new RevenueEventGroupTotal(nameof(RevenueEventStatus.Processed), "USD", 2, 150m),
+                new RevenueEventGroupTotal(nameof(RevenueEventStatus.Pending), "USD", 1, 30m)
             ]);
         _runs
             .Setup(repository => repository.GetRunsOverlappingPeriodAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
@@ -383,11 +414,46 @@ public class RevenueReportServiceTests
         report.Reconciliation.MatchedLines.Should().Be(2);
         report.Reconciliation.Discrepancies.Should().Be(1);
         report.Attestation.Should().Contain("3 revenue events recorded");
+        report.Attestation.Should().Contain("150.00 USD gross");
         report.Attestation.Should().Contain("1 events not yet processed");
     }
 
     [Fact]
-    public async Task GetTrendReportAsync_IncludesZeroActivityDays_AndComputesRangeTotals()
+    public async Task GetComplianceReportAsync_MixedCurrencies_StatesGrossPerCurrencyWithoutMerging()
+    {
+        // Regression (issue #404 verifier gap 1): 100 USD + 100 EUR must surface as two
+        // per-currency figures, never a unitless 200.
+        _revenueEvents
+            .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), RevenueEventTotalGrouping.EventType, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "USD", 1, 100m),
+                new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "EUR", 1, 100m)
+            ]);
+        _revenueEvents
+            .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), RevenueEventTotalGrouping.Source, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _revenueEvents
+            .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), RevenueEventTotalGrouping.Status, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new RevenueEventGroupTotal(nameof(RevenueEventStatus.Processed), "USD", 1, 100m)]);
+        _runs
+            .Setup(repository => repository.GetRunsOverlappingPeriodAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var report = await CreateService().GetComplianceReportAsync(
+            new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 30, 23, 59, 59, DateTimeKind.Utc),
+            null);
+
+        report.Attestation.Should().Contain("100.00 EUR");
+        report.Attestation.Should().Contain("100.00 USD");
+        report.Attestation.Should().Contain("per currency without conversion");
+        report.Attestation.Should().NotContain("200.00");
+        report.TotalsByEventType.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetTrendReportAsync_IncludesZeroActivityDays_AndComputesPerCurrencyTotals()
     {
         var from = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc);
         var to = new DateTime(2026, 9, 30, 0, 0, 0, DateTimeKind.Utc);
@@ -395,18 +461,63 @@ public class RevenueReportServiceTests
             .Setup(repository => repository.GetDailyTotalsAsync(from, to, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
-                new RevenueDailyTotal(new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), 100m, 20m, 80m, 4),
-                new RevenueDailyTotal(new DateTime(2026, 9, 30, 0, 0, 0, DateTimeKind.Utc), 10m, 0m, 10m, 1)
+                new RevenueDailyTotal(new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), "USD", 100m, 20m, 80m, 4),
+                new RevenueDailyTotal(new DateTime(2026, 9, 30, 0, 0, 0, DateTimeKind.Utc), "USD", 10m, 0m, 10m, 1),
+                new RevenueDailyTotal(new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), "EUR", 50m, 0m, 50m, 1)
             ]);
 
         var trend = await CreateService().GetTrendReportAsync(from, to, null);
 
-        trend.Points.Should().HaveCount(3);
-        trend.Points[1].EventCount.Should().Be(0);
-        trend.Points[1].NetTotal.Should().Be(0m);
-        trend.TotalCredit.Should().Be(110m);
-        trend.TotalDebit.Should().Be(20m);
-        trend.TotalNet.Should().Be(90m);
+        // Three days per observed currency, zero-filled for inactive (day, currency) pairs.
+        trend.Points.Should().HaveCount(6);
+        trend.Points.Should().Contain(point => point.DateUtc == new DateTime(2026, 9, 29) && point.Currency == "USD" && point.NetTotal == 0m);
+        trend.Points.Should().Contain(point => point.DateUtc == new DateTime(2026, 9, 29) && point.Currency == "EUR" && point.NetTotal == 0m);
+
+        trend.TotalsByCurrency.Should().BeEquivalentTo(
+        [
+            new RevenueTrendCurrencyTotal("USD", 110m, 20m, 90m),
+            new RevenueTrendCurrencyTotal("EUR", 50m, 0m, 50m)
+        ]);
+    }
+
+    [Fact]
+    public async Task GetTrendReportAsync_MixedCurrenciesNeverMergeIntoUnitlessTotals()
+    {
+        var from = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc);
+        _revenueEvents
+            .Setup(repository => repository.GetDailyTotalsAsync(from, to, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new RevenueDailyTotal(from, "USD", 100m, 0m, 100m, 1),
+                new RevenueDailyTotal(from, "EUR", 100m, 0m, 100m, 1)
+            ]);
+
+        var trend = await CreateService().GetTrendReportAsync(from, to, null);
+
+        // Regression (issue #404 verifier gap 1): 100 USD + 100 EUR on the same day
+        // must stay two series; no total may surface a unitless 200.
+        trend.TotalsByCurrency.Should().HaveCount(2);
+        trend.TotalsByCurrency.Should().Contain(total => total.Currency == "USD" && total.TotalNet == 100m);
+        trend.TotalsByCurrency.Should().Contain(total => total.Currency == "EUR" && total.TotalNet == 100m);
+        trend.TotalsByCurrency.Should().NotContain(total => total.TotalNet == 200m);
+    }
+
+    [Fact]
+    public async Task GetTrendReportAsync_NoActivity_ProducesNoCurrencySeries()
+    {
+        var from = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(2026, 9, 30, 0, 0, 0, DateTimeKind.Utc);
+        _revenueEvents
+            .Setup(repository => repository.GetDailyTotalsAsync(from, to, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var trend = await CreateService().GetTrendReportAsync(from, to, null);
+
+        // Zero amounts cannot be attributed to a currency, so an empty period yields
+        // no series instead of inventing a unitless zero currency.
+        trend.Points.Should().BeEmpty();
+        trend.TotalsByCurrency.Should().BeEmpty();
     }
 
     [Theory]
@@ -426,14 +537,22 @@ public class RevenueReportServiceTests
     }
 
     [Fact]
-    public async Task ExportAsync_ProducesRfc4180Csv_WithAllSections()
+    public async Task ExportAsync_ProducesRfc4180Csv_WithAllSectionsAndCurrencyColumn()
     {
         _revenueEvents
             .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<RevenueEventTotalGrouping>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), 1, 10m)]);
+            .ReturnsAsync(
+            [
+                new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "USD", 1, 10m),
+                new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "EUR", 1, 10m)
+            ]);
         _revenueEvents
             .Setup(repository => repository.GetDailyTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([new RevenueDailyTotal(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 10m, 0m, 10m, 1)]);
+            .ReturnsAsync(
+            [
+                new RevenueDailyTotal(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), "USD", 10m, 0m, 10m, 1),
+                new RevenueDailyTotal(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), "EUR", 10m, 0m, 10m, 1)
+            ]);
         _runs
             .Setup(repository => repository.GetRunsOverlappingPeriodAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
@@ -446,10 +565,15 @@ public class RevenueReportServiceTests
 
         export.FileName.Should().Be("revenue-audit-20260901-20260902.csv");
         export.ContentType.Should().Be("text/csv; charset=utf-8");
-        export.Content.SplitLines().First().Should().Be("section,key,count,total");
-        export.Content.Should().Contain($"event_type,{nameof(RevenueEventType.PaymentReceived)},1,10.00");
-        export.Content.Should().Contain("daily,2026-09-01,1,10.00");
-        export.Content.Should().Contain("daily,2026-09-02,0,0.00");
+        export.Content.SplitLines().First().Should().Be("section,key,currency,count,total");
+        export.Content.Should().Contain($"event_type,{nameof(RevenueEventType.PaymentReceived)},USD,1,10.00");
+        export.Content.Should().Contain($"event_type,{nameof(RevenueEventType.PaymentReceived)},EUR,1,10.00");
+        export.Content.Should().Contain("daily,2026-09-01,USD,1,10.00");
+        export.Content.Should().Contain("daily,2026-09-01,EUR,1,10.00");
+        export.Content.Should().Contain("daily,2026-09-02,USD,0,0.00");
+        // Regression (issue #404 verifier gap 1): mixed currencies never merge into a
+        // unitless 20.00 row.
+        export.Content.Should().NotContain("20.00");
     }
 
     [Fact]
@@ -475,7 +599,46 @@ public class RevenueReportServiceTests
         export.ContentType.Should().Be("application/json");
         var document = JsonDocument.Parse(export.Content);
         document.RootElement.GetProperty("compliance").GetProperty("attestation").GetString().Should().NotBeNullOrEmpty();
-        document.RootElement.GetProperty("trend").GetProperty("points").GetArrayLength().Should().Be(2);
+        document.RootElement.GetProperty("trend").GetProperty("points").GetArrayLength().Should().Be(0);
+        document.RootElement.GetProperty("trend").GetProperty("totalsByCurrency").GetArrayLength().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ExportAsync_MixedCurrencyJson_CarriesPerCurrencyBreakdowns()
+    {
+        _revenueEvents
+            .Setup(repository => repository.GetGroupedTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<RevenueEventTotalGrouping>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "USD", 1, 100m),
+                new RevenueEventGroupTotal(nameof(RevenueEventType.PaymentReceived), "EUR", 1, 100m)
+            ]);
+        _revenueEvents
+            .Setup(repository => repository.GetDailyTotalsAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new RevenueDailyTotal(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), "USD", 100m, 0m, 100m, 1),
+                new RevenueDailyTotal(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), "EUR", 100m, 0m, 100m, 1)
+            ]);
+        _runs
+            .Setup(repository => repository.GetRunsOverlappingPeriodAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var export = await CreateService().ExportAsync(
+            new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+            "json",
+            null);
+
+        var document = JsonDocument.Parse(export.Content);
+        // Regression (issue #404 verifier gap 1): every amount row carries its currency;
+        // range totals stay per currency.
+        var groupTotals = document.RootElement.GetProperty("compliance").GetProperty("totalsByEventType");
+        groupTotals.GetArrayLength().Should().Be(2);
+        groupTotals.EnumerateArray().Select(total => total.GetProperty("currency").GetString()).Should().BeEquivalentTo("USD", "EUR");
+        var trendTotals = document.RootElement.GetProperty("trend").GetProperty("totalsByCurrency");
+        trendTotals.GetArrayLength().Should().Be(2);
+        trendTotals.EnumerateArray().Select(total => total.GetProperty("totalNet").GetDecimal()).Should().OnlyContain(net => net == 100m);
     }
 }
 

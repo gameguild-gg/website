@@ -30,7 +30,7 @@ public interface IRevenueEventRepository
         Guid? tenantId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Group revenue event totals in an inclusive period by the requested dimension.</summary>
+    /// <summary>Group revenue event totals in an inclusive period by the requested dimension and currency. Amounts are never summed across currencies.</summary>
     Task<List<RevenueEventGroupTotal>> GetGroupedTotalsAsync(
         DateTime startUtc,
         DateTime endUtc,
@@ -38,7 +38,7 @@ public interface IRevenueEventRepository
         RevenueEventTotalGrouping grouping,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Get per-day net revenue totals in an inclusive period.</summary>
+    /// <summary>Get per-day, per-currency net revenue totals in an inclusive period. Amounts are never summed across currencies.</summary>
     Task<List<RevenueDailyTotal>> GetDailyTotalsAsync(
         DateTime startUtc,
         DateTime endUtc,

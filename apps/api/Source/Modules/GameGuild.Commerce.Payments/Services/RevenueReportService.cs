@@ -55,12 +55,20 @@ public sealed partial class RevenueReportService(
             .Where(total => total.Key == nameof(RevenueEventStatus.Pending) || total.Key == nameof(RevenueEventStatus.Failed))
             .Sum(total => total.Count);
 
-        var recognizedTotal = totalsByEventType.Sum(total => total.Total);
+        var recognizedByCurrency = totalsByEventType
+            .GroupBy(total => total.Currency, StringComparer.Ordinal)
+            .Select(group => (Currency: group.Key, Total: group.Sum(total => total.Total)))
+            .OrderBy(entry => entry.Currency, StringComparer.Ordinal)
+            .ToList();
+        var grossBreakdown = string.Join(
+            ", ",
+            recognizedByCurrency.Select(entry => $"{entry.Total.ToString("0.00", CultureInfo.InvariantCulture)} {entry.Currency}"));
+        grossBreakdown = grossBreakdown.Length > 0 ? grossBreakdown : "0.00 (no revenue events)";
         var attestation =
             $"Revenue audit summary for {fromUtc:yyyy-MM-ddTHH:mm:ssZ} to {toUtc:yyyy-MM-ddTHH:mm:ssZ}: " +
-            $"{totalsByStatus.Sum(total => total.Count)} revenue events recorded, {recognizedTotal.ToString("0.00", CultureInfo.InvariantCulture)} gross across event types, " +
+            $"{totalsByStatus.Sum(total => total.Count)} revenue events recorded, {grossBreakdown} gross across event types, " +
             $"{uncountedEventCount} events not yet processed, {coverage.ReconciliationRuns} reconciliation run(s) with {coverage.Discrepancies} discrepancy(ies). " +
-            "Totals are computed from immutable revenue event records as of the report timestamp.";
+            "Totals are computed from immutable revenue event records as of the report timestamp, reported per currency without conversion or cross-currency consolidation.";
 
         return new RevenueComplianceReport(
             FromUtc: fromUtc,
@@ -84,28 +92,54 @@ public sealed partial class RevenueReportService(
         var dailyTotals = await revenueEventRepository
             .GetDailyTotalsAsync(fromUtc, toUtc, tenantId, cancellationToken)
             .ConfigureAwait(false);
-        var totalsByDay = dailyTotals.ToDictionary(total => total.DateUtc, total => total);
+
+        // One trend series per observed currency: zero-activity days are filled per
+        // currency, and totals are never merged across currencies (100 USD + 100 EUR
+        // must never surface as a unitless 200).
+        var currencies = dailyTotals
+            .Select(total => total.Currency)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(currency => currency, StringComparer.Ordinal)
+            .ToList();
 
         var points = new List<RevenueTrendPoint>();
-        for (var day = fromUtc.Date; day <= toUtc.Date; day = day.AddDays(1))
+        var totalsByCurrency = new List<RevenueTrendCurrencyTotal>();
+        foreach (var currency in currencies)
         {
-            if (totalsByDay.TryGetValue(day, out var total))
+            var totalsByDay = dailyTotals
+                .Where(total => string.Equals(total.Currency, currency, StringComparison.Ordinal))
+                .ToDictionary(total => total.DateUtc, total => total);
+
+            decimal credit = 0m, debit = 0m, net = 0m;
+            for (var day = fromUtc.Date; day <= toUtc.Date; day = day.AddDays(1))
             {
-                points.Add(new RevenueTrendPoint(day, total.CreditTotal, total.DebitTotal, total.NetTotal, total.EventCount));
+                if (totalsByDay.TryGetValue(day, out var total))
+                {
+                    points.Add(new RevenueTrendPoint(day, currency, total.CreditTotal, total.DebitTotal, total.NetTotal, total.EventCount));
+                    credit += total.CreditTotal;
+                    debit += total.DebitTotal;
+                    net += total.NetTotal;
+                }
+                else
+                {
+                    points.Add(new RevenueTrendPoint(day, currency, 0m, 0m, 0m, 0));
+                }
             }
-            else
-            {
-                points.Add(new RevenueTrendPoint(day, 0m, 0m, 0m, 0));
-            }
+
+            totalsByCurrency.Add(new RevenueTrendCurrencyTotal(currency, credit, debit, net));
         }
+
+        points.Sort((left, right) =>
+        {
+            var byDate = left.DateUtc.CompareTo(right.DateUtc);
+            return byDate != 0 ? byDate : string.CompareOrdinal(left.Currency, right.Currency);
+        });
 
         return new RevenueTrendReport(
             FromUtc: fromUtc,
             ToUtc: toUtc,
             Points: points,
-            TotalCredit: points.Sum(point => point.CreditTotal),
-            TotalDebit: points.Sum(point => point.DebitTotal),
-            TotalNet: points.Sum(point => point.NetTotal));
+            TotalsByCurrency: totalsByCurrency);
     }
 
     /// <inheritdoc />
@@ -154,27 +188,27 @@ public sealed partial class RevenueReportService(
     private static string BuildCsv(RevenueComplianceReport complianceReport, RevenueTrendReport trendReport)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("section,key,count,total");
+        builder.AppendLine("section,key,currency,count,total");
 
         foreach (var total in complianceReport.TotalsByEventType)
         {
-            builder.AppendLine($"event_type,{Escape(total.Key)},{total.Count},{Format(total.Total)}");
+            builder.AppendLine($"event_type,{Escape(total.Key)},{Escape(total.Currency)},{total.Count},{Format(total.Total)}");
         }
 
         foreach (var total in complianceReport.TotalsBySource)
         {
-            builder.AppendLine($"source,{Escape(total.Key)},{total.Count},{Format(total.Total)}");
+            builder.AppendLine($"source,{Escape(total.Key)},{Escape(total.Currency)},{total.Count},{Format(total.Total)}");
         }
 
         foreach (var total in complianceReport.TotalsByStatus)
         {
-            builder.AppendLine($"status,{Escape(total.Key)},{total.Count},{Format(total.Total)}");
+            builder.AppendLine($"status,{Escape(total.Key)},{Escape(total.Currency)},{total.Count},{Format(total.Total)}");
         }
 
         foreach (var point in trendReport.Points)
         {
             builder.AppendLine(
-                $"daily,{point.DateUtc:yyyy-MM-dd},{point.EventCount},{Format(point.NetTotal)}");
+                $"daily,{point.DateUtc:yyyy-MM-dd},{Escape(point.Currency)},{point.EventCount},{Format(point.NetTotal)}");
         }
 
         return builder.ToString();

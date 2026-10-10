@@ -2020,8 +2020,9 @@ export interface CommercePaymentsProcessRefundResult {
 }
 
 /** Durable alert raised when daily net revenue deviates abnormally from its trailing
-baseline. Detection is idempotent per (kind, day): re-running detection for the same
-day never duplicates an alert. */
+baseline. Baselines are computed per currency; detection is idempotent per
+(kind, day, currency): re-running detection for the same day and currency never
+duplicates an alert. */
 export interface CommercePaymentsRevenueAnomalyAlert {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
@@ -2037,6 +2038,8 @@ Setter is public for EF Core materialization; prefer constructor or factory meth
   /** Timestamp when the entity was created.
 Protected setter prevents modification after initial creation; EF Core uses backing field. */
   createdAt: string;
+  /** ISO-4217 currency code of the daily net revenue series evaluated. Amounts are never compared across currencies. */
+  currency: string;
   /** Timestamp when the entity was soft-deleted (null if not deleted).
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
@@ -2046,7 +2049,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   detectedForDateUtc?: string;
   /** Domain events raised by this entity */
   domainEvents?: CQRSIDomainEvent[] | null;
-  /** Baseline (mean) net revenue expected for the evaluated day. */
+  /** Baseline (mean) net revenue expected for the evaluated day, in GameGuild.Commerce.Payments.RevenueAnomalyAlert.Currency. */
   expectedNetRevenue?: number;
   integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
@@ -2055,7 +2058,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   kind?: CommercePaymentsRevenueAnomalyKind;
-  /** Net revenue observed for the evaluated day. */
+  /** Net revenue observed for the evaluated day, in GameGuild.Commerce.Payments.RevenueAnomalyAlert.Currency. */
   observedNetRevenue?: number;
   status?: CommercePaymentsRevenueAnomalyStatus;
   tenantId?: string | null;
@@ -2110,20 +2113,20 @@ export interface CommercePaymentsRevenueAuditingControllerStatementLineInput {
   referenceId?: string | null;
 }
 
-/** Compliance-grade revenue summary for an inclusive period. */
+/** Compliance-grade revenue summary for an inclusive period, broken down by currency. */
 export interface CommercePaymentsRevenueComplianceReport {
-  /** Human-readable attestation statement for compliance filings. */
+  /** Human-readable attestation statement for compliance filings. States gross revenue per currency; no cross-currency consolidation is performed. */
   attestation?: string | null;
   /** Start of the period (inclusive). */
   fromUtc?: string;
   /** Moment the report was produced. */
   generatedAtUtc?: string;
   reconciliation?: CommercePaymentsRevenueReconciliationCoverage;
-  /** Revenue totals grouped by event type. */
+  /** Revenue totals grouped by (event type, currency). */
   totalsByEventType?: CommercePaymentsRevenueEventGroupTotal[] | null;
-  /** Revenue totals grouped by source. */
+  /** Revenue totals grouped by (source, currency). */
   totalsBySource?: CommercePaymentsRevenueEventGroupTotal[] | null;
-  /** Revenue totals grouped by processing status. */
+  /** Revenue totals grouped by (processing status, currency). */
   totalsByStatus?: CommercePaymentsRevenueEventGroupTotal[] | null;
   /** End of the period (inclusive). */
   toUtc?: string;
@@ -2135,13 +2138,15 @@ export interface CommercePaymentsRevenueComplianceReport {
 export type CommercePaymentsRevenueDiscrepancyKind =
   'MissingInternal' | 'MissingExternal' | 'AmountMismatch' | 'CurrencyMismatch' | 'DuplicateExternalReference';
 
-/** Grouped totals for one key of a grouping dimension (event type, source or status). */
+/** Grouped totals for one key of a grouping dimension (event type, source or status), in one currency. */
 export interface CommercePaymentsRevenueEventGroupTotal {
   /** Number of revenue events in the group. */
   count?: number;
+  /** ISO-4217 currency code the totals are denominated in. Amounts are never consolidated across currencies. */
+  currency?: string | null;
   /** Grouping key (enum name). */
   key?: string | null;
-  /** Sum of event amounts in the group. */
+  /** Sum of event amounts in the group, in Currency. */
   total?: number;
 }
 
@@ -2269,32 +2274,42 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Lifecycle status of a revenue reconciliation run */
 export type CommercePaymentsRevenueReconciliationStatus = 'Running' | 'Completed' | 'Failed';
 
-/** One point of a historical revenue trend. */
+/** Range totals of a historical revenue trend for one currency. */
+export interface CommercePaymentsRevenueTrendCurrencyTotal {
+  /** ISO-4217 currency code the totals are denominated in. */
+  currency?: string | null;
+  /** Credit total across the range, in Currency. */
+  totalCredit?: number;
+  /** Debit total across the range, in Currency. */
+  totalDebit?: number;
+  /** Net total across the range, in Currency. */
+  totalNet?: number;
+}
+
+/** One point of a historical revenue trend, for one currency. */
 export interface CommercePaymentsRevenueTrendPoint {
-  /** Credit-side total for the day. */
+  /** Credit-side total for the day, in Currency. */
   creditTotal?: number;
+  /** ISO-4217 currency code the point is denominated in. */
+  currency?: string | null;
   /** UTC day (midnight) the point covers. */
   dateUtc?: string;
-  /** Debit-side total for the day. */
+  /** Debit-side total for the day, in Currency. */
   debitTotal?: number;
-  /** Revenue events counted for the day. */
+  /** Revenue events counted for the day in this currency. */
   eventCount?: number;
-  /** Net total for the day. */
+  /** Net total for the day, in Currency. */
   netTotal?: number;
 }
 
-/** Historical revenue trend over an inclusive date range. */
+/** Historical revenue trend over an inclusive date range, broken down by currency. */
 export interface CommercePaymentsRevenueTrendReport {
   /** Start of the range (inclusive). */
   fromUtc?: string;
-  /** One point per UTC day in the range, including zero-activity days. */
+  /** One point per (UTC day, currency) pair for every currency observed in the range, including zero-activity days for those currencies. Empty when the range has no revenue events, since zero amounts cannot be attributed to a currency. */
   points?: CommercePaymentsRevenueTrendPoint[] | null;
-  /** Credit total across the range. */
-  totalCredit?: number;
-  /** Debit total across the range. */
-  totalDebit?: number;
-  /** Net total across the range. */
-  totalNet?: number;
+  /** Range totals per currency observed in the period. Amounts are never consolidated across currencies. */
+  totalsByCurrency?: CommercePaymentsRevenueTrendCurrencyTotal[] | null;
   /** End of the range (inclusive). */
   toUtc?: string;
 }
@@ -20170,6 +20185,7 @@ export let CommercePaymentsRevenueReconciliationCoverageSchema: z.ZodType<Commer
 export let CommercePaymentsRevenueReconciliationDiscrepancySchema: z.ZodType<CommercePaymentsRevenueReconciliationDiscrepancy>;
 export let CommercePaymentsRevenueReconciliationRunSchema: z.ZodType<CommercePaymentsRevenueReconciliationRun>;
 export let CommercePaymentsRevenueReconciliationStatusSchema: z.ZodType<CommercePaymentsRevenueReconciliationStatus>;
+export let CommercePaymentsRevenueTrendCurrencyTotalSchema: z.ZodType<CommercePaymentsRevenueTrendCurrencyTotal>;
 export let CommercePaymentsRevenueTrendPointSchema: z.ZodType<CommercePaymentsRevenueTrendPoint>;
 export let CommercePaymentsRevenueTrendReportSchema: z.ZodType<CommercePaymentsRevenueTrendReport>;
 export let CommercePaymentsTaxBreakdownSchema: z.ZodType<CommercePaymentsTaxBreakdown>;
@@ -23734,8 +23750,9 @@ CommercePaymentsProcessRefundResultSchema = z.object({
 });
 
 /** Zod schema for CommercePaymentsRevenueAnomalyAlert. Durable alert raised when daily net revenue deviates abnormally from its trailing
-baseline. Detection is idempotent per (kind, day): re-running detection for the same
-day never duplicates an alert. */
+baseline. Baselines are computed per currency; detection is idempotent per
+(kind, day, currency): re-running detection for the same day and currency never
+duplicates an alert. */
 CommercePaymentsRevenueAnomalyAlertSchema = z.object({
   id: z.string().uuid().optional(),
   acknowledgedAtUtc: z.string().datetime().nullable().optional(),
@@ -23743,6 +23760,7 @@ CommercePaymentsRevenueAnomalyAlertSchema = z.object({
   acknowledgementNotes: z.string().max(1000).nullable().optional(),
   baselineDays: z.number().int().optional(),
   createdAt: z.string().datetime(),
+  currency: z.string().min(1).max(3),
   deletedAt: z.string().datetime().nullable().optional(),
   detectedAtUtc: z.string().datetime().optional(),
   detectedForDateUtc: z.string().datetime().optional(),
@@ -23810,7 +23828,7 @@ CommercePaymentsRevenueAuditingControllerStatementLineInputSchema = z.object({
   referenceId: z.string().nullable().optional(),
 });
 
-/** Zod schema for CommercePaymentsRevenueComplianceReport. Compliance-grade revenue summary for an inclusive period. */
+/** Zod schema for CommercePaymentsRevenueComplianceReport. Compliance-grade revenue summary for an inclusive period, broken down by currency. */
 CommercePaymentsRevenueComplianceReportSchema = z.object({
   attestation: z.string().nullable().optional(),
   fromUtc: z.string().datetime().optional(),
@@ -23841,9 +23859,10 @@ CommercePaymentsRevenueDiscrepancyKindSchema = z.enum([
   'DuplicateExternalReference',
 ]);
 
-/** Zod schema for CommercePaymentsRevenueEventGroupTotal. Grouped totals for one key of a grouping dimension (event type, source or status). */
+/** Zod schema for CommercePaymentsRevenueEventGroupTotal. Grouped totals for one key of a grouping dimension (event type, source or status), in one currency. */
 CommercePaymentsRevenueEventGroupTotalSchema = z.object({
   count: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
   key: z.string().nullable().optional(),
   total: z.number().optional(),
 });
@@ -23933,25 +23952,35 @@ CommercePaymentsRevenueReconciliationRunSchema = z.object({
 /** Zod schema for CommercePaymentsRevenueReconciliationStatus. Lifecycle status of a revenue reconciliation run */
 CommercePaymentsRevenueReconciliationStatusSchema = z.enum(['Running', 'Completed', 'Failed']);
 
-/** Zod schema for CommercePaymentsRevenueTrendPoint. One point of a historical revenue trend. */
+/** Zod schema for CommercePaymentsRevenueTrendCurrencyTotal. Range totals of a historical revenue trend for one currency. */
+CommercePaymentsRevenueTrendCurrencyTotalSchema = z.object({
+  currency: z.string().nullable().optional(),
+  totalCredit: z.number().optional(),
+  totalDebit: z.number().optional(),
+  totalNet: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueTrendPoint. One point of a historical revenue trend, for one currency. */
 CommercePaymentsRevenueTrendPointSchema = z.object({
   creditTotal: z.number().optional(),
+  currency: z.string().nullable().optional(),
   dateUtc: z.string().datetime().optional(),
   debitTotal: z.number().optional(),
   eventCount: z.number().int().optional(),
   netTotal: z.number().optional(),
 });
 
-/** Zod schema for CommercePaymentsRevenueTrendReport. Historical revenue trend over an inclusive date range. */
+/** Zod schema for CommercePaymentsRevenueTrendReport. Historical revenue trend over an inclusive date range, broken down by currency. */
 CommercePaymentsRevenueTrendReportSchema = z.object({
   fromUtc: z.string().datetime().optional(),
   points: z
     .array(z.lazy(() => CommercePaymentsRevenueTrendPointSchema))
     .nullable()
     .optional(),
-  totalCredit: z.number().optional(),
-  totalDebit: z.number().optional(),
-  totalNet: z.number().optional(),
+  totalsByCurrency: z
+    .array(z.lazy(() => CommercePaymentsRevenueTrendCurrencyTotalSchema))
+    .nullable()
+    .optional(),
   toUtc: z.string().datetime().optional(),
 });
 
