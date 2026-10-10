@@ -750,17 +750,20 @@ public class LocalAuthService(
 
         var existingSession = await sessionManagementService.GetSessionByRefreshTokenAsync(hashedToken, cancellationToken).ConfigureAwait(false);
         var sessionId = existingSession?.Id ?? Guid.NewGuid();
-        var configuredExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
-            jwtOptions, configuration, persistent: false);
-        // Rotation renews the session's originating duration, so a persistent ("remember me")
-        // session keeps its persistent lifetime instead of collapsing onto the standard one.
-        // The raw stored CreatedAt is passed through so the resolver's malformed/legacy-row
-        // fallback (rows without a creation instant) engages instead of deriving a bogus
-        // duration from a sanitized clock value.
-        var refreshTokenExpiresAt = now.Add(RefreshTokenLifetimeResolver.ResolveOriginatingLifetime(
+        // Rotation renews the session with the configured lifetime for its class: a stored
+        // duration strictly longer than the configured standard lifetime marks a persistent
+        // ("remember me") session, which renews at the persistent lifetime so it does not
+        // collapse onto the standard one. Every other row — including legacy or malformed
+        // rows and the raw stored timestamps — renews at the configured standard lifetime.
+        // The raw stored duration itself is never copied into the replacement: short-lived,
+        // absolute-session-capped, or externally seeded rows would otherwise renew with a
+        // stale lifetime (the 2026-10-10 regression minted ~8-hour replacements) instead of
+        // the configured days.
+        var refreshTokenExpiresAt = now.AddDays(RefreshTokenLifetimeResolver.ResolveRenewalDays(
+            jwtOptions,
+            configuration,
             DateTime.SpecifyKind(storedToken.CreatedAt, DateTimeKind.Utc),
-            DateTime.SpecifyKind(storedToken.ExpiresAt, DateTimeKind.Utc),
-            TimeSpan.FromDays(configuredExpiryDays)));
+            DateTime.SpecifyKind(storedToken.ExpiresAt, DateTimeKind.Utc)));
         var newRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
             userId, deviceInfo, authenticatedAt, refreshTokenExpiresAt, cancellationToken).ConfigureAwait(false);
         var slidingExpiration = jwtOptions?.Value.RefreshTokenSlidingExpiration
