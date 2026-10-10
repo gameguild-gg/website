@@ -23,8 +23,9 @@ public sealed class CredentialTimingCompensationRegressionTests
     private const int CandidateResolutionDelayMs = 60;
 
     private readonly List<string> _order = [];
-    private AuthenticationTimingScope? _originReturnedToCaller;
-    private AuthenticationTimingScope? _compensatedScope;
+    private AuthenticationTimingOrigin? _originReturnedToCaller;
+    private AuthenticationTimingOrigin? _compensatedScope;
+    private RecordingTimeProvider? _clock;
     private CredentialWorkClassification? _compensatedClassification;
     private LocalSignInRequest? _capturedSignInRequest;
 
@@ -47,9 +48,6 @@ public sealed class CredentialTimingCompensationRegressionTests
 
     private LocalAuthService CreateSut(IPasswordHasher? passwordHasher = null)
     {
-        var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers.UserAgent = "TimingRegression/1.0";
-        _httpContextAccessor.Setup(accessor => accessor.HttpContext).Returns(httpContext);
         _authAttemptService.Setup(service => service.GetClientIpAddress(It.IsAny<HttpContext>())).Returns("127.0.0.1");
 
         SetupInstrumentedTimingProtection();
@@ -72,7 +70,9 @@ public sealed class CredentialTimingCompensationRegressionTests
             _httpContextAccessor.Object,
             NullLogger<LocalAuthService>.Instance,
             new Mock<ISender>().Object,
-            new Mock<ISessionManagementService>().Object);
+            new Mock<ISessionManagementService>().Object,
+            SignInMfaPreparationStub.Create(),
+            timeProvider: _clock);
     }
 
     private void SetupInstrumentedLookup(User? user)
@@ -81,6 +81,7 @@ public sealed class CredentialTimingCompensationRegressionTests
             .Setup(repository => repository.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
+                _originReturnedToCaller = AuthenticationTimingOrigin.GetOrStartForRequest(_httpContextAccessor.Object.HttpContext, _clock);
                 _order.Add("lookup");
                 await Task.Delay(LookupDelayMs);
                 return user;
@@ -89,28 +90,40 @@ public sealed class CredentialTimingCompensationRegressionTests
 
     private void SetupInstrumentedTimingProtection()
     {
-        _enumerationProtection
-            .Setup(protection => protection.BeginAuthenticationTiming())
-            .Callback(() => _order.Add("origin"))
-            .Returns(() =>
-            {
-                // A real server-owned scope: the elapsed measurement later in the test proves
-                // the origin precedes the instrumented lookup delay.
-                _originReturnedToCaller = new AuthenticationTimingScope();
-                return _originReturnedToCaller;
-            });
-        _enumerationProtection
-            .Setup(protection => protection.AddTimingProtectionDelayAsync(It.IsAny<AuthenticationTimingScope>(), It.IsAny<CredentialWorkClassification>()))
-            .Callback<AuthenticationTimingScope, CredentialWorkClassification>((scope, classification) =>
+        _clock = new RecordingTimeProvider(_order);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers.UserAgent = "TimingRegression/1.0";
+        _httpContextAccessor.Setup(accessor => accessor.HttpContext).Returns(httpContext);
+        _enumerationProtection.As<IAuthenticationTimingProtection>()
+            .Setup(protection => protection.CompleteAuthenticationTimingAsync(It.IsAny<AuthenticationTimingOrigin>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Callback<AuthenticationTimingOrigin, bool, CancellationToken>((scope, workCompleted, _) =>
             {
                 _order.Add("compensate");
                 _compensatedScope = scope;
-                _compensatedClassification = classification;
+                _compensatedClassification = workCompleted ? CredentialWorkClassification.Completed : CredentialWorkClassification.None;
             })
             .Returns(Task.CompletedTask);
         _enumerationProtection
             .Setup(protection => protection.GetGenericErrorMessage(It.IsAny<string>()))
             .Returns("Invalid credentials. Please check your email and password.");
+    }
+
+    private sealed class RecordingTimeProvider(List<string> order) : TimeProvider
+    {
+        private bool started;
+
+        public override long TimestampFrequency => TimeProvider.System.TimestampFrequency;
+
+        public override long GetTimestamp()
+        {
+            var timestamp = TimeProvider.System.GetTimestamp();
+            if (!started)
+            {
+                started = true;
+                order.Add("origin");
+            }
+            return timestamp;
+        }
     }
 
     private static User CreatePasswordAccount(IPasswordHasher hasher, string password = "CorrectPassword1!")
@@ -131,7 +144,7 @@ public sealed class CredentialTimingCompensationRegressionTests
 
         _order.Should().Equal("origin", "lookup", "compensate");
         _compensatedScope.Should().BeSameAs(_originReturnedToCaller);
-        _compensatedScope!.ElapsedSinceOrigin.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10),
+        _compensatedScope!.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10),
             "the server-owned origin must precede the account lookup so the lookup is compensated");
     }
 
@@ -146,7 +159,7 @@ public sealed class CredentialTimingCompensationRegressionTests
             sut.LocalSignInAsync(new LocalSignInRequest { Email = passwordless.Email, Password = "WrongPassword1!" }));
 
         _order.Should().Equal("origin", "lookup", "compensate");
-        _compensatedScope!.ElapsedSinceOrigin.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10),
+        _compensatedScope!.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10),
             "the server-owned origin must precede the account lookup so the lookup is compensated");
     }
 
@@ -164,7 +177,7 @@ public sealed class CredentialTimingCompensationRegressionTests
             sut.LocalSignInAsync(new LocalSignInRequest { Email = account.Email, Password = "WrongPassword1!" }));
 
         _order.Should().Equal("origin", "lookup", "verify", "compensate");
-        _compensatedScope!.ElapsedSinceOrigin.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10),
+        _compensatedScope!.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10),
             "the origin must precede the lookup and the real BCrypt verification");
     }
 
@@ -180,6 +193,7 @@ public sealed class CredentialTimingCompensationRegressionTests
             .Setup(repository => repository.FindSignInCandidatesAsync(It.IsAny<string>(), It.IsAny<SignInIdentifierType>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
+                _originReturnedToCaller = AuthenticationTimingOrigin.GetOrStartForRequest(_httpContextAccessor.Object.HttpContext, _clock);
                 _order.Add("candidates");
                 await Task.Delay(CandidateResolutionDelayMs);
                 return (IReadOnlyList<User>)new[] { account };
@@ -193,17 +207,19 @@ public sealed class CredentialTimingCompensationRegressionTests
         var handler = new PolymorphicSignInHandler(
             authService.Object,
             userRepository.Object,
-            _enumerationProtection.Object,
-            NullLogger<PolymorphicSignInHandler>.Instance);
+            NullLogger<PolymorphicSignInHandler>.Instance,
+            new PasswordSignInAdmissionStub(),
+            timeProvider: _clock,
+            httpContextAccessor: _httpContextAccessor.Object);
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             handler.Handle(new PolymorphicSignInCommand { Credential = account.Email, CredentialType = CredentialType.Email, Password = "WrongPassword1!" }, CancellationToken.None));
 
         _order.Should().Equal("origin", "candidates");
         _capturedSignInRequest.Should().NotBeNull();
-        _capturedSignInRequest!.TimingWindow.Should().BeSameAs(_originReturnedToCaller,
+        _capturedSignInRequest!.TimingOrigin.Should().BeSameAs(_originReturnedToCaller,
             "the polymorphic entry point must hand its pre-resolution window to the local sign-in service");
-        _capturedSignInRequest.TimingWindow!.ElapsedSinceOrigin.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(CandidateResolutionDelayMs - 10),
+        _capturedSignInRequest.TimingOrigin!.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(CandidateResolutionDelayMs - 10),
             "public candidate resolution must run inside the compensated window");
     }
 
@@ -303,13 +319,13 @@ public sealed class CredentialTimingCompensationRegressionTests
             sut.LocalSignUpAsync(new LocalSignUpRequest { Email = "duplicate@example.test", Password = "Password1!", Username = "duplicate" }));
 
         _order.Should().Equal("origin", "exists-check", "compensate");
-        _compensatedScope!.ElapsedSinceOrigin.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10));
+        _compensatedScope!.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(LookupDelayMs - 10));
         _compensatedClassification.Should().Be(CredentialWorkClassification.None,
             "the duplicate-email path performed no credential work while the fresh path hashes the password");
     }
 
     /// <summary>Delegating hasher that records verification order for window-containment assertions.</summary>
-    private sealed class OrderedHasherDecorator(IPasswordHasher inner, List<string> order) : IPasswordHasher
+    private sealed class OrderedHasherDecorator(IPasswordHasher inner, List<string> order) : IPasswordHasher, IPasswordVerificationWork
     {
         public string HashPassword(string password) => inner.HashPassword(password);
 
@@ -321,11 +337,14 @@ public sealed class CredentialTimingCompensationRegressionTests
             return inner.VerifyPasswordWithWorkClassification(hashedPassword, providedPassword);
         }
 
+        public PasswordVerificationResult VerifyPasswordWithWork(string hashedPassword, string providedPassword) =>
+            VerifyPasswordWithWorkClassification(hashedPassword, providedPassword);
+
         public bool NeedsUpgrade(string hashedPassword) => inner.NeedsUpgrade(hashedPassword);
 
         public PasswordStrengthResult ValidatePasswordStrength(string password) => inner.ValidatePasswordStrength(password);
 
-        public Task PerformDummyVerificationAsync(CancellationToken cancellationToken = default) => inner.PerformDummyVerificationAsync(cancellationToken);
+        public Task PerformDummyVerificationAsync(CancellationToken cancellationToken) => inner.PerformDummyVerificationAsync(cancellationToken);
     }
 }
 
@@ -453,12 +472,12 @@ public sealed class UserEnumerationProtectionCompensationTests
 /// </summary>
 public sealed class PasswordVerificationWorkClassificationTests
 {
-    private static IPasswordHasher CreateSut(int workFactor = 10)
+    private static IPasswordHasher CreateSut()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = workFactor.ToString()
+                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
             })
             .Build();
         return new PasswordHasher(NullLogger<PasswordHasher>.Instance, configuration);
@@ -525,7 +544,7 @@ public sealed class PasswordVerificationWorkClassificationTests
     [Fact]
     public async Task PerformDummyVerification_CompletesAtTheConfiguredWorkFactor()
     {
-        var sut = CreateSut(workFactor: 10);
+        var sut = CreateSut();
 
         var stopwatch = Stopwatch.StartNew();
         await sut.PerformDummyVerificationAsync();
@@ -533,5 +552,25 @@ public sealed class PasswordVerificationWorkClassificationTests
 
         // Bounded below by real bcrypt work at factor 10 (tens of milliseconds on any supported host).
         stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(15));
+    }
+
+    [Fact]
+    public async Task PerformDummyVerification_ExplicitCancellationPreventsWork()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var sut = CreateSut();
+
+        Func<Task> performWork = () => sut.PerformDummyVerificationAsync(cancellation.Token);
+
+        await performWork.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task PerformDummyVerification_ConcreteNoArgumentOverloadCompletes()
+    {
+        var sut = (PasswordHasher)CreateSut();
+
+        await sut.PerformDummyVerificationAsync();
     }
 }

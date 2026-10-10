@@ -714,7 +714,7 @@ public class TotpMfaServiceCovTests
             NullLogger<TotpMfaService>.Instance,
             _mfaRepo.Object,
             _trackingService.Object,
-            _encryptionService.Object);
+            _encryptionService.Object, NativeTotpReplayStub.Create());
     }
 
     [Fact]

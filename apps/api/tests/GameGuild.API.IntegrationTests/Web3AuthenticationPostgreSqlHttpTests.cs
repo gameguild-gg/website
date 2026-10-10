@@ -11,6 +11,7 @@ using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,7 @@ public sealed class Web3PostgreSqlFixture : IAsyncLifetime
 {
     private readonly ApiPostgreSqlFixture _inner = new();
     public WebApplicationFactory<Program> Factory => _inner.Factory;
+    public WebApplicationFactory<Program> CreateFactory(Action<IWebHostBuilder> configuration) => _inner.CreateFactory(configuration);
     public Guid TenantId { get; } = Guid.NewGuid();
     public async Task InitializeAsync()
     {
@@ -304,7 +306,7 @@ public sealed class Web3AuthenticationPostgreSqlHttpTests(Web3PostgreSqlFixture 
         Assert.Equal(HttpStatusCode.Unauthorized, retry.StatusCode);
     }
 
-    private WebApplicationFactory<Program> CreateFactory(WalletClock? clock = null, Action<IServiceCollection>? extraServices = null) => fixture.Factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> CreateFactory(WalletClock? clock = null, Action<IServiceCollection>? extraServices = null) => fixture.CreateFactory(builder =>
     {
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {

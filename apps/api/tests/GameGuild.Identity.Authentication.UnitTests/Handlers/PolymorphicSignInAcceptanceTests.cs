@@ -143,12 +143,91 @@ public sealed class PolymorphicSignInAcceptanceTests
         Assert.DoesNotContain("CredentialResolutionFailed", json, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static PolymorphicSignInHandler Handler(Mock<IAuthService> service, Mock<IUserRepository> repository)
+    [Theory]
+    [InlineData(CredentialType.Email)]
+    [InlineData(CredentialType.Username)]
+    [InlineData(CredentialType.Phone)]
+    public async Task AdmissionReceivesCanonicalAccountOriginAndCancellationAndHoldsLeaseThroughAuthentication(CredentialType type)
     {
-        var timingProtection = new Mock<IUserEnumerationProtectionService>();
-        timingProtection.Setup(value => value.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
-        return new PolymorphicSignInHandler(service.Object, repository.Object, timingProtection.Object, NullLogger<PolymorphicSignInHandler>.Instance);
+        using var cancellation = new CancellationTokenSource();
+        var account = Account();
+        var identifier = Identifier(account, type);
+        var admission = new PasswordSignInAdmissionStub();
+        var repository = new Mock<IUserRepository>(MockBehavior.Strict);
+        repository.Setup(value => value.FindSignInCandidatesAsync(identifier, Lookup(type), cancellation.Token))
+            .ReturnsAsync((IReadOnlyList<User>)[account]);
+        repository.Setup(value => value.GetByIdAsync(account.Id, cancellation.Token))
+            .Callback(() => Assert.False(admission.LeaseDisposed))
+            .ReturnsAsync(account);
+        var auth = new Mock<IAuthService>(MockBehavior.Strict);
+        auth.Setup(value => value.LocalSignInAsync(It.IsAny<LocalSignInRequest>(), cancellation.Token))
+            .Callback((LocalSignInRequest request, CancellationToken _) =>
+            {
+                Assert.Equal(account.Email, Assert.Single(admission.Identifiers));
+                Assert.Same(request.TimingOrigin, admission.Origin);
+                Assert.False(admission.LeaseDisposed);
+            })
+            .ReturnsAsync(new SignInResponse { Success = true, UserId = account.Id });
+        var handler = new PolymorphicSignInHandler(auth.Object, repository.Object,
+            NullLogger<PolymorphicSignInHandler>.Instance, admission);
+
+        var result = await handler.Handle(new PolymorphicSignInCommand
+        {
+            Credential = identifier, CredentialType = type, Password = SyntheticPassword()
+        }, cancellation.Token);
+
+        Assert.True(result.Success);
+        Assert.True(admission.LeaseDisposed);
+        Assert.Equal(cancellation.Token, admission.Cancellation);
+        repository.VerifyAll();
+        auth.VerifyAll();
     }
+
+    [Theory]
+    [InlineData(CredentialType.Email)]
+    [InlineData(CredentialType.Username)]
+    [InlineData(CredentialType.Phone)]
+    public async Task DeniedAdmissionCannotInvokePasswordAuthenticationOrIssueAResponse(CredentialType type)
+    {
+        var account = Account();
+        var identifier = Identifier(account, type);
+        var denial = new UnauthorizedAccessException("Synthetic generic authentication failure");
+        var admission = new PasswordSignInAdmissionStub { Denial = denial };
+        var repository = new Mock<IUserRepository>(MockBehavior.Strict);
+        repository.Setup(value => value.FindSignInCandidatesAsync(identifier, Lookup(type), CancellationToken.None))
+            .ReturnsAsync((IReadOnlyList<User>)[account]);
+        var auth = new Mock<IAuthService>(MockBehavior.Strict);
+        var handler = new PolymorphicSignInHandler(auth.Object, repository.Object,
+            NullLogger<PolymorphicSignInHandler>.Instance, admission);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(
+            new PolymorphicSignInCommand { Credential = identifier, CredentialType = type, Password = SyntheticPassword() },
+            CancellationToken.None));
+
+        Assert.Same(denial, exception);
+        Assert.Equal(account.Email, Assert.Single(admission.Identifiers));
+        auth.VerifyNoOtherCalls();
+        repository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task FailedPasswordAuthenticationReleasesTheAdmissionLease()
+    {
+        var repository = new Mock<IUserRepository>(MockBehavior.Strict);
+        var admission = new PasswordSignInAdmissionStub();
+        var auth = GenericDenial();
+        var handler = new PolymorphicSignInHandler(auth.Object, repository.Object,
+            NullLogger<PolymorphicSignInHandler>.Instance, admission);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(
+            new PolymorphicSignInCommand { Credential = "", CredentialType = CredentialType.Email, Password = SyntheticPassword() },
+            CancellationToken.None));
+        Assert.True(admission.LeaseDisposed);
+        Assert.Equal("", Assert.Single(admission.Identifiers));
+        repository.VerifyNoOtherCalls();
+        auth.VerifyAll();
+    }
+
+    private static PolymorphicSignInHandler Handler(Mock<IAuthService> service, Mock<IUserRepository> repository) => new(service.Object, repository.Object, NullLogger<PolymorphicSignInHandler>.Instance, new PasswordSignInAdmissionStub());
     private static Mock<IAuthService> GenericDenial()
     {
         var service = new Mock<IAuthService>(MockBehavior.Strict);

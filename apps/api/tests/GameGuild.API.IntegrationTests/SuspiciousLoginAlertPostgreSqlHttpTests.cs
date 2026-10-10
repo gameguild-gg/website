@@ -1,11 +1,13 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.Json;
 using GameGuild.API.Database;
 using GameGuild.API.Eventing;
 using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Identity.Authentication;
+using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using GameGuild.Notifications;
 using NotificationPriority = GameGuild.Notifications.NotificationPriority;
@@ -32,7 +34,6 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
 {
     private const string EventName = "identity.authentication.suspicious-login-detected.v1";
     private const string Endpoint = "/v1/auth/sign-in";
-    private const string Password = "S3cure-Alert-Password!";
 
     [Fact]
     public async Task HighRiskStepUpSignInProducesRedactedOwnerAlertsOnceThroughActualInbox()
@@ -44,16 +45,13 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         SetStableClientIdentity(client);
 
         using var response = await client.PostAsJsonAsync(Endpoint,
-            new { email = account.Email, password = Password, deviceFingerprint = "current-request-fingerprint" });
+            new { email = account.Email, password = account.Password, account.TenantId, deviceFingerprint = "current-request-fingerprint" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.True(document.RootElement.GetProperty("requiresStepUp").GetBoolean());
-        Assert.False(document.RootElement.GetProperty("success").GetBoolean());
+        await AssertPendingMfaAsync(factory, account, response);
 
         var message = await AlertEventAsync(factory, account.UserId);
         Assert.Equal(DurableIntegrationEventActors.System, message.ActorId);
-        Assert.Equal(DurableIntegrationEventTenants.Platform, message.TenantId);
+        Assert.Equal(account.TenantId, message.TenantId);
         Assert.Contains(account.UserId.ToString(), message.Payload, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(SecurityAlertKinds.LoginStepUpRequired, message.Payload, StringComparison.Ordinal);
         Assert.DoesNotContain(account.Email, message.Payload, StringComparison.Ordinal);
@@ -180,9 +178,9 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         SetStableClientIdentity(client);
 
         using var response = await client.PostAsJsonAsync(Endpoint,
-            new { email = account.Email, password = Password, deviceFingerprint = "current-request-fingerprint" });
+            new { email = account.Email, password = account.Password, account.TenantId, deviceFingerprint = "current-request-fingerprint" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await AssertPendingMfaAsync(factory, account, response);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.False(await db.Set<OutboxMessage>().AnyAsync(value => value.EventName == EventName && value.AggregateId == account.UserId.ToString()));
@@ -198,14 +196,71 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         SetStableClientIdentity(client);
 
         using var response = await client.PostAsJsonAsync(Endpoint,
-            new { email = account.Email, password = Password, deviceFingerprint = "current-request-fingerprint" });
+            new { email = account.Email, password = account.Password, account.TenantId, deviceFingerprint = "current-request-fingerprint" });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.True(document.RootElement.GetProperty("requiresStepUp").GetBoolean());
+        await AssertPendingMfaAsync(factory, account, response);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.False(await db.Set<OutboxMessage>().AnyAsync(value => value.EventName == EventName && value.AggregateId == account.UserId.ToString()));
+    }
+
+    [Fact]
+    public async Task HighRiskSignInWithoutTenantMembershipCannotObtainCredentialsOrMfaChallenge()
+    {
+        var clock = new AdvancingTimeProvider();
+        using var factory = CreateFactory(clock);
+        var account = await SeedAsync(factory, withTenantMembership: false);
+        using var client = factory.CreateClient();
+        SetStableClientIdentity(client);
+
+        using var response = await client.PostAsJsonAsync(Endpoint,
+            new { email = account.Email, password = account.Password, account.TenantId, deviceFingerprint = "current-request-fingerprint" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(403, document.RootElement.GetProperty("status").GetInt32());
+        Assert.False(document.RootElement.TryGetProperty("mfaToken", out _));
+        Assert.False(document.RootElement.TryGetProperty("accessToken", out _));
+        Assert.False(document.RootElement.TryGetProperty("refreshToken", out _));
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await db.Set<SignInMfaChallenge>().AnyAsync(value => value.SubjectId == account.UserId));
+        Assert.False(await db.Set<RefreshToken>().AnyAsync(value => value.UserId == account.UserId));
+        Assert.False(await db.Set<UserSession>().AnyAsync(value => value.UserId == account.UserId));
+    }
+
+    private static async Task AssertPendingMfaAsync(WebApplicationFactory<Program> factory, Account account, HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, $"Expected pending MFA response; received {(int)response.StatusCode}: {body}");
+        using var document = JsonDocument.Parse(body);
+        var value = document.RootElement;
+        Assert.False(value.GetProperty("success").GetBoolean());
+        Assert.True(value.GetProperty("requiresStepUp").GetBoolean());
+        Assert.True(value.GetProperty("requiresMfa").GetBoolean());
+        Assert.Equal(account.UserId, value.GetProperty("userId").GetGuid());
+        Assert.Equal(account.TenantId, value.GetProperty("tenantId").GetGuid());
+        Assert.True(string.IsNullOrEmpty(value.GetProperty("accessToken").GetString()));
+        Assert.True(string.IsNullOrEmpty(value.GetProperty("refreshToken").GetString()));
+        var bearer = value.GetProperty("mfaToken").GetString();
+        Assert.True(SignInMfaChallengeToken.TryHash(bearer, out var hash));
+        Assert.Equal(bearer, value.GetProperty("stepUpToken").GetString());
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var challenge = Assert.Single(await db.Set<SignInMfaChallenge>().AsNoTracking()
+            .Where(item => item.SubjectId == account.UserId).ToListAsync());
+        Assert.Equal(hash, challenge.TokenHash);
+        Assert.NotEqual(bearer, challenge.TokenHash);
+        Assert.Equal(account.TenantId, challenge.TenantId);
+        Assert.Equal((await db.Set<User>().SingleAsync(item => item.Id == account.UserId)).TokenVersion,
+            challenge.SubjectTokenVersion);
+        Assert.Equal(SignInFirstFactor.Password, challenge.FirstFactor);
+        Assert.Equal(SignInMfaPurpose.EnrollFactor, challenge.Purpose);
+        Assert.Equal(TimeSpan.FromMinutes(5), challenge.ExpiresAt - challenge.CreatedAt);
+        Assert.Null(challenge.ConsumedAt);
+        Assert.Null(challenge.RevokedAt);
+        Assert.False(await db.Set<RefreshToken>().AnyAsync(item => item.UserId == account.UserId));
+        Assert.False(await db.Set<UserSession>().AnyAsync(item => item.UserId == account.UserId));
     }
 
     private WebApplicationFactory<Program> CreateFactory(AdvancingTimeProvider clock,
@@ -250,15 +305,32 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         client.DefaultRequestHeaders.Add("X-Device-Fingerprint", "current-request-fingerprint");
     }
 
-    private static async Task<Account> SeedAsync(WebApplicationFactory<Program> factory, bool bruteForceHistory = false)
+    private static async Task<Account> SeedAsync(WebApplicationFactory<Program> factory, bool bruteForceHistory = false,
+        bool withTenantMembership = true)
     {
         var marker = Guid.NewGuid().ToString("N");
         var email = $"suspicious-login-{marker}@example.test";
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        var user = User.CreateWithPassword(email, "Synthetic suspicious login owner", hasher.HashPassword(Password), $"suspicious-login-{marker}");
+        var password = "aA7!" + Convert.ToHexString(RandomNumberGenerator.GetBytes(20));
+        var user = User.CreateWithPassword(email, "Synthetic suspicious login owner", hasher.HashPassword(password), $"suspicious-login-{marker}");
         db.Set<User>().Add(user);
+        var tenantId = Guid.NewGuid();
+        db.Set<Tenant>().Add(new Tenant
+        {
+            Id = tenantId, Name = "Suspicious login " + marker, Slug = "suspicious-login-" + marker,
+            AdminEmail = "admin-" + marker + "@example.test", IsActive = true
+        });
+        // High-risk sign-in still requires an eligible tenant before a limited MFA challenge
+        // can be issued. Startup initialization is disabled in this PostgreSQL fixture.
+        if (withTenantMembership)
+        {
+            db.Set<TenantMember>().Add(new TenantMember
+            {
+                Id = Guid.NewGuid(), TenantId = tenantId, UserId = user.Id, Role = "Member", IsActive = true
+            });
+        }
 
         var now = DateTime.UtcNow;
         // Last successful sign-in far outside the 24h window, from a different IP, user agent,
@@ -301,7 +373,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         }
 
         await db.SaveChangesAsync();
-        return new Account(user.Id, email);
+        return new Account(user.Id, email, tenantId, password);
     }
 
     private static async Task<OutboxMessage> AlertEventAsync(WebApplicationFactory<Program> factory, Guid userId)
@@ -390,7 +462,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         throw new InvalidOperationException("Synthetic suspicious-login outbox did not settle within ten dispatch cycles.");
     }
 
-    private sealed record Account(Guid UserId, string Email);
+    private sealed record Account(Guid UserId, string Email, Guid TenantId, string Password);
 
     /// <summary>Captures host log output so failing assertions can embed the pipeline's own diagnostics.</summary>
     private sealed class RecordingLoggerProvider : ILoggerProvider

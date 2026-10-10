@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.API.IntegrationTests;
 
@@ -79,6 +81,7 @@ public sealed class AuthenticationLockoutConcurrencyPostgreSqlTests(ApiPostgreSq
             await secondRequest.WaitAsync(TimeSpan.FromSeconds(10));
             secondNextCalled.Should().BeFalse();
             secondContext.Result.Should().BeOfType<UnauthorizedObjectResult>();
+            AssertProtectedDenial(secondContext, secondServices);
         }
         finally
         {
@@ -142,6 +145,7 @@ public sealed class AuthenticationLockoutConcurrencyPostgreSqlTests(ApiPostgreSq
             await secondRequest.WaitAsync(TimeSpan.FromSeconds(10));
             secondNextCalled.Should().BeFalse();
             secondContext.Result.Should().BeOfType<UnauthorizedObjectResult>();
+            AssertProtectedDenial(secondContext, secondServices);
         }
         finally
         {
@@ -170,7 +174,56 @@ public sealed class AuthenticationLockoutConcurrencyPostgreSqlTests(ApiPostgreSq
             MaxAttemptsPerIpPerHour = 50,
             AccountLockoutDurationMinutes = 30
         });
+        services.AddLogging();
+        services.AddMemoryCache();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["PasswordPolicy:BCryptWorkFactor"] = "10"
+        }).Build());
+        services.AddSingleton<AdmissionWorkRecorder>();
+        services.AddSingleton<ILogger<UserEnumerationProtectionService>>(provider => provider.GetRequiredService<AdmissionWorkRecorder>());
+        services.AddSingleton<IUserEnumerationProtectionService, UserEnumerationProtectionService>();
+        services.AddSingleton<IPasswordSignInAdmissionService, PasswordSignInAdmissionService>();
         return services.BuildServiceProvider();
+    }
+
+    private static void AssertProtectedDenial(ActionExecutingContext context, IServiceProvider services)
+    {
+        var result = context.Result.Should().BeOfType<UnauthorizedObjectResult>().Which;
+        var problem = result.Value.Should().BeOfType<ProblemDetails>().Which;
+        problem.Title.Should().Be("Unauthorized");
+        problem.Detail.Should().Be("Invalid credentials. Please check your email and password.");
+        context.HttpContext.Response.Headers.CacheControl.ToString().Should().Be("no-store");
+        AuthenticationTimingOrigin.GetOrStartForRequest(context.HttpContext).Elapsed.Should().BeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(400));
+        services.GetRequiredService<AdmissionWorkRecorder>().Costs.Should().Equal(10);
+    }
+
+    private sealed class AdmissionWorkRecorder : ILogger<UserEnumerationProtectionService>
+    {
+        public List<int> Costs { get; } = [];
+        IDisposable? ILogger.BeginScope<TState>(TState state)
+        {
+            _ = state;
+            return null;
+        }
+        bool ILogger.IsEnabled(LogLevel logLevel)
+        {
+            _ = logLevel;
+            return true;
+        }
+        void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            // The interface requires these arguments; this recorder observes only structured state.
+            _ = logLevel;
+            _ = eventId;
+            _ = exception;
+            _ = formatter;
+            if (state is not IEnumerable<KeyValuePair<string, object?>> values) { return; }
+            foreach (var value in values)
+            {
+                if (value.Key == "WorkFactor" && value.Value is int cost) { Costs.Add(cost); }
+            }
+        }
     }
 
     private static (ActionExecutingContext Context, ActionContext ActionContext) CreateContext(

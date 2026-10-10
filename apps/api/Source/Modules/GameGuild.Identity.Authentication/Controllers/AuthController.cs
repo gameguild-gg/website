@@ -84,6 +84,48 @@ public sealed class AuthController(ISender sender) : BaseApiController
         return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
     }
 
+    /// <summary>Provision the first TOTP factor using only the limited first-factor challenge.</summary>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/sign-in/enrollment")]
+    [EndpointSummary("Start limited MFA enrollment")]
+    [EndpointDescription("Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.")]
+    [ProducesResponseType<MfaSignInEnrollmentResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> StartMfaSignInEnrollment([FromBody] StartMfaSignInEnrollmentRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var response = await sender.Send(new StartMfaSignInEnrollmentCommand { MfaToken = body.MfaToken }, ct).ConfigureAwait(false);
+        return response.Success ? Ok(response) : Unauthorized(new ProblemDetails
+        {
+            Status = StatusCodes.Status401Unauthorized, Title = "Unauthorized", Detail = "Additional verification failed"
+        });
+    }
+
+    /// <summary>Complete a verified first factor with the account's enrolled or newly provisioned MFA method.</summary>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/sign-in/complete")]
+    [EndpointSummary("Complete MFA sign-in")]
+    [EndpointDescription("Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CompleteMfaSignIn([FromBody] CompleteMfaSignInRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var result = await ExecuteAuthCommandAsync(new CompleteMfaSignInCommand
+        {
+            MfaToken = body.MfaToken, Code = body.Code, Method = body.Method,
+            DeviceFingerprint = body.DeviceFingerprint
+        }, ct).ConfigureAwait(false);
+        return result is OkObjectResult { Value: SignInResponse { Success: false } }
+            ? Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized, Title = "Unauthorized", Detail = "Additional verification failed"
+            })
+            : result;
+    }
+
     /// <summary>Authenticate using email, username or international phone and a password.</summary>
     [AllowAnonymous]
     [HttpPost("v{version:apiVersion}/auth/polymorphic")]

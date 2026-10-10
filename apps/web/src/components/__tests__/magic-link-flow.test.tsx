@@ -58,6 +58,22 @@ describe("MagicLinkFlow", () => {
     mocks.requestMagicLink.mockReset().mockResolvedValue(true);
   });
 
+  it("continues MFA without consuming the one-time link a second time", async () => {
+    const { user, rerender } = renderWithUser(
+      <MagicLinkFlow token="verified-link" redirectTo="/workspace" apiUrl="https://api.example.test" messages={messages} />,
+    );
+    await waitFor(() => expect(mockAuth.signIn).toHaveBeenCalledTimes(1));
+    mockAuth.mfaChallenge = { mfaToken: "x".repeat(43), availableMethods: ["Totp", "BackupCode"] };
+    rerender(<MagicLinkFlow token="verified-link" redirectTo="/workspace" apiUrl="https://api.example.test" messages={messages} />);
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Authentication code"), "654321");
+    await user.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    expect(mockAuth.signIn).toHaveBeenLastCalledWith("credentials", {
+      mfaToken: "x".repeat(43), method: "Totp", code: "654321", redirectTo: "/workspace",
+    });
+    expect(mockAuth.signIn).toHaveBeenCalledTimes(2);
+  });
+
   it("requests a link and shows the same confirmation for every email address", async () => {
     const { user } = renderWithUser(
       <MagicLinkFlow
