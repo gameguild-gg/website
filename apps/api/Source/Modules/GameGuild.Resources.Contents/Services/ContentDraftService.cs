@@ -62,10 +62,14 @@ public class ContentDraftService(
             .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (version == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         if (version.Status != ContentVersionStatus.Draft)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.CanOnlyUpdateDrafts);
+        }
 
         version.UpdateDraft(title, summary, body, metadata, changeNotes);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -84,7 +88,9 @@ public class ContentDraftService(
             .FirstOrDefaultAsync(ct).ConfigureAwait(false);
 
         if (draft == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         return Result.Success(draft);
     }
@@ -104,7 +110,9 @@ public class ContentDraftService(
                 !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (targetVersion == null)
+        {
             return Result.Failure<ContentVersion>(ContentVersioningErrors.NotFound);
+        }
 
         var rollbackResult = await CreateDraftAsync(
             entityId,
@@ -118,7 +126,9 @@ public class ContentDraftService(
             ct).ConfigureAwait(false);
 
         if (!rollbackResult.IsSuccess)
+        {
             return rollbackResult;
+        }
 
         logger.LogInformation("Created rollback version from v{TargetVersion} for {EntityType}:{EntityId}",
             targetVersionNumber, entityType, entityId);
@@ -141,7 +151,9 @@ public class ContentDraftService(
             .ToListAsync(ct).ConfigureAwait(false);
 
         foreach (var version in versionsToArchive)
+        {
             version.Archive();
+        }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
 

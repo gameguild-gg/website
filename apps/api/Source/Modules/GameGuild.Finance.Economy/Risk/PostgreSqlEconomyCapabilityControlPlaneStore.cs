@@ -239,7 +239,9 @@ public sealed class PostgreSqlEconomyCapabilityControlPlaneStore : IEconomyCapab
             .AsNoTracking()
             .SingleOrDefaultAsync(row => row.Id == receiptId, cancellationToken);
         if (receiptRow is null)
+        {
             throw new CapabilityReceiptConsumptionException("The capability receipt is not consumable.");
+        }
 
         var relevantKillSwitches = await _db.Set<EconomyKillSwitchRow>()
             .AsNoTracking()
@@ -297,7 +299,9 @@ public sealed class PostgreSqlEconomyCapabilityControlPlaneStore : IEconomyCapab
             consumedAt < receipt.IssuedAt ||
             consumedAt >= receipt.ExpiresAt ||
             alreadyConsumed)
+        {
             throw new CapabilityReceiptConsumptionException("The capability receipt is not consumable.");
+        }
 
         _db.Set<EconomyCapabilityReceiptConsumptionRow>().Add(new EconomyCapabilityReceiptConsumptionRow
         {

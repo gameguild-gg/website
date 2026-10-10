@@ -104,7 +104,9 @@ public class TenantPermission : PermissionBase
         foreach (var perm in permissions)
         {
             if (!current.Contains(perm, StringComparer.OrdinalIgnoreCase))
+            {
                 current.Add(perm);
+            }
         }
 
         Permissions = current.ToArray();
@@ -130,7 +132,9 @@ public class TenantPermission : PermissionBase
         foreach (var perm in permissions)
         {
             if (!current.Contains(perm, StringComparer.OrdinalIgnoreCase))
+            {
                 current.Add(perm);
+            }
         }
 
         DenyPermissions = current.ToArray();

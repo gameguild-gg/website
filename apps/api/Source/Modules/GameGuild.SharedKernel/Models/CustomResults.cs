@@ -16,7 +16,9 @@ public static class CustomResults
     public static IResult Problem(Result result)
     {
         if (result.IsSuccess)
+        {
             throw new InvalidOperationException("Cannot create a problem result from a successful result.");
+        }
 
         var pd = ProblemDetailsMapper.ToProblemDetails(result.Error);
 

@@ -98,7 +98,11 @@ public sealed class TestingSlotRegistration : EntityBase
         DateTime rulesAcceptedAt,
         DateTime eventConfigurationFrozenAt)
     {
-        if (position <= 0) throw new ArgumentOutOfRangeException(nameof(position));
+        if (position <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(position));
+        }
+
         return Create(eventId, slotId, userId, TestingSlotRegistrationStatus.Waitlisted, position, notes, tenantId,
             registrationResponse, rulesAcceptedAt, eventConfigurationFrozenAt);
     }
@@ -106,7 +110,10 @@ public sealed class TestingSlotRegistration : EntityBase
     public void Promote()
     {
         if (Status != TestingSlotRegistrationStatus.Waitlisted)
+        {
             throw new InvalidOperationException("Only waitlisted registrations can be promoted.");
+        }
+
         Status = TestingSlotRegistrationStatus.Registered;
         WaitlistPosition = null;
         PromotedAt = SystemClock.UtcNow;
@@ -116,8 +123,15 @@ public sealed class TestingSlotRegistration : EntityBase
     public void Reposition(int position)
     {
         if (Status != TestingSlotRegistrationStatus.Waitlisted)
+        {
             throw new InvalidOperationException("Only waitlisted registrations can be repositioned.");
-        if (position <= 0) throw new ArgumentOutOfRangeException(nameof(position));
+        }
+
+        if (position <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(position));
+        }
+
         WaitlistPosition = position;
         Touch();
     }
@@ -125,9 +139,15 @@ public sealed class TestingSlotRegistration : EntityBase
     public void Cancel(Guid actorUserId, bool managerOverride)
     {
         if (!managerOverride && actorUserId != UserId)
+        {
             throw new UnauthorizedAccessException("Only the tester or event manager can cancel this registration.");
+        }
+
         if (Status is TestingSlotRegistrationStatus.Cancelled or TestingSlotRegistrationStatus.Completed)
+        {
             throw new InvalidOperationException("This registration can no longer be cancelled.");
+        }
+
         Status = TestingSlotRegistrationStatus.Cancelled;
         WaitlistPosition = null;
         Touch();
@@ -136,7 +156,10 @@ public sealed class TestingSlotRegistration : EntityBase
     public void CheckIn()
     {
         if (Status != TestingSlotRegistrationStatus.Registered)
+        {
             throw new InvalidOperationException("Only registered testers can check in.");
+        }
+
         Status = TestingSlotRegistrationStatus.CheckedIn;
         CheckedInAt = SystemClock.UtcNow;
         Touch();
@@ -145,7 +168,10 @@ public sealed class TestingSlotRegistration : EntityBase
     public void CheckOut()
     {
         if (Status != TestingSlotRegistrationStatus.CheckedIn)
+        {
             throw new InvalidOperationException("Only checked-in testers can check out.");
+        }
+
         Status = TestingSlotRegistrationStatus.Attended;
         CheckedOutAt = SystemClock.UtcNow;
         Touch();
@@ -154,7 +180,10 @@ public sealed class TestingSlotRegistration : EntityBase
     public void MarkNoShow()
     {
         if (Status != TestingSlotRegistrationStatus.Registered)
+        {
             throw new InvalidOperationException("Only registered testers can be marked as no-show.");
+        }
+
         Status = TestingSlotRegistrationStatus.NoShow;
         Touch();
     }
@@ -162,7 +191,10 @@ public sealed class TestingSlotRegistration : EntityBase
     public void Complete()
     {
         if (Status != TestingSlotRegistrationStatus.Attended)
+        {
             throw new InvalidOperationException("Only attended registrations can be completed.");
+        }
+
         Status = TestingSlotRegistrationStatus.Completed;
         CompletedAt = SystemClock.UtcNow;
         Touch();
@@ -181,7 +213,9 @@ public sealed class TestingSlotRegistration : EntityBase
         DateTime eventConfigurationFrozenAt)
     {
         if (eventId == Guid.Empty || slotId == Guid.Empty || userId == Guid.Empty)
+        {
             throw new ArgumentException("Event, slot, and user are required.");
+        }
 
         return new TestingSlotRegistration
         {

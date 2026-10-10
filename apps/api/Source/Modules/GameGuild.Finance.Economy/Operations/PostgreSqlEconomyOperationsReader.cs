@@ -186,10 +186,25 @@ public sealed class PostgreSqlEconomyOperationsReader : IEconomyOperationsReader
         };
 
         var diagnostics = new List<string>(4);
-        if (!journalHealthy) diagnostics.Add("Journal head is missing or not covered by a matching valid checkpoint.");
-        if (!projectionHealthy) diagnostics.Add("Exactly one dual-approved active projection matching the journal is required.");
-        if (!anchorHealthy) diagnostics.Add("The journal head is not covered by a valid retained WORM anchor.");
-        if (!reserveHealthy) diagnostics.Add("The active reserve or its custody reconciliation is missing, stale, or insufficient.");
+        if (!journalHealthy)
+        {
+            diagnostics.Add("Journal head is missing or not covered by a matching valid checkpoint.");
+        }
+
+        if (!projectionHealthy)
+        {
+            diagnostics.Add("Exactly one dual-approved active projection matching the journal is required.");
+        }
+
+        if (!anchorHealthy)
+        {
+            diagnostics.Add("The journal head is not covered by a valid retained WORM anchor.");
+        }
+
+        if (!reserveHealthy)
+        {
+            diagnostics.Add("The active reserve or its custody reconciliation is missing, stale, or insufficient.");
+        }
 
         return new EconomyLedgerHealthSnapshot(
             journalHealthy,
@@ -223,8 +238,15 @@ public sealed class PostgreSqlEconomyOperationsReader : IEconomyOperationsReader
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
-        if (limit is <= 0 or > 500) throw new ArgumentOutOfRangeException(nameof(limit));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
+        if (limit is <= 0 or > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
 
         var policyRows = await _db.Set<EconomyCapabilityPolicyRow>().AsNoTracking()
             .Where(row => row.TenantId == null || row.TenantId == tenantId)
@@ -235,7 +257,10 @@ public sealed class PostgreSqlEconomyOperationsReader : IEconomyOperationsReader
         var killSwitchQuery = _db.Set<EconomyKillSwitchRow>().AsNoTracking()
             .Where(row => row.TenantId == null || row.TenantId == tenantId);
         if (!includeInactiveKillSwitches)
+        {
             killSwitchQuery = killSwitchQuery.Where(row => row.IsActive);
+        }
+
         var killSwitchRows = await killSwitchQuery
             .OrderByDescending(row => row.ActivatedAt)
             .Take(limit)

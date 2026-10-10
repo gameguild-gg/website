@@ -65,7 +65,9 @@ public sealed class AiCostRiskGate
                 StringComparison.Ordinal) ||
             context.EntityGraphVersion != risk.EntityCluster.Version ||
             !string.Equals(context.EntityGraphEvidenceHash, risk.EntityCluster.EvidenceHash, StringComparison.Ordinal))
+        {
             throw new AiCostRiskExposureException("The risk decision is not bound to the final AI service charge.");
+        }
 
         var nodes = risk.EntityCluster.Nodes;
         if (EntityTypes.Any(type => nodes.All(node => node.Type != type)) ||
@@ -73,11 +75,15 @@ public sealed class AiCostRiskGate
             !HasNode(nodes, RiskEntityType.Tenant, command.TenantId.ToString("N")) ||
             !HasNode(nodes, RiskEntityType.ProviderObject, ProviderAccount(command.Provider, command.Model)) ||
             !HasNode(nodes, RiskEntityType.Session, command.RequestId.ToString("N")))
+        {
             throw new AiCostRiskExposureException("AI service entity-graph exposure is incomplete or unbound.");
+        }
 
         var dimensions = risk.Limits.Select(limit => limit.Key.Dimension).ToHashSet();
         if (LimitDimensions.Any(dimension => !dimensions.Contains(dimension)))
+        {
             throw new AiCostRiskExposureException("AI service aggregate-limit exposure is incomplete.");
+        }
 
         var subjects = risk.Limits.Select(limit => limit.Key).ToHashSet();
         var requiredSubjects = new[]
@@ -89,7 +95,9 @@ public sealed class AiCostRiskGate
             new RiskLimitKey(RiskLimitDimension.GlobalLossBudget, GlobalLossBudget(command.TenantId))
         };
         if (requiredSubjects.Any(subject => !subjects.Contains(subject)) || risk.CounterReservationId == Guid.Empty)
+        {
             throw new AiCostRiskExposureException("AI service limits are not bound to every material subject.");
+        }
 
         var decision = _decisions.AuthorizeValueMovement(risk.Decision, context, command.AuthorizedAt);
         var counter = _counters.Reserve(
@@ -103,21 +111,33 @@ public sealed class AiCostRiskGate
 
     public static string ProviderAccount(AiProvider provider, string model)
     {
-        if (!Enum.IsDefined(provider)) throw new ArgumentOutOfRangeException(nameof(provider));
+        if (!Enum.IsDefined(provider))
+        {
+            throw new ArgumentOutOfRangeException(nameof(provider));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
         return $"{provider}:{model.Trim()}";
     }
 
     public static string ProviderReference(Guid requestId, string serviceCode, AiProvider provider, string model)
     {
-        if (requestId == Guid.Empty) throw new ArgumentException("Request ID cannot be empty.", nameof(requestId));
+        if (requestId == Guid.Empty)
+        {
+            throw new ArgumentException("Request ID cannot be empty.", nameof(requestId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceCode);
         return $"ai:{requestId:N}:{serviceCode.Trim()}:{ProviderAccount(provider, model)}";
     }
 
     public static string GlobalLossBudget(Guid tenantId)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         return $"ai-loss-budget:{tenantId:N}";
     }
 

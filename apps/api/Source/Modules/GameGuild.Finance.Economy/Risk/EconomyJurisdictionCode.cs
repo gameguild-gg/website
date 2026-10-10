@@ -5,7 +5,9 @@ public static class EconomyJurisdictionCode
     public static string? NormalizeOptional(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return null;
+        }
 
         var normalized = value.Trim().ToUpperInvariant();
         return normalized.Length == 3 && normalized.All(character => character is >= 'A' and <= 'Z')

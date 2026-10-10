@@ -55,19 +55,40 @@ public sealed class UserEnumerationProtectionOptions : BaseOptions
     {
         var errors = new List<string>();
 
-        if (MinProcessingTimeMs < 50 || MinProcessingTimeMs > 2000) errors.Add("MinProcessingTimeMs must be between 50 and 2000");
+        if (MinProcessingTimeMs < 50 || MinProcessingTimeMs > 2000)
+        {
+            errors.Add("MinProcessingTimeMs must be between 50 and 2000");
+        }
 
-        if (MaxProcessingTimeMs < 100 || MaxProcessingTimeMs > 5000) errors.Add("MaxProcessingTimeMs must be between 100 and 5000");
+        if (MaxProcessingTimeMs < 100 || MaxProcessingTimeMs > 5000)
+        {
+            errors.Add("MaxProcessingTimeMs must be between 100 and 5000");
+        }
 
-        if (TargetProcessingTimeMs < 100 || TargetProcessingTimeMs > 3000) errors.Add("TargetProcessingTimeMs must be between 100 and 3000");
+        if (TargetProcessingTimeMs < 100 || TargetProcessingTimeMs > 3000)
+        {
+            errors.Add("TargetProcessingTimeMs must be between 100 and 3000");
+        }
 
-        if (MinProcessingTimeMs > TargetProcessingTimeMs) errors.Add("MinProcessingTimeMs cannot be greater than TargetProcessingTimeMs");
+        if (MinProcessingTimeMs > TargetProcessingTimeMs)
+        {
+            errors.Add("MinProcessingTimeMs cannot be greater than TargetProcessingTimeMs");
+        }
 
-        if (TargetProcessingTimeMs > MaxProcessingTimeMs) errors.Add("TargetProcessingTimeMs cannot be greater than MaxProcessingTimeMs");
+        if (TargetProcessingTimeMs > MaxProcessingTimeMs)
+        {
+            errors.Add("TargetProcessingTimeMs cannot be greater than MaxProcessingTimeMs");
+        }
 
-        if (string.IsNullOrWhiteSpace(ConsistentErrorMessage)) errors.Add("ConsistentErrorMessage is required");
+        if (string.IsNullOrWhiteSpace(ConsistentErrorMessage))
+        {
+            errors.Add("ConsistentErrorMessage is required");
+        }
 
-        if (EnableRandomJitter && (MaxJitterMs < 0 || MaxJitterMs > 500)) errors.Add("MaxJitterMs must be between 0 and 500");
+        if (EnableRandomJitter && (MaxJitterMs < 0 || MaxJitterMs > 500))
+        {
+            errors.Add("MaxJitterMs must be between 0 and 500");
+        }
 
         return (errors.Count == 0, errors.ToArray());
     }

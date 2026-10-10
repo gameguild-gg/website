@@ -46,7 +46,10 @@ public sealed class BlogPost : EntityBase
         DateTimeOffset? now = null)
     {
         if (primaryAuthorId == Guid.Empty)
+        {
             throw new ArgumentException("Primary author ID is required.", nameof(primaryAuthorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
         var at = now ?? DateTimeOffset.UtcNow;
@@ -91,26 +94,86 @@ public sealed class BlogPost : EntityBase
         DateTimeOffset? now = null)
     {
         if (expectedRevision != Revision)
+        {
             throw new BlogRevisionConflictException(expectedRevision, Revision);
+        }
+
         if (title is not null)
+        {
             ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        }
+
         if (jsonBody is not null && Format != BlogContentFormat.Lexical)
+        {
             throw new InvalidOperationException("Only Lexical-format posts carry a JSON body.");
+        }
 
         var at = now ?? DateTimeOffset.UtcNow;
-        if (title is not null) Title = title.Trim();
-        if (content is not null) Content = content;
-        if (jsonBody is not null) JsonBody = jsonBody;
-        if (excerpt is not null) Excerpt = excerpt;
-        if (tags is not null) Tags = [.. NormalizeTags(tags)];
-        if (metaTitle is not null) MetaTitle = metaTitle;
-        if (metaDescription is not null) MetaDescription = metaDescription;
-        if (ogImageUrl is not null) OgImageUrl = ogImageUrl;
-        if (canonicalUrlOverride is not null) CanonicalUrlOverride = canonicalUrlOverride;
-        if (twitterCard is not null) TwitterCard = twitterCard;
-        if (structuredDataOverride is not null) StructuredDataOverride = structuredDataOverride;
-        if (allowComments.HasValue) AllowComments = allowComments.Value;
-        if (readTimeMinutes.HasValue) ReadTimeMinutes = Math.Max(1, readTimeMinutes.Value);
+        if (title is not null)
+        {
+            Title = title.Trim();
+        }
+
+        if (content is not null)
+        {
+            Content = content;
+        }
+
+        if (jsonBody is not null)
+        {
+            JsonBody = jsonBody;
+        }
+
+        if (excerpt is not null)
+        {
+            Excerpt = excerpt;
+        }
+
+        if (tags is not null)
+        {
+            Tags = [.. NormalizeTags(tags)];
+        }
+
+        if (metaTitle is not null)
+        {
+            MetaTitle = metaTitle;
+        }
+
+        if (metaDescription is not null)
+        {
+            MetaDescription = metaDescription;
+        }
+
+        if (ogImageUrl is not null)
+        {
+            OgImageUrl = ogImageUrl;
+        }
+
+        if (canonicalUrlOverride is not null)
+        {
+            CanonicalUrlOverride = canonicalUrlOverride;
+        }
+
+        if (twitterCard is not null)
+        {
+            TwitterCard = twitterCard;
+        }
+
+        if (structuredDataOverride is not null)
+        {
+            StructuredDataOverride = structuredDataOverride;
+        }
+
+        if (allowComments.HasValue)
+        {
+            AllowComments = allowComments.Value;
+        }
+
+        if (readTimeMinutes.HasValue)
+        {
+            ReadTimeMinutes = Math.Max(1, readTimeMinutes.Value);
+        }
+
         Revision = checked(Revision + 1);
         UpdatedAt = at.UtcDateTime;
     }
@@ -128,7 +191,10 @@ public sealed class BlogPost : EntityBase
     public void TransferPrimary(Guid newPrimaryAuthorId, DateTimeOffset? now = null)
     {
         if (newPrimaryAuthorId == Guid.Empty)
+        {
             throw new ArgumentException("New primary author ID is required.", nameof(newPrimaryAuthorId));
+        }
+
         PrimaryAuthorId = newPrimaryAuthorId;
         Revision = checked(Revision + 1);
         UpdatedAt = (now ?? DateTimeOffset.UtcNow).UtcDateTime;
@@ -156,7 +222,10 @@ public sealed class BlogPost : EntityBase
     /// <summary>Comment count maintenance — must NOT bump UpdatedAt.</summary>
     public void DecrementComments()
     {
-        if (CommentsCount > 0) CommentsCount--;
+        if (CommentsCount > 0)
+        {
+            CommentsCount--;
+        }
     }
 
     /// <summary>Serialized tags for persistence (jsonb column).</summary>
@@ -179,7 +248,9 @@ public sealed class BlogPost : EntityBase
         foreach (var tag in normalized)
         {
             if (tag.Length > MaxTagLength)
+            {
                 throw new ArgumentException($"Tag '{tag}' exceeds {MaxTagLength} characters.");
+            }
         }
 
         return normalized;

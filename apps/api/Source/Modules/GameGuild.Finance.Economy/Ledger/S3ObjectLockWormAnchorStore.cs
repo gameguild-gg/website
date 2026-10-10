@@ -73,7 +73,11 @@ public sealed class S3ObjectLockWormAnchorStore : IWormAnchorStore, IWormAnchorV
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(anchor);
-        if (anchor.AnchorId == Guid.Empty) throw new ArgumentException("Anchor ID cannot be empty.", nameof(anchor));
+        if (anchor.AnchorId == Guid.Empty)
+        {
+            throw new ArgumentException("Anchor ID cannot be empty.", nameof(anchor));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(anchor.CanonicalPayload);
         EnsureConfigured();
         var bytes = Encoding.UTF8.GetBytes(anchor.CanonicalPayload);
@@ -95,8 +99,10 @@ public sealed class S3ObjectLockWormAnchorStore : IWormAnchorStore, IWormAnchorV
             ObjectLockRetainUntilDate = retainUntil.UtcDateTime
         }, cancellationToken);
         if (string.IsNullOrWhiteSpace(response.VersionId) || string.IsNullOrWhiteSpace(response.ETag))
+        {
             throw new WormAnchorVerificationException(
                 "S3 Object Lock publication did not return an immutable object version and ETag.");
+        }
 
         using var readBack = await _s3.GetObjectAsync(new GetObjectRequest
         {
@@ -108,7 +114,9 @@ public sealed class S3ObjectLockWormAnchorStore : IWormAnchorStore, IWormAnchorV
             objectHashBytes,
             SHA256.HashData(memory.ToArray()));
         if (!readBackMatches || readBack.VersionId != response.VersionId || readBack.ETag != response.ETag)
+        {
             throw new WormAnchorVerificationException("S3 Object Lock read-back did not match the published anchor.");
+        }
 
         var retention = await _s3.GetObjectRetentionAsync(new GetObjectRetentionRequest
         {
@@ -116,7 +124,9 @@ public sealed class S3ObjectLockWormAnchorStore : IWormAnchorStore, IWormAnchorV
         }, cancellationToken);
         if (retention.Retention?.Mode != ObjectLockRetentionMode.Compliance ||
             retention.Retention.RetainUntilDate.ToUniversalTime() < retainUntil.UtcDateTime)
+        {
             throw new WormAnchorVerificationException("S3 Object Lock COMPLIANCE retention was not durably applied.");
+        }
 
         return new WormAnchorPublication(
             objectKey, response.VersionId, response.ETag, retainUntil, objectHash, true);
@@ -157,8 +167,10 @@ public sealed class S3ObjectLockWormAnchorStore : IWormAnchorStore, IWormAnchorV
     {
         if (!_options.Enabled || string.IsNullOrWhiteSpace(_options.BucketName) ||
             string.IsNullOrWhiteSpace(_options.KeyPrefix) || _options.RetentionDays <= 0)
+        {
             throw new WormAnchorUnavailableException(
                 "Economy WORM anchoring is disabled until an S3 Object Lock bucket and retention policy are configured.");
+        }
     }
 }
 

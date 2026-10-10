@@ -13,7 +13,6 @@ public class RoleRepositoryTests
 {
     private readonly Mock<IApplicationDbContext> _mockContext;
     private readonly Mock<DbSet<Role>> _mockRoleSet;
-    private readonly Mock<DbSet<UserRole>> _mockUserRoleSet;
     private readonly RoleRepository _repository;
     private readonly Fixture _fixture;
 
@@ -21,11 +20,11 @@ public class RoleRepositoryTests
     {
         _mockContext = new Mock<IApplicationDbContext>();
         _mockRoleSet = new Mock<DbSet<Role>>();
-        _mockUserRoleSet = new Mock<DbSet<UserRole>>();
+        Mock<DbSet<UserRole>> mockUserRoleSet = new Mock<DbSet<UserRole>>();
         _fixture = new Fixture();
 
         _mockContext.Setup(c => c.Set<Role>()).Returns(_mockRoleSet.Object);
-        _mockContext.Setup(c => c.Set<UserRole>()).Returns(_mockUserRoleSet.Object);
+        _mockContext.Setup(c => c.Set<UserRole>()).Returns(mockUserRoleSet.Object);
 
         _repository = new RoleRepository(_mockContext.Object);
     }

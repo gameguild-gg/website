@@ -73,7 +73,9 @@ public sealed class PostgreSqlEconomyAnchorPublisher : IEconomyAnchorPublisher
         if (!onDemand && latest is not null &&
             head.Sequence - latest.JournalSequence < EntryInterval &&
             now - latest.AnchoredAt < TimeInterval)
+        {
             return null;
+        }
 
         var anchorId = Guid.NewGuid();
         var payload = Canonicalize(new
@@ -89,7 +91,9 @@ public sealed class PostgreSqlEconomyAnchorPublisher : IEconomyAnchorPublisher
         var signature = await _signer.SignAsync(payload, cancellationToken);
         if (!await _signatureVerifier.VerifyAsync(
                 payload, signature.KeyId, signature.Signature, cancellationToken))
+        {
             throw new AnchorPublicationBlockedException("The KMS anchor signature could not be verified.");
+        }
 
         var signedEnvelope = Canonicalize(new
         {
@@ -100,7 +104,9 @@ public sealed class PostgreSqlEconomyAnchorPublisher : IEconomyAnchorPublisher
         var publication = await _worm.PublishAsync(
             new WormAnchorObject(anchorId, signedEnvelope, now), cancellationToken);
         if (!publication.ReadBackVerified)
+        {
             throw new AnchorPublicationBlockedException("The WORM anchor did not pass mandatory read-back verification.");
+        }
 
         var row = new EconomyExternalAnchorRow
         {
@@ -143,7 +149,11 @@ public sealed class PostgreSqlEconomyAnchorPublisher : IEconomyAnchorPublisher
 
     private static string? NormalizeOptionalHash(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
         return value.Trim();
     }
 

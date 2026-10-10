@@ -34,6 +34,20 @@ public class PasswordHasherTests
     }
 
     [Fact]
+    public void ValidatePasswordStrength_LogsNoPasswordDerivedDetails()
+    {
+        var result = _passwordHasher.ValidatePasswordStrength("SecurePassword123!");
+
+        result.StrengthScore.Should().BeGreaterThan(0);
+        _loggerMock.Verify(logger => logger.Log(
+            LogLevel.Debug,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((state, _) => state.ToString() == "Password strength validation completed"),
+            It.IsAny<Exception?>(),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+    }
+
+    [Fact]
     public async Task HashPassword_WithValidPassword_ShouldReturnHash()
     {
         // Arrange

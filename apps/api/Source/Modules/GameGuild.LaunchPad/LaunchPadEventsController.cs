@@ -23,7 +23,11 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<IReadOnlyList<LaunchPadEventProjection>>> GetPublicEvents(CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return BadRequest(new { code = "LaunchPad.TenantRequired" });
+        if (!tenantId.HasValue)
+        {
+            return BadRequest(new { code = "LaunchPad.TenantRequired" });
+        }
+
         var visibleStatuses = new[]
         {
             LaunchPadEventStatus.ApplicationsOpen, LaunchPadEventStatus.ApplicationsClosed,
@@ -42,13 +46,20 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<LaunchPadEventDetailProjection>> GetPublicEvent(Guid id, CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return BadRequest(new { code = "LaunchPad.TenantRequired" });
+        if (!tenantId.HasValue)
+        {
+            return BadRequest(new { code = "LaunchPad.TenantRequired" });
+        }
+
         var entity = await context.Set<LaunchPadEvent>().AsNoTracking()
             .Include(candidate => candidate.Slots)
             .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.TenantId == tenantId && candidate.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false);
         if (entity == null || entity.Status is LaunchPadEventStatus.Draft or LaunchPadEventStatus.Archived)
+        {
             return NotFound();
+        }
+
         return Ok(LaunchPadEventDetailProjection.FromEntity(entity));
     }
 
@@ -56,8 +67,16 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<IReadOnlyList<LaunchPadEventProjection>>> GetManagedEvents(CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return Unauthorized();
-        if (!await authorization.CanManageEventsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (!tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (!await authorization.CanManageEventsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var events = await context.Set<LaunchPadEvent>().AsNoTracking()
             .Where(entity => entity.TenantId == tenantId && entity.DeletedAt == null)
             .OrderByDescending(entity => entity.StartsAt)
@@ -70,8 +89,16 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<LaunchPadEventDetailProjection>> GetManagedEvent(Guid id, CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return Unauthorized();
-        if (!await authorization.CanManageEventsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (!tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (!await authorization.CanManageEventsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var entity = await context.Set<LaunchPadEvent>().AsNoTracking()
             .Include(candidate => candidate.Slots.Where(slot => slot.DeletedAt == null))
             .SingleOrDefaultAsync(candidate => candidate.Id == id && candidate.TenantId == tenantId && candidate.DeletedAt == null,
@@ -85,8 +112,16 @@ public sealed class LaunchPadEventsController(
         CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return Unauthorized();
-        if (!await authorization.CanManageEventsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (!tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (!await authorization.CanManageEventsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         try
         {
             var entity = await sender.Send(new CreateLaunchPadEventEndpointCommand(tenantId.Value, request), cancellationToken)
@@ -110,12 +145,23 @@ public sealed class LaunchPadEventsController(
         CancellationToken cancellationToken)
     {
         var entity = await FindEventAsync(id, cancellationToken).ConfigureAwait(false);
-        if (entity == null) return NotFound();
-        if (!await authorization.CanManageEventsAsync(entity.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (entity == null)
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageEventsAsync(entity.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         if (request.Status is not (LaunchPadEventStatus.ApplicationsOpen or LaunchPadEventStatus.ApplicationsClosed or
             LaunchPadEventStatus.Scheduled or LaunchPadEventStatus.Active or LaunchPadEventStatus.Completed or
             LaunchPadEventStatus.Cancelled or LaunchPadEventStatus.Archived))
+        {
             return UnprocessableEntity(new { code = "LaunchPad.InvalidTargetStatus" });
+        }
+
         try
         {
             entity = await sender.Send(new TransitionLaunchPadEventEndpointCommand(entity, request.Status), cancellationToken)
@@ -135,8 +181,16 @@ public sealed class LaunchPadEventsController(
         CancellationToken cancellationToken)
     {
         var entity = await FindEventAsync(id, cancellationToken).ConfigureAwait(false);
-        if (entity == null) return NotFound();
-        if (!await authorization.CanManageEventsAsync(entity.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (entity == null)
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageEventsAsync(entity.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         try
         {
             entity = await sender.Send(new UpdateLaunchPadEventEndpointCommand(entity, request), cancellationToken)
@@ -160,12 +214,23 @@ public sealed class LaunchPadEventsController(
         CancellationToken cancellationToken)
     {
         var launchEvent = await FindEventAsync(eventId, cancellationToken).ConfigureAwait(false);
-        if (launchEvent == null) return NotFound();
-        if (!await authorization.CanManageEventsAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (launchEvent == null)
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageEventsAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         try
         {
             if (request.StartsAt < launchEvent.StartsAt || request.EndsAt > launchEvent.EndsAt)
+            {
                 return UnprocessableEntity(new { code = "LaunchPad.SlotOutsideEvent" });
+            }
+
             var slot = await sender.Send(new CreateLaunchPadSlotEndpointCommand(
                 launchEvent.TenantId.Value, eventId, request), cancellationToken).ConfigureAwait(false);
             return Created(string.Empty, LaunchPadSlotProjection.FromEntity(slot));
@@ -185,12 +250,26 @@ public sealed class LaunchPadEventsController(
         var slot = await context.Set<LaunchPadParticipantSlot>().Include(candidate => candidate.LaunchPadEvent)
             .SingleOrDefaultAsync(candidate => candidate.Id == slotId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (slot == null || slot.TenantId != CurrentTenantId()) return NotFound();
-        if (!await authorization.CanManageEventsAsync(slot.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (slot == null || slot.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageEventsAsync(slot.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         if (slot.LaunchPadEvent.Status is LaunchPadEventStatus.Active or LaunchPadEventStatus.Completed or LaunchPadEventStatus.Cancelled or LaunchPadEventStatus.Archived)
+        {
             return Conflict(new { code = "LaunchPad.InvalidState" });
+        }
+
         if (request.StartsAt < slot.LaunchPadEvent.StartsAt || request.EndsAt > slot.LaunchPadEvent.EndsAt)
+        {
             return UnprocessableEntity(new { code = "LaunchPad.SlotOutsideEvent" });
+        }
+
         try
         {
             slot = await sender.Send(new UpdateLaunchPadSlotEndpointCommand(slot, request), cancellationToken)
@@ -209,10 +288,21 @@ public sealed class LaunchPadEventsController(
         var slot = await context.Set<LaunchPadParticipantSlot>().Include(candidate => candidate.Registrations)
             .SingleOrDefaultAsync(candidate => candidate.Id == slotId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (slot == null || slot.TenantId != CurrentTenantId()) return NotFound();
-        if (!await authorization.CanManageEventsAsync(slot.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (slot == null || slot.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageEventsAsync(slot.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         if (slot.Registrations.Any(registration => registration.DeletedAt == null))
+        {
             return Conflict(new { code = "LaunchPad.SlotHasRegistrations" });
+        }
+
         await sender.Send(new DeleteLaunchPadSlotEndpointCommand(slot), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
@@ -224,20 +314,37 @@ public sealed class LaunchPadEventsController(
         CancellationToken cancellationToken)
     {
         var launchEvent = await FindEventAsync(eventId, cancellationToken).ConfigureAwait(false);
-        if (launchEvent == null || launchEvent.Status != LaunchPadEventStatus.ApplicationsOpen) return Conflict(new { code = "LaunchPad.ApplicationsClosed" });
+        if (launchEvent == null || launchEvent.Status != LaunchPadEventStatus.ApplicationsOpen)
+        {
+            return Conflict(new { code = "LaunchPad.ApplicationsClosed" });
+        }
+
         var actorId = actors.ActorContext.SubjectIdAsGuid;
         if (!actorId.HasValue || !await authorization.CanParticipateAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
             return Unauthorized();
-        if (!await authorization.CanSubmitProjectAsync(request.ProjectId, cancellationToken).ConfigureAwait(false)) return NotFound();
+        }
+
+        if (!await authorization.CanSubmitProjectAsync(request.ProjectId, cancellationToken).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
 
         var version = await context.Set<ProjectVersion>().AsNoTracking()
             .FirstOrDefaultAsync(version => version.Id == request.ProjectVersionId && version.ProjectId == request.ProjectId &&
                                  version.Project.TenantId == launchEvent.TenantId && version.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false);
-        if (version == null) return UnprocessableEntity(new { code = "LaunchPad.ProjectVersionMismatch" });
+        if (version == null)
+        {
+            return UnprocessableEntity(new { code = "LaunchPad.ProjectVersionMismatch" });
+        }
+
         var submissionPolicy = await GetVersionSubmissionPolicyAsync(launchEvent.TenantId.Value, cancellationToken).ConfigureAwait(false);
         if (!ProjectVersionEligibility.IsEligible(version.Status, submissionPolicy))
+        {
             return UnprocessableEntity(new { code = "LaunchPad.ProjectVersionIneligible" });
+        }
+
         var submittedAssetIds = request.SubmittedAssetReferenceIds?
             .Where(id => id != Guid.Empty).Distinct().Take(100).ToArray() ?? [];
         if (submittedAssetIds.Length > 0)
@@ -249,12 +356,17 @@ public sealed class LaunchPadEventsController(
                 reference.DeletedAt == null,
                 cancellationToken).ConfigureAwait(false);
             if (validAssets != submittedAssetIds.Length)
+            {
                 return UnprocessableEntity(new { code = "LaunchPad.SubmittedAssetMismatch" });
+            }
         }
         var duplicate = await context.Set<LaunchPadApplication>().AnyAsync(application =>
             application.LaunchPadEventId == eventId && application.ProjectId == request.ProjectId && application.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (duplicate) return Conflict(new { code = "LaunchPad.ApplicationExists" });
+        if (duplicate)
+        {
+            return Conflict(new { code = "LaunchPad.ApplicationExists" });
+        }
 
         var application = await sender.Send(new SubmitLaunchPadApplicationEndpointCommand(
             launchEvent.TenantId.Value, eventId, request.ProjectId, request.ProjectVersionId, actorId.Value,
@@ -266,12 +378,22 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<IReadOnlyList<LaunchPadApplicationProjection>>> GetMyApplications(CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue || actors.ActorContext.SubjectIdAsGuid == null) return Unauthorized();
+        if (!tenantId.HasValue || actors.ActorContext.SubjectIdAsGuid == null)
+        {
+            return Unauthorized();
+        }
+
         var projects = context.Set<Project>().Where(project => project.TenantId == tenantId && project.DeletedAt == null);
         var accessibleIds = await projects.Select(project => project.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
         var allowed = new List<Guid>();
         foreach (var projectId in accessibleIds)
-            if (await authorization.CanSubmitProjectAsync(projectId, cancellationToken).ConfigureAwait(false)) allowed.Add(projectId);
+        {
+            if (await authorization.CanSubmitProjectAsync(projectId, cancellationToken).ConfigureAwait(false))
+            {
+                allowed.Add(projectId);
+            }
+        }
+
         var applications = await context.Set<LaunchPadApplication>().AsNoTracking()
             .Include(application => application.LaunchPadEvent)
             .Where(application => application.TenantId == tenantId && allowed.Contains(application.ProjectId) && application.DeletedAt == null)
@@ -290,23 +412,43 @@ public sealed class LaunchPadEventsController(
         var application = await context.Set<LaunchPadApplication>().Include(candidate => candidate.LaunchPadEvent)
             .SingleOrDefaultAsync(candidate => candidate.Id == applicationId && candidate.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
-        if (application == null || application.TenantId != CurrentTenantId()) return NotFound();
-        if (!await authorization.CanSubmitProjectAsync(application.ProjectId, cancellationToken).ConfigureAwait(false)) return NotFound();
+        if (application == null || application.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanSubmitProjectAsync(application.ProjectId, cancellationToken).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
         if (application.LaunchPadEvent.Status != LaunchPadEventStatus.ApplicationsOpen)
+        {
             return Conflict(new { code = "LaunchPad.ApplicationsClosed" });
+        }
+
         var replacingVersion = request.ProjectVersionId != application.ProjectVersionId;
         if (replacingVersion && !ProjectVersionEligibility.CanReplaceAfterSubmission(application.SubmissionVersionPolicy))
+        {
             return Conflict(new { code = "LaunchPad.ProjectVersionImmutable" });
+        }
+
         var version = await context.Set<ProjectVersion>().AsNoTracking().FirstOrDefaultAsync(version =>
             version.Id == request.ProjectVersionId && version.ProjectId == application.ProjectId &&
             version.Project.TenantId == application.TenantId && version.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (version == null) return UnprocessableEntity(new { code = "LaunchPad.ProjectVersionMismatch" });
+        if (version == null)
+        {
+            return UnprocessableEntity(new { code = "LaunchPad.ProjectVersionMismatch" });
+        }
+
         if (replacingVersion)
         {
             var currentPolicy = await GetVersionSubmissionPolicyAsync(application.TenantId!.Value, cancellationToken).ConfigureAwait(false);
             if (!ProjectVersionEligibility.IsEligible(version.Status, currentPolicy))
+            {
                 return UnprocessableEntity(new { code = "LaunchPad.ProjectVersionIneligible" });
+            }
         }
         var assetIds = request.SubmittedAssetReferenceIds?.Where(id => id != Guid.Empty).Distinct().Take(100).ToArray() ?? [];
         var validAssets = await context.Set<AssetReference>().AsNoTracking().CountAsync(reference =>
@@ -314,7 +456,11 @@ public sealed class LaunchPadEventsController(
             reference.ParentResourceId == application.ProjectId &&
             (reference.ParentResourceType == "Project" || reference.ParentResourceType == "Projects") &&
             reference.DeletedAt == null, cancellationToken).ConfigureAwait(false);
-        if (validAssets != assetIds.Length) return UnprocessableEntity(new { code = "LaunchPad.SubmittedAssetMismatch" });
+        if (validAssets != assetIds.Length)
+        {
+            return UnprocessableEntity(new { code = "LaunchPad.SubmittedAssetMismatch" });
+        }
+
         try
         {
             application = await sender.Send(new UpdateLaunchPadApplicationEndpointCommand(
@@ -329,8 +475,16 @@ public sealed class LaunchPadEventsController(
     {
         var application = await context.Set<LaunchPadApplication>()
             .FirstOrDefaultAsync(candidate => candidate.Id == applicationId && candidate.DeletedAt == null, cancellationToken).ConfigureAwait(false);
-        if (application == null || application.TenantId != CurrentTenantId()) return NotFound();
-        if (!await authorization.CanSubmitProjectAsync(application.ProjectId, cancellationToken).ConfigureAwait(false)) return NotFound();
+        if (application == null || application.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanSubmitProjectAsync(application.ProjectId, cancellationToken).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
         try
         {
             application = await sender.Send(new WithdrawLaunchPadApplicationEndpointCommand(application), cancellationToken)
@@ -344,8 +498,16 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<IReadOnlyList<LaunchPadApplicationProjection>>> GetEventApplications(Guid eventId, CancellationToken cancellationToken)
     {
         var launchEvent = await FindEventAsync(eventId, cancellationToken).ConfigureAwait(false);
-        if (launchEvent == null) return NotFound();
-        if (!await authorization.CanReviewApplicationsAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (launchEvent == null)
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanReviewApplicationsAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var applications = await context.Set<LaunchPadApplication>().AsNoTracking()
             .Where(application => application.LaunchPadEventId == eventId && application.TenantId == launchEvent.TenantId && application.DeletedAt == null)
             .OrderBy(application => application.SubmittedAt)
@@ -363,13 +525,28 @@ public sealed class LaunchPadEventsController(
         var application = await context.Set<LaunchPadApplication>()
             .Include(candidate => candidate.LaunchPadEvent)
             .FirstOrDefaultAsync(candidate => candidate.Id == applicationId && candidate.DeletedAt == null, cancellationToken).ConfigureAwait(false);
-        if (application == null || application.TenantId != CurrentTenantId()) return NotFound();
-        if (!await authorization.CanReviewApplicationsAsync(application.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (application == null || application.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanReviewApplicationsAsync(application.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var reviewerId = actors.ActorContext.SubjectIdAsGuid;
-        if (!reviewerId.HasValue) return Unauthorized();
+        if (!reviewerId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         if (request.Status is not (LaunchPadApplicationStatus.UnderReview or LaunchPadApplicationStatus.Waitlisted or
             LaunchPadApplicationStatus.Approved or LaunchPadApplicationStatus.Rejected))
+        {
             return UnprocessableEntity(new { code = "LaunchPad.InvalidApplicationStatus" });
+        }
+
         try
         {
             application = await sender.Send(new ReviewLaunchPadApplicationEndpointCommand(
@@ -390,13 +567,24 @@ public sealed class LaunchPadEventsController(
             .FirstOrDefaultAsync(candidate => candidate.Id == slotId && candidate.DeletedAt == null, cancellationToken).ConfigureAwait(false);
         if (slot == null || slot.TenantId != CurrentTenantId() ||
             slot.LaunchPadEvent.Status is LaunchPadEventStatus.Draft or LaunchPadEventStatus.Completed or LaunchPadEventStatus.Cancelled or LaunchPadEventStatus.Archived)
+        {
             return NotFound();
+        }
+
         var actorId = actors.ActorContext.SubjectIdAsGuid;
-        if (!actorId.HasValue || !await authorization.CanParticipateAsync(slot.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Unauthorized();
+        if (!actorId.HasValue || !await authorization.CanParticipateAsync(slot.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Unauthorized();
+        }
+
         var existing = await context.Set<LaunchPadParticipantRegistration>().AnyAsync(registration =>
             registration.LaunchPadParticipantSlotId == slotId && registration.UserId == actorId && registration.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
-        if (existing) return Conflict(new { code = "LaunchPad.AlreadyRegistered" });
+        if (existing)
+        {
+            return Conflict(new { code = "LaunchPad.AlreadyRegistered" });
+        }
+
         var registration = await sender.Send(new RegisterLaunchPadParticipantEndpointCommand(slot, actorId.Value), cancellationToken)
             .ConfigureAwait(false);
         return Created(string.Empty, LaunchPadRegistrationProjection.FromEntity(registration));
@@ -407,7 +595,11 @@ public sealed class LaunchPadEventsController(
     {
         var actorId = actors.ActorContext.SubjectIdAsGuid;
         var tenantId = CurrentTenantId();
-        if (!actorId.HasValue || !tenantId.HasValue) return Unauthorized();
+        if (!actorId.HasValue || !tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
         var registrations = await context.Set<LaunchPadParticipantRegistration>().AsNoTracking()
             .Where(registration => registration.UserId == actorId && registration.TenantId == tenantId && registration.DeletedAt == null)
             .OrderByDescending(registration => registration.RegisteredAt)
@@ -422,10 +614,18 @@ public sealed class LaunchPadEventsController(
         var registration = await context.Set<LaunchPadParticipantRegistration>()
             .Include(candidate => candidate.LaunchPadParticipantSlot)
             .FirstOrDefaultAsync(candidate => candidate.Id == registrationId && candidate.DeletedAt == null, cancellationToken).ConfigureAwait(false);
-        if (registration == null || registration.TenantId != CurrentTenantId()) return NotFound();
+        if (registration == null || registration.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
         var actorId = actors.ActorContext.SubjectIdAsGuid;
         if (registration.UserId != actorId &&
-            !await authorization.CanManageParticipantsAsync(registration.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+            !await authorization.CanManageParticipantsAsync(registration.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         try
         {
             registration = await sender.Send(new CancelLaunchPadRegistrationEndpointCommand(registration), cancellationToken)
@@ -444,12 +644,23 @@ public sealed class LaunchPadEventsController(
         var registration = await context.Set<LaunchPadParticipantRegistration>()
             .Include(candidate => candidate.LaunchPadParticipantSlot)
             .FirstOrDefaultAsync(candidate => candidate.Id == registrationId && candidate.DeletedAt == null, cancellationToken).ConfigureAwait(false);
-        if (registration == null || registration.TenantId != CurrentTenantId()) return NotFound();
-        if (!await authorization.CanManageParticipantsAsync(registration.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (registration == null || registration.TenantId != CurrentTenantId())
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageParticipantsAsync(registration.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         if (request.Status is not (LaunchPadParticipantStatus.Registered or LaunchPadParticipantStatus.CheckedIn or
             LaunchPadParticipantStatus.Attended or LaunchPadParticipantStatus.Completed or
             LaunchPadParticipantStatus.NoShow or LaunchPadParticipantStatus.Cancelled))
+        {
             return UnprocessableEntity(new { code = "LaunchPad.InvalidParticipantStatus" });
+        }
+
         try
         {
             registration = await sender.Send(new TransitionLaunchPadRegistrationEndpointCommand(registration, request.Status), cancellationToken)
@@ -468,8 +679,16 @@ public sealed class LaunchPadEventsController(
         CancellationToken cancellationToken)
     {
         var launchEvent = await FindEventAsync(eventId, cancellationToken).ConfigureAwait(false);
-        if (launchEvent == null) return NotFound();
-        if (!await authorization.CanManageParticipantsAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (launchEvent == null)
+        {
+            return NotFound();
+        }
+
+        if (!await authorization.CanManageParticipantsAsync(launchEvent.TenantId!.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var registrations = await context.Set<LaunchPadParticipantRegistration>().AsNoTracking()
             .Where(registration => registration.LaunchPadParticipantSlot.LaunchPadEventId == eventId &&
                                    registration.TenantId == launchEvent.TenantId && registration.DeletedAt == null)
@@ -483,8 +702,16 @@ public sealed class LaunchPadEventsController(
     public async Task<ActionResult<LaunchPadAnalyticsProjection>> GetAnalytics(CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return Unauthorized();
-        if (!await authorization.CanViewAnalyticsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
+        if (!tenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        if (!await authorization.CanViewAnalyticsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
         var events = context.Set<LaunchPadEvent>().AsNoTracking().Where(entity => entity.TenantId == tenantId && entity.DeletedAt == null);
         var applications = context.Set<LaunchPadApplication>().AsNoTracking().Where(entity => entity.TenantId == tenantId && entity.DeletedAt == null);
         var registrations = context.Set<LaunchPadParticipantRegistration>().AsNoTracking().Where(entity => entity.TenantId == tenantId && entity.DeletedAt == null);
@@ -513,7 +740,11 @@ public sealed class LaunchPadEventsController(
     private async Task<LaunchPadEvent?> FindEventAsync(Guid id, CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId();
-        if (!tenantId.HasValue) return null;
+        if (!tenantId.HasValue)
+        {
+            return null;
+        }
+
         return await context.Set<LaunchPadEvent>().FirstOrDefaultAsync(entity => entity.Id == id && entity.TenantId == tenantId && entity.DeletedAt == null,
             cancellationToken).ConfigureAwait(false);
     }

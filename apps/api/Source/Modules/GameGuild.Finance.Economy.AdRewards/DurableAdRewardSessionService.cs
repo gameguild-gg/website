@@ -74,9 +74,12 @@ public sealed class DurableAdRewardSessionService : IDurableAdRewardSessionServi
         if (duplicate is not null)
         {
             if (!string.Equals(duplicate.StartRequestHash, requestHash, StringComparison.Ordinal))
-                throw new AdRewardIdempotencyConflictException(
+                {
+                    throw new AdRewardIdempotencyConflictException(
                     "The session idempotency key is already bound to different inputs.");
-            var replacementNonce = _entropy.CreateNonce();
+                }
+
+                var replacementNonce = _entropy.CreateNonce();
             var duplicateClaims = MapClaims(duplicate, replacementNonce);
             var duplicateToken = await _tokens.ProtectAsync(duplicateClaims, cancellationToken);
             duplicate.NonceHash = Hash(replacementNonce);
@@ -91,12 +94,18 @@ public sealed class DurableAdRewardSessionService : IDurableAdRewardSessionServi
         var policy = await _policies.GetEffectiveAsync(
             request.TenantId, request.Network, request.RequestedAt, cancellationToken);
         if (!policy.ProviderCertified || policy.Policy.IssuanceMode == AdRewardIssuanceMode.Disabled)
-            throw new AdRewardIssuanceDisabledException(
+            {
+                throw new AdRewardIssuanceDisabledException(
                 "The ad network is not certified for reward issuance.");
-        if (!policy.Policy.IsReportCurrent(request.RequestedAt))
-            throw new AdNetworkReportStaleException(
+            }
+
+            if (!policy.Policy.IsReportCurrent(request.RequestedAt))
+            {
+                throw new AdNetworkReportStaleException(
                 "The provider report is stale; new reward sessions are disabled.");
-        _providerAdapters.Resolve(policy.Policy.Network);
+            }
+
+            _providerAdapters.Resolve(policy.Policy.Network);
 
         var expiresAt = new[] { request.RequestedAt.Add(SessionLifetime), policy.Policy.ExpiresAt }.Min();
         var claims = new DurableAdRewardSessionClaims(
@@ -173,14 +182,19 @@ public sealed class DurableAdRewardSessionService : IDurableAdRewardSessionServi
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.TenantId == Guid.Empty || request.UserId == Guid.Empty || request.WalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, user and wallet IDs are required.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Network);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.CreativeId);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DeviceRiskHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.IpRiskHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.AsnRiskHash);
         if (request.RequiredDuration <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(request));
+        }
     }
 
     private static string Hash(string value) => Convert.ToHexStringLower(

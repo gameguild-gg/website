@@ -81,19 +81,40 @@ public sealed class AuthenticationAnomalyOptions : BaseOptions
     {
         var errors = new List<string>();
 
-        if (MaxFailedAttemptsPerHour < 1 || MaxFailedAttemptsPerHour > 50) errors.Add("MaxFailedAttemptsPerHour must be between 1 and 50");
+        if (MaxFailedAttemptsPerHour < 1 || MaxFailedAttemptsPerHour > 50)
+        {
+            errors.Add("MaxFailedAttemptsPerHour must be between 1 and 50");
+        }
 
-        if (MaxFailedAttemptsPerDay < 1 || MaxFailedAttemptsPerDay > 200) errors.Add("MaxFailedAttemptsPerDay must be between 1 and 200");
+        if (MaxFailedAttemptsPerDay < 1 || MaxFailedAttemptsPerDay > 200)
+        {
+            errors.Add("MaxFailedAttemptsPerDay must be between 1 and 200");
+        }
 
-        if (SuspiciousThreshold < 1 || SuspiciousThreshold > 10) errors.Add("SuspiciousThreshold must be between 1 and 10");
+        if (SuspiciousThreshold < 1 || SuspiciousThreshold > 10)
+        {
+            errors.Add("SuspiciousThreshold must be between 1 and 10");
+        }
 
-        if (ThrottleDurationMinutes < 1 || ThrottleDurationMinutes > 1440) errors.Add("ThrottleDurationMinutes must be between 1 and 1440");
+        if (ThrottleDurationMinutes < 1 || ThrottleDurationMinutes > 1440)
+        {
+            errors.Add("ThrottleDurationMinutes must be between 1 and 1440");
+        }
 
-        if (MaxAttemptsPerIpPerHour < 10 || MaxAttemptsPerIpPerHour > 1000) errors.Add("MaxAttemptsPerIpPerHour must be between 10 and 1000");
+        if (MaxAttemptsPerIpPerHour < 10 || MaxAttemptsPerIpPerHour > 1000)
+        {
+            errors.Add("MaxAttemptsPerIpPerHour must be between 10 and 1000");
+        }
 
-        if (EnableVelocityChecks && (MinTimeBetweenAttemptsSeconds < 1 || MinTimeBetweenAttemptsSeconds > 300)) errors.Add("MinTimeBetweenAttemptsSeconds must be between 1 and 300");
+        if (EnableVelocityChecks && (MinTimeBetweenAttemptsSeconds < 1 || MinTimeBetweenAttemptsSeconds > 300))
+        {
+            errors.Add("MinTimeBetweenAttemptsSeconds must be between 1 and 300");
+        }
 
-        if (MaxFailedAttemptsPerHour > MaxFailedAttemptsPerDay) errors.Add("MaxFailedAttemptsPerHour cannot exceed MaxFailedAttemptsPerDay");
+        if (MaxFailedAttemptsPerHour > MaxFailedAttemptsPerDay)
+        {
+            errors.Add("MaxFailedAttemptsPerHour cannot exceed MaxFailedAttemptsPerDay");
+        }
 
         return (errors.Count == 0, errors.ToArray());
     }

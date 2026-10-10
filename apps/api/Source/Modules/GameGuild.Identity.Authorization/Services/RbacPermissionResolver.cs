@@ -59,9 +59,14 @@ public class DynamicRoleRepository(
     {
         var query = DbSet.AsQueryable();
         if (includeGlobal)
+        {
             query = query.Where(r => r.TenantId == tenantId || r.TenantId == null);
+        }
         else
+        {
             query = query.Where(r => r.TenantId == tenantId);
+        }
+
         return await query.Include(r => r.ParentRole).ToListAsync(ct);
     }
 
@@ -69,9 +74,14 @@ public class DynamicRoleRepository(
     {
         var query = DbSet.Where(r => r.IsActive);
         if (includeGlobal)
+        {
             query = query.Where(r => r.TenantId == tenantId || r.TenantId == null);
+        }
         else
+        {
             query = query.Where(r => r.TenantId == tenantId);
+        }
+
         return await query.Include(r => r.ParentRole).ToListAsync(ct);
     }
 
@@ -148,7 +158,10 @@ public class DynamicRoleRepository(
             }
 
             // Prevent infinite loops
-            if (hierarchy.Count > 20) break;
+            if (hierarchy.Count > 20)
+            {
+                break;
+            }
         }
 
         return hierarchy;
@@ -291,7 +304,10 @@ public class RbacPermissionResolver(
 
         foreach (var assignment in assignments)
         {
-            if (assignment.Role == null || !assignment.Role.IsActive) continue;
+            if (assignment.Role == null || !assignment.Role.IsActive)
+            {
+                continue;
+            }
 
             // Direct contribution of the assigned role (static + dynamic permissions).
             var directPermissions = new List<string>();

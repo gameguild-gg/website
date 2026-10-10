@@ -3,6 +3,7 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 import { chromium } from "playwright";
 import {
   assertSharedAuthCookie,
@@ -34,7 +35,7 @@ const authoringOnly = ["1", "true", "yes"].includes(
 );
 
 function unique() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${Date.now()}-${randomUUID().replaceAll("-", "").slice(0, 8)}`;
 }
 
 async function apiRequest(path, init = {}, accessToken) {

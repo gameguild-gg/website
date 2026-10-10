@@ -22,11 +22,19 @@ public sealed class TestingEventTemplatesController(
         CancellationToken cancellationToken = default)
     {
         var actor = actors.ActorContext;
-        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
+        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false))
+        {
+            return Unauthorized();
+        }
+
         var query = context.Set<TestingEventTemplate>().AsNoTracking()
             .Include(template => template.Revisions)
             .Where(template => template.TenantId == actor.TenantId && template.DeletedAt == null);
-        if (!includeArchived) query = query.Where(template => template.ArchivedAt == null);
+        if (!includeArchived)
+        {
+            query = query.Where(template => template.ArchivedAt == null);
+        }
+
         var templates = await query.OrderBy(template => template.Name).ToListAsync(cancellationToken).ConfigureAwait(false);
         return Ok(templates.Select(TestingEventTemplateProjection.FromEntity).ToArray());
     }
@@ -39,7 +47,11 @@ public sealed class TestingEventTemplatesController(
         CancellationToken cancellationToken = default)
     {
         var actor = actors.ActorContext;
-        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
+        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false))
+        {
+            return Unauthorized();
+        }
+
         var revision = await context.Set<TestingEventTemplateRevision>().AsNoTracking()
             .FirstOrDefaultAsync(candidate =>
                 candidate.Id == revisionId && candidate.TemplateId == templateId &&
@@ -55,7 +67,11 @@ public sealed class TestingEventTemplatesController(
         CancellationToken cancellationToken = default)
     {
         var actor = actors.ActorContext;
-        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
+        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false))
+        {
+            return Unauthorized();
+        }
+
         try
         {
             var template = await sender.Send(new CreateTestingEventTemplateEndpointCommand(
@@ -80,7 +96,11 @@ public sealed class TestingEventTemplatesController(
         CancellationToken cancellationToken = default)
     {
         var actor = actors.ActorContext;
-        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
+        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false))
+        {
+            return Unauthorized();
+        }
+
         try
         {
             var template = await sender.Send(new CreateTestingEventTemplateRevisionEndpointCommand(
@@ -88,7 +108,11 @@ public sealed class TestingEventTemplatesController(
                 actor.TenantId!.Value,
                 actor.SubjectIdAsGuid!.Value,
                 request), cancellationToken).ConfigureAwait(false);
-            if (template == null) return NotFound();
+            if (template == null)
+            {
+                return NotFound();
+            }
+
             return Ok(TestingEventTemplateProjection.FromEntity(template));
         }
         catch (InvalidOperationException exception)
@@ -119,12 +143,20 @@ public sealed class TestingEventTemplatesController(
         CancellationToken cancellationToken)
     {
         var actor = actors.ActorContext;
-        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
+        if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false))
+        {
+            return Unauthorized();
+        }
+
         var template = await sender.Send(new SetTestingEventTemplateArchivedEndpointCommand(
             templateId,
             actor.TenantId!.Value,
             archived), cancellationToken).ConfigureAwait(false);
-        if (template == null) return NotFound();
+        if (template == null)
+        {
+            return NotFound();
+        }
+
         return Ok(TestingEventTemplateProjection.FromEntity(template));
     }
 

@@ -84,7 +84,7 @@ public sealed class IdempotencyMiddleware
         {
             _logger.LogInformation(
                 "Replaying idempotent response for key {IdempotencyKey}, Path: {Path}",
-                idempotencyKey, context.Request.Path);
+                LogRedaction.Sanitize(idempotencyKey), LogRedaction.Sanitize(context.Request.Path.Value));
             
             await WriteCachedResponse(context, cachedResponse).ConfigureAwait(false);
             return;
@@ -235,7 +235,9 @@ public static class IdempotencyMiddlewareExtensions
     public static IServiceCollection AddIdempotency(this IServiceCollection services, Action<IdempotencyOptions>? configure = null)
     {
         if (configure != null)
+        {
             services.Configure(configure);
+        }
 
         services.AddMemoryCache();
         services.TryAddSingleton<IIdempotencyStore, MemoryCacheIdempotencyStore>();

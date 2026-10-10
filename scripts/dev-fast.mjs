@@ -6,11 +6,12 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import net from "node:net";
 import { registerDevProcess } from "./dev-runtime.mjs";
+import { resolvePnpmProcess } from "../apps/web/scripts/pnpm-process.mjs";
 
 registerDevProcess("dev-fast");
 
 const API_PORT = 8080;
-const shell = process.platform === "win32";
+const runtimeEnv = process.env;
 
 function loadEnv(file) {
   const env = {};
@@ -28,11 +29,17 @@ function loadEnv(file) {
 }
 
 function run(cmd, args, options = {}) {
-  return spawn(cmd, args, {
-    shell,
+  const invocation =
+    cmd === "pnpm"
+      ? resolvePnpmProcess(args, { env: runtimeEnv })
+      : { command: cmd, args };
+  return spawn(invocation.command, invocation.args, {
     stdio: "inherit",
-    detached: !shell,
+    detached: process.platform !== "win32",
+    env: runtimeEnv,
     ...options,
+    shell: false,
+    windowsHide: true,
   });
 }
 
@@ -56,7 +63,8 @@ function killTree(child) {
   if (child.exitCode !== null) return;
   if (process.platform === "win32") {
     spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
-      shell: true,
+      shell: false,
+      windowsHide: true,
     });
   } else {
     try {
@@ -145,6 +153,23 @@ if (!existsSync("apps/web/public/emception/manifest.json")) {
   preparationChildren.push(emceptionSync);
   preparation.push(
     waitForSuccessfulExit(emceptionSync, "Emception asset synchronization"),
+  );
+}
+
+if (!existsSync("apps/web/public/langs/quickjs-asyncify.wasm.gz")) {
+  console.log("[dev:fast] QuickJS runtime is missing; synchronizing once");
+  const javascriptRuntimeSync = run("pnpm", [
+    "--filter",
+    "@game-guild/web",
+    "run",
+    "sync:javascript-runtime",
+  ]);
+  preparationChildren.push(javascriptRuntimeSync);
+  preparation.push(
+    waitForSuccessfulExit(
+      javascriptRuntimeSync,
+      "JavaScript runtime synchronization",
+    ),
   );
 }
 

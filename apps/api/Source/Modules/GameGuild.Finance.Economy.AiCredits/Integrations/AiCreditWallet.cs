@@ -69,7 +69,10 @@ public sealed class AiCreditReservation
         long outputSoftUnitsPerMillion = 0)
     {
         if (runId == Guid.Empty || tenantId == Guid.Empty || actorId == Guid.Empty || walletId == Guid.Empty)
+        {
             throw new ArgumentException("Run, tenant, actor, and wallet IDs are required.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(model);
@@ -111,14 +114,22 @@ public sealed class AiCreditReservation
         ArgumentOutOfRangeException.ThrowIfNegative(outputTokens);
         ArgumentOutOfRangeException.ThrowIfNegative(actualSoftUnits);
         if (actualSoftUnits > ReservedSoftUnits)
+        {
             throw new InvalidOperationException("Actual AI usage cannot exceed its maximum reservation.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(providerUsageId);
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
 
         if (Status == AiCreditReservationStatus.Settled && SettlementIdempotencyKey == idempotencyKey.Trim())
+        {
             return;
+        }
+
         if (Status != AiCreditReservationStatus.Reserved)
+        {
             throw new InvalidOperationException("Only a reserved AI credit charge can be settled.");
+        }
 
         InputTokens = inputTokens;
         OutputTokens = outputTokens;
@@ -136,9 +147,14 @@ public sealed class AiCreditReservation
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
         ArgumentException.ThrowIfNullOrWhiteSpace(idempotencyKey);
         if (Status == AiCreditReservationStatus.Released && SettlementIdempotencyKey == idempotencyKey.Trim())
+        {
             return;
+        }
+
         if (Status != AiCreditReservationStatus.Reserved)
+        {
             throw new InvalidOperationException("Only a reserved AI credit charge can be released.");
+        }
 
         ReleasedSoftUnits = ReservedSoftUnits;
         ReleaseReason = reason.Trim();
@@ -261,11 +277,16 @@ internal sealed class AiCreditWalletService(
             catch (DbUpdateException)
             {
                 if (db is DbContext context)
+                {
                     context.Entry(card).State = EntityState.Detached;
+                }
+
                 card = await CurrentRateCard(serviceCode, provider, model, now, cancellationToken)
                     .ConfigureAwait(false);
                 if (card is null)
+                {
                     throw;
+                }
             }
         }
         var maximum = card.Price(maximumInputTokens, maximumOutputTokens);
@@ -332,30 +353,43 @@ internal sealed class AiCreditWalletService(
                 duplicate.ReservedSoftUnits != quote.MaximumSoftUnits ||
                 duplicate.InputSoftUnitsPerMillion != quote.InputSoftUnitsPerMillion ||
                 duplicate.OutputSoftUnitsPerMillion != quote.OutputSoftUnitsPerMillion)
-                throw new InvalidOperationException("AI credit idempotency key is bound to another reservation request.");
-            if (ownsTransaction && transaction is not null)
-                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return duplicate;
+                {
+                    throw new InvalidOperationException("AI credit idempotency key is bound to another reservation request.");
+                }
+
+                if (ownsTransaction && transaction is not null)
+                {
+                    await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                return duplicate;
         }
 
         var balance = await GetBalanceAsync(tenantId, actorId, cancellationToken).ConfigureAwait(false);
         if (balance.AvailableSoftUnits < quote.MaximumSoftUnits)
-            throw new InsufficientAiCreditsException(balance.AvailableSoftUnits, quote.MaximumSoftUnits);
+            {
+                throw new InsufficientAiCreditsException(balance.AvailableSoftUnits, quote.MaximumSoftUnits);
+            }
 
-        var reservation = AiCreditReservation.Create(
+            var reservation = AiCreditReservation.Create(
             runId, tenantId, actorId, wallet.Id, serviceCode, quote.Provider, quote.Model,
             quote.MaximumSoftUnits, idempotencyKey, timeProvider.GetUtcNow(), quote.RateCardVersion,
             quote.InputSoftUnitsPerMillion, quote.OutputSoftUnitsPerMillion);
         db.Set<AiCreditReservation>().Add(reservation);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         if (ownsTransaction && transaction is not null)
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-        return reservation;
+            {
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            return reservation;
         }
         finally
         {
             if (ownsTransaction && transaction is not null)
+            {
                 await transaction.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 
@@ -396,7 +430,9 @@ internal sealed class AiCreditWalletService(
     private static void ValidateActor(Guid tenantId, Guid actorId)
     {
         if (tenantId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new UnauthorizedAccessException("AI credit operations require an authenticated tenant actor.");
+        }
     }
 
     private static long Price(int inputTokens, int outputTokens, long inputRate, long outputRate)

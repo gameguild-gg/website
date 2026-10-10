@@ -125,7 +125,9 @@ public class SoDService(
         var violation = await _violationRepository.GetByIdAsync(violationId, cancellationToken).ConfigureAwait(false);
 
         if (violation == null)
+        {
             throw new InvalidOperationException($"Violation {violationId} not found");
+        }
 
         violation.Resolve(resolvedBy, action, notes);
         await _violationRepository.UpdateAsync(violation, cancellationToken).ConfigureAwait(false);
@@ -143,7 +145,9 @@ public class SoDService(
         var violation = await _violationRepository.GetByIdAsync(violationId, cancellationToken).ConfigureAwait(false);
 
         if (violation == null)
+        {
             throw new InvalidOperationException($"Violation {violationId} not found");
+        }
 
         violation.MarkAsException(approvedBy, justification);
         await _violationRepository.UpdateAsync(violation, cancellationToken).ConfigureAwait(false);
@@ -159,7 +163,9 @@ public class SoDService(
         var violation = await _violationRepository.GetByIdAsync(violationId, cancellationToken).ConfigureAwait(false);
 
         if (violation == null)
+        {
             throw new InvalidOperationException($"Violation {violationId} not found");
+        }
 
         violation.Acknowledge();
         await _violationRepository.UpdateAsync(violation, cancellationToken).ConfigureAwait(false);

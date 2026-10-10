@@ -87,6 +87,20 @@ public interface IHybridPermissionCache
     Task SetValueAsync<T>(string key, T value, string cacheType, CancellationToken cancellationToken = default) where T : struct;
 
     /// <summary>
+    ///     Sets a value type in the cache with an explicit TTL that caps both the L1 and the L2 lifetime.
+    /// </summary>
+    /// <typeparam name="T">The type of value to store (must be a value type).</typeparam>
+    /// <param name="key">The cache key.</param>
+    /// <param name="value">The value to cache.</param>
+    /// <param name="cacheType">The cache type for metrics.</param>
+    /// <param name="ttlSeconds">
+    ///     TTL override in seconds; it never extends the configured TTLs, it only shortens them.
+    ///     Used to clamp cached ACL decisions to their earliest effective grant expiration.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task SetValueAsync<T>(string key, T value, string cacheType, int ttlSeconds, CancellationToken cancellationToken = default) where T : struct;
+
+    /// <summary>
     ///     Removes a value from the cache.
     /// </summary>
     /// <param name="key">The cache key.</param>
@@ -448,6 +462,12 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
     }
 
     /// <inheritdoc />
+    public Task SetValueAsync<T>(string key, T value, string cacheType, int ttlSeconds, CancellationToken cancellationToken = default) where T : struct
+    {
+        return SetAsyncCore(key, value, cacheType, ttlSeconds, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task SetManyValuesAsync<T>(IReadOnlyDictionary<string, T> values, string cacheType) where T : struct =>
         SetManyValuesAsync(values, cacheType, CancellationToken.None);
 
@@ -509,7 +529,14 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
     private async Task SetAsyncCore<T>(string key, T value, string cacheType, int? ttlSeconds, CancellationToken cancellationToken)
     {
         var l1Ttl = TimeSpan.FromSeconds(ttlSeconds ?? GetL1TtlSeconds(cacheType));
-        var l2Ttl = TimeSpan.FromSeconds(_options.DistributedCacheTtlSeconds);
+
+        // An explicit TTL only shortens the configured L2 lifetime; it never extends it. This lets
+        // callers clamp time-bound entries (for example ACL decisions bounded by grant expiration)
+        // so neither cache level can outlive the data the entry was derived from.
+        var l2Ttl = TimeSpan.FromSeconds(
+            ttlSeconds is { } explicitTtl
+                ? Math.Min(explicitTtl, _options.DistributedCacheTtlSeconds)
+                : _options.DistributedCacheTtlSeconds);
 
         // Set in L1
         SetL1(key, value, cacheType, l1Ttl);

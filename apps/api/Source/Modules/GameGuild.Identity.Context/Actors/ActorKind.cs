@@ -106,7 +106,10 @@ public static class ActorKindResolver
         // Build maps from attributes at startup
         foreach (var field in typeof(ActorKind).GetFields())
         {
-            if (!field.IsLiteral) continue;
+            if (!field.IsLiteral)
+            {
+                continue;
+            }
 
             var actorKind = (ActorKind)field.GetValue(null)!;
             var attributes = field.GetCustomAttributes(typeof(ActorKindIdentifierAttribute), false);
@@ -114,13 +117,19 @@ public static class ActorKindResolver
             foreach (ActorKindIdentifierAttribute attr in attributes)
             {
                 if (!string.IsNullOrEmpty(attr.ClaimValue))
+                {
                     ClaimValueMap[attr.ClaimValue] = actorKind;
-                
+                }
+
                 if (!string.IsNullOrEmpty(attr.GrantType))
+                {
                     GrantTypeMap[attr.GrantType] = actorKind;
-                
+                }
+
                 if (!string.IsNullOrEmpty(attr.SubjectId))
+                {
                     SubjectIdMap[attr.SubjectId] = actorKind;
+                }
             }
         }
     }

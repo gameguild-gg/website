@@ -182,7 +182,9 @@ public class TestingRequest : EntityBase
     public void Activate()
     {
         if (Status != TestingRequestStatus.Draft && Status != TestingRequestStatus.Paused)
+        {
             throw new InvalidOperationException("Only draft or paused requests can be activated");
+        }
 
         Status = TestingRequestStatus.Active;
         UpdatedAt = SystemClock.UtcNow;
@@ -194,7 +196,9 @@ public class TestingRequest : EntityBase
     public void Pause()
     {
         if (Status != TestingRequestStatus.Active)
+        {
             throw new InvalidOperationException("Only active requests can be paused");
+        }
 
         Status = TestingRequestStatus.Paused;
         UpdatedAt = SystemClock.UtcNow;
@@ -206,7 +210,9 @@ public class TestingRequest : EntityBase
     public void Complete()
     {
         if (Status == TestingRequestStatus.Completed)
+        {
             return;
+        }
 
         Status = TestingRequestStatus.Completed;
         UpdatedAt = SystemClock.UtcNow;
@@ -218,7 +224,9 @@ public class TestingRequest : EntityBase
     public void Cancel()
     {
         if (Status == TestingRequestStatus.Completed)
+        {
             throw new InvalidOperationException("Completed requests cannot be cancelled");
+        }
 
         Status = TestingRequestStatus.Cancelled;
         UpdatedAt = SystemClock.UtcNow;
@@ -230,7 +238,9 @@ public class TestingRequest : EntityBase
     public void AddTester()
     {
         if (MaxTesters.HasValue && CurrentTesterCount >= MaxTesters.Value)
+        {
             throw new InvalidOperationException("Maximum testers reached");
+        }
 
         CurrentTesterCount++;
         UpdatedAt = SystemClock.UtcNow;

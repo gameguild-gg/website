@@ -525,7 +525,11 @@ public sealed class StripeConnectPayoutProviderTests
             ["payouts_enabled"] = payouts,
             ["requirements"] = new { disabled_reason = disabledReason }
         };
-        if (external is not null) values["external_accounts"] = external;
+        if (external is not null)
+        {
+            values["external_accounts"] = external;
+        }
+
         return JsonSerializer.Serialize(values);
     }
 

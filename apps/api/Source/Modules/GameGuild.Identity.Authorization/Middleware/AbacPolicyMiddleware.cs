@@ -26,7 +26,7 @@ public sealed class AbacPolicyMiddleware(
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        logger.LogTrace("ABAC policy middleware processing request for {Path}", context.Request.Path);
+        logger.LogTrace("ABAC policy middleware processing request for {Path}", LogRedaction.Sanitize(context.Request.Path));
         
         // Add ABAC evaluation headers for diagnostics
         context.Response.Headers.Append("X-ABAC-Policies", "enabled");

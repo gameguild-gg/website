@@ -262,7 +262,10 @@ public sealed class ProjectChannelPostgreSqlMigrationTests
         var generator = context.GetService<IMigrationsSqlGenerator>();
         await using var transaction = await connection.BeginTransactionAsync();
         foreach (var command in generator.Generate(builder.Operations, null))
+        {
             await ExecuteAsync(connection, command.CommandText, transaction);
+        }
+
         await transaction.CommitAsync();
     }
 
@@ -287,7 +290,11 @@ public sealed class ProjectChannelPostgreSqlMigrationTests
             command.Parameters.AddWithValue("relation", relation);
             command.Parameters.AddWithValue("mode", mode);
             command.Parameters.AddWithValue("granted", granted);
-            if (Convert.ToInt32(await command.ExecuteScalarAsync()) > 0) return;
+            if (Convert.ToInt32(await command.ExecuteScalarAsync()) > 0)
+            {
+                return;
+            }
+
             await Task.Delay(25);
         }
 
@@ -326,7 +333,9 @@ public sealed class ProjectChannelPostgreSqlMigrationTests
         public DockerFactAttribute()
         {
             if (string.Equals(Environment.GetEnvironmentVariable("SKIP_DOCKER_TESTS"), "1", StringComparison.Ordinal))
+            {
                 Skip = "Docker tests disabled by SKIP_DOCKER_TESTS=1.";
+            }
         }
     }
 }

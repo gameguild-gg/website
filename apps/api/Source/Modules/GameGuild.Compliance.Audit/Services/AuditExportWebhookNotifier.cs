@@ -135,10 +135,10 @@ public sealed class AuditExportWebhookNotifier(
                 {
                     logger.LogWarning(
                         "Audit export webhook {EventId} failed after {Attempts} attempts with HTTP {StatusCode} for host {Host}",
-                        notification.Id,
+                        LogRedaction.Sanitize(notification.Id),
                         attempt,
                         (int)response.StatusCode,
-                        uri.IdnHost);
+                        LogRedaction.Sanitize(uri.IdnHost));
                 }
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -147,9 +147,9 @@ public sealed class AuditExportWebhookNotifier(
                 {
                     logger.LogWarning(
                         "Audit export webhook {EventId} timed out after {Attempts} attempts for host {Host}",
-                        notification.Id,
+                        LogRedaction.Sanitize(notification.Id),
                         attempt,
-                        uri.IdnHost);
+                        LogRedaction.Sanitize(uri.IdnHost));
                 }
             }
             catch (HttpRequestException exception)
@@ -159,9 +159,9 @@ public sealed class AuditExportWebhookNotifier(
                     logger.LogWarning(
                         exception,
                         "Audit export webhook {EventId} could not be delivered after {Attempts} attempts for host {Host}",
-                        notification.Id,
+                        LogRedaction.Sanitize(notification.Id),
                         attempt,
-                        uri.IdnHost);
+                        LogRedaction.Sanitize(uri.IdnHost));
                 }
             }
 

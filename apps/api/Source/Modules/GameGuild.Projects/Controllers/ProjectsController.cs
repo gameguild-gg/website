@@ -103,12 +103,17 @@ public class ProjectsController : BaseApiController {
     [FromQuery] int take = 50,
     CancellationToken cancellationToken = default) {
     if (!_actorContextAccessor.ActorContext.IsAuthenticated)
-      return Unauthorized();
+        {
+            return Unauthorized();
+        }
 
-    var source = _context.Set<Project>().AsNoTracking();
+        var source = _context.Set<Project>().AsNoTracking();
     if (!includeArchived)
-      source = source.Where(project => project.Status != ContentStatus.Archived && project.Status != ContentStatus.Deleted);
-    var projects = await _authorizationService.ApplyPersonalAccess(source)
+        {
+            source = source.Where(project => project.Status != ContentStatus.Archived && project.Status != ContentStatus.Deleted);
+        }
+
+        var projects = await _authorizationService.ApplyPersonalAccess(source)
       .Include(project => project.CreatedBy)
       .Include(project => project.Category)
       .Include(project => project.Versions)
@@ -128,8 +133,12 @@ public class ProjectsController : BaseApiController {
   [HttpGet("accessible-versions")]
   public async Task<ActionResult<IReadOnlyList<ProjectVersionOptionProjection>>> GetAccessibleProjectVersions(
     [FromQuery] int take = 200) {
-    if (!_actorContextAccessor.ActorContext.IsAuthenticated) return Unauthorized();
-    var projects = _authorizationService.ApplyWorkspaceAccess(
+    if (!_actorContextAccessor.ActorContext.IsAuthenticated)
+        {
+            return Unauthorized();
+        }
+
+        var projects = _authorizationService.ApplyWorkspaceAccess(
       _context.Set<Project>().AsNoTracking().Where(project =>
         project.DeletedAt == null &&
         project.Status != ContentStatus.Archived &&
@@ -166,16 +175,24 @@ public class ProjectsController : BaseApiController {
 
     var project = await _mediator.Send(query).ConfigureAwait(false);
 
-    if (project.IsFailure) return ToActionResult(Result.Failure<ProjectApiResponse>(project.Error));
-    if (project.Value == null) { return NotFound(); }
+    if (project.IsFailure)
+        {
+            return ToActionResult(Result.Failure<ProjectApiResponse>(project.Error));
+        }
+
+        if (project.Value == null) { return NotFound(); }
 
     return Ok(ProjectApiResponse.FromProject(project.Value));
   }
 
   [HttpGet("{id:guid}/versions")]
   public async Task<ActionResult<IReadOnlyList<ProjectVersionApiResponse>>> GetProjectVersions(Guid id) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Read).ConfigureAwait(false)) return NotFound();
-    var versions = await _context.Set<ProjectVersion>()
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Read).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        var versions = await _context.Set<ProjectVersion>()
       .AsNoTracking()
       .Where(version => version.ProjectId == id && version.DeletedAt == null)
       .OrderByDescending(version => version.CreatedAt)
@@ -186,23 +203,44 @@ public class ProjectsController : BaseApiController {
 
   [HttpPost("{id:guid}/versions")]
   public async Task<ActionResult<ProjectVersionApiResponse>> CreateProjectVersion(Guid id, [FromBody] CreateProjectVersionRequest request) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false)) return NotFound();
-    if (string.IsNullOrWhiteSpace(request.VersionNumber))
-      return UnprocessableEntity(new { code = "Projects.VersionNumberRequired" });
-    var project = await _context.Set<Project>().AsNoTracking()
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.VersionNumber))
+        {
+            return UnprocessableEntity(new { code = "Projects.VersionNumberRequired" });
+        }
+
+        var project = await _context.Set<Project>().AsNoTracking()
       .Where(candidate => candidate.Id == id && candidate.DeletedAt == null)
       .Select(candidate => new { candidate.Id, candidate.TenantId })
       .SingleOrDefaultAsync()
       .ConfigureAwait(false);
-    if (project == null) return NotFound();
-    var normalizedVersion = request.VersionNumber.Trim();
+    if (project == null)
+        {
+            return NotFound();
+        }
+
+        var normalizedVersion = request.VersionNumber.Trim();
     if (await _context.Set<ProjectVersion>().AnyAsync(version =>
         version.ProjectId == id && version.VersionNumber == normalizedVersion && version.DeletedAt == null).ConfigureAwait(false))
-      return Conflict(new { code = "Projects.VersionExists" });
-    if (_actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId) return Unauthorized();
-    if (request.Status is not null and not ProjectVersionStatus.Draft)
-      return UnprocessableEntity(new { code = "Projects.VersionMustStartAsDraft" });
-    var version = ProjectVersion.Create(
+        {
+            return Conflict(new { code = "Projects.VersionExists" });
+        }
+
+        if (_actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId)
+        {
+            return Unauthorized();
+        }
+
+        if (request.Status is not null and not ProjectVersionStatus.Draft)
+        {
+            return UnprocessableEntity(new { code = "Projects.VersionMustStartAsDraft" });
+        }
+
+        var version = ProjectVersion.Create(
       id,
       normalizedVersion,
       request.ReleaseNotes,
@@ -218,22 +256,35 @@ public class ProjectsController : BaseApiController {
     Guid id,
     Guid versionId,
     [FromBody] UpdateProjectVersionRequest request) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false)) return NotFound();
-    if (string.IsNullOrWhiteSpace(request.VersionNumber))
-      return UnprocessableEntity(new { code = "Projects.VersionNumberRequired" });
-    var version = await _context.Set<ProjectVersion>()
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.VersionNumber))
+        {
+            return UnprocessableEntity(new { code = "Projects.VersionNumberRequired" });
+        }
+
+        var version = await _context.Set<ProjectVersion>()
       .SingleOrDefaultAsync(candidate => candidate.Id == versionId && candidate.ProjectId == id && candidate.DeletedAt == null)
       .ConfigureAwait(false);
-    if (version == null) return NotFound();
-    var normalizedVersion = request.VersionNumber.Trim();
+    if (version == null)
+        {
+            return NotFound();
+        }
+
+        var normalizedVersion = request.VersionNumber.Trim();
     if (await _context.Set<ProjectVersion>().AnyAsync(candidate =>
         candidate.Id != versionId &&
         candidate.ProjectId == id &&
         candidate.VersionNumber == normalizedVersion &&
         candidate.DeletedAt == null).ConfigureAwait(false))
-      return Conflict(new { code = "Projects.VersionExists" });
+        {
+            return Conflict(new { code = "Projects.VersionExists" });
+        }
 
-    try {
+        try {
       version.UpdateDraft(normalizedVersion, request.ReleaseNotes);
       version = await _mediator.Send(new UpdateProjectVersionEndpointCommand(version)).ConfigureAwait(false);
       return Ok(ProjectVersionApiResponse.FromEntity(version));
@@ -260,13 +311,20 @@ public class ProjectsController : BaseApiController {
     Guid versionId,
     PermissionType permission,
     Action<ProjectVersion> transition) {
-    if (!await _authorizationService.HasPermissionAsync(projectId, permission).ConfigureAwait(false)) return NotFound();
-    var version = await _context.Set<ProjectVersion>()
+    if (!await _authorizationService.HasPermissionAsync(projectId, permission).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        var version = await _context.Set<ProjectVersion>()
       .SingleOrDefaultAsync(candidate => candidate.Id == versionId && candidate.ProjectId == projectId && candidate.DeletedAt == null)
       .ConfigureAwait(false);
-    if (version == null) return NotFound();
+    if (version == null)
+        {
+            return NotFound();
+        }
 
-    try {
+        try {
       transition(version);
       version = await _mediator.Send(new TransitionProjectVersionEndpointCommand(version)).ConfigureAwait(false);
       return Ok(ProjectVersionApiResponse.FromEntity(version));
@@ -284,8 +342,12 @@ public class ProjectsController : BaseApiController {
 
     var project = await _mediator.Send(query).ConfigureAwait(false);
 
-    if (project.IsFailure) return ToActionResult(Result.Failure<ProjectApiResponse>(project.Error));
-    if (project.Value == null) { return NotFound(); }
+    if (project.IsFailure)
+        {
+            return ToActionResult(Result.Failure<ProjectApiResponse>(project.Error));
+        }
+
+        if (project.Value == null) { return NotFound(); }
 
     return Ok(ProjectApiResponse.FromProject(project.Value));
   }
@@ -316,9 +378,11 @@ public class ProjectsController : BaseApiController {
     var result = await _mediator.Send(command).ConfigureAwait(false);
 
     if (result.IsSuccess)
-      return CreatedAtAction(nameof(GetProject), new { id = result.Value.Id }, ProjectApiResponse.FromProject(result.Value));
+        {
+            return CreatedAtAction(nameof(GetProject), new { id = result.Value.Id }, ProjectApiResponse.FromProject(result.Value));
+        }
 
-    return ToActionResult(Result.Failure<ProjectApiResponse>(result.Error));
+        return ToActionResult(Result.Failure<ProjectApiResponse>(result.Error));
   }
 
   /// <summary> Update an existing project </summary>
@@ -351,9 +415,12 @@ public class ProjectsController : BaseApiController {
   /// <summary> Delete a project </summary>
   [HttpDelete("{id:guid}")]
   public async Task<ActionResult<bool>> DeleteProject(Guid id, [FromQuery] bool softDelete = true, [FromQuery] string? reason = null) {
-    if (!softDelete && !await HasSensitiveActionAssuranceAsync().ConfigureAwait(false)) return Forbid();
+    if (!softDelete && !await HasSensitiveActionAssuranceAsync().ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
-    var command = new DeleteProjectCommand { ProjectId = id, DeletedBy = _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty, SoftDelete = softDelete, Reason = reason };
+        var command = new DeleteProjectCommand { ProjectId = id, DeletedBy = _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty, SoftDelete = softDelete, Reason = reason };
 
     var result = await _mediator.Send(command).ConfigureAwait(false);
 
@@ -365,9 +432,11 @@ public class ProjectsController : BaseApiController {
     if (actor.SubjectIdAsGuid is not { } actorId ||
         actor.TypedAttributes.AuthenticatedAt is not { } authenticatedAt ||
         authenticatedAt < DateTimeOffset.UtcNow.Subtract(RecentAuthenticationWindow))
-      return false;
+        {
+            return false;
+        }
 
-    var hasMfa = await _context.Set<UserMfaConfiguration>().AsNoTracking()
+        var hasMfa = await _context.Set<UserMfaConfiguration>().AsNoTracking()
       .AnyAsync(configuration => configuration.UserId == actorId && configuration.IsEnabled)
       .ConfigureAwait(false);
     return !hasMfa || actor.IsMfaVerified;
@@ -415,22 +484,37 @@ public class ProjectsController : BaseApiController {
     if (!await _authorizationService
           .HasPermissionIncludingDeletedAsync(id, PermissionType.Restore, cancellationToken)
           .ConfigureAwait(false))
-      return NotFound();
+        {
+            return NotFound();
+        }
 
-    var project = await _context.Set<Project>()
+        var project = await _context.Set<Project>()
       .IgnoreQueryFilters()
       .SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken)
       .ConfigureAwait(false);
-    if (project == null) return NotFound();
+    if (project == null)
+        {
+            return NotFound();
+        }
 
-    var wasSoftDeleted = project.DeletedAt != null;
+        var wasSoftDeleted = project.DeletedAt != null;
     var wasArchived = project.Status is ContentStatus.Archived or ContentStatus.Deleted;
     if (!wasSoftDeleted && !wasArchived)
-      return Conflict(new { code = "Project.NotRestorable", message = "Only archived or deleted projects can be restored." });
+        {
+            return Conflict(new { code = "Project.NotRestorable", message = "Only archived or deleted projects can be restored." });
+        }
 
-    if (wasSoftDeleted) project.Restore();
-    if (wasArchived) project.Status = ContentStatus.Draft;
-    project.Touch();
+        if (wasSoftDeleted)
+        {
+            project.Restore();
+        }
+
+        if (wasArchived)
+        {
+            project.Status = ContentStatus.Draft;
+        }
+
+        project.Touch();
     project = await _mediator.Send(new RestoreProjectEndpointCommand(project), cancellationToken).ConfigureAwait(false);
     return Ok(ProjectApiResponse.FromProject(project));
   }
@@ -555,8 +639,12 @@ public class ProjectsController : BaseApiController {
   public async Task<ActionResult<IEnumerable<ProjectInvitationDto>>> GetMyProjectInvitations() {
     var actor = _actorContextAccessor.ActorContext;
     var userId = actor.SubjectIdAsGuid;
-    if (!userId.HasValue || !actor.TenantId.HasValue) return Unauthorized();
-    var email = await _context.Set<User>().AsNoTracking()
+    if (!userId.HasValue || !actor.TenantId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var email = await _context.Set<User>().AsNoTracking()
       .Where(user => user.Id == userId.Value && user.IsActive && user.DeletedAt == null)
       .Select(user => user.Email)
       .SingleOrDefaultAsync().ConfigureAwait(false);
@@ -602,16 +690,29 @@ public class ProjectsController : BaseApiController {
   [HttpPost("invitations/{invitationToken}:accept")]
   public async Task<ActionResult<ProjectInvitationDto>> AcceptProjectInvitation(string invitationToken) {
     var invitation = await GetRespondableInvitation(invitationToken).ConfigureAwait(false);
-    if (invitation == null) return NotFound(new { Message = "Invitation not found" });
-    if (!invitation.CanRespond) return Conflict(new { Message = "Invitation is no longer pending or has expired" });
+    if (invitation == null)
+        {
+            return NotFound(new { Message = "Invitation not found" });
+        }
 
-    var actor = _actorContextAccessor.ActorContext;
+        if (!invitation.CanRespond)
+        {
+            return Conflict(new { Message = "Invitation is no longer pending or has expired" });
+        }
+
+        var actor = _actorContextAccessor.ActorContext;
     var userId = actor.SubjectIdAsGuid;
-    if (!userId.HasValue || !await CanRespondToInvitationAsync(invitation, userId.Value).ConfigureAwait(false)) return Forbid();
-    if (!TryNormalizeProjectPermissions(invitation.Permissions, [], out var invitationPermissions))
-      return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
+    if (!userId.HasValue || !await CanRespondToInvitationAsync(invitation, userId.Value).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
-    invitation.Accept();
+        if (!TryNormalizeProjectPermissions(invitation.Permissions, [], out var invitationPermissions))
+        {
+            return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
+        }
+
+        invitation.Accept();
 
     var collaborator = await _context.Set<ProjectCollaborator>()
       .FirstOrDefaultAsync(c => c.ProjectId == invitation.ProjectId && c.UserId == userId.Value)
@@ -645,14 +746,24 @@ public class ProjectsController : BaseApiController {
   [HttpPost("invitations/{invitationToken}:decline")]
   public async Task<ActionResult<ProjectInvitationDto>> DeclineProjectInvitation(string invitationToken) {
     var invitation = await GetRespondableInvitation(invitationToken).ConfigureAwait(false);
-    if (invitation == null) return NotFound(new { Message = "Invitation not found" });
-    if (!invitation.CanRespond) return Conflict(new { Message = "Invitation is no longer pending or has expired" });
+    if (invitation == null)
+        {
+            return NotFound(new { Message = "Invitation not found" });
+        }
 
-    var actor = _actorContextAccessor.ActorContext;
+        if (!invitation.CanRespond)
+        {
+            return Conflict(new { Message = "Invitation is no longer pending or has expired" });
+        }
+
+        var actor = _actorContextAccessor.ActorContext;
     var userId = actor.SubjectIdAsGuid;
-    if (!userId.HasValue || !await CanRespondToInvitationAsync(invitation, userId.Value).ConfigureAwait(false)) return Forbid();
+    if (!userId.HasValue || !await CanRespondToInvitationAsync(invitation, userId.Value).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
-    invitation.Decline();
+        invitation.Decline();
     invitation = await _mediator.Send(new DeclineProjectInvitationEndpointCommand(invitation)).ConfigureAwait(false);
 
     return Ok(ProjectInvitationDto.FromInvitation(invitation));
@@ -661,8 +772,12 @@ public class ProjectsController : BaseApiController {
   /// <summary> Get project collaborators </summary>
   [HttpGet("{id:guid}/collaborators")]
   public async Task<ActionResult<IEnumerable<CollaboratorDto>>> GetProjectCollaborators(Guid id) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Read).ConfigureAwait(false)) return NotFound();
-    var collaborators = await _context.Set<ProjectCollaborator>()
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Read).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        var collaborators = await _context.Set<ProjectCollaborator>()
       .Where(c => c.ProjectId == id && c.IsActive)
       .Include(c => c.User)
       .OrderBy(c => c.JoinedAt)
@@ -683,26 +798,41 @@ public class ProjectsController : BaseApiController {
   /// <summary> Add project collaborator </summary>
   [HttpPost("{id:guid}/collaborators")]
   public async Task<ActionResult<CollaboratorDto>> AddProjectCollaborator(Guid id, [FromBody] AddProjectCollaboratorRequest request) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false)) return NotFound();
-    var project = await _context.Set<Project>().FindAsync(id).ConfigureAwait(false);
-    if (project == null) return NotFound();
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
 
-    var actor = _actorContextAccessor.ActorContext;
+        var project = await _context.Set<Project>().FindAsync(id).ConfigureAwait(false);
+    if (project == null)
+        {
+            return NotFound();
+        }
+
+        var actor = _actorContextAccessor.ActorContext;
     var userId = actor.SubjectIdAsGuid ?? Guid.Empty;
     if (!TryNormalizeProjectPermissions(
           request.Permissions,
           [PermissionType.Read, PermissionType.Comment],
           out var permissions))
-      return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
-    if (!await IsActiveProjectTenantMemberAsync(project, request.UserId).ConfigureAwait(false))
-      return UnprocessableEntity(new { Code = "Projects.ActiveTenantMembershipRequired" });
+        {
+            return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
+        }
 
-    // Check if user is already a collaborator
-    var exists = await _context.Set<ProjectCollaborator>()
+        if (!await IsActiveProjectTenantMemberAsync(project, request.UserId).ConfigureAwait(false))
+        {
+            return UnprocessableEntity(new { Code = "Projects.ActiveTenantMembershipRequired" });
+        }
+
+        // Check if user is already a collaborator
+        var exists = await _context.Set<ProjectCollaborator>()
       .AnyAsync(c => c.ProjectId == id && c.UserId == request.UserId && c.IsActive).ConfigureAwait(false);
-    if (exists) return Conflict(new { Message = "User is already a collaborator" });
+    if (exists)
+        {
+            return Conflict(new { Message = "User is already a collaborator" });
+        }
 
-    var collaborator = new ProjectCollaborator {
+        var collaborator = new ProjectCollaborator {
       TenantId = project.TenantId,
       ProjectId = id,
       UserId = request.UserId,
@@ -730,18 +860,32 @@ public class ProjectsController : BaseApiController {
   /// <summary> Update project collaborator </summary>
   [HttpPut("{id:guid}/collaborators/{collaboratorId:guid}")]
   public async Task<ActionResult<CollaboratorDto>> UpdateProjectCollaborator(Guid id, Guid collaboratorId, [FromBody] UpdateProjectCollaboratorRequest request) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false)) return NotFound();
-    var collaborator = await _context.Set<ProjectCollaborator>()
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        var collaborator = await _context.Set<ProjectCollaborator>()
       .FirstOrDefaultAsync(c => c.Id == collaboratorId && c.ProjectId == id).ConfigureAwait(false);
-    if (collaborator == null) return NotFound();
+    if (collaborator == null)
+        {
+            return NotFound();
+        }
 
-    var userId = _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
+        var userId = _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
 
-    if (request.Role != null) collaborator.Role = request.Role;
-    if (request.Permissions != null) {
+    if (request.Role != null)
+        {
+            collaborator.Role = request.Role;
+        }
+
+        if (request.Permissions != null) {
       if (!TryNormalizeProjectPermissions(request.Permissions, [], out var permissions))
-        return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
-      collaborator.Permissions = permissions;
+            {
+                return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
+            }
+
+            collaborator.Permissions = permissions;
     }
 
     collaborator = await _mediator.Send(new UpdateProjectCollaboratorEndpointCommand(collaborator)).ConfigureAwait(false);
@@ -761,12 +905,19 @@ public class ProjectsController : BaseApiController {
   /// <summary> Remove project collaborator </summary>
   [HttpDelete("{id:guid}/collaborators/{collaboratorId:guid}")]
   public async Task<ActionResult> RemoveProjectCollaborator(Guid id, Guid collaboratorId) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false)) return NotFound();
-    var collaborator = await _context.Set<ProjectCollaborator>()
-      .FirstOrDefaultAsync(c => c.Id == collaboratorId && c.ProjectId == id).ConfigureAwait(false);
-    if (collaborator == null) return NotFound();
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Edit).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
 
-    var userId = _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
+        var collaborator = await _context.Set<ProjectCollaborator>()
+      .FirstOrDefaultAsync(c => c.Id == collaboratorId && c.ProjectId == id).ConfigureAwait(false);
+    if (collaborator == null)
+        {
+            return NotFound();
+        }
+
+        var userId = _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
 
     // Soft-delete: mark as inactive
     collaborator.IsActive = false;
@@ -781,18 +932,30 @@ public class ProjectsController : BaseApiController {
   /// <summary> Share project with a user by assigning a role </summary>
   [HttpPost("{id:guid}:share")]
   public async Task<ActionResult<CollaboratorDto>> ShareProject(Guid id, [FromBody] ShareProjectRequest request) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Share).ConfigureAwait(false)) return NotFound();
-    var project = await _context.Set<Project>().FindAsync(id).ConfigureAwait(false);
-    if (project == null) return NotFound();
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Share).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
 
-    var actor = _actorContextAccessor.ActorContext;
+        var project = await _context.Set<Project>().FindAsync(id).ConfigureAwait(false);
+    if (project == null)
+        {
+            return NotFound();
+        }
+
+        var actor = _actorContextAccessor.ActorContext;
     var userId = actor.SubjectIdAsGuid ?? Guid.Empty;
     if (!TryNormalizeProjectPermissions(request.Permissions, [PermissionType.Read], out var permissions))
-      return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
-    if (!await IsActiveProjectTenantMemberAsync(project, request.UserId).ConfigureAwait(false))
-      return UnprocessableEntity(new { Code = "Projects.ActiveTenantMembershipRequired" });
-    // Check if already shared
-    var existing = await _context.Set<ProjectCollaborator>()
+        {
+            return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
+        }
+
+        if (!await IsActiveProjectTenantMemberAsync(project, request.UserId).ConfigureAwait(false))
+        {
+            return UnprocessableEntity(new { Code = "Projects.ActiveTenantMembershipRequired" });
+        }
+        // Check if already shared
+        var existing = await _context.Set<ProjectCollaborator>()
       .FirstOrDefaultAsync(c => c.ProjectId == id && c.UserId == request.UserId).ConfigureAwait(false);
 
     if (existing != null) {
@@ -825,22 +988,34 @@ public class ProjectsController : BaseApiController {
   /// <summary> Invite a user to collaborate on a project without granting access until acceptance </summary>
   [HttpPost("{id:guid}/invitations")]
   public async Task<ActionResult<ProjectInvitationDto>> InviteProjectCollaborator(Guid id, [FromBody] InviteProjectCollaboratorRequest request) {
-    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Share).ConfigureAwait(false)) return NotFound();
-    var project = await _context.Set<Project>().FindAsync(id).ConfigureAwait(false);
-    if (project == null) return NotFound();
+    if (!await _authorizationService.HasPermissionAsync(id, PermissionType.Share).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
 
-    var actor = _actorContextAccessor.ActorContext;
+        var project = await _context.Set<Project>().FindAsync(id).ConfigureAwait(false);
+    if (project == null)
+        {
+            return NotFound();
+        }
+
+        var actor = _actorContextAccessor.ActorContext;
     var userId = actor.SubjectIdAsGuid ?? Guid.Empty;
     if (!request.UserId.HasValue && string.IsNullOrWhiteSpace(request.Email)) {
       return BadRequest(new { Message = "Provide either a user id or an email address." });
     }
     if (!TryNormalizeProjectPermissions(request.Permissions, [PermissionType.Read], out var permissions))
-      return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
-    if (request.UserId.HasValue &&
-        !await IsActiveProjectTenantMemberAsync(project, request.UserId.Value).ConfigureAwait(false))
-      return UnprocessableEntity(new { Code = "Projects.ActiveTenantMembershipRequired" });
+        {
+            return UnprocessableEntity(new { Code = "Projects.InvalidProjectPermissions" });
+        }
 
-    var invitation = new ProjectInvitation {
+        if (request.UserId.HasValue &&
+        !await IsActiveProjectTenantMemberAsync(project, request.UserId.Value).ConfigureAwait(false))
+        {
+            return UnprocessableEntity(new { Code = "Projects.ActiveTenantMembershipRequired" });
+        }
+
+        var invitation = new ProjectInvitation {
       TenantId = project.TenantId,
       ProjectId = id,
       InvitedUserId = request.UserId,
@@ -870,12 +1045,21 @@ public class ProjectsController : BaseApiController {
     var projectTenantId = invitation.Project.TenantId;
     if (!projectTenantId.HasValue || actor.TenantId != projectTenantId ||
         !await IsActiveProjectTenantMemberAsync(invitation.Project, userId).ConfigureAwait(false))
-      return false;
+        {
+            return false;
+        }
 
-    if (invitation.InvitedUserId.HasValue) return invitation.InvitedUserId == userId;
-    if (string.IsNullOrWhiteSpace(invitation.InvitedEmail)) return false;
+        if (invitation.InvitedUserId.HasValue)
+        {
+            return invitation.InvitedUserId == userId;
+        }
 
-    var email = await _context.Set<User>().AsNoTracking()
+        if (string.IsNullOrWhiteSpace(invitation.InvitedEmail))
+        {
+            return false;
+        }
+
+        var email = await _context.Set<User>().AsNoTracking()
       .Where(user => user.Id == userId && user.IsActive && user.DeletedAt == null)
       .Select(user => user.Email)
       .SingleOrDefaultAsync()
@@ -884,8 +1068,12 @@ public class ProjectsController : BaseApiController {
   }
 
   private Task<bool> IsActiveProjectTenantMemberAsync(Project project, Guid userId) {
-    if (!project.TenantId.HasValue) return Task.FromResult(false);
-    return _context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
+    if (!project.TenantId.HasValue)
+        {
+            return Task.FromResult(false);
+        }
+
+        return _context.Set<TenantMember>().AsNoTracking().AnyAsync(member =>
       member.UserId == userId &&
       member.TenantId == project.TenantId.Value &&
       member.IsActive &&

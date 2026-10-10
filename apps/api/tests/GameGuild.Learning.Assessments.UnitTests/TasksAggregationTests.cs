@@ -264,7 +264,10 @@ public class TasksAggregationTests
         {
             db.Add(Enrollment.Create(courseId, userId));
             var row = await SeedUserRowAsync(db, assessment.Id, userId, "member", 1, SubmissionStatus.InProgress, groupId: group.GroupId);
-            if (aliceRow == null) aliceRow = row.Row;
+            if (aliceRow == null)
+            {
+                aliceRow = row.Row;
+            }
         }
 
         await db.SaveChangesAsync();
@@ -384,7 +387,11 @@ public class TasksAggregationTests
             string? referenceEntityType = null, string? metadata = null, string? recipientEmail = null,
             CancellationToken cancellationToken = default)
         {
-            if (ThrowOnSend) throw new InvalidOperationException("notification sink down");
+            if (ThrowOnSend)
+            {
+                throw new InvalidOperationException("notification sink down");
+            }
+
             Sent.Add((recipientId!.Value, type, title, message));
             return Task.FromResult(Result.Success<Notification>(null!));
         }

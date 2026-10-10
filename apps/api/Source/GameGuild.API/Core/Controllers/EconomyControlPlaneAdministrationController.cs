@@ -72,7 +72,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] ProposeEconomyPolicyRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManagePolicies, out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManagePolicies, out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var now = timeProvider.GetUtcNow();
         var policy = await sender.Send(new ProposeEconomyPolicyEndpointCommand(new EconomyCapabilityPolicyProposal(
@@ -97,7 +101,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] ApproveEconomyPolicyRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManagePolicies, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManagePolicies, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var operation = EconomyStepUpOperation.Create(
             "economy.policy.approve",
@@ -118,7 +126,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] InspectEconomyCapabilityReadinessRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ReadOperations, out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ReadOperations, out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var result = await capabilityReadiness.InspectAsync(new EconomyCapabilityEvaluationContext(
             tenantId,
@@ -142,7 +154,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromQuery] int limit = 100,
         CancellationToken cancellationToken = default)
     {
-        if (!TryActor(EconomyPermission.Keys.ReadOperations, out var tenantId, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ReadOperations, out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await operations.ReadCapabilityConfigurationAsync(
             tenantId,
             includeInactiveKillSwitches,
@@ -157,7 +173,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] ActivateEconomyKillSwitchRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out var tenantId, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         var scope = request.Capability.HasValue
             ? EconomyKillSwitchScope.ForCapability(tenantId, request.Capability.Value)
@@ -179,7 +199,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] EconomyStepUpRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var operation = EconomyStepUpOperation.Create(
             "economy.kill-switch.release.propose",
             $"kill-switch:{killSwitchId:N}",
@@ -199,7 +223,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] EconomyStepUpRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var operation = EconomyStepUpOperation.Create(
             "economy.kill-switch.release.approve",
             $"kill-switch:{killSwitchId:N}",
@@ -216,7 +244,11 @@ public sealed class EconomyControlPlaneAdministrationController(
     [ProducesResponseType(typeof(EconomyKillSwitchState), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReleaseKillSwitch(Guid killSwitchId, CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await sender.Send(new ReleaseEconomyKillSwitchEndpointCommand(
             killSwitchId,
             timeProvider.GetUtcNow()),
@@ -227,7 +259,11 @@ public sealed class EconomyControlPlaneAdministrationController(
     [ProducesResponseType(typeof(JournalIntegrityRunResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> VerifyJournal(CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var result = await sender.Send(new VerifyEconomyJournalEndpointCommand(
             $"admin:{actorId:N}",
             timeProvider.GetUtcNow(),
@@ -240,7 +276,11 @@ public sealed class EconomyControlPlaneAdministrationController(
     [ProducesResponseType(typeof(EconomyLedgerHealthSnapshot), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReadLedgerHealth(CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ReadOperations, out _, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ReadOperations, out _, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await operations.ReadLedgerHealthAsync(
             timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false));
     }
@@ -252,7 +292,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] PublishEconomyAnchorRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out _))
+        {
+            return Forbid();
+        }
+
         var result = await sender.Send(new PublishEconomyAnchorEndpointCommand(
             timeProvider.GetUtcNow(),
             true,
@@ -265,7 +309,11 @@ public sealed class EconomyControlPlaneAdministrationController(
     [ProducesResponseType(typeof(AnchorVerificationRunResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> VerifyAnchors(CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await sender.Send(new VerifyEconomyAnchorsEndpointCommand(
             timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false));
     }
@@ -274,7 +322,11 @@ public sealed class EconomyControlPlaneAdministrationController(
     [ProducesResponseType(typeof(ProjectionGenerationState), StatusCodes.Status201Created)]
     public async Task<IActionResult> RebuildProjections(CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var generation = await sender.Send(new RebuildEconomyProjectionsEndpointCommand(
             actorId, timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, generation);
@@ -287,7 +339,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] EconomyStepUpRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var operation = EconomyStepUpOperation.Create(
             "economy.projection.approve",
             $"projection:{generation}",
@@ -306,7 +362,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] CustodyObservationCommand request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out _))
+        {
+            return Forbid();
+        }
+
         return StatusCode(
             StatusCodes.Status201Created,
             await sender.Send(new IngestEconomyCustodyObservationEndpointCommand(request), cancellationToken).ConfigureAwait(false));
@@ -316,7 +376,11 @@ public sealed class EconomyControlPlaneAdministrationController(
     [ProducesResponseType(typeof(EconomyLiabilitySnapshot), StatusCodes.Status200OK)]
     public async Task<IActionResult> CalculateLiabilities(CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out _)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await reserves.CalculateLiabilitiesAsync(cancellationToken).ConfigureAwait(false));
     }
 
@@ -326,7 +390,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] ProposeEconomyReserveRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var proposed = await sender.Send(new ProposeEconomyReserveEndpointCommand(new DurableReserveProposalCommand(
             request.Id,
             request.Version,
@@ -351,7 +419,11 @@ public sealed class EconomyControlPlaneAdministrationController(
         [FromBody] EconomyStepUpRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out var actorId)) return Forbid();
+        if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out var actorId))
+        {
+            return Forbid();
+        }
+
         var operation = EconomyStepUpOperation.Create(
             "economy.reserve.approve",
             $"reserve:{proposalId:N}",
@@ -371,7 +443,10 @@ public sealed class EconomyControlPlaneAdministrationController(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue || !actor.SubjectIdAsGuid.HasValue ||
             !actor.HasPermission(permission))
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         actorId = actor.SubjectIdAsGuid.Value;
         return true;

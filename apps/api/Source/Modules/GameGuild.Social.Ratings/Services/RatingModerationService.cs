@@ -25,10 +25,14 @@ public class RatingModerationService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure(RatingErrors.NotFound);
+        }
 
         if (rating.UserId == userId)
+        {
             return Result.Failure(RatingErrors.CannotVoteOwnRating);
+        }
 
         var existingVote = await db.Set<RatingHelpfulVote>()
             .FirstOrDefaultAsync(v => v.RatingId == ratingId && v.UserId == userId && !v.IsDeleted, ct).ConfigureAwait(false);
@@ -55,7 +59,9 @@ public class RatingModerationService(
             db.Set<RatingHelpfulVote>().Add(vote);
 
             if (isHelpful)
+            {
                 rating.IncrementHelpful();
+            }
         }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -70,13 +76,17 @@ public class RatingModerationService(
             .FirstOrDefaultAsync(v => v.RatingId == ratingId && v.UserId == userId && !v.IsDeleted, ct).ConfigureAwait(false);
 
         if (vote == null)
+        {
             return Result.Failure(RatingErrors.VoteNotFound);
+        }
 
         var rating = await db.Set<Rating>()
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating != null && vote.IsHelpful)
+        {
             rating.DecrementHelpful();
+        }
 
         vote.SoftDelete();
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -90,13 +100,17 @@ public class RatingModerationService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure(RatingErrors.NotFound);
+        }
 
         rating.IncrementReport();
 
         // Auto-flag for moderation if too many reports
         if (rating.ReportCount >= 3)
+        {
             rating.SetModerationStatus(RatingModerationStatus.Flagged);
+        }
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
@@ -132,7 +146,9 @@ public class RatingModerationService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure(RatingErrors.NotFound);
+        }
 
         rating.SetModerationStatus(RatingModerationStatus.Approved);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -149,7 +165,9 @@ public class RatingModerationService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure(RatingErrors.NotFound);
+        }
 
         rating.SetModerationStatus(RatingModerationStatus.Rejected);
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -166,7 +184,9 @@ public class RatingModerationService(
             .FirstOrDefaultAsync(r => r.Id == ratingId && !r.IsDeleted, ct).ConfigureAwait(false);
 
         if (rating == null)
+        {
             return Result.Failure(RatingErrors.NotFound);
+        }
 
         rating.SoftDelete();
         await db.SaveChangesAsync(ct).ConfigureAwait(false);

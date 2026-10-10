@@ -30,6 +30,7 @@ describe('CourseCompletionCertificateService', () => {
     });
     expect(fetchMock).toHaveBeenCalledWith('/api/courses/certificates?mode=status&courseId=course-1', {
       method: 'GET',
+      redirect: 'error',
     });
   });
 

@@ -84,7 +84,9 @@ public sealed class AwsPriceListRateSource(
                     options.Value.UsdExchangeRates))
                 .FirstOrDefault(candidate => candidate is not null);
             if (quote is not null)
+            {
                 quotes.Add(quote);
+            }
         }
 
         return quotes;
@@ -101,17 +103,23 @@ public sealed class AwsPriceListRateSource(
             || !product.TryGetProperty("sku", out var sku)
             || !document.RootElement.TryGetProperty("terms", out var terms)
             || !terms.TryGetProperty("OnDemand", out var onDemand))
+        {
             return null;
+        }
 
         foreach (var offer in onDemand.EnumerateObject())
         {
             if (!offer.Value.TryGetProperty("priceDimensions", out var dimensions))
+            {
                 continue;
+            }
 
             foreach (var dimension in dimensions.EnumerateObject())
             {
                 if (!dimension.Value.TryGetProperty("pricePerUnit", out var pricePerUnit))
+                {
                     continue;
+                }
 
                 foreach (var currencyPrice in pricePerUnit.EnumerateObject())
                 {
@@ -120,7 +128,9 @@ public sealed class AwsPriceListRateSource(
                             NumberStyles.Number,
                             CultureInfo.InvariantCulture,
                             out var unitPrice))
+                    {
                         continue;
+                    }
 
                     var currency = currencyPrice.Name.ToUpperInvariant();
                     var usdRate = usdExchangeRates.GetValueOrDefault(currency);
@@ -179,7 +189,9 @@ public sealed class AwsCostExplorerSource(
             {
                 if (!group.Metrics.TryGetValue("UnblendedCost", out var metric)
                     || !decimal.TryParse(metric.Amount, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
+                {
                     continue;
+                }
 
                 var service = group.Keys.ElementAtOrDefault(0) ?? "unknown";
                 var tenantId = ParseTenantId(group.Keys.ElementAtOrDefault(1));
@@ -215,7 +227,9 @@ public sealed class AwsCostExplorerSource(
         var start = now.AddDays(1);
         var end = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
         if (start >= end)
+        {
             return [];
+        }
 
         var response = await costExplorer.GetCostForecastAsync(new GetCostForecastRequest
         {
@@ -229,7 +243,9 @@ public sealed class AwsCostExplorerSource(
         }, cancellationToken).ConfigureAwait(false);
         if (response.Total is null
             || !decimal.TryParse(response.Total.Amount, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
+        {
             return [];
+        }
 
         var usdRate = options.Value.UsdExchangeRates.GetValueOrDefault(response.Total.Unit);
         return
@@ -255,7 +271,9 @@ public sealed class AwsCostExplorerSource(
     private static Guid? ParseTenantId(string? tagValue)
     {
         if (string.IsNullOrWhiteSpace(tagValue))
+        {
             return null;
+        }
 
         var separator = tagValue.LastIndexOf('$');
         var candidate = separator >= 0 ? tagValue[(separator + 1)..] : tagValue;
@@ -275,7 +293,9 @@ public sealed class AwsCur2CsvCostSource : IAwsCur2CostSource
         using var reader = new StreamReader(csvStream, Encoding.UTF8, true, leaveOpen: true);
         var headerLine = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
         if (headerLine is null)
+        {
             return [];
+        }
 
         var headers = ParseCsvLine(headerLine);
         var positions = headers.Select((name, index) => (name, index))
@@ -292,7 +312,9 @@ public sealed class AwsCur2CsvCostSource : IAwsCur2CostSource
                 || !DateTime.TryParse(startText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var start)
                 || !DateTime.TryParse(endText, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var end)
                 || !decimal.TryParse(costText, NumberStyles.Number, CultureInfo.InvariantCulture, out var cost))
+            {
                 continue;
+            }
 
             var tenantText = Get(values, positions, "resource_tags_user_tenantid");
             var currency = Get(values, positions, "line_item_currency_code") ?? "USD";
@@ -367,7 +389,9 @@ public sealed class AwsCostAccountingBackgroundService(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!options.Value.Enabled)
+        {
             return;
+        }
 
         await Task.Delay(TimeSpan.FromMinutes(Math.Max(0, options.Value.InitialDelayMinutes)), stoppingToken)
             .ConfigureAwait(false);

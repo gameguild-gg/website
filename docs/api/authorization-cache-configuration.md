@@ -54,12 +54,33 @@ fails. Publish failures are logged, and old cache entries expire through their
 configured TTLs. Pub/Sub provides prompt local cleanup. A singleton per-process key index tracks L1 entries from cache services and request scopes so received events can evict the actual local entries.
 Wildcard matching scans this in-memory index; the implementation does not issue Redis key scans for deletion.
 
+ACL cache keys length-prefix their free-form segments: the `resourceType` and
+`resourceId` parts of `acl:` and `acl:subj:` keys are emitted as
+`{length}:{value}` components (for example `8:Document:7:res-123`) instead of the
+bare raw strings. The leading character count makes the encoding injective, so
+delimiter-bearing identifiers can never collide two distinct resources onto one
+cached access decision, while the raw value stays embedded in the key so
+wildcard and substring invalidation patterns — built from the same
+length-prefixed components — keep matching resource entries. GUID-valued
+segments (tenant, user, role, group) and the `tv`/`uv`/`gv` version suffixes
+remain human-readable, so key-inspection output shows which subject and version
+scope an entry belongs to and which resource pair it was computed for.
+
 ACL keys also include a shared global security version stored under the reserved
 `Guid.Empty` version scope. Global role assignment, removal, update, and deletion
 advance this version and publish a global invalidation event. This makes prior
 ACL keys unreachable across tenants even when Pub/Sub is unavailable; received
 events also clear tracked ACL entries from the local L1 cache.
 The tenant and global versions are read together in one database query.
+
+ACL decisions derived from time-bound grants (`ExpiresAt` on ACL entries) are
+cached with the boundary attached. Time-based expiration performs no mutation and
+advances no security version, so the cached copy polices itself: writes clamp the
+L1 and L2 TTL to the seconds remaining before the earliest effective grant
+expiration (never above the configured TTL), and every read re-checks the
+boundary before serving, which also covers entries promoted from L2 to L1.
+A decision whose grants already lapsed is returned once from the authoritative
+evaluation but never cached.
 
 Bulk invalidation accepts 1–500 typed targets (user, resource, policy, or role/group
 dependency), advances the tenant version once, evicts matching local L1 entries,
@@ -184,6 +205,90 @@ MOVED/ASK redirects automatically. The multiplexer is always built with
 `AbortOnConnectFail = false` so a failed initial connect retries in the
 background. TLS client-certificate selection and per-endpoint Sentinel
 credentials are deferred: configure them through the connection string.
+
+### Redis cache backup and disaster recovery
+
+The authorization cache is a **derived, rebuildable** store. PostgreSQL holds the
+authoritative permissions and ACL entries; every cache miss falls through to the
+database. Disaster recovery for the cache is therefore an availability concern,
+never a data-recovery concern: the safest recovery is an empty cache.
+
+**Persistence tradeoffs (RDB snapshots vs AOF).** The local Compose Redis already
+enables AOF (`--appendonly yes` with the `redis-data` volume). AOF journals every
+write and, with the default `appendfsync everysec`, loses at most about one
+second of writes at the cost of larger files and a replay-based restart. RDB
+snapshots (`--save <seconds> <changes>`, or `BGSAVE`) are compact point-in-time
+files that restart fast but lose everything since the last snapshot. The
+recommended combination for a deployment that wants warm-restart optimization is
+both: AOF for the small loss window and a scheduled RDB as the cold-backup
+artifact. For the authorization cache specifically, either choice is acceptable,
+because the versioned-key rule below makes restored entries harmless.
+
+**Versioned-key safety on restore.** Every ACL and permission cache key embeds
+the tenant, global, and user security versions current at write time. Restoring
+a Redis backup (or failing over to a replica with stale data) cannot resurrect
+stale authorization decisions: lookups build keys from the *current* security
+versions, so old-version entries are unreachable and simply expire through
+their TTLs. This is the same mechanism that makes a lost Pub/Sub invalidation
+harmless.
+
+**Backup procedure.** To take a backup without stopping the service:
+
+```bash
+# Snapshot to RDB without blocking Redis
+docker exec game-guild-redis redis-cli BGSAVE
+# Copy the artifact out of the volume, then store it offsite (encrypted)
+docker run --rm -v game-guild-redis-data:/data -v "$PWD:/backup" alpine \
+  cp /data/dump.rdb /backup/redis-auth-cache-$(date -u +%Y%m%dT%H%M%SZ).rdb
+```
+
+Alternative for remote capture: `redis-cli --rdb /backup/dump.rdb`. Schedule
+`BGSAVE` through `--save 900 1` (or the deployment's scheduler) and keep the
+retention the deployment requires; the files are small because cache values are
+single enum decisions.
+
+**Restore procedure (database-authoritative).**
+
+1. Prefer not restoring at all: start Redis empty and let the cache refill from
+   misses. This is the correct choice after any permission incident.
+2. If warm restart is wanted (for example restoring a whole host), restore the
+   RDB into the `redis-data` volume (or AOF files) while the API is stopped, then
+   start Redis, then the API. Restored entries whose embedded security versions
+   still match remain usable; everything else is unreachable and expires.
+3. After a restore, optionally prewarm hot decisions with
+   `POST /v{version}/permissions/cache:warm` and let popularity-based warming
+   refill the rest.
+4. Never restore a backup into a deployment whose database was rolled back
+   further than the backup: the database is authoritative, and a cache newer
+   than the database only causes harmless misses, but a database rollback must
+   be followed by a cache flush (below) so long-TTL entries cannot mask the
+   rollback.
+
+**Flush procedure for a suspect or corrupted cache.** Delete only this
+deployment's key namespace, never `FLUSHALL`/`FLUSHDB` on a shared Redis:
+
+```bash
+# The instanceName configured in AddAuthorizationRedisCache prefixes every key
+docker exec game-guild-redis sh -c \
+  'redis-cli --scan --pattern "gg:auth:*" | xargs -r redis-cli UNLINK'
+```
+
+Then warm as in step 3. (Redis `SCAN` never blocks the server; `UNLINK` deletes
+in the background.)
+
+**Failover monitoring.** The Compose healthcheck (`redis-cli ping`) gates
+container restarts. At the application boundary, the multiplexer reconnects in
+the background (`AbortOnConnectFail = false`, `RedisConnectRetry`) and the cache
+degrades to database reads while Redis is unavailable — watch the cache metrics
+for sustained miss-ratio elevation (alert rules in
+[authorization-cache-alerts.yml](./authorization-cache-alerts.yml)) as the
+signal of a degraded or failed Redis. For the Redis server itself, export
+`redis_up`, `redis_master_repl_offset` drift on replicas, `redis_aof_last_write_status`,
+and `redis_rdb_last_save_timestamp_seconds` staleness into the same Prometheus
+pipeline that loads the authorization-cache rules, and route alerts through the
+Alertmanager receiver configured for the deployment. Sentinel and Cluster
+topologies additionally alert on `redis_master_up` / managed-failover events
+from the provider.
 
 The authorization and authentication unit suites cover the L1/L2 cache behavior,
 DI registration, version increments, serialized event payloads, subscriber

@@ -107,10 +107,25 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
         score += Math.Min(password.Length * 2, 25);
 
         // Character variety score (max 40 points)
-        if (Regex.IsMatch(password, @"[a-z]")) score += 10;
-        if (Regex.IsMatch(password, @"[A-Z]")) score += 10;
-        if (Regex.IsMatch(password, @"[0-9]")) score += 10;
-        if (Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>/?]")) score += 10;
+        if (Regex.IsMatch(password, @"[a-z]"))
+        {
+            score += 10;
+        }
+
+        if (Regex.IsMatch(password, @"[A-Z]"))
+        {
+            score += 10;
+        }
+
+        if (Regex.IsMatch(password, @"[0-9]"))
+        {
+            score += 10;
+        }
+
+        if (Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>/?]"))
+        {
+            score += 10;
+        }
 
         // Complexity bonus (max 35 points)
         var uniqueChars = password.Distinct().Count();
@@ -308,9 +323,8 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
             result.ValidationFailures.Add("Password is too common and easily guessable");
         }
 
-        result.StrengthScore = CalculatePasswordStrength(password);
-
-        result.StrengthLevel = result.StrengthScore switch
+        var strengthScore = CalculatePasswordStrength(password);
+        var strengthLevel = strengthScore switch
         {
             >= 80 => "Strong",
             >= 60 => "Good",
@@ -319,7 +333,10 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
             _ => "Very Weak"
         };
 
-        logger.LogDebug("Password strength validation: {IsValid}, Score: {Score}, Level: {Level}", result.IsValid, result.StrengthScore, result.StrengthLevel);
+        result.StrengthScore = strengthScore;
+        result.StrengthLevel = strengthLevel;
+
+        logger.LogDebug("Password strength validation completed");
 
         return result;
     }

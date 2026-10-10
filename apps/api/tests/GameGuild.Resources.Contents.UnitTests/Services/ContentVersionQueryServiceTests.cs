@@ -13,17 +13,16 @@ namespace GameGuild.Resources.Contents.UnitTests.Services;
 public class ContentVersionQueryServiceTests
 {
     private readonly Mock<IApplicationDbContext> _dbMock;
-    private readonly Mock<ILogger<ContentVersionQueryService>> _loggerMock;
     private readonly List<ContentVersion> _versions;
     private readonly ContentVersionQueryService _service;
 
     public ContentVersionQueryServiceTests()
     {
         _dbMock = new Mock<IApplicationDbContext>();
-        _loggerMock = new Mock<ILogger<ContentVersionQueryService>>();
+        Mock<ILogger<ContentVersionQueryService>> loggerMock = new Mock<ILogger<ContentVersionQueryService>>();
         _versions = new List<ContentVersion>();
 
-        _service = new ContentVersionQueryService(_dbMock.Object, _loggerMock.Object);
+        _service = new ContentVersionQueryService(_dbMock.Object, loggerMock.Object);
     }
 
     private void SetupDbSet()

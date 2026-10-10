@@ -43,13 +43,18 @@ public sealed class PostgreSqlDurablePayoutReservationWorkflow(
         var operation = request.Operation;
         var replay = operations.FindReplay(operation.TenantId, operation.IdempotencyKey.Value, operation.RequestHash);
         if (replay is not null)
+        {
             return replay;
+        }
+
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             dbContext, IsolationLevel.Serializable, async transactionToken =>
         {
             replay = operations.FindReplay(operation.TenantId, operation.IdempotencyKey.Value, operation.RequestHash);
             if (replay is not null)
+            {
                 return replay;
+            }
 
             var fragments = reservations.Reserve(new FifoFragmentReservationRequest(
                 operation.Id,
@@ -60,7 +65,9 @@ public sealed class PostgreSqlDurablePayoutReservationWorkflow(
                 PersistedFragmentReservationPurpose.Payout,
                 operation.CreatedAt));
             if (fragments.Sum(fragment => fragment.Amount.Units) != operation.Amount.Units)
+            {
                 throw new RegisteredPostingRejectedException("Payout FIFO reservations do not match the requested hard-coin amount.");
+            }
 
             var sourceRoots = fragments
                 .Select(fragment => fragment.RootSourceStampId)
@@ -91,8 +98,11 @@ public sealed class PostgreSqlDurablePayoutReservationWorkflow(
                     operationToken).ConfigureAwait(false);
                 if (authority.TenantId != operation.TenantId || authority.ActorId != operation.ActorId ||
                     authority.RiskDecisionId != receipt.RiskDecisionId)
+                {
                     throw new InvalidOperationException(
-                        "The registered posting authority does not match the payout actor and tenant.");
+                    "The registered posting authority does not match the payout actor and tenant.");
+                }
+
                 var authorizedOperation = operation with
                 {
                     RiskDecisionId = authorization.RiskDecisionId,
@@ -151,8 +161,10 @@ public sealed class PostgreSqlDurablePayoutReservationWorkflow(
             !string.Equals(receipt.ProviderHash, request.ProviderHash.Trim(), StringComparison.Ordinal) ||
             !string.Equals(receipt.DestinationHash, operation.DestinationHash, StringComparison.Ordinal) ||
             !receipt.SourceRootHashes.SequenceEqual(rootHashes, StringComparer.Ordinal))
+        {
             throw new InvalidOperationException(
-                "The payout capability receipt does not match the durable reservation snapshot.");
+            "The payout capability receipt does not match the durable reservation snapshot.");
+        }
     }
 
     private static PostingRequest CreateReservationPosting(PayoutOperation operation) => new(
@@ -187,24 +199,48 @@ public sealed class PostgreSqlDurablePayoutReservationWorkflow(
     {
         var operation = request.Operation;
         if (operation.Id == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation ID is required.", nameof(request));
+        }
+
         if (operation.TenantId == Guid.Empty)
+        {
             throw new ArgumentException("Payout operation tenant ID is required.", nameof(request));
+        }
+
         if (operation.State != PayoutOperationState.Reserved || operation.Version != 1)
+        {
             throw new InvalidOperationException("Only a new reserved payout operation can create an immutable reservation posting.");
+        }
+
         if (operation.Amount.Currency != CurrencyCode.HardCoin || operation.Amount.Units <= 0)
+        {
             throw new ArgumentException("Payout reservations require a positive hard-coin amount.", nameof(request));
+        }
+
         if (operation.RiskDecisionId != Guid.Empty)
+        {
             throw new InvalidOperationException("New payout reservations cannot carry a client-issued risk decision.");
+        }
+
         if (operation.KillSwitchEpoch < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(request), "Payout kill-switch epochs cannot be negative.");
+        }
+
         if (operation.FencingToken <= 0 || operation.ReserveAuthorizationEpoch <= 0)
+        {
             throw new ArgumentException("Payout reservation control epochs must be positive.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.JurisdictionCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReauthenticationEvidenceHash);
         if (request.ReauthenticationEvidenceHash.Trim().Length != 64)
+        {
             throw new ArgumentException(
-                "Payout reauthentication evidence hashes must contain 64 characters.", nameof(request));
+            "Payout reauthentication evidence hashes must contain 64 characters.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ProviderHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(operation.RequestHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(operation.ProviderAccountId);

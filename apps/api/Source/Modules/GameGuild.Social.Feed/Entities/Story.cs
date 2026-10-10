@@ -15,11 +15,21 @@ public sealed class Story : EntityBase
         string? caption,
         DateTime createdAt)
     {
-        if (authorId == Guid.Empty) throw new ArgumentException("An author is required.", nameof(authorId));
-        if (assetReferenceId == Guid.Empty) throw new ArgumentException("An asset is required.", nameof(assetReferenceId));
+        if (authorId == Guid.Empty)
+        {
+            throw new ArgumentException("An author is required.", nameof(authorId));
+        }
+
+        if (assetReferenceId == Guid.Empty)
+        {
+            throw new ArgumentException("An asset is required.", nameof(assetReferenceId));
+        }
 
         var normalizedCaption = string.IsNullOrWhiteSpace(caption) ? null : caption.Trim();
-        if (normalizedCaption?.Length > 280) throw new ArgumentOutOfRangeException(nameof(caption), "Story captions are limited to 280 characters.");
+        if (normalizedCaption?.Length > 280)
+        {
+            throw new ArgumentOutOfRangeException(nameof(caption), "Story captions are limited to 280 characters.");
+        }
 
         return new Story
         {

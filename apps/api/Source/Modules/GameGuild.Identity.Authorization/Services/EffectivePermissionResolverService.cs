@@ -30,6 +30,19 @@ namespace GameGuild.Identity.Authorization;
 ///         broken plugin can neither open nor break the permission decision path.
 ///     </para>
 ///     <para>
+///         <b>External authorization decisions (issue #146).</b> A registered
+///         <see cref="IExternalAuthorizationDecisionProvider"/> is consulted for every
+///         locally-allowed permission after all local layers and evaluation extensions,
+///         immediately before the DENY-WINS subtraction. The external layer is
+///         <b>veto-only</b>: an external deny unions into the deny set (it overrides a
+///         local allow), while an external allow, a not-applicable and a missing decision
+///         never add or resurrect a permission — grants remain exclusively local
+///         (fail-closed paramount; absent = deny per #327). The static system-account
+///         wildcard stays non-deniable. A provider that violates the never-throw
+///         contract fails the permission under question closed. See
+///         <c>apps/api/docs/effective-permission-resolution.md</c>.
+///     </para>
+///     <para>
 ///         <b>Evaluation throttle (issue #358).</b> When the optional
 ///         <see cref="IEvaluationDenialThrottleService"/> reports a throttled user+tenant
 ///         pair, resolution short-circuits to an empty fail-closed result
@@ -46,7 +59,8 @@ public sealed class EffectivePermissionResolverService(
     ILogger<EffectivePermissionResolverService> logger,
     IJitElevationRequestRepository? jitElevationRepository = null,
     IEnumerable<IPermissionEvaluationExtension>? evaluationExtensions = null,
-    IEvaluationDenialThrottleService? denialThrottle = null
+    IEvaluationDenialThrottleService? denialThrottle = null,
+    IExternalAuthorizationDecisionProvider? externalDecisionProvider = null
 ) : IEffectivePermissionResolver
 {
     private readonly AuthorizationOptions _authOptions = authorizationOptions.Value;
@@ -63,6 +77,7 @@ public sealed class EffectivePermissionResolverService(
         {
             logger.LogWarning(
                 "Effective permission resolution requested with an invalid context (user {UserId}, tenant {TenantId}, resource {ResourceType}/{ResourceId}) - returning empty permissions (fail-closed).",
+                // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
                 context.UserId, context.TenantId, context.ResourceType ?? "<none>", context.ResourceId ?? "<none>");
             return FailClosed(context);
         }
@@ -247,6 +262,13 @@ public sealed class EffectivePermissionResolverService(
             denies.UnionWith(contribution.AdditionalDenies);
         }
 
+        // External authorization-decision layer (issue #146): a registered decision
+        // provider is consulted for every locally-allowed permission after all local
+        // layers and evaluation extensions. The layer is veto-only — an external deny
+        // unions into the deny set below, an external allow / not-applicable / missing
+        // decision changes nothing. Grants stay exclusively local (fail-closed).
+        await AddExternalAuthorizationLayerAsync(context, allows, denies, sources, ct).ConfigureAwait(false);
+
         // DENY-WINS: subtract every layer's explicit denies. Static (system-account)
         // permissions are the only grants that survive an explicit deny.
         var effectivePermissions = new HashSet<string>(allows, StringComparer.OrdinalIgnoreCase);
@@ -256,6 +278,7 @@ public sealed class EffectivePermissionResolverService(
             {
                 logger.LogWarning(
                     "Attempted to deny static permission {Permission} for user {UserId} - denies cannot override static grants",
+                    // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
                     denied, context.UserId);
                 continue;
             }
@@ -268,6 +291,7 @@ public sealed class EffectivePermissionResolverService(
 
         logger.LogDebug(
             "Resolved {Count} effective permissions ({AllowCount} allowed, {DenyCount} denied) for user {UserId} in tenant {TenantId}",
+            // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
             effectivePermissions.Count, allows.Count, denies.Count, context.UserId, context.TenantId);
 
         return new EffectivePermissions
@@ -322,6 +346,77 @@ public sealed class EffectivePermissionResolverService(
         var hasAny = effective.HasAnyPermission(permissions);
         RecordDeniedEvaluationIfNeeded(userId, tenantId, effective, hasAny);
         return hasAny;
+    }
+
+    /// <summary>
+    ///     External authorization-decision layer (issue #146). Consults the registered
+    ///     <see cref="IExternalAuthorizationDecisionProvider"/> for every locally-allowed
+    ///     permission and unions external denials into the deny set, which the DENY-WINS
+    ///     subtraction then applies like any local deny. Veto-only by design: no external
+    ///     outcome adds a permission, so an external allow can never override a local deny
+    ///     and can never mint a grant. Static system-account grants are not queried (they
+    ///     are non-deniable anyway). An implementation that throws despite the
+    ///     never-throw contract denies the permission under question (fail-closed).
+    /// </summary>
+    private async Task AddExternalAuthorizationLayerAsync(
+        EffectivePermissionContext context,
+        HashSet<string> allows,
+        HashSet<string> denies,
+        Dictionary<string, PermissionSource> sources,
+        CancellationToken ct)
+    {
+        if (externalDecisionProvider is null || allows.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var permission in allows)
+        {
+            if (sources.TryGetValue(permission, out var source) && source == PermissionSource.Static)
+            {
+                continue;
+            }
+
+            ExternalAuthorizationDecision? decision;
+            try
+            {
+                decision = await externalDecisionProvider.EvaluateAsync(
+                    new ExternalAuthorizationQuery
+                    {
+                        UserId = context.UserId,
+                        TenantId = context.TenantId,
+                        Permission = permission,
+                        ResourceType = context.ResourceType,
+                        ResourceId = context.ResourceId
+                    },
+                    ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(
+                    exception,
+                    "External authorization decision provider threw while evaluating permission {Permission} for user {UserId} in tenant {TenantId} - the permission fails closed.",
+                    // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
+                    permission, context.UserId, context.TenantId);
+                denies.Add(permission);
+                continue;
+            }
+
+            if (decision is null || decision.Outcome != ExternalAuthorizationOutcome.Deny)
+            {
+                continue;
+            }
+
+            logger.LogDebug(
+                "External authorization decision provider denied permission {Permission} for user {UserId} in tenant {TenantId}: {Reasons}",
+                // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
+                permission, context.UserId, context.TenantId, string.Join("; ", decision.Reasons));
+            denies.Add(permission);
+        }
     }
 
     /// <summary>

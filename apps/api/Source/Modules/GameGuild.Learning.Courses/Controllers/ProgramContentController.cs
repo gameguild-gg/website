@@ -64,11 +64,22 @@ public class ProgramContentController(
 
     var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
 
-    if (content == null || content.ProgramId != programId) return NotFound();
-    if (!access.CanManageContent && access.CanViewLearnerContent && content.Visibility == Visibility.Private) return NotFound();
-    if (!access.CanManageContent && !access.CanViewLearnerContent && content.Visibility != Visibility.Public) return NotFound();
+    if (content == null || content.ProgramId != programId)
+        {
+            return NotFound();
+        }
 
-    var contentDto = content.ToDto();
+        if (!access.CanManageContent && access.CanViewLearnerContent && content.Visibility == Visibility.Private)
+        {
+            return NotFound();
+        }
+
+        if (!access.CanManageContent && !access.CanViewLearnerContent && content.Visibility != Visibility.Public)
+        {
+            return NotFound();
+        }
+
+        var contentDto = content.ToDto();
     return Ok(ResolveProjectedContent([contentDto], access).Single());
   }
 
@@ -76,15 +87,29 @@ public class ProgramContentController(
   [HttpPost("{id}/submit")]
   public async Task<ActionResult<ContentInteractionDto>> SubmitContent(Guid programId, Guid id, [FromBody] SubmitUserContentDto submitDto)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
-    if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentLearner).ConfigureAwait(false)) return Forbid();
+        var currentUserId = GetCurrentUserId();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
-    if (content is null || content.ProgramId != programId) return NotFound();
-    try
+        if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentLearner).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
+        var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
+    if (content is null || content.ProgramId != programId)
+        {
+            return NotFound();
+        }
+
+        try
     {
       ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Submit);
     }
@@ -99,9 +124,12 @@ public class ProgramContentController(
       id,
       submitDto.SubmissionData)).ConfigureAwait(false);
 
-    if (interaction == null) return NotFound();
+    if (interaction == null)
+        {
+            return NotFound();
+        }
 
-    return Ok(interaction.ToDto());
+        return Ok(interaction.ToDto());
   }
 
   /// <summary> Create new program content (resource-level Create permission required on parent Program) </summary>
@@ -109,9 +137,12 @@ public class ProgramContentController(
   [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult<ProgramContentDto>> CreateContent(Guid programId, [FromBody] CreateProgramContentDto createDto)
   {
-    if (createDto.ProgramId != programId) return BadRequest("Program ID in URL must match Program ID in request body");
+    if (createDto.ProgramId != programId)
+        {
+            return BadRequest("Program ID in URL must match Program ID in request body");
+        }
 
-    var content = createDto.ToEntity();
+        var content = createDto.ToEntity();
     try
     {
       ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
@@ -131,16 +162,23 @@ public class ProgramContentController(
   [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult<ProgramContentDto>> UpdateContent(Guid programId, Guid id, [FromBody] UpdateProgramContentDto updateDto)
   {
-    if (updateDto.Id != id) return BadRequest("Content ID in URL must match Content ID in request body");
+    if (updateDto.Id != id)
+        {
+            return BadRequest("Content ID in URL must match Content ID in request body");
+        }
 
-    var existingContent = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
+        var existingContent = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
 
-    if (existingContent == null || existingContent.ProgramId != programId) return NotFound();
+    if (existingContent == null || existingContent.ProgramId != programId)
+        {
+            return NotFound();
+        }
 
-    // Apply updates from DTO
-    existingContent.ApplyUpdates(updateDto);
-    try
+        try
     {
+      // Check the protected persisted state before the request can erase it.
+      ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, existingContent, ProgramContentAcademicMutation.Authoring);
+      existingContent.ApplyUpdates(updateDto);
       ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, existingContent, ProgramContentAcademicMutation.Authoring);
     }
     catch (InvalidOperationException exception)
@@ -161,13 +199,19 @@ public class ProgramContentController(
   {
     var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
 
-    if (content == null || content.ProgramId != programId) return NotFound();
+    if (content == null || content.ProgramId != programId)
+        {
+            return NotFound();
+        }
 
-    var deleted = await sender.Send(new DeleteProgramContentEndpointCommand(id)).ConfigureAwait(false);
+        var deleted = await sender.Send(new DeleteProgramContentEndpointCommand(id)).ConfigureAwait(false);
 
-    if (!deleted) return NotFound();
+    if (!deleted)
+        {
+            return NotFound();
+        }
 
-    return NoContent();
+        return NoContent();
   }
 
   /// <summary> Get child content for a specific parent (resource-level Read permission required on parent Program) </summary>
@@ -175,15 +219,25 @@ public class ProgramContentController(
   public async Task<ActionResult<IEnumerable<ProgramContentDto>>> GetChildContent(Guid programId, Guid parentId)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent && !access.CanViewLearnerContent) return NotFound();
+    if (!access.CanManageContent && !access.CanViewLearnerContent)
+        {
+            return NotFound();
+        }
 
-    // Verify parent belongs to the program
-    var parent = await contentService.GetContentByIdAsync(parentId).ConfigureAwait(false);
+        // Verify parent belongs to the program
+        var parent = await contentService.GetContentByIdAsync(parentId).ConfigureAwait(false);
 
-    if (parent == null || parent.ProgramId != programId) return NotFound("Parent content not found or does not belong to this program");
-    if (!access.CanManageContent && parent.Visibility == Visibility.Private) return NotFound();
+    if (parent == null || parent.ProgramId != programId)
+        {
+            return NotFound("Parent content not found or does not belong to this program");
+        }
 
-    var children = await contentService.GetContentByParentAsync(parentId).ConfigureAwait(false);
+        if (!access.CanManageContent && parent.Visibility == Visibility.Private)
+        {
+            return NotFound();
+        }
+
+        var children = await contentService.GetContentByParentAsync(parentId).ConfigureAwait(false);
     var childrenDtos = children.ToDtos();
 
     return Ok(ResolveProjectedContent(childrenDtos.ToList(), access));
@@ -198,9 +252,12 @@ public class ProgramContentController(
     var newOrder = reorderDto.ContentIds.Select((id, index) => (id, index + 1)).ToList();
     var success = await sender.Send(new ReorderProgramContentEndpointCommand(programId, newOrder)).ConfigureAwait(false);
 
-    if (!success) return BadRequest("Failed to reorder content. Some content items may not exist.");
+    if (!success)
+        {
+            return BadRequest("Failed to reorder content. Some content items may not exist.");
+        }
 
-    return Ok();
+        return Ok();
   }
 
   /// <summary> Move content to a new parent/position (resource-level Edit permission required on parent Program) </summary>
@@ -208,17 +265,26 @@ public class ProgramContentController(
   [RequireCourseCapability(CourseCapability.Edit, "programId")]
   public async Task<ActionResult> MoveContent(Guid programId, Guid id, [FromBody] MoveContentDto moveDto)
   {
-    if (moveDto.ContentId != id) return BadRequest("Content ID in URL must match Content ID in request body");
+    if (moveDto.ContentId != id)
+        {
+            return BadRequest("Content ID in URL must match Content ID in request body");
+        }
 
-    var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
+        var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
 
-    if (content == null || content.ProgramId != programId) return NotFound();
+    if (content == null || content.ProgramId != programId)
+        {
+            return NotFound();
+        }
 
-    var success = await sender.Send(new MoveProgramContentEndpointCommand(id, moveDto.NewParentId, moveDto.NewSortOrder)).ConfigureAwait(false);
+        var success = await sender.Send(new MoveProgramContentEndpointCommand(id, moveDto.NewParentId, moveDto.NewSortOrder)).ConfigureAwait(false);
 
-    if (!success) return BadRequest("Failed to move content");
+    if (!success)
+        {
+            return BadRequest("Failed to move content");
+        }
 
-    return Ok();
+        return Ok();
   }
 
   /// <summary> Get required content for a program (resource-level Read permission required on parent Program) </summary>
@@ -226,9 +292,12 @@ public class ProgramContentController(
   public async Task<ActionResult<IEnumerable<ProgramContentDto>>> GetRequiredContent(Guid programId)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent && !access.CanViewLearnerContent) return NotFound();
+    if (!access.CanManageContent && !access.CanViewLearnerContent)
+        {
+            return NotFound();
+        }
 
-    var requiredContent = await contentService.GetRequiredContentAsync(programId).ConfigureAwait(false);
+        var requiredContent = await contentService.GetRequiredContentAsync(programId).ConfigureAwait(false);
     var contentDtos = requiredContent.ToDtos();
 
     return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
@@ -239,9 +308,12 @@ public class ProgramContentController(
   public async Task<ActionResult<IEnumerable<ProgramContentDto>>> GetContentByType(Guid programId, ProgramContentType type)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent && !access.CanViewLearnerContent) return NotFound();
+    if (!access.CanManageContent && !access.CanViewLearnerContent)
+        {
+            return NotFound();
+        }
 
-    var content = await contentService.GetContentByTypeAsync(programId, type).ConfigureAwait(false);
+        var content = await contentService.GetContentByTypeAsync(programId, type).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
     return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
@@ -252,12 +324,18 @@ public class ProgramContentController(
   public async Task<ActionResult<IEnumerable<ProgramContentDto>>> GetContentByVisibility(Guid programId, Visibility visibility)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent && !access.CanViewLearnerContent) return NotFound();
+    if (!access.CanManageContent && !access.CanViewLearnerContent)
+        {
+            return NotFound();
+        }
 
-    // Learners cannot enumerate Private content even by explicit filter.
-    if (!access.CanManageContent && visibility == Visibility.Private) return Ok(Array.Empty<ProgramContentDto>());
+        // Learners cannot enumerate Private content even by explicit filter.
+        if (!access.CanManageContent && visibility == Visibility.Private)
+        {
+            return Ok(Array.Empty<ProgramContentDto>());
+        }
 
-    var content = await contentService.GetContentByVisibilityAsync(programId, visibility).ConfigureAwait(false);
+        var content = await contentService.GetContentByVisibilityAsync(programId, visibility).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
     return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
@@ -269,10 +347,17 @@ public class ProgramContentController(
   public async Task<ActionResult<IEnumerable<ProgramContentDto>>> SearchContent(Guid programId, [FromBody] SearchContentDto searchDto)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent && !access.CanViewLearnerContent) return NotFound();
-    if (searchDto.ProgramId != programId) return BadRequest("Program ID in URL must match Program ID in request body");
+    if (!access.CanManageContent && !access.CanViewLearnerContent)
+        {
+            return NotFound();
+        }
 
-    var content = await sender.Send(new SearchProgramContentEndpointQuery(programId, searchDto.SearchTerm)).ConfigureAwait(false);
+        if (searchDto.ProgramId != programId)
+        {
+            return BadRequest("Program ID in URL must match Program ID in request body");
+        }
+
+        var content = await sender.Send(new SearchProgramContentEndpointQuery(programId, searchDto.SearchTerm)).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
     return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
@@ -283,9 +368,12 @@ public class ProgramContentController(
   public async Task<ActionResult<ContentStatsDto>> GetContentStats(Guid programId)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent) return NotFound();
+    if (!access.CanManageContent)
+        {
+            return NotFound();
+        }
 
-    var totalContent = await contentService.GetContentCountAsync(programId).ConfigureAwait(false);
+        var totalContent = await contentService.GetContentCountAsync(programId).ConfigureAwait(false);
     var requiredContent = await contentService.GetRequiredContentCountAsync(programId).ConfigureAwait(false);
 
     var stats = new ContentStatsDto { ProgramId = programId, TotalContent = totalContent, RequiredContent = requiredContent, OptionalContent = totalContent - requiredContent };
@@ -299,12 +387,23 @@ public class ProgramContentController(
   public async Task<ActionResult<CodingAssignmentContent>> GetCodingAssignmentPublic(Guid programId, Guid id)
   {
     var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
-    if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentLearner).ConfigureAwait(false)) return Forbid();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var content = await codingAssignmentService.GetPublicAsync(programId, id, currentUserId.Value).ConfigureAwait(false);
-    if (content == null) return NotFound();
-    return Ok(content);
+        if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentLearner).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
+        var content = await codingAssignmentService.GetPublicAsync(programId, id, currentUserId.Value).ConfigureAwait(false);
+    if (content == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(content);
   }
 
   /// <summary> Instructor view of a coding assignment: full content including Private tests and files. </summary>
@@ -313,12 +412,23 @@ public class ProgramContentController(
   public async Task<ActionResult<CodingAssignmentContent>> GetCodingAssignmentFull(Guid programId, Guid id)
   {
     var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
-    if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentManage).ConfigureAwait(false)) return Forbid();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var content = await codingAssignmentService.GetFullAsync(programId, id).ConfigureAwait(false);
-    if (content == null) return NotFound();
-    return Ok(content);
+        if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentManage).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
+        var content = await codingAssignmentService.GetFullAsync(programId, id).ConfigureAwait(false);
+    if (content == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(content);
   }
 
   /// <summary> Author a coding assignment: UPSERT onto ProgramContent.JsonBody + sync grading to linked Assessment. </summary>
@@ -329,13 +439,23 @@ public class ProgramContentController(
     Guid id,
     [FromBody] CodingAssignmentContent body)
   {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-    var currentUserId = GetCurrentUserId();
-    if (currentUserId == null) return Unauthorized();
-    if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentManage).ConfigureAwait(false)) return Forbid();
+        var currentUserId = GetCurrentUserId();
+    if (currentUserId == null)
+        {
+            return Unauthorized();
+        }
 
-    var result = await sender.Send(new PutCodingAssignmentEndpointCommand(programId, id, body, currentUserId.Value)).ConfigureAwait(false);
+        if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentManage).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
+
+        var result = await sender.Send(new PutCodingAssignmentEndpointCommand(programId, id, body, currentUserId.Value)).ConfigureAwait(false);
     if (!result.IsSuccess)
     {
       return result.Error.Type == ErrorType.NotFound
@@ -386,9 +506,17 @@ public class ProgramContentController(
 
   private List<ProgramContentDto> ResolveProjectedContent(List<ProgramContentDto> content, ContentAccessResolution access)
   {
-    if (access.CanManageContent) return content;
-    if (access.CanViewLearnerContent) return ProjectLearnerContent(content);
-    return SanitizePublicContent(content);
+    if (access.CanManageContent)
+        {
+            return content;
+        }
+
+        if (access.CanViewLearnerContent)
+        {
+            return ProjectLearnerContent(content);
+        }
+
+        return SanitizePublicContent(content);
   }
 
   private List<ProgramContentDto> ProjectLearnerContent(IEnumerable<ProgramContentDto> content)

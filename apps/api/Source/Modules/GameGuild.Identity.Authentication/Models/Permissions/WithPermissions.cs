@@ -112,7 +112,10 @@ public abstract class WithPermissions : PermissionBase
     /// <returns>Collection of permission types</returns>
     public IEnumerable<PermissionType> GetPermissionsAsEnum()
     {
-        if (string.IsNullOrWhiteSpace(Permissions)) return [];
+        if (string.IsNullOrWhiteSpace(Permissions))
+        {
+            return [];
+        }
 
         return Permissions
             .Split(',', StringSplitOptions.RemoveEmptyEntries)

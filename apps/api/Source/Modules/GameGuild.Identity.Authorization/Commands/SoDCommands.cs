@@ -88,7 +88,9 @@ public sealed class UpdateSoDRuleHandler(ISoDService service)
     {
         var existing = await service.GetRuleByIdAsync(request.RuleId, cancellationToken).ConfigureAwait(false);
         if (existing == null)
+        {
             return null;
+        }
 
         existing.Name = request.Name;
         existing.Description = request.Description;

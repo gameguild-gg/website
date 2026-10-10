@@ -1,0 +1,28 @@
+{
+  "commit": "7b58716d96c3ae4c0c4e6f72e29b16137bb6224b",
+  "upstreamGitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
+  "normalizedArchiveGitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
+  "archiveSha256": "96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce",
+  "archiveBytes": 270492404,
+  "verifiedFileAndSymlinkEntries": 175014,
+  "regularFiles": 174995,
+  "symlinks": 19,
+  "ordinaryFilesIdenticalToReviewedPrimary": 175013,
+  "onlyContentDifference": "clang/bindings/python/.git_archival.txt",
+  "describeName": "llvmorg-23-init-13463-g7b58716d96c3ae",
+  "describeAbbreviationLength": 14,
+  "fullCommitDateTagAndDistanceIdentical": true,
+  "allPathsModesBlobsMatchPinnedTreeAfterReviewedExportTransforms": true,
+  "extraMissingOrDuplicateFiles": false,
+  "unverifiedDifferences": 0,
+  "extractionOrExecutionPerformed": false,
+  "previousReviewedArchiveSha256": "0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5",
+  "previousExportTransformProofSha256": "b8e3b43f81d4f84e9375cb5ff602645595957b9d1d88ca8b52848226e226b986",
+  "officialCommitSnapshotSha256": "3859c0c43def9963c764434ba6270cf78595d2e100cef62136ca4513e5db24ef",
+  "references": [
+    "https://api.github.com/repos/llvm/llvm-project/git/commits/7b58716d96c3ae4c0c4e6f72e29b16137bb6224b",
+    "https://git-scm.com/docs/git-archive",
+    "https://git-scm.com/docs/gitattributes"
+  ],
+  "observedCiRunId": 37506641178
+}

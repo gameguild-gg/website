@@ -1,16 +1,20 @@
 import assert from "node:assert/strict";
-import { existsSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 import { test } from "node:test";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+import { readPnpmSecurityConfig } from "../read-pnpm-config.mjs";
+
+const repositoryRoot = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../..",
+);
 const virtualStore = join(repositoryRoot, "node_modules/.pnpm");
 const require = createRequire(import.meta.url);
 const packageRoots = new Set();
-
 for (const entry of readdirSync(virtualStore, { withFileTypes: true })) {
   if (!entry.isDirectory() || entry.name.startsWith("sprintf-js@")) continue;
   const candidate = join(virtualStore, entry.name, "node_modules/sprintf-js");
@@ -22,7 +26,82 @@ for (const candidate of [
 ]) {
   if (existsSync(candidate)) packageRoots.add(realpathSync(candidate));
 }
-assert.ok(packageRoots.size > 0, "Installed consumers must resolve sprintf-js");
+assert.ok(packageRoots.size > 0, "The installed graph must contain sprintf-js");
+
+test("the dependency gate applies reviewed patches before auditing installed bytes", () => {
+  const installer = readFileSync(join(repositoryRoot, "scripts/ci/install-and-audit-pnpm.sh"), "utf8");
+  const steps = [
+    'rm -f "$repository_root/node_modules/.pnpm-workspace-state.json"',
+    "\npnpm install --frozen-lockfile --ignore-scripts\n",
+    "\npnpm rebuild braces sprintf-js\n",
+    'cp "$virtual_store_lock" "$audit_lock"',
+    'node "$script_dir/validate-pnpm-audit.mjs"',
+  ];
+  let previous = -1;
+  for (const step of steps) {
+    const position = installer.indexOf(step);
+    assert.ok(position > previous, `Missing or unordered dependency step: ${step}`);
+    previous = position;
+  }
+  for (const packageRoot of packageRoots) {
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+    for (const hook of ["preinstall", "install", "postinstall"]) {
+      assert.equal(manifest.scripts?.[hook], undefined, `Unexpected reviewed-package hook: ${hook}`);
+    }
+  }
+});
+
+for (const packageRoot of packageRoots) {
+  const { sprintf, vsprintf } = require(packageRoot);
+  const label = packageRoot.replace(repositoryRoot, "");
+  test(`${label}: excessive floating precision cannot raise RangeError`, () => {
+    for (const kind of ["e", "f", "g"]) {
+      for (const precision of ["101", "1000000000", "9".repeat(400)]) {
+        let formatted;
+        assert.doesNotThrow(() => {
+          formatted = sprintf(`%.${precision}${kind}`, 1.2345);
+        });
+        assert.equal(typeof formatted, "string");
+        assert.ok(formatted.length <= 110);
+        assert.doesNotThrow(() => vsprintf(`%.${precision}${kind}`, [1.2345]));
+      }
+    }
+    assert.doesNotThrow(() => sprintf("%.0g", 1.2345));
+  });
+  test(`${label}: ordinary formatting and valid precision remain compatible`, () => {
+    assert.equal(sprintf("%s: %04d", "value", 7), "value: 0007");
+    assert.equal(sprintf("%.2f", 1.2345), "1.23");
+    assert.equal(sprintf("%.2e", 1.2345), "1.23e+0");
+    assert.equal(sprintf("%.3g", 1.2345), "1.23");
+    assert.equal(vsprintf("%(name)s", [{ name: "value" }]), "value");
+    assert.equal(sprintf("%.100f", 1.2345), (1.2345).toFixed(100));
+  });
+}
+
+test("the advisory mitigation requires the exact installed patch on every consumer", () => {
+  const pnpmConfig = readPnpmSecurityConfig(repositoryRoot);
+  assert.equal(
+    pnpmConfig.patchedDependencies?.["sprintf-js@1.1.3"],
+    "patches/sprintf-js@1.1.3.patch",
+  );
+  assert.equal(pnpmConfig.auditConfig, undefined);
+  assert.deepEqual(pnpmConfig.onlyBuiltDependencies, ["braces", "sprintf-js"]);
+  const scannerExceptions = readFileSync(
+    join(repositoryRoot, ".trivyignore"),
+    "utf8",
+  )
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"));
+  assert.deepEqual(scannerExceptions, []);
+  for (const packageRoot of packageRoots) {
+    assert.match(packageRoot, /sprintf-js@1\.1\.3_patch_hash[=_]/);
+    assert.match(
+      readFileSync(join(packageRoot, "src/sprintf.js"), "utf8"),
+      /function sprintf_precision/,
+    );
+  }
+});
 
 for (const packageRoot of packageRoots) {
   const label = packageRoot.replace(repositoryRoot, "");

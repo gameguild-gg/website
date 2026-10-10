@@ -118,10 +118,16 @@ public class ServiceLevelObjective : EntityBase
     /// <returns>True if alert conditions are met</returns>
     public bool ShouldTriggerAlert()
     {
-        if (!IsEnabled) return false;
+        if (!IsEnabled)
+        {
+            return false;
+        }
 
         // Alert if breached
-        if (Status == SloStatus.Breached) return true;
+        if (Status == SloStatus.Breached)
+        {
+            return true;
+        }
 
         // Alert if at risk (error budget threshold exceeded)
         if (Status == SloStatus.AtRisk && RemainingErrorBudget.HasValue) { return RemainingErrorBudget.Value <= AlertThresholdPercentage; }

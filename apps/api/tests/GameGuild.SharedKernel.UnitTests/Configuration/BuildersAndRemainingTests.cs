@@ -195,6 +195,7 @@ public class RateLimitPoliciesTests
         RateLimitPolicies.ApiKey.Should().NotBeEmpty();
         RateLimitPolicies.ExpensiveOperations.Should().NotBeEmpty();
         RateLimitPolicies.PerIp.Should().NotBeEmpty();
+        RateLimitPolicies.Webhook.Should().NotBeEmpty();
     }
 
     [Theory]
@@ -208,6 +209,7 @@ public class RateLimitPoliciesTests
     [InlineData("api-key")]
     [InlineData("expensive-operations")]
     [InlineData("per-ip")]
+    [InlineData("webhook")]
     public void AllConstants_ShouldHaveExpectedValues(string expectedValue)
     {
         var allPolicies = new[]
@@ -221,7 +223,8 @@ public class RateLimitPoliciesTests
             RateLimitPolicies.Bursty,
             RateLimitPolicies.ApiKey,
             RateLimitPolicies.ExpensiveOperations,
-            RateLimitPolicies.PerIp
+            RateLimitPolicies.PerIp,
+            RateLimitPolicies.Webhook
         };
         allPolicies.Should().Contain(expectedValue);
     }

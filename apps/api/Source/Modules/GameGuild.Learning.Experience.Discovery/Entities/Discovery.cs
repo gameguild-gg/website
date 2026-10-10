@@ -54,15 +54,51 @@ public class FeaturedContent : EntityBase
         bool? isActive = null,
         string? targetAudience = null)
     {
-        if (title is not null) Title = title;
-        if (subtitle is not null) Subtitle = subtitle;
-        if (imageUrl is not null) ImageUrl = imageUrl;
-        if (linkUrl is not null) LinkUrl = linkUrl;
-        if (displayOrder.HasValue) DisplayOrder = displayOrder.Value;
-        if (startsAt.HasValue) StartsAt = startsAt.Value;
-        if (endsAt.HasValue) EndsAt = endsAt.Value;
-        if (isActive.HasValue) IsActive = isActive.Value;
-        if (targetAudience is not null) TargetAudience = targetAudience;
+        if (title is not null)
+        {
+            Title = title;
+        }
+
+        if (subtitle is not null)
+        {
+            Subtitle = subtitle;
+        }
+
+        if (imageUrl is not null)
+        {
+            ImageUrl = imageUrl;
+        }
+
+        if (linkUrl is not null)
+        {
+            LinkUrl = linkUrl;
+        }
+
+        if (displayOrder.HasValue)
+        {
+            DisplayOrder = displayOrder.Value;
+        }
+
+        if (startsAt.HasValue)
+        {
+            StartsAt = startsAt.Value;
+        }
+
+        if (endsAt.HasValue)
+        {
+            EndsAt = endsAt.Value;
+        }
+
+        if (isActive.HasValue)
+        {
+            IsActive = isActive.Value;
+        }
+
+        if (targetAudience is not null)
+        {
+            TargetAudience = targetAudience;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 
@@ -74,10 +110,22 @@ public class FeaturedContent : EntityBase
 
     public bool IsCurrentlyActive()
     {
-        if (!IsActive) return false;
+        if (!IsActive)
+        {
+            return false;
+        }
+
         var now = SystemClock.UtcNow;
-        if (StartsAt.HasValue && now < StartsAt.Value) return false;
-        if (EndsAt.HasValue && now > EndsAt.Value) return false;
+        if (StartsAt.HasValue && now < StartsAt.Value)
+        {
+            return false;
+        }
+
+        if (EndsAt.HasValue && now > EndsAt.Value)
+        {
+            return false;
+        }
+
         return true;
     }
 }
@@ -127,10 +175,26 @@ public class CourseCollection : EntityBase
         string? imageUrl = null,
         bool? isFeatured = null)
     {
-        if (title is not null) Title = title;
-        if (description is not null) Description = description;
-        if (imageUrl is not null) ImageUrl = imageUrl;
-        if (isFeatured.HasValue) IsFeatured = isFeatured.Value;
+        if (title is not null)
+        {
+            Title = title;
+        }
+
+        if (description is not null)
+        {
+            Description = description;
+        }
+
+        if (imageUrl is not null)
+        {
+            ImageUrl = imageUrl;
+        }
+
+        if (isFeatured.HasValue)
+        {
+            IsFeatured = isFeatured.Value;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 

@@ -29,6 +29,12 @@ public class WebhookSettings
     ///     Retry policy configuration for failed webhook processing.
     /// </summary>
     public WebhookRetryPolicy RetryPolicy { get; set; } = new WebhookRetryPolicy();
+
+    /// <summary>
+    ///     Security hardening for webhook callback endpoints (source IP allowlist,
+    ///     suspicious-activity auto-blocking). See <see cref="WebhookSecuritySettings"/>.
+    /// </summary>
+    public WebhookSecuritySettings Security { get; set; } = new WebhookSecuritySettings();
 }
 
 /// <summary>
@@ -74,7 +80,9 @@ public class WebhookRetryPolicy
     public int CalculateDelaySeconds(int attemptNumber)
     {
         if (attemptNumber <= 0)
+        {
             return 0;
+        }
 
         var baseDelay = InitialDelaySeconds * Math.Pow(BackoffMultiplier, attemptNumber - 1);
         var delay = Math.Min(baseDelay, MaxDelaySeconds);

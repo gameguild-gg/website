@@ -20,11 +20,20 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var query = UsageRecords.Where(r => r.TenantId!.Value == tenantId);
 
-        if (type.HasValue) query = query.Where(r => r.Type == type.Value);
+        if (type.HasValue)
+        {
+            query = query.Where(r => r.Type == type.Value);
+        }
 
-        if (fromDate.HasValue) query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(r => r.PeriodStart <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart <= toDate.Value);
+        }
 
         return await query.OrderByDescending(r => r.PeriodStart).ToListAsync(cancellationToken);
     }
@@ -41,9 +50,20 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var query = UsageRecords.Where(r => r.TenantId!.Value == tenantId);
 
-        if (type.HasValue) query = query.Where(r => r.Type == type.Value);
-        if (fromDate.HasValue) query = query.Where(r => r.PeriodStart >= fromDate.Value);
-        if (toDate.HasValue) query = query.Where(r => r.PeriodStart <= toDate.Value);
+        if (type.HasValue)
+        {
+            query = query.Where(r => r.Type == type.Value);
+        }
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart <= toDate.Value);
+        }
 
         // Get total count for pagination metadata
         var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
@@ -97,7 +117,10 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var records = await UsageRecords.Where(r => r.PeriodStart < olderThan).ToListAsync(cancellationToken);
 
-        if (records.Count == 0) return false;
+        if (records.Count == 0)
+        {
+            return false;
+        }
 
         UsageRecords.RemoveRange(records);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -142,7 +165,10 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var records = await UsageRecords.Where(r => r.TenantId!.Value == tenantId && r.Type == type).ToListAsync(cancellationToken);
 
-        if (records.Count == 0) return false;
+        if (records.Count == 0)
+        {
+            return false;
+        }
 
         UsageRecords.RemoveRange(records);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -154,7 +180,10 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var records = await UsageRecords.Where(r => r.TenantId!.Value == tenantId).ToListAsync(cancellationToken);
 
-        if (records.Count == 0) return false;
+        if (records.Count == 0)
+        {
+            return false;
+        }
 
         UsageRecords.RemoveRange(records);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -167,11 +196,20 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var query = UsageRecords.Where(r => r.UserId == userId);
 
-        if (type.HasValue) query = query.Where(r => r.Type == type.Value);
+        if (type.HasValue)
+        {
+            query = query.Where(r => r.Type == type.Value);
+        }
 
-        if (fromDate.HasValue) query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(r => r.PeriodStart <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(r => r.PeriodStart <= toDate.Value);
+        }
 
         return await query.OrderByDescending(r => r.PeriodStart).ToListAsync(cancellationToken);
     }
@@ -197,7 +235,10 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
     {
         var records = await UsageRecords.Where(r => r.UserId == userId && r.Type == type).ToListAsync(cancellationToken);
 
-        if (records.Count == 0) return false;
+        if (records.Count == 0)
+        {
+            return false;
+        }
 
         UsageRecords.RemoveRange(records);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -210,7 +251,9 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
         var query = UsageRecords.AsQueryable();
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId!.Value == tenantId.Value);
+        }
 
         return await query.CountAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -220,7 +263,9 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
         var query = UsageRecords.AsQueryable();
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId!.Value == tenantId.Value);
+        }
 
         // Count records that have archived:true in their metadata
         return await query
@@ -233,7 +278,9 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
         var query = UsageRecords.AsQueryable();
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId!.Value == tenantId.Value);
+        }
 
         return await query
             .OrderBy(r => r.PeriodStart)
@@ -246,10 +293,14 @@ public class UsageRecordRepository(IApplicationDbContext context) : IUsageRecord
         var query = UsageRecords.AsQueryable();
 
         if (tenantId.HasValue)
+        {
             query = query.Where(r => r.TenantId!.Value == tenantId.Value);
+        }
 
         if (archivedOnly)
+        {
             query = query.Where(r => r.Metadata != null && r.Metadata.Contains("\"archived\":true"));
+        }
 
         // Estimate ~200 bytes per record for typical usage record storage
         var recordCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);

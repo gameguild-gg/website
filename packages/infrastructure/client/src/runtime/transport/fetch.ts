@@ -6,6 +6,7 @@
 
 import { ok, err } from '../result/helpers.js';
 import { createApiError, createNetworkError } from '../errors/transform.js';
+import { assertSafeServiceUrl } from '../security/safe-remote-url.js';
 import type { Result } from '../result/types.js';
 import type { ApiError } from '../errors/types.js';
 import type { ApiResponse, RequestConfig, Transport, TransportConfig, Interceptor } from './types.js';
@@ -129,6 +130,8 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
   // Build request options
   const options: RequestInit = {
     method: requestConfig.method,
+    // Origin validation applies to this request, not an unvalidated redirect target.
+    redirect: 'error',
     cache: requestConfig.cache ?? transportConfig.cache,
     headers,
     signal: requestConfig.signal,
@@ -151,7 +154,7 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
   }
 
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(assertSafeServiceUrl(url, transportConfig.baseUrl), options);
 
     if (timeoutId) {
       clearTimeout(timeoutId);
