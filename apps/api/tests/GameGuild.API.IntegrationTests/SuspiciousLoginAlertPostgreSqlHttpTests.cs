@@ -266,7 +266,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
     private WebApplicationFactory<Program> CreateFactory(AdvancingTimeProvider clock,
         string? enabled = null, string? minimumRiskLevel = null, RecordingLoggerProvider? recorder = null,
         string? maxFailedAttemptsPerHour = null) =>
-        fixture.Factory.WithWebHostBuilder(builder =>
+        fixture.CreateFactory(builder =>
         {
             if (enabled is not null)
             {
