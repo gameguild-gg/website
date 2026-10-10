@@ -1,7 +1,7 @@
 'use client';
 import React, { PropsWithChildren, useCallback, useReducer } from 'react';
 import { Web3Context, Web3ContextValue }                     from '../lib/web3-context';
-import { web3Reducer }                                       from '../lib/web3-reducer';
+import { defaultWeb3State, web3Reducer }                                       from '../lib/web3-reducer';
 import { Web3Config, NetworkInfo }                           from '../types';
 
 
@@ -17,7 +17,7 @@ export const Web3Provider = ({
   // initialState = defaultWeb3State,
   // supportedNetworks = defaultSupportedNetworks,
 }: Readonly<PropsWithChildren<Web3ProviderProps>>): React.JSX.Element => {
-  const [state, dispatch] = useReducer(web3Reducer, , createInitialWeb3State);
+  const [state, dispatch] = useReducer(web3Reducer, defaultWeb3State);
 
   const connect = useCallback(async (): Promise<void> => {
     //
