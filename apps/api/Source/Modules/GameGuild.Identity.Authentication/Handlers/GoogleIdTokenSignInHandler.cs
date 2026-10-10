@@ -22,7 +22,7 @@ public sealed class GoogleIdTokenSignInHandler(IAuthService authService, IUserRe
             throw new RequestValidationException(errors);
         }
 
-        var signInRequest = new GoogleIdTokenRequest { IdToken = command.IdToken, TenantId = command.TenantId };
+        var signInRequest = new GoogleIdTokenRequest { IdToken = command.IdToken, TenantId = command.TenantId, RememberMe = command.RememberMe };
 
         var domainResult = await authService.GoogleIdTokenSignInAsync(signInRequest, cancellationToken).ConfigureAwait(false);
 

@@ -178,7 +178,11 @@ async function finalizeAuth(
   });
 
   const encrypted = await encodeSession(token, config);
-  sessionStore.write(encrypted, responseCookies.set.bind(responseCookies));
+  // Storage policy: an explicit non-remember sign-in gets a browser-session cookie;
+  // remember-me (or the configured default) keeps the durable Max-Age cookie.
+  sessionStore.write(encrypted, responseCookies.set.bind(responseCookies), {
+    storage: token.rememberMe === false ? 'session' : 'persistent',
+  });
 
   let session = toSession(token);
   session = await config.callbacks.session({ session, token });

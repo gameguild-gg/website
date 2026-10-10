@@ -26,4 +26,9 @@ public class GitHubCallbackCommand : IRequest<SignInResponse>
     ///     Device fingerprint for session tracking
     /// </summary>
     public string? DeviceFingerprint { get; init; }
+
+    /// <summary>
+    ///     When true, issues a persistent ("remember me") refresh token using the persistent lifetime.
+    /// </summary>
+    public bool? RememberMe { get; init; }
 }

@@ -42,7 +42,7 @@ public class Web3AuthServiceTests
             .Setup(x => x.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("jwt-access-token");
         _jwtTokenServiceMock
-            .Setup(x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("jwt-refresh-token");
         _web3ServiceMock
             .Setup(x => x.VerifySignatureAsync(
@@ -192,7 +192,7 @@ public class Web3AuthServiceTests
         _identity.Sessions.Verify(value => value.CreateSessionAsync(result.SessionId, _identity.User.Id,
             "127.0.0.1", "TestAgent/1.0", "synthetic-hash-jwt-refresh-token", It.IsAny<DateTime>(), "synthetic-device", cancellation.Token), Times.Once);
         _jwtTokenServiceMock.Verify(value => value.GenerateRefreshTokenAsync(_identity.User.Id,
-            It.Is<DeviceInfo>(device => device.Fingerprint == "synthetic-device"), cancellation.Token), Times.Once);
+            It.Is<DeviceInfo>(device => device.Fingerprint == "synthetic-device"), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), cancellation.Token), Times.Once);
         _identity.Users.Verify(value => value.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
         _identity.Links.Verify(value => value.UpsertAsync(It.IsAny<ExternalLogin>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -203,7 +203,7 @@ public class Web3AuthServiceTests
         _web3ServiceMock.Setup(value => value.VerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).ReturnsAsync(false);
         await Assert.ThrowsAsync<AuthenticationRequiredException>(() => _sut.VerifyWeb3SignatureAsync(new Web3VerificationRequest()));
         _identity.Links.Verify(value => value.GetByProviderKeyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _jwtTokenServiceMock.Verify(value => value.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()), Times.Never);
+        _jwtTokenServiceMock.Verify(value => value.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]
@@ -223,7 +223,7 @@ public class Web3AuthServiceTests
         }
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _sut.VerifyWeb3SignatureAsync(new Web3VerificationRequest(), cancellation.Token));
         _identity.Links.Verify(value => value.GetByProviderKeyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _jwtTokenServiceMock.Verify(value => value.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()), Times.Never);
+        _jwtTokenServiceMock.Verify(value => value.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

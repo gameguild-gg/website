@@ -27,4 +27,9 @@ public class DiscordCallbackCommand : ICommand<SignInResponse>
     ///     Optional tenant context
     /// </summary>
     public Guid? TenantId { get; init; }
+
+    /// <summary>
+    ///     When true, issues a persistent ("remember me") refresh token using the persistent lifetime.
+    /// </summary>
+    public bool? RememberMe { get; init; }
 }
