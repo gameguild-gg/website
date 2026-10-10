@@ -203,14 +203,14 @@ public class ExternalLoginRepositoryTests
             UserId = userId,
             Provider = "discord",
             ProviderKey = "snow-1",
-            GrantedScopes = ExternalLoginGrants.Serialize(new[] { "identify", "email" }),
+            GrantedScopes = ExternalLoginGrants.Serialize(new[] { "identify", "email", "guild.link" }),
             ConsentedAt = consentedAt,
             ConsentVersion = OAuthConsentVersions.Current
         });
 
         var hit = await repository.GetByProviderKeyAsync("discord", "snow-1");
         hit.Should().NotBeNull();
-        ExternalLoginGrants.Deserialize(hit!.GrantedScopes).Should().Equal("identify", "email", "JSON list must round-trip in order");
+        ExternalLoginGrants.Deserialize(hit!.GrantedScopes).Should().Equal("identify", "email", "guild.link");
         hit.ConsentedAt.Should().Be(consentedAt);
         hit.ConsentVersion.Should().Be(OAuthConsentVersions.Current);
         added.GrantedScopes.Should().Be(hit.GrantedScopes);

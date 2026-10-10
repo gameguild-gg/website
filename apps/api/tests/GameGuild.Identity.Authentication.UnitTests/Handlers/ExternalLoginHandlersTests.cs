@@ -28,14 +28,13 @@ public class ExternalLoginHandlersTests
             });
 
         // Server-resolved authorization scopes (issue #250): Google and Discord defaults.
+        // Case-insensitive matchers mirror the real OAuthService, which normalizes the
+        // provider key internally (link-preview passes through the caller's casing).
         _oauthServiceMock
-            .Setup(x => x.ResolveAuthorizationScopes("google", It.IsAny<string[]?>()))
+            .Setup(x => x.ResolveAuthorizationScopes(It.Is<string>(p => p.Equals("google", StringComparison.OrdinalIgnoreCase)), It.IsAny<string[]?>()))
             .Returns(new[] { "openid", "email", "profile" });
         _oauthServiceMock
-            .Setup(x => x.ResolveAuthorizationScopes("google"))
-            .Returns(new[] { "openid", "email", "profile" });
-        _oauthServiceMock
-            .Setup(x => x.ResolveAuthorizationScopes("discord"))
+            .Setup(x => x.ResolveAuthorizationScopes(It.Is<string>(p => p.Equals("discord", StringComparison.OrdinalIgnoreCase)), It.IsAny<string[]?>()))
             .Returns(new[] { "identify", "email" });
 
         _externalLoginRepoMock

@@ -93,7 +93,9 @@ function UnlinkButton({ provider }: { provider: 'google' | 'discord' }) {
     <Button
       variant="outline"
       size="sm"
-      onClick={handleUnlink}
+      onClick={() => {
+        void handleUnlink();
+      }}
       disabled={pending}
       title={t('scopes.unlinkRevokesAll')}
     >
@@ -139,7 +141,9 @@ function ScopeRevokeButton({
   return (
     <button
       type="button"
-      onClick={handleRevoke}
+      onClick={() => {
+        void handleRevoke();
+      }}
       disabled={pending}
       aria-label={t('scopes.revokeAriaLabel', { scope })}
       data-testid={`scope-revoke-${provider}-${scope}`}
