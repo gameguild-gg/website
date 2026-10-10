@@ -44,6 +44,7 @@
  */
 
 import { spawn, spawnSync } from "node:child_process";
+import { resolvePnpmProcess } from "./pnpm-process.mjs";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, createWriteStream, rmSync } from "node:fs";
@@ -414,17 +415,20 @@ async function bootStack() {
   // construction — next-intl's default-locale handling then 307-loops
   // unprefixed routes onto themselves (/sign-in → /sign-in). The default
   // bind (*:port) serves both localhost and 127.0.0.1 correctly.
-  const web = spawn(
-    process.platform === "win32" ? "pnpm.cmd" : "pnpm",
+  const webInvocation = resolvePnpmProcess(
     ["exec", "next", "dev", "--webpack", "--port", String(WEB_PORT)],
+    { env: process.env },
+  );
+  const web = spawn(
+    webInvocation.command,
+    webInvocation.args,
     {
       cwd: WEB_DIR,
       env: { ...process.env, ...envArrayToObject(webEnv) },
       detached: process.platform !== "win32",
-      // Node cannot spawn a .cmd file with pipes directly on Windows. The
-      // command is fixed in this runner, and taskkill below still tears down
-      // the shell's complete process tree.
-      shell: process.platform === "win32",
+      // Execute pnpm's native executable or JavaScript entry point directly.
+      shell: false,
+      windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     },
   );

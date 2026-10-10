@@ -2,18 +2,19 @@ import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { resolvePnpmProcess } from '../../../apps/web/scripts/pnpm-process.mjs';
 
 const emceptionRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = join(emceptionRoot, '..', '..');
 const lockDir = join(repoRoot, '.cache', 'emception-libs.lock');
 
 const targets = [
-  { name: 'root lib', cwd: emceptionRoot, dist: join(emceptionRoot, 'dist', 'index.js'), cmd: 'pnpm run build:lib' },
+  { name: 'root lib', cwd: emceptionRoot, dist: join(emceptionRoot, 'dist', 'index.js'), args: ['run', 'build:lib'] },
   ...['core', 'xterm', 'browser', 'ide'].map((name) => ({
     name: `${name} package`,
     cwd: join(emceptionRoot, 'packages', name),
     dist: join(emceptionRoot, 'packages', name, 'dist', 'index.js'),
-    cmd: 'pnpm run build',
+    args: ['run', 'build'],
   })),
 ];
 
@@ -48,7 +49,8 @@ async function main() {
     try {
       for (const target of missing()) {
         console.log(`[ensure-emception-libs] building ${target.name}`);
-        const result = spawnSync(target.cmd, { cwd: target.cwd, stdio: 'inherit', shell: true });
+        const invocation = resolvePnpmProcess(target.args, { env: process.env });
+        const result = spawnSync(invocation.command, invocation.args, { cwd: target.cwd, stdio: 'inherit', shell: false, windowsHide: true });
         if (result.status !== 0) {
           const error = new Error(`Failed to build ${target.name}`, { cause: result.error });
           error.exitCode = result.status ?? 1;

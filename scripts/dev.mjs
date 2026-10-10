@@ -10,11 +10,9 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import net from 'node:net';
+import { resolvePnpmProcess } from '../apps/web/scripts/pnpm-process.mjs';
 
 const API_PORT = 8080;
-
-// Windows: pnpm/docker are .cmd shims — need shell to resolve.
-const shell = process.platform === 'win32';
 
 // Minimal KEY=VALUE .env parser. Spawning `pnpm dev:api` instead would put
 // dotenv-cli/dotnet watch inside pnpm's own process groups, where group
@@ -36,13 +34,21 @@ function loadEnv(file) {
 // POSIX: detached makes each child its own process-group leader, so the
 // negative-pid group kill below reaches its whole subtree.
 function run(cmd, args) {
-  return spawn(cmd, args, { shell, stdio: 'inherit', detached: !shell });
+  const invocation = cmd === 'pnpm'
+    ? resolvePnpmProcess(args, { env: process.env })
+    : { command: cmd, args };
+  return spawn(invocation.command, invocation.args, {
+    shell: false,
+    stdio: 'inherit',
+    detached: process.platform !== 'win32',
+    windowsHide: true,
+  });
 }
 
 function killTree(child) {
   if (child.exitCode !== null) return;
   if (process.platform === 'win32') {
-    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { shell: true });
+    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { shell: false, windowsHide: true });
   } else {
     try {
       process.kill(-child.pid, 'SIGTERM');
