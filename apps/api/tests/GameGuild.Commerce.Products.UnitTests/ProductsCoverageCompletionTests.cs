@@ -417,7 +417,7 @@ public class ProductsCoverageCompletionTests
     [Fact]
     public void PricingEngineService_IsSaleActive_CoversAllDateBranches()
     {
-        var service = new PricingEngineService(Mock.Of<IProductRepository>(), Mock.Of<IPromoCodeRepository>());
+        var service = new PricingEngineService(Mock.Of<IProductRepository>(), Mock.Of<IPromoCodeRepository>(), Mock.Of<IPromoStackingRuleRepository>());
 
         service.IsSaleActive(ProductPricing.CreateWithVersion(Guid.NewGuid(), "NoSale", 100m).Pricing).Should().BeFalse();
         service.IsSaleActive(ProductPricing.CreateWithVersion(Guid.NewGuid(), "Open", 100m, salePrice: 80m).Pricing).Should().BeTrue();

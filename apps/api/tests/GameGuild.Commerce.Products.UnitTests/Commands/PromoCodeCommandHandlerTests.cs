@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.Commerce.Products;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -220,7 +221,12 @@ public class ApplyPromoCodesCommandHandlerTests
     public ApplyPromoCodesCommandHandlerTests()
     {
         _mockPricingEngine = new Mock<IPricingEngineService>();
-        _handler = new ApplyPromoCodesCommandHandler(_mockPricingEngine.Object);
+        _handler = new ApplyPromoCodesCommandHandler(
+            _mockPricingEngine.Object,
+            Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<IPromoCodeAuditLogger>(),
+            NullLogger<ApplyPromoCodesCommandHandler>.Instance);
     }
 
     [Fact]

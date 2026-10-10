@@ -173,9 +173,9 @@ public class PromoCodeRecordTests
     {
         var request = new CreatePromoCodeRequest(
             "FLAT5", "Flat $5", "Get $5 off", PromoCodeType.FixedAmountOff,
-            null, 5m, "EUR", 10m, 100, 1,
+            null, 5m, null, "EUR", 10m, 100, 1, null, null, false,
             DateTime.UtcNow, DateTime.UtcNow.AddDays(30),
-            true, true, 5, Guid.NewGuid());
+            true, true, 5, "launch-2026", Guid.NewGuid());
         request.DiscountAmount.Should().Be(5m);
         request.Currency.Should().Be("EUR");
         request.IsExclusive.Should().BeTrue();

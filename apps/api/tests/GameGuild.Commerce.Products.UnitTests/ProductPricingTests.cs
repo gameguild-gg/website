@@ -134,7 +134,7 @@ public class ProductPricingTests
     }
 
     private PricingEngineService CreateService()
-        => new(_productRepository.Object, _promoCodeRepository.Object);
+        => new(_productRepository.Object, _promoCodeRepository.Object, Mock.Of<IPromoStackingRuleRepository>());
 
     private static Product CreateProductWithPricing(decimal basePrice, decimal? salePrice = null)
     {

@@ -167,9 +167,10 @@ public class ExtendedCoverageTests
     {
         var cmd = new CreatePromoCodeCommand(
             "FULL20", "Full Promo", "All options",
-            PromoCodeType.BuyOneGetOne, 20m, 10m, "GBP",
-            50m, 100, 3, DateTime.UtcNow, DateTime.UtcNow.AddMonths(1),
-            true, true, 5, Guid.NewGuid(), Guid.NewGuid());
+            PromoCodeType.BuyOneGetOne, 20m, 10m, null, "GBP",
+            50m, 100, 3, null, null, false,
+            DateTime.UtcNow, DateTime.UtcNow.AddMonths(1),
+            true, true, 5, "launch-2026", Guid.NewGuid(), Guid.NewGuid());
         cmd.Type.Should().Be(PromoCodeType.BuyOneGetOne);
         cmd.IsExclusive.Should().BeTrue();
         cmd.MaxUses.Should().Be(100);
