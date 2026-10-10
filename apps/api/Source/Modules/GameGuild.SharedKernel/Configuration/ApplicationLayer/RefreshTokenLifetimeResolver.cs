@@ -42,14 +42,15 @@ public static class RefreshTokenLifetimeResolver
 
     /// <summary>
     ///     Resolves the lifetime (in days) a replacement refresh token must be minted with
-    ///     during rotation. A stored originating duration strictly longer than the configured
-    ///     standard lifetime marks a persistent ("remember me") session, which renews at the
-    ///     configured persistent lifetime; every other row (standard sessions, legacy or
-    ///     malformed rows, and rows minted under different configuration) renews at the
-    ///     configured standard lifetime.
-    ///     The raw stored duration itself is never copied into the replacement: short-lived,
-    ///     absolute-session-capped, or externally seeded rows would otherwise renew with a
-    ///     stale lifetime instead of the configured one.
+    ///     during rotation. The session is classified by its originating policy — a stored
+    ///     originating duration at or beyond the configured persistent lifetime marks a
+    ///     persistent ("remember me") session, which renews at the configured persistent
+    ///     lifetime; every other row (standard sessions, legacy or malformed rows, and rows
+    ///     minted under different configuration) renews at the configured standard lifetime.
+    ///     The raw stored duration itself is never copied into the replacement: rotation
+    ///     preserves the originating CreatedAt while advancing ExpiresAt, so replaying the
+    ///     stored span would compound elapsed time and drift past every configured deadline
+    ///     (short-lived or absolute-session-capped rows would renew with a stale lifetime).
     /// </summary>
     /// <param name="jwtOptions">Typed JWT options when the host binds them; otherwise null.</param>
     /// <param name="configuration">Raw configuration for the legacy fallback chain.</param>
@@ -65,7 +66,7 @@ public static class RefreshTokenLifetimeResolver
         var persistentDays = ResolveExpirationDays(jwtOptions, configuration, persistent: true);
         var originatingLifetime = ResolveOriginatingLifetime(createdAt, expiresAt, TimeSpan.FromDays(standardDays));
 
-        return originatingLifetime > TimeSpan.FromDays(standardDays) ? persistentDays : standardDays;
+        return originatingLifetime >= TimeSpan.FromDays(persistentDays) ? persistentDays : standardDays;
     }
 
     /// <summary>
