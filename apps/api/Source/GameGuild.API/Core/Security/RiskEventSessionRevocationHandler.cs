@@ -93,7 +93,7 @@ internal sealed class RiskEventSessionRevocationHandler(
         await users.UpdateAsync(user, cancellationToken).ConfigureAwait(false);
         await users.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        var tenantId = @event.TenantId == DurableIntegrationEventTenants.Platform ? null : @event.TenantId;
+        var tenantId = @event.TenantId == DurableIntegrationEventTenants.Platform ? (Guid?)null : @event.TenantId;
         await lifecycleRecorder.RecordMutationAsync(
                 new RefreshTokenLifecycleEvent(RefreshTokenLifecycleOperation.AllRevoked, userId, TenantId: tenantId),
                 cancellationToken)
@@ -131,7 +131,7 @@ internal sealed class RiskEventSessionRevocationHandler(
                     @event.RiskScore,
                     @event.EventId,
                     RevokedScope = "AllSessionsAndTokens"
-                })).ConfigureAwait(false);
+                }), CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception exception)
         {

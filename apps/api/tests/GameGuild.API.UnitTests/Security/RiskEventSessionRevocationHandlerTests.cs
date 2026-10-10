@@ -55,7 +55,7 @@ public class RiskEventSessionRevocationHandlerTests
             Times.Once);
         _user.TokenVersion.Should().Be(initialTokenVersion + 1);
         _lifecycleRecorder.Verify(recorder => recorder.RecordMutationAsync(
-                It.Is<RefreshTokenLifecycleEvent(lifecycleEvent =>
+                It.Is<RefreshTokenLifecycleEvent>(lifecycleEvent =>
                     lifecycleEvent.Operation == RefreshTokenLifecycleOperation.AllRevoked
                     && lifecycleEvent.UserId == _user.Id),
                 It.IsAny<CancellationToken>()),
@@ -157,7 +157,7 @@ public class RiskEventSessionRevocationHandlerTests
         await CreateSut().HandleAsync(@event);
 
         _lifecycleRecorder.Verify(recorder => recorder.RecordMutationAsync(
-                It.Is<RefreshTokenLifecycleEvent(lifecycleEvent => lifecycleEvent.TenantId == tenantId),
+                It.Is<RefreshTokenLifecycleEvent>(lifecycleEvent => lifecycleEvent.TenantId == tenantId),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         _auditEventSink.Verify(sink => sink.RecordAsync(
