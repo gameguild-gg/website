@@ -76,6 +76,23 @@ public class ServiceAccountConfiguration : IEntityTypeConfiguration<ServiceAccou
             .HasColumnName("allowed_ip_addresses")
             .HasMaxLength(2000);
 
+        // X.509 client-certificate binding (thumbprint + optional SPKI key pin)
+        builder.Property(x => x.CertificateThumbprint)
+            .HasColumnName("certificate_thumbprint")
+            .HasMaxLength(40);
+
+        builder.Property(x => x.CertificateSpkiSha256)
+            .HasColumnName("certificate_spki_sha256")
+            .HasMaxLength(64);
+
+        builder.HasIndex(x => x.CertificateThumbprint)
+            .IsUnique()
+            .HasDatabaseName("idx_service_accounts_certificate_thumbprint");
+
+        builder.HasIndex(x => x.CertificateSpkiSha256)
+            .IsUnique()
+            .HasDatabaseName("idx_service_accounts_certificate_spki_sha256");
+
         // Lockout management
         builder.Property(x => x.IsLocked)
             .HasColumnName("is_locked")
