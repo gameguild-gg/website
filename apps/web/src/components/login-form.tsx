@@ -8,6 +8,7 @@ import { Button } from '@game-guild/ui/components/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@game-guild/ui/components/card';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSeparator } from '@game-guild/ui/components/field';
 import { Input } from '@game-guild/ui/components/input';
+import { Checkbox } from '@game-guild/ui/components/checkbox';
 
 export function SignInForm({ className, ...props }: React.ComponentProps<'div'>) {
   const { signIn, isLoading, error, clearError } = useAuth();
@@ -21,6 +22,8 @@ export function SignInForm({ className, ...props }: React.ComponentProps<'div'>)
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    // Remember-me opt-in: persistent backend refresh lifetime + durable cookie storage.
+    const rememberMe = formData.get('rememberMe') === 'on';
 
     if (!email) {
       setFieldErrors((prev) => ({ ...prev, email: 'Email is required.' }));
@@ -35,6 +38,7 @@ export function SignInForm({ className, ...props }: React.ComponentProps<'div'>)
       await signIn('credentials', {
         email,
         password,
+        rememberMe,
         redirectTo: '/',
       });
     } catch {
@@ -115,6 +119,23 @@ export function SignInForm({ className, ...props }: React.ComponentProps<'div'>)
                   onChange={() => fieldErrors.password && setFieldErrors((prev) => ({ ...prev, password: '' }))}
                 />
                 {fieldErrors.password && <FieldError>{fieldErrors.password}</FieldError>}
+              </Field>
+              <Field>
+                <label
+                  htmlFor="rememberMe"
+                  className="flex cursor-pointer items-center gap-2 text-sm select-none"
+                >
+                  <Checkbox
+                    id="rememberMe"
+                    name="rememberMe"
+                    disabled={isLoading}
+                    aria-label="Remember me on this device"
+                  />
+                  Remember me
+                </label>
+                <FieldDescription className="text-center">
+                  Keeps you signed in on this device for up to 30 days.
+                </FieldDescription>
               </Field>
               {error && <FieldError>{error.message}</FieldError>}
               <Field>

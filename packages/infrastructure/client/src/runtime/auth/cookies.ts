@@ -124,9 +124,18 @@ export class SessionStore {
    *
    * @param value - The encrypted JWT to store
    * @param setCookie - Function to set a cookie (name, value, options)
+   * @param policy - Storage policy: `session` omits Max-Age so the browser drops
+   * the cookie when the session ends; `persistent` (default) keeps the durable cookie.
    */
-  write(value: string, setCookie: (name: string, value: string, options: CookieSerializeOptions) => void): void {
+  write(
+    value: string,
+    setCookie: (name: string, value: string, options: CookieSerializeOptions) => void,
+    policy?: { storage?: 'session' | 'persistent' },
+  ): void {
     const cookieOptions = this.serializeOptions();
+    if (policy?.storage === 'session') {
+      delete cookieOptions.maxAge;
+    }
 
     if (value.length <= MAX_COOKIE_SIZE) {
       // Fits in a single cookie

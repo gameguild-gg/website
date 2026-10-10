@@ -111,6 +111,7 @@ describe('SignInForm', () => {
     expect(mockAuth.signIn).toHaveBeenCalledWith('credentials', {
       email: 'test@example.com',
       password: 'password123',
+      rememberMe: false,
       redirectTo: '/',
     });
   });

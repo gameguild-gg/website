@@ -154,6 +154,50 @@ describe('Cookie Management', () => {
         expect(mainCookie!.value).toBe('small-token');
       });
 
+      it('should omit Max-Age for session storage policy (remember me off)', () => {
+        const store = new SessionStore(defaultOptions);
+        const written: Array<{ name: string; opts: any }> = [];
+        const setCookie = (name: string, _value: string, opts: any) => {
+          written.push({ name, opts });
+        };
+
+        store.write('session-token', setCookie, { storage: 'session' });
+
+        // Chunk cleanup cookies intentionally keep maxAge 0; only the main
+        // session cookie carries the storage policy.
+        const mainCookie = written.find((c) => c.name === '__me.session-token');
+        expect(mainCookie).toBeDefined();
+        expect(mainCookie!.opts.maxAge).toBeUndefined();
+      });
+
+      it('should keep Max-Age for persistent storage policy (remember me on)', () => {
+        const store = new SessionStore(defaultOptions);
+        const written: Array<{ name: string; opts: any }> = [];
+        const setCookie = (name: string, _value: string, opts: any) => {
+          written.push({ name, opts });
+        };
+
+        store.write('persistent-token', setCookie, { storage: 'persistent' });
+
+        const mainCookie = written.find((c) => c.name === '__me.session-token');
+        expect(mainCookie).toBeDefined();
+        expect(mainCookie!.opts.maxAge).toBe(defaultOptions.maxAge);
+      });
+
+      it('should default to persistent storage when no policy is provided', () => {
+        const store = new SessionStore(defaultOptions);
+        const written: Array<{ name: string; opts: any }> = [];
+        const setCookie = (name: string, _value: string, opts: any) => {
+          written.push({ name, opts });
+        };
+
+        store.write('default-token', setCookie);
+
+        const mainCookie = written.find((c) => c.name === '__me.session-token');
+        expect(mainCookie).toBeDefined();
+        expect(mainCookie!.opts.maxAge).toBe(defaultOptions.maxAge);
+      });
+
       it('should chunk large values', () => {
         const store = new SessionStore(defaultOptions);
         const written: Array<{ name: string; value: string }> = [];

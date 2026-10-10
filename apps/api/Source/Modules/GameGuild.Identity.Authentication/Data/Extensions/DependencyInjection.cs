@@ -123,6 +123,7 @@ public static class DataDependencyInjection
 
         // Core authentication services - focused sub-services
         services.AddScoped<IAuthAttemptService, AuthAttemptService>();
+        services.AddScoped<ISuspiciousLoginAlertPublisher, SuspiciousLoginAlertPublisher>();
         services.AddScoped<ILocalAuthService, LocalAuthService>();
         services.AddScoped<IOAuthAuthService, OAuthAuthService>();
         services.AddScoped<IPasswordService, PasswordService>();

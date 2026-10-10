@@ -19,13 +19,12 @@ public sealed class AuthenticationFailedEventHandler(ILogger<AuthenticationFaile
             notification.Timestamp
         );
 
-        // Here you could also:
-        // - Track failed authentication attempts for rate limiting
-        // - Send security alerts for repeated failures
-        // - Update fraud detection systems
-        // - Log to security monitoring systems
-        // - Trigger account lockout after threshold reached
-        // - Send email notifications for suspicious activity
+        // Security escalation for failed authentication lives in the sign-in pipeline:
+        // risk analysis (LoginAttemptAnalysisService) records the attempt, forwards signals to
+        // the SIEM, and — on confirmed brute force against a known account — publishes a
+        // SuspiciousLoginDetectedV1 durable event. The host-side SuspiciousLoginAlertHandler
+        // consumes it and queues the NotificationType.Security owner alert (InApp always,
+        // Email per preferences), gated by Authentication:SecurityNotifications.
 
         await Task.CompletedTask.ConfigureAwait(false);
     }
