@@ -283,7 +283,13 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
             certificateAuthority.NotBefore,
             certificateAuthority.NotAfter,
             RandomNumberGenerator.GetBytes(16));
-        return ImportPersistable(issued);
+
+        // Create() signs with the issuer but does NOT associate the request's private
+        // key with the returned certificate (unlike CreateSelfSigned), so the PFX
+        // round-trip below would otherwise drop the key and leave the certificate
+        // unusable for TLS client authentication.
+        using var issuedWithKey = issued.HasPrivateKey ? issued : issued.CopyWithPrivateKey(rsa);
+        return ImportPersistable(issuedWithKey);
     }
 
     private static X509Certificate2 CreateServerCertificate()

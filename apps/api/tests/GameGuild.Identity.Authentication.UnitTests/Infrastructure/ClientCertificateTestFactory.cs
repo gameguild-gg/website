@@ -48,7 +48,12 @@ public static class ClientCertificateTestFactory
             certificateAuthority.NotBefore,
             certificateAuthority.NotAfter,
             RandomNumberGenerator.GetBytes(16));
-        return ImportPersistable(issued);
+
+        // Create() signs with the issuer but does NOT associate the request's private
+        // key with the returned certificate (unlike CreateSelfSigned), so the PFX
+        // round-trip below would otherwise drop the key.
+        using var issuedWithKey = issued.HasPrivateKey ? issued : issued.CopyWithPrivateKey(rsa);
+        return ImportPersistable(issuedWithKey);
     }
 
     /// <summary>
