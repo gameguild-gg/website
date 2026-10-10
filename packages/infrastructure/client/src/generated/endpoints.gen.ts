@@ -9657,6 +9657,255 @@ export const getReadyEndpoint = {
   requiresAuth: false,
 } as const;
 
+export interface PostScimV2BulkInput {
+  body?: Types.IdentityProvisioningScimScimBulkInput;
+}
+export type PostScimV2BulkOutput = Types.IdentityProvisioningScimScimBulkOutput;
+export const postScimV2BulkEndpoint = {
+  operationId: 'postScimV2Bulk' as const,
+  method: 'POST' as const,
+  path: '/scim/v2/Bulk' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists provisioned groups with optional filter and 1-based pagination.
+ */
+export interface GetScimV2GroupsForGetScimV2GroupsInput {
+  query?: {
+    filter?: string;
+    startIndex?: string;
+    count?: string;
+  };
+}
+export type GetScimV2GroupsForGetScimV2GroupsOutput = Types.IdentityProvisioningScimScimListResponseScimGroupResource;
+export const getScimV2GroupsForGetScimV2GroupsEndpoint = {
+  operationId: 'getScimV2GroupsForGetScimV2Groups' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Groups' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a group. Idempotent on externalId (repeat POST returns 200).
+ */
+export interface PostScimV2GroupsInput {
+  body?: Types.IdentityProvisioningScimScimGroupInput;
+}
+export type PostScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const postScimV2GroupsEndpoint = {
+  operationId: 'postScimV2Groups' as const,
+  method: 'POST' as const,
+  path: '/scim/v2/Groups' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Fetches one provisioned group with its members.
+ */
+export interface GetScimV2GroupsForGetScimV2GroupsByRoleIdInput {
+  roleId: string;
+}
+export type GetScimV2GroupsForGetScimV2GroupsByRoleIdOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const getScimV2GroupsForGetScimV2GroupsByRoleIdEndpoint = {
+  operationId: 'getScimV2GroupsForGetScimV2GroupsByRoleId' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Replaces a group, including its full member list (RFC 7644 §3.5.1).
+ */
+export interface PutScimV2GroupsInput {
+  roleId: string;
+  body?: Types.IdentityProvisioningScimScimGroupInput;
+}
+export type PutScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const putScimV2GroupsEndpoint = {
+  operationId: 'putScimV2Groups' as const,
+  method: 'PUT' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a group: memberships are removed and the backing role deactivated.
+ */
+export interface DeleteScimV2GroupsInput {
+  roleId: string;
+}
+export type DeleteScimV2GroupsOutput = void;
+export const deleteScimV2GroupsEndpoint = {
+  operationId: 'deleteScimV2Groups' as const,
+  method: 'DELETE' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Patches a group: displayName, externalId and the members paths
+ * (`members`, `members[value eq "…"]`). Membership changes are
+ * audited and bump the tenant security version.
+ */
+export interface PatchScimV2GroupsInput {
+  roleId: string;
+  body?: Types.IdentityProvisioningScimScimPatchInput;
+}
+export type PatchScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const patchScimV2GroupsEndpoint = {
+  operationId: 'patchScimV2Groups' as const,
+  method: 'PATCH' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetScimV2ResourcetypesInput = void;
+export type GetScimV2ResourcetypesOutput = void;
+export const getScimV2ResourcetypesEndpoint = {
+  operationId: 'getScimV2Resourcetypes' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/ResourceTypes' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetScimV2SchemasForGetScimV2SchemasInput = void;
+export type GetScimV2SchemasForGetScimV2SchemasOutput = void;
+export const getScimV2SchemasForGetScimV2SchemasEndpoint = {
+  operationId: 'getScimV2SchemasForGetScimV2Schemas' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Schemas' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetScimV2SchemasForGetScimV2SchemasBySchemaIdInput {
+  schemaId: string;
+}
+export type GetScimV2SchemasForGetScimV2SchemasBySchemaIdOutput = void;
+export const getScimV2SchemasForGetScimV2SchemasBySchemaIdEndpoint = {
+  operationId: 'getScimV2SchemasForGetScimV2SchemasBySchemaId' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Schemas/{schemaId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetScimV2ServiceproviderconfigInput = void;
+export type GetScimV2ServiceproviderconfigOutput = void;
+export const getScimV2ServiceproviderconfigEndpoint = {
+  operationId: 'getScimV2Serviceproviderconfig' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/ServiceProviderConfig' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists provisioned users with optional filter and 1-based pagination.
+ */
+export interface GetScimV2UsersForGetScimV2UsersInput {
+  query?: {
+    filter?: string;
+    startIndex?: string;
+    count?: string;
+  };
+}
+export type GetScimV2UsersForGetScimV2UsersOutput = Types.IdentityProvisioningScimScimListResponseScimUserResource;
+export const getScimV2UsersForGetScimV2UsersEndpoint = {
+  operationId: 'getScimV2UsersForGetScimV2Users' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Users' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a user. Idempotent on externalId: a repeated POST with the same
+ * externalId returns the existing resource with 200 instead of creating a copy.
+ */
+export interface PostScimV2UsersInput {
+  body?: Types.IdentityProvisioningScimScimUserInput;
+}
+export type PostScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
+export const postScimV2UsersEndpoint = {
+  operationId: 'postScimV2Users' as const,
+  method: 'POST' as const,
+  path: '/scim/v2/Users' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Fetches one provisioned user by id.
+ */
+export interface GetScimV2UsersForGetScimV2UsersByUserIdInput {
+  userId: string;
+}
+export type GetScimV2UsersForGetScimV2UsersByUserIdOutput = Types.IdentityProvisioningScimScimUserResource;
+export const getScimV2UsersForGetScimV2UsersByUserIdEndpoint = {
+  operationId: 'getScimV2UsersForGetScimV2UsersByUserId' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Replaces a provisioned user (RFC 7644 §3.5.1).
+ */
+export interface PutScimV2UsersInput {
+  userId: string;
+  body?: Types.IdentityProvisioningScimScimUserInput;
+}
+export type PutScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
+export const putScimV2UsersEndpoint = {
+  operationId: 'putScimV2Users' as const,
+  method: 'PUT' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deprovisions a user: soft delete plus immediate session and token revocation.
+ */
+export interface DeleteScimV2UsersInput {
+  userId: string;
+}
+export type DeleteScimV2UsersOutput = void;
+export const deleteScimV2UsersEndpoint = {
+  operationId: 'deleteScimV2Users' as const,
+  method: 'DELETE' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Patches a provisioned user (RFC 7644 §3.5.2 add/remove/replace).
+ */
+export interface PatchScimV2UsersInput {
+  userId: string;
+  body?: Types.IdentityProvisioningScimScimPatchInput;
+}
+export type PatchScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
+export const patchScimV2UsersEndpoint = {
+  operationId: 'patchScimV2Users' as const,
+  method: 'PATCH' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
 /**
  * Serve transformed asset (resized, cropped, etc.) with CDN caching.
  *
@@ -13312,6 +13561,66 @@ export const postAuthPolymorphicEndpoint = {
   path: '/v1/auth/polymorphic' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Lists the tenant's provisioning tokens (no plaintext).
+ */
+export type GetAuthScimProvisioningTokensInput = void;
+export type GetAuthScimProvisioningTokensOutput = Types.IdentityProvisioningScimProvisioningTokenDto[];
+export const getAuthScimProvisioningTokensEndpoint = {
+  operationId: 'getAuthScimProvisioningTokens' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/scim-provisioning-tokens' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Issues a new tenant-scoped provisioning token. The plaintext is returned once.
+ */
+export interface PostAuthScimProvisioningTokensInput {
+  body?: Types.IdentityProvisioningCreateScimProvisioningTokenInput;
+}
+export type PostAuthScimProvisioningTokensOutput = Types.IdentityProvisioningCreateScimProvisioningTokenOutput;
+export const postAuthScimProvisioningTokensEndpoint = {
+  operationId: 'postAuthScimProvisioningTokens' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/scim-provisioning-tokens' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revokes a provisioning token immediately.
+ */
+export interface PostAuthScimProvisioningTokensRevokeInput {
+  tokenId: string;
+  body?: Types.IdentityProvisioningRevokeScimProvisioningTokenInput;
+}
+export type PostAuthScimProvisioningTokensRevokeOutput = void;
+export const postAuthScimProvisioningTokensRevokeEndpoint = {
+  operationId: 'postAuthScimProvisioningTokensRevoke' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/scim-provisioning-tokens/{tokenId}:revoke' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Rotates a provisioning token; the old token stays valid for the grace window.
+ */
+export interface PostAuthScimProvisioningTokensRotateInput {
+  tokenId: string;
+  body?: Types.IdentityProvisioningRotateScimProvisioningTokenInput;
+}
+export type PostAuthScimProvisioningTokensRotateOutput = Types.IdentityProvisioningRotateScimProvisioningTokenOutput;
+export const postAuthScimProvisioningTokensRotateEndpoint = {
+  operationId: 'postAuthScimProvisioningTokensRotate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/scim-provisioning-tokens/{tokenId}:rotate' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -26790,6 +27099,23 @@ export const endpoints = {
   postLtiLogin: postLtiLoginEndpoint,
   getMetrics: getMetricsEndpoint,
   getReady: getReadyEndpoint,
+  postScimV2Bulk: postScimV2BulkEndpoint,
+  getScimV2GroupsForGetScimV2Groups: getScimV2GroupsForGetScimV2GroupsEndpoint,
+  postScimV2Groups: postScimV2GroupsEndpoint,
+  getScimV2GroupsForGetScimV2GroupsByRoleId: getScimV2GroupsForGetScimV2GroupsByRoleIdEndpoint,
+  putScimV2Groups: putScimV2GroupsEndpoint,
+  deleteScimV2Groups: deleteScimV2GroupsEndpoint,
+  patchScimV2Groups: patchScimV2GroupsEndpoint,
+  getScimV2Resourcetypes: getScimV2ResourcetypesEndpoint,
+  getScimV2SchemasForGetScimV2Schemas: getScimV2SchemasForGetScimV2SchemasEndpoint,
+  getScimV2SchemasForGetScimV2SchemasBySchemaId: getScimV2SchemasForGetScimV2SchemasBySchemaIdEndpoint,
+  getScimV2Serviceproviderconfig: getScimV2ServiceproviderconfigEndpoint,
+  getScimV2UsersForGetScimV2Users: getScimV2UsersForGetScimV2UsersEndpoint,
+  postScimV2Users: postScimV2UsersEndpoint,
+  getScimV2UsersForGetScimV2UsersByUserId: getScimV2UsersForGetScimV2UsersByUserIdEndpoint,
+  putScimV2Users: putScimV2UsersEndpoint,
+  deleteScimV2Users: deleteScimV2UsersEndpoint,
+  patchScimV2Users: patchScimV2UsersEndpoint,
   getT: getTEndpoint,
   postVCoursesCheckoutComplete: postVCoursesCheckoutCompleteEndpoint,
   getVMarketplaceCart: getVMarketplaceCartEndpoint,
@@ -27023,6 +27349,10 @@ export const endpoints = {
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,
   postAuthPolymorphic: postAuthPolymorphicEndpoint,
+  getAuthScimProvisioningTokens: getAuthScimProvisioningTokensEndpoint,
+  postAuthScimProvisioningTokens: postAuthScimProvisioningTokensEndpoint,
+  postAuthScimProvisioningTokensRevoke: postAuthScimProvisioningTokensRevokeEndpoint,
+  postAuthScimProvisioningTokensRotate: postAuthScimProvisioningTokensRotateEndpoint,
   getAuthServiceAccountsForGetAuthServiceAccounts: getAuthServiceAccountsForGetAuthServiceAccountsEndpoint,
   postAuthServiceAccounts: postAuthServiceAccountsEndpoint,
   getAuthServiceAccountsForGetAuthServiceAccountsByServiceAccountId: getAuthServiceAccountsForGetAuthServiceAccountsByServiceAccountIdEndpoint,

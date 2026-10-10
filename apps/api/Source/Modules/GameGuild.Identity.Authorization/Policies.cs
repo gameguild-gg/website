@@ -117,6 +117,13 @@ public static class Policies
     public const string SecureAdmin = "SecureAdmin";
 
     // ========================
+    // PROVISIONING POLICIES
+    // ========================
+
+    /// <summary>Issue, rotate and revoke SCIM provisioning tokens</summary>
+    public const string ProvisioningManageTokens = "Provisioning.ManageTokens";
+
+    // ========================
     // USER POLICIES - Collection Operations
     // ========================
 
@@ -196,6 +203,8 @@ public static class Policies
         LedgersRead, LedgersWrite,
         // Admin
         Admin, SystemAdmin, SecureAdmin,
+        // Provisioning
+        ProvisioningManageTokens,
         // Users - Collection
         UsersRead, UsersCreate, UsersUpdate, UsersDelete, UsersAdmin, UsersPurge,
         // Employees

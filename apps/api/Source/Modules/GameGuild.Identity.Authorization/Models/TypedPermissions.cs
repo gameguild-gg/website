@@ -55,6 +55,36 @@ public sealed class AdminPermission : Permission
 }
 
 /// <summary>
+///     Strongly-typed permissions for SCIM provisioning administration.
+/// </summary>
+/// <remarks>
+///     Use <see cref="Keys"/> for attribute usage: [RequirePermission(ProvisioningPermission.Keys.ManageTokens)]
+///     and the static fields for runtime checks: actor.HasPermission(ProvisioningPermission.ManageTokens).
+/// </remarks>
+public sealed class ProvisioningPermission : Permission
+{
+    private ProvisioningPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Contains(':') ? key.Split(':')[1] : key,
+            scope: key.Split(':').Length > 2 ? key.Split(':')[2] : null,
+            description: description)
+    {
+    }
+
+    /// <summary>Permission key constants for use in attributes.</summary>
+    public static class Keys
+    {
+        /// <summary>Issue, rotate and revoke SCIM provisioning tokens.</summary>
+        public const string ManageTokens = "provisioning:manage-tokens";
+    }
+
+    /// <summary>Issue, rotate and revoke SCIM provisioning tokens.</summary>
+    public static readonly ProvisioningPermission ManageTokens =
+        new(Keys.ManageTokens, "Manage SCIM provisioning tokens");
+}
+
+/// <summary>
 ///     Strongly-typed permissions for user operations.
 ///     Provides compile-time safety for permission checks.
 /// </summary>

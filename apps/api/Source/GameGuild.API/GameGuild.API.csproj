@@ -70,6 +70,7 @@
         <ProjectReference Include="..\Modules\GameGuild.Identity.Authentication\GameGuild.Identity.Authentication.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Identity.Authorization\GameGuild.Identity.Authorization.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Identity.Context\GameGuild.Identity.Context.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Identity.Provisioning\GameGuild.Identity.Provisioning.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Commerce.Billing\GameGuild.Commerce.Billing.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Commerce.Orders\GameGuild.Commerce.Orders.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj" />

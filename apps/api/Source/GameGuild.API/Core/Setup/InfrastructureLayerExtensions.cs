@@ -21,6 +21,7 @@ using GameGuild.Features;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context;
+using GameGuild.Identity.Provisioning;
 using GameGuild.Identity.Tenants;
 using GameGuild.Localization;
 using GameGuild.Monitoring.SLA;
@@ -185,6 +186,11 @@ public static class InfrastructureLayerExtensions
         stepStopwatch.Restart();
         services.AddAuthenticationData(configuration);
         logger.LogInformation("Authentication Data registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
+
+        // 03c. SCIM Provisioning (RFC 7643/7644 surface, feature-flagged via Scim:Enabled)
+        stepStopwatch.Restart();
+        services.AddScimProvisioningModule(configuration);
+        logger.LogInformation("SCIM Provisioning Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 04. Authorization Application (policy infrastructure, Access Control List service, Permission Services)
         stepStopwatch.Restart();

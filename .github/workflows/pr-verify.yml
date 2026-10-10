@@ -4,12 +4,16 @@ on:
   pull_request:
     branches: [main, develop, "feature/**"]
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
 
 concurrency:
-  group: pr-verify-${{ github.event.pull_request.number }}
+  # Suffixed during PR #773 repair: synchronize events stopped creating runs for
+  # this PR (dropped/stuck pending in the original group). Distinct group + manual
+  # dispatch unblocks verification; revert together with the repair.
+  group: pr-verify-${{ github.event.pull_request.number }}-repair773
   cancel-in-progress: true
 
 jobs:
@@ -30,6 +34,8 @@ jobs:
       serviceMatrix: ${{ steps.changes.outputs.serviceMatrix }}
       runtimeServiceMatrix: ${{ steps.changes.outputs.runtimeServiceMatrix }}
       treeSha: ${{ steps.identity.outputs.treeSha }}
+      baseSha: ${{ steps.revs.outputs.base }}
+      headSha: ${{ steps.revs.outputs.head }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -40,12 +46,21 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
+      - name: Resolve PR base and head commits
+        id: revs
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$base" ]; then base=$(git merge-base HEAD origin/develop); fi
+          head="${{ github.event.pull_request.head.sha }}"
+          if [ -z "$head" ]; then head=$(git rev-parse HEAD); fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
       - name: Classify changed paths
         id: changes
         run: >-
           node scripts/ci/classify-release-changes.mjs
-          --base "${{ github.event.pull_request.base.sha }}"
-          --head "${{ github.event.pull_request.head.sha }}"
+          --base "${{ steps.revs.outputs.base }}"
+          --head "${{ steps.revs.outputs.head }}"
       - name: Resolve merge-ref tree
         id: identity
         run: echo "treeSha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
@@ -121,8 +136,8 @@ jobs:
         shell: bash
         run: >-
           bash scripts/ci/run-affected-dotnet-tests.sh
-          --base "${{ github.event.pull_request.base.sha }}"
-          --head "${{ github.event.pull_request.head.sha }}"
+          --base "${{ needs.classify.outputs.baseSha }}"
+          --head "${{ needs.classify.outputs.headSha }}"
       - name: Upload affected API test evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

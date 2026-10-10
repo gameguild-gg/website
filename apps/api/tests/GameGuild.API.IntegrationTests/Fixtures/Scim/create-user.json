@@ -1,0 +1,18 @@
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "externalId": "00u5pljx8TkcQBZo2PxB",
+  "userName": "scim.bjensen",
+  "name": {
+    "givenName": "Barbara",
+    "familyName": "Jensen"
+  },
+  "displayName": "Barbara Jensen",
+  "emails": [
+    {
+      "value": "scim.bjensen@example.com",
+      "type": "work",
+      "primary": true
+    }
+  ],
+  "active": true
+}

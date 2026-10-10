@@ -11722,6 +11722,71 @@ Table "gameguild.authentication"."role" {
   }
 }
 
+Table "gameguild.authentication"."scim_group_mappings" {
+  "id" uuid [not null]
+  "tenant_id" uuid [not null]
+  "external_id" "character varying(256)" [not null]
+  "role_id" uuid [not null]
+  "version" integer [not null]
+  "created_at" timestamp [not null]
+  "updated_at" timestamp [not null]
+  "deleted_at" timestamp
+
+  Indexes {
+    id [pk, name: "PK_scim_group_mappings"]
+    role_id [name: "ix_scim_group_mappings_role_id"]
+    (tenant_id, external_id) [unique, name: "ix_scim_group_mappings_tenant_id_external_id"]
+  }
+}
+
+Table "gameguild.authentication"."scim_provisioning_tokens" {
+  "id" uuid [not null]
+  "tenant_id" uuid [not null]
+  "created_by_user_id" uuid [not null]
+  "name" "character varying(100)" [not null]
+  "key_hash" "character varying(64)" [not null]
+  "key_prefix" "character varying(20)" [not null]
+  "scopes" "character varying(1000)" [not null]
+  "is_active" boolean [not null, default: true]
+  "expires_at" timestamp
+  "last_used_at" timestamp
+  "usage_count" bigint [not null, default: 0]
+  "revoked_at" timestamp
+  "revocation_reason" "character varying(200)"
+  "replaces_token_id" uuid
+  "rotation_grace_ends_at" timestamp
+  "version" integer [not null]
+  "created_at" timestamp [not null]
+  "updated_at" timestamp [not null]
+  "deleted_at" timestamp
+
+  Indexes {
+    id [pk, name: "PK_scim_provisioning_tokens"]
+    expires_at [name: "ix_scim_provisioning_tokens_expires_at"]
+    is_active [name: "ix_scim_provisioning_tokens_is_active"]
+    key_hash [unique, name: "ix_scim_provisioning_tokens_key_hash"]
+    replaces_token_id [name: "ix_scim_provisioning_tokens_replaces_token_id"]
+    tenant_id [name: "ix_scim_provisioning_tokens_tenant_id"]
+  }
+}
+
+Table "gameguild.authentication"."scim_user_mappings" {
+  "id" uuid [not null]
+  "tenant_id" uuid [not null]
+  "external_id" "character varying(256)" [not null]
+  "user_id" uuid [not null]
+  "version" integer [not null]
+  "created_at" timestamp [not null]
+  "updated_at" timestamp [not null]
+  "deleted_at" timestamp
+
+  Indexes {
+    id [pk, name: "PK_scim_user_mappings"]
+    (tenant_id, external_id) [unique, name: "ix_scim_user_mappings_tenant_id_external_id"]
+    user_id [name: "ix_scim_user_mappings_user_id"]
+  }
+}
+
 Table "gameguild.authentication"."service_accounts" {
   "id" uuid [not null]
   "client_id" "character varying(100)" [not null]
