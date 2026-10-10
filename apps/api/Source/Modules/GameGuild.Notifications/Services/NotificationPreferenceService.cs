@@ -135,6 +135,7 @@ public class NotificationPreferenceService(
         NotificationType.EmailVerification,
         NotificationType.PasswordReset,
         NotificationType.MagicLink,
+        NotificationType.EmailCode,
         NotificationType.TenantInvite
     ];
 

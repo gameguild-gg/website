@@ -437,6 +437,9 @@ public enum NotificationType
     /// <summary>Monthly billing statement</summary>
     MonthlyStatement = 23,
 
+    /// <summary>One-time email sign-in code</summary>
+    EmailCode = 24,
+
     /// <summary>Custom/other notification type</summary>
     Custom = 99
 }

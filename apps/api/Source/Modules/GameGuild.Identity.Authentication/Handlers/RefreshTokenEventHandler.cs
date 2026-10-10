@@ -26,11 +26,12 @@ public sealed class RefreshTokenEventHandler(ILogger<RefreshTokenEventHandler> l
     {
         logger.LogInformation("Refresh token {TokenId} revoked for user {UserId}. Reason: {Reason} at {RevokedAt}", notification.TokenId, notification.UserId, notification.Reason, notification.RevokedAt);
 
-        // Here you could also:
-        // - Update token status in database
-        // - Send security notification if suspicious
-        // - Log to security audit system
-        // - Track revocation metrics
+        // Suspicious revocations notify the owner through the durable security pipeline:
+        // replay containment publishes RefreshTokenReplayContainedV1, whose host-side
+        // RefreshTokenReplayAlertHandler queues the NotificationType.Security owner alert.
+        // Sign-in risk signals (step-up, brute force, impossible travel) use
+        // SuspiciousLoginDetectedV1 with the host-side SuspiciousLoginAlertHandler, gated
+        // by Authentication:SecurityNotifications.
 
         await Task.CompletedTask.ConfigureAwait(false);
     }

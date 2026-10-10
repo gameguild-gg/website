@@ -73,11 +73,16 @@ public class Web3AuthService(
             Fingerprint = string.IsNullOrWhiteSpace(request.DeviceFingerprint) ? Guid.NewGuid().ToString("N") : request.DeviceFingerprint,
             IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "Wallet Device", DeviceType = "Web"
         };
-        var refreshDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                          ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
+        var refreshDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+            jwtOptions, configuration, request.RememberMe == true);
         var refreshExpires = SystemClock.UtcNow.AddDays(refreshDays);
         var sessionId = Guid.NewGuid();
-        var refresh = await jwtTokenService.GenerateRefreshTokenAsync(user.Id, deviceInfo, cancellationToken).ConfigureAwait(false);
+        var refresh = await jwtTokenService.GenerateRefreshTokenAsync(
+            user.Id,
+            deviceInfo,
+            new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+            refreshExpires,
+            cancellationToken).ConfigureAwait(false);
         var access = await jwtTokenService.GenerateAccessTokenAsync(
             user.Id, user.Email, tenantContext.Roles.ToArray(), tenantContext.TenantId, user.TokenVersion, sessionId, cancellationToken).ConfigureAwait(false);
         var refreshTokenHash = refreshTokenHasher.HashToken(refresh);

@@ -6,6 +6,8 @@ import { test } from "node:test";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { readPnpmSecurityConfig } from "../read-pnpm-config.mjs";
+
 const repositoryRoot = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../..",
@@ -77,15 +79,13 @@ for (const packageRoot of packageRoots) {
 }
 
 test("the advisory mitigation requires the exact installed patch on every consumer", () => {
-  const manifest = JSON.parse(
-    readFileSync(join(repositoryRoot, "package.json"), "utf8"),
-  );
+  const pnpmConfig = readPnpmSecurityConfig(repositoryRoot);
   assert.equal(
-    manifest.pnpm.patchedDependencies?.["sprintf-js@1.1.3"],
+    pnpmConfig.patchedDependencies?.["sprintf-js@1.1.3"],
     "patches/sprintf-js@1.1.3.patch",
   );
-  assert.equal(manifest.pnpm.auditConfig, undefined);
-  assert.deepEqual(manifest.pnpm.onlyBuiltDependencies, ["braces", "sprintf-js"]);
+  assert.equal(pnpmConfig.auditConfig, undefined);
+  assert.deepEqual(pnpmConfig.onlyBuiltDependencies, ["braces", "sprintf-js"]);
   const scannerExceptions = readFileSync(
     join(repositoryRoot, ".trivyignore"),
     "utf8",

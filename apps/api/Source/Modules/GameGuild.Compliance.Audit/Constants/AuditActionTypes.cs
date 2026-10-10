@@ -77,11 +77,24 @@ public static class AuditActionTypes
     // Security Events
     public const string SecurityViolation = "SecurityViolation";
 
+    public const string SecurityAlertResolved = "SecurityAlertResolved";
+
     public const string RateLimitExceeded = "RateLimitExceeded";
 
     public const string SuspiciousActivity = "SuspiciousActivity";
 
     public const string PolicyViolation = "PolicyViolation";
+
+    // Webhook Security Events (provider callback verification pipeline)
+    public const string WebhookSignatureFailed = "WebhookSignatureFailed";
+
+    public const string WebhookSourceIpRejected = "WebhookSourceIpRejected";
+
+    public const string WebhookReplayDetected = "WebhookReplayDetected";
+
+    public const string WebhookRateLimitExceeded = "WebhookRateLimitExceeded";
+
+    public const string WebhookSourceBlocked = "WebhookSourceBlocked";
 
     // Tenant Operations
     public const string TenantCreated = "TenantCreated";

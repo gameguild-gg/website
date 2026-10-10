@@ -78,6 +78,61 @@ public class ExternalLoginsControllerTests
 
         result.Should().BeOfType<OkResult>();
         controller.Response.Headers.ContainsKey("X-Linked-Providers").Should().BeFalse();
+        controller.Response.Headers.ContainsKey("X-Granted-Scopes").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetExternalLogins_WithRecordedConsents_ReturnsGrantedScopesHeader()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        var consentedAt = DateTime.UtcNow.AddHours(-1);
+        sender
+            .Setup(s => s.Send(
+                It.Is<GetExternalLoginsQuery>(q => q.UserId == userId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ExternalLoginDto>
+            {
+                new()
+                {
+                    Provider = "discord",
+                    CreatedAt = DateTime.UtcNow,
+                    GrantedScopes = ["identify", "email"],
+                    ConsentedAt = consentedAt,
+                    ConsentVersion = OAuthConsentVersions.Current
+                },
+                new() { Provider = "google", CreatedAt = DateTime.UtcNow.AddHours(-2) }
+            });
+
+        var controller = CreateController(sender, userId);
+        var result = await controller.GetExternalLogins(CancellationToken.None);
+
+        result.Should().BeOfType<OkResult>();
+        var header = controller.Response.Headers["X-Granted-Scopes"].ToString();
+        header.Should().Be(
+            $"discord={DateTime.SpecifyKind(consentedAt, DateTimeKind.Utc):O}|{OAuthConsentVersions.Current}|identify%20email",
+            "one 'provider=timestamp|version|scopes' entry per link with a recorded consent; legacy rows are omitted");
+    }
+
+    [Fact]
+    public async Task GetExternalLogins_NoRecordedConsents_OmitsGrantedScopesHeader()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(s => s.Send(
+                It.Is<GetExternalLoginsQuery>(q => q.UserId == userId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ExternalLoginDto>
+            {
+                new() { Provider = "google", CreatedAt = DateTime.UtcNow, GrantedScopes = [], ConsentedAt = null, ConsentVersion = 0 }
+            });
+
+        var controller = CreateController(sender, userId);
+        await controller.GetExternalLogins(CancellationToken.None);
+
+        controller.Response.Headers.ContainsKey("X-Linked-Providers").Should().BeTrue();
+        controller.Response.Headers.ContainsKey("X-Granted-Scopes").Should().BeFalse();
     }
 
     [Fact]
@@ -246,6 +301,108 @@ public class ExternalLoginsControllerTests
         var problem = conflict.Value.Should().BeOfType<ProblemDetails>().Subject;
         problem.Status.Should().Be(409);
         problem.Detail.Should().Be("Social account already linked to another user");
+    }
+
+    // ── GET link-preview ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task LinkPreview_HandlerSucceeds_Returns200WithPreview()
+    {
+        var sender = new Mock<ISender>();
+        var preview = new ExternalLoginLinkPreviewResponse { Provider = "discord", RequestedScopes = ["identify", "email"] };
+        sender
+            .Setup(s => s.Send(
+                It.Is<GetExternalLoginLinkPreviewQuery>(q => q.Provider == "discord"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(preview);
+
+        var result = await CreateController(sender, Guid.NewGuid()).LinkPreview("discord", CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().Be(preview);
+    }
+
+    [Fact]
+    public async Task LinkPreview_UnsupportedProvider_Returns400Problem()
+    {
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(s => s.Send(It.IsAny<GetExternalLoginLinkPreviewQuery>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new NotSupportedException("Provider not supported for link preview: steam"));
+
+        var result = await CreateController(sender, Guid.NewGuid()).LinkPreview("steam", CancellationToken.None);
+
+        var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        var problem = badRequest.Value.Should().BeOfType<ProblemDetails>().Subject;
+        problem.Status.Should().Be(400);
+    }
+
+    // ── POST scopes:revoke ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task RevokeScopes_HandlerSucceeds_Returns200WithRemainingState()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        var response = new RevokeExternalLoginScopesResponse
+        {
+            Provider = "google",
+            GrantedScopes = ["openid", "profile"],
+            ConsentedAt = DateTime.UtcNow.AddDays(-1),
+            ConsentVersion = OAuthConsentVersions.Current
+        };
+        sender
+            .Setup(s => s.Send(
+                It.Is<RevokeExternalLoginScopesCommand>(c => c.UserId == userId && c.Provider == "google" && c.Scopes.SequenceEqual(new[] { "email" })),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        var result = await CreateController(sender, userId).RevokeScopes(
+            "google",
+            new RevokeExternalLoginScopesRequest { Scopes = ["email"] },
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().Be(response);
+    }
+
+    [Fact]
+    public async Task RevokeScopes_InvalidScopeToken_Returns400Problem()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(s => s.Send(It.IsAny<RevokeExternalLoginScopesCommand>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOAuthScopeException("'bad scope' is not a valid OAuth scope token"));
+
+        var result = await CreateController(sender, userId).RevokeScopes(
+            "google",
+            new RevokeExternalLoginScopesRequest { Scopes = ["bad scope"] },
+            CancellationToken.None);
+
+        var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        var problem = badRequest.Value.Should().BeOfType<ProblemDetails>().Subject;
+        problem.Status.Should().Be(400);
+        problem.Detail.Should().Be("'bad scope' is not a valid OAuth scope token");
+    }
+
+    [Fact]
+    public async Task RevokeScopes_ProviderNotLinked_Returns404Problem()
+    {
+        var userId = Guid.NewGuid();
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(s => s.Send(It.IsAny<RevokeExternalLoginScopesCommand>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ExternalLoginNotFoundException("No google login linked to this account"));
+
+        var result = await CreateController(sender, userId).RevokeScopes(
+            "google",
+            new RevokeExternalLoginScopesRequest { Scopes = ["email"] },
+            CancellationToken.None);
+
+        var notFound = result.Should().BeOfType<NotFoundObjectResult>().Subject;
+        var problem = notFound.Value.Should().BeOfType<ProblemDetails>().Subject;
+        problem.Status.Should().Be(404);
     }
 
     // ── DELETE unlink ───────────────────────────────────────────────────

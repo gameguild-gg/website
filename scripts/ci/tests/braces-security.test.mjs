@@ -6,6 +6,8 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 
+import { readPnpmSecurityConfig } from "../read-pnpm-config.mjs";
+
 const repositoryRoot = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../..",
@@ -152,14 +154,12 @@ for (const packageRoot of packageRoots) {
 }
 
 test("the installed security patch is verified without suppressing scanner advisories", () => {
-  const manifest = JSON.parse(
-    readFileSync(join(repositoryRoot, "package.json"), "utf8"),
-  );
+  const pnpmConfig = readPnpmSecurityConfig(repositoryRoot);
   assert.equal(
-    manifest.pnpm.patchedDependencies?.["braces@3.0.3"],
+    pnpmConfig.patchedDependencies?.["braces@3.0.3"],
     "patches/braces@3.0.3.patch",
   );
-  assert.equal(manifest.pnpm.auditConfig, undefined);
+  assert.equal(pnpmConfig.auditConfig, undefined);
   const scannerExceptions = readFileSync(
     join(repositoryRoot, ".trivyignore"),
     "utf8",

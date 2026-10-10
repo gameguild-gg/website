@@ -3400,6 +3400,34 @@ Table "payments" {
   }
 }
 
+Table "PermissionAuditLogs" {
+  "Id" uuid [not null]
+  "TenantId" uuid
+  "OperationType" integer [not null]
+  "UserId" uuid
+  "ResourceId" uuid
+  "ResourceType" "character varying(200)"
+  "PermissionType" "character varying(256)"
+  "PermissionDetails" text
+  "OldValue" text
+  "NewValue" text
+  "PerformedBy" uuid [not null]
+  "IpAddress" "character varying(64)"
+  "UserAgent" "character varying(512)"
+  "Reason" "character varying(2000)"
+  "Success" boolean [not null]
+  "ErrorMessage" "character varying(2000)"
+  "Timestamp" timestamp [not null]
+
+  Indexes {
+    Id [pk, name: "PK_PermissionAuditLogs"]
+    OperationType [name: "IX_PermissionAuditLogs_OperationType"]
+    (TenantId, Timestamp) [name: "IX_PermissionAuditLogs_Tenant_Time"]
+    Timestamp [name: "IX_PermissionAuditLogs_Time"]
+    UserId [name: "IX_PermissionAuditLogs_UserId"]
+  }
+}
+
 Table "PermissionDelegation" {
   "Id" uuid [not null]
   "DelegatorUserId" uuid [not null]
@@ -3432,6 +3460,7 @@ Table "PermissionEvaluationLogs" {
   "Id" uuid [not null]
   "TenantId" uuid
   "UserId" uuid
+  "Roles" "text[]" [not null]
   "ResourceType" "character varying(200)" [not null]
   "ResourceId" "character varying(200)"
   "RequiredPermissions" "text[]" [not null]
@@ -6728,7 +6757,7 @@ Table "Notifications" {
   "Priority" "character varying(20)" [not null]
   "ReferenceEntityId" uuid
   "ReferenceEntityType" "character varying(100)"
-  "Metadata" "character varying(4000)"
+  "Metadata" text
   "TemplateId" uuid
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
@@ -11583,6 +11612,9 @@ Table "gameguild.authentication"."externallogin" {
   "ProviderKey" "character varying(256)" [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
+  "GrantedScopes" "character varying(1024)"
+  "ConsentedAt" timestamp
+  "ConsentVersion" integer [not null, default: 0]
 
   Indexes {
     id [pk, name: "PK_externallogin"]

@@ -1483,6 +1483,129 @@ export interface BulkOperationOutput {
   totalRequested?: number;
 }
 
+/** Read model over a durable billing integration event published through the platform outbox. */
+export interface CommerceBillingBillingOutboxEventDto {
+  /** Aggregate identifier the event refers to. */
+  aggregateId?: string | null;
+  /** Aggregate the event refers to. */
+  aggregateType?: string | null;
+  /** Correlation identifier of the emitting operation. */
+  correlationId?: string;
+  /** Durable event identifier. */
+  eventId?: string;
+  /** Stable event name, e.g. commerce.billing.invoice-paid.v1. */
+  eventName?: string | null;
+  /** Stable CLR type name of the event payload. */
+  eventType?: string | null;
+  /** When the event occurred. */
+  occurredAtUtc?: string;
+  /** Schema version of the event payload. */
+  schemaVersion?: number;
+  status?: CommerceBillingBillingOutboxEventStatus;
+  /** Tenant scope of the event. */
+  tenantId?: string;
+}
+
+/** Delivery status of a durable billing event in the platform outbox. */
+export type CommerceBillingBillingOutboxEventStatus = 'Pending' | 'Completed' | 'DeadLettered';
+
+/** State of the CIDR source allowlist enforced on the provider callback endpoints. */
+export interface CommerceBillingBillingWebhookAllowlistStatusDto {
+  /** Number of configured CIDR entries. */
+  configuredNetworkCount?: number;
+  /** Configured CIDR entries (admin-visible; providers rotate egress ranges). */
+  configuredNetworks?: string[] | null;
+  /** Whether any allowlist entry is configured (fail closed when true). */
+  isEnabled?: boolean;
+}
+
+/** A webhook source currently blocked for suspicious activity. */
+export interface CommerceBillingBillingWebhookBlockedSourceDto {
+  blockedUntilUtc?: string;
+  failureCount?: number;
+  sourceKey?: string | null;
+}
+
+/** DTO for webhook event response */
+export interface CommerceBillingBillingWebhookEventDto {
+  id?: string;
+  createdAt?: string;
+  errorMessage?: string | null;
+  eventType?: string | null;
+  externalEventId?: string | null;
+  isFailed?: boolean;
+  isProcessed?: boolean;
+  processedAt?: string | null;
+  processingAttempts?: number;
+  provider?: string | null;
+  subscriptionId?: string | null;
+  tenantId?: string | null;
+}
+
+/** List item of the billing webhook inbox event feed (issue #396). Payloads are excluded. */
+export interface CommerceBillingBillingWebhookEventListItemDto {
+  /** Local inbox row identifier. */
+  id?: string;
+  /** When the event was accepted into the inbox. */
+  createdAt?: string;
+  /** Error of the last failed attempt, when present. */
+  errorMessage?: string | null;
+  /** Provider event type, e.g. invoice.payment_succeeded. */
+  eventType?: string | null;
+  /** Provider-scoped event identifier. */
+  externalEventId?: string | null;
+  /** Whether the last attempt failed. */
+  isFailed?: boolean;
+  /** Whether processing completed. */
+  isProcessed?: boolean;
+  /** When processing completed. */
+  processedAt?: string | null;
+  /** Number of processing attempts. */
+  processingAttempts?: number;
+  /** Payment provider that emitted the webhook. */
+  provider?: string | null;
+  /** Related subscription, when known. */
+  subscriptionId?: string | null;
+  /** Related tenant, when known. */
+  tenantId?: string | null;
+}
+
+/** A security alert surfaced from the Compliance.Audit pipeline. */
+export interface CommerceBillingBillingWebhookSecurityAlertDto {
+  id?: string;
+  kind?: string | null;
+  raisedAtUtc?: string | null;
+  ruleId?: string | null;
+  severity?: string | null;
+  title?: string | null;
+}
+
+/** Admin-facing summary of the billing webhook security posture: allowlist state,
+suspicious-activity blocking, and the delivery health of the security event pipeline. */
+export interface CommerceBillingBillingWebhookSecuritySummaryDto {
+  /** UTC moment the summary was produced. */
+  generatedAtUtc?: string;
+  /** Open (unacknowledged) security alerts raised by the pipeline. */
+  openSecurityAlerts?: CommerceBillingBillingWebhookSecurityAlertDto[] | null;
+  securityEventPipeline?: ComplianceAuditSecurityEventDeliveryStatusOutput;
+  sourceIpAllowlist?: CommerceBillingBillingWebhookAllowlistStatusDto;
+  suspiciousActivity?: CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
+}
+
+/** State of the suspicious-activity auto-blocking monitor. */
+export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
+  /** How long (seconds) a blocked source stays blocked. */
+  blockDurationSeconds?: number;
+  /** Sources currently blocked, ordered by remaining block duration. */
+  blockedSources?: CommerceBillingBillingWebhookBlockedSourceDto[] | null;
+  /** Failures within the window that trigger a temporary block. */
+  failureThreshold?: number;
+  /** Whether threshold blocking is enabled (fail open when false). */
+  isEnabled?: boolean;
+  /** Sliding window (seconds) in which failures are counted per source. */
+  windowSeconds?: number;
+}
+
 /** Data model for Commerce Billing Invoice Payment Retry Result. */
 export interface CommerceBillingInvoicePaymentRetryResult {
   accepted?: boolean;
@@ -4246,6 +4369,12 @@ export interface ComplianceAuditPermissionAuditOutput {
   totalCount?: number;
 }
 
+/** Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
+export interface ComplianceAuditResolveSecurityAlertInput {
+  /** Resolution note recorded on the alert and in the resolution audit event. */
+  notes?: string | null;
+}
+
 /** Data model for Compliance Audit Review Compliance Document Request. */
 export interface ComplianceAuditReviewComplianceDocumentInput {
   decision?: ComplianceAuditComplianceDocumentReview;
@@ -4293,6 +4422,9 @@ export interface ComplianceAuditSecurityAlertOutput {
   kind?: ComplianceAuditSecurityEventKind;
   lastSeenAtUtc?: string;
   occurrenceCount?: number;
+  resolutionNotes?: string | null;
+  resolvedAtUtc?: string | null;
+  resolvedByUserId?: string | null;
   ruleId?: string | null;
   severity?: ComplianceAuditAuditRiskLevel;
   sourceActionType?: string | null;
@@ -7206,6 +7338,18 @@ export interface IdentityAuthenticationCompleteWebAuthnRegistrationInput {
   isPasswordless?: boolean;
 }
 
+/** Request to consume a one-time email sign-in code. */
+export interface IdentityAuthenticationConsumeEmailCodeInput {
+  /** Six-digit one-time code received by email. */
+  code: string;
+  /** Optional device fingerprint for refresh-token session tracking. */
+  deviceFingerprint?: string | null;
+  /** Email address the code belongs to. */
+  email: string;
+  /** Optional tenant context. */
+  tenantId?: string | null;
+}
+
 /** Request to consume a passwordless magic sign-in link. */
 export interface IdentityAuthenticationConsumeMagicLinkInput {
   /** Optional device fingerprint for refresh-token session tracking. */
@@ -7261,7 +7405,7 @@ export interface IdentityAuthenticationCreateStepUpChallengeInput {
 }
 
 /** Credential type detection */
-export type IdentityAuthenticationCredentialType = 'Email' | 'Username' | 'Phone' | 'WalletAddress';
+export type IdentityAuthenticationCredentialType = 'Email' | 'Username' | 'Phone' | 'WalletAddress' | 'Certificate';
 
 /** Represents detailed device information for security tracking. */
 export interface IdentityAuthenticationDeviceInfo {
@@ -7314,6 +7458,8 @@ export interface IdentityAuthenticationDiscordCallbackRequestDto {
   code: string;
   /** The same redirect URI used in the authorization request */
   redirectUri: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
   state: string;
   /** Optional tenant context */
@@ -7349,6 +7495,13 @@ so the caller can stash it in its state cookie) */
   state: string | null;
 }
 
+/** Data model for Identity Authentication Email Code Request Result. */
+export interface IdentityAuthenticationEmailCodeRequestResult {
+  expiresInMinutes?: number;
+  message?: string | null;
+  success?: boolean;
+}
+
 /** Response for email verification request */
 export interface IdentityAuthenticationEmailVerificationOutput {
   /** Success message */
@@ -7369,6 +7522,14 @@ export interface IdentityAuthenticationEmailVerificationResult {
   verifiedAt?: string | null;
 }
 
+/** Authorization-time consent preview: the exact scopes a link flow will request from
+the provider, shown to the user before they continue (issue #250). */
+export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
+  provider: string | null;
+  /** Scope tokens that will appear on the authorization request. */
+  requestedScopes: string[] | null;
+}
+
 /** Response for GitHub sign-in initiation */
 export interface IdentityAuthenticationGitHubSignInOutput {
   /** GitHub OAuth authorization URL */
@@ -7378,6 +7539,8 @@ export interface IdentityAuthenticationGitHubSignInOutput {
 /** Request for Google ID token sign-in */
 export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   idToken: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   tenantId?: string | null;
 }
 
@@ -7406,6 +7569,10 @@ export interface IdentityAuthenticationLocalSignInInput {
   /** Alias for Email to support polymorphic sign-in scenarios */
   emailOrUsername?: string | null;
   password: string;
+  /** When true, the session is persistent ("remember me"): the refresh token uses the
+configurable persistent lifetime (`Jwt:PersistentRefreshTokenExpirationDays`)
+instead of the standard one. Null or false keeps the standard lifetime. */
+  rememberMe?: boolean | null;
   /** Optional tenant ID to use for the sign-in. If not provided, will use the first available tenant for the user */
   tenantId?: string | null;
   username?: string | null;
@@ -7538,6 +7705,54 @@ export interface IdentityAuthenticationOAuth2ErrorOutput {
   errorDescription?: string | null;
 }
 
+/** Request to initiate an OIDC federation provider sign-in */
+export interface IdentityAuthenticationOidcAuthorizeRequestDto {
+  /** The redirect URI registered with the federation provider */
+  redirectUri: string;
+}
+
+/** Request body for the OIDC federation callback endpoint */
+export interface IdentityAuthenticationOidcCallbackRequestDto {
+  /** OAuth authorization code returned by the federation provider */
+  code: string;
+  /** The same redirect URI used in the authorization request */
+  redirectUri: string;
+  /** Whether the caller asked for a persistent ("remember me") refresh-token lifetime */
+  rememberMe?: boolean | null;
+  /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
+  state: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
+/** A discovered federation provider serving one email domain. */
+export interface IdentityAuthenticationOidcDiscoveredProvider {
+  displayName: string | null;
+  slug: string | null;
+}
+
+/** Response for domain-to-provider discovery */
+export interface IdentityAuthenticationOidcDiscoverProviderOutput {
+  /** Federation providers whose configured email domains match the requested address */
+  providers: IdentityAuthenticationOidcDiscoveredProvider[] | null;
+}
+
+/** Response for OIDC logout forwarding */
+export interface IdentityAuthenticationOidcEndSessionUrlOutput {
+  /** The provider's end-session URL with the post-logout redirect applied; null when the
+provider's discovery document does not advertise an end_session_endpoint. */
+  endSessionUrl?: string | null;
+}
+
+/** Response for OIDC federation sign-in initiation */
+export interface IdentityAuthenticationOidcSignInOutput {
+  /** The provider's authorization URL with client, redirect, scope, and state parameters applied */
+  authUrl: string | null;
+  /** CSRF state parameter embedded in the authorization URL (also returned separately
+so the caller can stash it in its state cookie) */
+  state: string | null;
+}
+
 /** Request to change password for authenticated user */
 export interface IdentityAuthenticationPasswordChangeInput {
   /** Password confirmation */
@@ -7596,6 +7811,8 @@ export interface IdentityAuthenticationPolymorphicSignInInput {
   credentialType?: IdentityAuthenticationCredentialType;
   deviceFingerprint?: string | null;
   password?: string | null;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   tenantId?: string | null;
 }
 
@@ -7609,6 +7826,14 @@ export interface IdentityAuthenticationRefreshTokenInput {
 export interface IdentityAuthenticationRemoveRoleFromUserInput {
   roleId?: string;
   userId?: string;
+}
+
+/** Request to send a one-time email sign-in code. */
+export interface IdentityAuthenticationRequestEmailCodeInput {
+  /** Email address to send the sign-in code to. */
+  email: string;
+  /** Optional tenant context. */
+  tenantId?: string | null;
 }
 
 /** Request to send a passwordless magic sign-in link. */
@@ -7630,6 +7855,24 @@ export interface IdentityAuthenticationRequestPasswordResetInput {
 /** Data model for Identity Authentication Revoke Api Key Request. */
 export interface IdentityAuthenticationRevokeApiKeyInput {
   reason?: string | null;
+}
+
+/** Request to revoke individual OAuth scope grants on a linked provider.
+Revoking every remaining scope is allowed and leaves the link in place with an
+empty grant list; removing the whole provider remains the unlink endpoint's job. */
+export interface IdentityAuthenticationRevokeExternalLoginScopesInput {
+  /** Scope tokens to revoke. Each must be a valid scope token (non-empty, no whitespace). */
+  scopes: string[];
+}
+
+/** Post-revocation snapshot of the link's grant state. */
+export interface IdentityAuthenticationRevokeExternalLoginScopesOutput {
+  /** UTC moment the underlying consent was recorded (revocation does not re-stamp it), when one exists. */
+  consentedAt?: string | null;
+  consentVersion?: number;
+  /** Scope grants remaining after the revocation. */
+  grantedScopes: string[] | null;
+  provider: string | null;
 }
 
 /** Request for revoking a refresh token */
@@ -7783,6 +8026,12 @@ export interface IdentityAuthenticationSignInOutput {
   accessToken?: string | null;
   /** When the access token expires (short-lived) */
   accessTokenExpiresAt?: string;
+  /**     Authentication context class reference (OIDC `acr`) attested by the federated
+identity provider for this sign-in. Null for non-federated flows. */
+  authenticationContextClassReference?: string | null;
+  /**     Authentication method references (OIDC `amr`) attested by the federated
+identity provider for this sign-in. Null for non-federated flows. */
+  authenticationMethodReferences?: string[] | null;
   /** Available step-up authentication methods */
   availableMethods?: string[] | null;
   /** List of tenants the user has access to */
@@ -7799,6 +8048,9 @@ export interface IdentityAuthenticationSignInOutput {
   mfaSessionId?: string | null;
   /** MFA token */
   mfaToken?: string | null;
+  /**     Whether the federated identity provider attested multi-factor authentication
+(`amr` containing "mfa") for this sign-in. */
+  mfaVerifiedByProvider?: boolean;
   /** Refresh token */
   refreshToken?: string | null;
   /** When the refresh token expires (long-lived) */
@@ -7947,6 +8199,8 @@ export interface IdentityAuthenticationWeb3VerifyInput {
   deviceFingerprint?: string | null;
   /** Nonce contained in the SIWE challenge message */
   nonce: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   /** EIP-191 signature over the SIWE challenge message */
   signature: string;
   /** Optional tenant context */
@@ -14801,6 +15055,52 @@ export type ObjectsUserVerificationRequirement = 'Required' | 'Preferred' | 'Dis
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultBillingOutboxEventDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingBillingOutboxEventDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultBillingWebhookEventListItemDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingBillingWebhookEventListItemDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultDeadLetterDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -19800,6 +20100,15 @@ export let AssetsVirusScanStatusSchema: z.ZodType<AssetsVirusScanStatus>;
 export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
+export let CommerceBillingBillingOutboxEventDtoSchema: z.ZodType<CommerceBillingBillingOutboxEventDto>;
+export let CommerceBillingBillingOutboxEventStatusSchema: z.ZodType<CommerceBillingBillingOutboxEventStatus>;
+export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookAllowlistStatusDto>;
+export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
+export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
+export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventListItemDto>;
+export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
+export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
+export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
@@ -20042,6 +20351,7 @@ export let ComplianceAuditExportStatusSchema: z.ZodType<ComplianceAuditExportSta
 export let ComplianceAuditFailureReasonCountSchema: z.ZodType<ComplianceAuditFailureReasonCount>;
 export let ComplianceAuditPermissionAuditEntrySchema: z.ZodType<ComplianceAuditPermissionAuditEntry>;
 export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAuditPermissionAuditOutput>;
+export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
 export let ComplianceAuditScheduledAuditExportOutputSchema: z.ZodType<ComplianceAuditScheduledAuditExportOutput>;
@@ -20331,6 +20641,7 @@ export let IdentityAuthenticationCompleteMfaSetupInputSchema: z.ZodType<Identity
 export let IdentityAuthenticationCompletePasswordResetInputSchema: z.ZodType<IdentityAuthenticationCompletePasswordResetInput>;
 export let IdentityAuthenticationCompleteWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnRegistrationInput>;
+export let IdentityAuthenticationConsumeEmailCodeInputSchema: z.ZodType<IdentityAuthenticationConsumeEmailCodeInput>;
 export let IdentityAuthenticationConsumeMagicLinkInputSchema: z.ZodType<IdentityAuthenticationConsumeMagicLinkInput>;
 export let IdentityAuthenticationCreateApiKeyCommandSchema: z.ZodType<IdentityAuthenticationCreateApiKeyCommand>;
 export let IdentityAuthenticationCreateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationCreateApiKeyOutput>;
@@ -20346,8 +20657,10 @@ export let IdentityAuthenticationDiscordLinkAuthorizeInputSchema: z.ZodType<Iden
 export let IdentityAuthenticationDiscordLinkAuthorizeOutputSchema: z.ZodType<IdentityAuthenticationDiscordLinkAuthorizeOutput>;
 export let IdentityAuthenticationDiscordLinkCallbackInputSchema: z.ZodType<IdentityAuthenticationDiscordLinkCallbackInput>;
 export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAuthenticationDiscordSignInOutput>;
+export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<IdentityAuthenticationEmailCodeRequestResult>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
+export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
@@ -20366,6 +20679,12 @@ export let IdentityAuthenticationMfaSetupOutputSchema: z.ZodType<IdentityAuthent
 export let IdentityAuthenticationMfaSuccessOutputSchema: z.ZodType<IdentityAuthenticationMfaSuccessOutput>;
 export let IdentityAuthenticationMfaVerificationOutputSchema: z.ZodType<IdentityAuthenticationMfaVerificationOutput>;
 export let IdentityAuthenticationOAuth2ErrorOutputSchema: z.ZodType<IdentityAuthenticationOAuth2ErrorOutput>;
+export let IdentityAuthenticationOidcAuthorizeRequestDtoSchema: z.ZodType<IdentityAuthenticationOidcAuthorizeRequestDto>;
+export let IdentityAuthenticationOidcCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationOidcCallbackRequestDto>;
+export let IdentityAuthenticationOidcDiscoveredProviderSchema: z.ZodType<IdentityAuthenticationOidcDiscoveredProvider>;
+export let IdentityAuthenticationOidcDiscoverProviderOutputSchema: z.ZodType<IdentityAuthenticationOidcDiscoverProviderOutput>;
+export let IdentityAuthenticationOidcEndSessionUrlOutputSchema: z.ZodType<IdentityAuthenticationOidcEndSessionUrlOutput>;
+export let IdentityAuthenticationOidcSignInOutputSchema: z.ZodType<IdentityAuthenticationOidcSignInOutput>;
 export let IdentityAuthenticationPasswordChangeInputSchema: z.ZodType<IdentityAuthenticationPasswordChangeInput>;
 export let IdentityAuthenticationPasswordChangeResultSchema: z.ZodType<IdentityAuthenticationPasswordChangeResult>;
 export let IdentityAuthenticationPasswordResetRequestResultSchema: z.ZodType<IdentityAuthenticationPasswordResetRequestResult>;
@@ -20374,9 +20693,12 @@ export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<Ident
 export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
+export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
 export let IdentityAuthenticationRequestMagicLinkInputSchema: z.ZodType<IdentityAuthenticationRequestMagicLinkInput>;
 export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<IdentityAuthenticationRequestPasswordResetInput>;
 export let IdentityAuthenticationRevokeApiKeyInputSchema: z.ZodType<IdentityAuthenticationRevokeApiKeyInput>;
+export let IdentityAuthenticationRevokeExternalLoginScopesInputSchema: z.ZodType<IdentityAuthenticationRevokeExternalLoginScopesInput>;
+export let IdentityAuthenticationRevokeExternalLoginScopesOutputSchema: z.ZodType<IdentityAuthenticationRevokeExternalLoginScopesOutput>;
 export let IdentityAuthenticationRevokeRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRevokeRefreshTokenInput>;
 export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticationRiskLevel>;
 export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
@@ -21004,6 +21326,8 @@ export let ObjectsPublicKeyCredentialHintSchema: z.ZodType<ObjectsPublicKeyCrede
 export let ObjectsPublicKeyCredentialTypeSchema: z.ZodType<ObjectsPublicKeyCredentialType>;
 export let ObjectsResidentKeyRequirementSchema: z.ZodType<ObjectsResidentKeyRequirement>;
 export let ObjectsUserVerificationRequirementSchema: z.ZodType<ObjectsUserVerificationRequirement>;
+export let PagedResultBillingOutboxEventDtoSchema: z.ZodType<PagedResultBillingOutboxEventDto>;
+export let PagedResultBillingWebhookEventListItemDtoSchema: z.ZodType<PagedResultBillingWebhookEventListItemDto>;
 export let PagedResultDeadLetterDtoSchema: z.ZodType<PagedResultDeadLetterDto>;
 export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDeliveryEventDto>;
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
@@ -22900,6 +23224,104 @@ BulkOperationOutputSchema = z.object({
   successfulOperations: z.number().int().optional(),
   successRate: z.number().optional(),
   totalRequested: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingOutboxEventDto. Read model over a durable billing integration event published through the platform outbox. */
+CommerceBillingBillingOutboxEventDtoSchema = z.object({
+  aggregateId: z.string().nullable().optional(),
+  aggregateType: z.string().nullable().optional(),
+  correlationId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
+  eventName: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  schemaVersion: z.number().int().optional(),
+  status: z.lazy(() => CommerceBillingBillingOutboxEventStatusSchema).optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingOutboxEventStatus. Delivery status of a durable billing event in the platform outbox. */
+CommerceBillingBillingOutboxEventStatusSchema = z.enum(['Pending', 'Completed', 'DeadLettered']);
+
+/** Zod schema for CommerceBillingBillingWebhookAllowlistStatusDto. State of the CIDR source allowlist enforced on the provider callback endpoints. */
+CommerceBillingBillingWebhookAllowlistStatusDtoSchema = z.object({
+  configuredNetworkCount: z.number().int().optional(),
+  configuredNetworks: z.array(z.string()).nullable().optional(),
+  isEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookBlockedSourceDto. A webhook source currently blocked for suspicious activity. */
+CommerceBillingBillingWebhookBlockedSourceDtoSchema = z.object({
+  blockedUntilUtc: z.string().datetime().optional(),
+  failureCount: z.number().int().optional(),
+  sourceKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookEventDto. DTO for webhook event response */
+CommerceBillingBillingWebhookEventDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorMessage: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  externalEventId: z.string().nullable().optional(),
+  isFailed: z.boolean().optional(),
+  isProcessed: z.boolean().optional(),
+  processedAt: z.string().datetime().nullable().optional(),
+  processingAttempts: z.number().int().optional(),
+  provider: z.string().nullable().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookEventListItemDto. List item of the billing webhook inbox event feed (issue #396). Payloads are excluded. */
+CommerceBillingBillingWebhookEventListItemDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorMessage: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  externalEventId: z.string().nullable().optional(),
+  isFailed: z.boolean().optional(),
+  isProcessed: z.boolean().optional(),
+  processedAt: z.string().datetime().nullable().optional(),
+  processingAttempts: z.number().int().optional(),
+  provider: z.string().nullable().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
+CommerceBillingBillingWebhookSecurityAlertDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  kind: z.string().nullable().optional(),
+  raisedAtUtc: z.string().datetime().nullable().optional(),
+  ruleId: z.string().nullable().optional(),
+  severity: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSecuritySummaryDto. Admin-facing summary of the billing webhook security posture: allowlist state,
+suspicious-activity blocking, and the delivery health of the security event pipeline. */
+CommerceBillingBillingWebhookSecuritySummaryDtoSchema = z.object({
+  generatedAtUtc: z.string().datetime().optional(),
+  openSecurityAlerts: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookSecurityAlertDtoSchema))
+    .nullable()
+    .optional(),
+  securityEventPipeline: z.lazy(() => ComplianceAuditSecurityEventDeliveryStatusOutputSchema).optional(),
+  sourceIpAllowlist: z.lazy(() => CommerceBillingBillingWebhookAllowlistStatusDtoSchema).optional(),
+  suspiciousActivity: z.lazy(() => CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema).optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSuspiciousActivityStatusDto. State of the suspicious-activity auto-blocking monitor. */
+CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema = z.object({
+  blockDurationSeconds: z.number().int().optional(),
+  blockedSources: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookBlockedSourceDtoSchema))
+    .nullable()
+    .optional(),
+  failureThreshold: z.number().int().optional(),
+  isEnabled: z.boolean().optional(),
+  windowSeconds: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceBillingInvoicePaymentRetryResult. Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -25474,6 +25896,11 @@ ComplianceAuditPermissionAuditOutputSchema = z.object({
   totalCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditResolveSecurityAlertInput. Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
+ComplianceAuditResolveSecurityAlertInputSchema = z.object({
+  notes: z.string().max(1000).nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditReviewComplianceDocumentInput. Data model for Compliance Audit Review Compliance Document Request. */
 ComplianceAuditReviewComplianceDocumentInputSchema = z.object({
   decision: z.lazy(() => ComplianceAuditComplianceDocumentReviewSchema).optional(),
@@ -25524,6 +25951,9 @@ ComplianceAuditSecurityAlertOutputSchema = z.object({
   kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
   lastSeenAtUtc: z.string().datetime().optional(),
   occurrenceCount: z.number().int().optional(),
+  resolutionNotes: z.string().nullable().optional(),
+  resolvedAtUtc: z.string().datetime().nullable().optional(),
+  resolvedByUserId: z.string().uuid().nullable().optional(),
   ruleId: z.string().nullable().optional(),
   severity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
   sourceActionType: z.string().nullable().optional(),
@@ -28561,6 +28991,17 @@ IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema = z.object({
   isPasswordless: z.boolean().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationConsumeEmailCodeInput. Request to consume a one-time email sign-in code. */
+IdentityAuthenticationConsumeEmailCodeInputSchema = z.object({
+  code: z
+    .string()
+    .min(1)
+    .regex(/^[0-9]{6}$/),
+  deviceFingerprint: z.string().nullable().optional(),
+  email: z.string().email().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationConsumeMagicLinkInput. Request to consume a passwordless magic sign-in link. */
 IdentityAuthenticationConsumeMagicLinkInputSchema = z.object({
   deviceFingerprint: z.string().nullable().optional(),
@@ -28613,7 +29054,7 @@ IdentityAuthenticationCreateStepUpChallengeInputSchema = z.object({
 });
 
 /** Zod schema for IdentityAuthenticationCredentialType. Credential type detection */
-IdentityAuthenticationCredentialTypeSchema = z.enum(['Email', 'Username', 'Phone', 'WalletAddress']);
+IdentityAuthenticationCredentialTypeSchema = z.enum(['Email', 'Username', 'Phone', 'WalletAddress', 'Certificate']);
 
 /** Zod schema for IdentityAuthenticationDeviceInfo. Represents detailed device information for security tracking. */
 IdentityAuthenticationDeviceInfoSchema = z.object({
@@ -28648,6 +29089,7 @@ IdentityAuthenticationDiscordAuthorizeInputSchema = z.object({
 IdentityAuthenticationDiscordCallbackRequestDtoSchema = z.object({
   code: z.string().min(1),
   redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   state: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
 });
@@ -28676,6 +29118,13 @@ IdentityAuthenticationDiscordSignInOutputSchema = z.object({
   state: z.string().nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationEmailCodeRequestResult. Data model for Identity Authentication Email Code Request Result. */
+IdentityAuthenticationEmailCodeRequestResultSchema = z.object({
+  expiresInMinutes: z.number().int().optional(),
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationEmailVerificationOutput. Response for email verification request */
 IdentityAuthenticationEmailVerificationOutputSchema = z.object({
   message: z.string().nullable(),
@@ -28690,6 +29139,13 @@ IdentityAuthenticationEmailVerificationResultSchema = z.object({
   verifiedAt: z.string().datetime().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationExternalLoginLinkPreviewOutput. Authorization-time consent preview: the exact scopes a link flow will request from
+the provider, shown to the user before they continue (issue #250). */
+IdentityAuthenticationExternalLoginLinkPreviewOutputSchema = z.object({
+  provider: z.string().nullable(),
+  requestedScopes: z.array(z.string()).nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationGitHubSignInOutput. Response for GitHub sign-in initiation */
 IdentityAuthenticationGitHubSignInOutputSchema = z.object({
   authUrl: z.string().nullable(),
@@ -28698,6 +29154,7 @@ IdentityAuthenticationGitHubSignInOutputSchema = z.object({
 /** Zod schema for IdentityAuthenticationGoogleIdTokenRequestDto. Request for Google ID token sign-in */
 IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   idToken: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -28724,6 +29181,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
   email: z.string().email().min(1),
   emailOrUsername: z.string().nullable().optional(),
   password: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
   username: z.string().nullable().optional(),
 });
@@ -28831,6 +29289,42 @@ IdentityAuthenticationOAuth2ErrorOutputSchema = z.object({
   errorDescription: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationOidcAuthorizeRequestDto. Request to initiate an OIDC federation provider sign-in */
+IdentityAuthenticationOidcAuthorizeRequestDtoSchema = z.object({
+  redirectUri: z.string().min(1),
+});
+
+/** Zod schema for IdentityAuthenticationOidcCallbackRequestDto. Request body for the OIDC federation callback endpoint */
+IdentityAuthenticationOidcCallbackRequestDtoSchema = z.object({
+  code: z.string().min(1),
+  redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
+  state: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcDiscoveredProvider. A discovered federation provider serving one email domain. */
+IdentityAuthenticationOidcDiscoveredProviderSchema = z.object({
+  displayName: z.string().nullable(),
+  slug: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcDiscoverProviderOutput. Response for domain-to-provider discovery */
+IdentityAuthenticationOidcDiscoverProviderOutputSchema = z.object({
+  providers: z.array(z.lazy(() => IdentityAuthenticationOidcDiscoveredProviderSchema)).nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcEndSessionUrlOutput. Response for OIDC logout forwarding */
+IdentityAuthenticationOidcEndSessionUrlOutputSchema = z.object({
+  endSessionUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcSignInOutput. Response for OIDC federation sign-in initiation */
+IdentityAuthenticationOidcSignInOutputSchema = z.object({
+  authUrl: z.string().nullable(),
+  state: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationPasswordChangeInput. Request to change password for authenticated user */
 IdentityAuthenticationPasswordChangeInputSchema = z.object({
   confirmPassword: z.string().min(1),
@@ -28874,6 +29368,7 @@ IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
   credentialType: z.lazy(() => IdentityAuthenticationCredentialTypeSchema).optional(),
   deviceFingerprint: z.string().nullable().optional(),
   password: z.string().nullable().optional(),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -28887,6 +29382,12 @@ IdentityAuthenticationRefreshTokenInputSchema = z.object({
 IdentityAuthenticationRemoveRoleFromUserInputSchema = z.object({
   roleId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRequestEmailCodeInput. Request to send a one-time email sign-in code. */
+IdentityAuthenticationRequestEmailCodeInputSchema = z.object({
+  email: z.string().email().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationRequestMagicLinkInput. Request to send a passwordless magic sign-in link. */
@@ -28904,6 +29405,21 @@ IdentityAuthenticationRequestPasswordResetInputSchema = z.object({
 /** Zod schema for IdentityAuthenticationRevokeApiKeyInput. Data model for Identity Authentication Revoke Api Key Request. */
 IdentityAuthenticationRevokeApiKeyInputSchema = z.object({
   reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRevokeExternalLoginScopesInput. Request to revoke individual OAuth scope grants on a linked provider.
+Revoking every remaining scope is allowed and leaves the link in place with an
+empty grant list; removing the whole provider remains the unlink endpoint's job. */
+IdentityAuthenticationRevokeExternalLoginScopesInputSchema = z.object({
+  scopes: z.array(z.string()).min(1),
+});
+
+/** Zod schema for IdentityAuthenticationRevokeExternalLoginScopesOutput. Post-revocation snapshot of the link's grant state. */
+IdentityAuthenticationRevokeExternalLoginScopesOutputSchema = z.object({
+  consentedAt: z.string().datetime().nullable().optional(),
+  consentVersion: z.number().int().optional(),
+  grantedScopes: z.array(z.string()).nullable(),
+  provider: z.string().nullable(),
 });
 
 /** Zod schema for IdentityAuthenticationRevokeRefreshTokenInput. Request for revoking a refresh token */
@@ -29047,6 +29563,8 @@ IdentityAuthenticationSessionTerminationOutputSchema = z.object({
 IdentityAuthenticationSignInOutputSchema = z.object({
   accessToken: z.string().nullable().optional(),
   accessTokenExpiresAt: z.string().datetime().optional(),
+  authenticationContextClassReference: z.string().nullable().optional(),
+  authenticationMethodReferences: z.array(z.string()).nullable().optional(),
   availableMethods: z.array(z.string()).nullable().optional(),
   availableTenants: z
     .array(z.lazy(() => TenantInfoSchema))
@@ -29058,6 +29576,7 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   message: z.string().nullable().optional(),
   mfaSessionId: z.string().nullable().optional(),
   mfaToken: z.string().nullable().optional(),
+  mfaVerifiedByProvider: z.boolean().optional(),
   refreshToken: z.string().nullable().optional(),
   refreshTokenExpiresAt: z.string().datetime().optional(),
   requiresMfa: z.boolean().optional(),
@@ -29183,6 +29702,7 @@ IdentityAuthenticationWeb3VerifyInputSchema = z.object({
   challenge: z.string().min(1),
   deviceFingerprint: z.string().nullable().optional(),
   nonce: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   signature: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
   walletAddress: z.string().min(1),
@@ -35628,6 +36148,40 @@ ObjectsResidentKeyRequirementSchema = z.enum(['Required', 'Preferred', 'Discoura
 /** Zod schema for ObjectsUserVerificationRequirement. OpenAPI schema for Objects User Verification Requirement. */
 ObjectsUserVerificationRequirementSchema = z.enum(['Required', 'Preferred', 'Discouraged']);
 
+/** Zod schema for PagedResultBillingOutboxEventDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultBillingOutboxEventDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingBillingOutboxEventDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultBillingWebhookEventListItemDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultBillingWebhookEventListItemDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookEventListItemDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultDeadLetterDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultDeadLetterDtoSchema = z.object({
@@ -40000,6 +40554,22 @@ export type APITeamsTeamInvitation = APITeamsTeamInvitationDto;
 export { APITeamsTeamInvitationDtoSchema as APITeamsTeamInvitationSchema };
 export type APITeamsTeamMember = APITeamsTeamMemberDto;
 export { APITeamsTeamMemberDtoSchema as APITeamsTeamMemberSchema };
+export type CommerceBillingBillingOutboxEvent = CommerceBillingBillingOutboxEventDto;
+export { CommerceBillingBillingOutboxEventDtoSchema as CommerceBillingBillingOutboxEventSchema };
+export type CommerceBillingBillingWebhookAllowlistStatus = CommerceBillingBillingWebhookAllowlistStatusDto;
+export { CommerceBillingBillingWebhookAllowlistStatusDtoSchema as CommerceBillingBillingWebhookAllowlistStatusSchema };
+export type CommerceBillingBillingWebhookBlockedSource = CommerceBillingBillingWebhookBlockedSourceDto;
+export { CommerceBillingBillingWebhookBlockedSourceDtoSchema as CommerceBillingBillingWebhookBlockedSourceSchema };
+export type CommerceBillingBillingWebhookEvent = CommerceBillingBillingWebhookEventDto;
+export { CommerceBillingBillingWebhookEventDtoSchema as CommerceBillingBillingWebhookEventSchema };
+export type CommerceBillingBillingWebhookEventListItem = CommerceBillingBillingWebhookEventListItemDto;
+export { CommerceBillingBillingWebhookEventListItemDtoSchema as CommerceBillingBillingWebhookEventListItemSchema };
+export type CommerceBillingBillingWebhookSecurityAlert = CommerceBillingBillingWebhookSecurityAlertDto;
+export { CommerceBillingBillingWebhookSecurityAlertDtoSchema as CommerceBillingBillingWebhookSecurityAlertSchema };
+export type CommerceBillingBillingWebhookSecuritySummary = CommerceBillingBillingWebhookSecuritySummaryDto;
+export { CommerceBillingBillingWebhookSecuritySummaryDtoSchema as CommerceBillingBillingWebhookSecuritySummarySchema };
+export type CommerceBillingBillingWebhookSuspiciousActivityStatus = CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
+export { CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema as CommerceBillingBillingWebhookSuspiciousActivityStatusSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -40118,6 +40688,10 @@ export type IdentityAuthenticationGoogleIdTokenRequest = IdentityAuthenticationG
 export { IdentityAuthenticationGoogleIdTokenRequestDtoSchema as IdentityAuthenticationGoogleIdTokenRequestSchema };
 export type IdentityAuthenticationJwtKeyInfo = IdentityAuthenticationJwtKeyInfoDto;
 export { IdentityAuthenticationJwtKeyInfoDtoSchema as IdentityAuthenticationJwtKeyInfoSchema };
+export type IdentityAuthenticationOidcAuthorizeRequest = IdentityAuthenticationOidcAuthorizeRequestDto;
+export { IdentityAuthenticationOidcAuthorizeRequestDtoSchema as IdentityAuthenticationOidcAuthorizeRequestSchema };
+export type IdentityAuthenticationOidcCallbackRequest = IdentityAuthenticationOidcCallbackRequestDto;
+export { IdentityAuthenticationOidcCallbackRequestDtoSchema as IdentityAuthenticationOidcCallbackRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationEffectivePermission = IdentityAuthorizationEffectivePermissionDto;
@@ -40470,6 +41044,10 @@ export type NotificationsControllersNotificationPreference = NotificationsContro
 export { NotificationsControllersNotificationPreferenceDtoSchema as NotificationsControllersNotificationPreferenceSchema };
 export type NotificationsControllersNotificationTimeline = NotificationsControllersNotificationTimelineDto;
 export { NotificationsControllersNotificationTimelineDtoSchema as NotificationsControllersNotificationTimelineSchema };
+export type PagedResultBillingOutboxEvent = PagedResultBillingOutboxEventDto;
+export { PagedResultBillingOutboxEventDtoSchema as PagedResultBillingOutboxEventSchema };
+export type PagedResultBillingWebhookEventListItem = PagedResultBillingWebhookEventListItemDto;
+export { PagedResultBillingWebhookEventListItemDtoSchema as PagedResultBillingWebhookEventListItemSchema };
 export type PagedResultDeadLetter = PagedResultDeadLetterDto;
 export { PagedResultDeadLetterDtoSchema as PagedResultDeadLetterSchema };
 export type PagedResultEmailDeliveryEvent = PagedResultEmailDeliveryEventDto;

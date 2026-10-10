@@ -31,4 +31,9 @@ public class PolymorphicSignInCommand : ICommand<SignInResponse>
     ///     Optional device fingerprint for trusted device tracking
     /// </summary>
     public string? DeviceFingerprint { get; init; }
+
+    /// <summary>
+    ///     When true, issues a persistent ("remember me") refresh token using the persistent lifetime.
+    /// </summary>
+    public bool? RememberMe { get; init; }
 }

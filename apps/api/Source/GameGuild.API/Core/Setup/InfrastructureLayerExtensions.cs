@@ -225,6 +225,12 @@ public static class InfrastructureLayerExtensions
         // 10a. Resources Module (quota, usage tracking, SLA services)
         stepStopwatch.Restart();
         services.AddResourcesInfrastructure(configuration);
+        // FluentValidation pipeline behavior (issue #394): registered BEFORE the quota and
+        // operation/audit behaviors so invalid commands short-circuit with
+        // RequestValidationException without consuming resource quotas and without opening a
+        // use-case operation transaction (no operation event is ever emitted for them).
+        // Behaviors wrap in registration order, so this runs after AuthorizationBehavior.
+        services.AddTransient(typeof(GameGuild.CQRS.IPipelineBehavior<,>), typeof(GameGuild.CQRS.ValidationBehavior<,>));
         services.AddResourceQuotaBehavior();
         services.AddTransient(typeof(GameGuild.CQRS.IPipelineBehavior<,>), typeof(UseCaseOperationBehavior<,>));
         services.Configure<QuotaReconciliationOptions>(
@@ -274,6 +280,9 @@ public static class InfrastructureLayerExtensions
         // 10d. Commerce Billing Module (webhook services for Stripe, PayPal, ApplePay)
         stepStopwatch.Restart();
         services.AddBillingModule(configuration);
+        // Connect the billing module's outbox read port to the platform outbox read model
+        // (issue #396: billing events monitoring over the existing durable transport).
+        services.AddScoped<IBillingOutboxEventReader, Core.Integration.BillingOutboxEventReader>();
         logger.LogInformation("Billing Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10e. Commerce Payments Module (payment gateway, payment services)

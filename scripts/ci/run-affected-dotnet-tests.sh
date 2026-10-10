@@ -5,6 +5,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repository_root="$(cd "$script_dir/../.." && pwd)"
 # shellcheck source=disposable-postgres.sh
 source "$script_dir/disposable-postgres.sh"
+# shellcheck source=pull-ci-image.sh
+source "$script_dir/pull-ci-image.sh"
 cd "$repository_root"
 
 # Capture selection before starting infrastructure; a failed selector must fail
@@ -44,13 +46,14 @@ prepare_economy_template() {
   local mapping postgres_port template_connection candidate_id attempt password ready=false
   password="$(new_disposable_postgres_password)"
   register_disposable_postgres_password "$password"
+  pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
   candidate_id="$(docker run --detach --rm --name "$container_name" \
     --label gameguild.ci=affected-api \
     --env POSTGRES_DB=economy_tests \
     --env POSTGRES_USER=postgres --env "POSTGRES_PASSWORD=$password" \
     --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --publish 127.0.0.1::5432 \
-    postgres:17-alpine -c max_locks_per_transaction=512)"
+    public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512)"
   [[ "$candidate_id" =~ ^[a-f0-9]{12,64}$ ]] || {
     printf 'Docker did not return a valid owned container ID\n' >&2
     return 1

@@ -15,7 +15,8 @@ public class LoginAttemptAnalysisService(
     IConfiguration configuration,
     ISiemIntegrationService siemService,
     IThreatIntelligenceProvider? threatIntelligenceProvider = null,
-    IAuthenticationAuditEventSink? auditEventSink = null) : ILoginAttemptAnalysisService
+    IAuthenticationAuditEventSink? auditEventSink = null,
+    IAdaptiveAnomalyDetectionService? adaptiveAnomalyDetectionService = null) : ILoginAttemptAnalysisService
 {
     private const int DefaultSuspiciousThreshold = 3;
     private const string MaliciousIpAnomaly = "ThreatIntel:MaliciousIp";
@@ -159,7 +160,7 @@ public class LoginAttemptAnalysisService(
                         if (isImpossibleTravel)
                         {
                             result.RiskScore += 50;
-                            result.DetectedAnomalies.Add("ImpossibleTravel");
+                            result.DetectedAnomalies.Add(SecurityAlertKinds.ImpossibleTravel);
                         }
                     }
                 }
@@ -182,7 +183,7 @@ public class LoginAttemptAnalysisService(
                 if (isBruteForce)
                 {
                     result.RiskScore += 40;
-                    result.DetectedAnomalies.Add("BruteForceDetected");
+                    result.DetectedAnomalies.Add(SecurityAlertKinds.BruteForceDetected);
                 }
             }
 
@@ -193,6 +194,8 @@ public class LoginAttemptAnalysisService(
             }
 
             await ApplyThreatIntelligenceSignalsAsync(context, result).ConfigureAwait(false);
+
+            await ApplyAdaptiveAnomalySignalsAsync(context, result).ConfigureAwait(false);
 
             result.RiskLevel = result.RiskScore switch
             {
@@ -282,6 +285,41 @@ public class LoginAttemptAnalysisService(
             // outcome (or the availability) of the primary risk analysis.
             logger.LogWarning(exception, "Threat intelligence evaluation skipped after a provider error");
         }
+    }
+
+    /// <summary>
+    ///     Applies the adaptive (online statistical learning) anomaly assessment to the risk
+    ///     analysis: learned behavioral deviations raise the risk score and are recorded as
+    ///     detected anomaly labels. The adaptive scorer fails open and abstains during cold
+    ///     start, so the fixed-weight heuristics above remain the baseline signal at all times.
+    /// </summary>
+    private async Task ApplyAdaptiveAnomalySignalsAsync(
+        AuthenticationAttemptContext context,
+        AuthenticationAnomalyResult result)
+    {
+        if (adaptiveAnomalyDetectionService is null)
+        {
+            return;
+        }
+
+        var assessment = await adaptiveAnomalyDetectionService
+            .AssessAsync(context)
+            .ConfigureAwait(false);
+
+        if (!assessment.IsLearnedDeviation)
+        {
+            return;
+        }
+
+        result.RiskScore += assessment.LearnedRiskScoreContribution;
+        result.DetectedAnomalies.AddRange(assessment.DeviationLabels);
+
+        logger.LogWarning(
+            "Learned behavioral deviation detected - UserId: {UserId}, ZScore: {ZScore}, BaselineSamples: {BaselineSamples}, Features: {Features}",
+            context.UserId,
+            assessment.CombinedZScore,
+            assessment.BaselineSampleCount,
+            string.Join(", ", assessment.DeviationLabels));
     }
 
     private async Task ApplyThreatIntelligenceMatchAsync(

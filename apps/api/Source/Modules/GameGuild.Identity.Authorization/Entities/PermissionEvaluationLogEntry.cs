@@ -26,6 +26,15 @@ public class PermissionEvaluationLogEntry
     /// <summary>Actor whose permissions were evaluated.</summary>
     public Guid? UserId { get; set; }
 
+    /// <summary>
+    ///     Role attribution of the evaluated user per the effective-permission contract
+    ///     (issue #330): direct roles by name, hierarchy-inherited roles marked with
+    ///     <c>" (inherited)"</c>, capped at 32 entries with an overflow marker
+    ///     (issue #359; PostgreSQL native array).
+    /// </summary>
+    [Column(TypeName = "text[]")]
+    public string[] Roles { get; set; } = Array.Empty<string>();
+
     /// <summary>Resource type identifier, for example <c>Project</c>.</summary>
     [MaxLength(200)]
     public string ResourceType { get; set; } = string.Empty;
@@ -64,6 +73,7 @@ public class PermissionEvaluationLogEntry
         {
             TenantId = record.TenantId,
             UserId = record.UserId,
+            Roles = record.Roles.ToArray(),
             ResourceType = record.ResourceType ?? string.Empty,
             ResourceId = record.ResourceId,
             RequiredPermissions = record.RequiredPermissions.ToArray(),
@@ -80,6 +90,7 @@ public class PermissionEvaluationLogEntry
         => new(
             UserId,
             TenantId,
+            Roles,
             ResourceType,
             ResourceId,
             RequiredPermissions,

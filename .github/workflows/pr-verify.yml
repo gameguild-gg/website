@@ -190,7 +190,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17-alpine
+        image: public.ecr.aws/docker/library/postgres:17-alpine
         env:
           POSTGRES_DB: gameguild
           POSTGRES_USER: postgres
@@ -227,7 +227,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17-alpine
+        image: public.ecr.aws/docker/library/postgres:17-alpine
         env:
           POSTGRES_DB: gameguild
           POSTGRES_USER: postgres
@@ -302,14 +302,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Require every selected gate
+        # toJSON(needs) embeds classify's changedFiles list; on large PRs that
+        # env var exceeds the kernel execve limit and bash cannot even start
+        # ("Argument list too long"). Pass each job's result string instead.
         env:
-          GATE_RESULTS: ${{ toJSON(needs) }}
+          CLASSIFY: ${{ needs.classify.result }}
+          REPOSITORY_POLICY: ${{ needs.repository-policy.result }}
+          WEB: ${{ needs.web.result }}
+          API: ${{ needs.api.result }}
+          TESTING_LAB: ${{ needs.testing-lab.result }}
+          OPENAPI: ${{ needs.openapi.result }}
+          MIGRATION: ${{ needs.migration.result }}
+          ECONOMY: ${{ needs.economy.result }}
         run: |
           node - <<'NODE'
-          const gates = JSON.parse(process.env.GATE_RESULTS);
+          const gates = {
+            classify: process.env.CLASSIFY,
+            'repository-policy': process.env.REPOSITORY_POLICY,
+            web: process.env.WEB,
+            api: process.env.API,
+            'testing-lab': process.env.TESTING_LAB,
+            openapi: process.env.OPENAPI,
+            migration: process.env.MIGRATION,
+            economy: process.env.ECONOMY,
+          };
           const failed = Object.entries(gates)
-            .filter(([, gate]) => gate.result === 'failure' || gate.result === 'cancelled')
-            .map(([name, gate]) => `${name}=${gate.result}`);
+            .filter(([, result]) => result === 'failure' || result === 'cancelled')
+            .map(([name, result]) => `${name}=${result}`);
           if (failed.length) {
             console.error(`Required PR gates failed: ${failed.join(', ')}`);
             process.exit(1);

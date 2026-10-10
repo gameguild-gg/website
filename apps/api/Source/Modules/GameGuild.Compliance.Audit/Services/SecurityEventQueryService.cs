@@ -15,6 +15,14 @@ public interface ISecurityEventQueryService
     Task<IReadOnlyList<SecurityAlertResponse>> GetAlertsAsync(SecurityAlertListRequest request, CancellationToken cancellationToken = default);
 
     Task<SecurityAlertResponse?> AcknowledgeAlertAsync(Guid alertId, string? notes, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Resolves a security alert (terminal lifecycle step) for the current tenant. The acting
+    ///     administrator comes from the request context; the resolution is recorded as an audit event
+    ///     in the same save as the status transition.
+    /// </summary>
+    /// <exception cref="SecurityAlertTransitionException">The alert is already resolved.</exception>
+    Task<SecurityAlertResponse?> ResolveAlertAsync(Guid alertId, string? notes, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -125,6 +133,55 @@ public sealed class SecurityEventQueryService(
         return MapAlert(alert);
     }
 
+    public async Task<SecurityAlertResponse?> ResolveAlertAsync(Guid alertId, string? notes, CancellationToken cancellationToken = default)
+    {
+        var (tenant, user) = await RequireAdministratorAsync().ConfigureAwait(false);
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var alert = await context.Set<SecurityAlert>()
+            .FirstOrDefaultAsync(item => item.Id == alertId && item.TenantId == tenant, cancellationToken)
+            .ConfigureAwait(false);
+        if (alert is null)
+        {
+            return null;
+        }
+
+        var previousStatus = alert.Status;
+        alert.Resolve(user, notes, SystemClock.UtcNow);
+
+        // The resolution is an auditable incident-response action: it lands in the same save as
+        // the status transition so an alert is never resolved without its audit trail.
+        context.Set<AuditLog>().Add(AuditLogEntryFactory.Create(
+            new CreateAuditLogRequest
+            {
+                ActionType = AuditActionTypes.SecurityAlertResolved,
+                ResourceType = "SecurityAlert",
+                ResourceId = alert.Id.ToString(),
+                UserId = user,
+                TenantId = tenant,
+                Description = "Security alert resolved through the incident lifecycle",
+                Category = AuditCategory.Security,
+                RiskLevel = AuditRiskLevel.Low,
+                Metadata = new
+                {
+                    AlertId = alert.Id,
+                    AlertRuleId = alert.RuleId,
+                    AlertKind = alert.Kind.ToString(),
+                    AlertSeverity = alert.Severity.ToString(),
+                    PreviousStatus = previousStatus.ToString(),
+                    OccurrenceCount = alert.OccurrenceCount
+                }
+            },
+            httpContext: null));
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation(
+            "Security alert {AlertId} resolved by user {UserId} after status {PreviousStatus}",
+            alertId, user, previousStatus);
+        return MapAlert(alert);
+    }
+
     private async Task<(Guid Tenant, Guid User)> RequireAdministratorAsync()
     {
         var actor = actors.ActorContext;
@@ -142,5 +199,6 @@ public sealed class SecurityEventQueryService(
         new(alert.Id, alert.TenantId, alert.RuleId, alert.Kind, alert.Severity, alert.Title, alert.Description,
             alert.SourceActionType, alert.SourceAuditLogId, alert.SubjectUserId, alert.IpAddress, alert.Status,
             alert.OccurrenceCount, alert.FirstSeenAtUtc, alert.LastSeenAtUtc, alert.AcknowledgedByUserId,
-            alert.AcknowledgedAtUtc, alert.AcknowledgementNotes);
+            alert.AcknowledgedAtUtc, alert.AcknowledgementNotes,
+            alert.ResolvedByUserId, alert.ResolvedAtUtc, alert.ResolutionNotes);
 }

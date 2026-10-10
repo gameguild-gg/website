@@ -15,6 +15,7 @@ public static class JwtOptionsResolver
             SecretKey = FirstConfigured(configuration, "Jwt:Secret", "Jwt:SecretKey", "JwtSettings:SecretKey", "Authentication:JwtSecretKey") ?? string.Empty,
             AccessTokenExpirationMinutes = GetInt(configuration, new JwtOptions().AccessTokenExpirationMinutes, "Jwt:AccessTokenExpirationMinutes", "JwtSettings:AccessTokenExpirationMinutes"),
             RefreshTokenExpirationDays = GetInt(configuration, new JwtOptions().RefreshTokenExpirationDays, "Jwt:RefreshTokenExpirationDays", "JwtSettings:RefreshTokenExpirationDays"),
+            PersistentRefreshTokenExpirationDays = GetInt(configuration, new JwtOptions().PersistentRefreshTokenExpirationDays, "Jwt:PersistentRefreshTokenExpirationDays", "JwtSettings:PersistentRefreshTokenExpirationDays"),
             RefreshTokenSlidingExpiration = GetBool(configuration, new JwtOptions().RefreshTokenSlidingExpiration, "Jwt:RefreshTokenSlidingExpiration", "JwtSettings:RefreshTokenSlidingExpiration"),
             RefreshTokenReplayContainmentScope = ResolveReplayScope(configuration),
             ClockSkewSeconds = GetInt(configuration, new JwtOptions().ClockSkewSeconds, "Jwt:ClockSkewSeconds", "JwtSettings:ClockSkewSeconds"),

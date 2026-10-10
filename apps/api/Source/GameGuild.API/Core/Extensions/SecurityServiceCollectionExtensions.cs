@@ -65,7 +65,8 @@ public static class SecurityServiceCollectionExtensions
                 ["Jwt:Issuer"] = options.JwtIssuer,
                 ["Jwt:Audience"] = options.JwtAudience,
                 ["Jwt:AccessTokenExpirationMinutes"] = accessTokenExpirationMinutes.ToString(CultureInfo.InvariantCulture),
-                ["Jwt:RefreshTokenExpirationDays"] = options.RefreshTokenExpirationDays.ToString(CultureInfo.InvariantCulture)
+                ["Jwt:RefreshTokenExpirationDays"] = options.RefreshTokenExpirationDays.ToString(CultureInfo.InvariantCulture),
+                ["Jwt:PersistentRefreshTokenExpirationDays"] = options.PersistentRefreshTokenExpirationDays.ToString(CultureInfo.InvariantCulture)
             })
             .Build();
         var resolvedJwtOptions = JwtOptionsResolver.CreateValidated(jwtConfiguration);
@@ -77,6 +78,7 @@ public static class SecurityServiceCollectionExtensions
             jwtOptions.Audience = resolvedJwtOptions.Audience;
             jwtOptions.AccessTokenExpirationMinutes = resolvedJwtOptions.AccessTokenExpirationMinutes;
             jwtOptions.RefreshTokenExpirationDays = resolvedJwtOptions.RefreshTokenExpirationDays;
+            jwtOptions.PersistentRefreshTokenExpirationDays = resolvedJwtOptions.PersistentRefreshTokenExpirationDays;
         });
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(resolvedJwtOptions.SecretKey))
@@ -189,6 +191,12 @@ public static class SecurityServiceCollectionExtensions
             {
                 basicOptions.Realm = basicSettings.Realm;
             });
+        }
+
+        if (options.EnableClientCertificateAuthentication)
+        {
+            var certificateSettings = options.ClientCertificate!;
+            authenticationBuilder.AddClientCertificateAuthentication(certificateSettings);
         }
 
         if (options.EnableCookieAuthentication)

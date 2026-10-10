@@ -81,6 +81,13 @@ monetization:*            (family wildcard — validates against the registry)
   `[RequiresPermission]` attribute, granted **and** denied) records a
   `PermissionAuditLog` entry with the new `PermissionOperationType.Check` operation type,
   including permission key, controller action, tenant and actor.
+  **Configuration note:** the endpoint filter is registered only when
+  `Controllers:EnablePermissionAuthorizationFilter` is `true`, which is **not the
+  default** and is not set in any shipped environment configuration. With the flag off,
+  enforcement for these surfaces rests entirely on the `[AuthorizeRequest]` command/query
+  gates (still fail-closed on every dispatch path), no endpoint `Check` rows are
+  produced, and REST denials surface as fail-closed 5xx `ProblemDetails` from the shared
+  exception pipeline rather than 403.
 - `AuditService` no longer swallows persistence failures silently: `TryLogAsync` retries
   the write once, and a permanent failure escalates to a **critical structured-log entry
   that carries the full audit payload**, so the record survives in the durable logging
@@ -100,6 +107,13 @@ monetization:*            (family wildcard — validates against the registry)
 
 ## Tests
 
+- `GameGuild.API.IntegrationTests/MonetizationPermissionHttpTests.cs` — end-to-end HTTP
+  coverage against real PostgreSQL: `GET /api/metrics/product` (ViewAnalytics),
+  `POST /v1/subscription-plans` (Configure) and `PUT /v1/products/{id}/pricing`
+  (Monetize), asserting 200-with-grant, fail-closed denial without the grant (including
+  wrong-key, cross-tenant and expired grants, with no mutation and no payload leakage),
+  and SystemAdmin bypass, under the as-shipped configuration (see the audit-logging
+  configuration note above for the denial status semantics).
 - `GameGuild.Identity.Authorization.UnitTests/MonetizationPermissionTests.cs` — registry,
   facade, wildcard, and CQRS `AuthorizationBehavior` enforcement (allow / deny /
   unauthenticated / system-admin bypass).

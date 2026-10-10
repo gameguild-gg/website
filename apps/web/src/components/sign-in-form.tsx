@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@game-guild/ui/components/field"
 import { Input } from "@game-guild/ui/components/input"
+import { Checkbox } from "@game-guild/ui/components/checkbox"
 import { PasswordInput } from "@/components/ui/password-input"
 
 const subscribeToHydration = () => () => undefined
@@ -28,11 +29,13 @@ export function SignInForm({
   className,
   redirectTo = "/",
   magicLinkLabel,
+  emailCodeLabel,
   providers,
   ...props
 }: React.ComponentProps<"div"> & {
   redirectTo?: string
   magicLinkLabel?: string
+  emailCodeLabel?: string
   providers?: React.ReactNode
 }) {
   const { signIn, isLoading, error, clearError } = useAuth()
@@ -47,6 +50,8 @@ export function SignInForm({
     const formData = new FormData(e.currentTarget)
     const email = formData.get("email") as string
     const password = formData.get("password") as string
+    // Remember-me opt-in: persistent backend refresh lifetime + durable cookie storage.
+    const rememberMe = formData.get("rememberMe") === "on"
 
     if (!email) {
       setFieldErrors((prev) => ({ ...prev, email: "Email is required." }))
@@ -61,6 +66,7 @@ export function SignInForm({
       await signIn("credentials", {
         email,
         password,
+        rememberMe,
         redirectTo,
       })
     } catch {
@@ -144,6 +150,23 @@ export function SignInForm({
                   Forgot your password?
                 </Link>
               </Field>
+              <Field>
+                <label
+                  htmlFor="rememberMe"
+                  className="flex cursor-pointer items-center gap-2 text-sm text-slate-300 select-none"
+                >
+                  <Checkbox
+                    id="rememberMe"
+                    name="rememberMe"
+                    disabled={isLoading}
+                    aria-label="Remember me on this device"
+                  />
+                  Remember me
+                </label>
+                <FieldDescription className="text-slate-400">
+                  Keeps you signed in on this device for up to 30 days.
+                </FieldDescription>
+              </Field>
               {error && (
                 <FieldError>{error.message}</FieldError>
               )}
@@ -167,6 +190,16 @@ export function SignInForm({
                       className="text-sky-200 underline-offset-4 hover:underline"
                     >
                       {magicLinkLabel}
+                    </Link>
+                  </FieldDescription>
+                ) : null}
+                {emailCodeLabel ? (
+                  <FieldDescription className="text-center text-slate-300">
+                    <Link
+                      href="/email-code"
+                      className="text-sky-200 underline-offset-4 hover:underline"
+                    >
+                      {emailCodeLabel}
                     </Link>
                   </FieldDescription>
                 ) : null}

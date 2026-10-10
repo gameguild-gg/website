@@ -56,6 +56,7 @@ public sealed class PolymorphicSignInHandler(
             Password = command.Password,
             TenantId = command.TenantId,
             DeviceFingerprint = command.DeviceFingerprint,
+            RememberMe = command.RememberMe,
             CredentialResolutionFailed = account is null,
             ResolvedUserId = account?.Id
         };

@@ -14,6 +14,8 @@ internal static class EventTransportServiceCollectionExtensions
         services.AddScoped<IUseCaseEventVerifier, UseCaseEventVerifier>();
         services.AddScoped<IDurableEventProducer, DurableEventProducer>();
         services.AddScoped<IIntegrationEventHandler<RefreshTokenReplayContainedV1>, RefreshTokenReplayAlertHandler>();
+        services.AddScoped<IIntegrationEventHandler<SuspiciousLoginDetectedV1>, SuspiciousLoginAlertHandler>();
+        services.AddScoped<IIntegrationEventHandler<SuspiciousLoginDetectedV1>, RiskEventSessionRevocationHandler>();
         services.AddScoped<IInboxStore, InboxStore>();
         services.AddScoped<IOutboxDispatcher, OutboxDispatcher>();
         services.AddScoped<IEventReplayService, EventReplayService>();

@@ -16,6 +16,7 @@ public static class NotificationCategories
         NotificationType.EmailVerification,
         NotificationType.PasswordReset,
         NotificationType.MagicLink,
+        NotificationType.EmailCode,
         NotificationType.TenantInvite
     ];
 
@@ -49,6 +50,7 @@ public static class NotificationCategories
         NotificationType.EmailVerification
             or NotificationType.PasswordReset
             or NotificationType.MagicLink
+            or NotificationType.EmailCode
             or NotificationType.TenantInvite => "Transactional",
 
         _ => "System"

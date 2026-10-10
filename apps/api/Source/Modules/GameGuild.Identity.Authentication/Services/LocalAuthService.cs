@@ -35,9 +35,15 @@ public class LocalAuthService(
     ISessionManagementService sessionManagementService,
     IOptions<JwtOptions>? jwtOptions = null,
     IAuthenticationAuditEventSink? auditEventSink = null,
-    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null
+    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null,
+    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null,
+    IOptions<SignInComplianceGateOptions>? complianceGateOptions = null,
+    ISignInCompliancePolicy? compliancePolicy = null
 ) : ILocalAuthService
 {
+    private const string ComplianceDeniedAuditAction = "Authentication.ComplianceDenied";
+    private const string ComplianceChallengeAuditAction = "Authentication.ComplianceChallengeRequired";
+
     public async Task<SignInResponse> LocalSignInAsync(LocalSignInRequest request, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -75,12 +81,15 @@ public class LocalAuthService(
             // Verify password if user exists
             if (user != null)
             {
+                // The account is known even when the password is wrong: risk analysis, failed-attempt
+                // persistence, and brute-force owner alerts on failed sign-ins all need the user id.
+                userId = user.Id;
+
                 var passwordValid = user.HasPassword && passwordHasher.VerifyPassword(user.PasswordHash!, request.Password);
 
                 if (passwordValid)
                 {
                     authenticationSucceeded = true;
-                    userId = user.Id;
                     logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", LogRedaction.MaskEmail(user.Email), userId);
                 }
                 else
@@ -125,6 +134,16 @@ public class LocalAuthService(
                         failedAttemptAnalysis).ConfigureAwait(false);
                 }
 
+                // Brute force against a known account must reach the owner even when the attempt
+                // fails. The publisher gates on the configured severity (High by default).
+                if (failedAttemptAnalysis is not null
+                    && userId.HasValue
+                    && failedAttemptAnalysis.DetectedAnomalies.Contains(SecurityAlertKinds.BruteForceDetected, StringComparer.Ordinal))
+                {
+                    await RecordSuspiciousLoginAlertAsync(
+                        userId, request.TenantId, failedAttemptAnalysis, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
+                }
+
                 throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
             }
 
@@ -150,6 +169,10 @@ public class LocalAuthService(
                     anomalyResult,
                     authenticationSucceeded: false,
                     behavioralAnalysis: behavioralAnalysis).ConfigureAwait(false);
+
+                // The step-up challenge is a confirmed high-risk signal: alert the account owner.
+                await RecordSuspiciousLoginAlertAsync(
+                    userId, request.TenantId, anomalyResult, SecurityAlertKinds.LoginStepUpRequired, cancellationToken).ConfigureAwait(false);
             }
 
             // Require step-up authentication for high-risk logins
@@ -187,11 +210,71 @@ public class LocalAuthService(
             var tenantAccessContext = await ResolveTenantAccessContextAsync(authenticatedUserId, request.TenantId, cancellationToken).ConfigureAwait(false);
             RequireActiveTenantAccess(tenantAccessContext);
 
-            var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                         ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
+            // Sign-in compliance gate (issue #267): after credential validation and tenant
+            // access are confirmed, but before any token is generated or any session is
+            // created, the compliance policy decides whether the sign-in may proceed.
+            var complianceGate = complianceGateOptions?.Value ?? SignInComplianceGateOptions.Disabled;
+            if (complianceGate.IsActive)
+            {
+                var complianceDecision = await EvaluateSignInComplianceGateAsync(
+                    new SignInComplianceContext(authenticatedUserId, tenantAccessContext.TenantId, ipAddress, deviceFingerprint),
+                    complianceGate,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (complianceDecision.Outcome == SignInComplianceOutcome.Deny)
+                {
+                    await RecordComplianceAuditEventAsync(
+                        ComplianceDeniedAuditAction,
+                        authenticatedUserId,
+                        tenantAccessContext.TenantId,
+                        ipAddress,
+                        userAgent,
+                        complianceDecision.Reason,
+                        complianceGate.Mode).ConfigureAwait(false);
+                    logger.LogWarning(
+                        "Sign-in denied by the compliance gate for user {UserId} with reason {Reason}",
+                        authenticatedUserId, complianceDecision.Reason);
+                    throw new AccessDeniedException("Sign-in denied by the compliance gate.");
+                }
+
+                if (complianceDecision.Outcome == SignInComplianceOutcome.Challenge)
+                {
+                    await RecordComplianceAuditEventAsync(
+                        ComplianceChallengeAuditAction,
+                        authenticatedUserId,
+                        tenantAccessContext.TenantId,
+                        ipAddress,
+                        userAgent,
+                        complianceDecision.Reason,
+                        complianceGate.Mode).ConfigureAwait(false);
+                    logger.LogInformation(
+                        "Sign-in requires compliance step-up for user {UserId} with reason {Reason}",
+                        authenticatedUserId, complianceDecision.Reason);
+
+                    return new SignInResponse
+                    {
+                        Success = false,
+                        Message = "Additional verification required",
+                        RequiresStepUp = true,
+                        StepUpToken = Guid.NewGuid().ToString("N"),
+                        StepUpExpiresAt = SystemClock.UtcNow.AddMinutes(5),
+                        UserId = authenticatedUserId,
+                        Email = authenticatedUser?.Email ?? request.Email,
+                        TenantId = tenantAccessContext.TenantId
+                    };
+                }
+            }
+
+            var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+                jwtOptions, configuration, request.RememberMe == true);
             var refreshTokenExpiresAt = SystemClock.UtcNow.AddDays(refreshTokenExpiryDays);
             var sessionId = Guid.NewGuid();
-            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(authenticatedUserId, deviceInfo, cancellationToken).ConfigureAwait(false);
+            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+                authenticatedUserId,
+                deviceInfo,
+                new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+                refreshTokenExpiresAt,
+                cancellationToken).ConfigureAwait(false);
             var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
                 authenticatedUserId,
                 authenticatedUser?.Email ?? request.Email,
@@ -225,6 +308,20 @@ public class LocalAuthService(
                     anomalyResult,
                     authenticationSucceeded: true,
                     behavioralAnalysis: behavioralAnalysis).ConfigureAwait(false);
+            }
+
+            // Confirmed signals on a successful sign-in: impossible travel, and brute force that
+            // eventually succeeded (classic account-takeover pattern). Both must reach the owner.
+            if (anomalyResult.DetectedAnomalies.Contains(SecurityAlertKinds.ImpossibleTravel, StringComparer.Ordinal))
+            {
+                await RecordSuspiciousLoginAlertAsync(
+                    authenticatedUserId, request.TenantId, anomalyResult, SecurityAlertKinds.ImpossibleTravel, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (anomalyResult.DetectedAnomalies.Contains(SecurityAlertKinds.BruteForceDetected, StringComparer.Ordinal))
+            {
+                await RecordSuspiciousLoginAlertAsync(
+                    authenticatedUserId, request.TenantId, anomalyResult, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
             }
 
             // Record successful login attempt
@@ -319,6 +416,27 @@ public class LocalAuthService(
             logger.LogError(exception, "Could not analyze authentication behavior for user {UserId}", userId);
             return null;
         }
+    }
+
+    /// <summary>
+    ///     Forwards a confirmed suspicious-login signal to the (optional) alert publisher, which
+    ///     records a redacted durable event consumed host-side to queue the owner notification.
+    ///     Absent publisher (hosts without the durable transport) degrades to a no-op.
+    /// </summary>
+    private async Task RecordSuspiciousLoginAlertAsync(
+        Guid? userId,
+        Guid? tenantId,
+        AuthenticationAnomalyResult analysis,
+        string alertKind,
+        CancellationToken cancellationToken)
+    {
+        if (suspiciousLoginAlerts is null || userId is not { } alertUserId)
+        {
+            return;
+        }
+
+        await suspiciousLoginAlerts.RecordAsync(
+            alertUserId, tenantId, alertKind, analysis.RiskLevel, analysis.RiskScore, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RecordRiskAuditEventAsync(
@@ -476,11 +594,16 @@ public class LocalAuthService(
 
             var tenantAccessContext = await ResolveTenantAccessContextAsync(userId, request.TenantId, cancellationToken).ConfigureAwait(false);
 
-            var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                         ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
+            var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
+                jwtOptions, configuration, persistent: false);
             var refreshTokenExpiresAt = SystemClock.UtcNow.AddDays(refreshTokenExpiryDays);
             var sessionId = Guid.NewGuid();
-            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(userId, deviceInfo, cancellationToken).ConfigureAwait(false);
+            var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+                userId,
+                deviceInfo,
+                new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+                refreshTokenExpiresAt,
+                cancellationToken).ConfigureAwait(false);
             var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
                 userId,
                 newUser.Email,
@@ -627,10 +750,24 @@ public class LocalAuthService(
 
         var existingSession = await sessionManagementService.GetSessionByRefreshTokenAsync(hashedToken, cancellationToken).ConfigureAwait(false);
         var sessionId = existingSession?.Id ?? Guid.NewGuid();
-        var refreshTokenExpiryDays = jwtOptions?.Value.RefreshTokenExpirationDays
-                                     ?? int.Parse(configuration["Jwt:RefreshTokenExpirationDays"] ?? configuration["Jwt:RefreshTokenExpiryInDays"] ?? "7", CultureInfo.InvariantCulture);
-        var newRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(userId, deviceInfo, authenticatedAt, cancellationToken).ConfigureAwait(false);
-        var refreshTokenExpiresAt = now.AddDays(refreshTokenExpiryDays);
+        // Rotation classifies the session by its originating policy instead of replaying
+        // the stored row's raw span: rotation preserves the originating CreatedAt while
+        // advancing ExpiresAt, so the span compounds elapsed time and drifts past every
+        // configured deadline (the 2026-10-10 regression minted ~8-hour replacements from
+        // short-lived seeded rows). Renewal always lands on a configured lifetime: a
+        // persistent ("remember me") session keeps the persistent lifetime instead of
+        // collapsing onto the standard one, and every other row — including legacy or
+        // malformed rows — renews at the configured standard lifetime.
+        // The raw stored CreatedAt is passed through so the resolver's malformed/legacy-row
+        // fallback (rows without a creation instant) engages instead of deriving a bogus
+        // duration from a sanitized clock value.
+        var refreshTokenExpiresAt = now.AddDays(RefreshTokenLifetimeResolver.ResolveRenewalDays(
+            jwtOptions,
+            configuration,
+            DateTime.SpecifyKind(storedToken.CreatedAt, DateTimeKind.Utc),
+            DateTime.SpecifyKind(storedToken.ExpiresAt, DateTimeKind.Utc)));
+        var newRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
+            userId, deviceInfo, authenticatedAt, refreshTokenExpiresAt, cancellationToken).ConfigureAwait(false);
         var slidingExpiration = jwtOptions?.Value.RefreshTokenSlidingExpiration
                                 ?? bool.Parse(configuration["Jwt:RefreshTokenSlidingExpiration"] ?? bool.TrueString);
         if (!slidingExpiration && refreshTokenExpiresAt > storedToken.ExpiresAt)
@@ -769,6 +906,83 @@ public class LocalAuthService(
         }
 
         throw new AccessDeniedException("Authenticated user has no active tenant membership.");
+    }
+
+    /// <summary>
+    ///     Evaluates the sign-in compliance policy for an authenticated user. In
+    ///     <see cref="SignInComplianceGateMode.ChallengeOnly" /> the gate may only challenge,
+    ///     so deny-class decisions are downgraded to a step-up challenge. When the policy
+    ///     cannot produce a decision the gate fails closed only in
+    ///     <see cref="SignInComplianceGateMode.Enforce" />; other modes fail open.
+    /// </summary>
+    private async Task<SignInComplianceDecision> EvaluateSignInComplianceGateAsync(
+        SignInComplianceContext context,
+        SignInComplianceGateOptions gate,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var decision = await (compliancePolicy ?? AllowAllSignInCompliancePolicy.Instance)
+                .EvaluateAsync(context, cancellationToken).ConfigureAwait(false);
+
+            if (gate.Mode == SignInComplianceGateMode.ChallengeOnly && decision.Outcome == SignInComplianceOutcome.Deny)
+            {
+                return SignInComplianceDecision.Challenge(decision.Reason);
+            }
+
+            return decision;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Sign-in compliance evaluation failed for user {UserId}", context.UserId);
+
+            return gate.FailClosed
+                ? SignInComplianceDecision.Deny(SignInComplianceReasons.EvaluationFailed)
+                : SignInComplianceDecision.Allow;
+        }
+    }
+
+    /// <summary>
+    ///     Audits a non-allow compliance decision. Reason codes are coarse by contract, so
+    ///     no verification detail (provider, documents, case references) is ever leaked.
+    /// </summary>
+    private async Task RecordComplianceAuditEventAsync(
+        string actionType,
+        Guid userId,
+        Guid? tenantId,
+        string? ipAddress,
+        string? userAgent,
+        string reason,
+        SignInComplianceGateMode gateMode)
+    {
+        if (auditEventSink is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await auditEventSink.RecordAsync(new AuthenticationAuditEvent(
+                actionType,
+                userId,
+                Success: false,
+                Method: "Password",
+                IpAddress: ipAddress,
+                UserAgent: userAgent,
+                TenantId: tenantId,
+                ErrorMessage: reason,
+                Metadata: new
+                {
+                    Reason = reason,
+                    GateMode = gateMode.ToString(),
+                    CorrelationId = httpContextAccessor.HttpContext?.TraceIdentifier
+                }),
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Could not record authentication compliance event {ActionType}", actionType);
+        }
     }
 
     private async Task<TenantAccessContext> ResolveTenantAccessContextAsync(Guid userId, Guid? requestedTenantId, CancellationToken cancellationToken)

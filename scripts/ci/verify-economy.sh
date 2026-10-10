@@ -20,6 +20,8 @@ whole_solution_jobs="${ECONOMY_WHOLE_SOLUTION_JOBS:-}"
 source "$script_dir/economy-gate.sh"
 # shellcheck source=disposable-postgres.sh
 source "$script_dir/disposable-postgres.sh"
+# shellcheck source=pull-ci-image.sh
+source "$script_dir/pull-ci-image.sh"
 
 whole_solution_scaffold_project() {
   case "$1" in
@@ -399,13 +401,14 @@ economy_postgres_password="$(new_disposable_postgres_password)"
 register_disposable_postgres_password "$app_postgres_password"
 register_disposable_postgres_password "$economy_postgres_password"
 gate_stage='postgres-app'
+pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
 run docker run --detach --rm --name "$postgres_container" \
   --env POSTGRES_DB=economy_ci \
   --env POSTGRES_USER=postgres \
   --env "POSTGRES_PASSWORD=$app_postgres_password" \
   --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --publish 127.0.0.1::5432 \
-  postgres:17-alpine >/dev/null
+  public.ecr.aws/docker/library/postgres:17-alpine >/dev/null
 
 app_postgres_probe() {
   docker exec --env "PGPASSWORD=$app_postgres_password" "$postgres_container" \
@@ -422,6 +425,7 @@ connection_string="Host=127.0.0.1;Port=$postgres_port;Database=economy_ci;Userna
 gate_stage='postgres-economy-tests'
 # Full-schema resets across isolated test databases share PostgreSQL's lock table.
 # Keep the two test workers while sizing their disposable server for both resets.
+pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
 run docker run --detach --rm --name "$economy_postgres_container" \
   --env POSTGRES_DB=economy_tests \
   --env POSTGRES_USER=postgres \
@@ -429,7 +433,7 @@ run docker run --detach --rm --name "$economy_postgres_container" \
   --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --tmpfs /var/lib/postgresql/data:rw \
   --publish 127.0.0.1::5432 \
-  postgres:17-alpine -c max_locks_per_transaction=512 >/dev/null
+  public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512 >/dev/null
 
 economy_postgres_probe() {
   docker exec --env "PGPASSWORD=$economy_postgres_password" "$economy_postgres_container" \
@@ -454,6 +458,7 @@ if [[ "$gate_profile" == full ]]; then
   whole_solution_postgres_container="gameguild-economy-ci-whole-solution-$$-$RANDOM"
   whole_solution_postgres_password="$(new_disposable_postgres_password)"
   register_disposable_postgres_password "$whole_solution_postgres_password"
+  pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
   run docker run --detach --rm --name "$whole_solution_postgres_container" \
     --env POSTGRES_DB=whole_solution_tests \
     --env POSTGRES_USER=postgres \
@@ -461,7 +466,7 @@ if [[ "$gate_profile" == full ]]; then
     --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --tmpfs /var/lib/postgresql/data:rw \
     --publish 127.0.0.1::5432 \
-    postgres:17-alpine >/dev/null
+    public.ecr.aws/docker/library/postgres:17-alpine >/dev/null
 
   whole_solution_postgres_probe() {
     docker exec --env "PGPASSWORD=$whole_solution_postgres_password" "$whole_solution_postgres_container" \
@@ -491,6 +496,7 @@ fi
 {
   garage_container='gameguild-economy-ci-garage-'$$-$RANDOM
   garage_config="$(native_path "$repository_root/scripts/garage/garage.toml")"
+  pull_ci_image dxflrs/garage:v2.3.0
   run env MSYS_NO_PATHCONV=1 docker run --detach --rm --name "$garage_container" \
     --env GARAGE_CONFIG_FILE=/etc/garage/garage.toml \
     --volume "$garage_config:/etc/garage/garage.toml:ro" \
@@ -618,9 +624,6 @@ run_whole_solution_test_project() {
     # in the diagnostic run. Bound the assembly separately from the unchanged
     # per-test blame timeout so steady progress is not mistaken for a hang.
     project_timeout="$api_integration_test_timeout"
-  fi
-  if [[ "$test_name" == 'GameGuild.API.IntegrationTests' ]]; then
-    project_timeout="$api_test_timeout"
   fi
   run_logged "$project_log" timeout --kill-after=30s "$project_timeout" \
     "${test_environment[@]}" \

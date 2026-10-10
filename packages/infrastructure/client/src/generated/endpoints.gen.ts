@@ -582,6 +582,24 @@ export const getApiAuditSecurityEventsAlertsEndpoint = {
 } as const;
 
 /**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostApiAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostApiAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postApiAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postApiAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/alerts/{alertId}:resolve' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Acknowledges an open security alert. The acting administrator is derived from the request context.
  */
 export interface PostApiAuditSecurityEventsAlertsAcknowledgeInput {
@@ -6278,6 +6296,89 @@ export const postBillingChargesRetryEndpoint = {
 } as const;
 
 /**
+ * List billing webhook inbox events
+ *
+ * Pages through the durable billing webhook inbox: provider events accepted from Stripe, PayPal, Apple App Store and Google Pay, with their processing status, attempt counters and error details. Supports filtering by status (processed/failed/pending), provider, provider event type and acceptance date range. Payload bodies are never returned.
+ */
+export interface GetBillingEventsForGetBillingEventsInput {
+  query?: {
+    status?: string;
+    provider?: string;
+    eventType?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingEventsForGetBillingEventsOutput = Types.PagedResultBillingWebhookEventListItemDto;
+export const getBillingEventsForGetBillingEventsEndpoint = {
+  operationId: 'getBillingEventsForGetBillingEvents' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a billing webhook inbox event by id
+ *
+ * Retrieves one durable webhook inbox event by its local identifier, including processing status, attempt count, error message and tenant/subscription references.
+ */
+export interface GetBillingEventsForGetBillingEventsByEventIdInput {
+  eventId: string;
+}
+export type GetBillingEventsForGetBillingEventsByEventIdOutput = Types.CommerceBillingBillingWebhookEventDto;
+export const getBillingEventsForGetBillingEventsByEventIdEndpoint = {
+  operationId: 'getBillingEventsForGetBillingEventsByEventId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/{eventId}' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List durable billing integration events from the platform outbox
+ *
+ * Pages through the named billing integration events (webhook processed/failed, invoice paid, subscription renewed/cancelled) recorded in the platform durable outbox, with their delivery status. Dead-lettered events can be replayed through the platform admin event transport endpoints.
+ */
+export interface GetBillingEventsOutboxForGetBillingEventsOutboxInput {
+  query?: {
+    eventName?: string;
+    status?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingEventsOutboxForGetBillingEventsOutboxOutput = Types.PagedResultBillingOutboxEventDto;
+export const getBillingEventsOutboxForGetBillingEventsOutboxEndpoint = {
+  operationId: 'getBillingEventsOutboxForGetBillingEventsOutbox' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/outbox' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one durable billing integration event by id
+ *
+ * Retrieves a single named billing integration event from the platform outbox read model by its durable event identifier.
+ */
+export interface GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdInput {
+  eventId: string;
+}
+export type GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdOutput = Types.CommerceBillingBillingOutboxEventDto;
+export const getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint = {
+  operationId: 'getBillingEventsOutboxForGetBillingEventsOutboxByEventId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/outbox/{eventId}' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
@@ -6649,6 +6750,24 @@ export const postBillingWebhooksPaypalEndpoint = {
 } as const;
 
 /**
+ * Get the billing webhook security monitoring summary
+ *
+ * Admin-facing monitoring surface for the billing webhook security controls: the state of
+ * the source IP allowlist, the suspicious-activity threshold blocking (currently blocked
+ * sources), and the delivery health of the central security event pipeline that persists
+ * verification failures, allowlist rejections, and replay detections.
+ */
+export type GetBillingWebhooksSecurityInput = void;
+export type GetBillingWebhooksSecurityOutput = Types.CommerceBillingBillingWebhookSecuritySummaryDto;
+export const getBillingWebhooksSecurityEndpoint = {
+  operationId: 'getBillingWebhooksSecurity' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/webhooks/security' as const,
+  tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Handle Stripe webhook events with signature verification
  *
  * Processes Stripe webhook notifications with enhanced security through signature verification.
@@ -6689,7 +6808,7 @@ export const getBillingWebhooksWebhookEventsEndpoint = {
   method: 'GET' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}' as const,
   tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -6714,7 +6833,7 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}:retry' as const,
   tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
+  requiresAuth: true,
 } as const;
 
 export interface PostEconomyAdRewardsSessionsInput {
@@ -12400,6 +12519,24 @@ export const getAuditSecurityEventsAlertsEndpoint = {
 } as const;
 
 /**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/alerts/{alertId}:resolve' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Acknowledges an open security alert. The acting administrator is derived from the request context.
  */
 export interface PostAuditSecurityEventsAlertsAcknowledgeInput {
@@ -12599,6 +12736,40 @@ export const postAuthDiscordSignInCallbackEndpoint = {
 } as const;
 
 /**
+ * Consume a one-time email sign-in code.
+ *
+ * Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.
+ */
+export interface PostAuthEmailCodeConsumeInput {
+  body?: Types.IdentityAuthenticationConsumeEmailCodeInput;
+}
+export type PostAuthEmailCodeConsumeOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthEmailCodeConsumeEndpoint = {
+  operationId: 'postAuthEmailCodeConsume' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/email-code:consume' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Request a one-time email sign-in code.
+ *
+ * Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.
+ */
+export interface PostAuthEmailCodeRequestInput {
+  body?: Types.IdentityAuthenticationRequestEmailCodeInput;
+}
+export type PostAuthEmailCodeRequestOutput = Types.IdentityAuthenticationEmailCodeRequestResult;
+export const postAuthEmailCodeRequestEndpoint = {
+  operationId: 'postAuthEmailCodeRequest' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/email-code:request' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Send email verification to user
  *
  * Sends a verification email to the specified email address to confirm ownership.
@@ -12635,7 +12806,7 @@ export const postAuthEmailVerifyEndpoint = {
 /**
  * List the external logins linked to the current user, newest first.
  *
- * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.
+ * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked. Granted OAuth scopes (issue #250) are conveyed in the X-Granted-Scopes header as comma-separated 'provider=iso8601-consent-timestamp|consent-version|url-encoded-space-separated-scopes' triples, one entry per link with a recorded consent (consent-version 0 marks a legacy row); the header is omitted when no consents are recorded.
  */
 export type HeadAuthExternalLoginsInput = void;
 export type HeadAuthExternalLoginsOutput = void;
@@ -12650,7 +12821,7 @@ export const headAuthExternalLoginsEndpoint = {
 /**
  * Unlink an external provider from the current user.
  *
- * Removes the external login link for the given provider. Refused with 400 when it is the user's last sign-in method and no password is set.
+ * Removes the external login link for the given provider — this is the whole-provider full revocation of every granted scope and the recorded consent. Refused with 400 when it is the user's last sign-in method and no password is set.
  */
 export interface DeleteAuthExternalLoginsInput {
   provider: string;
@@ -12660,6 +12831,41 @@ export const deleteAuthExternalLoginsEndpoint = {
   operationId: 'deleteAuthExternalLogins' as const,
   method: 'DELETE' as const,
   path: '/v1/auth/external-logins/{provider}' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview the scopes a provider link flow will request (authorization-time consent screen data).
+ *
+ * Returns the exact OAuth scopes the provider link flow will request, resolved the same way the authorize step embeds them in the authorization URL. Powers the authorization-time consent surface shown before linking (issue #250).
+ */
+export interface GetAuthExternalLoginsLinkPreviewInput {
+  provider: string;
+}
+export type GetAuthExternalLoginsLinkPreviewOutput = Types.IdentityAuthenticationExternalLoginLinkPreviewOutput;
+export const getAuthExternalLoginsLinkPreviewEndpoint = {
+  operationId: 'getAuthExternalLoginsLinkPreview' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/external-logins/{provider}/link-preview' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revoke individual OAuth scope grants on a linked provider.
+ *
+ * Revokes individual scope grants on a linked provider without unlinking it; the remaining grant state is returned. Idempotent for scopes that are not currently granted. Revoking every remaining scope leaves the link in place with an empty grant list — whole-provider revocation remains the unlink endpoint (DELETE /external-logins/{provider}), which removes the link entirely.
+ */
+export interface PostAuthExternalLoginsScopesRevokeInput {
+  provider: string;
+  body?: Types.IdentityAuthenticationRevokeExternalLoginScopesInput;
+}
+export type PostAuthExternalLoginsScopesRevokeOutput = Types.IdentityAuthenticationRevokeExternalLoginScopesOutput;
+export const postAuthExternalLoginsScopesRevokeEndpoint = {
+  operationId: 'postAuthExternalLoginsScopesRevoke' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/external-logins/{provider}/scopes:revoke' as const,
   tags: ['Auth'] as const,
   requiresAuth: true,
 } as const;
@@ -12962,6 +13168,81 @@ export const postAuthMfaVerifyEndpoint = {
   method: 'POST' as const,
   path: '/v1/auth/mfa/verify' as const,
   tags: ['AuthMultiFactor'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Discover federation providers for an email domain
+ *
+ * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+ */
+export interface GetAuthOidcDiscoverProviderInput {
+  query?: {
+    email?: string;
+  };
+}
+export type GetAuthOidcDiscoverProviderOutput = Types.IdentityAuthenticationOidcDiscoverProviderOutput;
+export const getAuthOidcDiscoverProviderEndpoint = {
+  operationId: 'getAuthOidcDiscoverProvider' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/oidc:discover-provider' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Resolve the provider's front-channel logout URL
+ *
+ * Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+ */
+export interface GetAuthOidcEndSessionUrlInput {
+  slug: string;
+  query?: {
+    postLogoutRedirectUri?: string;
+  };
+}
+export type GetAuthOidcEndSessionUrlOutput = Types.IdentityAuthenticationOidcEndSessionUrlOutput;
+export const getAuthOidcEndSessionUrlEndpoint = {
+  operationId: 'getAuthOidcEndSessionUrl' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/oidc/{slug}:end-session-url' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Initiate OIDC federation provider sign-in
+ *
+ * Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.
+ */
+export interface PostAuthOidcSignInAuthorizeInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationOidcAuthorizeRequestDto;
+}
+export type PostAuthOidcSignInAuthorizeOutput = Types.IdentityAuthenticationOidcSignInOutput;
+export const postAuthOidcSignInAuthorizeEndpoint = {
+  operationId: 'postAuthOidcSignInAuthorize' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/oidc/{slug}:sign-in-authorize' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Handle OIDC federation provider callback
+ *
+ * Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).
+ */
+export interface PostAuthOidcSignInCallbackInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationOidcCallbackRequestDto;
+}
+export type PostAuthOidcSignInCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOidcSignInCallbackEndpoint = {
+  operationId: 'postAuthOidcSignInCallback' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/oidc/{slug}:sign-in-callback' as const,
+  tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
 
@@ -17730,6 +18011,8 @@ export const getMeTasksEndpoint = {
  * OAuth2 client_credentials grant - authenticates a service account and returns a JWT token.
  *
  * This endpoint implements the OAuth2 client_credentials flow for machine-to-machine authentication.
+ * Authentication uses the `client_secret` form field, or an X.509 client certificate
+ * negotiated over TLS in lieu of the secret when one is bound to the service account.
  * The returned access token can be used to authenticate API requests.
  */
 export interface PostOauthTokenInput {
@@ -25913,6 +26196,7 @@ export const endpoints = {
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
   getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
+  postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
   postApiAuditSecurityEventsRetentionEnforce: postApiAuditSecurityEventsRetentionEnforceEndpoint,
@@ -26317,6 +26601,10 @@ export const endpoints = {
   postBillingChargesCancel: postBillingChargesCancelEndpoint,
   postBillingChargesRefund: postBillingChargesRefundEndpoint,
   postBillingChargesRetry: postBillingChargesRetryEndpoint,
+  getBillingEventsForGetBillingEvents: getBillingEventsForGetBillingEventsEndpoint,
+  getBillingEventsForGetBillingEventsByEventId: getBillingEventsForGetBillingEventsByEventIdEndpoint,
+  getBillingEventsOutboxForGetBillingEventsOutbox: getBillingEventsOutboxForGetBillingEventsOutboxEndpoint,
+  getBillingEventsOutboxForGetBillingEventsOutboxByEventId: getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
@@ -26336,6 +26624,7 @@ export const endpoints = {
   postBillingWebhooksApplePay: postBillingWebhooksApplePayEndpoint,
   postBillingWebhooksGooglePay: postBillingWebhooksGooglePayEndpoint,
   postBillingWebhooksPaypal: postBillingWebhooksPaypalEndpoint,
+  getBillingWebhooksSecurity: getBillingWebhooksSecurityEndpoint,
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
   postBillingWebhooksWebhookEventsRetry: postBillingWebhooksWebhookEventsRetryEndpoint,
@@ -26686,6 +26975,7 @@ export const endpoints = {
   putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
   getAuditRetentionSimulationTemplates: getAuditRetentionSimulationTemplatesEndpoint,
   getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
+  postAuditSecurityEventsAlertsResolve: postAuditSecurityEventsAlertsResolveEndpoint,
   postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
   postAuditSecurityEventsRetentionEnforce: postAuditSecurityEventsRetentionEnforceEndpoint,
@@ -26699,10 +26989,14 @@ export const endpoints = {
   postAuthApiKeysRotate: postAuthApiKeysRotateEndpoint,
   postAuthDiscordSignInAuthorize: postAuthDiscordSignInAuthorizeEndpoint,
   postAuthDiscordSignInCallback: postAuthDiscordSignInCallbackEndpoint,
+  postAuthEmailCodeConsume: postAuthEmailCodeConsumeEndpoint,
+  postAuthEmailCodeRequest: postAuthEmailCodeRequestEndpoint,
   postAuthEmailSendVerification: postAuthEmailSendVerificationEndpoint,
   postAuthEmailVerify: postAuthEmailVerifyEndpoint,
   headAuthExternalLogins: headAuthExternalLoginsEndpoint,
   deleteAuthExternalLogins: deleteAuthExternalLoginsEndpoint,
+  getAuthExternalLoginsLinkPreview: getAuthExternalLoginsLinkPreviewEndpoint,
+  postAuthExternalLoginsScopesRevoke: postAuthExternalLoginsScopesRevokeEndpoint,
   postAuthExternalLoginsDiscordLinkAuthorize: postAuthExternalLoginsDiscordLinkAuthorizeEndpoint,
   postAuthExternalLoginsDiscordLinkCallback: postAuthExternalLoginsDiscordLinkCallbackEndpoint,
   postAuthExternalLoginsGoogle: postAuthExternalLoginsGoogleEndpoint,
@@ -26721,6 +27015,10 @@ export const endpoints = {
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,
   postAuthMfaTotpSetup: postAuthMfaTotpSetupEndpoint,
   postAuthMfaVerify: postAuthMfaVerifyEndpoint,
+  getAuthOidcDiscoverProvider: getAuthOidcDiscoverProviderEndpoint,
+  getAuthOidcEndSessionUrl: getAuthOidcEndSessionUrlEndpoint,
+  postAuthOidcSignInAuthorize: postAuthOidcSignInAuthorizeEndpoint,
+  postAuthOidcSignInCallback: postAuthOidcSignInCallbackEndpoint,
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,

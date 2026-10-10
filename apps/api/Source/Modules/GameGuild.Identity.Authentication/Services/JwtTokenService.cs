@@ -197,10 +197,20 @@ public sealed class JwtTokenService(
             cancellationToken);
     }
 
+    public Task<string> GenerateRefreshTokenAsync(
+        Guid userId,
+        DeviceInfo deviceInfo,
+        DateTimeOffset authenticatedAt,
+        CancellationToken cancellationToken = default)
+    {
+        return GenerateRefreshTokenAsync(userId, deviceInfo, authenticatedAt, expiresAt: null, cancellationToken);
+    }
+
     public async Task<string> GenerateRefreshTokenAsync(
         Guid userId,
         DeviceInfo deviceInfo,
         DateTimeOffset authenticatedAt,
+        DateTime? expiresAt,
         CancellationToken cancellationToken = default)
     {
         if (deviceInfo == null) throw new ArgumentNullException(nameof(deviceInfo));
@@ -242,7 +252,9 @@ public sealed class JwtTokenService(
                     Token = hashedToken, // Store hash, not plaintext
                     CreatedByIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0",
                     CreatedAt = authenticatedAt.UtcDateTime,
-                    ExpiresAt = SystemClock.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
+                    // The caller-resolved deadline is authoritative so the persisted token row matches
+                    // the session policy (persistent "remember me" vs standard lifetime).
+                    ExpiresAt = expiresAt ?? SystemClock.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
                     IsRevoked = false
                 };
 
