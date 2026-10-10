@@ -34,7 +34,7 @@ public static class AuthenticationEndpoint
         authGroup.MapPost("/google", GoogleSignIn).WithName("GoogleSignIn").Produces<SignInResponseDto>().Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
     }
 
-    private static async Task<IResult> SignUp(SignUpRequest request, IAuthService authService, IConfiguration configuration, ILogger<Program> logger, CancellationToken cancellationToken = default)
+    private static async Task<IResult> SignUp(SignUpRequest request, IAuthService authService, ILogger<Program> logger, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -70,7 +70,9 @@ public static class AuthenticationEndpoint
                     AccessToken = response.AccessToken,
                     RefreshToken = response.RefreshToken,
                     AccessTokenExpiresAt = response.ExpiresAt,
-                    RefreshTokenExpiresAt = response.ExpiresAt.AddDays(RefreshTokenLifetimeResolver.ResolveExpirationDays(null, configuration, persistent: false)),
+                    // The module already resolved the policy-aware refresh deadline (standard
+                    // vs persistent lifetime); surface it instead of assuming one here.
+                    RefreshTokenExpiresAt = response.RefreshTokenExpiresAt,
                     ExpiresAt = response.ExpiresAt,
                     User = new AuthUserDto
                     {
