@@ -6,6 +6,7 @@
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Users;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -195,10 +196,17 @@ public sealed class SendEmailVerificationEnumerationProtectionTests
     [Fact]
     public void GenericMessage_IsRegisteredAsTheEmailVerificationContextMessage()
     {
+        var policy = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
+            })
+            .Build();
         var protection = new UserEnumerationProtectionService(
             Mock.Of<ILogger<UserEnumerationProtectionService>>(),
             new Microsoft.Extensions.Caching.Memory.MemoryCache(Microsoft.Extensions.Options.Options.Create(
-                new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions())));
+                new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions())),
+            new PasswordHasher(Mock.Of<ILogger<PasswordHasher>>(), policy));
 
         protection.GetGenericErrorMessage("email_verification")
             .Should().Be(UserEnumerationProtectionService.GenericEmailVerificationMessage);

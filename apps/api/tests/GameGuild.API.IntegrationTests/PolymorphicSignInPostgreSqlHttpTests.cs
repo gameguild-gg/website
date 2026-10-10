@@ -211,7 +211,7 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         using var factory = CreateFactory();
         var account = await SeedAsync(factory);
         using var scope = factory.Services.CreateScope();
-        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), scope.ServiceProvider.GetRequiredService<IUserRepository>(), NullLogger<PolymorphicSignInHandler>.Instance);
+            var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), scope.ServiceProvider.GetRequiredService<IUserRepository>(), scope.ServiceProvider.GetRequiredService<IUserEnumerationProtectionService>(), NullLogger<PolymorphicSignInHandler>.Instance);
         var command = new PolymorphicSignInCommand { Credential = Identifier(account, type), CredentialType = type, Password = incorrect ? SyntheticPassword() : account.Password, TenantId = account.TenantId };
         if (incorrect)
         {
@@ -260,7 +260,7 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         observed.Setup(value => value.GetByIdAsync(account.User.Id, CancellationToken.None))
             .Returns(() => repository.GetByIdAsync(account.User.Id));
         // Only the interleaving is controlled; both reads, password replacement and local authentication are real.
-        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), observed.Object, NullLogger<PolymorphicSignInHandler>.Instance);
+        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), observed.Object, scope.ServiceProvider.GetRequiredService<IUserEnumerationProtectionService>(), NullLogger<PolymorphicSignInHandler>.Instance);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(new PolymorphicSignInCommand
         {
             Credential = account.User.Username!, Password = account.Password, TenantId = account.TenantId

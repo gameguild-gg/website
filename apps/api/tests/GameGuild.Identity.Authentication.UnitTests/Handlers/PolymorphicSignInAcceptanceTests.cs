@@ -143,7 +143,12 @@ public sealed class PolymorphicSignInAcceptanceTests
         Assert.DoesNotContain("CredentialResolutionFailed", json, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static PolymorphicSignInHandler Handler(Mock<IAuthService> service, Mock<IUserRepository> repository) => new(service.Object, repository.Object, NullLogger<PolymorphicSignInHandler>.Instance);
+    private static PolymorphicSignInHandler Handler(Mock<IAuthService> service, Mock<IUserRepository> repository)
+    {
+        var timingProtection = new Mock<IUserEnumerationProtectionService>();
+        timingProtection.Setup(value => value.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
+        return new PolymorphicSignInHandler(service.Object, repository.Object, timingProtection.Object, NullLogger<PolymorphicSignInHandler>.Instance);
+    }
     private static Mock<IAuthService> GenericDenial()
     {
         var service = new Mock<IAuthService>(MockBehavior.Strict);

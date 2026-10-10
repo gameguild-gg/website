@@ -498,9 +498,16 @@ public class UserEnumerationProtectionServiceTests
     public UserEnumerationProtectionServiceTests()
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var policy = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
+            })
+            .Build();
         _service = new UserEnumerationProtectionService(
             NullLogger<UserEnumerationProtectionService>.Instance,
-            _memoryCache);
+            _memoryCache,
+            new PasswordHasher(NullLogger<PasswordHasher>.Instance, policy));
     }
 
     [Theory]

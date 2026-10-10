@@ -61,10 +61,16 @@ public class LocalAuthService(
         // it is never persisted or logged.
         var candidatePasswordSha256Hex = ComputePasswordSha256Hex(request.Password);
 
+        // Server-owned monotonic origin for timing compensation. It is captured BEFORE account
+        // resolution so the lookup and all credential work fall inside the compensated window.
+        // An entry point that resolved candidates earlier (polymorphic sign-in) supplies its
+        // own window so that resolution is inside the window too.
+        var timingWindow = request.TimingWindow ?? enumerationProtection.BeginAuthenticationTiming();
+        var credentialWork = CredentialWorkClassification.None;
+
 #pragma warning disable IDE0059 // Unnecessary assignment - Initial null IS used in failure path at RecordFailedAttempt
         Guid? userId = null;
 #pragma warning restore IDE0059
-        var userExists = false;
         var authenticationSucceeded = false;
         string? failureReason = null;
 
@@ -76,7 +82,6 @@ public class LocalAuthService(
                 : request.ResolvedUserId.HasValue
                     ? await userRepository.GetByIdAsync(request.ResolvedUserId.Value, cancellationToken).ConfigureAwait(false)
                     : await userRepository.GetByEmailAsync(normalizedEmail, cancellationToken).ConfigureAwait(false);
-            userExists = user != null;
 
             // Verify password if user exists
             if (user != null)
@@ -85,7 +90,16 @@ public class LocalAuthService(
                 // persistence, and brute-force owner alerts on failed sign-ins all need the user id.
                 userId = user.Id;
 
-                var passwordValid = user.HasPassword && passwordHasher.VerifyPassword(user.PasswordHash!, request.Password);
+                // Work classification, not account existence: a passwordless account or a stored
+                // credential the hasher rejects before expensive verification performed no
+                // cryptographic work and must be compensated with equivalent dummy verification.
+                var verification = user.HasPassword
+                    ? passwordHasher.VerifyPasswordWithWorkClassification(user.PasswordHash!, request.Password)
+                    : PasswordVerificationResult.RejectedWithoutWork;
+                credentialWork = verification.PerformedCryptographicWork
+                    ? CredentialWorkClassification.Completed
+                    : CredentialWorkClassification.None;
+                var passwordValid = verification.IsValid;
 
                 if (passwordValid)
                 {
@@ -104,8 +118,9 @@ public class LocalAuthService(
                 logger.LogWarning("User not found: {Email}", LogRedaction.MaskEmail(request.Email));
             }
 
-            // Apply user enumeration protection timing
-            await enumerationProtection.AddTimingProtectionDelayAsync(userExists, SystemClock.UtcNow).ConfigureAwait(false);
+            // Apply user enumeration protection timing. The window originates before account
+            // resolution, and only windows without completed credential work receive dummy work.
+            await enumerationProtection.AddTimingProtectionDelayAsync(timingWindow, credentialWork).ConfigureAwait(false);
 
             if (!authenticationSucceeded)
             {
@@ -551,12 +566,19 @@ public class LocalAuthService(
                     passwordValidation.ValidationFailures.Select(failure => new ValidationError("Password", failure)));
             }
 
+            // Server-owned monotonic origin captured before the duplicate-email lookup so the
+            // account check stays inside the compensated window.
+            var timingWindow = enumerationProtection.BeginAuthenticationTiming();
+
             // Check for existing user
             var emailExists = await userRepository.ExistsByEmailAsync(request.Email.ToLowerInvariant(), cancellationToken).ConfigureAwait(false);
 
             if (emailExists)
             {
-                await enumerationProtection.AddTimingProtectionDelayAsync(true, SystemClock.UtcNow).ConfigureAwait(false);
+                // The duplicate path completed no credential work (the fresh sign-up path hashes
+                // the password), so it is classified without completed work and receives equivalent
+                // dummy verification at the configured work factor.
+                await enumerationProtection.AddTimingProtectionDelayAsync(timingWindow, CredentialWorkClassification.None).ConfigureAwait(false);
                 logger.LogWarning("Sign-up attempt with existing email: {Email}", LogRedaction.MaskEmail(request.Email));
 
                 throw new InvalidOperationException("User already exists");

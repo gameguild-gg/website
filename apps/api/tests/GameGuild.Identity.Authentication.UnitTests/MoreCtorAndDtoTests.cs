@@ -33,9 +33,12 @@ public class MoreCtorAndDtoTests
     [Fact]
     public void PolymorphicSignInHandler_CanBeConstructed()
     {
+        var timingProtection = new Mock<IUserEnumerationProtectionService>();
+        timingProtection.Setup(value => value.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
         var svc = new PolymorphicSignInHandler(
             Mock.Of<IAuthService>(),
             Mock.Of<IUserRepository>(),
+            timingProtection.Object,
             NullLogger<PolymorphicSignInHandler>.Instance,
             null);
         svc.Should().NotBeNull();

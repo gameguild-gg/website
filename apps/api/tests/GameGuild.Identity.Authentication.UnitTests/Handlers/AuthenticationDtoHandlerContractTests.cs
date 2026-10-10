@@ -55,7 +55,7 @@ public sealed class AuthenticationDtoHandlerContractTests
                 .Handle(new LocalSignInCommand { Email = user.Email, TenantId = source.TenantId }, cancellation.Token),
             "refresh" => await new RefreshTokenHandler(service.Object, repository.Object, NullLogger<RefreshTokenHandler>.Instance, Validator<RefreshTokenCommand>())
                 .Handle(new RefreshTokenCommand { RefreshToken = "synthetic-input-refresh", TenantId = source.TenantId }, cancellation.Token),
-            "polymorphic" => await new PolymorphicSignInHandler(service.Object, repository.Object, NullLogger<PolymorphicSignInHandler>.Instance, Validator<PolymorphicSignInCommand>())
+            "polymorphic" => await new PolymorphicSignInHandler(service.Object, repository.Object, TimingProtection(), NullLogger<PolymorphicSignInHandler>.Instance, Validator<PolymorphicSignInCommand>())
                 .Handle(new PolymorphicSignInCommand { Credential = user.Email, TenantId = source.TenantId }, cancellation.Token),
             "social" => await new SocialSignInHandler(service.Object, repository.Object, NullLogger<SocialSignInHandler>.Instance, Validator<SocialSignInCommand>())
                 .Handle(new SocialSignInCommand { Provider = SocialProvider.Google, Token = "synthetic-input-oauth", TenantId = source.TenantId }, cancellation.Token),
@@ -93,5 +93,12 @@ public sealed class AuthenticationDtoHandlerContractTests
         var validator = new Mock<IValidator<T>>();
         validator.Setup(value => value.ValidateAsync(It.IsAny<T>(), It.IsAny<CancellationToken>())).ReturnsAsync(new ValidationResult());
         return validator.Object;
+    }
+
+    private static IUserEnumerationProtectionService TimingProtection()
+    {
+        var protection = new Mock<IUserEnumerationProtectionService>();
+        protection.Setup(value => value.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
+        return protection.Object;
     }
 }

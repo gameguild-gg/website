@@ -505,7 +505,8 @@ public class RememberMeSessionLifetimeTests
             HttpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
             Attempts.Setup(x => x.GetClientIpAddress(It.IsAny<HttpContext>())).Returns("127.0.0.1");
             Enumeration.Setup(x => x.GetGenericErrorMessage(It.IsAny<string>())).Returns("Authentication failed");
-            Enumeration.Setup(x => x.AddTimingProtectionDelayAsync(It.IsAny<bool>(), It.IsAny<DateTime>())).Returns(Task.CompletedTask);
+            Enumeration.Setup(x => x.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
+            Enumeration.Setup(x => x.AddTimingProtectionDelayAsync(It.IsAny<AuthenticationTimingScope>(), It.IsAny<CredentialWorkClassification>())).Returns(Task.CompletedTask);
             Anomalies
                 .Setup(x => x.AnalyzeBehavioralPatternsAsync(It.IsAny<Guid>(), It.IsAny<AuthenticationAttemptContext>()))
                 .ReturnsAsync(new BehavioralAnalysisResult { MatchesTypicalBehavior = true });

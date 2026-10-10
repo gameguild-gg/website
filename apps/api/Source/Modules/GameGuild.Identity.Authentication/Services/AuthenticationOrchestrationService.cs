@@ -281,14 +281,22 @@ public sealed class AuthenticationOrchestrationService(
             throw new UnauthorizedAccessException("A primary credential is required to initiate an authentication flow.");
         }
 
+        // Server-owned monotonic origin: captured BEFORE account resolution so the lookup and
+        // credential verification stay inside the compensated window.
+        var timingScope = enumerationProtectionService.BeginAuthenticationTiming();
         var user = await userRepository.GetByEmailAsync(identifier.ToLowerInvariant(), CancellationToken.None).ConfigureAwait(false);
-        var userExists = user is not null;
-        var credentialValid = user is { IsActive: true, HasPassword: true }
-            && passwordHasher.VerifyPassword(user.PasswordHash!, password);
 
-        if (!credentialValid)
+        // Work classification, not account existence: passwordless accounts and credentials the
+        // hasher rejects before expensive verification performed no cryptographic work.
+        var verification = user is { IsActive: true, HasPassword: true }
+            ? passwordHasher.VerifyPasswordWithWorkClassification(user.PasswordHash!, password)
+            : PasswordVerificationResult.RejectedWithoutWork;
+
+        if (!verification.IsValid)
         {
-            await enumerationProtectionService.AddTimingProtectionDelayAsync(userExists, SystemClock.UtcNow).ConfigureAwait(false);
+            await enumerationProtectionService.AddTimingProtectionDelayAsync(
+                timingScope,
+                verification.PerformedCryptographicWork ? CredentialWorkClassification.Completed : CredentialWorkClassification.None).ConfigureAwait(false);
             await authAttemptService.RecordFailedAttemptAsync(
                 identifier,
                 user?.Id,

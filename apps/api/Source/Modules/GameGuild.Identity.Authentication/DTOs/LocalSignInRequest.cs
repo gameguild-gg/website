@@ -38,6 +38,14 @@ public class LocalSignInRequest
     internal Guid? ResolvedUserId { get; init; }
 
     /// <summary>
+    ///     Server-owned timing window already opened by an entry point that resolved account
+    ///     candidates before delegating here (polymorphic sign-in). When present, compensation
+    ///     is measured from this earlier origin so candidate resolution stays inside the
+    ///     compensated window. Internal: cannot be supplied by a request.
+    /// </summary>
+    internal AuthenticationTimingScope? TimingWindow { get; init; }
+
+    /// <summary>
     ///     Alias for Email to support polymorphic sign-in scenarios
     /// </summary>
     public string EmailOrUsername { get => Email; }

@@ -1137,7 +1137,8 @@ public sealed class UserEnumerationProtectionCoverageTests
     {
         _cache = new MemoryCache(new MemoryCacheOptions());
         _sut = new UserEnumerationProtectionService(
-            Mock.Of<ILogger<UserEnumerationProtectionService>>(), _cache);
+            Mock.Of<ILogger<UserEnumerationProtectionService>>(), _cache,
+            new PasswordHasher(Mock.Of<ILogger<PasswordHasher>>(), UserEnumProtectionExtraTests.TestPasswordPolicyConfiguration));
     }
 
     [Theory]
@@ -1171,16 +1172,16 @@ public sealed class UserEnumerationProtectionCoverageTests
     }
 
     [Fact]
-    public async Task AddTimingProtectionDelay_ValidUser()
+    public async Task AddTimingProtectionDelay_CompletedCredentialWork()
     {
-        await _sut.AddTimingProtectionDelayAsync(true, DateTime.UtcNow);
+        await _sut.AddTimingProtectionDelayAsync(_sut.BeginAuthenticationTiming(), CredentialWorkClassification.Completed);
         // Should not throw, just adds delay
     }
 
     [Fact]
-    public async Task AddTimingProtectionDelay_InvalidUser()
+    public async Task AddTimingProtectionDelay_NoCredentialWork()
     {
-        await _sut.AddTimingProtectionDelayAsync(false, DateTime.UtcNow);
+        await _sut.AddTimingProtectionDelayAsync(_sut.BeginAuthenticationTiming(), CredentialWorkClassification.None);
         // Should not throw, just adds delay
     }
 }

@@ -7,12 +7,24 @@ namespace GameGuild.Identity.Authentication;
 public interface IUserEnumerationProtectionService
 {
     /// <summary>
-    ///     Adds artificial delay to authentication responses to prevent timing attacks.
-    ///     Ensures both successful and failed attempts take similar time.
+    ///     Captures the server-owned monotonic origin for an authentication attempt. Must be
+    ///     called before any account resolution so that lookups and credential verification are
+    ///     inside the compensated window.
     /// </summary>
-    /// <param name="isValidUser">Whether the user exists (internal use only)</param>
-    /// <param name="startTime">When the authentication attempt started</param>
-    Task AddTimingProtectionDelayAsync(bool isValidUser, DateTime startTime);
+    AuthenticationTimingScope BeginAuthenticationTiming();
+
+    /// <summary>
+    ///     Adds compensation to an authentication response so the total window (account
+    ///     resolution + credential work + this call) is indistinguishable across outcomes.
+    ///     When the window completed no usable credential verification (missing account,
+    ///     passwordless account, unusable credential), equivalent dummy verification runs at
+    ///     the configured BCrypt work factor before topping the window up to the target time.
+    ///     There is no existence-dependent jitter: both classifications follow the same
+    ///     deterministic compensation structure.
+    /// </summary>
+    /// <param name="timingScope">Server-owned scope created before account resolution</param>
+    /// <param name="credentialWork">Classification of the credential work completed in the window</param>
+    Task AddTimingProtectionDelayAsync(AuthenticationTimingScope timingScope, CredentialWorkClassification credentialWork);
 
     /// <summary>
     ///     Generates a consistent, generic error message that doesn't reveal if user exists.

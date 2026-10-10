@@ -12,6 +12,7 @@ namespace GameGuild.Identity.Authentication;
 public sealed class PolymorphicSignInHandler(
     IAuthService authService,
     IUserRepository userRepository,
+    IUserEnumerationProtectionService enumerationProtection,
     ILogger<PolymorphicSignInHandler> logger,
     FluentValidation.IValidator<PolymorphicSignInCommand>? validator = null
 ) : ICommandHandler<PolymorphicSignInCommand, SignInResponse>
@@ -37,6 +38,11 @@ public sealed class PolymorphicSignInHandler(
 
         logger.LogInformation("Processing polymorphic sign-in for credential type: {CredentialType}", credentialType);
 
+        // Server-owned monotonic origin captured BEFORE public candidate resolution so the
+        // account lookup cannot leak existence through a window that excludes it. The scope is
+        // handed to the local sign-in service, which compensates from this earlier origin.
+        var timingWindow = enumerationProtection.BeginAuthenticationTiming();
+
         User? account = null;
         var lookupType = ValidIdentifierType(identifier, credentialType);
         if (lookupType.HasValue)
@@ -58,7 +64,8 @@ public sealed class PolymorphicSignInHandler(
             DeviceFingerprint = command.DeviceFingerprint,
             RememberMe = command.RememberMe,
             CredentialResolutionFailed = account is null,
-            ResolvedUserId = account?.Id
+            ResolvedUserId = account?.Id,
+            TimingWindow = timingWindow
         };
 
         var domainResult = await authService.LocalSignInAsync(localSignInRequest, cancellationToken).ConfigureAwait(false);

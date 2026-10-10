@@ -51,8 +51,14 @@ public sealed class AuthenticationOrchestrationServiceTests : IDisposable
         _passwordHasher
             .Setup(hasher => hasher.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
+        _passwordHasher
+            .Setup(hasher => hasher.VerifyPasswordWithWorkClassification(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new PasswordVerificationResult(IsValid: true, PerformedCryptographicWork: true));
         _enumerationProtection
-            .Setup(protection => protection.AddTimingProtectionDelayAsync(It.IsAny<bool>(), It.IsAny<DateTime>()))
+            .Setup(protection => protection.BeginAuthenticationTiming())
+            .Returns(new AuthenticationTimingScope());
+        _enumerationProtection
+            .Setup(protection => protection.AddTimingProtectionDelayAsync(It.IsAny<AuthenticationTimingScope>(), It.IsAny<CredentialWorkClassification>()))
             .Returns(Task.CompletedTask);
         _enumerationProtection
             .Setup(protection => protection.GetGenericErrorMessage(It.IsAny<string>()))
@@ -146,7 +152,7 @@ public sealed class AuthenticationOrchestrationServiceTests : IDisposable
         state.ExpiresAt.Should().Be(_clock.FrozenUtcNow.Add(AuthenticationOrchestrationService.FlowLifetime).UtcDateTime);
         state.CompletedSteps.Should().Contain(state.RequiredSteps);
 
-        _passwordHasher.Verify(hasher => hasher.VerifyPassword("hash", "correct-password"), Times.Once);
+        _passwordHasher.Verify(hasher => hasher.VerifyPasswordWithWorkClassification("hash", "correct-password"), Times.Once);
         _userRepository.Verify(repository => repository.GetByEmailAsync("user@example.com", It.IsAny<CancellationToken>()), Times.Once);
         _authAttemptService.Verify(
             service => service.RecordSuccessfulAttemptAsync("user@example.com", _user.Id, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>(), "Local"),
@@ -450,8 +456,8 @@ public sealed class AuthenticationOrchestrationServiceTests : IDisposable
     public async Task Initiate_WithInvalidPassword_RecordsFailedAttemptAndDoesNotCreateFlow()
     {
         _passwordHasher
-            .Setup(hasher => hasher.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(false);
+            .Setup(hasher => hasher.VerifyPasswordWithWorkClassification(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new PasswordVerificationResult(IsValid: false, PerformedCryptographicWork: true));
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => _sut.InitiateAuthenticationAsync(CreateRequest(deviceFingerprint: TrustedFingerprint)));
