@@ -115,29 +115,6 @@ public interface IFieldAccessAuditService {
 }
 
 /// <summary>
-/// Service for real-time anomaly detection on privileged operations.
-/// Uses ML-based pattern recognition and rule-based triggers.
-/// </summary>
-public interface IAnomalyDetectionService {
-    Task<Result<AuditAnomaly?>> DetectAnomalyAsync(
-        Guid tenantId,
-        Guid? userId,
-        string action,
-        string entityType,
-        string ipAddress,
-        string userAgent,
-        Dictionary<string, object> context,
-        CancellationToken cancellationToken = default);
-
-    Task<Result<IEnumerable<AuditAnomaly>>> GetActiveAnomaliesAsync(Guid tenantId, CancellationToken cancellationToken = default);
-    Task<Result> AssignAnomalyAsync(Guid anomalyId, string assignee, CancellationToken cancellationToken = default);
-    Task<Result> ResolveAnomalyAsync(Guid anomalyId, string resolutionNotes, string? mitigationActions = null, CancellationToken cancellationToken = default);
-    Task<Result> MarkAsFalsePositiveAsync(Guid anomalyId, string notes, CancellationToken cancellationToken = default);
-    double CalculateConfidenceScore(Dictionary<string, object> features);
-    Task<Result<Dictionary<string, object>>> AnalyzeGeographicPatternsAsync(Guid userId, string ipAddress, CancellationToken cancellationToken = default);
-}
-
-/// <summary>
 /// Service for compliance evidence packaging (SOC2, ISO 27001, GDPR, HIPAA).
 /// Creates tamper-evident packages with digital signatures for regulatory submissions.
 /// </summary>
@@ -178,9 +155,3 @@ public sealed record ChainVerificationResult(
     int VerifiedLogs,
     int FailedLogs,
     List<string> Errors);
-
-public class AnomalyDetectionResult {
-    public bool IsAnomaly { get; set; }
-    public double ConfidenceScore { get; set; }
-    public List<AuditAnomaly> DetectedAnomalies { get; set; } = new();
-}

@@ -582,6 +582,24 @@ export const getApiAuditSecurityEventsAlertsEndpoint = {
 } as const;
 
 /**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostApiAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostApiAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postApiAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postApiAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/alerts/{alertId}:resolve' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Acknowledges an open security alert. The acting administrator is derived from the request context.
  */
 export interface PostApiAuditSecurityEventsAlertsAcknowledgeInput {
@@ -12413,6 +12431,24 @@ export const getAuditSecurityEventsAlertsEndpoint = {
   operationId: 'getAuditSecurityEventsAlerts' as const,
   method: 'GET' as const,
   path: '/v1/audit/security-events/alerts' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/alerts/{alertId}:resolve' as const,
   tags: ['ComplianceAuditSecurityEvents'] as const,
   requiresAuth: true,
 } as const;
@@ -25966,6 +26002,7 @@ export const endpoints = {
   putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
   getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
   getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
+  postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
   postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
   postApiAuditSecurityEventsRetentionEnforce: postApiAuditSecurityEventsRetentionEnforceEndpoint,
@@ -26740,6 +26777,7 @@ export const endpoints = {
   putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
   getAuditRetentionSimulationTemplates: getAuditRetentionSimulationTemplatesEndpoint,
   getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
+  postAuditSecurityEventsAlertsResolve: postAuditSecurityEventsAlertsResolveEndpoint,
   postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
   getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
   postAuditSecurityEventsRetentionEnforce: postAuditSecurityEventsRetentionEnforceEndpoint,

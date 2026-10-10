@@ -63,6 +63,7 @@ public sealed class SecurityEventController(
     [ProducesResponseType(typeof(SecurityAlertResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<SecurityAlertResponse>> AcknowledgeAlert(
         Guid alertId,
         [FromBody] AcknowledgeSecurityAlertRequest? request,
@@ -76,6 +77,42 @@ public sealed class SecurityEventController(
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+        catch (SecurityAlertTransitionException exception)
+        {
+            return Conflict(new ValidationProblemDetails(exception.Errors.ToDictionary(pair => pair.Key, pair => pair.Value))
+                { Status = StatusCodes.Status409Conflict });
+        }
+    }
+
+    /// <summary>
+    ///     Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+    ///     resolution). The acting administrator is derived from the request context and recorded together
+    ///     with the resolution instant and note; the resolution is audited as a security event.
+    /// </summary>
+    [HttpPost("alerts/{alertId:guid}:resolve")]
+    [ProducesResponseType(typeof(SecurityAlertResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<SecurityAlertResponse>> ResolveAlert(
+        Guid alertId,
+        [FromBody] ResolveSecurityAlertRequest? request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await sender.Send(new ResolveSecurityAlertCommand(alertId, request?.Notes), cancellationToken).ConfigureAwait(false);
+            return response is null ? NotFound() : Ok(response);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (SecurityAlertTransitionException exception)
+        {
+            return Conflict(new ValidationProblemDetails(exception.Errors.ToDictionary(pair => pair.Key, pair => pair.Value))
+                { Status = StatusCodes.Status409Conflict });
         }
     }
 

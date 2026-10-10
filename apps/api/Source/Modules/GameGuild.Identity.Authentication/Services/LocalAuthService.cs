@@ -750,15 +750,17 @@ public class LocalAuthService(
 
         var existingSession = await sessionManagementService.GetSessionByRefreshTokenAsync(hashedToken, cancellationToken).ConfigureAwait(false);
         var sessionId = existingSession?.Id ?? Guid.NewGuid();
-        // Rotation renews the session with the configured lifetime for its class: a stored
-        // duration strictly longer than the configured standard lifetime marks a persistent
-        // ("remember me") session, which renews at the persistent lifetime so it does not
-        // collapse onto the standard one. Every other row — including legacy or malformed
-        // rows and the raw stored timestamps — renews at the configured standard lifetime.
-        // The raw stored duration itself is never copied into the replacement: short-lived,
-        // absolute-session-capped, or externally seeded rows would otherwise renew with a
-        // stale lifetime (the 2026-10-10 regression minted ~8-hour replacements) instead of
-        // the configured days.
+        // Rotation classifies the session by its originating policy instead of replaying
+        // the stored row's raw span: rotation preserves the originating CreatedAt while
+        // advancing ExpiresAt, so the span compounds elapsed time and drifts past every
+        // configured deadline (the 2026-10-10 regression minted ~8-hour replacements from
+        // short-lived seeded rows). Renewal always lands on a configured lifetime: a
+        // persistent ("remember me") session keeps the persistent lifetime instead of
+        // collapsing onto the standard one, and every other row — including legacy or
+        // malformed rows — renews at the configured standard lifetime.
+        // The raw stored CreatedAt is passed through so the resolver's malformed/legacy-row
+        // fallback (rows without a creation instant) engages instead of deriving a bogus
+        // duration from a sanitized clock value.
         var refreshTokenExpiresAt = now.AddDays(RefreshTokenLifetimeResolver.ResolveRenewalDays(
             jwtOptions,
             configuration,
