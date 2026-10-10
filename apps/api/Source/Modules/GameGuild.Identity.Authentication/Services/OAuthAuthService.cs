@@ -20,6 +20,8 @@ public class OAuthAuthService(
     IRefreshTokenHasher refreshTokenHasher,
     IOAuthService oauthService,
     IGoogleIdTokenVerifier googleIdTokenVerifier,
+    IOidcFederationService oidcFederationService,
+    IMfaService mfaService,
     IExternalLoginRepository externalLoginRepository,
     IConfiguration configuration,
     IAuthAttemptService authAttemptService,
@@ -189,6 +191,94 @@ public class OAuthAuthService(
         logger.LogInformation("Discord OAuth sign-in successful for {Email}", LogRedaction.MaskEmail(email));
 
         return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "Discord sign-in successful", "Discord", stopwatch, request.RememberMe == true, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Completes a generic OIDC federation sign-in: the federation service validates the
+    ///     provider ID token (issuer/audience/lifetime/RS256 signature), then the shared
+    ///     auto-link/JIT policy resolves the platform user (provider key <c>oidc-&lt;slug&gt;</c>).
+    ///     Fail closed: the platform MFA policy must be satisfied by the provider's <c>amr</c>
+    ///     proof or the sign-in is refused.
+    /// </summary>
+    public async Task<SignInResponse> OidcSignInAsync(OidcSignInRequest request, CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var authenticationMethod = $"Oidc:{request.Slug}";
+        logger.LogInformation("Processing OIDC federation sign-in for provider {Slug}", request.Slug);
+
+        var (user, identity) = await RunProviderAuthenticationAsync(
+            authenticationMethod,
+            stopwatch,
+            async () =>
+            {
+                var federatedIdentity = await oidcFederationService
+                    .AuthenticateCallbackAsync(request.Slug, request.Code, request.State, request.RedirectUri, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var email = federatedIdentity.Email ?? throw new UnauthorizedAccessException($"OIDC account for provider '{request.Slug}' has no email claim");
+
+                var resolvedUser = await ResolveExternalUserAsync(
+                    $"oidc-{request.Slug}",
+                    email,
+                    federatedIdentity.ProviderKey,
+                    federatedIdentity.Name,
+                    federatedIdentity.EmailVerified,
+                    federatedIdentity.GrantedScopes.ToArray(),
+                    cancellationToken).ConfigureAwait(false);
+
+                await EnforceOidcMfaPolicyAsync(resolvedUser.Id, federatedIdentity, request.Slug, cancellationToken).ConfigureAwait(false);
+
+                return (resolvedUser, federatedIdentity);
+            }).ConfigureAwait(false);
+
+        await DefaultTenantMembershipProvisioner.EnsureAsync(sender, user.Id, cancellationToken).ConfigureAwait(false);
+        var tenantAccessContext = await ResolveTenantAccessContextAsync(user.Id, request.TenantId, cancellationToken).ConfigureAwait(false);
+
+        var httpContext = httpContextAccessor.HttpContext;
+        var ipAddress = authAttemptService.GetClientIpAddress(httpContext);
+        var userAgent = httpContext?.Request.Headers.UserAgent.ToString();
+        var deviceInfo = new DeviceInfo { Fingerprint = Guid.NewGuid().ToString(), IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "OAuth Device", DeviceType = "Web" };
+
+        logger.LogInformation("OIDC federation sign-in successful for provider {Slug}", request.Slug);
+
+        var response = await CompleteSignInAsync(
+            user,
+            tenantAccessContext,
+            deviceInfo,
+            ipAddress,
+            userAgent,
+            $"OIDC sign-in successful ({request.Slug})",
+            authenticationMethod,
+            stopwatch,
+            request.RememberMe == true,
+            cancellationToken).ConfigureAwait(false);
+
+        // Map the provider's amr/acr assertions onto the sign-in surface so clients and
+        // conditional policies can consume them alongside the existing step-up fields.
+        response.AuthenticationMethodReferences = identity.Amr;
+        response.AuthenticationContextClassReference = identity.Acr;
+        response.MfaVerifiedByProvider = identity.HasMfaProof;
+        return response;
+    }
+
+    /// <summary>
+    ///     Fail-closed MFA gate for federated sign-in: when the platform policy requires MFA
+    ///     for the resolved user, the provider must have attested multi-factor authentication
+    ///     (amr containing "mfa") or the sign-in is refused.
+    /// </summary>
+    private async Task EnforceOidcMfaPolicyAsync(Guid userId, OidcFederatedIdentity identity, string slug, CancellationToken cancellationToken)
+    {
+        if (identity.HasMfaProof)
+        {
+            return;
+        }
+
+        var mfaRequired = await mfaService.IsMfaRequiredAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (mfaRequired)
+        {
+            throw new UnauthorizedAccessException(
+                $"OIDC sign-in for provider '{slug}' requires multi-factor authentication, but the provider did not attest one (no 'mfa' amr value).");
+        }
     }
 
     private async Task<SignInResponse> CompleteSignInAsync(

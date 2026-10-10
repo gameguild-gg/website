@@ -13172,6 +13172,81 @@ export const postAuthMfaVerifyEndpoint = {
 } as const;
 
 /**
+ * Discover federation providers for an email domain
+ *
+ * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+ */
+export interface GetAuthOidcDiscoverProviderInput {
+  query?: {
+    email?: string;
+  };
+}
+export type GetAuthOidcDiscoverProviderOutput = Types.IdentityAuthenticationOidcDiscoverProviderOutput;
+export const getAuthOidcDiscoverProviderEndpoint = {
+  operationId: 'getAuthOidcDiscoverProvider' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/oidc:discover-provider' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Resolve the provider's front-channel logout URL
+ *
+ * Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+ */
+export interface GetAuthOidcEndSessionUrlInput {
+  slug: string;
+  query?: {
+    postLogoutRedirectUri?: string;
+  };
+}
+export type GetAuthOidcEndSessionUrlOutput = Types.IdentityAuthenticationOidcEndSessionUrlOutput;
+export const getAuthOidcEndSessionUrlEndpoint = {
+  operationId: 'getAuthOidcEndSessionUrl' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/oidc/{slug}:end-session-url' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Initiate OIDC federation provider sign-in
+ *
+ * Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.
+ */
+export interface PostAuthOidcSignInAuthorizeInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationOidcAuthorizeRequestDto;
+}
+export type PostAuthOidcSignInAuthorizeOutput = Types.IdentityAuthenticationOidcSignInOutput;
+export const postAuthOidcSignInAuthorizeEndpoint = {
+  operationId: 'postAuthOidcSignInAuthorize' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/oidc/{slug}:sign-in-authorize' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Handle OIDC federation provider callback
+ *
+ * Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).
+ */
+export interface PostAuthOidcSignInCallbackInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationOidcCallbackRequestDto;
+}
+export type PostAuthOidcSignInCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOidcSignInCallbackEndpoint = {
+  operationId: 'postAuthOidcSignInCallback' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/oidc/{slug}:sign-in-callback' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Change password for authenticated user
  *
  * Changes the password for the currently authenticated user.
@@ -26940,6 +27015,10 @@ export const endpoints = {
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,
   postAuthMfaTotpSetup: postAuthMfaTotpSetupEndpoint,
   postAuthMfaVerify: postAuthMfaVerifyEndpoint,
+  getAuthOidcDiscoverProvider: getAuthOidcDiscoverProviderEndpoint,
+  getAuthOidcEndSessionUrl: getAuthOidcEndSessionUrlEndpoint,
+  postAuthOidcSignInAuthorize: postAuthOidcSignInAuthorizeEndpoint,
+  postAuthOidcSignInCallback: postAuthOidcSignInCallbackEndpoint,
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,

@@ -355,6 +355,143 @@ public sealed class AuthController(ISender sender) : BaseApiController
 
     #endregion
 
+    #region OIDC federation sign-in - /v1/auth/oidc
+
+    /// <summary>
+    ///     Initiate OIDC federation provider sign-in
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="body">Redirect URI registered with the federation provider</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Provider authorization URL and CSRF state parameter</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/oidc/{slug}:sign-in-authorize")]
+    [EndpointSummary("Initiate OIDC federation sign-in")]
+    [EndpointDescription("Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.")]
+    [ProducesResponseType<OidcSignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> OidcSignIn([FromRoute] string slug, [FromBody] OidcAuthorizeRequestDto body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new OidcSignInCommand { Slug = slug, RedirectUri = body.RedirectUri };
+
+        try
+        {
+            var result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return OidcNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Handle OIDC federation provider callback
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="body">Callback with authorization code, state, redirect URI, and optional tenant context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Authentication tokens on success</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/oidc/{slug}:sign-in-callback")]
+    [EndpointSummary("OIDC federation sign-in callback")]
+    [EndpointDescription("Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> OidcCallback([FromRoute] string slug, [FromBody] OidcCallbackRequestDto body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new OidcCallbackCommand
+        {
+            Slug = slug,
+            Code = body.Code,
+            State = body.State,
+            RedirectUri = body.RedirectUri,
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
+        };
+
+        try
+        {
+            SignInResponse result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return OidcNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Discover federation providers for an email domain
+    /// </summary>
+    /// <param name="email">Email address (or bare domain) to route to its federation providers</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Federation providers whose configured email domains match</returns>
+    [AllowAnonymous]
+    [HttpGet("v{version:apiVersion}/auth/oidc:discover-provider")]
+    [EndpointSummary("Discover OIDC federation providers by email domain")]
+    [EndpointDescription("Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.")]
+    [ProducesResponseType<OidcDiscoverProviderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> OidcDiscoverProvider([FromQuery] string email, CancellationToken ct)
+    {
+        var query = new DiscoverOidcProvidersQuery { Email = email };
+        var result = await sender.Send(query, ct).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Resolve the provider's front-channel logout URL
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="postLogoutRedirectUri">Where the provider should return the browser after its logout</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The end-session URL, or null when the provider does not advertise one</returns>
+    [Authorize]
+    [HttpGet("v{version:apiVersion}/auth/oidc/{slug}:end-session-url")]
+    [EndpointSummary("Resolve OIDC logout forwarding URL")]
+    [EndpointDescription("Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.")]
+    [ProducesResponseType<OidcEndSessionUrlResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> OidcEndSessionUrl([FromRoute] string slug, [FromQuery] string? postLogoutRedirectUri, CancellationToken ct)
+    {
+        var query = new GetOidcEndSessionUrlQuery { Slug = slug, PostLogoutRedirectUri = postLogoutRedirectUri };
+
+        try
+        {
+            var result = await sender.Send(query, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return OidcNotConfigured(ex);
+        }
+    }
+
+    private ObjectResult OidcNotConfigured(InvalidOperationException ex)
+    {
+        return Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "OIDC federation provider is not configured",
+            detail: ex.Message);
+    }
+
+    #endregion
+
     #region Token Operations - /v1/auth/tokens
 
     /// <summary>

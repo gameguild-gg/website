@@ -93,6 +93,8 @@ public class DiExtensionsAndServiceTests
             Mock.Of<IRefreshTokenHasher>(),
             Mock.Of<IOAuthService>(),
             Mock.Of<IGoogleIdTokenVerifier>(),
+            Mock.Of<IOidcFederationService>(),
+            Mock.Of<IMfaService>(),
             Mock.Of<IExternalLoginRepository>(),
             EmptyConfig(),
             Mock.Of<IAuthAttemptService>(),

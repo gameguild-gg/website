@@ -74,7 +74,10 @@ public static class AuthenticationMappings
             StepUpExpiresAt = domainResponse.StepUpExpiresAt,
             RiskLevel = domainResponse.RiskLevel,
             RiskFactors = domainResponse.RiskFactors?.ToList(),
-            AvailableMethods = domainResponse.AvailableMethods?.ToList()
+            AvailableMethods = domainResponse.AvailableMethods?.ToList(),
+            AuthenticationMethodReferences = domainResponse.AuthenticationMethodReferences?.ToArray(),
+            AuthenticationContextClassReference = domainResponse.AuthenticationContextClassReference,
+            MfaVerifiedByProvider = domainResponse.MfaVerifiedByProvider
         };
     }
 
