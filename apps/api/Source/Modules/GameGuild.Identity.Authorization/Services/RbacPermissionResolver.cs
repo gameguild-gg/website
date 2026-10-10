@@ -27,6 +27,14 @@ public interface IDynamicRoleAssignmentRepository
 {
     Task<IReadOnlyList<DynamicRoleAssignment>> GetByUserAsync(Guid userId, Guid? tenantId, CancellationToken ct = default);
     Task<IReadOnlyList<DynamicRoleAssignment>> GetValidByUserAsync(Guid userId, Guid? tenantId, CancellationToken ct = default);
+
+    /// <summary>
+    ///     Gets every role assignment stored in a tenant scope (null = global scope),
+    ///     regardless of validity. Used by read-only analysis such as the permission
+    ///     graph and impact simulation, which filter validity themselves.
+    /// </summary>
+    Task<IReadOnlyList<DynamicRoleAssignment>> GetByTenantAsync(Guid? tenantId, CancellationToken ct = default);
+
     Task<DynamicRoleAssignment> CreateAsync(DynamicRoleAssignment assignment, CancellationToken ct = default);
     Task DeleteAsync(Guid userId, Guid roleId, CancellationToken ct = default);
     Task<int> CountByRoleAsync(Guid roleId, CancellationToken ct = default);
@@ -51,9 +59,14 @@ public class DynamicRoleRepository(
     {
         var query = DbSet.AsQueryable();
         if (includeGlobal)
+        {
             query = query.Where(r => r.TenantId == tenantId || r.TenantId == null);
+        }
         else
+        {
             query = query.Where(r => r.TenantId == tenantId);
+        }
+
         return await query.Include(r => r.ParentRole).ToListAsync(ct);
     }
 
@@ -61,9 +74,14 @@ public class DynamicRoleRepository(
     {
         var query = DbSet.Where(r => r.IsActive);
         if (includeGlobal)
+        {
             query = query.Where(r => r.TenantId == tenantId || r.TenantId == null);
+        }
         else
+        {
             query = query.Where(r => r.TenantId == tenantId);
+        }
+
         return await query.Include(r => r.ParentRole).ToListAsync(ct);
     }
 
@@ -140,7 +158,10 @@ public class DynamicRoleRepository(
             }
 
             // Prevent infinite loops
-            if (hierarchy.Count > 20) break;
+            if (hierarchy.Count > 20)
+            {
+                break;
+            }
         }
 
         return hierarchy;
@@ -189,6 +210,13 @@ public class DynamicRoleAssignmentRepository(
             .Where(a => !a.ExpiresAt.HasValue || a.ExpiresAt.Value > now)
             .ToListAsync(ct).ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DynamicRoleAssignment>> GetByTenantAsync(Guid? tenantId, CancellationToken ct = default)
+        => await DbSet
+            .Include(a => a.Role)
+            .Where(a => a.TenantId == tenantId)
+            .ToListAsync(ct).ConfigureAwait(false);
 
     public async Task<DynamicRoleAssignment> CreateAsync(DynamicRoleAssignment assignment, CancellationToken ct = default)
     {
@@ -276,7 +304,10 @@ public class RbacPermissionResolver(
 
         foreach (var assignment in assignments)
         {
-            if (assignment.Role == null || !assignment.Role.IsActive) continue;
+            if (assignment.Role == null || !assignment.Role.IsActive)
+            {
+                continue;
+            }
 
             // Direct contribution of the assigned role (static + dynamic permissions).
             var directPermissions = new List<string>();

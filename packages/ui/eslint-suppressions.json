@@ -1,0 +1,359 @@
+{
+  "prettier.config.mjs": {
+    "prettier/prettier": {
+      "count": 1
+    }
+  },
+  "src/components/accordion.tsx": {
+    "prettier/prettier": {
+      "count": 14
+    }
+  },
+  "src/components/alert-dialog.tsx": {
+    "prettier/prettier": {
+      "count": 43
+    }
+  },
+  "src/components/alert.tsx": {
+    "prettier/prettier": {
+      "count": 20
+    }
+  },
+  "src/components/aspect-ratio.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/attachment.tsx": {
+    "prettier/prettier": {
+      "count": 58
+    }
+  },
+  "src/components/avatar.tsx": {
+    "prettier/prettier": {
+      "count": 29
+    }
+  },
+  "src/components/badge.tsx": {
+    "prettier/prettier": {
+      "count": 21
+    }
+  },
+  "src/components/breadcrumb.tsx": {
+    "prettier/prettier": {
+      "count": 31
+    }
+  },
+  "src/components/bubble.tsx": {
+    "prettier/prettier": {
+      "count": 48
+    }
+  },
+  "src/components/button-group.tsx": {
+    "prettier/prettier": {
+      "count": 24
+    }
+  },
+  "src/components/button-variants.tsx": {
+    "prettier/prettier": {
+      "count": 19
+    }
+  },
+  "src/components/button.tsx": {
+    "prettier/prettier": {
+      "count": 27
+    }
+  },
+  "src/components/calendar.tsx": {
+    "prettier/prettier": {
+      "count": 67
+    }
+  },
+  "src/components/card.tsx": {
+    "prettier/prettier": {
+      "count": 23
+    }
+  },
+  "src/components/carousel.tsx": {
+    "prettier/prettier": {
+      "count": 83
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/chart.tsx": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 1
+    },
+    "@typescript-eslint/restrict-template-expressions": {
+      "count": 3
+    },
+    "prettier/prettier": {
+      "count": 104
+    }
+  },
+  "src/components/checkbox.tsx": {
+    "prettier/prettier": {
+      "count": 10
+    }
+  },
+  "src/components/collapsible.tsx": {
+    "prettier/prettier": {
+      "count": 6
+    }
+  },
+  "src/components/combobox.tsx": {
+    "prettier/prettier": {
+      "count": 52
+    }
+  },
+  "src/components/context-menu.tsx": {
+    "prettier/prettier": {
+      "count": 46
+    }
+  },
+  "src/components/dialog.tsx": {
+    "prettier/prettier": {
+      "count": 32
+    }
+  },
+  "src/components/direction.tsx": {
+    "prettier/prettier": {
+      "count": 2
+    }
+  },
+  "src/components/drawer.tsx": {
+    "prettier/prettier": {
+      "count": 60
+    }
+  },
+  "src/components/dropdown-menu.tsx": {
+    "prettier/prettier": {
+      "count": 48
+    }
+  },
+  "src/components/empty.tsx": {
+    "prettier/prettier": {
+      "count": 29
+    }
+  },
+  "src/components/field.tsx": {
+    "prettier/prettier": {
+      "count": 65
+    }
+  },
+  "src/components/form.tsx": {
+    "prettier/prettier": {
+      "count": 53
+    }
+  },
+  "src/components/hover-card.tsx": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/components/input-group.tsx": {
+    "prettier/prettier": {
+      "count": 51
+    }
+  },
+  "src/components/input-otp.tsx": {
+    "prettier/prettier": {
+      "count": 25
+    }
+  },
+  "src/components/input.tsx": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/components/item.tsx": {
+    "prettier/prettier": {
+      "count": 53
+    }
+  },
+  "src/components/kbd.tsx": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/components/label.tsx": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/components/marker.tsx": {
+    "prettier/prettier": {
+      "count": 23
+    }
+  },
+  "src/components/menubar.tsx": {
+    "prettier/prettier": {
+      "count": 50
+    }
+  },
+  "src/components/message-scroller.tsx": {
+    "prettier/prettier": {
+      "count": 30
+    }
+  },
+  "src/components/message.tsx": {
+    "prettier/prettier": {
+      "count": 23
+    }
+  },
+  "src/components/native-select.tsx": {
+    "prettier/prettier": {
+      "count": 15
+    }
+  },
+  "src/components/navigation-menu.tsx": {
+    "prettier/prettier": {
+      "count": 37
+    }
+  },
+  "src/components/pagination.tsx": {
+    "prettier/prettier": {
+      "count": 28
+    }
+  },
+  "src/components/popover.tsx": {
+    "prettier/prettier": {
+      "count": 19
+    }
+  },
+  "src/components/progress.tsx": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/components/questionnaire.tsx": {
+    "prettier/prettier": {
+      "count": 69
+    }
+  },
+  "src/components/radio-group.tsx": {
+    "prettier/prettier": {
+      "count": 10
+    }
+  },
+  "src/components/resizable.tsx": {
+    "prettier/prettier": {
+      "count": 13
+    }
+  },
+  "src/components/scroll-area.tsx": {
+    "prettier/prettier": {
+      "count": 12
+    }
+  },
+  "src/components/select.tsx": {
+    "prettier/prettier": {
+      "count": 36
+    }
+  },
+  "src/components/separator.tsx": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/components/sheet.tsx": {
+    "prettier/prettier": {
+      "count": 29
+    }
+  },
+  "src/components/sidebar.tsx": {
+    "prettier/prettier": {
+      "count": 216
+    }
+  },
+  "src/components/skeleton.tsx": {
+    "prettier/prettier": {
+      "count": 4
+    }
+  },
+  "src/components/slider.tsx": {
+    "prettier/prettier": {
+      "count": 8
+    }
+  },
+  "src/components/sonner.tsx": {
+    "prettier/prettier": {
+      "count": 19
+    }
+  },
+  "src/components/spinner.tsx": {
+    "prettier/prettier": {
+      "count": 5
+    }
+  },
+  "src/components/switch.tsx": {
+    "prettier/prettier": {
+      "count": 9
+    }
+  },
+  "src/components/table.tsx": {
+    "prettier/prettier": {
+      "count": 24
+    }
+  },
+  "src/components/tabs.tsx": {
+    "prettier/prettier": {
+      "count": 22
+    }
+  },
+  "src/components/textarea.tsx": {
+    "prettier/prettier": {
+      "count": 7
+    }
+  },
+  "src/components/toast.tsx": {
+    "prettier/prettier": {
+      "count": 61
+    }
+  },
+  "src/components/toggle-group.tsx": {
+    "prettier/prettier": {
+      "count": 28
+    }
+  },
+  "src/components/toggle.tsx": {
+    "prettier/prettier": {
+      "count": 16
+    }
+  },
+  "src/components/tooltip.tsx": {
+    "prettier/prettier": {
+      "count": 15
+    }
+  },
+  "src/hooks/use-mobile.ts": {
+    "prettier/prettier": {
+      "count": 11
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/lib/legacy-layer.ts": {
+    "prettier/prettier": {
+      "count": 52
+    },
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/use-memo": {
+      "count": 1
+    }
+  }
+}

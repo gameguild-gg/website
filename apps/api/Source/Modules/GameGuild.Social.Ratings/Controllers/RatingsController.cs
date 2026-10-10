@@ -114,7 +114,9 @@ public class RatingsController : BaseApiController
             entityId, entityType, minValue, maxValue, withReviewOnly, verifiedOnly, sortOrder, skip, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(RatingDto.FromEntity);
         return Ok(dtos);
@@ -146,7 +148,9 @@ public class RatingsController : BaseApiController
             request.EntityIds.ToArray(), request.EntityType), ct).ConfigureAwait(false);
         
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.ToDictionary(
             kvp => kvp.Key, 
@@ -166,7 +170,9 @@ public class RatingsController : BaseApiController
             request.EntityIds.ToArray(), request.EntityType), ct).ConfigureAwait(false);
         
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.ToDictionary(
             kvp => kvp.Key, 
@@ -191,7 +197,9 @@ public class RatingsController : BaseApiController
         var result = await _ratingService.GetUserRatingsAsync(userId, entityType, skip, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(RatingDto.FromEntity);
         return Ok(dtos);
@@ -262,7 +270,9 @@ public class RatingsController : BaseApiController
         var result = await _ratingService.GetTopRatedAsync(entityType, minRatings, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(RatingSummaryDto.FromEntity);
         return Ok(dtos);
@@ -282,7 +292,9 @@ public class RatingsController : BaseApiController
         var result = await _ratingService.GetRecentReviewsAsync(entityType, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(RatingDto.FromEntity);
         return Ok(dtos);
@@ -304,7 +316,9 @@ public class RatingsController : BaseApiController
         var result = await _ratingService.GetPendingModerationAsync(skip, take, ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return BadRequest(result.Error);
+        }
 
         var dtos = result.Value.Select(RatingDto.FromEntity);
         return Ok(dtos);

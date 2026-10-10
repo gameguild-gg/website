@@ -27,7 +27,10 @@ public sealed record TreasuryBufferPolicy(
         ArgumentNullException.ThrowIfNull(liabilities);
         ArgumentNullException.ThrowIfNull(exposure);
         if (ObservedAt > now || ExpiresAt <= now || string.IsNullOrWhiteSpace(Owner))
+        {
             throw new ReserveInputUnknownException("Treasury buffer policy is stale or invalid.");
+        }
+
         var hardBasis = ReserveFormula.HardFaceValueUsdMinor(liabilities.OutstandingHardUnits);
         var softBasis = ReserveFormula.SoftFaceValueUsdNanos(liabilities.OutstandingSoftUnits);
         return new ReserveBufferPosition(
@@ -43,7 +46,10 @@ public sealed record TreasuryBufferPolicy(
     private static long Evaluate(TreasuryBufferRule rule, long basis, long observed)
     {
         if (rule is null || rule.AbsoluteFloor < 0 || rule.PercentageFloorPpm is < 0 or >= PpmScale || observed < 0)
+        {
             throw new ReserveInputUnknownException("Treasury buffer evidence or rule is invalid.");
+        }
+
         var percentage = CeilingDivide((BigInteger)basis * rule.PercentageFloorPpm, PpmScale);
         return (long)BigInteger.Max(observed, BigInteger.Max(rule.AbsoluteFloor, percentage));
     }

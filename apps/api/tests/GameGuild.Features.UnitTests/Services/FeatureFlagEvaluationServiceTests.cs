@@ -13,7 +13,6 @@ public class FeatureFlagEvaluationServiceTests
 {
     private readonly Mock<IFeatureFlagQueryRepository> _repositoryMock;
     private readonly Mock<ILogger<FeatureFlagEvaluationService>> _loggerMock;
-    private readonly Mock<IOptions<FeatureFlagOptions>> _optionsMock;
     private readonly List<IFeatureEvaluationStrategy> _strategies;
     private readonly FeatureFlagEvaluationService _service;
 
@@ -21,8 +20,8 @@ public class FeatureFlagEvaluationServiceTests
     {
         _repositoryMock = new Mock<IFeatureFlagQueryRepository>();
         _loggerMock = new Mock<ILogger<FeatureFlagEvaluationService>>();
-        _optionsMock = new Mock<IOptions<FeatureFlagOptions>>();
-        _optionsMock.Setup(x => x.Value).Returns(new FeatureFlagOptions { MaxBulkEvaluationSize = 100 });
+        Mock<IOptions<FeatureFlagOptions>> optionsMock = new Mock<IOptions<FeatureFlagOptions>>();
+        optionsMock.Setup(x => x.Value).Returns(new FeatureFlagOptions { MaxBulkEvaluationSize = 100 });
 
         _strategies = new List<IFeatureEvaluationStrategy>
         {
@@ -34,7 +33,7 @@ public class FeatureFlagEvaluationServiceTests
             _repositoryMock.Object,
             _strategies,
             _loggerMock.Object,
-            _optionsMock.Object
+            optionsMock.Object
         );
     }
 

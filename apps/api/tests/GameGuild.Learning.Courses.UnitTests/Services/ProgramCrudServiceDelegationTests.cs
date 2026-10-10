@@ -51,21 +51,45 @@ public sealed class ProgramCrudServiceDelegationTests
     {
         var type = parameter.ParameterType;
         if (type == typeof(Guid))
+        {
             return Guid.NewGuid();
+        }
+
         if (type == typeof(string))
+        {
             return $"value-for-{parameter.Name}";
+        }
+
         if (type == typeof(int))
+        {
             return 7;
+        }
+
         if (type.IsEnum)
+        {
             return Enum.GetValues(type).GetValue(0);
+        }
+
         if (Nullable.GetUnderlyingType(type) is not null)
+        {
             return null;
+        }
+
         if (type == typeof(List<Guid>))
+        {
             return new List<Guid> { Guid.NewGuid() };
+        }
+
         if (type == typeof(Program))
+        {
             return new Program();
+        }
+
         if (type == typeof(ProgramContent))
+        {
             return new ProgramContent();
+        }
+
         return null;
     }
 
@@ -92,7 +116,10 @@ public sealed class ProgramCrudServiceDelegationTests
             Invocations.Add(new RecordedInvocation(targetMethod!, arguments));
             var returnType = targetMethod!.ReturnType;
             if (returnType == typeof(Task))
+            {
                 return Task.CompletedTask;
+            }
+
             if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
                 var resultType = returnType.GetGenericArguments()[0];

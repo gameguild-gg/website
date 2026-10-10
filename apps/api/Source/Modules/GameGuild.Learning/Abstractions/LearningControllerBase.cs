@@ -40,7 +40,10 @@ public abstract class LearningControllerBase : BaseApiController
     {
         var actor = ActorContextAccessor.ActorContext;
         if (!actor.SubjectIdAsGuid.HasValue)
+        {
             throw new UnauthorizedAccessException("User must be authenticated");
+        }
+
         return actor.SubjectIdAsGuid.Value;
     }
 
@@ -62,7 +65,10 @@ public abstract class LearningControllerBase : BaseApiController
     {
         var actor = ActorContextAccessor.ActorContext;
         if (actor == null || !actor.SubjectIdAsGuid.HasValue)
+        {
             throw new UnauthorizedAccessException("User must be authenticated");
+        }
+
         return actor;
     }
 
@@ -85,7 +91,10 @@ public abstract class LearningControllerBase : BaseApiController
     protected ActionResult<T> OkOrNotFound<T>(T? entity, string? notFoundMessage = null) where T : class
     {
         if (entity == null)
+        {
             return NotFound(notFoundMessage ?? "Resource not found");
+        }
+
         return Ok(entity);
     }
 
@@ -101,7 +110,10 @@ public abstract class LearningControllerBase : BaseApiController
     protected ActionResult<TResult> MapOrNotFound<T, TResult>(T? entity, Func<T, TResult> onSuccess, string? notFoundMessage = null) where T : class
     {
         if (entity == null)
+        {
             return NotFound(notFoundMessage ?? "Resource not found");
+        }
+
         return Ok(onSuccess(entity));
     }
 
@@ -114,16 +126,22 @@ public abstract class LearningControllerBase : BaseApiController
     {
         var currentUserId = GetOptionalUserId();
         if (!currentUserId.HasValue)
+        {
             return false;
-        
+        }
+
         // Allow access if same user
         if (currentUserId.Value == resourceUserId)
+        {
             return true;
+        }
 
         // Admin role check: admins and tenant admins can access any user's resources
         var actor = ActorContextAccessor.ActorContext;
         if (actor.IsSystemAdmin || actor.IsTenantAdmin)
+        {
             return true;
+        }
 
         return false;
     }

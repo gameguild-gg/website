@@ -84,23 +84,33 @@ public sealed class RequireIpAllowListRuleEvaluator : IRuleEvaluator
     {
         var parts = cidr.Split('/');
         if (parts.Length != 2)
+        {
             return false;
+        }
 
         if (!IPAddress.TryParse(parts[0], out var networkAddress))
+        {
             return false;
+        }
 
         if (!int.TryParse(parts[1], out var prefixLength))
+        {
             return false;
+        }
 
         // Convert both addresses to byte arrays
         var ipBytes = ip.GetAddressBytes();
         var networkBytes = networkAddress.GetAddressBytes();
 
         if (ipBytes.Length != networkBytes.Length)
+        {
             return false;
+        }
 
         if (prefixLength < 0 || prefixLength > ipBytes.Length * 8)
+        {
             return false;
+        }
 
         // Calculate the mask
         var maskBytes = new byte[ipBytes.Length];

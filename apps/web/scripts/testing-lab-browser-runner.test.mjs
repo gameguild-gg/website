@@ -275,3 +275,16 @@ test("waits for the canonical workspace redirect after browser sign-in", async (
     "the canonical workspace redirect must settle before the next journey navigation",
   );
 });
+
+test("sequences fixture sign-ins that share the source-IP lockout budget", async () => {
+  const journey = await readFile(
+    new URL("./testing-lab-browser-e2e.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    journey,
+    /const owner = await createFixtureIdentity\("owner"\);\s+const reviewer = await createFixtureIdentity\("reviewer"\);\s+const tester = await createFixtureIdentity\("tester"\);/,
+  );
+  assert.doesNotMatch(journey, /Promise\.all\(\[\s*createFixtureIdentity/);
+});

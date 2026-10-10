@@ -90,6 +90,12 @@ public static class DataDependencyInjection
         // Configure JWT options from configuration
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
+        // Sign-in compliance gate (issue #267): safe default is disabled; hosts register a
+        // real ISignInCompliancePolicy adapter to compose product compliance signals. The
+        // default policy is stateless, so the shared instance is served per scope.
+        services.Configure<SignInComplianceGateOptions>(configuration.GetSection(SignInComplianceGateOptions.SectionName));
+        services.TryAddScoped<ISignInCompliancePolicy>(static _ => AllowAllSignInCompliancePolicy.Instance);
+
         // Register repositories
         // NOTE: IUserRepository is registered by the Users module - no need to register here
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -114,6 +120,7 @@ public static class DataDependencyInjection
         services.AddScoped<GameGuild.Identity.Authorization.IAuthorizationRolePermissionProvider, RolePermissionProvider>();
         services.AddScoped<IServiceAccountRepository, ServiceAccountRepository>();
         services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();
+        services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
 
         // Core authentication services - focused sub-services
         services.AddScoped<IAuthAttemptService, AuthAttemptService>();

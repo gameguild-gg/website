@@ -192,8 +192,8 @@ public sealed class PermissionCacheRedisIntegrationTests(PermissionCacheRedisFix
         var cacheKeys = new[]
         {
             $"perm:{tenantId}:{userId}:v0",
-            $"acl:{tenantId}:{userId}:Project:project-42:tv0:uv0:gv0",
-            $"acl:subj:{tenantId}:{userId}:nr:ng:Project:project-42:tv0:uv0:gv0"
+            AclCacheKeys.BuildUserCacheKey(userId, tenantId, "Project", "project-42", 0, 0, 0),
+            AclCacheKeys.BuildSubjectCacheKey(AclSubject.ForUser(userId), tenantId, "Project", "project-42", 0, 0, 0)
         };
         var services = new ServiceCollection();
         services.AddLogging();
@@ -269,11 +269,15 @@ public sealed class PermissionCacheRedisIntegrationTests(PermissionCacheRedisFix
         var memberUserId = Guid.NewGuid();
         var invalidatedKeys = new[]
         {
-            $"acl:subj:{tenantId}:anon:{roleId},{inheritedRoleId}:ng:Document:doc-1:tv0:uv0:gv0",
-            $"acl:subj:{tenantId}:{memberUserId}:{roleId},{inheritedRoleId}:ng:Project:project-1:tv0:uv0:gv0",
-            $"acl:subj:{tenantId}:{memberUserId}:nr:{inheritedGroupId},{unrelatedGroupId}:Project:project-2:tv0:uv0:gv0"
+            AclCacheKeys.BuildSubjectCacheKey(
+                AclSubject.Anonymous with { RoleIds = [roleId, inheritedRoleId] }, tenantId, "Document", "doc-1", 0, 0, 0),
+            AclCacheKeys.BuildSubjectCacheKey(
+                AclSubject.ForUser(memberUserId, roleIds: [roleId, inheritedRoleId]), tenantId, "Project", "project-1", 0, 0, 0),
+            AclCacheKeys.BuildSubjectCacheKey(
+                AclSubject.ForUser(memberUserId, groupIds: [inheritedGroupId, unrelatedGroupId]), tenantId, "Project", "project-2", 0, 0, 0)
         };
-        var unaffectedKey = $"acl:subj:{tenantId}:anon:{otherRoleId}:ng:Document:doc-1:tv0:uv0:gv0";
+        var unaffectedKey = AclCacheKeys.BuildSubjectCacheKey(
+            AclSubject.Anonymous with { RoleIds = [otherRoleId] }, tenantId, "Document", "doc-1", 0, 0, 0);
 
         var services = new ServiceCollection();
         services.AddLogging();
@@ -431,7 +435,7 @@ public sealed class PermissionCacheRedisIntegrationTests(PermissionCacheRedisFix
 
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var cacheKey = $"acl:{tenantId}:{userId}:Project:project-42:tv0:uv0:gv0";
+        var cacheKey = AclCacheKeys.BuildUserCacheKey(userId, tenantId, "Project", "project-42", 0, 0, 0);
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddMemoryCache();

@@ -16,14 +16,23 @@ public sealed class AssetUploadAuthorizationService(
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (userId == Guid.Empty || tenantId == null) return false;
+        if (userId == Guid.Empty || tenantId == null)
+        {
+            return false;
+        }
 
         var hasType = !string.IsNullOrWhiteSpace(parentResourceType);
         var hasId = parentResourceId.HasValue;
-        if (hasType != hasId) return false;
+        if (hasType != hasId)
+        {
+            return false;
+        }
 
         // Personal assets without a parent remain supported, but cannot target a scoped folder.
-        if (!hasType) return folderId == null;
+        if (!hasType)
+        {
+            return folderId == null;
+        }
 
         var resolver = _parentResolvers.FirstOrDefault(candidate => candidate.Supports(parentResourceType!));
         if (resolver == null || !await resolver.CanManageAsync(
@@ -31,9 +40,14 @@ public sealed class AssetUploadAuthorizationService(
                 userId,
                 tenantId,
                 cancellationToken).ConfigureAwait(false))
+        {
             return false;
+        }
 
-        if (folderId == null) return true;
+        if (folderId == null)
+        {
+            return true;
+        }
 
         return await context.Set<AssetFolder>().AsNoTracking().AnyAsync(folder =>
             folder.Id == folderId &&

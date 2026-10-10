@@ -24,8 +24,16 @@ public sealed class ChainAnchor
         string signature,
         DateTimeOffset createdAt)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Anchor ID cannot be empty.", nameof(id));
-        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Anchor ID cannot be empty.", nameof(id));
+        }
+
+        if (!Enum.IsDefined(kind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(headSequence);
         ArgumentException.ThrowIfNullOrWhiteSpace(headHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(credentialId);
@@ -67,7 +75,11 @@ public sealed class HmacChainHeadSigner : IChainHeadSigner
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(credentialId);
         ArgumentNullException.ThrowIfNull(key);
-        if (key.Length < 32) throw new ArgumentException("Anchor signing keys must be at least 256 bits.", nameof(key));
+        if (key.Length < 32)
+        {
+            throw new ArgumentException("Anchor signing keys must be at least 256 bits.", nameof(key));
+        }
+
         CredentialId = credentialId.Trim();
         _key = key.ToArray();
     }
@@ -199,7 +211,10 @@ public sealed class ChainAnchorService
         ArgumentException.ThrowIfNullOrWhiteSpace(hash);
         hash = hash.Trim();
         if (hash.Length != 64 || hash.Any(character => !Uri.IsHexDigit(character)))
+        {
             throw new ArgumentException("Dispatch snapshot hash must be a SHA-256 hexadecimal value.", nameof(hash));
+        }
+
         return hash.ToLowerInvariant();
     }
 }

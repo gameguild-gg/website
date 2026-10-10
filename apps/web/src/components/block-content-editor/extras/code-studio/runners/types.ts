@@ -17,6 +17,9 @@ export interface CodeRunner {
 }
 
 export interface RunnerOptions {
+  onOutput?: (output: string, stream: 'stdout' | 'stderr') => void
+  onDialog?: (kind: 'alert' | 'prompt' | 'confirm', message: string, defaultValue: string) => Promise<string | boolean | undefined>
+  persistContext?: boolean
   timeout?: number // ms
   memoryLimit?: number // bytes
   onRequestInput?: (prompt?: string, currentOutput?: string) => Promise<string> // Callback for interactive input

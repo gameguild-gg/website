@@ -73,8 +73,11 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
             claims.TenantId, claims.Network, claims.PolicyVersion, cancellationToken);
         if (!policy.Policy.IsEffective(request.CompletedAt) || !policy.Policy.IsReportCurrent(request.CompletedAt) ||
             !policy.ProviderCertified || policy.Policy.IssuanceMode == AdRewardIssuanceMode.Disabled)
+        {
             throw new AdRewardDependencyUnavailableException(
-                "The signed ad network policy or its reports are not current.");
+            "The signed ad network policy or its reports are not current.");
+        }
+
         ValidatePlayback(claims, request.Playback, policy.Policy, request.CompletedAt);
 
         AdRewardProviderProofVerification? proofVerification = null;
@@ -87,7 +90,9 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
                 .VerifyCompletionAsync(claims, providerProof, request.CompletedAt, cancellationToken);
             if (!proofVerification.IsValid ||
                 !string.Equals(proofVerification.EvidenceHash, providerProof.EvidenceHash, StringComparison.Ordinal))
+            {
                 throw new AdPlaybackVerificationException("Provider completion proof is invalid.");
+            }
         }
         else
         {
@@ -110,13 +115,18 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
         if (existing is not null)
         {
             if (!string.Equals(existing.IdempotencyKey, idempotencyHash, StringComparison.Ordinal))
-                throw new AdRewardReplayException("Ad reward session was already completed.");
-            return Map(existing, true);
+                {
+                    throw new AdRewardReplayException("Ad reward session was already completed.");
+                }
+
+                return Map(existing, true);
         }
         if (session.State != DurableAdRewardSessionState.Issued)
-            throw new AdRewardReplayException("Ad reward session is not consumable.");
+            {
+                throw new AdRewardReplayException("Ad reward session is not consumable.");
+            }
 
-        PersistMilestones(session.Id, request.Playback, requestHash);
+            PersistMilestones(session.Id, request.Playback, requestHash);
         if (policy.Policy.IssuanceMode == AdRewardIssuanceMode.DeferredReport)
         {
             var pending = RecordDeferred(session, request, claims, idempotencyHash, requestHash);
@@ -200,8 +210,10 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
                 request.CompletedAt,
                 receipt.ReceiptHash));
             if (posting.PostingId != postingId)
+            {
                 throw new RegisteredPostingRejectedException(
-                    "The ad reward writer returned an unexpected posting identity.");
+                "The ad reward writer returned an unexpected posting identity.");
+            }
 
             UpsertAccumulator(accumulator, claims, quote, request.CompletedAt);
             RecordBudgetConsumption(claims, quote.RewardSoftUnits, request.CompletedAt);
@@ -395,12 +407,17 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
             var used = existing.Where(row => row.Scope == scope && row.SubjectHash == subject)
                 .Sum(row => row.SoftUnits);
             if (softUnits > maximum - used)
+            {
                 throw new AdRewardBudgetExceededException($"Ad reward {scope} cap was exceeded.");
+            }
         }
         var usedLossBudget = existing.Where(row => row.Scope == AdRewardCapScope.Global)
             .Sum(row => row.LossBudgetUsdNanos);
         if (lossBudget > policy.Budget.FundedLossBudgetUsdNanos - usedLossBudget)
+        {
             throw new AdRewardBudgetExceededException("Ad reward funded loss budget was exceeded.");
+        }
+
         foreach (var (scope, subject, _) in scopes)
         {
             _db.Set<AdRewardCapConsumptionRow>().Add(new AdRewardCapConsumptionRow
@@ -464,8 +481,10 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
             session.ExpiresAt != claims.ExpiresAt ||
             session.NonceHash != Hash(claims.Nonce) ||
             session.TokenHash != KmsAdRewardSessionTokenProtector.HashToken(token.Value))
+        {
             throw new AdRewardRiskBindingException(
-                "Signed session claims do not match the durable session.");
+            "Signed session claims do not match the durable session.");
+        }
     }
 
     private static void EnsureActorScope(
@@ -473,8 +492,10 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
         DurableAdRewardSessionClaims claims)
     {
         if (actor.TenantId != claims.TenantId || actor.ActorId != claims.UserId)
+        {
             throw new AdRewardRiskBindingException(
-                "The actor context does not own the durable ad reward session.");
+            "The actor context does not own the durable ad reward session.");
+        }
     }
 
     private ProtectedActor RequiredActor()
@@ -482,8 +503,11 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
         var actor = _actorContexts.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
-                "Ad reward completion requires an authenticated tenant actor.");
+            "Ad reward completion requires an authenticated tenant actor.");
+        }
+
         return new ProtectedActor(tenantId, actorId);
     }
 
@@ -497,8 +521,10 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
             authorization.JurisdictionCode != jurisdiction.JurisdictionCode ||
             authorization.Receipt.PolicyVersion != policy.Policy.Version.Value ||
             authorization.Receipt.ProviderHash != policy.ProviderHash)
+        {
             throw new AdRewardRiskBindingException(
-                "The protected operation authorization does not match the ad reward policy.");
+            "The protected operation authorization does not match the ad reward policy.");
+        }
     }
 
     private static void ValidatePlayback(
@@ -513,14 +539,22 @@ public sealed class DurableAdRewardCompletionService : IDurableAdRewardCompletio
             evidence.PlaybackDuration < claims.RequiredDuration ||
             evidence.VisibleDuration < TimeSpan.Zero || evidence.VisibleDuration > evidence.PlaybackDuration ||
             evidence.FocusLoss < TimeSpan.Zero || evidence.FocusLoss > policy.MaximumFocusLoss)
+        {
             throw new AdPlaybackVerificationException("Playback timing is not physically valid.");
+        }
+
         if ((decimal)evidence.VisibleDuration.Ticks * 1_000_000 <
             (decimal)evidence.PlaybackDuration.Ticks * policy.MinimumVisiblePpm)
+        {
             throw new AdPlaybackVerificationException("Playback visibility is below policy.");
+        }
+
         if (evidence.Milestones.Count < 2 || evidence.Milestones[0] != 0 ||
             evidence.Milestones[^1] != 100 || evidence.Milestones.Any(value => value is < 0 or > 100) ||
             evidence.Milestones.Where((value, index) => index > 0 && value <= evidence.Milestones[index - 1]).Any())
+        {
             throw new AdPlaybackVerificationException("Playback milestones are incomplete or unordered.");
+        }
     }
 
     private static void ValidateRequest(CompleteDurableAdRewardSessionRequest request)

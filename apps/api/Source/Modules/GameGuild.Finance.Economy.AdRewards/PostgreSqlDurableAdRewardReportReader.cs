@@ -56,10 +56,20 @@ public sealed class PostgreSqlDurableAdRewardReportReader : IDurableAdRewardRepo
         int limit,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (network is not null && string.IsNullOrWhiteSpace(network))
+        {
             throw new ArgumentException("Network cannot be blank.", nameof(network));
-        if (limit is <= 0 or > 500) throw new ArgumentOutOfRangeException(nameof(limit));
+        }
+
+        if (limit is <= 0 or > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        }
 
         var query = _db.Set<AdProviderReportRow>().AsNoTracking()
             .Where(row => row.TenantId == tenantId);

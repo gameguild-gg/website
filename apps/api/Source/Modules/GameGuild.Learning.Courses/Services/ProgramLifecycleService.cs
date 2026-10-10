@@ -134,9 +134,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> SubmitProgramAsync(Guid id) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Review;
+        program.Status = ContentStatus.Review;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -146,9 +149,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> ApproveProgramAsync(Guid id) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Published;
+        program.Status = ContentStatus.Published;
     program.Visibility = ContentVisibility.Public;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -159,9 +165,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> RejectProgramAsync(Guid id, string reason) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Draft;
+        program.Status = ContentStatus.Draft;
     program.Visibility = ContentVisibility.Private;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -172,9 +181,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> WithdrawProgramAsync(Guid id) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Draft;
+        program.Status = ContentStatus.Draft;
     program.Visibility = ContentVisibility.Private;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -185,9 +197,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> ArchiveProgramAsync(Guid id) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Archived;
+        program.Status = ContentStatus.Archived;
     program.Visibility = ContentVisibility.Private;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -198,9 +213,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> RestoreProgramAsync(Guid id) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Draft;
+        program.Status = ContentStatus.Draft;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -210,9 +228,12 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   public async Task<Program?> ScheduleProgramAsync(Guid id, DateTime publishAt) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) return null;
+    if (program == null)
+        {
+            return null;
+        }
 
-    program.Status = ContentStatus.Published;
+        program.Status = ContentStatus.Published;
     program.Visibility = ContentVisibility.Public;
     program.Touch();
     await context.SaveChangesAsync().ConfigureAwait(false);
@@ -229,8 +250,11 @@ public class ProgramLifecycleService(IApplicationDbContext context) : IProgramLi
   private async Task<Program> GetRequiredProgramAsync(Guid id) {
     var program = await GetProgramByIdAsync(id).ConfigureAwait(false);
 
-    if (program == null) throw new ArgumentException($"Program with ID {id} not found", nameof(id));
+    if (program == null)
+        {
+            throw new ArgumentException($"Program with ID {id} not found", nameof(id));
+        }
 
-    return program;
+        return program;
   }
 }

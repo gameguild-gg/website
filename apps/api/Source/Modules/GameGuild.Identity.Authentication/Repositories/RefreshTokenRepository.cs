@@ -220,7 +220,10 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
     {
         var refreshToken = await GetByTokenAsync(token, cancellationToken).ConfigureAwait(false);
 
-        if (refreshToken == null || refreshToken.IsRevoked) return;
+        if (refreshToken == null || refreshToken.IsRevoked)
+        {
+            return;
+        }
 
         refreshToken.IsRevoked = true;
         refreshToken.RevokedAt = SystemClock.UtcNow;
@@ -237,7 +240,10 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
         var activeTokens = await RefreshTokens.Where(r => r.UserId == userId && !r.IsRevoked && r.ExpiresAt > now)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        if (activeTokens.Count == 0) return;
+        if (activeTokens.Count == 0)
+        {
+            return;
+        }
 
         foreach (var token in activeTokens)
         {
@@ -282,7 +288,10 @@ public class RefreshTokenRepository(IApplicationDbContext context) : IRefreshTok
     {
         var refreshToken = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (refreshToken == null) return false;
+        if (refreshToken == null)
+        {
+            return false;
+        }
 
         RefreshTokens.Remove(refreshToken);
         var changes = await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

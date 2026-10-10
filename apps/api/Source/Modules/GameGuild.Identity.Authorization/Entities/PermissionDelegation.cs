@@ -45,22 +45,30 @@ public class PermissionDelegation
     public bool IsValidNow()
     {
         if (!IsActive)
+        {
             return false;
+        }
 
         var now = SystemClock.UtcNow;
         if (StartsAt > now)
+        {
             return false;
+        }
 
         if (ExpiresAt is not null)
         {
             if (ExpiresAt.Value <= now)
+            {
                 return false;
+            }
         }
 
         if (UsageLimit is not null)
         {
             if (UsageCount >= UsageLimit.Value)
+            {
                 return false;
+            }
         }
 
         return true;
@@ -78,7 +86,9 @@ public class PermissionDelegation
     public void RecordUsage()
     {
         if (!IsValidNow())
+        {
             throw new InvalidOperationException("Cannot record usage for invalid delegation");
+        }
 
         UsageCount++;
         UpdatedAt = SystemClock.UtcNow;
@@ -119,7 +129,9 @@ public class PermissionDelegation
     public void Extend(DateTime newExpiresAt)
     {
         if (newExpiresAt <= SystemClock.UtcNow)
+        {
             throw new ArgumentException("New expiration must be in the future", nameof(newExpiresAt));
+        }
 
         ExpiresAt = newExpiresAt;
         UpdatedAt = SystemClock.UtcNow;
@@ -136,7 +148,11 @@ public class PermissionDelegation
     /// </summary>
     public int? GetRemainingUsage()
     {
-        if (!UsageLimit.HasValue) return null;
+        if (!UsageLimit.HasValue)
+        {
+            return null;
+        }
+
         return Math.Max(0, UsageLimit.Value - UsageCount);
     }
 }

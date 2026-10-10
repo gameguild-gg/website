@@ -343,7 +343,8 @@ public sealed class PermissionExpirationService(
 
     private static void SetStamp(TenantPermission grant, string key)
     {
-        (grant.Metadata ??= new Dictionary<string, object>())[key] = SystemClock.UtcNow.ToString("O");
+        grant.Metadata ??= new Dictionary<string, object>();
+        grant.Metadata[key] = SystemClock.UtcNow.ToString("O");
     }
 
     private static void ClearStamp(TenantPermission grant, string key)

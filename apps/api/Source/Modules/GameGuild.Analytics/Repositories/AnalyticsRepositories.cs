@@ -20,26 +20,58 @@ public class AnalyticsEventRepository(IApplicationDbContext context) : IAnalytic
     public async Task<List<AnalyticsEvent>> GetByEventNameAsync(string eventName, DateTime? startDate, DateTime? endDate, Guid? tenantId, CancellationToken ct = default)
     {
         var query = context.Set<AnalyticsEvent>().Where(e => e.EventName == eventName && e.DeletedAt == null);
-        if (startDate.HasValue) query = query.Where(e => e.Timestamp >= startDate.Value);
-        if (endDate.HasValue) query = query.Where(e => e.Timestamp <= endDate.Value);
-        if (tenantId.HasValue) query = query.Where(e => e.TenantId == tenantId.Value);
+        if (startDate.HasValue)
+        {
+            query = query.Where(e => e.Timestamp >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(e => e.Timestamp <= endDate.Value);
+        }
+
+        if (tenantId.HasValue)
+        {
+            query = query.Where(e => e.TenantId == tenantId.Value);
+        }
+
         return await query.OrderByDescending(e => e.Timestamp).ToListAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<List<AnalyticsEvent>> GetByUserIdAsync(Guid userId, DateTime? startDate, DateTime? endDate, CancellationToken ct = default)
     {
         var query = context.Set<AnalyticsEvent>().Where(e => e.UserId == userId && e.DeletedAt == null);
-        if (startDate.HasValue) query = query.Where(e => e.Timestamp >= startDate.Value);
-        if (endDate.HasValue) query = query.Where(e => e.Timestamp <= endDate.Value);
+        if (startDate.HasValue)
+        {
+            query = query.Where(e => e.Timestamp >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(e => e.Timestamp <= endDate.Value);
+        }
+
         return await query.OrderByDescending(e => e.Timestamp).ToListAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<int> CountAsync(string eventName, DateTime? startDate, DateTime? endDate, Guid? tenantId, CancellationToken ct = default)
     {
         var query = context.Set<AnalyticsEvent>().Where(e => e.EventName == eventName && e.DeletedAt == null);
-        if (startDate.HasValue) query = query.Where(e => e.Timestamp >= startDate.Value);
-        if (endDate.HasValue) query = query.Where(e => e.Timestamp <= endDate.Value);
-        if (tenantId.HasValue) query = query.Where(e => e.TenantId == tenantId.Value);
+        if (startDate.HasValue)
+        {
+            query = query.Where(e => e.Timestamp >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(e => e.Timestamp <= endDate.Value);
+        }
+
+        if (tenantId.HasValue)
+        {
+            query = query.Where(e => e.TenantId == tenantId.Value);
+        }
+
         return await query.CountAsync(ct).ConfigureAwait(false);
     }
 }
@@ -80,7 +112,11 @@ public class DashboardRepository(IApplicationDbContext context) : IDashboardRepo
     {
         var query = context.Set<Dashboard>().Include(d => d.Widgets.OrderBy(w => w.SortOrder))
             .Where(d => d.DeletedAt == null);
-        if (tenantId.HasValue) query = query.Where(d => d.TenantId == tenantId.Value);
+        if (tenantId.HasValue)
+        {
+            query = query.Where(d => d.TenantId == tenantId.Value);
+        }
+
         return await query.ToListAsync(ct).ConfigureAwait(false);
     }
 

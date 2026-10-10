@@ -58,7 +58,11 @@ public sealed class AcademicOutboxWriter(
 
         // The empty route is itself frozen. Consumers registered in a later deploy
         // must not receive historical events implicitly.
-        if (route.Length == 0) message.MarkCompleted(SystemClock.UtcNow);
+        if (route.Length == 0)
+        {
+            message.MarkCompleted(SystemClock.UtcNow);
+        }
+
         return message;
     }
 
@@ -102,7 +106,10 @@ public sealed class AcademicOutboxDispatcher(
         var processed = 0;
         foreach (var deliveryId in deliveryIds)
         {
-            if (await DispatchOneAsync(deliveryId, cancellationToken).ConfigureAwait(false)) processed++;
+            if (await DispatchOneAsync(deliveryId, cancellationToken).ConfigureAwait(false))
+            {
+                processed++;
+            }
         }
         return processed;
     }
@@ -114,11 +121,18 @@ public sealed class AcademicOutboxDispatcher(
         var delivery = await context.Set<AcademicOutboxDelivery>()
             .FirstOrDefaultAsync(value => value.Id == deliveryId, cancellationToken)
             .ConfigureAwait(false);
-        if (delivery is null || delivery.Status == AcademicOutboxDeliveryStatus.Confirmed) return false;
+        if (delivery is null || delivery.Status == AcademicOutboxDeliveryStatus.Confirmed)
+        {
+            return false;
+        }
+
         var message = await context.Set<AcademicOutboxMessage>()
             .FirstOrDefaultAsync(value => value.Id == delivery.OutboxMessageId, cancellationToken)
             .ConfigureAwait(false);
-        if (message is null) return false;
+        if (message is null)
+        {
+            return false;
+        }
 
         var workerId = $"{Environment.MachineName}:{Environment.ProcessId}";
         try
@@ -200,7 +214,10 @@ public sealed class AcademicOutboxBackgroundService(
             try
             {
                 var processed = await dispatcher.DispatchBatchAsync(stoppingToken).ConfigureAwait(false);
-                if (processed == 0) await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken).ConfigureAwait(false);
+                if (processed == 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken).ConfigureAwait(false);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

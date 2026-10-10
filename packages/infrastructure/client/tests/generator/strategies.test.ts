@@ -61,7 +61,7 @@ describe('schema type mapper strategies', () => {
     const unionMapper = new UnionTypeMapper(chain);
 
     expect(arrayMapper.canHandle({ type: 'array' })).toBe(true);
-    expect(arrayMapper.map({ type: 'array', items: { type: 'string' } })).toBe('Array<string>');
+    expect(arrayMapper.map({ type: 'array', items: { type: 'string' } })).toBe('string[]');
     expect(arrayMapper.map({ type: 'array', nullable: true } as any)).toBe('unknown[] | null');
     expect(objectMapper.canHandle({} as any)).toBe(true);
     expect(objectMapper.map({ type: 'object', additionalProperties: true })).toBe('Record<string, unknown>');
@@ -85,6 +85,15 @@ describe('schema type mapper strategies', () => {
     expect(() => arrayMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
     expect(() => objectMapper.map({ $ref: '#/components/schemas/User' })).toThrow('Reference schema');
     expect(() => unionMapper.map({ $ref: '#/components/schemas/Variant' })).toThrow('Reference schema');
+  });
+
+  it('preserves compound, nullable, and nested array item types in bracket syntax', () => {
+    expect(chain.map({ type: 'array', items: { type: 'string', nullable: true } })).toBe('(string | null)[]');
+    expect(chain.map({ type: 'array', nullable: true, items: { type: 'string' } })).toBe('string[] | null');
+    expect(chain.map({ type: 'array', items: { type: 'array', items: { type: 'number' } } })).toBe('number[][]');
+    expect(chain.map({ type: 'array', items: { oneOf: [{ type: 'string' }, { type: 'number' }] } })).toBe('(string | number)[]');
+    expect(chain.map({ type: 'array', items: { allOf: [{ $ref: '#/components/schemas/A' }, { $ref: '#/components/schemas/B' }] } })).toBe('(A & B)[]');
+    expect(chain.map({ type: 'array', items: { $ref: '#/components/schemas/User' } })).toBe('User[]');
   });
 
   it('maps allOf property compositions and preserves nullable', () => {

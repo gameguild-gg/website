@@ -42,7 +42,9 @@ public sealed class UserMembershipsController(
     {
         ArgumentNullException.ThrowIfNull(body);
         if (!CanManageTenant(body.TenantId) || !CanAssignRole(body.Role))
+        {
             return Forbid();
+        }
 
         var result = await sender.Send(
                 new AddTenantMemberCommand(body.TenantId, userId, body.Role, body.InvitedByEmail, body.RequiresAcceptance, body.InviteeEmail, body.InviteeName),
@@ -86,7 +88,9 @@ public sealed class UserMembershipsController(
     {
         ArgumentNullException.ThrowIfNull(body);
         if (!CanManageTenant(tenantId) || !CanAssignRole(body.Role))
+        {
             return Forbid();
+        }
 
         var result = await sender.Send(
                 new UpdateTenantMemberRoleCommand(tenantId, userId, body.Role),
@@ -110,7 +114,9 @@ public sealed class UserMembershipsController(
         CancellationToken ct = default)
     {
         if (!CanManageTenant(tenantId))
+        {
             return Forbid();
+        }
 
         var result = await sender.Send(
                 new SetTenantMembershipStatusCommand(tenantId, userId, false, body?.Reason),
@@ -132,7 +138,9 @@ public sealed class UserMembershipsController(
         CancellationToken ct = default)
     {
         if (!CanManageTenant(tenantId))
+        {
             return Forbid();
+        }
 
         var result = await sender.Send(
                 new SetTenantMembershipStatusCommand(tenantId, userId, true),
@@ -192,7 +200,9 @@ public sealed class UserMembershipsController(
         CancellationToken ct)
     {
         if (!CanUpdateInvite(userId, tenantId, action))
+        {
             return Forbid();
+        }
 
         var result = await sender.Send(
                 new UpdateTenantMemberInviteCommand(tenantId, userId, action, body?.ActorEmail),
@@ -234,7 +244,9 @@ public sealed class UserMembershipsController(
         CancellationToken ct = default)
     {
         if (!CanReadMemberships(userId))
+        {
             return Forbid();
+        }
 
         var query = new GetUserMembershipsQuery(userId, includeInactive);
         var result = await sender.Send(query, ct).ConfigureAwait(false);
@@ -256,7 +268,9 @@ public sealed class UserMembershipsController(
     public async Task<IActionResult> CheckUserHasMemberships(Guid userId, CancellationToken ct = default)
     {
         if (!CanReadMemberships(userId))
+        {
             return Forbid();
+        }
 
         var query = new GetUserMembershipsQuery(userId, IncludeInactive: false);
         var result = await sender.Send(query, ct).ConfigureAwait(false);
@@ -278,7 +292,9 @@ public sealed class UserMembershipsController(
     public async Task<IActionResult> GetMembershipCount(Guid userId, CancellationToken ct = default)
     {
         if (!CanReadMemberships(userId))
+        {
             return Forbid();
+        }
 
         var query = new GetUserMembershipsQuery(userId, IncludeInactive: false);
         var result = await sender.Send(query, ct).ConfigureAwait(false);
@@ -319,7 +335,9 @@ public sealed class UserMembershipsController(
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.IsSystemAdmin || actor.SubjectIdAsGuid == userId)
+        {
             return result;
+        }
 
         var memberships = result.Memberships
             .Where(membership => membership.TenantId == actor.TenantId)

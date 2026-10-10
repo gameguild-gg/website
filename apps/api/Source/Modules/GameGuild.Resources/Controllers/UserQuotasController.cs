@@ -33,12 +33,16 @@ public sealed class UserQuotasController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass ownership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // Check if actor owns this resource
         return actor.SubjectIdAsGuid.Value == userId;
     }
@@ -59,8 +63,10 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> GetUserQuotas(Guid userId, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         var query = new GetUserResourceQuotasQuery(userId);
         var result = await sender.Send(query, ct).ConfigureAwait(false);
 
@@ -83,12 +89,17 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> GetQuota(Guid userId, ResourceUsageType type, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         var query = new GetUserResourceQuotaQuery(userId, type);
         var result = await sender.Send(query, ct).ConfigureAwait(false);
 
-        if (result == null) return NotFound($"Quota not found for user {userId} and type {type}");
+        if (result == null)
+        {
+            return NotFound($"Quota not found for user {userId} and type {type}");
+        }
 
         return Ok(result);
     }
@@ -114,8 +125,10 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> SetQuota(Guid userId, ResourceUsageType type, [FromBody] SetQuotaRequest body, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var command = new SetUserResourceQuotaCommand(userId, type, body.SoftLimit, body.HardLimit, body.Period, body.IsActive, body.ResetTime);
@@ -140,8 +153,10 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> DeleteQuota(Guid userId, ResourceUsageType type, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         var command = new DeleteUserResourceQuotaCommand(userId, type);
         await sender.Send(command, ct).ConfigureAwait(false);
 
@@ -168,8 +183,10 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> ResetQuota(Guid userId, ResourceUsageType type, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         var command = new ResetUserResourceQuotaCommand(userId, type);
         await sender.Send(command, ct).ConfigureAwait(false);
 
@@ -194,8 +211,10 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> ToggleQuota(Guid userId, ResourceUsageType type, [FromBody] ToggleResourceQuotaRequest body, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var command = new ToggleUserResourceQuotaCommand(userId, type, body.IsActive);
@@ -223,8 +242,10 @@ public sealed class UserQuotasController(
     public async Task<IActionResult> CheckQuota(Guid userId, ResourceUsageType type, [FromBody] CheckResourceQuotaRequest body, CancellationToken ct = default)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var query = new CheckUserResourceQuotaQuery(userId, type, body.Amount);

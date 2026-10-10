@@ -212,9 +212,14 @@ public sealed class ProgramContentAuthoringServiceTests
 
         saved.Payload.Type.Should().Be(expectedType);
         if (keepsLessonFormat)
+        {
             saved.Payload.LessonFormat.Should().Be(LessonContentFormat.Markdown);
+        }
         else
+        {
             saved.Payload.LessonFormat.Should().BeNull();
+        }
+
         saved.Payload.Body.Should().Be("Edited body");
     }
 

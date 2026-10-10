@@ -46,7 +46,10 @@ public class GroupSetsController : BaseApiController
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<GroupSetSummaryDto>>> GetGroupSets(Guid courseId)
     {
-        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var sets = await _groupSetService.GetCourseGroupSetsAsync(courseId).ConfigureAwait(false);
         return Ok(sets);
@@ -61,8 +64,15 @@ public class GroupSetsController : BaseApiController
         [FromBody] CreateGroupSetRequest request)
     {
         var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateCourseGroupSetEndpointCommand(courseId, request.Name)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -86,8 +96,15 @@ public class GroupSetsController : BaseApiController
         [FromBody] CreateGroupRequest request)
     {
         var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateCourseGroupEndpointCommand(courseId, setId, request.Name, request.Capacity))
             .ConfigureAwait(false);
@@ -110,7 +127,10 @@ public class GroupSetsController : BaseApiController
     [HttpGet("{setId:guid}/groups")]
     public async Task<ActionResult<IReadOnlyList<GroupDetailDto>>> GetGroupSetGroups(Guid courseId, Guid setId)
     {
-        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _groupSetService.GetGroupSetGroupsAsync(courseId, setId).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -173,7 +193,10 @@ public class GroupSetsController : BaseApiController
     [HttpPost("groups/{groupId:guid}/members/{userId:guid}")]
     public async Task<ActionResult<GroupMembershipDto>> AddMember(Guid courseId, Guid groupId, Guid userId)
     {
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new AddCourseGroupMemberEndpointCommand(courseId, groupId, userId)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -192,7 +215,10 @@ public class GroupSetsController : BaseApiController
     [HttpDelete("groups/{groupId:guid}/members/{userId:guid}")]
     public async Task<ActionResult> RemoveMember(Guid courseId, Guid groupId, Guid userId)
     {
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new RemoveCourseGroupMemberEndpointCommand(courseId, groupId, userId)).ConfigureAwait(false);
         if (!result.IsSuccess)

@@ -46,7 +46,9 @@ public sealed class DbAuthorizationPolicyProvider : IAuthorizationPolicyProvider
     {
         var builtInPolicy = _authzOptions.GetPolicy(policyName);
         if (!Policies.IsValid(policyName) && builtInPolicy is not null)
+        {
             return builtInPolicy;
+        }
 
         // Resolve tenant context and scoped services within a scope
         string tenantId;

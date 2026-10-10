@@ -79,8 +79,14 @@ public sealed class AssessmentGradebookProjectionService(
         CancellationToken cancellationToken = default)
     {
         if (!result.Score.HasValue)
+        {
             throw new InvalidOperationException("A finalized result requires a score before gradebook projection.");
-        if (!assessment.AssessmentGroupId.HasValue) return;
+        }
+
+        if (!assessment.AssessmentGroupId.HasValue)
+        {
+            return;
+        }
 
         var group = await context.Set<AssessmentGroup>()
             .SingleAsync(value => value.Id == assessment.AssessmentGroupId.Value && value.DeletedAt == null, cancellationToken)
@@ -248,7 +254,9 @@ public sealed class AssessmentGradebookProjectionService(
         }
 
         if (learnerView && learnerHasUnavailableContribution)
+        {
             return new GradebookCourseProjectionV1(courseId, enrollmentId, false, withheld, null, []);
+        }
 
         var groups = projectedEntries
             .Where(entry => entry.AssessmentGroupId.HasValue && entry.CapturedWeightPercent.HasValue)
@@ -271,7 +279,10 @@ public sealed class AssessmentGradebookProjectionService(
         IReadOnlySet<Guid> currentReleasedRoundIds,
         CancellationToken cancellationToken)
     {
-        if (entries.Count == 0) return ([], false);
+        if (entries.Count == 0)
+        {
+            return ([], false);
+        }
 
         var submissionIds = entries.Select(value => value.SubmissionId).Distinct().ToArray();
         var executionOwners = await context.Set<GradingExecution>()
@@ -328,7 +339,9 @@ public sealed class AssessmentGradebookProjectionService(
             }
 
             if (entry.CapturedWeightPercent is { } weight && weight.CompareTo(PercentValue.Zero) > 0)
+            {
                 hasUnavailableContribution = true;
+            }
         }
 
         return (visible.ToArray(), hasUnavailableContribution);
@@ -367,7 +380,11 @@ public sealed class AssessmentGradebookProjectionService(
                     .ConfigureAwait(false);
             foreach (var enrollmentId in enrollmentIds)
             {
-                if (!existingEnrollments.Add(enrollmentId)) continue;
+                if (!existingEnrollments.Add(enrollmentId))
+                {
+                    continue;
+                }
+
                 context.Set<AssessmentGradebookEntry>().Add(AssessmentGradebookEntry.Create(
                     candidate.Submission.TenantId,
                     assessment.CourseId,
@@ -451,7 +468,11 @@ public sealed class AssessmentGradebookProjectionService(
         Guid? nextGroupId,
         PercentValue? nextWeight)
     {
-        if (!assessment.TenantId.HasValue) return;
+        if (!assessment.TenantId.HasValue)
+        {
+            return;
+        }
+
         Enqueue(assessment.TenantId.Value, new
         {
             schemaVersion = 1,
@@ -469,7 +490,11 @@ public sealed class AssessmentGradebookProjectionService(
         PercentValue previousWeight,
         PercentValue? nextWeight)
     {
-        if (!group.TenantId.HasValue) return;
+        if (!group.TenantId.HasValue)
+        {
+            return;
+        }
+
         Enqueue(group.TenantId.Value, new
         {
             schemaVersion = 1,
@@ -492,6 +517,9 @@ public sealed class AssessmentGradebookProjectionService(
 
     private static void RequireActor(Guid actorId)
     {
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
     }
 }

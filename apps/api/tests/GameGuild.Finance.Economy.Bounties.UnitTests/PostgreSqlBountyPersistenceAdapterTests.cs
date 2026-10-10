@@ -354,8 +354,15 @@ public sealed class PostgreSqlBountyPersistenceAdapterTests
         Type? expected)
     {
         var interceptor = new ScriptedRelationalInterceptor();
-        if (exception is null) interceptor.EnqueueNonQuery();
-        else interceptor.EnqueueNonQueryException(exception);
+        if (exception is null)
+        {
+            interceptor.EnqueueNonQuery();
+        }
+        else
+        {
+            interceptor.EnqueueNonQueryException(exception);
+        }
+
         using var context = new ScriptedBountiesContext(interceptor);
         var action = () => new PostgreSqlBountyTerminalClaimWriter(context).Complete(command);
         if (expected is null)
@@ -363,7 +370,10 @@ public sealed class PostgreSqlBountyPersistenceAdapterTests
             action.Should().NotThrow();
             interceptor.Commands.Should().ContainSingle(item => item.Contains("complete_bounty_claim_v2"));
         }
-        else action.Should().Throw<Exception>().Which.Should().BeOfType(expected);
+        else
+        {
+            action.Should().Throw<Exception>().Which.Should().BeOfType(expected);
+        }
     }
 
     private static void AssertClaimValidation(BountyClaimTerminalWriteCommand command, Type expected)
@@ -380,8 +390,15 @@ public sealed class PostgreSqlBountyPersistenceAdapterTests
         Type? expected)
     {
         var interceptor = new ScriptedRelationalInterceptor();
-        if (exception is null) interceptor.EnqueueNonQuery();
-        else interceptor.EnqueueNonQueryException(exception);
+        if (exception is null)
+        {
+            interceptor.EnqueueNonQuery();
+        }
+        else
+        {
+            interceptor.EnqueueNonQueryException(exception);
+        }
+
         using var context = new ScriptedBountiesContext(interceptor);
         var action = () => new PostgreSqlBountyTerminalReclaimWriter(context).Complete(command);
         if (expected is null)
@@ -389,7 +406,10 @@ public sealed class PostgreSqlBountyPersistenceAdapterTests
             action.Should().NotThrow();
             interceptor.Commands.Should().ContainSingle(item => item.Contains("complete_bounty_reclaim_v2"));
         }
-        else action.Should().Throw<Exception>().Which.Should().BeOfType(expected);
+        else
+        {
+            action.Should().Throw<Exception>().Which.Should().BeOfType(expected);
+        }
     }
 
     private static void AssertReclaimValidation(BountyReclaimTerminalWriteCommand command, Type expected)
@@ -438,11 +458,14 @@ public sealed class PostgreSqlBountyPersistenceAdapterTests
             ("Status", typeof(int)), ("IdempotencyKey", typeof(string)), ("RequestHash", typeof(string)),
             ("PostedAt", typeof(DateTimeOffset)), ("ExpiresAt", typeof(DateTimeOffset)), ("Version", typeof(long)));
         if (id is not null)
+        {
             table.AddRow(
-                id.Value.Value, TenantId, posterId ?? Guid.NewGuid(), (posterWalletId ?? WalletId.New()).Value,
-                (escrowWalletId ?? WalletId.New()).Value, (int)CurrencyCode.HardCoin, 10L, 100_000,
-                true, 12, true, (int)BountyStatus.Open, "post-key", requestHash,
-                Now, Now.AddDays(2), 3L);
+            id.Value.Value, TenantId, posterId ?? Guid.NewGuid(), (posterWalletId ?? WalletId.New()).Value,
+            (escrowWalletId ?? WalletId.New()).Value, (int)CurrencyCode.HardCoin, 10L, 100_000,
+            true, 12, true, (int)BountyStatus.Open, "post-key", requestHash,
+            Now, Now.AddDays(2), 3L);
+        }
+
         return table;
     }
 

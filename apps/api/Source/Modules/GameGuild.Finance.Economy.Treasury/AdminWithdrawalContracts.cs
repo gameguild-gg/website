@@ -137,20 +137,32 @@ public sealed class AdminWithdrawalExecutionGate
 
     public bool IsEnabled
     {
-        get { lock (_gate) return _enabled; }
+        get { lock (_gate)
+            {
+                return _enabled;
+            }
+        }
     }
 
     public long Epoch
     {
-        get { lock (_gate) return _epoch; }
+        get { lock (_gate)
+            {
+                return _epoch;
+            }
+        }
     }
 
     public void EnsureEnabled()
     {
         lock (_gate)
+        {
             if (!_enabled)
+            {
                 throw new AdminWithdrawalExecutionDisabledException(
-                    "Admin withdrawal execution is disabled pending legal and operational approval.");
+                "Admin withdrawal execution is disabled pending legal and operational approval.");
+            }
+        }
     }
 
     public long Stop()
@@ -168,10 +180,15 @@ public static class AdminWithdrawalReservationSnapshotGuard
     public static void EnsureUnchanged(long activeHoldUnits, string expectedSelectionHash, string currentSelectionHash)
     {
         if (activeHoldUnits > 0)
+        {
             throw new AdminWithdrawalEligibilityException("An active hold blocks platform fee withdrawal.");
+        }
+
         if (!string.Equals(expectedSelectionHash, currentSelectionHash, StringComparison.Ordinal))
+        {
             throw new AdminWithdrawalStaleCommandException(
-                "Eligible platform fee fragments changed before reservation.");
+            "Eligible platform fee fragments changed before reservation.");
+        }
     }
 }
 public sealed class AdminWithdrawalOverlapException(string message) : InvalidOperationException(message);

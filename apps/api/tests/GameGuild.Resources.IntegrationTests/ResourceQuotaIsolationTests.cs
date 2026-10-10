@@ -17,7 +17,6 @@ public class ResourceQuotaIsolationTests : IDisposable
 {
     private readonly PostgreSqlTestFixture _postgreSqlFixture;
     private readonly ResourceQuotaTestDbContext _context;
-    private readonly IResourceQuotaRepository _repository;
     private readonly IResourceQuotaService _service;
 
     public ResourceQuotaIsolationTests(PostgreSqlTestFixture postgreSqlFixture)
@@ -28,25 +27,25 @@ public class ResourceQuotaIsolationTests : IDisposable
             .Options;
 
         _context = new ResourceQuotaTestDbContext(options);
-        _repository = new ResourceQuotaRepository(_context);
+        IResourceQuotaRepository repository = new ResourceQuotaRepository(_context);
         var usageRepository = new UsageRecordRepository(_context);
         var publisherMock = new Mock<IPublisher>();
 
         // Build the real sub-services
         var management = new QuotaManagementService(
-            _repository,
+            repository,
             usageRepository,
             publisherMock.Object,
             NullLogger<QuotaManagementService>.Instance);
 
         var enforcement = new QuotaEnforcementService(
-            _repository,
+            repository,
             management,
             publisherMock.Object,
             NullLogger<QuotaEnforcementService>.Instance);
 
         var maintenance = new QuotaMaintenanceService(
-            _repository,
+            repository,
             usageRepository,
             management,
             publisherMock.Object,

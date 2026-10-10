@@ -130,7 +130,9 @@ public class TestingParticipant : EntityBase
     public void Start()
     {
         if (!InstructionsAcknowledged)
+        {
             throw new InvalidOperationException("Instructions must be acknowledged before starting");
+        }
 
         Status = ParticipationStatus.Active;
         UpdatedAt = SystemClock.UtcNow;

@@ -44,11 +44,19 @@ public static class LineageAllocator
     {
         var validated = Validate(selections, fenceSnapshot, fences);
         if (validated.Currency != CurrencyCode.HardCoin || outputAmount.Currency != CurrencyCode.SoftCoin)
+        {
             throw new LineageConservationException("Conversion lineage supports HardCoin to SoftCoin only.");
+        }
+
         if (checked(validated.TotalUnits * Money.FixedParity.SoftCoinsPerHardCoin) != outputAmount.Units)
+        {
             throw new LineageConservationException("Conversion output must preserve exact fixed parity.");
+        }
+
         if (validated.TraceUnits != checked(outputAmount.Units * CurrencyTraceScale.SoftCoinTraceUnitsPerCoin))
+        {
             throw new LineageConservationException("Converted output must preserve every normalized root trace unit.");
+        }
 
         var lot = new CreditLot(
             outputLotId,
@@ -85,7 +93,10 @@ public static class LineageAllocator
         ArgumentNullException.ThrowIfNull(selections);
         ArgumentNullException.ThrowIfNull(fenceSnapshot);
         ArgumentNullException.ThrowIfNull(fences);
-        if (selections.Count == 0) throw new LineageConservationException("At least one selected parent is required.");
+        if (selections.Count == 0)
+        {
+            throw new LineageConservationException("At least one selected parent is required.");
+        }
 
         var currency = selections[0].Amount.Currency;
         var ranges = new List<RootTraceRange>();
@@ -97,15 +108,22 @@ public static class LineageAllocator
         foreach (var selection in selections)
         {
             if (selection.Amount.Currency != currency)
+            {
                 throw new LineageConservationException("All selected fragments must use one currency.");
+            }
+
             if (selection.TraceUnitsPerCoinUnit != traceUnitsPerCoinUnit)
+            {
                 throw new LineageConservationException("A derived lot cannot mix trace-unit scales.");
+            }
 
             var tracedUnits = selection.SelectedRanges.Aggregate(
                 0L,
                 static (total, range) => checked(total + range.Length));
             if (tracedUnits != checked(selection.Amount.Units * selection.TraceUnitsPerCoinUnit))
+            {
                 throw new LineageConservationException("Every parent allocation must conserve its selected amount exactly.");
+            }
 
             totalUnits = checked(totalUnits + selection.Amount.Units);
             traceUnits = checked(traceUnits + tracedUnits);
@@ -126,7 +144,9 @@ public static class LineageAllocator
             for (var index = 1; index < ordered.Length; index++)
             {
                 if (ordered[index].Start < ordered[index - 1].EndExclusive)
+                {
                     throw new LineageConservationException("Root trace ranges cannot overlap.");
+                }
             }
         }
     }

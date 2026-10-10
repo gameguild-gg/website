@@ -6,6 +6,31 @@ namespace GameGuild.Finance.Economy.UnitTests.Risk;
 public sealed class EconomyProtectedRiskPolicyTests
 {
     [Fact]
+    public void Parse_PreservesPolicyValidationDetailsWithoutWrapping()
+    {
+        const string payload = """
+            {"riskDecisionLifetimeSeconds":300,"riskReviewRequiredApprovals":1,"complianceHoldSeconds":60,"riskLimits":[]}
+            """;
+
+        var exception = Assert.Throws<EconomyProtectedRiskPolicyException>(() => EconomyProtectedRiskPolicy.Parse(payload));
+
+        Assert.Equal("At least one explicit aggregate risk limit is required.", exception.Message);
+        Assert.Null(exception.InnerException);
+    }
+
+    [Theory]
+    [InlineData("{}", typeof(KeyNotFoundException))]
+    [InlineData("{\"riskDecisionLifetimeSeconds\":\"invalid\"}", typeof(InvalidOperationException))]
+    public void Parse_WrapsPayloadReadErrorsWithOriginalCause(string payload, Type causeType)
+    {
+        var exception = Assert.Throws<EconomyProtectedRiskPolicyException>(() => EconomyProtectedRiskPolicy.Parse(payload));
+
+        Assert.Equal("The signed protected-operation risk policy is invalid.", exception.Message);
+        Assert.NotNull(exception.InnerException);
+        Assert.Equal(causeType, exception.InnerException.GetType());
+    }
+
+    [Fact]
     public void Parse_RequiresExplicitSafeSettingsAndMaterializesLimits()
     {
         const string payload = """

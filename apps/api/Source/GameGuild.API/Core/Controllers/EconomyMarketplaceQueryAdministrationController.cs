@@ -27,7 +27,11 @@ public sealed class EconomyMarketplaceQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await marketplace.ListSettlementsAsync(
             tenantId, status, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -37,7 +41,11 @@ public sealed class EconomyMarketplaceQueryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSettlement(Guid settlementId, CancellationToken cancellationToken)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         var settlement = await marketplace.FindSettlementAsync(
             tenantId, settlementId, cancellationToken).ConfigureAwait(false);
         return settlement is null ? NotFound() : Ok(settlement);
@@ -52,7 +60,11 @@ public sealed class EconomyMarketplaceQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await marketplace.ListRefundsAsync(
             tenantId, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -62,7 +74,11 @@ public sealed class EconomyMarketplaceQueryAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRefund(Guid refundId, CancellationToken cancellationToken)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         var refund = await marketplace.FindRefundAsync(
             tenantId, refundId, cancellationToken).ConfigureAwait(false);
         return refund is null ? NotFound() : Ok(refund);
@@ -78,7 +94,11 @@ public sealed class EconomyMarketplaceQueryAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryTenant(out var tenantId)) return Forbid();
+        if (!TryTenant(out var tenantId))
+        {
+            return Forbid();
+        }
+
         return Ok(await marketplace.ListOutboxAsync(
             tenantId, published, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -89,7 +109,10 @@ public sealed class EconomyMarketplaceQueryAdministrationController(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue ||
             !actor.HasPermission(EconomyPermission.Keys.OperateMarketplace))
+        {
             return false;
+        }
+
         tenantId = actor.TenantId.Value;
         return true;
     }

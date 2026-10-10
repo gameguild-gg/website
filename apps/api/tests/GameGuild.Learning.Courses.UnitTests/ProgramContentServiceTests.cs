@@ -8,6 +8,44 @@ namespace GameGuild.Learning.Courses.UnitTests;
 
 public sealed class ProgramContentServiceTests
 {
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task UpdateContent_ShouldCheckPersistedProtectionEvenWhenTheReplacementErasesIt(bool useWriteService, bool mutateTracked)
+    {
+        await using var context = CreateContext();
+        var content = PersistedContent(Guid.NewGuid(), "Graded quiz");
+        content.Type = ProgramContentType.Questionnaire;
+        content.JsonBody = """{"grading":{}}""";
+        context.Add(content);
+        await context.SaveChangesAsync();
+        var replacement = mutateTracked ? content : PersistedContent(content.ProgramId, content.Title);
+        replacement.Id = content.Id;
+        replacement.Type = ProgramContentType.Lesson;
+        replacement.JsonBody = null;
+        replacement.Body = "replacement";
+        if (!mutateTracked)
+        {
+            context.ChangeTracker.Clear();
+        }
+        var guard = new Mock<IProgramContentAcademicMutationGuard>();
+        guard.Setup(value => value.GetRejection(It.IsAny<ProgramContent>(), ProgramContentAcademicMutation.Authoring))
+            .Returns((ProgramContent candidate, ProgramContentAcademicMutation _) =>
+                candidate.Type == ProgramContentType.Questionnaire && candidate.JsonBody is not null ? "Use the atomic workflow." : null);
+        Func<Task<ProgramContent>> update = useWriteService
+            ? () => new ProgramWriteService(context, academicGuards: [guard.Object]).UpdateContentAsync(replacement)
+            : () => new ProgramContentService(context, Mock.Of<IProgramContentScheduleGuard>(),
+                Mock.Of<IProgramContentLifecycleGuard>(), [guard.Object]).UpdateContentAsync(replacement);
+
+        await update.Should().ThrowAsync<InvalidOperationException>().WithMessage("Use the atomic workflow.");
+        context.ChangeTracker.Clear();
+        var persisted = await context.Set<ProgramContent>().SingleAsync();
+        persisted.Type.Should().Be(ProgramContentType.Questionnaire);
+        persisted.JsonBody.Should().NotBeNull();
+    }
+
     [Fact]
     public async Task CreateContentAsync_ShouldInheritTenantFromProgram()
     {

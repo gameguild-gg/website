@@ -74,21 +74,34 @@ public sealed class SessionOptions : BaseOptions
         var errors = new List<string>();
 
         if (IdleTimeoutMinutes < 1 || IdleTimeoutMinutes > 10080)
+        {
             errors.Add("IdleTimeoutMinutes must be between 1 and 10080 (7 days)");
+        }
 
         if (AbsoluteTimeoutMinutes < 1 || AbsoluteTimeoutMinutes > 43200)
+        {
             errors.Add("AbsoluteTimeoutMinutes must be between 1 and 43200 (30 days)");
+        }
 
         if (MaxConcurrentSessions < 1 || MaxConcurrentSessions > 100)
+        {
             errors.Add("MaxConcurrentSessions must be between 1 and 100");
+        }
 
         if (TrustedDeviceDurationDays < 1 || TrustedDeviceDurationDays > 365)
+        {
             errors.Add("TrustedDeviceDurationDays must be between 1 and 365");
+        }
 
-        if (MaxTrustedDevices < 1 || MaxTrustedDevices > 50) errors.Add("MaxTrustedDevices must be between 1 and 50");
+        if (MaxTrustedDevices < 1 || MaxTrustedDevices > 50)
+        {
+            errors.Add("MaxTrustedDevices must be between 1 and 50");
+        }
 
         if (IdleTimeoutMinutes > AbsoluteTimeoutMinutes)
+        {
             errors.Add("IdleTimeoutMinutes cannot be greater than AbsoluteTimeoutMinutes");
+        }
 
         return (errors.Count == 0, errors.ToArray());
     }

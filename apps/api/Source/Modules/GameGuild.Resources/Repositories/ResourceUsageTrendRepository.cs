@@ -20,11 +20,20 @@ public class ResourceUsageTrendRepository(IApplicationDbContext context) : IReso
     {
         var query = ResourceUsageTrends.Where(t => t.TenantId!.Value == tenantId);
 
-        if (type.HasValue) query = query.Where(t => t.Type == type.Value);
+        if (type.HasValue)
+        {
+            query = query.Where(t => t.Type == type.Value);
+        }
 
-        if (fromDate.HasValue) query = query.Where(t => t.PeriodStart >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(t => t.PeriodStart >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(t => t.PeriodEnd <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(t => t.PeriodEnd <= toDate.Value);
+        }
 
         return await query.OrderByDescending(t => t.PeriodEnd).ToListAsync(cancellationToken);
     }
@@ -56,7 +65,10 @@ public class ResourceUsageTrendRepository(IApplicationDbContext context) : IReso
     {
         var trend = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (trend == null) return false;
+        if (trend == null)
+        {
+            return false;
+        }
 
         ResourceUsageTrends.Remove(trend);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

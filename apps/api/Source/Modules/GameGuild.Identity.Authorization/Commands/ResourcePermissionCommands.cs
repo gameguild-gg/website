@@ -345,7 +345,7 @@ public sealed class DeclineResourceInvitationCommandHandler(
         {
             logger.LogWarning(
                 "User with email {Email} attempted to decline invitation {InvitationId} for another recipient",
-                email,
+                LogRedaction.MaskEmail(email),
                 request.InvitationId);
 
             throw new UnauthorizedAccessException("This invitation is not addressed to the current user");

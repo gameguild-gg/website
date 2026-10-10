@@ -69,6 +69,11 @@ export interface QuizContentParseResult {
   issues: QuizContentParseIssue[];
 }
 
+export interface QuizLearnerContentParseResult {
+  document: QuizLearnerContentDocument;
+  issues: QuizContentParseIssue[];
+}
+
 export interface QuizContentDocumentInput {
   items: readonly QuizContentItem[];
   grading?: ContentGradingDefinitionV2 | null;

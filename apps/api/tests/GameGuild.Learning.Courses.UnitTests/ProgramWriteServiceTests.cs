@@ -95,8 +95,15 @@ public sealed class ProgramWriteServiceTests
         var program = CreateProgram();
         program.TenantId = tenantId;
         var content = new ProgramContent { Id = Guid.NewGuid(), ProgramId = program.Id, Title = "Activity", Type = survey ? ProgramContentType.Survey : ProgramContentType.Reflection };
-        if (survey) content.SetActivitySettings(new SurveyActivitySettings());
-        else content.SetActivitySettings(new ReflectionActivitySettings());
+        if (survey)
+        {
+            content.SetActivitySettings(new SurveyActivitySettings());
+        }
+        else
+        {
+            content.SetActivitySettings(new ReflectionActivitySettings());
+        }
+
         context.AddRange(program, content);
         await context.SaveChangesAsync();
         var service = new ContentInteractionService(context, new TestRequestContextAccessor(Guid.NewGuid(), tenantId), CreateCourseAccess(canReviewAsStaff: false));
@@ -312,7 +319,9 @@ public sealed class ProgramWriteServiceTests
             await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("Discussion thread root is invalid.");
         }
         else
+        {
             (await submit()).Should().NotBeNull();
+        }
     }
 
     [Theory]
@@ -1181,7 +1190,9 @@ public sealed class ProgramWriteServiceTests
                 BeforeInteractionSaveAsync = null;
                 await beforeInteractionSave(cancellationToken);
                 if (SimulateInteractionConflictAfterHook)
+                {
                     throw new DbUpdateException("Simulated concurrent active-attempt conflict.");
+                }
             }
 
             try

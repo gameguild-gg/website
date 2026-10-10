@@ -32,7 +32,10 @@ public sealed class TestingFeedbackObligation : EntityBase
         Guid? questionnaireRevisionId = null)
     {
         if (eventId == Guid.Empty || slotId == Guid.Empty || applicationId == Guid.Empty || testerUserId == Guid.Empty)
+        {
             throw new ArgumentException("Event, slot, application, and tester are required.");
+        }
+
         return new TestingFeedbackObligation
         {
             Id = Guid.NewGuid(),
@@ -49,8 +52,16 @@ public sealed class TestingFeedbackObligation : EntityBase
 
     public void Fulfill(Guid feedbackId)
     {
-        if (feedbackId == Guid.Empty) throw new ArgumentException("Feedback is required.", nameof(feedbackId));
-        if (IsFulfilled) throw new InvalidOperationException("The feedback obligation is already complete.");
+        if (feedbackId == Guid.Empty)
+        {
+            throw new ArgumentException("Feedback is required.", nameof(feedbackId));
+        }
+
+        if (IsFulfilled)
+        {
+            throw new InvalidOperationException("The feedback obligation is already complete.");
+        }
+
         FeedbackId = feedbackId;
         Status = TestingFeedbackObligationStatus.Fulfilled;
         FulfilledAt = SystemClock.UtcNow;
@@ -59,7 +70,11 @@ public sealed class TestingFeedbackObligation : EntityBase
 
     public void Waive()
     {
-        if (IsFulfilled) throw new InvalidOperationException("The feedback obligation is already complete.");
+        if (IsFulfilled)
+        {
+            throw new InvalidOperationException("The feedback obligation is already complete.");
+        }
+
         Status = TestingFeedbackObligationStatus.Waived;
         FulfilledAt = SystemClock.UtcNow;
         Touch();

@@ -102,8 +102,8 @@ public static class RateLimitingServiceCollectionExtensions
                     context.HttpContext.RequestServices.GetService<ILoggerFactory>()?
                         .CreateLogger("GameGuild.API.RateLimiting")
                         .LogWarning("Rate limit exceeded for {Path} using policy {Policy}",
-                            context.HttpContext.Request.Path,
-                            policy);
+                            LogRedaction.Sanitize(context.HttpContext.Request.Path),
+                            LogRedaction.Sanitize(policy));
 
                     var problemDetails = new ProblemDetails
                     {
@@ -289,6 +289,31 @@ public static class RateLimitingServiceCollectionExtensions
                             });
                 });
 
+                // Webhook policy: Fixed window partitioned by IP for anonymous provider callbacks
+                // (e.g. billing webhooks). Throttles spoofed request floods before signature
+                // verification runs while absorbing legitimate provider retry bursts.
+                rateLimiterOptions.AddPolicy(RateLimitPolicies.Webhook, httpContext =>
+                {
+                    var partitionKey = GetIpPartitionKey(httpContext);
+                    if (accessOptions.IsAllowlisted(httpContext))
+                    {
+                        return RateLimitPartition.GetNoLimiter($"allowlisted:{RateLimitPolicies.Webhook}:{partitionKey}");
+                    }
+
+                    return redisEnabled
+                        ? RateLimitPartition.GetNoLimiter($"redis:{RateLimitPolicies.Webhook}:{partitionKey}")
+                        : RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey,
+                            _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = options.WebhookRequestsPerMinute,
+                                Window = options.WebhookWindow,
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 0, // No queuing: reject floods early
+                                AutoReplenishment = true
+                            });
+                });
+
                 // ============ TOKEN BUCKET POLICIES ============
 
                 // Bursty policy: Token bucket for bursty traffic patterns
@@ -402,6 +427,7 @@ public static class RateLimitingServiceCollectionExtensions
             (nameof(options.TenantWindow), options.TenantWindow),
             (nameof(options.UserWindow), options.UserWindow),
             (nameof(options.IpWindow), options.IpWindow),
+            (nameof(options.WebhookWindow), options.WebhookWindow),
             (nameof(options.ApiKeyWindow), options.ApiKeyWindow),
             (nameof(options.TokenReplenishmentPeriod), options.TokenReplenishmentPeriod)
         };
@@ -665,6 +691,7 @@ public static class RateLimitingServiceCollectionExtensions
             RateLimitPolicies.PerTenant => options.TenantRequestsPerMinute,
             RateLimitPolicies.PerUser => options.UserRequestsPerMinute,
             RateLimitPolicies.PerIp => options.IpRequestsPerMinute,
+            RateLimitPolicies.Webhook => options.WebhookRequestsPerMinute,
             RateLimitPolicies.Bursty => options.TokenBucketLimit,
             RateLimitPolicies.ApiKey => GetApiKeyPartitionKey(httpContext).StartsWith("premium:", StringComparison.Ordinal)
                 ? options.PremiumApiKeyRequestsPerMinute

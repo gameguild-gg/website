@@ -125,10 +125,15 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
         var canonical = CanonicalObservationPayload(command);
         var computedHash = Hash(canonical);
         if (!string.Equals(computedHash, command.PayloadHash, StringComparison.Ordinal))
+        {
             throw new CustodyObservationException("The custody payload hash does not match its canonical content.");
+        }
+
         if (!await _signatureVerifier.VerifyAsync(
                 canonical, command.KeyId, command.Signature, cancellationToken))
+        {
             throw new CustodyObservationException("The custody observation signature is invalid.");
+        }
 
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async _ =>
@@ -138,8 +143,11 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
         if (replay is not null)
         {
             if (replay.PayloadHash != computedHash)
-                throw new CustodyObservationException("A custody observation ID cannot be reused with different content.");
-            return Map(replay);
+                {
+                    throw new CustodyObservationException("A custody observation ID cannot be reused with different content.");
+                }
+
+                return Map(replay);
         }
 
         var latestVersion = await _db.Set<EconomyCustodyObservationRow>()
@@ -147,8 +155,11 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
             .Select(row => (long?)row.Version)
             .MaxAsync(cancellationToken) ?? 0;
         if (command.Version != latestVersion + 1)
-            throw new CustodyObservationException("Custody observation versions must be contiguous and monotonic.");
-        var row = new EconomyCustodyObservationRow
+            {
+                throw new CustodyObservationException("Custody observation versions must be contiguous and monotonic.");
+            }
+
+            var row = new EconomyCustodyObservationRow
         {
             Id = command.Id,
             Provider = command.Provider.Trim(),
@@ -188,12 +199,19 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
         {
             var delta = line.Side == EntrySide.Credit ? line.AmountUnits : -line.AmountUnits;
             if (accounts[line.AccountId].Code == EconomyAccountCode.SoftCoinLiability)
+            {
                 soft = checked(soft + delta);
+            }
             else
+            {
                 hard = checked(hard + delta);
+            }
         }
         if (hard < 0 || soft < 0)
+        {
             throw new ReserveInputUnknownException("Journal liability accounts produced a negative balance.");
+        }
+
         var liabilityNanos = checked(hard * UsdNanosPerCent + ReserveFormula.SoftFaceValueUsdNanos(soft));
         return new EconomyLiabilitySnapshot(head.Sequence, head.Hash, hard, soft, liabilityNanos);
     }
@@ -212,36 +230,52 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
         if (replay is not null)
         {
             if (replay.RequestHash != requestHash)
-                throw new ReserveVersionConflictException("A reserve proposal ID cannot be reused with different inputs.");
-            return Map(replay);
+                {
+                    throw new ReserveVersionConflictException("A reserve proposal ID cannot be reused with different inputs.");
+                }
+
+                return Map(replay);
         }
 
         var active = await _db.Set<EconomyReserveHeadRow>().SingleOrDefaultAsync(row => row.IsActive, cancellationToken);
         if (active?.Version != command.ExpectedActiveVersion || (active is null && command.ExpectedActiveVersion.HasValue))
-            throw new ReserveVersionConflictException("The expected active reserve version is stale.");
-        var maximumVersion = await _db.Set<EconomyReserveProposalRow>()
+            {
+                throw new ReserveVersionConflictException("The expected active reserve version is stale.");
+            }
+
+            var maximumVersion = await _db.Set<EconomyReserveProposalRow>()
             .Select(row => (long?)row.Version).MaxAsync(cancellationToken) ?? 0;
         if (command.Version <= maximumVersion || (active is not null && command.Version <= active.Version))
-            throw new ReserveVersionConflictException("Reserve versions must increase monotonically.");
-        var maximumEpoch = await _db.Set<EconomyReserveHeadRow>()
+            {
+                throw new ReserveVersionConflictException("Reserve versions must increase monotonically.");
+            }
+
+            var maximumEpoch = await _db.Set<EconomyReserveHeadRow>()
             .Select(row => (long?)row.AuthorizationEpoch).MaxAsync(cancellationToken) ?? 0;
         if (command.AuthorizationEpoch <= maximumEpoch)
-            throw new ReserveAuthorizationEpochException("Reserve authorization epochs must increase monotonically.");
+            {
+                throw new ReserveAuthorizationEpochException("Reserve authorization epochs must increase monotonically.");
+            }
 
-        var liabilities = await CalculateLiabilitiesAsync(cancellationToken);
+            var liabilities = await CalculateLiabilitiesAsync(cancellationToken);
         var checkpointValid = await _db.Set<EconomyJournalVerificationCheckpointRow>().AsNoTracking()
             .AnyAsync(row => row.IsValid && row.ToSequence == liabilities.JournalSequence &&
                              row.CurrentHash == liabilities.JournalHash, cancellationToken);
         if (!checkpointValid)
-            throw new ReserveInputUnknownException("Reserve proposals require a fully verified journal head.");
-        var observations = await LoadAndValidateObservationsAsync(
+            {
+                throw new ReserveInputUnknownException("Reserve proposals require a fully verified journal head.");
+            }
+
+            var observations = await LoadAndValidateObservationsAsync(
             command.CustodyObservationIds, command.ProposedAt, cancellationToken);
         var assets = observations.Select(row => new ExternalReserveAsset(
             row.AssetKey, row.Purpose, row.EligibleUsdNanos)).ToArray();
         if (assets.Select(asset => asset.AssetKey).Distinct(StringComparer.Ordinal).Count() != assets.Length)
-            throw new DuplicateReserveAssetException("A custody asset cannot back multiple pools in one reserve head.");
+            {
+                throw new DuplicateReserveAssetException("A custody asset cannot back multiple pools in one reserve head.");
+            }
 
-        var requirements = CalculateRequirements(command, liabilities);
+            var requirements = CalculateRequirements(command, liabilities);
         var hardBacking = SumBacking(assets, ReserveBackingPurpose.HardCoin);
         var softBacking = SumBacking(assets, ReserveBackingPurpose.SoftCoin);
         var coverage = checked(requirements.RequiredHardReserveUsdMinor * UsdNanosPerCent) <= hardBacking &&
@@ -309,8 +343,16 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
         DateTimeOffset approvedAt,
         CancellationToken cancellationToken)
     {
-        if (proposalId == Guid.Empty) throw new ArgumentException("Proposal ID cannot be empty.", nameof(proposalId));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        if (proposalId == Guid.Empty)
+        {
+            throw new ArgumentException("Proposal ID cannot be empty.", nameof(proposalId));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID cannot be empty.", nameof(actorId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(reauthenticationHash);
         return await PostgreSqlTransactionExecutor.ExecuteAsync(
             _db, IsolationLevel.Serializable, async _ =>
@@ -319,19 +361,34 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
             .SingleOrDefaultAsync(row => row.Id == proposalId, cancellationToken)
             ?? throw new KeyNotFoundException("Reserve proposal not found.");
         if (proposal.Status != "PendingApproval")
-            throw new InvalidOperationException("Only pending reserve proposals can be approved.");
-        if (proposal.ProposedBy == actorId)
-            throw new InvalidOperationException("The reserve proposer cannot approve their own proposal.");
-        if (approvedAt < proposal.ProposedAt || approvedAt >= proposal.ExpiresAt)
-            throw new ReserveInputUnknownException("The reserve proposal is stale or approval predates proposal.");
-        var observationIds = JsonSerializer.Deserialize<Guid[]>(proposal.ObservationIds) ?? [];
+            {
+                throw new InvalidOperationException("Only pending reserve proposals can be approved.");
+            }
+
+            if (proposal.ProposedBy == actorId)
+            {
+                throw new InvalidOperationException("The reserve proposer cannot approve their own proposal.");
+            }
+
+            if (approvedAt < proposal.ProposedAt || approvedAt >= proposal.ExpiresAt)
+            {
+                throw new ReserveInputUnknownException("The reserve proposal is stale or approval predates proposal.");
+            }
+
+            var observationIds = JsonSerializer.Deserialize<Guid[]>(proposal.ObservationIds) ?? [];
         await LoadAndValidateObservationsAsync(observationIds, approvedAt, cancellationToken);
         var active = await _db.Set<EconomyReserveHeadRow>().SingleOrDefaultAsync(row => row.IsActive, cancellationToken);
         if (active?.Version != proposal.ExpectedActiveVersion || (active is null && proposal.ExpectedActiveVersion.HasValue))
-            throw new ReserveVersionConflictException("The active reserve head changed after proposal creation.");
-        if (active is not null) active.IsActive = false;
+            {
+                throw new ReserveVersionConflictException("The active reserve head changed after proposal creation.");
+            }
 
-        var assets = JsonSerializer.Deserialize<ExternalReserveAsset[]>(proposal.AssetAllocations) ?? [];
+            if (active is not null)
+            {
+                active.IsActive = false;
+            }
+
+            var assets = JsonSerializer.Deserialize<ExternalReserveAsset[]>(proposal.AssetAllocations) ?? [];
         var head = new EconomyReserveHeadRow
         {
             Version = proposal.Version,
@@ -387,9 +444,15 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
     {
         var head = await CurrentHeadAsync(now, cancellationToken).ConfigureAwait(false);
         if (head.Version != version)
+        {
             throw new ReserveAuthorizationException("The requested reserve version is not active.");
+        }
+
         if (head.AuthorizationEpoch != authorizationEpoch)
+        {
             throw new ReserveAuthorizationEpochException("The requested reserve authorization epoch is not active.");
+        }
+
         return new ReservePostingAuthorization(version, authorizationEpoch, now);
     }
 
@@ -401,13 +464,22 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
             .SingleOrDefaultAsync(row => row.IsActive, cancellationToken)
             ?? throw new ReserveAuthorizationException("No authoritative reserve head is active.");
         if (head.ObservedAt > now || head.ExpiresAt <= now)
+        {
             throw new ReserveInputUnknownException("The active reserve head is stale.");
+        }
+
         if (head.Coverage != ReserveCoverageState.Covered)
+        {
             throw new ReserveShortfallException("The active reserve head does not cover required liabilities and buffers.");
+        }
+
         var reconciliation = await _db.Set<EconomyCustodyReconciliationRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.ReserveVersion == head.Version, cancellationToken);
         if (reconciliation?.IsReconciled != true || reconciliation.EvidenceHash != head.EvidenceHash)
+        {
             throw new ReserveInputUnknownException("Custody is not reconciled for the active reserve head.");
+        }
+
         var observationIds = JsonSerializer.Deserialize<Guid[]>(reconciliation.ObservationIds) ?? [];
         _ = await LoadAndValidateObservationsAsync(observationIds, now, cancellationToken).ConfigureAwait(false);
         var assets = await _db.Set<EconomyReserveAssetAllocationRow>().AsNoTracking()
@@ -422,8 +494,11 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
         if (assets.Length == 0 || hardBacking != head.HardBackingUsdNanos ||
             softBacking != head.SoftBackingUsdNanos ||
             checked(hardBacking + softBacking) != reconciliation.EligibleAssetUsdNanos)
+        {
             throw new ReserveInputUnknownException(
                 "Reserve asset allocations do not match the reconciled custody snapshot.");
+        }
+
         return MapHead(head, assets);
     }
 
@@ -449,27 +524,41 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
     {
         ArgumentNullException.ThrowIfNull(ids);
         if (ids.Count == 0 || ids.Any(id => id == Guid.Empty) || ids.Distinct().Count() != ids.Count)
+        {
             throw new ReserveInputUnknownException("A reserve proposal requires unique custody observations.");
+        }
+
         var observations = await _db.Set<EconomyCustodyObservationRow>()
             .Where(row => ids.Contains(row.Id)).ToArrayAsync(cancellationToken);
         if (observations.Length != ids.Count)
+        {
             throw new ReserveInputUnknownException("A referenced custody observation does not exist.");
+        }
+
         foreach (var row in observations)
         {
             if (row.ObservedAt > now || row.ExpiresAt <= now)
+            {
                 throw new ReserveInputUnknownException("A custody observation is stale.");
+            }
+
             var latest = await _db.Set<EconomyCustodyObservationRow>()
                 .Where(item => item.Provider == row.Provider && item.AssetKey == row.AssetKey)
                 .MaxAsync(item => item.Version, cancellationToken);
             if (row.Version != latest)
+            {
                 throw new ReserveInputUnknownException("A custody observation was superseded.");
+            }
+
             var command = new CustodyObservationCommand(
                 row.Id, row.Provider, row.AssetKey, row.Purpose, row.Version, row.EligibleUsdNanos,
                 row.ObservedAt, row.ExpiresAt, row.PayloadHash, row.KeyId, row.Signature);
             var canonical = CanonicalObservationPayload(command);
             if (Hash(canonical) != row.PayloadHash || !await _signatureVerifier.VerifyAsync(
                     canonical, row.KeyId, row.Signature, cancellationToken))
+            {
                 throw new ReserveInputUnknownException("A custody observation signature is invalid.");
+            }
         }
         return observations;
     }
@@ -531,12 +620,23 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
     private static void ValidateObservation(CustodyObservationCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        if (command.Id == Guid.Empty) throw new ArgumentException("Observation ID cannot be empty.", nameof(command));
+        if (command.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Observation ID cannot be empty.", nameof(command));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Provider);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.AssetKey);
-        if (!Enum.IsDefined(command.Purpose)) throw new ArgumentOutOfRangeException(nameof(command));
+        if (!Enum.IsDefined(command.Purpose))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         if (command.Version <= 0 || command.EligibleUsdNanos < 0 || command.ExpiresAt <= command.ObservedAt)
+        {
             throw new CustodyObservationException("Custody observation values or lifetime are invalid.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(command.PayloadHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.KeyId);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.Signature);
@@ -546,16 +646,27 @@ public sealed class PostgreSqlReserveCustodyControlPlane : IEconomyReserveCustod
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.Id == Guid.Empty || command.ProposedBy == Guid.Empty)
+        {
             throw new ArgumentException("Proposal and proposer IDs are required.", nameof(command));
+        }
+
         if (command.Version <= 0 || command.PolicyVersion <= 0 || command.AuthorizationEpoch <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(command));
+        }
+
         if (command.ObservedAt > command.ProposedAt || command.ExpiresAt <= command.ProposedAt)
+        {
             throw new ReserveInputUnknownException("Reserve proposal evidence is stale or has an invalid window.");
+        }
+
         ArgumentNullException.ThrowIfNull(command.Buffers);
         ArgumentNullException.ThrowIfNull(command.Services);
         ArgumentNullException.ThrowIfNull(command.CustodyObservationIds);
         if (command.IrreversibleInFlightProviderCostUsdNanos < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(command));
+        }
     }
 
     private static DurableCustodyObservation Map(EconomyCustodyObservationRow row) => new(

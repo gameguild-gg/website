@@ -31,7 +31,9 @@ public sealed class QuizProgramContentPublicationParticipant(
         CancellationToken cancellationToken = default)
     {
         if (!payload.JsonBody.HasValue)
+        {
             throw new ValidationException("Quiz content is required before publication.");
+        }
 
         var projection = adapter.ProjectAuthoring(payload.JsonBody.Value);
         var assessment = await context.Set<Assessment>()
@@ -42,7 +44,10 @@ public sealed class QuizProgramContentPublicationParticipant(
 
         if (projection.Grading is null)
         {
-            if (assessment is null) return;
+            if (assessment is null)
+            {
+                return;
+            }
 
             if (assessment.PublishedDefinitionRevisionId.HasValue)
             {
@@ -56,10 +61,14 @@ public sealed class QuizProgramContentPublicationParticipant(
         }
 
         if (projection.Items.Count == 0)
+        {
             throw new ValidationException("Graded quiz content requires at least one assessable item.");
+        }
 
         if (assessment is not null && assessment.Type != AssessmentType.Quiz)
+        {
             throw new InvalidOperationException("The linked assessment type does not match quiz content.");
+        }
 
         var tenantId = assessment?.TenantId ?? content.TenantId ?? ResolveActorTenant(actorId);
 
@@ -93,7 +102,9 @@ public sealed class QuizProgramContentPublicationParticipant(
         }
 
         if (!assessment.TenantId.HasValue)
+        {
             assessment.TenantId = tenantId;
+        }
 
         var reviewConfiguration = EnsureInstructorReviewConfiguration(
             assessment.ReviewMethods,
@@ -135,8 +146,11 @@ public sealed class QuizProgramContentPublicationParticipant(
     {
         var actor = actorContextAccessor.ActorContext;
         if (actor.SubjectIdAsGuid != actorId || !actor.TenantId.HasValue)
+        {
             throw new ValidationException(
                 "A tenant-scoped actor is required to publish graded quiz content.");
+        }
+
         return actor.TenantId.Value;
     }
 
@@ -168,7 +182,10 @@ public sealed class QuizProgramContentPublicationParticipant(
                 candidate => candidate.ContentId == content.Id && candidate.DeletedAt == null,
                 cancellationToken)
             .ConfigureAwait(false);
-        if (assessment is null) return;
+        if (assessment is null)
+        {
+            return;
+        }
 
         var prepared = await authoringService.PrepareAsync(
                 assessment.Id,
@@ -177,7 +194,9 @@ public sealed class QuizProgramContentPublicationParticipant(
                 cancellationToken)
             .ConfigureAwait(false);
         if (!prepared.IsSuccess)
+        {
             throw new ValidationException($"{prepared.Error.Code}: {prepared.Error.Description}");
+        }
 
         var published = await authoringService.PublishAsync(
                 assessment.Id,
@@ -188,6 +207,8 @@ public sealed class QuizProgramContentPublicationParticipant(
                 cancellationToken)
             .ConfigureAwait(false);
         if (!published.IsSuccess)
+        {
             throw new ValidationException($"{published.Error.Code}: {published.Error.Description}");
+        }
     }
 }

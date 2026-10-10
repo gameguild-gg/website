@@ -36,21 +36,32 @@ public sealed class LaunchPlan : EntityBase<Guid>
     {
         get
         {
-            if (ChecklistItems.Count == 0) return 0;
+            if (ChecklistItems.Count == 0)
+            {
+                return 0;
+            }
+
             return (int)Math.Round(ChecklistItems.Count(item => item.IsComplete) * 100m / ChecklistItems.Count);
         }
     }
 
     public void RecalculateStatus()
     {
-        if (Status == LaunchPlanStatus.Launched || Status == LaunchPlanStatus.Paused) return;
+        if (Status == LaunchPlanStatus.Launched || Status == LaunchPlanStatus.Paused)
+        {
+            return;
+        }
+
         Status = ReadinessPercent == 100 ? LaunchPlanStatus.Ready : LaunchPlanStatus.Preparing;
     }
 
     public void Publish()
     {
         RecalculateStatus();
-        if (Status != LaunchPlanStatus.Ready) throw new InvalidOperationException("Launch plan must be ready before publishing.");
+        if (Status != LaunchPlanStatus.Ready)
+        {
+            throw new InvalidOperationException("Launch plan must be ready before publishing.");
+        }
 
         Status = LaunchPlanStatus.Launched;
         LaunchedAt = SystemClock.UtcNow;
@@ -65,7 +76,10 @@ public sealed class LaunchPlan : EntityBase<Guid>
         string name)
     {
         if (new[] { tenantId, launchPadEventId, launchPadApplicationId, projectId, projectVersionId }.Any(id => id == Guid.Empty))
+        {
             throw new ArgumentException("Tenant, event, application, project and version are required.");
+        }
+
         var plan = new LaunchPlan
         {
             Id = Guid.NewGuid(),

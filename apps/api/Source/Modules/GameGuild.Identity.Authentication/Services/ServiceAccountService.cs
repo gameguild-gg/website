@@ -144,7 +144,7 @@ public sealed class ServiceAccountService : IServiceAccountService
 
         _logger.LogInformation(
             "Rotated secret for service account {ServiceAccountId} (rotation #{RotationCount})",
-            serviceAccountId, serviceAccount.SecretRotationCount);
+            LogRedaction.RedactId(serviceAccountId, "sac"), serviceAccount.SecretRotationCount);
 
         return newSecret;
     }
@@ -158,7 +158,7 @@ public sealed class ServiceAccountService : IServiceAccountService
         serviceAccount.Unlock();
         await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation("Unlocked service account {ServiceAccountId}", serviceAccountId);
+        _logger.LogInformation("Unlocked service account {ServiceAccountId}", LogRedaction.RedactId(serviceAccountId, "sac"));
     }
 
     /// <inheritdoc />
@@ -170,7 +170,7 @@ public sealed class ServiceAccountService : IServiceAccountService
         serviceAccount.Lock(reason);
         await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation("Locked service account {ServiceAccountId} with reason: {Reason}", serviceAccountId, reason);
+        _logger.LogInformation("Locked service account {ServiceAccountId} with reason: {Reason}", LogRedaction.RedactId(serviceAccountId, "sac"), LogRedaction.Sanitize(reason));
     }
 
     /// <inheritdoc />
@@ -207,7 +207,7 @@ public sealed class ServiceAccountService : IServiceAccountService
         serviceAccount.UpdatedAt = SystemClock.UtcNow;
         await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation("Deactivated service account {ServiceAccountId}", serviceAccountId);
+        _logger.LogInformation("Deactivated service account {ServiceAccountId}", LogRedaction.RedactId(serviceAccountId, "sac"));
     }
 
     /// <inheritdoc />
@@ -220,7 +220,7 @@ public sealed class ServiceAccountService : IServiceAccountService
         serviceAccount.UpdatedAt = SystemClock.UtcNow;
         await _repository.UpdateAsync(serviceAccount, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation("Reactivated service account {ServiceAccountId}", serviceAccountId);
+        _logger.LogInformation("Reactivated service account {ServiceAccountId}", LogRedaction.RedactId(serviceAccountId, "sac"));
     }
 
     /// <inheritdoc />
@@ -235,7 +235,7 @@ public sealed class ServiceAccountService : IServiceAccountService
 
         _logger.LogInformation(
             "Updated scopes for service account {ServiceAccountId} to: {Scopes}",
-            serviceAccountId, scopes);
+            LogRedaction.RedactId(serviceAccountId, "sac"), LogRedaction.Sanitize(scopes));
     }
 
     /// <inheritdoc />
@@ -263,7 +263,9 @@ public sealed class ServiceAccountService : IServiceAccountService
         {
             // Simple exact match for now (CIDR support could be added)
             if (allowedIp.Equals(ipAddress, StringComparison.OrdinalIgnoreCase))
+            {
                 return true;
+            }
         }
         return false;
     }

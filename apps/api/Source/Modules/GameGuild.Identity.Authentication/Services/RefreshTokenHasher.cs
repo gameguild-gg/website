@@ -47,7 +47,9 @@ public sealed class RefreshTokenHasher : IRefreshTokenHasher
     public string HashToken(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
+        {
             throw new ArgumentException("Token cannot be empty", nameof(token));
+        }
 
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
         return Convert.ToBase64String(bytes);
@@ -59,7 +61,9 @@ public sealed class RefreshTokenHasher : IRefreshTokenHasher
     public bool VerifyToken(string token, string hashedToken)
     {
         if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(hashedToken))
+        {
             return false;
+        }
 
         var computedHash = HashToken(token);
         return CryptographicOperations.FixedTimeEquals(

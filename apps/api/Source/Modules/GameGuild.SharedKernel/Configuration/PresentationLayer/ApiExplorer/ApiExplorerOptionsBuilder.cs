@@ -41,7 +41,10 @@ public static class ApiExplorerOptionsBuilder
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (string.IsNullOrWhiteSpace(options.DefaultGroupName)) throw new InvalidOperationException("Default group name cannot be null or empty.");
+        if (string.IsNullOrWhiteSpace(options.DefaultGroupName))
+        {
+            throw new InvalidOperationException("Default group name cannot be null or empty.");
+        }
     }
 
     /// <summary>

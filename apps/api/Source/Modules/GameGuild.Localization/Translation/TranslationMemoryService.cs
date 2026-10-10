@@ -201,7 +201,9 @@ public sealed class TranslationMemoryService : ITranslationMemoryService
         var maxLength = Math.Max(text1.Length, text2.Length);
 
         if (maxLength == 0)
+        {
             return 1.0;
+        }
 
         return 1.0 - ((double)distance / maxLength);
     }
@@ -213,14 +215,24 @@ public sealed class TranslationMemoryService : ITranslationMemoryService
         var d = new int[n + 1, m + 1];
 
         if (n == 0)
+        {
             return m;
+        }
+
         if (m == 0)
+        {
             return n;
+        }
 
         for (var i = 0; i <= n; i++)
+        {
             d[i, 0] = i;
+        }
+
         for (var j = 0; j <= m; j++)
+        {
             d[0, j] = j;
+        }
 
         for (var i = 1; i <= n; i++)
         {

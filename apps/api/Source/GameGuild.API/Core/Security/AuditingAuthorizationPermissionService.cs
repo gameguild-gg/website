@@ -270,7 +270,11 @@ internal sealed class AuditingAuthorizationPermissionService(
                 return false;
             }
 
-            alertCache.Set(key, true, TimeSpan.FromHours(1));
+            alertCache.Set(key, true, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+                Size = 1
+            });
             return true;
         }
     }

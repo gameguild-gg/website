@@ -11,14 +11,13 @@ namespace GameGuild.Assets.UnitTests.Services;
 public class AssetRateLimitServiceTests
 {
     private readonly Mock<IDistributedCache> _cacheMock;
-    private readonly Mock<ILogger<AssetRateLimitService>> _loggerMock;
     private readonly AssetRateLimitOptions _options;
     private readonly AssetRateLimitService _service;
 
     public AssetRateLimitServiceTests()
     {
         _cacheMock = new Mock<IDistributedCache>();
-        _loggerMock = new Mock<ILogger<AssetRateLimitService>>();
+        Mock<ILogger<AssetRateLimitService>> loggerMock = new Mock<ILogger<AssetRateLimitService>>();
         _options = new AssetRateLimitOptions
         {
             Enabled = true,
@@ -27,7 +26,7 @@ public class AssetRateLimitServiceTests
             BlockDurationMinutes = 60
         };
         var optionsMock = Options.Create(_options);
-        _service = new AssetRateLimitService(_cacheMock.Object, optionsMock, _loggerMock.Object);
+        _service = new AssetRateLimitService(_cacheMock.Object, optionsMock, loggerMock.Object);
     }
 
     [Fact]

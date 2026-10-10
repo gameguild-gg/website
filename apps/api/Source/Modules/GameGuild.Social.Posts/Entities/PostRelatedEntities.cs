@@ -56,7 +56,11 @@ public class PostStatistics : EntityBase
     public void IncrementViews(bool isUnique = false)
     {
         ViewsCount++;
-        if (isUnique) UniqueViewersCount++;
+        if (isUnique)
+        {
+            UniqueViewersCount++;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 
@@ -187,10 +191,26 @@ public class PostFollower : EntityBase
 
     public void UpdatePreferences(bool? notifyOnComments, bool? notifyOnLikes, bool? notifyOnShares, bool? notifyOnUpdates)
     {
-        if (notifyOnComments.HasValue) NotifyOnComments = notifyOnComments.Value;
-        if (notifyOnLikes.HasValue) NotifyOnLikes = notifyOnLikes.Value;
-        if (notifyOnShares.HasValue) NotifyOnShares = notifyOnShares.Value;
-        if (notifyOnUpdates.HasValue) NotifyOnUpdates = notifyOnUpdates.Value;
+        if (notifyOnComments.HasValue)
+        {
+            NotifyOnComments = notifyOnComments.Value;
+        }
+
+        if (notifyOnLikes.HasValue)
+        {
+            NotifyOnLikes = notifyOnLikes.Value;
+        }
+
+        if (notifyOnShares.HasValue)
+        {
+            NotifyOnShares = notifyOnShares.Value;
+        }
+
+        if (notifyOnUpdates.HasValue)
+        {
+            NotifyOnUpdates = notifyOnUpdates.Value;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 }
@@ -246,7 +266,7 @@ public class PostTag : EntityBase
     }
 
     public void IncrementUsage() { UsageCount++; UpdatedAt = SystemClock.UtcNow; }
-    public void DecrementUsage() { if (UsageCount > 0) UsageCount--; UpdatedAt = SystemClock.UtcNow; }
+    public void DecrementUsage() { if (UsageCount > 0) { UsageCount--; } UpdatedAt = SystemClock.UtcNow; }
     public void SetFeatured(bool featured) { IsFeatured = featured; UpdatedAt = SystemClock.UtcNow; }
 }
 

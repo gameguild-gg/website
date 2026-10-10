@@ -87,9 +87,19 @@ public sealed class PostgreSqlAdminWithdrawalDispatchOutboxTests
         {
             var row = await fixture.Context.Set<AdminWithdrawalDispatchOutboxRow>()
                 .SingleAsync(value => value.Id == item.Row.Id);
-            if (stale == "owner") row.LeaseOwner = "another-worker";
-            else if (stale == "missing") row.LeaseExpiresAt = null;
-            else row.LeaseExpiresAt = Now.AddTicks(-1);
+            if (stale == "owner")
+            {
+                row.LeaseOwner = "another-worker";
+            }
+            else if (stale == "missing")
+            {
+                row.LeaseExpiresAt = null;
+            }
+            else
+            {
+                row.LeaseExpiresAt = Now.AddTicks(-1);
+            }
+
             await fixture.Context.SaveChangesAsync();
             return Receipt(command, AdminWithdrawalProviderOutcome.Submitted);
         });
@@ -125,16 +135,31 @@ public sealed class PostgreSqlAdminWithdrawalDispatchOutboxTests
         foreach (var invalid in invalids)
         {
             var item = await fixture.AddAsync(AdminWithdrawalRunState.Dispatching);
-            if (invalid == "hash") item.Row.PayloadHash = "invalid";
+            if (invalid == "hash")
+            {
+                item.Row.PayloadHash = "invalid";
+            }
+
             if (invalid == "null")
             {
                 item.Row.Payload = "null";
                 item.Row.PayloadHash = Hash(item.Row.Payload);
             }
             if (invalid == "command-tenant")
+            {
                 ReplaceCommand(item, item.Command with { TenantId = Guid.Empty });
-            if (invalid == "row-tenant") item.Row.TenantId = Guid.NewGuid();
-            if (invalid == "row-run") ReplaceCommand(item, item.Command with { RunId = Guid.NewGuid() });
+            }
+
+            if (invalid == "row-tenant")
+            {
+                item.Row.TenantId = Guid.NewGuid();
+            }
+
+            if (invalid == "row-run")
+            {
+                ReplaceCommand(item, item.Command with { RunId = Guid.NewGuid() });
+            }
+
             await fixture.Context.SaveChangesAsync();
 
             var processor = fixture.Processor(command => invalid switch

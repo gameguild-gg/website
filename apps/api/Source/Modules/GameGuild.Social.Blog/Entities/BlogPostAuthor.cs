@@ -16,7 +16,9 @@ public sealed class BlogPostAuthor : EntityBase
     public static BlogPostAuthor Create(Guid blogPostId, Guid userId, Guid addedByUserId, DateTimeOffset? now = null)
     {
         if (blogPostId == Guid.Empty || userId == Guid.Empty || addedByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Post, user, and acting user IDs are required.");
+        }
 
         var at = now ?? DateTimeOffset.UtcNow;
         return new BlogPostAuthor
@@ -52,7 +54,10 @@ public sealed class BlogSlugHistory : EntityBase
         DateTimeOffset? now = null)
     {
         if (blogPostId == Guid.Empty || previousPrimaryAuthorId == Guid.Empty)
+        {
             throw new ArgumentException("Post and previous author IDs are required.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(previousSlug);
 
         var at = now ?? DateTimeOffset.UtcNow;
@@ -87,10 +92,15 @@ public sealed class BlogComment : EntityBase
     public static BlogComment Create(Guid blogPostId, Guid authorUserId, string content, Guid? parentCommentId = null)
     {
         if (blogPostId == Guid.Empty || authorUserId == Guid.Empty)
+        {
             throw new ArgumentException("Post and author IDs are required.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(content);
         if (content.Length > 2000)
+        {
             throw new ArgumentOutOfRangeException(nameof(content), "Comments are limited to 2000 characters.");
+        }
 
         return new BlogComment
         {
@@ -106,8 +116,14 @@ public sealed class BlogComment : EntityBase
     public void Delete(Guid deletedByUserId, DateTimeOffset? now = null)
     {
         if (deletedByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Acting user ID is required.", nameof(deletedByUserId));
-        if (DeletedAt.HasValue) return;
+        }
+
+        if (DeletedAt.HasValue)
+        {
+            return;
+        }
 
         var at = now ?? DateTimeOffset.UtcNow;
         DeletedAt = at;

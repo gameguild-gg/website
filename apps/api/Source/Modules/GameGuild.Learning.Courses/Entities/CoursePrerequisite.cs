@@ -107,14 +107,18 @@ public class CoursePrerequisite : EntityBase
         string? prerequisiteGroup = null)
     {
         if (type.HasValue)
+        {
             Type = type.Value;
-        
+        }
+
         MinimumGrade = minimumGrade;
         Description = description;
         
         if (displayOrder.HasValue)
+        {
             DisplayOrder = displayOrder.Value;
-        
+        }
+
         PrerequisiteGroup = prerequisiteGroup;
         UpdatedAt = SystemClock.UtcNow;
     }

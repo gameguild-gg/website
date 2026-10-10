@@ -63,19 +63,27 @@ public sealed record AclSubject
         yield return (AclPrincipalType.Anonymous, null);
 
         if (!IsAuthenticated)
+        {
             yield break;
+        }
 
         // User principal
         if (UserId.HasValue)
+        {
             yield return (AclPrincipalType.User, UserId.Value);
+        }
 
         // Role principals
         foreach (var roleId in RoleIds)
+        {
             yield return (AclPrincipalType.Role, roleId);
+        }
 
         // Group principals
         foreach (var groupId in GroupIds)
+        {
             yield return (AclPrincipalType.Group, groupId);
+        }
     }
 }
 

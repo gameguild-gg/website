@@ -1,7 +1,7 @@
 # Permission Evaluation Policy
 
 **Date**: January 12, 2026  
-**Version**: 1.2 (deny-by-default contract)  
+**Version**: 1.2 (deny-by-default contract)
 **Status**: ✅ DOCUMENTED
 
 This document defines the official permission evaluation policy for the GameGuild authorization system, including conflict resolution rules, layer precedence, and the rationale behind design decisions.

@@ -28,11 +28,21 @@ public sealed class LearningAssetParentAuthorizationResolver(
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (!HasAuthoritativeActor(userId, tenantId)) return false;
+        if (!HasAuthoritativeActor(userId, tenantId))
+        {
+            return false;
+        }
 
         var program = await ResolveProgramAsync(parentResourceId, cancellationToken).ConfigureAwait(false);
-        if (program is null || program.TenantId != tenantId) return false;
-        if (program.CreatorId == userId) return true;
+        if (program is null || program.TenantId != tenantId)
+        {
+            return false;
+        }
+
+        if (program.CreatorId == userId)
+        {
+            return true;
+        }
 
         var enrolled = await context.Set<ProgramEnrollment>()
             .AsNoTracking()
@@ -45,7 +55,10 @@ public sealed class LearningAssetParentAuthorizationResolver(
                                enrollment.EnrollmentStatus == EnrollmentStatus.Completed),
                 cancellationToken)
             .ConfigureAwait(false);
-        if (enrolled) return true;
+        if (enrolled)
+        {
+            return true;
+        }
 
         return await HasAnyPermissionAsync(program.Id, userId, tenantId!.Value, cancellationToken,
             "Read", "Edit", "Review", "Publish").ConfigureAwait(false);
@@ -57,11 +70,21 @@ public sealed class LearningAssetParentAuthorizationResolver(
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        if (!HasAuthoritativeActor(userId, tenantId)) return false;
+        if (!HasAuthoritativeActor(userId, tenantId))
+        {
+            return false;
+        }
 
         var program = await ResolveProgramAsync(parentResourceId, cancellationToken).ConfigureAwait(false);
-        if (program is null || program.TenantId != tenantId) return false;
-        if (program.CreatorId == userId) return true;
+        if (program is null || program.TenantId != tenantId)
+        {
+            return false;
+        }
+
+        if (program.CreatorId == userId)
+        {
+            return true;
+        }
 
         return await HasAnyPermissionAsync(program.Id, userId, tenantId!.Value, cancellationToken,
             "Edit", "Publish").ConfigureAwait(false);
@@ -70,12 +93,32 @@ public sealed class LearningAssetParentAuthorizationResolver(
     private bool HasAuthoritativeActor(Guid userId, Guid? tenantId)
     {
         var actor = actorContextAccessor.ActorContext;
-        if (!actor.IsAuthenticated) return false;
+        if (!actor.IsAuthenticated)
+        {
+            return false;
+        }
+
         var actorUserId = actor.SubjectIdAsGuid;
-        if (!actorUserId.HasValue) return false;
-        if (actorUserId.Value != userId) return false;
-        if (!tenantId.HasValue) return false;
-        if (!actor.TenantId.HasValue) return false;
+        if (!actorUserId.HasValue)
+        {
+            return false;
+        }
+
+        if (actorUserId.Value != userId)
+        {
+            return false;
+        }
+
+        if (!tenantId.HasValue)
+        {
+            return false;
+        }
+
+        if (!actor.TenantId.HasValue)
+        {
+            return false;
+        }
+
         return actor.TenantId.Value == tenantId.Value;
     }
 
@@ -110,7 +153,10 @@ public sealed class LearningAssetParentAuthorizationResolver(
                     tenantId,
                     $"Program.{programId}.{permission}",
                     cancellationToken)
-                .ConfigureAwait(false)) return true;
+                .ConfigureAwait(false))
+            {
+                return true;
+            }
         }
 
         return false;

@@ -594,6 +594,31 @@ test('reviewed Git archive variants still reject every unlisted archive before e
   assert.equal(lock.tools.llvm.source.sha256, expectedHash);
 });
 
+test('the committed LLVM CI archive variant is bound to the fully reviewed immutable tree', async () => {
+  const { lockedArchiveHashes } = await import('../toolchain/lock.ts');
+  const lock = JSON.parse(await readFile(new URL('../../toolchain/toolchain.lock.json', import.meta.url), 'utf8'));
+  const source = lock.tools.llvm.source;
+  const digest = '96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce';
+  const proof = JSON.parse(await readFile(new URL('../../toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b-96cf1ae6.json', import.meta.url), 'utf8'));
+  assert.equal(source.commit, '7b58716d96c3ae4c0c4e6f72e29b16137bb6224b');
+  assert.equal(source.url, `https://codeload.github.com/llvm/llvm-project/tar.gz/${source.commit}`);
+  assert.equal(source.sha256, '0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5');
+  assert.equal(proof.archiveSha256, digest);
+  assert.equal(proof.commit, source.commit);
+  assert.equal(proof.normalizedArchiveGitTree, proof.upstreamGitTree);
+  assert.equal(proof.upstreamGitTree, '34cd378b6fba47d5bd42003cdaf9505179879004');
+  assert.equal(proof.verifiedFileAndSymlinkEntries, 175014);
+  assert.equal(proof.allPathsModesBlobsMatchPinnedTreeAfterReviewedExportTransforms, true);
+  assert.equal(proof.unverifiedDifferences, 0);
+  assert.equal(proof.extraMissingOrDuplicateFiles, false);
+  assert.equal(proof.onlyContentDifference, 'clang/bindings/python/.git_archival.txt');
+  assert.equal(proof.describeName, `llvmorg-23-init-13463-g${source.commit.slice(0, 14)}`);
+  assert(lockedArchiveHashes(source).includes(digest));
+  const variant = source.reviewedArchiveVariants.find(entry => entry.sha256 === digest);
+  assert.equal(variant.gitTree, proof.upstreamGitTree);
+  assert(variant.review.includes('96cf1ae6.json'));
+});
+
 test('release lock provenance retains reviewed variants without mutating the lock', async (context) => {
   const { lockedSourceProvenance } = await import('../toolchain/lock.ts');
   const { lock, oldHash, reviewedHash, commit } = await lockedGitExportFixture(context, false);

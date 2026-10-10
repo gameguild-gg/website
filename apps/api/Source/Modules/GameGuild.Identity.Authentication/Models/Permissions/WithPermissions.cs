@@ -4,11 +4,13 @@ using GameGuild.CQRS.Models;
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>
-///     Base abstract class for all permission entities
-///     Provides common functionality for managing permissions with tenant support
-///     Implements the foundation for the 3-layer permission system
+///     Base abstract class for the content-type and resource permission families
+///     (layers 2 and 3 of the 3-layer permission system).
+///     Inherits the shared permission-grant contract from <see cref="PermissionBase"/> (#352):
+///     subject, grant metadata, activation, expiration, validation, audit and tenant-isolation
+///     behaviors are defined once on the base and inherited by every permission entity.
 /// </summary>
-public abstract class WithPermissions : EntityBase<Guid>
+public abstract class WithPermissions : PermissionBase
 {
     /// <summary>
     ///     Protected constructor for entity framework
@@ -31,25 +33,10 @@ public abstract class WithPermissions : EntityBase<Guid>
 #pragma warning restore CA2214
 
     /// <summary>
-    ///     User ID to whom the permissions are granted (null for default permissions)
-    /// </summary>
-    public Guid? UserId { get; set; }
-
-    /// <summary>
     ///     Serialized permissions as a comma-separated string
     ///     Stores the actual permission values efficiently
     /// </summary>
     public string Permissions { get; set; } = string.Empty;
-
-    /// <summary>
-    ///     Date and time when these permissions expire (null for permanent)
-    /// </summary>
-    public DateTime? ExpiresAt { get; set; }
-
-    /// <summary>
-    ///     Whether these permissions are currently active
-    /// </summary>
-    public bool IsActive { get; set; } = true;
 
     /// <summary>
     ///     Notes or comments about these permissions
@@ -62,9 +49,20 @@ public abstract class WithPermissions : EntityBase<Guid>
     public Guid? GrantedBy { get; set; }
 
     /// <summary>
-    ///     Date and time when these permissions were granted
+    ///     Unified audit view: who granted this permission.
     /// </summary>
-    public DateTime GrantedAt { get; set; } = SystemClock.UtcNow;
+    public override Guid? CreatedBy => GrantedBy;
+
+    /// <summary>
+    ///     Unified audit view: tenant scope of this permission grant.
+    /// </summary>
+    public override Guid? PermissionTenantId => TenantId;
+
+    /// <summary>
+    ///     Fail-closed mapping of the stored comma-separated payload to defined permission
+    ///     types. Undefined numeric values are dropped by <see cref="PermissionBase"/> validation.
+    /// </summary>
+    public override IReadOnlyList<PermissionType> GetGrantedPermissionTypes() { return GetPermissionsAsEnum().ToList(); }
 
     /// <summary>
     ///     Add a permission to this entity
@@ -106,14 +104,24 @@ public abstract class WithPermissions : EntityBase<Guid>
     public bool HasPermission(PermissionType permission) { return GetPermissionsAsEnum().Contains(permission); }
 
     /// <summary>
-    ///     Get all permissions as enumeration values
+    ///     Get all permissions as enumeration values.
+    ///     SECURITY: fail closed (#357) — every parsed value is validated with
+    ///     <c>Enum.IsDefined</c>; undefined numeric values are dropped instead of being
+    ///     blindly cast into the <see cref="PermissionType"/> domain.
     /// </summary>
     /// <returns>Collection of permission types</returns>
     public IEnumerable<PermissionType> GetPermissionsAsEnum()
     {
-        if (string.IsNullOrWhiteSpace(Permissions)) return [];
+        if (string.IsNullOrWhiteSpace(Permissions))
+        {
+            return [];
+        }
 
-        return Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(p => int.TryParse(p.Trim(), out var val) ? (PermissionType) val : (PermissionType?) null).Where(p => p.HasValue).Select(p => p!.Value);
+        return Permissions
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => TryParsePermissionType(p, out var value) ? value : (PermissionType?) null)
+            .Where(p => p.HasValue)
+            .Select(p => p!.Value);
     }
 
     /// <summary>
@@ -123,38 +131,6 @@ public abstract class WithPermissions : EntityBase<Guid>
     public void SetPermissions(IEnumerable<PermissionType> permissions)
     {
         Permissions = string.Join(",", permissions.Select(p => (int) p));
-        UpdatedAt = SystemClock.UtcNow;
-    }
-
-    /// <summary>
-    ///     Check if permissions have expired
-    /// </summary>
-    /// <returns>True if permissions are expired</returns>
-    public bool IsExpired() { return ExpiresAt.HasValue && ExpiresAt.Value <= SystemClock.UtcNow; }
-
-    /// <summary>
-    ///     Check if permissions are currently effective (active and not expired)
-    /// </summary>
-    /// <returns>True if permissions are effective</returns>
-    public bool IsEffective() { return IsActive && !IsExpired(); }
-
-    /// <summary>
-    ///     Expire these permissions
-    /// </summary>
-    public void Expire()
-    {
-        IsActive = false;
-        ExpiresAt = SystemClock.UtcNow;
-        UpdatedAt = SystemClock.UtcNow;
-    }
-
-    /// <summary>
-    ///     Extend the expiration date
-    /// </summary>
-    /// <param name="newExpirationDate">New expiration date (null for permanent)</param>
-    public void ExtendExpiration(DateTime? newExpirationDate)
-    {
-        ExpiresAt = newExpirationDate;
         UpdatedAt = SystemClock.UtcNow;
     }
 

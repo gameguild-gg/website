@@ -151,7 +151,10 @@ public sealed class EconomyLegacyMigrationAdministrationControllerTests
         var result = await controller.Capture(new(Guid.NewGuid(), "BR"), default);
 
         result.Should().BeOfType(expectedType);
-        if (status.HasValue) ((ObjectResult)result).StatusCode.Should().Be(status);
+        if (status.HasValue)
+        {
+            ((ObjectResult)result).StatusCode.Should().Be(status);
+        }
     }
 
     public static TheoryData<Exception, Type, int?> Failures => new()

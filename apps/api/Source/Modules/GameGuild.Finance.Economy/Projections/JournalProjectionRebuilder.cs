@@ -50,7 +50,10 @@ public static class JournalProjectionRebuilder
         }
 
         if (purchasedHard < 0 || earnedHard < 0 || restrictedHard < 0 || soft < 0)
+        {
             throw new ProjectionCorruptionException("Journal recomputation produced a negative wallet component.");
+        }
+
         return new JournalWalletProjection(purchasedHard, earnedHard, restrictedHard, soft);
     }
 
@@ -76,7 +79,9 @@ public static class JournalProjectionRebuilder
         long lotUnits)
     {
         if (journalUnits != lotUnits)
+        {
             differences.Add(new JournalProjectionDifference(component, journalUnits, lotUnits));
+        }
     }
 
     private static long Add(long left, long right)

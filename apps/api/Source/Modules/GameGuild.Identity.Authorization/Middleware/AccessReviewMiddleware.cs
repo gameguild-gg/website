@@ -30,7 +30,7 @@ public sealed class AccessReviewMiddleware(
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        logger.LogTrace("Access review middleware processing request for {Path}", context.Request.Path);
+        logger.LogTrace("Access review middleware processing request for {Path}", LogRedaction.Sanitize(context.Request.Path));
         
         // Add access review headers for diagnostics
         context.Response.Headers.Append("X-Access-Review", "enabled");

@@ -24,7 +24,9 @@ public sealed class BlogViewCounterService(IApplicationDbContext context) : IBlo
     public async Task<bool> IncrementAsync(Guid postId, CancellationToken ct = default)
     {
         if (context is DbContext dbContext && !dbContext.Database.IsRelational())
+        {
             return await IncrementTrackedAsync(postId, ct).ConfigureAwait(false);
+        }
 
         try
         {
@@ -48,7 +50,9 @@ public sealed class BlogViewCounterService(IApplicationDbContext context) : IBlo
             .FirstOrDefaultAsync(p => p.Id == postId && p.Status == BlogPostStatus.Published && p.DeletedAt == null, ct)
             .ConfigureAwait(false);
         if (post is null)
+        {
             return false;
+        }
 
         // IncrementViews() never touches UpdatedAt (JSON-LD dateModified stability).
         post.IncrementViews();

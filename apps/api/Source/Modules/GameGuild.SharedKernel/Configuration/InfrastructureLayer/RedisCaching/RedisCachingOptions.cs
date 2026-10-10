@@ -59,19 +59,40 @@ public sealed class RedisCachingOptions : BaseOptions
     {
         base.Validate();
 
-        if (Enabled && string.IsNullOrWhiteSpace(ConnectionString)) throw new ArgumentException("Redis ConnectionString cannot be null or empty when Redis is enabled.", nameof(ConnectionString));
+        if (Enabled && string.IsNullOrWhiteSpace(ConnectionString))
+        {
+            throw new ArgumentException("Redis ConnectionString cannot be null or empty when Redis is enabled.", nameof(ConnectionString));
+        }
 
-        if (string.IsNullOrWhiteSpace(InstanceName)) throw new ArgumentException("Redis InstanceName cannot be null or empty.", nameof(InstanceName));
+        if (string.IsNullOrWhiteSpace(InstanceName))
+        {
+            throw new ArgumentException("Redis InstanceName cannot be null or empty.", nameof(InstanceName));
+        }
 
-        if (DefaultExpirationMinutes <= 0) throw new ArgumentException("DefaultExpirationMinutes must be positive.", nameof(DefaultExpirationMinutes));
+        if (DefaultExpirationMinutes <= 0)
+        {
+            throw new ArgumentException("DefaultExpirationMinutes must be positive.", nameof(DefaultExpirationMinutes));
+        }
 
-        if (FeatureFlagExpirationMinutes <= 0) throw new ArgumentException("FeatureFlagExpirationMinutes must be positive.", nameof(FeatureFlagExpirationMinutes));
+        if (FeatureFlagExpirationMinutes <= 0)
+        {
+            throw new ArgumentException("FeatureFlagExpirationMinutes must be positive.", nameof(FeatureFlagExpirationMinutes));
+        }
 
-        if (UserSessionExpirationMinutes <= 0) throw new ArgumentException("UserSessionExpirationMinutes must be positive.", nameof(UserSessionExpirationMinutes));
+        if (UserSessionExpirationMinutes <= 0)
+        {
+            throw new ArgumentException("UserSessionExpirationMinutes must be positive.", nameof(UserSessionExpirationMinutes));
+        }
 
-        if (ConnectTimeoutMs <= 0) throw new ArgumentException("ConnectTimeoutMs must be positive.", nameof(ConnectTimeoutMs));
+        if (ConnectTimeoutMs <= 0)
+        {
+            throw new ArgumentException("ConnectTimeoutMs must be positive.", nameof(ConnectTimeoutMs));
+        }
 
-        if (SyncTimeoutMs <= 0) throw new ArgumentException("SyncTimeoutMs must be positive.", nameof(SyncTimeoutMs));
+        if (SyncTimeoutMs <= 0)
+        {
+            throw new ArgumentException("SyncTimeoutMs must be positive.", nameof(SyncTimeoutMs));
+        }
     }
 
     public static RedisCachingOptions CreateDefault() { return new RedisCachingOptions(); }

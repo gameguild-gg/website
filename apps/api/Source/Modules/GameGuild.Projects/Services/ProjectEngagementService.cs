@@ -21,7 +21,10 @@ public class ProjectEngagementService(
         var projectTenantId = await context.Set<Project>().Where(project => project.Id == projectId && project.DeletedAt == null)
             .Select(project => project.TenantId).SingleAsync().ConfigureAwait(false);
         if (!await context.Set<Team>().AnyAsync(team => team.Id == teamId && team.TenantId == projectTenantId && team.IsActive && team.DeletedAt == null).ConfigureAwait(false))
+        {
             throw new ArgumentException("Team not found in the Project tenant.", nameof(teamId));
+        }
+
         var projectTeam = new ProjectTeam
         {
             ProjectId = projectId,
@@ -46,7 +49,10 @@ public class ProjectEngagementService(
         var projectTeam = await context.Set<ProjectTeam>()
             .FirstOrDefaultAsync(pt => pt.ProjectId == projectId && pt.TeamId == teamId);
 
-        if (projectTeam == null) return false;
+        if (projectTeam == null)
+        {
+            return false;
+        }
 
         projectTeam.IsActive = false;
         projectTeam.EndedAt = SystemClock.UtcNow;
@@ -85,7 +91,10 @@ public class ProjectEngagementService(
         var existing = await context.Set<ProjectFollower>()
             .FirstOrDefaultAsync(pf => pf.ProjectId == projectId && pf.UserId == userId);
 
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            return existing;
+        }
 
         var follower = new ProjectFollower
         {
@@ -109,7 +118,10 @@ public class ProjectEngagementService(
         var follower = await context.Set<ProjectFollower>()
             .FirstOrDefaultAsync(pf => pf.ProjectId == projectId && pf.UserId == userId);
 
-        if (follower == null) return false;
+        if (follower == null)
+        {
+            return false;
+        }
 
         context.Set<ProjectFollower>().Remove(follower);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -121,7 +133,10 @@ public class ProjectEngagementService(
     {
         if (actorContextAccessor.ActorContext.SubjectIdAsGuid != userId ||
             !await authorizationService.HasPermissionAsync(projectId, PermissionType.Read).ConfigureAwait(false))
+        {
             return false;
+        }
+
         return await context.Set<ProjectFollower>()
             .AnyAsync(pf => pf.ProjectId == projectId && pf.UserId == userId);
     }
@@ -189,11 +204,16 @@ public class ProjectEngagementService(
         var feedback = await context.Set<ProjectFeedback>().FirstOrDefaultAsync(candidate => candidate.Id == feedbackId).ConfigureAwait(false);
 
         if (feedback == null)
+        {
             throw new ArgumentException("Feedback not found", nameof(feedbackId));
+        }
+
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (actorId != feedback.UserId &&
             !await authorizationService.HasPermissionAsync(feedback.ProjectId, PermissionType.Edit).ConfigureAwait(false))
+        {
             throw new UnauthorizedAccessException("Only the feedback author or a Project editor may update feedback.");
+        }
 
         feedback.Rating = rating;
         feedback.Title = title;
@@ -209,11 +229,17 @@ public class ProjectEngagementService(
     {
         var feedback = await context.Set<ProjectFeedback>().FirstOrDefaultAsync(candidate => candidate.Id == feedbackId).ConfigureAwait(false);
 
-        if (feedback == null) return false;
+        if (feedback == null)
+        {
+            return false;
+        }
+
         var actorId = actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (actorId != feedback.UserId &&
             !await authorizationService.HasPermissionAsync(feedback.ProjectId, PermissionType.Edit).ConfigureAwait(false))
+        {
             return false;
+        }
 
         context.Set<ProjectFeedback>().Remove(feedback);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -237,7 +263,10 @@ public class ProjectEngagementService(
     {
         if (actorContextAccessor.ActorContext.SubjectIdAsGuid != userId &&
             !await authorizationService.HasPermissionAsync(projectId, PermissionType.Edit).ConfigureAwait(false))
+        {
             return null;
+        }
+
         await RequireProjectPermissionAsync(projectId, PermissionType.Read).ConfigureAwait(false);
         return await context.Set<ProjectFeedback>()
             .Include(pf => pf.User)
@@ -254,7 +283,10 @@ public class ProjectEngagementService(
         var existing = await context.Set<ProjectJamSubmission>()
             .FirstOrDefaultAsync(pjs => pjs.ProjectId == projectId && pjs.JamId == jamId);
 
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            return existing;
+        }
 
         var submission = new ProjectJamSubmission
         {
@@ -274,11 +306,17 @@ public class ProjectEngagementService(
     public async Task<bool> RemoveProjectFromJamAsync(Guid projectId, Guid jamId)
     {
         if (!await authorizationService.HasPermissionAsync(projectId, PermissionType.Edit).ConfigureAwait(false))
+        {
             return false;
+        }
+
         var submission = await context.Set<ProjectJamSubmission>()
             .FirstOrDefaultAsync(pjs => pjs.ProjectId == projectId && pjs.JamId == jamId);
 
-        if (submission == null) return false;
+        if (submission == null)
+        {
+            return false;
+        }
 
         context.Set<ProjectJamSubmission>().Remove(submission);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -322,7 +360,9 @@ public class ProjectEngagementService(
             .FirstOrDefaultAsync(p => p.Id == projectId);
 
         if (project == null)
+        {
             throw new ArgumentException("Project not found", nameof(projectId));
+        }
 
         var thirtyDaysAgo = SystemClock.UtcNow.AddDays(-30);
 
@@ -381,14 +421,18 @@ public class ProjectEngagementService(
     private async Task RequireProjectPermissionAsync(Guid projectId, PermissionType permission)
     {
         if (!await authorizationService.HasPermissionAsync(projectId, permission).ConfigureAwait(false))
+        {
             throw new UnauthorizedAccessException($"Project {permission} permission is required.");
+        }
     }
 
     private async Task RequireActorAsync(Guid userId)
     {
         if (actorContextAccessor.ActorContext.SubjectIdAsGuid != userId ||
             !await authorizationService.IsActorActiveTenantMemberAsync().ConfigureAwait(false))
+        {
             throw new UnauthorizedAccessException("The authenticated active tenant member must match the requested user.");
+        }
     }
 
     private static decimal CalculateTrendingScore(Project project, DateTime cutoffDate)
