@@ -257,6 +257,8 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
                 await new SendMagicLinkRequestedHandler(NullLogger<SendMagicLinkRequestedHandler>.Instance, service, users.Object)
                     .Handle(new MagicLinkRequestedNotification { Email = user.Email, Token = token, UserName = user.Name }, CancellationToken.None);
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind));
         }
         var notification = await context.Set<Notification>().SingleAsync(value => value.RecipientId == user.Id);
         return (notification, token);
