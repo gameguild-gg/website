@@ -1,7 +1,11 @@
+using System.Reflection;
 using FluentAssertions;
+using GameGuild.Configuration.PresentationLayer.RateLimiting;
 using GameGuild.CQRS;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System.Text;
@@ -233,6 +237,103 @@ public class BillingWebhooksControllerTests
         var result = await controller.RetryWebhookEvent("evt", CancellationToken.None);
 
         result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetWebhookSecuritySummary_Should_Return_The_Summary()
+    {
+        var summary = new BillingWebhookSecuritySummaryDto
+        {
+            SourceIpAllowlist = new BillingWebhookAllowlistStatusDto
+            {
+                IsEnabled = true,
+                ConfiguredNetworkCount = 1,
+                ConfiguredNetworks = ["203.0.113.0/24"]
+            }
+        };
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(s => s.Send(It.IsAny<GetBillingWebhookSecuritySummaryQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(summary);
+
+        var controller = CreateController(sender.Object, "{}", new Dictionary<string, string>());
+
+        var result = await controller.GetWebhookSecuritySummary(CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Which;
+        ok.Value.Should().BeSameAs(summary);
+    }
+
+    // ── Endpoint authorization metadata (regression guard for the anonymous split) ──
+
+    [Fact]
+    public void Only_The_Provider_Callbacks_Are_Anonymous()
+    {
+        var controllerType = typeof(BillingWebhooksController);
+
+        controllerType.IsDefined(typeof(AllowAnonymousAttribute), true).Should().BeFalse(
+            "the controller must not be class-level anonymous: inspection, retry, and the security surface are admin-only");
+
+        var anonymousActions = controllerType
+            .GetMethods()
+            .Where(method => method.IsDefined(typeof(AllowAnonymousAttribute), true))
+            .Select(method => method.Name)
+            .ToList();
+
+        anonymousActions.Should().BeEquivalentTo(
+            [nameof(BillingWebhooksController.HandleGooglePayWebhook),
+             nameof(BillingWebhooksController.HandleApplePayWebhook),
+             nameof(BillingWebhooksController.HandleStripeWebhook),
+             nameof(BillingWebhooksController.HandlePayPalWebhook)]);
+    }
+
+    [Fact]
+    public void Inspection_Retry_And_Security_Surface_Require_The_SystemAdmin_Policy()
+    {
+        var controllerType = typeof(BillingWebhooksController);
+
+        var adminActions = controllerType
+            .GetMethods()
+            .Where(method => method.IsDefined(typeof(AuthorizeAttribute), true))
+            .Select(method => method.Name)
+            .ToList();
+
+        adminActions.Should().BeEquivalentTo(
+            [nameof(BillingWebhooksController.GetWebhookEvent),
+             nameof(BillingWebhooksController.RetryWebhookEvent),
+             nameof(BillingWebhooksController.GetWebhookSecuritySummary)]);
+
+        foreach (var method in controllerType.GetMethods()
+                     .Where(method => method.IsDefined(typeof(AuthorizeAttribute), true)))
+        {
+            var authorize = method.GetCustomAttribute<AuthorizeAttribute>();
+            authorize!.Policy.Should().Be("SystemAdmin", $"{method.Name} must be SystemAdmin-guarded");
+        }
+    }
+
+    [Fact]
+    public void Provider_Callbacks_Use_The_Webhook_Rate_Limit_Policy_And_The_Source_Security_Filter()
+    {
+        var controllerType = typeof(BillingWebhooksController);
+        var callbacks = new[]
+        {
+            nameof(BillingWebhooksController.HandleGooglePayWebhook),
+            nameof(BillingWebhooksController.HandleApplePayWebhook),
+            nameof(BillingWebhooksController.HandleStripeWebhook),
+            nameof(BillingWebhooksController.HandlePayPalWebhook)
+        };
+
+        foreach (var callback in callbacks)
+        {
+            var method = controllerType.GetMethod(callback)!;
+            var rateLimit = method.GetCustomAttribute<EnableRateLimitingAttribute>();
+            rateLimit.Should().NotBeNull($"{callback} must carry a rate limit policy");
+            rateLimit!.PolicyName.Should().Be(RateLimitPolicies.Webhook);
+
+            var serviceFilter = method.GetCustomAttribute<ServiceFilterAttribute>();
+            serviceFilter.Should().NotBeNull($"{callback} must enforce the webhook source security filter");
+            serviceFilter!.ServiceType.Should().Be(typeof(WebhookSourceSecurityFilter));
+        }
     }
 
     private static BillingWebhooksController CreateController(ISender sender, string body, IDictionary<string, string> headers)

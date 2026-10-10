@@ -298,6 +298,7 @@ test_full_gate_bounds_complete_api_suites() {
   cat >> "$runner" <<'SCRIPT'
 test_hang_timeout=5m
 api_test_timeout=12m
+api_integration_test_timeout=25m
 whole_solution_connection_string=isolated-test-database
 test_hang_arguments=(--blame-hang-timeout 5m)
 economy_gate_error() { return 1; }
@@ -309,9 +310,10 @@ run_logged() {
   mkdir -p "$results"
   : > "$results/$name.trx"
 }
-expected_timeout=12m
+expected_timeout=25m
 run_whole_solution_test_project \
   apps/api/tests/GameGuild.API.IntegrationTests/GameGuild.API.IntegrationTests.csproj "$1" || exit 1
+expected_timeout=12m
 run_whole_solution_test_project \
   apps/api/tests/GameGuild.API.UnitTests/GameGuild.API.UnitTests.csproj "$1" || exit 1
 expected_timeout=5m
