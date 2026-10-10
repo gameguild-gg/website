@@ -186,6 +186,7 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.Property(alert => alert.DeduplicationKey).HasMaxLength(400).IsRequired();
             entity.Property(alert => alert.Status).HasConversion<int>();
             entity.Property(alert => alert.AcknowledgementNotes).HasMaxLength(1000);
+            entity.Property(alert => alert.ResolutionNotes).HasMaxLength(1000);
             entity.HasIndex(alert => alert.DeduplicationKey);
             entity.HasIndex(alert => new { alert.Status, alert.Severity, alert.LastSeenAtUtc });
             entity.HasIndex(alert => new { alert.TenantId, alert.Status, alert.LastSeenAtUtc });

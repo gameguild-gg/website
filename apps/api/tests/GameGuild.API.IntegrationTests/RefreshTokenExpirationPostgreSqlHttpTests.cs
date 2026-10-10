@@ -60,7 +60,12 @@ public sealed class RefreshTokenExpirationPostgreSqlHttpTests(ApiPostgreSqlFixtu
         var user = User.Create($"expiration-{marker}@example.test", "Synthetic expiration owner");
         user.Username = "expiration-" + marker;
         var tenantId = Guid.NewGuid();
-        var originalExpiry = now.AddMinutes(15);
+        // Rotation renews the credential's originating lifetime (remember-me semantics), so the
+        // sliding case that asserts a renewed full 7-day window must seed a credential that
+        // already carries that window; non-sliding cases keep the short-lived credential the
+        // rotation must not extend.
+        var seededCreatedAt = sliding ? now : now.AddHours(-23);
+        var originalExpiry = sliding ? now.AddDays(7) : now.AddMinutes(15);
         var sessionId = Guid.NewGuid();
         using (var scope = factory.Services.CreateScope())
         {
@@ -72,7 +77,7 @@ public sealed class RefreshTokenExpirationPostgreSqlHttpTests(ApiPostgreSqlFixtu
             db.Set<TenantMember>().Add(new TenantMember { Id = Guid.NewGuid(), UserId = user.Id,
                 TenantId = tenantId, Role = "Member", IsActive = true });
             db.Set<RefreshToken>().Add(new RefreshToken { Id = Guid.NewGuid(), UserId = user.Id,
-                Token = hash, SessionId = sessionId, CreatedAt = now.AddHours(-23),
+                Token = hash, SessionId = sessionId, CreatedAt = seededCreatedAt,
                 UpdatedAt = now, ExpiresAt = originalExpiry, CreatedByIp = "127.0.0.1" });
             db.Set<UserSession>().Add(new UserSession { Id = sessionId, UserId = user.Id,
                 RefreshToken = hash, CreatedAt = now.AddHours(-23), UpdatedAt = now,

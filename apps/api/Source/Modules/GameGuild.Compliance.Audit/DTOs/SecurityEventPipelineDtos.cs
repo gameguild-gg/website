@@ -68,7 +68,10 @@ public sealed record SecurityAlertResponse(
     DateTime LastSeenAtUtc,
     Guid? AcknowledgedByUserId,
     DateTime? AcknowledgedAtUtc,
-    string? AcknowledgementNotes);
+    string? AcknowledgementNotes,
+    Guid? ResolvedByUserId = null,
+    DateTime? ResolvedAtUtc = null,
+    string? ResolutionNotes = null);
 
 /// <summary>Configures the retention policy applied to a tenant's security audit log.</summary>
 public sealed record ConfigureSecurityLogRetentionRequest
@@ -123,5 +126,12 @@ public sealed record SecurityLogRetentionExecutionListRequest
 
 public sealed record AcknowledgeSecurityAlertRequest
 {
+    [MaxLength(1000)] public string? Notes { get; init; }
+}
+
+/// <summary>Body of <c>POST /api/audit/security-events/alerts/{id}:resolve</c>.</summary>
+public sealed record ResolveSecurityAlertRequest
+{
+    /// <summary>Resolution note recorded on the alert and in the resolution audit event.</summary>
     [MaxLength(1000)] public string? Notes { get; init; }
 }

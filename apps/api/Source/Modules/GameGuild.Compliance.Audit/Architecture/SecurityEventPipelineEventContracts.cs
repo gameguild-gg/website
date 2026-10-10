@@ -10,3 +10,7 @@
     typeof(global::GameGuild.Compliance.Audit.AcknowledgeSecurityAlertCommand),
     "compliance.audit.security-events.alerts.acknowledge",
     NoDomainEventReason = "Acknowledgement only changes the workflow state of the persisted alert; the durable operation event records the transition.")]
+[assembly: global::GameGuild.UseCaseEventContractAttribute(
+    typeof(global::GameGuild.Compliance.Audit.ResolveSecurityAlertCommand),
+    "compliance.audit.security-events.alerts.resolve",
+    NoDomainEventReason = "Resolution only changes the workflow state of the persisted alert; the resolution is audited as a security event and needs no cross-module state change.")]
