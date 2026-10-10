@@ -12653,6 +12653,40 @@ export const postAuthDiscordSignInCallbackEndpoint = {
 } as const;
 
 /**
+ * Consume a one-time email sign-in code.
+ *
+ * Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.
+ */
+export interface PostAuthEmailCodeConsumeInput {
+  body?: Types.IdentityAuthenticationConsumeEmailCodeInput;
+}
+export type PostAuthEmailCodeConsumeOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthEmailCodeConsumeEndpoint = {
+  operationId: 'postAuthEmailCodeConsume' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/email-code:consume' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Request a one-time email sign-in code.
+ *
+ * Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.
+ */
+export interface PostAuthEmailCodeRequestInput {
+  body?: Types.IdentityAuthenticationRequestEmailCodeInput;
+}
+export type PostAuthEmailCodeRequestOutput = Types.IdentityAuthenticationEmailCodeRequestResult;
+export const postAuthEmailCodeRequestEndpoint = {
+  operationId: 'postAuthEmailCodeRequest' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/email-code:request' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Send email verification to user
  *
  * Sends a verification email to the specified email address to confirm ownership.
@@ -26793,6 +26827,8 @@ export const endpoints = {
   postAuthApiKeysRotate: postAuthApiKeysRotateEndpoint,
   postAuthDiscordSignInAuthorize: postAuthDiscordSignInAuthorizeEndpoint,
   postAuthDiscordSignInCallback: postAuthDiscordSignInCallbackEndpoint,
+  postAuthEmailCodeConsume: postAuthEmailCodeConsumeEndpoint,
+  postAuthEmailCodeRequest: postAuthEmailCodeRequestEndpoint,
   postAuthEmailSendVerification: postAuthEmailSendVerificationEndpoint,
   postAuthEmailVerify: postAuthEmailVerifyEndpoint,
   headAuthExternalLogins: headAuthExternalLoginsEndpoint,

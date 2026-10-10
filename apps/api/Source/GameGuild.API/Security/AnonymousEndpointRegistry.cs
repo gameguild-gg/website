@@ -50,6 +50,8 @@ public static class AnonymousEndpointRegistry
             ["AuthController.RefreshToken"] = "Refresh-token rotation; the rotating refresh token itself is the credential.",
             ["AuthController.RequestMagicLink"] = "Requests an emailed sign-in link; only schedules an email.",
             ["AuthController.ConsumeMagicLink"] = "Redeems a single-use, expiring magic-link token.",
+            ["AuthController.RequestEmailCode"] = "Requests an emailed one-time sign-in code; only schedules an email.",
+            ["AuthController.ConsumeEmailCode"] = "Redeems a single-use, expiring, attempt-limited email sign-in code.",
             ["AuthController.RequestPasswordReset"] = "Password-reset request; only schedules an email to the given address.",
             ["AuthController.ResetPassword"] = "Redeems a single-use, expiring reset token.",
             ["AuthController.SendEmailVerification"] = "Triggers a verification email; the emailed token is the proof.",

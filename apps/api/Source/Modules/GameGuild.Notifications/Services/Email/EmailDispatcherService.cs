@@ -32,7 +32,7 @@ public sealed class EmailDispatcherService(
 
     /// <summary>Transactional types: expire via TransactionalStalenessTtl and never render once stale.</summary>
     private static readonly HashSet<NotificationType> TransactionalTypes =
-        [NotificationType.EmailVerification, NotificationType.PasswordReset, NotificationType.MagicLink, NotificationType.TenantInvite];
+        [NotificationType.EmailVerification, NotificationType.PasswordReset, NotificationType.MagicLink, NotificationType.EmailCode, NotificationType.TenantInvite];
 
     /// <summary>
     /// Runs one sweep pass and returns the number of rows processed (sent, held, skipped, or deadlettered by design).
@@ -217,7 +217,8 @@ public sealed class EmailDispatcherService(
             .IgnoreQueryFilters()
             .Where(n => (n.Type == NotificationType.EmailVerification
                     || n.Type == NotificationType.PasswordReset
-                    || n.Type == NotificationType.MagicLink)
+                    || n.Type == NotificationType.MagicLink
+                    || n.Type == NotificationType.EmailCode)
                 && n.Metadata != null && n.Metadata.Trim() != ""
                 && !n.Metadata.StartsWith(NotificationMetadataProtector.ProtectedPrefix))
             .OrderBy(n => n.CreatedAt)

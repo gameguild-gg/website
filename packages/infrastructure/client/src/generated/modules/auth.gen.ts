@@ -74,6 +74,62 @@ export class AuthModule {
   }
 
   /**
+   * Consume a one-time email sign-in code.
+   *
+   * Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.
+   */
+  async postAuthEmailCodeConsume(body: Types.IdentityAuthenticationConsumeEmailCodeInput): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = '/v1/auth/email-code:consume';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationConsumeEmailCodeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Request a one-time email sign-in code.
+   *
+   * Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.
+   */
+  async postAuthEmailCodeRequest(
+    body: Types.IdentityAuthenticationRequestEmailCodeInput,
+  ): Promise<Result<Types.IdentityAuthenticationEmailCodeRequestResult, ApiError>> {
+    const url = '/v1/auth/email-code:request';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRequestEmailCodeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationEmailCodeRequestResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Send email verification to user
    *
    * Sends a verification email to the specified email address to confirm ownership.

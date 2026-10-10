@@ -254,3 +254,60 @@ public sealed class MagicLinkRenderer(
         public static MagicLinkMetadata Empty { get; } = new(null, null, null);
     }
 }
+
+/// <summary>
+/// Renders the one-time email sign-in code email. TRANSACTIONAL: never unsubscribable, no footer.
+/// Metadata JSON: <c>{ "code": string, "email": string, "userName": string }</c>.
+/// </summary>
+public sealed class EmailCodeRenderer(
+    IEmailFooterService footerService,
+    NotificationMetadataProtector metadataProtector) : EmailRendererBase, IEmailRenderer
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    public NotificationType Type => NotificationType.EmailCode;
+
+    public Task<EmailMessage?> RenderAsync(Notification notification, CancellationToken cancellationToken = default)
+    {
+        var meta = Deserialize(metadataProtector.GetForRendering(notification, Type));
+        if (string.IsNullOrWhiteSpace(meta.Code) || string.IsNullOrWhiteSpace(meta.Email))
+        {
+            throw new InvalidOperationException("Notification credential metadata is invalid or unavailable.");
+        }
+
+        var recipientName = string.IsNullOrWhiteSpace(meta.UserName) ? meta.Email : meta.UserName;
+        var encodedName = WebUtility.HtmlEncode(recipientName);
+        var encodedCode = WebUtility.HtmlEncode(meta.Code);
+
+        var plain =
+            $"Hi {recipientName},\n\nUse this one-time code to sign in to GameGuild:\n{meta.Code}\n\nThe code expires in 10 minutes and can only be used once. If you did not request it, you can ignore this email.";
+        var html =
+            $"<p>Hi {encodedName},</p><p>Use this one-time code to sign in to GameGuild:</p><p style=\"font-size:1.5em;letter-spacing:0.3em;\">{encodedCode}</p><p>The code expires in 10 minutes and can only be used once. If you did not request it, you can ignore this email.</p>";
+
+        var (finalPlain, finalHtml) = MergeFooter(plain, html, footerService.Build(notification));
+        var message = new EmailMessage(string.Empty, "Your GameGuild sign-in code", finalPlain, finalHtml, recipientName);
+        return Task.FromResult<EmailMessage?>(message);
+    }
+
+    private static EmailCodeMetadata Deserialize(string? metadata)
+    {
+        if (string.IsNullOrWhiteSpace(metadata))
+        {
+            return EmailCodeMetadata.Empty;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<EmailCodeMetadata>(metadata, JsonOptions) ?? EmailCodeMetadata.Empty;
+        }
+        catch (JsonException)
+        {
+            return EmailCodeMetadata.Empty;
+        }
+    }
+
+    private sealed record EmailCodeMetadata(string? Code, string? Email, string? UserName)
+    {
+        public static EmailCodeMetadata Empty { get; } = new(null, null, null);
+    }
+}
