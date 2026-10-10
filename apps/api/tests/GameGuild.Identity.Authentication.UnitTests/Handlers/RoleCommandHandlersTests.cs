@@ -94,7 +94,7 @@ public class RoleCommandHandlersTests
             .ReturnsAsync(false);
 
         _mockRepository.Setup(r => r.AddAsync(It.IsAny<Role>(), default))
-            .ReturnsAsync((Role r, CancellationToken ct) => r);
+            .ReturnsAsync((Role r, CancellationToken _) => r);
 
         var handler = new CreateRoleCommandHandler(_mockRepository.Object);
 
@@ -369,7 +369,7 @@ public class RoleCommandHandlersTests
             .ReturnsAsync(false);
 
         _mockRepository.Setup(r => r.AssignRoleToUserAsync(It.IsAny<UserRole>(), default))
-            .ReturnsAsync((UserRole ur, CancellationToken ct) => ur);
+            .ReturnsAsync((UserRole ur, CancellationToken _) => ur);
 
         var handler = new AssignRoleToUserCommandHandler(_mockRepository.Object);
 
