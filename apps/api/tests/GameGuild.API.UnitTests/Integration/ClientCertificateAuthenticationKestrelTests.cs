@@ -46,7 +46,7 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
         if (statusCode != (int)HttpStatusCode.OK)
         {
             Assert.Fail(
-                $"Expected OK got {statusCode} '{body}'.\n" +
+                $"Expected OK got {(statusCode?.ToString() ?? "<TLS-layer rejection, no HTTP response>")} '{body}'.\n" +
                 $"Client negotiated certificate: {negotiatedCertificate}\n" +
                 $"Server logs:\n{host.DumpRecentLogs()}");
         }
@@ -69,12 +69,23 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     {
         await using var host = await _fixture.StartHostAsync();
 
-        // The test host requires a client certificate during the handshake, so a
-        // certificate-less client cannot even establish the connection.
-        var exception = await Record.ExceptionAsync(() => host.SendRawHttpsRequestAsync(clientCertificate: null));
-        Assert.True(
-            exception is System.Security.Authentication.AuthenticationException or IOException,
-            $"Expected the TLS handshake to fail without a client certificate, got: {exception}");
+        // The test host requires a client certificate during the handshake: depending
+        // on the TLS version the failure surfaces as a handshake exception or as the
+        // server closing the connection without an HTTP response.
+        int? statusCode;
+        try
+        {
+            (statusCode, _, _) = await host.SendRawHttpsRequestAsync(clientCertificate: null);
+        }
+        catch (Exception exception)
+        {
+            Assert.True(
+                exception is System.Security.Authentication.AuthenticationException or IOException,
+                $"Expected the TLS handshake to fail without a client certificate, got: {exception}");
+            return;
+        }
+
+        Assert.NotEqual((int)HttpStatusCode.OK, statusCode ?? -1);
     }
 
     [Fact]
@@ -82,9 +93,10 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     {
         await using var host = await _fixture.StartHostAsync();
 
-        var (statusCode, _, _) = await host.SendRawHttpsRequestAsync(_fixture.RogueClientCertificate);
+        var (statusCode, body, negotiatedCertificate) = await host.SendRawHttpsRequestAsync(_fixture.RogueClientCertificate);
 
-        Assert.Equal((int)HttpStatusCode.Unauthorized, statusCode);
+        Assert.True(statusCode == (int)HttpStatusCode.Unauthorized,
+            $"Expected Unauthorized, got {statusCode?.ToString() ?? "<TLS-layer rejection>"} '{body}' (negotiated: {negotiatedCertificate}).\nServer logs:\n{host.DumpRecentLogs()}");
     }
 
     [Fact]
@@ -92,9 +104,10 @@ public sealed class ClientCertificateAuthenticationKestrelTests : IClassFixture<
     {
         await using var host = await _fixture.StartHostAsync();
 
-        var (statusCode, _, _) = await host.SendRawHttpsRequestAsync(_fixture.UnboundClientCertificate);
+        var (statusCode, body, negotiatedCertificate) = await host.SendRawHttpsRequestAsync(_fixture.UnboundClientCertificate);
 
-        Assert.Equal((int)HttpStatusCode.Unauthorized, statusCode);
+        Assert.True(statusCode == (int)HttpStatusCode.Unauthorized,
+            $"Expected Unauthorized, got {statusCode?.ToString() ?? "<TLS-layer rejection>"} '{body}' (negotiated: {negotiatedCertificate}).\nServer logs:\n{host.DumpRecentLogs()}");
     }
 }
 
@@ -136,11 +149,11 @@ public sealed class KestrelClientCertificateFixture : IAsyncLifetime, IDisposabl
             httpsOptions.ServerCertificate = _serverCertificate;
             // Require the certificate during the handshake so the TLS layer itself
             // negotiates it (the AllowCertificate mode defers the request, which the
-            // Linux stack cannot satisfy after the handshake). Chain/binding validation
-            // stays in the authentication handler so its fail-closed rules govern the
-            // authorization outcome.
+            // Linux stack cannot satisfy after the handshake). Accept any presented
+            // certificate at the TLS layer; chain/binding validation stays in the
+            // authentication handler so its fail-closed rules govern the outcome.
             httpsOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
-            httpsOptions.ClientCertificateValidation = (_, _, _) => true;
+            httpsOptions.AllowAnyClientCertificate();
         })));
 
         var databaseName = $"kestrel-client-certs-{Guid.NewGuid():N}";
@@ -302,12 +315,14 @@ public sealed class TestKestrelHost(
         logCollector.Entries.TakeLast(50).Select(entry => $"[{entry.Level}] {entry.Category}: {entry.Message}"));
 
     /// <summary>
-    ///     Performs a raw HTTPS/1.1 GET over an explicit <see cref="SslStream"/> handshake so the
-    ///     test controls (and can report) exactly which client certificate was negotiated. The
-    ///     HttpClient stack performs the same handshake but hides the negotiation outcome, which
-    ///     made Linux-side failures invisible.
+    ///     Performs a raw HTTPS/1.1 GET over an explicit <see cref="SslStream"/> handshake. The
+    ///     certificate is pinned through the SslStream constructor's selection callback and a
+    ///     random target host is used, mirroring the Kestrel test-suite approach: HttpClient
+    ///     "might not send the certificate because it is invalid or it doesn't match any of the
+    ///     certificate authorities sent by the server in the SSL handshake", and TLS session
+    ///     resumption can also skip the certificate exchange.
     /// </summary>
-    public async Task<(int StatusCode, string Body, string NegotiatedCertificate)> SendRawHttpsRequestAsync(
+    public async Task<(int? StatusCode, string Body, string NegotiatedCertificate)> SendRawHttpsRequestAsync(
         X509Certificate2? clientCertificate)
     {
         var baseAddress = app.Urls.Single(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
@@ -316,19 +331,14 @@ public sealed class TestKestrelHost(
         using var tcpClient = new TcpClient();
         await tcpClient.ConnectAsync(IPAddress.Loopback, uri.Port).ConfigureAwait(false);
 
-        using var sslStream = new SslStream(tcpClient.GetStream(), leaveInnerStreamOpen: false);
-        var authenticationOptions = new SslClientAuthenticationOptions
-        {
-            TargetHost = uri.Host,
-            RemoteCertificateValidationCallback = (_, _, _, _) => true,
-            ClientCertificates = clientCertificate is null
-                ? new X509CertificateCollection()
-                : new X509CertificateCollection { clientCertificate },
-            LocalCertificateSelectionCallback = clientCertificate is null
+        using var sslStream = new SslStream(
+            tcpClient.GetStream(),
+            leaveInnerStreamOpen: false,
+            userCertificateValidationCallback: (_, _, _, _) => true,
+            userCertificateSelectionCallback: clientCertificate is null
                 ? null
-                : (_, _, _, _, _) => clientCertificate
-        };
-        await sslStream.AuthenticateAsClientAsync(authenticationOptions).ConfigureAwait(false);
+                : (_, _, _, _, _) => clientCertificate);
+        await sslStream.AuthenticateAsClientAsync(Guid.NewGuid().ToString("N")).ConfigureAwait(false);
 
         var negotiatedCertificate = sslStream.LocalCertificate is null
             ? "<none>"
@@ -343,11 +353,18 @@ public sealed class TestKestrelHost(
         var raw = Encoding.UTF8.GetString(memory.ToArray());
 
         var separator = raw.IndexOf("\r\n\r\n", StringComparison.Ordinal);
-        var head = separator < 0 ? raw : raw[..separator];
-        var body = separator < 0 ? string.Empty : raw[(separator + 4)..];
+        if (separator < 0)
+        {
+            // No HTTP response: the server rejected the connection at the TLS layer.
+            return (null, raw, negotiatedCertificate);
+        }
 
-        var statusCode = int.Parse(head.Split(' ')[1], System.Globalization.CultureInfo.InvariantCulture);
-        return (statusCode, body, negotiatedCertificate);
+        var head = raw[..separator];
+        var body = raw[(separator + 4)..];
+        var statusLine = head.Split('\r')[0].Split(' ');
+        return (int.TryParse(statusLine.Length > 1 ? statusLine[1] : string.Empty, out var statusCode)
+            ? statusCode
+            : null, body, negotiatedCertificate);
     }
 
     public async ValueTask DisposeAsync()
