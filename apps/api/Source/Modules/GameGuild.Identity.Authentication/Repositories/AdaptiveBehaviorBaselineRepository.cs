@@ -44,6 +44,7 @@ public class AdaptiveBehaviorBaselineRepository(IApplicationDbContext context) :
             existing.IpWeightsJson = baseline.IpWeightsJson;
             existing.CadenceLogSecondsMean = baseline.CadenceLogSecondsMean;
             existing.CadenceLogSecondsMeanSquaredDeviation = baseline.CadenceLogSecondsMeanSquaredDeviation;
+            existing.CadenceObservationCount = baseline.CadenceObservationCount;
             existing.ObservationCount = baseline.ObservationCount;
             existing.LastObservedAtUtc = baseline.LastObservedAtUtc;
             existing.UpdatedAt = SystemClock.UtcNow;
