@@ -701,8 +701,11 @@ public class LocalAuthService(
             jwtOptions, configuration, persistent: false);
         // Rotation renews the session's originating duration, so a persistent ("remember me")
         // session keeps its persistent lifetime instead of collapsing onto the standard one.
+        // The raw stored CreatedAt is passed through so the resolver's malformed/legacy-row
+        // fallback (rows without a creation instant) engages instead of deriving a bogus
+        // duration from a sanitized clock value.
         var refreshTokenExpiresAt = now.Add(RefreshTokenLifetimeResolver.ResolveOriginatingLifetime(
-            DateTime.SpecifyKind(storedToken.CreatedAt > DateTime.UnixEpoch ? storedToken.CreatedAt : now, DateTimeKind.Utc),
+            DateTime.SpecifyKind(storedToken.CreatedAt, DateTimeKind.Utc),
             DateTime.SpecifyKind(storedToken.ExpiresAt, DateTimeKind.Utc),
             TimeSpan.FromDays(configuredExpiryDays)));
         var newRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(

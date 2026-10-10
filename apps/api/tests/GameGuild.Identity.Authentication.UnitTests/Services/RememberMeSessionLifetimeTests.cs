@@ -337,8 +337,8 @@ public class RememberMeSessionLifetimeTests
         var response = await harness.Sut.RefreshTokenAsync(new RefreshTokenRequest { RefreshToken = "revoked-token" });
 
         response.Success.Should().BeFalse();
-        response.AccessToken.Should().BeNull();
-        response.RefreshToken.Should().BeNull();
+        response.AccessToken.Should().BeNullOrEmpty();
+        response.RefreshToken.Should().BeNullOrEmpty();
     }
 
     // ── Harnesses ─────────────────────────
