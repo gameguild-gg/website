@@ -106,10 +106,12 @@ public sealed class MonetizationPermissionHttpTests(ApiPostgreSqlFixture fixture
             var metrics = JsonNode.Parse(await allowedResponse.Content.ReadAsStringAsync())!;
             metrics["generatedAtUtc"].Should().NotBeNull("the metrics payload was returned");
 
-            // A grant held in another tenant does not leak into this tenant's context (fail closed).
+            // A grant held in another tenant does not leak into this tenant's context:
+            // the tenant-validation layer rejects the non-member with 403 before the
+            // dispatch-level gate is even reached (fail closed).
             using var foreignViewerClient = fixture.CreateAuthenticatedClient(foreignViewerId, tenantId);
             var crossTenantResponse = await foreignViewerClient.GetAsync(MetricsRoute);
-            crossTenantResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+            crossTenantResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
             (await crossTenantResponse.Content.ReadAsStringAsync()).Should().NotContain("monthlyRecurringRevenue");
 
             // SystemAdmin bypasses the permission check without any grant.
