@@ -179,7 +179,7 @@ public sealed class AuditingAuthorizationPermissionServiceTests
 
         captured.Should().NotBeNull();
         ExtractMetadataRoles(captured!)
-            .Should().Equal("Member", "Admin (inherited)", "resolver role attribution is logged on denials with inherited roles marked");
+            .Should().Equal(["Member", "Admin (inherited)"], "resolver role attribution is logged on denials with inherited roles marked");
     }
 
     [Fact]
