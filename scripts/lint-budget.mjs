@@ -14,11 +14,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const budgetFile = resolve(root, 'lint-budgets.json');
 
-const PACKAGES = [
-  'apps/web',
-  'packages/ui',
-  'packages/infrastructure/client',
-];
+const PACKAGES = ['apps/web', 'packages/ui', 'packages/infrastructure/client'];
 
 function countPackage(pkgDir) {
   const file = resolve(root, pkgDir, 'eslint-suppressions.json');
@@ -36,9 +32,7 @@ function countPackage(pkgDir) {
   return total;
 }
 
-const current = Object.fromEntries(
-  PACKAGES.map((pkg) => [pkg, countPackage(pkg)]),
-);
+const current = Object.fromEntries(PACKAGES.map((pkg) => [pkg, countPackage(pkg)]));
 
 if (process.argv.includes('--update')) {
   writeFileSync(budgetFile, `${JSON.stringify(current, null, 2)}\n`);
