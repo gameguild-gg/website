@@ -18,6 +18,10 @@ public class StripeBillingWebhookService : BillingWebhookService
     private readonly ISubscriptionQueryService _subscriptionQueryService;
     private readonly WebhookSettings _webhookSettings;
     private readonly IWebhookSecurityEventPublisher? _securityEvents;
+    private readonly IBillingIntegrationEventPublisher? _billingEvents;
+
+    /// <inheritdoc />
+    protected override string ProviderName => PaymentProviders.Stripe;
 
     public StripeBillingWebhookService(
         IBillingWebhookRepository webhookRepository,
@@ -30,8 +34,9 @@ public class StripeBillingWebhookService : BillingWebhookService
         ISubscriptionExternalIdService externalIdService,
         IOptions<BillingConfiguration>? configuration = null,
         IEnumerable<IStripeVerifiedEventConsumer>? verifiedEventConsumers = null,
-        IWebhookSecurityEventPublisher? securityEvents = null)
-        : base(logger, lifecycleService, queryService, billingService, externalIdService)
+        IWebhookSecurityEventPublisher? securityEvents = null,
+        IBillingIntegrationEventPublisher? billingEvents = null)
+        : base(logger, lifecycleService, queryService, billingService, externalIdService, billingEvents)
     {
         _webhookRepository = webhookRepository;
         _webhookVerifier = webhookVerifier;
@@ -41,6 +46,7 @@ public class StripeBillingWebhookService : BillingWebhookService
         _logger = logger;
         _webhookSettings = configuration?.Value.Webhook ?? new WebhookSettings();
         _securityEvents = securityEvents;
+        _billingEvents = billingEvents;
     }
 
     /// <summary>
@@ -167,6 +173,7 @@ public class StripeBillingWebhookService : BillingWebhookService
 
             webhookEvent.MarkAsProcessed();
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: true, cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Successfully processed Stripe webhook: {EventId}", verifiedEvent.EventId);
             return WebhookProcessingResult.Success(verifiedEvent.EventId);
@@ -177,8 +184,33 @@ public class StripeBillingWebhookService : BillingWebhookService
 
             webhookEvent.MarkAsFailed(ex.Message);
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
 
             return WebhookProcessingResult.Failed(verifiedEvent.EventId, ex.Message);
+        }
+    }
+
+    /// <summary>
+    ///     Publishes the named inbox-transition event for the processed/failed outcome.
+    ///     Best-effort: a publication failure never changes the processing result.
+    /// </summary>
+    private async Task PublishBillingEventAsync(
+        BillingWebhookEvent webhookEvent,
+        bool processed,
+        CancellationToken cancellationToken)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        if (processed)
+        {
+            await _billingEvents.PublishWebhookProcessedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await _billingEvents.PublishWebhookFailedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
         }
     }
 

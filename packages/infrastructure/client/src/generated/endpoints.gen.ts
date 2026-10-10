@@ -6296,6 +6296,89 @@ export const postBillingChargesRetryEndpoint = {
 } as const;
 
 /**
+ * List billing webhook inbox events
+ *
+ * Pages through the durable billing webhook inbox: provider events accepted from Stripe, PayPal, Apple App Store and Google Pay, with their processing status, attempt counters and error details. Supports filtering by status (processed/failed/pending), provider, provider event type and acceptance date range. Payload bodies are never returned.
+ */
+export interface GetBillingEventsForGetBillingEventsInput {
+  query?: {
+    status?: string;
+    provider?: string;
+    eventType?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingEventsForGetBillingEventsOutput = Types.PagedResultBillingWebhookEventListItemDto;
+export const getBillingEventsForGetBillingEventsEndpoint = {
+  operationId: 'getBillingEventsForGetBillingEvents' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a billing webhook inbox event by id
+ *
+ * Retrieves one durable webhook inbox event by its local identifier, including processing status, attempt count, error message and tenant/subscription references.
+ */
+export interface GetBillingEventsForGetBillingEventsByEventIdInput {
+  eventId: string;
+}
+export type GetBillingEventsForGetBillingEventsByEventIdOutput = Types.CommerceBillingBillingWebhookEventDto;
+export const getBillingEventsForGetBillingEventsByEventIdEndpoint = {
+  operationId: 'getBillingEventsForGetBillingEventsByEventId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/{eventId}' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List durable billing integration events from the platform outbox
+ *
+ * Pages through the named billing integration events (webhook processed/failed, invoice paid, subscription renewed/cancelled) recorded in the platform durable outbox, with their delivery status. Dead-lettered events can be replayed through the platform admin event transport endpoints.
+ */
+export interface GetBillingEventsOutboxForGetBillingEventsOutboxInput {
+  query?: {
+    eventName?: string;
+    status?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingEventsOutboxForGetBillingEventsOutboxOutput = Types.PagedResultBillingOutboxEventDto;
+export const getBillingEventsOutboxForGetBillingEventsOutboxEndpoint = {
+  operationId: 'getBillingEventsOutboxForGetBillingEventsOutbox' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/outbox' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one durable billing integration event by id
+ *
+ * Retrieves a single named billing integration event from the platform outbox read model by its durable event identifier.
+ */
+export interface GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdInput {
+  eventId: string;
+}
+export type GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdOutput = Types.CommerceBillingBillingOutboxEventDto;
+export const getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint = {
+  operationId: 'getBillingEventsOutboxForGetBillingEventsOutboxByEventId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/outbox/{eventId}' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
@@ -26443,6 +26526,10 @@ export const endpoints = {
   postBillingChargesCancel: postBillingChargesCancelEndpoint,
   postBillingChargesRefund: postBillingChargesRefundEndpoint,
   postBillingChargesRetry: postBillingChargesRetryEndpoint,
+  getBillingEventsForGetBillingEvents: getBillingEventsForGetBillingEventsEndpoint,
+  getBillingEventsForGetBillingEventsByEventId: getBillingEventsForGetBillingEventsByEventIdEndpoint,
+  getBillingEventsOutboxForGetBillingEventsOutbox: getBillingEventsOutboxForGetBillingEventsOutboxEndpoint,
+  getBillingEventsOutboxForGetBillingEventsOutboxByEventId: getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,

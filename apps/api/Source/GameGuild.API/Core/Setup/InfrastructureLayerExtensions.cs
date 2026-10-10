@@ -274,6 +274,9 @@ public static class InfrastructureLayerExtensions
         // 10d. Commerce Billing Module (webhook services for Stripe, PayPal, ApplePay)
         stepStopwatch.Restart();
         services.AddBillingModule(configuration);
+        // Connect the billing module's outbox read port to the platform outbox read model
+        // (issue #396: billing events monitoring over the existing durable transport).
+        services.AddScoped<IBillingOutboxEventReader, Core.Integration.BillingOutboxEventReader>();
         logger.LogInformation("Billing Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10e. Commerce Payments Module (payment gateway, payment services)
