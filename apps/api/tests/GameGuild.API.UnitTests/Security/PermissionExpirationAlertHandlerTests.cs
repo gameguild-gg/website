@@ -84,7 +84,7 @@ public sealed class PermissionExpirationAlertHandlerTests
     {
         var userId = Guid.NewGuid();
         var deleted = CreateUser(userId);
-        deleted.SoftDelete(); // EntityBase soft delete flips IsDeleted.
+        deleted.DeletedAt = DateTime.UtcNow; // EntityBase.IsDeleted is derived from DeletedAt; SoftDelete() refuses unpersisted entities.
         _users.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(deleted);
 
         await CreateHandler().Handle(CreateNotification(userId), CancellationToken.None);
