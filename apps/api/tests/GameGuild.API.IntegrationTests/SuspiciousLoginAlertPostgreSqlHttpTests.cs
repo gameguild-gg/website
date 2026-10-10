@@ -91,7 +91,7 @@ public sealed class SuspiciousLoginAlertPostgreSqlHttpTests(ApiPostgreSqlFixture
         var clock = new AdvancingTimeProvider();
         var recorder = new RecordingLoggerProvider();
         using var factory = CreateFactory(clock,
-            maxFailedAttemptsPerHour: "10", // above the seeded five so the lockout filter lets the request through
+            maxFailedAttemptsPerHour: "10", // above the seeded five failures so the lockout filter lets the request reach the sign-in action
             recorder: recorder);
         var account = await SeedAsync(factory, bruteForceHistory: true);
         using var client = factory.CreateClient();
