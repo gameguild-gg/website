@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { createTestingLabMfaSignIn } from "./testing-lab-mfa-support.mjs";
+import { createTestingLabMfaQualityMonitor } from "./testing-lab-mfa-quality.mjs";
 import {
   buildTestingLabFixtureUsername,
   cleanupTestingLabFixture,
@@ -11,7 +13,6 @@ import {
   collectViewportFailures,
   createTestingLabFixtureIdentities,
   requireDisposableDatabaseMode,
-  responseFailure,
   throwForBrowserQualityFailures,
 } from "./testing-lab-browser-quality.mjs";
 
@@ -42,6 +43,8 @@ const quality = {
 };
 let activePage;
 let activePageLabel = "initial browser session";
+const mfaSignIn = createTestingLabMfaSignIn();
+const pageQualityMonitors = new Map();
 
 function unique() {
   return `${Date.now()}-${randomUUID().slice(0, 8)}`;
@@ -113,10 +116,11 @@ async function warmTestingLabEventSsr(eventId) {
 }
 
 async function bootstrap() {
-  const auth = await apiRequest("/v1/auth/sign-in", {
+  const adminFirstFactor = await apiRequest("/v1/auth/sign-in", {
     method: "POST",
     body: JSON.stringify({ email: adminEmail, password: adminPassword }),
   });
+  const auth = await mfaSignIn.api(adminFirstFactor, apiRequest, adminEmail);
   if (!auth.accessToken || !auth.tenantId) {
     throw new Error(
       "The system administrator session did not expose accessToken and tenantId.",
@@ -173,10 +177,11 @@ async function bootstrap() {
         auth.tenantId,
       );
     }
-    const tenantAuth = await apiRequest("/v1/auth/sign-in", {
+    const tenantFirstFactor = await apiRequest("/v1/auth/sign-in", {
       method: "POST",
       body: JSON.stringify({ email, password, tenantId: auth.tenantId }),
     });
+    const tenantAuth = await mfaSignIn.api(tenantFirstFactor, apiRequest, email);
     if (!tenantAuth.accessToken)
       throw new Error(
         `The ${kind} tenant sign-in did not expose an access token.`,
@@ -439,16 +444,14 @@ async function visit(page, pathname, label) {
 }
 
 function monitorPage(page) {
+  const monitor = createTestingLabMfaQualityMonitor(webBaseUrl);
+  pageQualityMonitors.set(page, monitor);
   page.on("pageerror", (error) =>
     quality.browserErrors.push(`${error.message} (page: ${page.url()})`),
   );
   page.on("console", (message) => {
     if (message.type() === "error") {
-      const location = message.location();
-      const source = location.url
-        ? ` (${location.url}${location.lineNumber ? `:${location.lineNumber}` : ""})`
-        : "";
-      quality.browserErrors.push(`${message.text()}${source} (page: ${page.url()})`);
+      monitor.consoleError(message, page.url());
     }
   });
   page.on("requestfailed", (request) => {
@@ -460,9 +463,12 @@ function monitorPage(page) {
     }
   });
   page.on("response", (response) => {
-    const failure = responseFailure(response, webBaseUrl);
-    if (failure) quality.failedResponses.push(failure);
+    monitor.response(response);
   });
+}
+
+function flushBrowserQuality() {
+  for (const monitor of pageQualityMonitors.values()) monitor.flush(quality);
 }
 
 async function waitForClientHydration(page) {
@@ -500,6 +506,7 @@ async function assertAuthenticatedBrowserSession(page, label) {
       `${label} did not retain an authenticated browser session: ${JSON.stringify(session)}`,
     );
   }
+  return session.body;
 }
 
 async function signIn(page, email = adminEmail, password = adminPassword) {
@@ -516,14 +523,25 @@ async function signIn(page, email = adminEmail, password = adminPassword) {
   await form.waitFor({ state: "visible", timeout: 60_000 });
   await form.locator('input[name="email"]').fill(email);
   await form.locator('input[name="password"]').fill(password);
+  const monitor = pageQualityMonitors.get(page);
+  monitor.beginSignIn();
+  const firstFactorResponse = page.waitForResponse(response =>
+    new URL(response.url()).pathname === "/api/auth/signin/credentials" && response.request().method() === "POST");
   await form
     .getByRole("button", { name: "Sign in", exact: true })
     .click({ noWaitAfter: true });
+  const submitted = await firstFactorResponse;
+  const firstFactor = await submitted.json();
+  if (!submitted.ok() && firstFactor.error !== "MfaRequired") {
+    throw new Error(`Testing Lab browser sign-in failed (HTTP ${submitted.status()})`);
+  }
+  await mfaSignIn.browser(firstFactor, page, email);
   await page.waitForURL(
     (url) => url.pathname.endsWith("/workspace"),
     { timeout: 60_000 },
   );
-  await assertAuthenticatedBrowserSession(page, `Browser sign-in for ${email}`);
+  const session = await assertAuthenticatedBrowserSession(page, `Browser sign-in for ${email}`);
+  monitor.completeSignIn(submitted, firstFactor, email, session);
 }
 
 async function waitForText(page, text) {
@@ -1290,12 +1308,14 @@ async function run() {
     );
     await waitForText(page, "Cancelled");
     eventCancelled = true;
+    flushBrowserQuality();
     throwForBrowserQualityFailures(quality);
 
     console.log(
       `Testing Lab browser E2E passed for ${fixture.tag}. Artifacts: ${artifactsDirectory}`,
     );
   } catch (error) {
+    flushBrowserQuality();
     const failedPage = activePage ?? page;
     const pageText = await failedPage
       .locator("body")

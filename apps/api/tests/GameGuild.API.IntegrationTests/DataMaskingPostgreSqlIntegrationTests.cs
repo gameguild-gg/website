@@ -35,7 +35,7 @@ public sealed class DataMaskingPostgreSqlIntegrationTests(ApiPostgreSqlFixture f
         var userAId = Guid.NewGuid();
         var userBId = Guid.NewGuid();
 
-        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        using var factory = fixture.CreateFactory(builder =>
             builder.ConfigureTestServices(services =>
             {
                 services.AddAuthentication(options =>

@@ -53,7 +53,7 @@ public sealed class RefreshTokenLineageFailurePostgreSqlHttpTests(ApiPostgreSqlF
             storedHash = scope.ServiceProvider.GetRequiredService<IRefreshTokenHasher>().HashToken(raw);
         }
         var evidence = new PersistedWriteEvidence();
-        using var faulty = fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        using var faulty = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IRefreshTokenLineageRepository>();
             services.AddScoped<IRefreshTokenLineageRepository>(provider => new FailureAfterPersistedLineage(

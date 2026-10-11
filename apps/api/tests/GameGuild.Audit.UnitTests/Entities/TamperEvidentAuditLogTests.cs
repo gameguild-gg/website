@@ -115,4 +115,3 @@ public class TamperEvidentAuditLogTests
             1);
     }
 }
-

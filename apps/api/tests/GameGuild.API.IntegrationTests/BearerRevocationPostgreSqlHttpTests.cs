@@ -128,7 +128,7 @@ public sealed class BearerRevocationPostgreSqlHttpTests(ApiPostgreSqlFixture fix
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private WebApplicationFactory<Program> CreateBearerFactory() => fixture.Factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> CreateBearerFactory() => fixture.CreateFactory(builder =>
         builder.ConfigureTestServices(services => services.PostConfigure<AuthenticationOptions>(options =>
         {
             // Only select the production handler. Its crypto/events/pipeline and every repository remain real.

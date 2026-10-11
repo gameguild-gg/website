@@ -14728,6 +14728,171 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("service_accounts", "gameguild.authentication");
                 });
 
+            modelBuilder.Entity("GameGuild.Identity.Authentication.SessionMfaEvidence", b =>
+                {
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("session_id");
+
+                    b.Property<Guid>("ChallengeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("challenge_id");
+
+                    b.Property<string>("FirstFactor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("first_factor");
+
+                    b.Property<DateTimeOffset>("FirstFactorVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_factor_verified_at");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("method");
+
+                    b.Property<string>("PolicyFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("policy_fingerprint");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<int>("TokenVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("token_version");
+
+                    b.Property<DateTimeOffset>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("verified_at");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("ChallengeId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_session_mfa_evidence_challenge");
+
+                    b.ToTable("session_mfa_evidence", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_session_mfa_method", "method IN ('Totp', 'BackupCode', 'WebAuthn')");
+
+                            t.HasCheckConstraint("ck_session_mfa_policy", "policy_fingerprint ~ '^[a-f0-9]{64}$'");
+
+                            t.HasCheckConstraint("ck_session_mfa_time", "verified_at >= first_factor_verified_at AND verified_at <= first_factor_verified_at + INTERVAL '5 minutes'");
+
+                            t.HasCheckConstraint("ck_session_mfa_version", "token_version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.SignInMfaChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("EnrollmentConfigurationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("enrollment_configuration_id");
+
+                    b.Property<DateTimeOffset?>("EnrollmentInitializedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("enrollment_initialized_at");
+
+                    b.Property<string>("EnrollmentSecretFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("enrollment_secret_fingerprint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FirstFactor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("first_factor");
+
+                    b.Property<string>("PolicyFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("policy_fingerprint");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("purpose");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<int>("SubjectTokenVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("subject_token_version");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("VerificationMethod")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("verification_method");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sign_in_mfa_challenges_token_hash");
+
+                    b.HasIndex("SubjectId", "ExpiresAt")
+                        .HasDatabaseName("ix_sign_in_mfa_challenges_subject_expiry");
+
+                    b.ToTable("sign_in_mfa_challenges", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_sign_in_mfa_enrollment_binding", "(enrollment_configuration_id IS NULL AND enrollment_secret_fingerprint IS NULL AND enrollment_initialized_at IS NULL)\nOR (purpose = 'EnrollFactor' AND enrollment_configuration_id IS NOT NULL\n    AND enrollment_configuration_id <> '00000000-0000-0000-0000-000000000000'::uuid\n    AND enrollment_secret_fingerprint IS NOT NULL AND enrollment_secret_fingerprint ~ '^[a-f0-9]{64}$'\n    AND enrollment_initialized_at IS NOT NULL AND enrollment_initialized_at >= created_at AND enrollment_initialized_at < expires_at)");
+
+                            t.HasCheckConstraint("ck_sign_in_mfa_lifetime", "expires_at > created_at AND expires_at <= created_at + INTERVAL '5 minutes'");
+
+                            t.HasCheckConstraint("ck_sign_in_mfa_policy_hash", "policy_fingerprint ~ '^[a-f0-9]{64}$'");
+
+                            t.HasCheckConstraint("ck_sign_in_mfa_subject_version", "subject_token_version > 0");
+
+                            t.HasCheckConstraint("ck_sign_in_mfa_token_hash", "token_hash ~ '^[a-f0-9]{64}$'");
+                        });
+                });
+
             modelBuilder.Entity("GameGuild.Identity.Authentication.StepUpChallenge", b =>
                 {
                     b.Property<Guid>("Id")
@@ -14812,6 +14977,33 @@ namespace GameGuild.API.Database.Migrations
                             t.HasCheckConstraint("ck_step_up_challenges_payload_hash", "payload_hash ~ '^[0-9a-f]{64}$'");
 
                             t.HasCheckConstraint("ck_step_up_challenges_verification", "(verified_at IS NULL AND verification_method IS NULL AND receipt_hash IS NULL) OR (verified_at IS NOT NULL AND verification_method IS NOT NULL AND receipt_hash ~ '^[0-9a-f]{64}$')");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.TotpReplayState", b =>
+                {
+                    b.Property<Guid>("ConfigurationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("configuration_id");
+
+                    b.Property<string>("SecretFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("secret_fingerprint");
+
+                    b.Property<DateTimeOffset>("LastAcceptedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_accepted_at");
+
+                    b.Property<long>("LastAcceptedStep")
+                        .HasColumnType("bigint")
+                        .HasColumnName("last_accepted_step");
+
+                    b.HasKey("ConfigurationId", "SecretFingerprint");
+
+                    b.ToTable("totp_replay_state", "gameguild.authentication", t =>
+                        {
+                            t.HasCheckConstraint("ck_totp_replay_state_nonnegative_step", "last_accepted_step >= 0");
                         });
                 });
 
@@ -14951,6 +15143,7 @@ namespace GameGuild.API.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("UserId")
+                        .IsUnique()
                         .HasDatabaseName("ix_user_mfa_configuration_user_id");
 
                     b.ToTable("user_mfa_configuration", "gameguild.authentication");
@@ -32236,6 +32429,24 @@ namespace GameGuild.API.Database.Migrations
                         .WithMany()
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.SessionMfaEvidence", b =>
+                {
+                    b.HasOne("GameGuild.Identity.Authentication.UserSession", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Identity.Authentication.SessionMfaEvidence", "SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Identity.Authentication.TotpReplayState", b =>
+                {
+                    b.HasOne("GameGuild.Identity.Authentication.UserMfaConfiguration", null)
+                        .WithMany()
+                        .HasForeignKey("ConfigurationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GameGuild.Identity.Authentication.UserRole", b =>

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using FluentAssertions;
 using GameGuild.API.Database;
+using GameGuild.API.IntegrationTests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -11,13 +12,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GameGuild.API.IntegrationTests;
 
-public sealed class ModuleOpenApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class ModuleOpenApiIntegrationTests : IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    public ModuleOpenApiIntegrationTests(WebApplicationFactory<Program> factory)
+    public ModuleOpenApiIntegrationTests()
     {
-        _factory = factory.WithWebHostBuilder(builder =>
+        _factory = new ConfiguredApiWebApplicationFactory(builder =>
         {
             builder.UseEnvironment("Development");
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
@@ -46,6 +47,8 @@ public sealed class ModuleOpenApiIntegrationTests : IClassFixture<WebApplication
             });
         });
     }
+
+    public void Dispose() => _factory.Dispose();
 
     [Fact]
     public async Task Swagger_ShouldExposeImplementedModuleRoutes()

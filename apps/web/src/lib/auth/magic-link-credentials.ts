@@ -1,6 +1,7 @@
 import {
   AuthServiceUnavailableError,
   CredentialsSignInError,
+  MfaRequiredError,
   parseBackendAuthResponse,
   type CredentialsProviderConfig,
 } from "@game-guild/client";
@@ -19,7 +20,9 @@ export function createMagicLinkCredentialsAuthorize(
 ): CredentialsAuthorize {
   return async (credentials, request) => {
     const rawToken = credentials.magicLinkToken;
-    if (rawToken === undefined) return passwordAuthorize(credentials, request);
+    if (Object.hasOwn(credentials, "mfaToken") || rawToken === undefined) {
+      return passwordAuthorize(credentials, request);
+    }
 
     if (typeof rawToken !== "string" || rawToken.trim().length === 0) {
       throw new CredentialsSignInError(
@@ -80,7 +83,16 @@ export function createMagicLinkCredentialsAuthorize(
       );
     }
 
-    const result = parseBackendAuthResponse(data as Record<string, unknown>);
+    const payload = data as Record<string, unknown>;
+    if (payload.requiresMfa === true) {
+      throw new MfaRequiredError("Multi-factor authentication required", {
+        mfaToken: typeof payload.mfaToken === "string" ? payload.mfaToken : undefined,
+        availableMethods: Array.isArray(payload.availableMethods)
+          ? payload.availableMethods.filter((method): method is string => typeof method === "string")
+          : undefined,
+      });
+    }
+    const result = parseBackendAuthResponse(payload);
     if (
       !result.user.id ||
       !result.tokens.accessToken ||

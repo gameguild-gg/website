@@ -28,15 +28,17 @@ internal static class LongPasswordHash
         }
     }
 
-    internal static bool Verify(string storedHash, string password)
+    internal static bool Verify(string storedHash, string password) => VerifyWithWork(storedHash, password).IsValid;
+
+    internal static PasswordVerificationResult VerifyWithWork(string storedHash, string password)
     {
-        if (!TryParse(storedHash, out var salt, out var expected)) { return false; }
+        if (!TryParse(storedHash, out var salt, out var expected)) { return default; }
         var passwordBytes = Encoding.UTF8.GetBytes(password);
         byte[]? actual = null;
         try
         {
             actual = Rfc2898DeriveBytes.Pbkdf2(passwordBytes, salt, Iterations, HashAlgorithmName.SHA256, HashLength);
-            return CryptographicOperations.FixedTimeEquals(actual, expected);
+            return new PasswordVerificationResult(CryptographicOperations.FixedTimeEquals(actual, expected), true);
         }
         finally
         {

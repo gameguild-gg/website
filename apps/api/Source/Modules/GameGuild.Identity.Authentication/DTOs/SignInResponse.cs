@@ -70,6 +70,10 @@ public class SignInResponse
     /// </summary>
     public string? MfaToken { get; set; }
 
+    /// <summary>Recovery codes returned once, only when a limited enrollment finishes with verified TOTP.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? MfaEnrollmentBackupCodes { get; set; }
+
     /// <summary>
     ///     User information
     /// </summary>

@@ -33,12 +33,14 @@ public class LocalAuthService(
     ILogger<LocalAuthService> logger,
     ISender sender,
     ISessionManagementService sessionManagementService,
+    ISignInMfaService signInMfa,
     IOptions<JwtOptions>? jwtOptions = null,
     IAuthenticationAuditEventSink? auditEventSink = null,
     IRefreshTokenLifecycleRecorder? lifecycleRecorder = null,
-    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null,
+    TimeProvider? timeProvider = null,
     IOptions<SignInComplianceGateOptions>? complianceGateOptions = null,
-    ISignInCompliancePolicy? compliancePolicy = null
+    ISignInCompliancePolicy? compliancePolicy = null,
+    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null
 ) : ILocalAuthService
 {
     private const string ComplianceDeniedAuditAction = "Authentication.ComplianceDenied";
@@ -46,8 +48,12 @@ public class LocalAuthService(
 
     public async Task<SignInResponse> LocalSignInAsync(LocalSignInRequest request, CancellationToken cancellationToken = default)
     {
-        var stopwatch = Stopwatch.StartNew();
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
         var httpContext = httpContextAccessor.HttpContext;
+        var timingOrigin = request.TimingOrigin ?? request.TimingWindow?.Origin
+            ?? AuthenticationTimingOrigin.GetOrStartForRequest(httpContext, timeProvider);
+        var stopwatch = Stopwatch.StartNew();
         var ipAddress = authAttemptService.GetClientIpAddress(httpContext);
         var userAgent = httpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty;
         var deviceFingerprint = httpContext?.Request.Headers["X-Device-Fingerprint"].FirstOrDefault();
@@ -61,18 +67,24 @@ public class LocalAuthService(
         // it is never persisted or logged.
         var candidatePasswordSha256Hex = ComputePasswordSha256Hex(request.Password);
 
-        // Server-owned monotonic origin for timing compensation. It is captured BEFORE account
-        // resolution so the lookup and all credential work fall inside the compensated window.
-        // An entry point that resolved candidates earlier (polymorphic sign-in) supplies its
-        // own window so that resolution is inside the window too.
-        var timingWindow = request.TimingWindow ?? enumerationProtection.BeginAuthenticationTiming();
-        var credentialWork = CredentialWorkClassification.None;
-
 #pragma warning disable IDE0059 // Unnecessary assignment - Initial null IS used in failure path at RecordFailedAttempt
         Guid? userId = null;
 #pragma warning restore IDE0059
+        var credentialWorkCompleted = false;
+        var timingAttempted = false;
         var authenticationSucceeded = false;
+        int? verifiedTokenVersion = null;
         string? failureReason = null;
+
+        Task CompleteTimingOnceAsync()
+        {
+            if (timingAttempted)
+            {
+                return Task.CompletedTask;
+            }
+            timingAttempted = true;
+            return CompleteAuthenticationTimingAsync(timingOrigin, credentialWorkCompleted, cancellationToken);
+        }
 
         try
         {
@@ -82,46 +94,40 @@ public class LocalAuthService(
                 : request.ResolvedUserId.HasValue
                     ? await userRepository.GetByIdAsync(request.ResolvedUserId.Value, cancellationToken).ConfigureAwait(false)
                     : await userRepository.GetByEmailAsync(normalizedEmail, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Verify password if user exists
             if (user != null)
             {
-                // The account is known even when the password is wrong: risk analysis, failed-attempt
-                // persistence, and brute-force owner alerts on failed sign-ins all need the user id.
+                // Known-account failures still need an identity for risk analysis and owner alerts.
                 userId = user.Id;
-
-                // Work classification, not account existence: a passwordless account or a stored
-                // credential the hasher rejects before expensive verification performed no
-                // cryptographic work and must be compensated with equivalent dummy verification.
-                var verification = user.HasPassword
-                    ? passwordHasher.VerifyPasswordWithWorkClassification(user.PasswordHash!, request.Password)
-                    : PasswordVerificationResult.RejectedWithoutWork;
-                credentialWork = verification.PerformedCryptographicWork
-                    ? CredentialWorkClassification.Completed
-                    : CredentialWorkClassification.None;
+                var versionAtVerification = user.TokenVersion;
+                var verification = !user.HasPassword ? default
+                    : passwordHasher is IPasswordVerificationWork workAwareHasher
+                        ? workAwareHasher.VerifyPasswordWithWork(user.PasswordHash!, request.Password)
+                        : new PasswordVerificationResult(passwordHasher.VerifyPassword(user.PasswordHash!, request.Password), false);
+                credentialWorkCompleted = verification.WorkPerformed;
                 var passwordValid = verification.IsValid;
 
                 if (passwordValid)
                 {
                     authenticationSucceeded = true;
-                    logger.LogInformation("User {Email} authenticated successfully with ID {UserId}", LogRedaction.MaskEmail(user.Email), userId);
+                    verifiedTokenVersion = versionAtVerification;
+                    logger.LogInformation("First factor verified for user {UserId}", userId);
                 }
                 else
                 {
                     failureReason = "InvalidCredentials";
-                    logger.LogWarning("Invalid password for user {Email}", LogRedaction.MaskEmail(request.Email));
+                    logger.LogWarning("Invalid password for user {UserId}", user.Id);
                 }
             }
             else
             {
                 failureReason = "InvalidCredentials";
-                logger.LogWarning("User not found: {Email}", LogRedaction.MaskEmail(request.Email));
+                logger.LogWarning("Authentication account could not be resolved");
             }
 
-            // Apply user enumeration protection timing. The window originates before account
-            // resolution, and only windows without completed credential work receive dummy work.
-            await enumerationProtection.AddTimingProtectionDelayAsync(timingWindow, credentialWork).ConfigureAwait(false);
-
+            cancellationToken.ThrowIfCancellationRequested();
             if (!authenticationSucceeded)
             {
                 try
@@ -159,9 +165,11 @@ public class LocalAuthService(
                         userId, request.TenantId, failedAttemptAnalysis, SecurityAlertKinds.BruteForceDetected, cancellationToken).ConfigureAwait(false);
                 }
 
+                await CompleteTimingOnceAsync().ConfigureAwait(false);
                 throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
             }
 
+            await CompleteTimingOnceAsync().ConfigureAwait(false);
             var authenticatedUserId = userId ?? throw new InvalidOperationException("A successful authentication must have a user ID.");
 
             // Analyze login attempt for anomalies
@@ -190,41 +198,21 @@ public class LocalAuthService(
                     userId, request.TenantId, anomalyResult, SecurityAlertKinds.LoginStepUpRequired, cancellationToken).ConfigureAwait(false);
             }
 
-            // Require step-up authentication for high-risk logins
-            if (anomalyResult.RiskLevel >= RiskLevel.High)
+            var deviceInfo = new DeviceInfo
             {
-                logger.LogWarning("High-risk login attempt detected: UserId={UserId}, RiskLevel={RiskLevel}, Anomalies={Anomalies}",
-                    authenticatedUserId, anomalyResult.RiskLevel, string.Join(", ", anomalyResult.DetectedAnomalies));
-
-                var stepUpToken = Guid.NewGuid().ToString("N");
-                var stepUpExpiresAt = SystemClock.UtcNow.AddMinutes(5);
-
-                return new SignInResponse
-                {
-                    Success = false,
-                    Message = "Additional verification required",
-                    RequiresStepUp = true,
-                    StepUpToken = stepUpToken,
-                    StepUpExpiresAt = stepUpExpiresAt,
-                    RiskLevel = anomalyResult.RiskLevel,
-                    RiskFactors = anomalyResult.DetectedAnomalies.ToList(),
-                    AvailableMethods = ["TOTP", "Email"],
-                    UserId = authenticatedUserId,
-                    Email = request.Email,
-                    TenantId = request.TenantId
-                };
-            }
-
-            // Create device info for refresh token
-            var deviceInfo = new DeviceInfo { Fingerprint = string.IsNullOrWhiteSpace(deviceFingerprint) ? Guid.NewGuid().ToString() : deviceFingerprint, IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "Test Device", DeviceType = "Web" };
-
-            // Fetch user again to get token version
+                Fingerprint = string.IsNullOrWhiteSpace(deviceFingerprint) ? Guid.NewGuid().ToString() : deviceFingerprint,
+                IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "Test Device", DeviceType = "Web"
+            };
+            var authenticatedVersion = verifiedTokenVersion
+                ?? throw new InvalidOperationException("The first factor must capture an account version.");
             var authenticatedUser = await userRepository.GetByIdAsync(authenticatedUserId, cancellationToken).ConfigureAwait(false);
-            var tokenVersion = authenticatedUser?.TokenVersion ?? 1;
+            if (authenticatedUser is null || authenticatedUser.IsDeleted || !authenticatedUser.ValidateForAuthentication(authenticatedVersion).IsSuccess)
+            {
+                throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
+            }
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, authenticatedUserId, cancellationToken).ConfigureAwait(false);
             var tenantAccessContext = await ResolveTenantAccessContextAsync(authenticatedUserId, request.TenantId, cancellationToken).ConfigureAwait(false);
             RequireActiveTenantAccess(tenantAccessContext);
-
             // Sign-in compliance gate (issue #267): after credential validation and tenant
             // access are confirmed, but before any token is generated or any session is
             // created, the compliance policy decides whether the sign-in may proceed.
@@ -279,6 +267,25 @@ public class LocalAuthService(
                     };
                 }
             }
+
+            var preparation = await signInMfa.PrepareAsync(authenticatedUserId, authenticatedVersion, request.TenantId,
+                deviceInfo, SignInFirstFactor.Password, requiresStepUp, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("MFA credential preparation is unavailable.");
+            cancellationToken.ThrowIfCancellationRequested();
+            if (preparation.Outcome is { } outcome)
+            {
+                if (outcome.RequiresMfa || outcome.RequiresStepUp)
+                {
+                    outcome.RiskLevel = anomalyResult.RiskLevel;
+                    outcome.RiskFactors = anomalyResult.DetectedAnomalies.ToList();
+                }
+                return outcome;
+            }
+            if (!preparation.MayIssueOrdinaryCredentials || requiresStepUp)
+            {
+                throw new InvalidOperationException("Required MFA cannot be skipped during credential issuance.");
+            }
+            var tokenVersion = authenticatedVersion;
 
             var refreshTokenExpiryDays = RefreshTokenLifetimeResolver.ResolveExpirationDays(
                 jwtOptions, configuration, request.RememberMe == true);
@@ -362,6 +369,10 @@ public class LocalAuthService(
                 AvailableTenants = tenantAccessContext.AvailableTenants
             };
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (SecurityException)
         {
             throw;
@@ -372,12 +383,42 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during authentication for {Email}", LogRedaction.MaskEmail(request.Email));
-
-            await authAttemptService.RecordFailedAttemptAsync(request.Email, userId, ipAddress, userAgent, "SystemError", stopwatch.Elapsed).ConfigureAwait(false);
+            logger.LogError(ex, "Unexpected error during authentication for user {UserId}", userId);
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await authAttemptService.RecordFailedAttemptAsync(request.Email, userId, ipAddress, userAgent, "SystemError", stopwatch.Elapsed).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Could not record failed authentication attempt after a system error");
+            }
+            await CompleteTimingOnceAsync().ConfigureAwait(false);
 
             throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
         }
+    }
+
+    private async Task CompleteAuthenticationTimingAsync(AuthenticationTimingOrigin origin, bool credentialWorkCompleted,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (enumerationProtection is IAuthenticationTimingProtection monotonicProtection)
+        {
+            await monotonicProtection.CompleteAuthenticationTimingAsync(origin, credentialWorkCompleted, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            // Preserve an existing custom provider's interface. Its UTC-only timing capability is not certified
+            // as monotonic; opaque password providers are conservatively given dummy-work compensation.
+            await enumerationProtection.AddTimingProtectionDelayAsync(credentialWorkCompleted, origin.StartedAtUtc)
+                .WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     private AuthenticationAttemptContext CreateAttemptContext(
@@ -545,6 +586,8 @@ public class LocalAuthService(
 
     public async Task<SignInResponse> LocalSignUpAsync(LocalSignUpRequest request, CancellationToken cancellationToken = default)
     {
+        var timingOrigin = AuthenticationTimingOrigin.Start(timeProvider);
+        cancellationToken.ThrowIfCancellationRequested();
         var stopwatch = Stopwatch.StartNew();
         var httpContext = httpContextAccessor.HttpContext;
         var ipAddress = authAttemptService.GetClientIpAddress(httpContext);
@@ -566,20 +609,13 @@ public class LocalAuthService(
                     passwordValidation.ValidationFailures.Select(failure => new ValidationError("Password", failure)));
             }
 
-            // Server-owned monotonic origin captured before the duplicate-email lookup so the
-            // account check stays inside the compensated window.
-            var timingWindow = enumerationProtection.BeginAuthenticationTiming();
-
             // Check for existing user
             var emailExists = await userRepository.ExistsByEmailAsync(request.Email.ToLowerInvariant(), cancellationToken).ConfigureAwait(false);
 
             if (emailExists)
             {
-                // The duplicate path completed no credential work (the fresh sign-up path hashes
-                // the password), so it is classified without completed work and receives equivalent
-                // dummy verification at the configured work factor.
-                await enumerationProtection.AddTimingProtectionDelayAsync(timingWindow, CredentialWorkClassification.None).ConfigureAwait(false);
-                logger.LogWarning("Sign-up attempt with existing email: {Email}", LogRedaction.MaskEmail(request.Email));
+                await CompleteAuthenticationTimingAsync(timingOrigin, false, cancellationToken).ConfigureAwait(false);
+                logger.LogWarning("Sign-up attempted for an existing account");
 
                 throw new InvalidOperationException("User already exists");
             }
@@ -607,7 +643,7 @@ public class LocalAuthService(
             await userRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             var userId = newUser.Id;
 
-            logger.LogInformation("Created new user with ID: {UserId} and Email: {Email}", userId, LogRedaction.MaskEmail(newUser.Email));
+            logger.LogInformation("Created new user with ID: {UserId}", userId);
 
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, userId, cancellationToken).ConfigureAwait(false);
 
@@ -649,7 +685,7 @@ public class LocalAuthService(
 
             // Record successful registration
             await authAttemptService.RecordSuccessfulAttemptAsync(request.Email, userId, ipAddress ?? "unknown", userAgent, stopwatch.Elapsed, "Registration").ConfigureAwait(false);
-            logger.LogInformation("User {Email} successfully signed up", LogRedaction.MaskEmail(request.Email));
+            logger.LogInformation("User {UserId} successfully signed up", userId);
 
             var accessTokenExpirationMinutes = jwtOptions?.Value.AccessTokenExpirationMinutes
                                                ?? int.Parse(configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60", CultureInfo.InvariantCulture);
@@ -673,7 +709,7 @@ public class LocalAuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error during user registration for {Email}", LogRedaction.MaskEmail(request.Email));
+            logger.LogError(ex, "Error during user registration");
 
             throw;
         }
@@ -772,6 +808,10 @@ public class LocalAuthService(
 
         var existingSession = await sessionManagementService.GetSessionByRefreshTokenAsync(hashedToken, cancellationToken).ConfigureAwait(false);
         var sessionId = existingSession?.Id ?? Guid.NewGuid();
+        var mfaProof = await signInMfa.ReadSessionProofAsync(userId, tokenVersion,
+            tenantAccessContext.TenantId ?? throw new AuthenticationRequiredException("No authorized tenant is available."),
+            sessionId, authenticatedAt, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         // Rotation classifies the session by its originating policy instead of replaying
         // the stored row's raw span: rotation preserves the originating CreatedAt while
         // advancing ExpiresAt, so the span compounds elapsed time and drifts past every
@@ -797,7 +837,7 @@ public class LocalAuthService(
             refreshTokenExpiresAt = storedToken.ExpiresAt;
         }
         var replacementTokenHash = refreshTokenHasher.HashToken(newRefreshToken);
-        var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
+        var accessToken = mfaProof is null ? await jwtTokenService.GenerateAccessTokenAsync(
             userId,
             userEmail,
             tenantAccessContext.Roles.ToArray(),
@@ -805,7 +845,9 @@ public class LocalAuthService(
             tokenVersion,
             authenticatedAt,
             sessionId,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken).ConfigureAwait(false)
+            : await jwtTokenService.GenerateMfaAccessTokenAsync(userId, userEmail, tenantAccessContext.Roles.ToArray(),
+                tenantAccessContext.TenantId, tokenVersion, authenticatedAt, sessionId, mfaProof, cancellationToken).ConfigureAwait(false);
 
         if (existingSession == null)
         {
@@ -946,6 +988,7 @@ public class LocalAuthService(
         {
             var decision = await (compliancePolicy ?? AllowAllSignInCompliancePolicy.Instance)
                 .EvaluateAsync(context, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (gate.Mode == SignInComplianceGateMode.ChallengeOnly && decision.Outcome == SignInComplianceOutcome.Deny)
             {
@@ -953,6 +996,10 @@ public class LocalAuthService(
             }
 
             return decision;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception exception)
         {

@@ -29,7 +29,7 @@ namespace GameGuild.API.IntegrationTests;
 public sealed class ScimProvisioningPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     : IAsyncLifetime
 {
-    private readonly WebApplicationFactory<Program> _scimEnabledFactory = fixture.Factory.WithWebHostBuilder(builder =>
+    private readonly WebApplicationFactory<Program> _scimEnabledFactory = fixture.CreateFactory(builder =>
     {
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
@@ -74,11 +74,13 @@ public sealed class ScimProvisioningPostgreSqlHttpTests(ApiPostgreSqlFixture fix
             await scope.ServiceProvider.GetRequiredService<PolicyDefinitionSeeder>().SeedAsync();
         }
 
-        _tokenA = await IssueTokenAsync(fixture.CreateAuthenticatedClient(_adminA, _tenantA, isSystemAdmin: true));
-        _tokenB = await IssueTokenAsync(fixture.CreateAuthenticatedClient(_adminB, _tenantB, isSystemAdmin: true));
+        using var adminAClient = fixture.CreateAuthenticatedClient(_adminA, _tenantA, isSystemAdmin: true);
+        using var adminBClient = fixture.CreateAuthenticatedClient(_adminB, _tenantB, isSystemAdmin: true);
+        _tokenA = await IssueTokenAsync(adminAClient);
+        _tokenB = await IssueTokenAsync(adminBClient);
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public Task DisposeAsync() => _scimEnabledFactory.DisposeAsync().AsTask();
 
     private HttpClient CreateScimClient(string token)
     {
@@ -89,7 +91,7 @@ public sealed class ScimProvisioningPostgreSqlHttpTests(ApiPostgreSqlFixture fix
 
     private async Task<string> IssueTokenAsync(HttpClient adminClient)
     {
-        var response = await adminClient.PostAsJsonAsync(
+        using var response = await adminClient.PostAsJsonAsync(
             "/v1/auth/scim-provisioning-tokens",
             new { Name = "conformance", Scopes = new[] { "scim:read", "scim:write" } });
         response.StatusCode.Should().Be(HttpStatusCode.OK,

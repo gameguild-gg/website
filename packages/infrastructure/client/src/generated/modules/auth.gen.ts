@@ -32,7 +32,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -61,7 +61,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -88,7 +88,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -117,7 +117,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -146,7 +146,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -175,7 +175,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -357,7 +357,7 @@ export class AuthModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -381,7 +381,7 @@ export class AuthModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -408,7 +408,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -435,7 +435,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -464,12 +464,70 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationMagicLinkRequestResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
+   *
+   * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
+   */
+  async postAuthMfaSignInComplete(
+    body: Types.IdentityAuthenticationCompleteMfaSignInInput,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sign-in/complete';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationCompleteMfaSignInInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Provision the first TOTP factor using only the limited first-factor challenge.
+   *
+   * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
+   */
+  async postAuthMfaSignInEnrollment(
+    body: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaSignInEnrollmentOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sign-in/enrollment';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationStartMfaSignInEnrollmentInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaSignInEnrollmentOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -488,7 +546,7 @@ export class AuthModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -545,7 +603,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -575,7 +633,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -633,7 +691,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -662,7 +720,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -689,7 +747,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -716,7 +774,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -743,7 +801,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -770,7 +828,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -818,7 +876,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -847,7 +905,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

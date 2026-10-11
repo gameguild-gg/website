@@ -257,7 +257,7 @@ export class AuthMultiFactorModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

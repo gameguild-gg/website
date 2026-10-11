@@ -72,7 +72,7 @@ export class AssetsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -122,7 +122,7 @@ export class AssetsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -141,7 +141,7 @@ export class AssetsModule {
       method: 'POST',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -176,7 +176,7 @@ export class AssetsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
