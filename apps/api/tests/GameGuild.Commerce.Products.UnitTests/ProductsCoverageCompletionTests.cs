@@ -420,6 +420,7 @@ public class ProductsCoverageCompletionTests
         var service = new PricingEngineService(
             Mock.Of<IProductRepository>(),
             Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPromoStackingRuleRepository>(),
             Mock.Of<IPricingRuleRepository>(),
             new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
 

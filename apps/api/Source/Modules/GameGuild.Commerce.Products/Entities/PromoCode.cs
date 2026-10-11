@@ -12,6 +12,8 @@ namespace GameGuild.Commerce.Products;
 [Index(nameof(IsActive))]
 [Index(nameof(ValidFrom))]
 [Index(nameof(ValidUntil))]
+[Index(nameof(CampaignId))]
+[Index(nameof(IsActive), nameof(ValidUntil))]
 public class PromoCode : EntityBase
 {
     /// <summary>Default constructor</summary>
@@ -21,7 +23,7 @@ public class PromoCode : EntityBase
     /// <param name="partial">Partial promo code data</param>
     public PromoCode(object partial) : base(partial) { }
 
-    /// <summary>The promotional code that users enter</summary>
+    /// <summary>The promotional code that users enter (stored uppercase; always compare via <see cref="PromoCodeNormalizer.Normalize"/>)</summary>
     [Required]
     [MaxLength(50)]
     public string Code { get; set; } = string.Empty;
@@ -42,9 +44,13 @@ public class PromoCode : EntityBase
     [Column(TypeName = "decimal(5,2)")]
     public decimal? DiscountPercentage { get; set; }
 
-    /// <summary>Fixed discount amount (for FixedAmountOff type)</summary>
+    /// <summary>Fixed discount amount (for FixedAmountOff; target price for SetPrice)</summary>
     [Column(TypeName = "decimal(10,2)")]
     public decimal? DiscountAmount { get; set; }
+
+    /// <summary>Maximum discount amount that caps percentage discounts (null = no cap)</summary>
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal? MaxDiscountAmount { get; set; }
 
     /// <summary>Currency code for fixed amount discounts</summary>
     [MaxLength(3)]
@@ -60,6 +66,18 @@ public class PromoCode : EntityBase
     /// <summary>Maximum uses per user (null = unlimited per user)</summary>
     public int? MaxUsesPerUser { get; set; }
 
+    /// <summary>Number of recorded uses; incremented atomically when usage is recorded</summary>
+    public int CurrentUses { get; set; } = 0;
+
+    /// <summary>Trial extension in days granted by FreeTrialExtension codes</summary>
+    public int? FreeTrialExtensionDays { get; set; }
+
+    /// <summary>Number of billing periods granted by FreeMonths codes (also the discount duration for other types)</summary>
+    public int? DurationMonths { get; set; }
+
+    /// <summary>Whether the discount also applies to renewals</summary>
+    public bool ApplyToRenewal { get; set; } = false;
+
     /// <summary>When this promo code becomes valid</summary>
     public DateTime? ValidFrom { get; set; }
 
@@ -74,6 +92,10 @@ public class PromoCode : EntityBase
 
     /// <summary>Priority for stacking (higher = applied first)</summary>
     public int StackingPriority { get; set; } = 0;
+
+    /// <summary>Campaign identifier used to group codes for performance tracking</summary>
+    [MaxLength(100)]
+    public string? CampaignId { get; set; }
 
     /// <summary>Specific product this code applies to (null = applies to all products)</summary>
     public Guid? ProductId { get; set; }
@@ -108,7 +130,17 @@ public class PromoCode : EntityBase
         return true;
     }
 
-    /// <summary>Calculate the discount amount for a given order amount</summary>
+    /// <summary>
+    /// Calculate the discount amount for a given order amount. Supports all five
+    /// discount types with a monetary outcome on the current charge:
+    /// <list type="bullet">
+    /// <item><see cref="PromoCodeType.PercentageOff"/>: percentage of the amount, capped by <see cref="MaxDiscountAmount"/> when set.</item>
+    /// <item><see cref="PromoCodeType.FixedAmountOff"/>: fixed amount, never exceeding the order amount.</item>
+    /// <item><see cref="PromoCodeType.FreeTrialExtension"/>: full current charge waived; <see cref="FreeTrialExtensionDays"/> trial days are granted at checkout.</item>
+    /// <item><see cref="PromoCodeType.FreeMonths"/>: full current charge waived; <see cref="DurationMonths"/> billing periods are skipped.</item>
+    /// <item><see cref="PromoCodeType.SetPrice"/>: discount is the difference between the order amount and the set price.</item>
+    /// </list>
+    /// </summary>
     public decimal CalculateDiscount(decimal orderAmount)
     {
         if (!IsCurrentlyValid()) return 0;
@@ -117,10 +149,22 @@ public class PromoCode : EntityBase
 
         return Type switch
         {
-            PromoCodeType.PercentageOff => orderAmount * (DiscountPercentage ?? 0) / 100,
+            PromoCodeType.PercentageOff => CapPercentageDiscount(orderAmount * (DiscountPercentage ?? 0) / 100, orderAmount),
             PromoCodeType.FixedAmountOff => Math.Min(DiscountAmount ?? 0, orderAmount),
+            PromoCodeType.FreeTrialExtension => FreeTrialExtensionDays is > 0 ? orderAmount : 0,
+            PromoCodeType.FreeMonths => DurationMonths is > 0 ? orderAmount : 0,
+            PromoCodeType.SetPrice => DiscountAmount.HasValue
+                ? Math.Max(0, Math.Min(orderAmount - DiscountAmount.Value, orderAmount))
+                : 0,
             _ => 0
         };
+    }
+
+    /// <summary>Apply the <see cref="MaxDiscountAmount"/> cap to a percentage discount, never exceeding the order amount.</summary>
+    private decimal CapPercentageDiscount(decimal rawDiscount, decimal orderAmount)
+    {
+        var capped = MaxDiscountAmount.HasValue ? Math.Min(rawDiscount, MaxDiscountAmount.Value) : rawDiscount;
+        return Math.Min(capped, orderAmount);
     }
 
     /// <summary>Check if this promo code is exclusive (cannot be stacked)</summary>

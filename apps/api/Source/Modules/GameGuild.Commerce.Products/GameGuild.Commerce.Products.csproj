@@ -18,6 +18,7 @@
         <ProjectReference Include="..\GameGuild.Resources\GameGuild.Resources.csproj" />
         <ProjectReference Include="..\GameGuild.Commerce\GameGuild.Commerce.csproj" />
         <ProjectReference Include="..\GameGuild.Commerce.Subscriptions\GameGuild.Commerce.Subscriptions.csproj" />
+        <ProjectReference Include="..\GameGuild.Compliance.Audit\GameGuild.Compliance.Audit.csproj" />
     </ItemGroup>
 
 </Project>
