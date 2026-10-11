@@ -114,8 +114,23 @@ internal sealed class PaymentHandlerFixture
         PaymentGateway = new Mock<IPaymentGateway>();
         SyncService = new Mock<IPaymentSubscriptionSyncService>();
         ContextService = new Mock<ISubscriptionPaymentContextService>();
+        FraudGate = new Mock<IFraudDetectionService>();
 
         PaymentGateway.SetupGet(gateway => gateway.ProviderId).Returns("stripe");
+
+        // The merged fraud gate (issue #409) must allow the charge so the failover
+        // attribution path reaches the gateway.
+        FraudGate
+            .Setup(fraud => fraud.AssessPaymentAsync(It.IsAny<FraudSignalContext>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((FraudSignalContext context, CancellationToken _) => new FraudAssessment(
+                context.TenantId,
+                context.PaymentId,
+                Score: 0,
+                RiskLevel: FraudRiskLevel.Low,
+                Decision: FraudDecision.Allow,
+                Reason: "unit test",
+                Signals: [],
+                AssessedAt: SystemClock.UtcNow));
 
         PaymentRepository
             .Setup(repository => repository.GetByIdempotencyKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -149,6 +164,7 @@ internal sealed class PaymentHandlerFixture
             SyncService.Object,
             ContextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            FraudGate.Object,
             Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
     }
 
@@ -163,6 +179,8 @@ internal sealed class PaymentHandlerFixture
     public Mock<IPaymentSubscriptionSyncService> SyncService { get; }
 
     public Mock<ISubscriptionPaymentContextService> ContextService { get; }
+
+    public Mock<IFraudDetectionService> FraudGate { get; }
 
     public ProcessPaymentCommandHandler Handler { get; }
 
