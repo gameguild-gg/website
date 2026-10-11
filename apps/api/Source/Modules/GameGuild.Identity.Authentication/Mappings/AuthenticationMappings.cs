@@ -95,6 +95,46 @@ public static class AuthenticationMappings
     }
 
     /// <summary>
+    ///     Maps the orchestration <see cref="AuthenticationFlowState"/> to its API response DTO.
+    /// </summary>
+    public static OrchestratedFlowStateResponse ToDto(this AuthenticationFlowState flowState)
+    {
+        ArgumentNullException.ThrowIfNull(flowState);
+        return new OrchestratedFlowStateResponse
+        {
+            FlowId = flowState.FlowId,
+            UserId = flowState.UserId,
+            CurrentStep = flowState.CurrentStep,
+            RequiredSteps = [.. flowState.RequiredSteps],
+            CompletedSteps = [.. flowState.CompletedSteps],
+            NextStep = flowState.NextStep,
+            IsComplete = flowState.IsComplete,
+            RiskScore = flowState.RiskScore,
+            InitiatedAt = flowState.InitiatedAt,
+            ExpiresAt = flowState.ExpiresAt
+        };
+    }
+
+    /// <summary>
+    ///     Maps the orchestration <see cref="AuthenticationResult"/> to the shared sign-in response.
+    /// </summary>
+    public static SignInResponse ToSignInResponse(this AuthenticationResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return new SignInResponse
+        {
+            Success = result.IsSuccess,
+            Message = result.IsSuccess ? "Authentication complete" : result.FailureReason ?? "Authentication failed",
+            AccessToken = result.AccessToken,
+            RefreshToken = result.RefreshToken,
+            ExpiresAt = result.TokenExpiresAt ?? default(DateTime),
+            AccessTokenExpiresAt = result.TokenExpiresAt,
+            UserId = result.UserId,
+            SessionId = result.SessionId ?? Guid.Empty
+        };
+    }
+
+    /// <summary>
     ///     Maps Domain RefreshTokenResponse to Application RefreshTokenResponse DTO
     /// </summary>
     public static RefreshTokenResponse ToDto(this RefreshTokenResponse domainResponse)

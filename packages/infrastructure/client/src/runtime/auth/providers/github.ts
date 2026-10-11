@@ -1,12 +1,13 @@
 /**
  * GitHub OAuth Provider
  *
- * Bridges GitHub sign-in to the .NET backend.
- * The flow is:
- *   1. Redirect user to .NET `/v1/auth/github:authorize` (which returns the GitHub auth URL)
+ * Bridges GitHub sign-in to the .NET backend via the
+ * authorization-code redirect flow:
+ *   1. GET `/v1/auth/github:authorize` → backend returns the GitHub auth URL
  *   2. User authenticates with GitHub
- *   3. GitHub redirects back to .NET callback
- *   4. .NET exchanges the code and returns GameGuild tokens
+ *   3. GitHub redirects back to the client callback route
+ *   4. Client sends the code to backend `POST /v1/auth/github:callback`
+ *      and receives GameGuild tokens
  *
  * @example
  * ```typescript
@@ -55,7 +56,7 @@ export interface GitHubProviderOptions {
  */
 export function GitHubProvider(options: GitHubProviderOptions): OAuthProviderConfig & {
   getAuthorizeUrl: (apiUrl: string, redirectUri?: string) => Promise<string>;
-  handleCallback: (apiUrl: string, code: string, state?: string) => Promise<ProviderResult>;
+  handleCallback: (apiUrl: string, code: string, state?: string, redirectUri?: string, tenantId?: string) => Promise<ProviderResult>;
 } {
   const { authorizePath = '/v1/auth/github:authorize', callbackPath = '/v1/auth/github:callback' } = options;
 
@@ -101,14 +102,18 @@ export function GitHubProvider(options: GitHubProviderOptions): OAuthProviderCon
     /**
      * Complete the GitHub OAuth flow by sending the authorization code to the backend.
      */
-    handleCallback: async (apiUrl: string, code: string, state?: string): Promise<ProviderResult> => {
+    handleCallback: async (apiUrl: string, code: string, state?: string, redirectUri?: string, tenantId?: string): Promise<ProviderResult> => {
       const effectiveApiUrl = options.apiUrl || apiUrl;
+
+      const body: Record<string, unknown> = { code, state };
+      if (redirectUri) body.redirectUri = redirectUri;
+      if (tenantId) body.tenantId = tenantId;
 
       const response = await fetch(assertSafeServiceUrl(`${effectiveApiUrl}${callbackPath}`, effectiveApiUrl), {
         redirect: 'error',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, state }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {

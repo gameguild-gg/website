@@ -3,29 +3,30 @@ using GameGuild.CQRS;
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>
-///     Command to handle GitHub OAuth callback and exchange code for tokens
+///     Command to handle the GitHub OAuth callback: exchange the authorization
+///     code for tokens and complete sign-in
 /// </summary>
-public class GitHubCallbackCommand : IRequest<SignInResponse>
+public class GitHubCallbackCommand : ICommand<SignInResponse>
 {
     /// <summary>
-    ///     OAuth authorization code from GitHub callback
+    ///     OAuth authorization code from the GitHub callback
     /// </summary>
     public string Code { get; init; } = string.Empty;
 
     /// <summary>
-    ///     OAuth state parameter for CSRF protection
+    ///     OAuth state parameter for CSRF protection (validated web-side)
     /// </summary>
     public string State { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     The same redirect URI used in the authorization request
+    /// </summary>
+    public string RedirectUri { get; init; } = string.Empty;
 
     /// <summary>
     ///     Optional tenant context
     /// </summary>
     public Guid? TenantId { get; init; }
-
-    /// <summary>
-    ///     Device fingerprint for session tracking
-    /// </summary>
-    public string? DeviceFingerprint { get; init; }
 
     /// <summary>
     ///     When true, issues a persistent ("remember me") refresh token using the persistent lifetime.
