@@ -13,6 +13,17 @@ namespace GameGuild.Identity.Authentication;
 /// </summary>
 public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguration configuration) : IPasswordHasher, IPasswordVerificationWork
 {
+    private readonly Func<string, int, string> dummyHashPassword = static (password, workFactor) =>
+        BCrypt.Net.BCrypt.HashPassword(password, workFactor);
+
+    // The internal boundary lets regression tests observe the real BCrypt result without
+    // using machine-dependent timing ratios. The public constructor always uses BCrypt.
+    internal PasswordHasher(ILogger<PasswordHasher> logger, IConfiguration configuration,
+        Func<string, int, string> dummyHashPassword) : this(logger, configuration)
+    {
+        this.dummyHashPassword = dummyHashPassword ?? throw new ArgumentNullException(nameof(dummyHashPassword));
+    }
+
     private static readonly Regex BcryptHashPattern = new(
         @"\A\$2[abxy]?\$(0[4-9]|1[0-6])\$[./A-Za-z0-9]{53}\z",
         RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
@@ -88,7 +99,7 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
     {
         cancellationToken.ThrowIfCancellationRequested();
         var workFactor = GetBCryptWorkFactor();
-        await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(DummyCredentialMaterial, workFactor), cancellationToken).ConfigureAwait(false);
+        await Task.Run(() => dummyHashPassword(DummyCredentialMaterial, workFactor), cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         logger.LogDebug("Dummy credential work completed (BCrypt work factor: {WorkFactor})", workFactor);
     }
