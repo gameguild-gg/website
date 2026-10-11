@@ -378,8 +378,13 @@ public sealed class UserEnumerationProtectionCompensationTests
         public override long TimestampFrequency => TimeSpan.TicksPerSecond;
         public override long GetTimestamp() => timestamp;
         public void Advance(TimeSpan elapsed) => timestamp += elapsed.Ticks;
-        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
-            throw new InvalidOperationException("A window already above the target must not create a top-up timer.");
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            ArgumentNullException.ThrowIfNull(callback);
+            var stateType = state?.GetType().Name ?? "null";
+            throw new InvalidOperationException(
+                $"A pre-aged window requested a timer: due={dueTime}, period={period}, callback={callback.Method.Name}, stateType={stateType}.");
+        }
     }
 
     [Fact]
@@ -537,7 +542,7 @@ internal sealed class RecordingDummyBcrypt
     internal List<(string Material, int WorkFactor, string Hash)> Results { get; } = [];
     internal Action? AfterHash { get; init; }
 
-    internal RecordingDummyBcrypt(int workFactor = 10)
+    internal RecordingDummyBcrypt(int workFactor)
     {
         Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -648,7 +653,7 @@ public sealed class PasswordVerificationWorkClassificationTests
     [Fact]
     public async Task PerformDummyVerification_CompletesAtTheConfiguredWorkFactor()
     {
-        var work = new RecordingDummyBcrypt();
+        var work = new RecordingDummyBcrypt(10);
         IPasswordHasher sut = work.Hasher;
 
         await sut.PerformDummyVerificationAsync();
@@ -671,7 +676,7 @@ public sealed class PasswordVerificationWorkClassificationTests
     [Fact]
     public async Task PerformDummyVerification_ConcreteNoArgumentOverloadCompletes()
     {
-        var work = new RecordingDummyBcrypt();
+        var work = new RecordingDummyBcrypt(10);
 
         await work.Hasher.PerformDummyVerificationAsync();
 
