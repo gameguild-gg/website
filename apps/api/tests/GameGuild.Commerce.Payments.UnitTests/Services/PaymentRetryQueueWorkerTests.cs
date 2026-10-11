@@ -101,20 +101,43 @@ public class PaymentRetryQueueWorkerTests
         SetupDuePayments([payment]);
         SetupRetryResults(success: true);
 
-        ActorContext? observedDuringDispatch = null;
-        ActorContext? observedAfterDispatch = null;
+        // A mutable accessor fake so the test observes the SetActorContext swap and restore
+        // (a static Moq setup would keep returning the ambient context regardless).
         var ambientContext = ActorContextBuilder.ForUser(Guid.NewGuid()).Build();
-        _actorAccessor.SetupGet(accessor => accessor.ActorContext).Returns(ambientContext);
+        var accessor = new MutableActorContextAccessor(ambientContext);
+        var workerWithMutableAccessor = new PaymentRetryQueueWorker(
+            _paymentRepository.Object,
+            _sender.Object,
+            accessor,
+            Microsoft.Extensions.Options.Options.Create(new PaymentRetryQueueOptions
+            {
+                Enabled = true,
+                MaxBatchSize = 100,
+                PollIntervalMinutes = 60
+            }),
+            NullLogger<PaymentRetryQueueWorker>.Instance);
+
+        ActorContext? observedDuringDispatch = null;
         _sender
             .Setup(sender => sender.Send(It.IsAny<RetryPaymentCommand>(), It.IsAny<CancellationToken>()))
-            .Callback(() => observedDuringDispatch = _actorAccessor.Object.ActorContext)
+            .Callback(() => observedDuringDispatch = accessor.ActorContext)
             .ReturnsAsync(new PaymentRetryResult { Success = true, RetryAttempt = 1 });
 
-        await worker.ProcessDueAsync();
-        observedAfterDispatch = _actorAccessor.Object.ActorContext;
+        await workerWithMutableAccessor.ProcessDueAsync();
 
         observedDuringDispatch!.ActorKind.Should().Be(ActorKind.System);
-        observedAfterDispatch.Should().Be(ambientContext); // Context restored after the dispatch.
+        accessor.ActorContext.Should().Be(ambientContext); // Context restored after the dispatch.
+    }
+
+    private sealed class MutableActorContextAccessor(ActorContext initial) : IActorContextAccessor
+    {
+        private ActorContext _current = initial;
+
+        public ActorContext ActorContext => _current;
+
+        public void SetActorContext(ActorContext context) => _current = context;
+
+        public void ClearActorContext() => _current = ActorContext.Anonymous;
     }
 
     private PaymentRetryQueueWorker CreateWorker(bool enabled, int maxBatchSize = 100) =>

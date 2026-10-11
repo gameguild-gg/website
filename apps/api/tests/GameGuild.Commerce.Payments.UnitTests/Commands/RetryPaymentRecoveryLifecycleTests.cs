@@ -93,9 +93,11 @@ public class RetryPaymentRecoveryLifecycleTests
 
         result.Success.Should().BeFalse();
         payment.IsRetriable.Should().BeTrue();
-        // insufficient_funds ladder, first rung: 3 days (no jitter on the test resolver).
-        payment.NextRetryAt.Should().BeOnOrAfter(before.AddDays(3).AddSeconds(-1));
-        payment.NextRetryAt.Should().BeOnOrBefore(before.AddDays(3).AddSeconds(1));
+        // The failing attempt is retry #1 (RetryCount == 1 after PrepareForRetry), so the
+        // insufficient_funds ladder rung is 7 days after this failure (rung 1 = 3 days after
+        // the initial failure; no jitter on the test resolver).
+        payment.NextRetryAt.Should().BeOnOrAfter(before.AddDays(7).AddSeconds(-1));
+        payment.NextRetryAt.Should().BeOnOrBefore(before.AddDays(7).AddSeconds(1));
         _dunning.Verify(
             service => service.SuspendForRetryExhaustionAsync(
                 It.IsAny<Guid>(),
@@ -204,7 +206,15 @@ public class RetryPaymentRecoveryLifecycleTests
     [Fact]
     public async Task PaymentWithoutSubscription_SkipsTheRecoveryLifecycle()
     {
-        var payment = FailedPayment(maxRetries: 1, subscriptionId: null);
+        var payment = Payment.Create(
+            Guid.NewGuid(),
+            25m,
+            "USD",
+            $"idem-recovery-{Guid.NewGuid():N}",
+            subscriptionId: null, // One-time payment: no recovery lifecycle applies.
+            maxRetries: 1);
+        payment.MarkAsProcessing();
+        payment.MarkAsFailed("insufficient funds", "insufficient_funds");
         SetupGatewayFailure("card_declined");
         var handler = CreateHandler(payment, 1);
 
