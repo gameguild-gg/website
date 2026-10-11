@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddSelfServiceEconomyTransferIntents
+public partial class AddSelfServiceEconomyTransferIntents : Migration
 {
     private static void InstallSelfServiceTransferSecurity(MigrationBuilder migrationBuilder)
     {
