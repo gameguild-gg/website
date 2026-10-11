@@ -416,6 +416,7 @@ public sealed class AuditService(
         if (!string.IsNullOrEmpty(query.IpAddress)) { queryable = queryable.Where(a => a.IpAddress == query.IpAddress); }
         var searchPredicate = AuditLogSearchFilter.BuildPredicate(query.SearchText);
         if (searchPredicate is not null) { queryable = queryable.Where(searchPredicate); }
+        if (query.Condition is not null) { queryable = queryable.Where(AuditConditionTreeTranslator.BuildPredicate(query.Condition)); }
 
         return queryable;
     }

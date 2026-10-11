@@ -31,6 +31,11 @@ public class AuditLogQuery
     /// </summary>
     public string? SearchText { get; set; }
 
+    /// <summary>
+    /// Optional nested condition tree combined with the flat filters above. Null means no tree filter.
+    /// </summary>
+    public AuditConditionNode? Condition { get; set; }
+
     public int Skip { get; set; } = 0;
 
     public int Take { get; set; } = 100;
