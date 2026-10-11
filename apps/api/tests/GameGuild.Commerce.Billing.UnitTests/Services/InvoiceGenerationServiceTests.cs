@@ -40,7 +40,7 @@ public sealed class InvoiceGenerationServiceTests
             .Callback((Invoice entity) => _invoices.Add(entity));
         invoiceSet
             .Setup(set => set.Remove(It.IsAny<Invoice>()))
-            .Returns((Invoice entity) => null!);
+            .Returns((Invoice _) => null!);
         invoiceSet
             .Setup(set => set.Update(It.IsAny<Invoice>()))
             .Returns((Invoice _) => null!);

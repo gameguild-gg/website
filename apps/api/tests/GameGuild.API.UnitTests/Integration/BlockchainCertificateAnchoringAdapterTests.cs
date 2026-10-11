@@ -33,7 +33,7 @@ public class BlockchainCertificateAnchoringAdapterTests
                 capturedPayload = data;
                 capturedType = type;
             })
-            .ReturnsAsync((Guid userId, string data, string type) => BlockchainCertificateAnchorResult.Success(
+            .ReturnsAsync((Guid _, string data, string _) => BlockchainCertificateAnchorResult.Success(
                 "0xtx", "local", BlockchainCertificateCanonicalizer.ComputeSha256Hex(data), 1L, DateTime.UtcNow));
 
         var certificate = CreateCertificate();
