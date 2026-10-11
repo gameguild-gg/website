@@ -14897,9 +14897,19 @@ export interface LearningWorkspacesLearnerSearchResultDto {
   title?: string | null;
 }
 
-/** Represents a money value with currency */
+/** Represents a money value with currency.
+Amounts are stored as a decimal in major units (e.g. dollars) rounded to the
+currency's ISO 4217 minor-unit exponent (see GameGuild.Iso4217CurrencyCatalog):
+JPY keeps zero decimals, USD two, KWD three. Minor-unit (integer) access is available
+through GameGuild.Money.MinorUnits and M:GameGuild.Money.FromMinorUnits(System.Int64,System.String) for provider
+integrations that speak the smallest currency unit.
+The persisted/serialized shape stays exactly { Amount, Currency } — the minor-unit
+members are computed and excluded from JSON and EF mappings, so existing invoices,
+payments, and API contracts are unaffected. */
 export interface Money {
+  /** Amount in major units, already rounded to the currency's minor-unit exponent. */
   amount?: number;
+  /** Upper-case ISO 4217 currency code. */
   currency?: string | null;
 }
 
@@ -36401,7 +36411,15 @@ LearningWorkspacesLearnerSearchResultDtoSchema = z.object({
   title: z.string().nullable().optional(),
 });
 
-/** Zod schema for Money. Represents a money value with currency */
+/** Zod schema for Money. Represents a money value with currency.
+Amounts are stored as a decimal in major units (e.g. dollars) rounded to the
+currency's ISO 4217 minor-unit exponent (see GameGuild.Iso4217CurrencyCatalog):
+JPY keeps zero decimals, USD two, KWD three. Minor-unit (integer) access is available
+through GameGuild.Money.MinorUnits and M:GameGuild.Money.FromMinorUnits(System.Int64,System.String) for provider
+integrations that speak the smallest currency unit.
+The persisted/serialized shape stays exactly { Amount, Currency } — the minor-unit
+members are computed and excluded from JSON and EF mappings, so existing invoices,
+payments, and API contracts are unaffected. */
 MoneySchema = z.object({
   amount: z.number().optional(),
   currency: z.string().nullable().optional(),
