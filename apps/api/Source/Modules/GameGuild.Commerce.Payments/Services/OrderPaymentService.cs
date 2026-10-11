@@ -87,7 +87,7 @@ public sealed class OrderPaymentService(
             }
 
             var providerResult = await paymentGateway
-                .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken)
+                .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken, providerId: payment.Provider)
                 .ConfigureAwait(false);
             return await ApplyGatewayResultAsync(payment, providerResult, cancellationToken).ConfigureAwait(false);
         }
@@ -97,7 +97,7 @@ public sealed class OrderPaymentService(
             if (!string.IsNullOrWhiteSpace(payment.ExternalTransactionId))
             {
                 var providerResult = await paymentGateway
-                    .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken)
+                    .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken, providerId: payment.Provider)
                     .ConfigureAwait(false);
                 return await ApplyGatewayResultAsync(payment, providerResult, cancellationToken).ConfigureAwait(false);
             }
@@ -186,7 +186,12 @@ public sealed class OrderPaymentService(
         GatewayPaymentResult gatewayResult,
         CancellationToken cancellationToken)
     {
-        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
+        // Failover may route the attempt away from the primary gateway (issue #413):
+        // attribute the payment to the gateway that actually answered before binding the
+        // verified provider mapping. When a provider mapping is already bound the mapped
+        // provider stays authoritative (RecordProcessingProvider is a no-op).
+        payment.RecordProcessingProvider(gatewayResult.ProviderId ?? paymentGateway.ProviderId);
+        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, payment.Provider, gatewayResult);
         var stateChanged = gatewayResult.ProviderMapping is not null;
 
         if (gatewayResult.Success || gatewayResult.Status == PaymentStatus.Succeeded)
@@ -297,7 +302,7 @@ public sealed class OrderPaymentService(
             return null;
 
         var cancellation = await paymentGateway
-            .CancelPaymentAsync(payment.ExternalTransactionId, cancellationToken)
+            .CancelPaymentAsync(payment.ExternalTransactionId, cancellationToken, providerId: payment.Provider)
             .ConfigureAwait(false);
         if (cancellation.Success)
             return null;

@@ -232,6 +232,7 @@ public sealed class PricingEngineServicePricingRuleTests
         var engine = new PricingEngineService(
             Mock.Of<IProductRepository>(),
             Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPromoStackingRuleRepository>(),
             counting,
             cache);
 
@@ -322,9 +323,14 @@ public sealed class PricingEngineServicePricingRuleTests
             .Setup(r => r.GetByCodeAsync("STACK10", It.IsAny<CancellationToken>()))
             .ReturnsAsync(promo);
 
+        promoRepository
+            .Setup(r => r.GetByCodesAsync(It.Is<IEnumerable<string>>(c => c.SequenceEqual(new[] { "STACK10" })), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PromoCode> { promo });
+
         var engine = new PricingEngineService(
             Mock.Of<IProductRepository>(),
             promoRepository.Object,
+            Mock.Of<IPromoStackingRuleRepository>(),
             new PricingRuleRepository(db),
             new MemoryCache(new MemoryCacheOptions()));
 
@@ -413,6 +419,7 @@ public sealed class PricingEngineServicePricingRuleTests
         return new PricingEngineService(
             Mock.Of<IProductRepository>(),
             Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPromoStackingRuleRepository>(),
             new PricingRuleRepository(db),
             cache ?? new MemoryCache(new MemoryCacheOptions()));
     }

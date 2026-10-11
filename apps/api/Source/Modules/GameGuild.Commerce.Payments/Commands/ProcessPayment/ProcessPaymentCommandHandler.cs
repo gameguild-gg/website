@@ -148,7 +148,13 @@ public sealed class ProcessPaymentCommandHandler(
 
         var gatewayResult = await paymentGateway.ProcessPaymentAsync(gatewayRequest, cancellationToken)
             .ConfigureAwait(false);
-        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
+
+        // Failover may route the charge away from the primary gateway (issue #413):
+        // attribute the payment to the gateway that actually answered before binding
+        // the verified provider mapping. When a provider mapping is already bound the
+        // mapped provider stays authoritative (RecordProcessingProvider is a no-op).
+        payment.RecordProcessingProvider(gatewayResult.ProviderId ?? paymentGateway.ProviderId);
+        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, payment.Provider, gatewayResult);
 
         // 6. Update payment based on gateway result
         if (gatewayResult.Success)

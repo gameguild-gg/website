@@ -167,6 +167,7 @@ export * from './modules/projects-permission.gen.js';
 export * from './modules/projects-store-products.gen.js';
 export * from './modules/api-project-work.gen.js';
 export * from './modules/commerce-products-promo-codes.gen.js';
+export * from './modules/commerce-products-promo-stacking-rules.gen.js';
 export * from './modules/learning-experience-recommendations.gen.js';
 export * from './modules/resources.gen.js';
 export * from './modules/auth-roles.gen.js';

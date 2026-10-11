@@ -246,7 +246,7 @@ public sealed class OrderPaymentServiceTests
             .ReturnsAsync(payment);
         var gateway = new Mock<IPaymentGateway>();
         gateway.SetupGet(item => item.ProviderId).Returns("stripe");
-        gateway.Setup(item => item.CancelPaymentAsync("pi_declined", It.IsAny<CancellationToken>()))
+        gateway.Setup(item => item.CancelPaymentAsync("pi_declined", It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync(new GatewayPaymentCancellationResult(true, false, null, null));
         gateway.Setup(item => item.ProcessPaymentAsync(It.IsAny<GatewayPaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GatewayPaymentResult(
@@ -266,7 +266,7 @@ public sealed class OrderPaymentServiceTests
         var result = await service.ProcessAsync(charge);
 
         result.Success.Should().BeTrue();
-        gateway.Verify(item => item.CancelPaymentAsync("pi_declined", It.IsAny<CancellationToken>()), Times.Once);
+        gateway.Verify(item => item.CancelPaymentAsync("pi_declined", It.IsAny<CancellationToken>(), It.IsAny<string?>()), Times.Once);
         gateway.Verify(item => item.ProcessPaymentAsync(It.IsAny<GatewayPaymentRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -290,7 +290,7 @@ public sealed class OrderPaymentServiceTests
             .ReturnsAsync(payment);
         var gateway = new Mock<IPaymentGateway>();
         gateway.SetupGet(item => item.ProviderId).Returns("stripe");
-        gateway.Setup(item => item.CancelPaymentAsync("pi_declined", It.IsAny<CancellationToken>()))
+        gateway.Setup(item => item.CancelPaymentAsync("pi_declined", It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync(new GatewayPaymentCancellationResult(
                 false,
                 true,
@@ -333,7 +333,7 @@ public sealed class OrderPaymentServiceTests
             .ReturnsAsync(payment);
         var gateway = new Mock<IPaymentGateway>();
         gateway.SetupGet(item => item.ProviderId).Returns("stripe");
-        gateway.Setup(item => item.GetPaymentAsync("pi_requires_action", It.IsAny<CancellationToken>()))
+        gateway.Setup(item => item.GetPaymentAsync("pi_requires_action", It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync(new GatewayPaymentResult(
                 true,
                 "txn_retry",
@@ -570,7 +570,7 @@ public sealed class OrderPaymentServiceTests
             .ReturnsAsync(payment);
         var gateway = new Mock<IPaymentGateway>();
         gateway.SetupGet(item => item.ProviderId).Returns("stripe");
-        gateway.Setup(item => item.GetPaymentAsync("pi_requires_action", It.IsAny<CancellationToken>()))
+        gateway.Setup(item => item.GetPaymentAsync("pi_requires_action", It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync(new GatewayPaymentResult(
                 false,
                 "pi_requires_action",
@@ -796,7 +796,7 @@ public sealed class OrderPaymentServiceTests
         result.Success.Should().BeTrue();
         result.PaymentId.Should().Be(replacement.Id);
         gateway.Verify(
-            item => item.CancelPaymentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            item => item.CancelPaymentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Never);
     }
 

@@ -381,6 +381,82 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         Assert.False(await database.Set<AuthenticationAttempt>().AnyAsync(attempt => attempt.Email == account.User.Email && attempt.IsSuccessful));
     }
 
+    [Theory]
+    [InlineData(false, false)] [InlineData(false, true)]
+    [InlineData(true, false)] [InlineData(true, true)]
+    public async Task HttpIpThresholdNormalizesMappedIpv4AcrossUnrelatedAccounts(bool polymorphic, bool mapped)
+    {
+        var host = Interlocked.Increment(ref _lockoutAcceptanceHost);
+        var normalized = new IPAddress(new byte[] { 198, 18, (byte)(host / 254), (byte)(host % 254 + 1) });
+        var sourceAddress = mapped ? normalized.MapToIPv6() : normalized;
+        var calls = new ConcurrentQueue<AuthenticationAttemptContext>();
+        using var factory = CreateFactory(attempts: calls, sourceAddress: sourceAddress);
+        var account = await SeedAsync(factory);
+        using (var seed = factory.Services.CreateScope())
+        {
+            var database = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var now = DateTime.UtcNow;
+            database.Set<AuthenticationAttempt>().AddRange(Enumerable.Range(0, 3).Select(index => new AuthenticationAttempt
+            {
+                Id = Guid.NewGuid(), Email = "lockout-ip-" + Guid.NewGuid().ToString("N") + "@example.test",
+                IpAddress = normalized.ToString(), IsSuccessful = false, AttemptedAt = now.AddSeconds(-index),
+                CreatedAt = now, UpdatedAt = now
+            }));
+            await database.SaveChangesAsync();
+        }
+        using var client = factory.CreateClient();
+        object body = polymorphic
+            ? new { credential = account.User.Email, credentialType = CredentialType.Email, account.Password, account.TenantId }
+            : new { email = account.User.Email, account.Password, account.TenantId };
+        var endpoint = polymorphic ? Endpoint : LocalSignInEndpoint();
+        using var response = await client.PostAsJsonAsync(endpoint, body);
+        await AssertGenericDenialAsync(factory, response);
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        Assert.Empty(calls);
+        using var verification = factory.Services.CreateScope();
+        var context = verification.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await context.Set<UserSession>().AnyAsync(session => session.UserId == account.User.Id));
+        Assert.False(await context.Set<AuthenticationAttempt>().AnyAsync(attempt => attempt.Email == account.User.Email && attempt.IsSuccessful));
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task HttpAccountLockoutExpiresWhileEarlierFailuresRemainInRollingHour(bool polymorphic)
+    {
+        var bytes = RandomNumberGenerator.GetBytes(16);
+        bytes[0] = 0x20; bytes[1] = 0x01; bytes[2] = 0x0d; bytes[3] = 0xb8;
+        using var factory = CreateFactory(sourceAddress: new IPAddress(bytes));
+        var account = await SeedAsync(factory);
+        using (var seed = factory.Services.CreateScope())
+        {
+            var database = seed.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var attemptedAt = DateTime.UtcNow.AddMinutes(-40);
+            database.Set<AuthenticationAttempt>().AddRange(Enumerable.Range(0, 3).Select(index => new AuthenticationAttempt
+            {
+                Id = Guid.NewGuid(), Email = account.User.Email, IpAddress = "192.0.2.253",
+                IsSuccessful = false, AttemptedAt = attemptedAt.AddSeconds(-index),
+                CreatedAt = attemptedAt, UpdatedAt = attemptedAt
+            }));
+            await database.SaveChangesAsync();
+        }
+        using var client = factory.CreateClient();
+        object body = polymorphic
+            ? new { credential = account.User.Email, credentialType = CredentialType.Email, account.Password, account.TenantId }
+            : new { email = account.User.Email, account.Password, account.TenantId };
+        using var response = await client.PostAsJsonAsync(polymorphic ? Endpoint : LocalSignInEndpoint(), body);
+        using var payload = await ReadAsync(response, HttpStatusCode.OK);
+        await AssertCompletedAsync(factory, account, payload.RootElement);
+        using var verification = factory.Services.CreateScope();
+        Assert.Equal(3, await verification.ServiceProvider.GetRequiredService<ApplicationDbContext>()
+            .Set<AuthenticationAttempt>().CountAsync(attempt => attempt.Email == account.User.Email && !attempt.IsSuccessful));
+    }
+
+    private static int _lockoutAcceptanceHost;
+    private static string LocalSignInEndpoint() =>
+        "/" + typeof(AuthController).GetMethod(nameof(AuthController.LocalSignIn))!
+            .GetCustomAttribute<HttpPostAttribute>()!.Template!
+            .Replace("v{version:apiVersion}", "v1", StringComparison.Ordinal);
+
     private sealed class SourceAddressStartupFilter(IPAddress address) : IStartupFilter
     {
         public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next) => app =>
