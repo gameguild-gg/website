@@ -703,9 +703,17 @@ public class PermissionService(
     {
         var startedAt = Stopwatch.GetTimestamp();
 
-        var result = securityVersionStore is not null && hybridPermissionCache is not null
-            ? await EvaluateBulkPermissionCheckBatchWithCacheAsync(requests, cancellationToken).ConfigureAwait(false)
-            : await EvaluateBulkPermissionCheckBatchFromDatabaseAsync(requests, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<BulkPermissionCheckResult> result;
+        if (securityVersionStore is not null && hybridPermissionCache is not null)
+        {
+            result = await EvaluateBulkPermissionCheckBatchWithCacheAsync(requests, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            var databaseEvaluations = await EvaluateBulkPermissionCheckBatchFromDatabaseAsync(requests, cancellationToken)
+                .ConfigureAwait(false);
+            result = MapToBulkPermissionCheckResults(databaseEvaluations);
+        }
 
         if (recordMetrics)
         {
@@ -716,6 +724,18 @@ public class PermissionService(
         }
 
         return result;
+    }
+
+    private static IReadOnlyList<BulkPermissionCheckResult> MapToBulkPermissionCheckResults(
+        IReadOnlyList<BulkPermissionDatabaseResult> evaluations)
+    {
+        var results = new List<BulkPermissionCheckResult>(evaluations.Count);
+        foreach (var evaluation in evaluations)
+        {
+            results.Add(new BulkPermissionCheckResult(evaluation.Request, evaluation.IsGranted));
+        }
+
+        return results;
     }
 
     private async Task<IReadOnlyList<BulkPermissionCheckResult>> EvaluateBulkPermissionCheckBatchWithCacheAsync(
@@ -744,7 +764,7 @@ public class PermissionService(
             }
 
             var cacheResults = await hybridPermissionCache!
-                .GetManyValuesAsync<bool>(cacheKeys.Values.ToArray(), BulkPermissionCacheType, cancellationToken)
+                .GetManyValuesAsync<CachedPermissionDecision>(cacheKeys.Values.ToArray(), BulkPermissionCacheType, cancellationToken)
                 .ConfigureAwait(false);
             var decisions = new Dictionary<BulkPermissionCheckRequest, bool>(distinctRequests.Length);
             var cacheMisses = new List<BulkPermissionCheckRequest>();
@@ -752,9 +772,10 @@ public class PermissionService(
             foreach (var request in distinctRequests)
             {
                 var cacheKey = cacheKeys[request];
-                if (cacheResults.TryGetValue(cacheKey, out var cached) && cached.Found)
+                if (cacheResults.TryGetValue(cacheKey, out var cached) && cached.Found &&
+                    IsBulkPermissionDecisionServable(cached.Value))
                 {
-                    decisions[request] = cached.Value;
+                    decisions[request] = cached.Value.IsGranted;
                 }
                 else
                 {
@@ -762,7 +783,7 @@ public class PermissionService(
                 }
             }
 
-            IReadOnlyList<BulkPermissionCheckResult> databaseResults = [];
+            IReadOnlyList<BulkPermissionDatabaseResult> databaseResults = [];
             if (cacheMisses.Count > 0)
             {
                 databaseResults = await EvaluateBulkPermissionCheckBatchFromDatabaseAsync(cacheMisses, cancellationToken)
@@ -783,14 +804,30 @@ public class PermissionService(
 
             if (databaseResults.Count > 0)
             {
-                var valuesToCache = new Dictionary<string, bool>(databaseResults.Count, StringComparer.Ordinal);
+                var valuesToCache = new Dictionary<string, CachedPermissionDecision>(databaseResults.Count, StringComparer.Ordinal);
+                var clampedTtlSeconds = new Dictionary<string, int>(databaseResults.Count, StringComparer.Ordinal);
                 foreach (var result in databaseResults)
                 {
-                    valuesToCache[cacheKeys[result.Request]] = result.IsGranted;
+                    if (!TryComputeBulkPermissionCacheTtlSeconds(result.EarliestExpiryUtc, out var ttlSeconds))
+                    {
+                        // The shortest-lived grant participating in this decision already lapsed while the
+                        // batch was being evaluated; a stale decision is cached under no TTL (fail closed).
+                        continue;
+                    }
+
+                    var cacheKey = cacheKeys[result.Request];
+                    valuesToCache[cacheKey] = new CachedPermissionDecision(result.IsGranted, result.EarliestExpiryUtc);
+                    if (ttlSeconds is { } clampedTtl)
+                    {
+                        clampedTtlSeconds[cacheKey] = clampedTtl;
+                    }
                 }
 
-                await hybridPermissionCache.SetManyValuesAsync(valuesToCache, BulkPermissionCacheType, cancellationToken)
-                    .ConfigureAwait(false);
+                if (valuesToCache.Count > 0)
+                {
+                    await hybridPermissionCache.SetManyValuesAsync(valuesToCache, BulkPermissionCacheType, clampedTtlSeconds, cancellationToken)
+                        .ConfigureAwait(false);
+                }
             }
 
             return requests
@@ -800,6 +837,43 @@ public class PermissionService(
 
         throw new InvalidOperationException(
             $"Could not obtain stable permission versions for a bulk authorization batch after {MaximumBulkPermissionCacheVersionRetries} attempts.");
+    }
+
+    /// <summary>
+    ///     Returns true when the cached bulk decision may still be served; false once its earliest
+    ///     participating grant expiration has passed. Time-based grant expiration advances no security
+    ///     version, so the cached copy has to police its own boundary: a lapsed entry is treated as a
+    ///     miss (fail closed) and re-evaluated from the authoritative grants instead of being served.
+    /// </summary>
+    private static bool IsBulkPermissionDecisionServable(CachedPermissionDecision decision) =>
+        decision.EffectiveUntilUtc is not { } effectiveUntil || effectiveUntil > SystemClock.UtcNow;
+
+    /// <summary>
+    ///     Computes the write TTL for a cached bulk decision. Returns <c>false</c> when the decision
+    ///     must not be cached at all because its shortest-lived participating grant already lapsed.
+    ///     Returns <c>true</c> with the seconds remaining before the earliest participating grant
+    ///     expiration (the cache layers clamp this to the configured TTLs, so it never extends them),
+    ///     or <c>null</c> to use the configured TTL when the decision is not time-bound.
+    /// </summary>
+    private static bool TryComputeBulkPermissionCacheTtlSeconds(DateTime? earliestExpiryUtc, out int? ttlSeconds)
+    {
+        if (earliestExpiryUtc is not { } expiresAt)
+        {
+            ttlSeconds = null;
+            return true;
+        }
+
+        // Floor the remaining time so the cached copy never outlives the grant, and treat anything
+        // already at or past the boundary as uncacheable.
+        var remainingSeconds = Math.Floor((expiresAt - SystemClock.UtcNow).TotalSeconds);
+        if (remainingSeconds <= 0)
+        {
+            ttlSeconds = null;
+            return false;
+        }
+
+        ttlSeconds = (int)Math.Min(remainingSeconds, int.MaxValue);
+        return true;
     }
 
     private static bool AreBulkPermissionVersionsCurrent(
@@ -828,7 +902,9 @@ public class PermissionService(
         var globalVersion = versions.GlobalVersion.ToString(CultureInfo.InvariantCulture);
         var permission = ((int)request.Permission).ToString(CultureInfo.InvariantCulture);
 
-        return $"perm:{tenantKey}:{request.UserId:D}:bulk:v1:{tenantVersion}:{globalVersion}:{permission}:{FingerprintCacheKeyPart(request.ContentTypeName)}:{resourceKey}:{FingerprintCacheKeyPart(request.ResourceTypeName)}";
+        // v2: cached values moved from raw booleans to expiry-enveloped CachedPermissionDecision
+        // records, so v1 entries (which carry no grant-expiration boundary) are never read again.
+        return $"perm:{tenantKey}:{request.UserId:D}:bulk:v2:{tenantVersion}:{globalVersion}:{permission}:{FingerprintCacheKeyPart(request.ContentTypeName)}:{resourceKey}:{FingerprintCacheKeyPart(request.ResourceTypeName)}";
     }
 
     private static string FingerprintCacheKeyPart(string? value) =>
@@ -851,7 +927,7 @@ public class PermissionService(
         }
     }
 
-    private async Task<IReadOnlyList<BulkPermissionCheckResult>> EvaluateBulkPermissionCheckBatchFromDatabaseAsync(
+    private async Task<IReadOnlyList<BulkPermissionDatabaseResult>> EvaluateBulkPermissionCheckBatchFromDatabaseAsync(
         IReadOnlyList<BulkPermissionCheckRequest> requests,
         CancellationToken cancellationToken)
     {
@@ -902,7 +978,7 @@ public class PermissionService(
             resultIndexes[index] = distinctIndex;
         }
 
-        var decisions = new bool[distinctRequests.Count];
+        var decisions = new BulkPermissionEvaluation[distinctRequests.Count];
         void EvaluateAt(int index)
         {
             decisions[index] = EvaluateBulkPermissionDecision(
@@ -933,10 +1009,11 @@ public class PermissionService(
             }
         }
 
-        var result = new List<BulkPermissionCheckResult>(requests.Count);
+        var result = new List<BulkPermissionDatabaseResult>(requests.Count);
         for (var index = 0; index < requests.Count; index++)
         {
-            result.Add(new BulkPermissionCheckResult(requests[index], decisions[resultIndexes[index]]));
+            var evaluation = decisions[resultIndexes[index]];
+            result.Add(new BulkPermissionDatabaseResult(requests[index], evaluation.IsGranted, evaluation.EarliestExpiryUtc));
         }
 
         return result;
@@ -1101,7 +1178,7 @@ public class PermissionService(
         return Expression.Lambda<Func<GenericResourcePermission, bool>>(predicate ?? Expression.Constant(false), grant);
     }
 
-    private static bool EvaluateBulkPermissionDecision(
+    private static BulkPermissionEvaluation EvaluateBulkPermissionDecision(
         BulkPermissionCheckRequest request,
         IReadOnlyList<TenantPermission> tenantGrants,
         IReadOnlyList<ContentTypePermission> contentTypeGrants,
@@ -1109,6 +1186,17 @@ public class PermissionService(
     {
         var allowed = new HashSet<PermissionType>();
         var denied = new HashSet<PermissionType>();
+        var earliestExpiryUtc = default(DateTime?);
+
+        void TrackParticipatingGrantExpiry(DateTime? expiresAt, bool participatesInDecision)
+        {
+            if (expiresAt is not { } boundary || !participatesInDecision)
+            {
+                return;
+            }
+
+            earliestExpiryUtc = earliestExpiryUtc is { } current && current <= boundary ? current : boundary;
+        }
 
         foreach (var grant in tenantGrants)
         {
@@ -1117,8 +1205,13 @@ public class PermissionService(
                 continue;
             }
 
-            allowed.UnionWith(ToPermissionTypes(grant.Permissions));
-            denied.UnionWith(ToPermissionTypes(grant.DenyPermissions));
+            var grantAllows = ToPermissionTypes(grant.Permissions).ToArray();
+            var grantDenies = ToPermissionTypes(grant.DenyPermissions).ToArray();
+            allowed.UnionWith(grantAllows);
+            denied.UnionWith(grantDenies);
+            TrackParticipatingGrantExpiry(
+                grant.ExpiresAt,
+                grantAllows.Contains(request.Permission) || grantDenies.Contains(request.Permission));
         }
 
         if (!string.IsNullOrWhiteSpace(request.ContentTypeName))
@@ -1132,7 +1225,9 @@ public class PermissionService(
                     continue;
                 }
 
-                allowed.UnionWith(grant.GetPermissionsAsEnum());
+                var grantAllows = grant.GetPermissionsAsEnum().ToArray();
+                allowed.UnionWith(grantAllows);
+                TrackParticipatingGrantExpiry(grant.ExpiresAt, grantAllows.Contains(request.Permission));
             }
         }
 
@@ -1151,12 +1246,31 @@ public class PermissionService(
                     continue;
                 }
 
-                allowed.UnionWith(grant.GetPermissionsAsEnum());
+                var grantAllows = grant.GetPermissionsAsEnum().ToArray();
+                allowed.UnionWith(grantAllows);
+                TrackParticipatingGrantExpiry(grant.ExpiresAt, grantAllows.Contains(request.Permission));
             }
         }
 
-        return allowed.Contains(request.Permission) && !denied.Contains(request.Permission);
+        var isGranted = allowed.Contains(request.Permission) && !denied.Contains(request.Permission);
+        return new BulkPermissionEvaluation(isGranted, earliestExpiryUtc);
     }
+
+    /// <summary>
+    ///     An evaluated bulk permission decision together with the earliest expiration among the
+    ///     grants that participated in the decision (grants conveying or denying the requested
+    ///     permission), or <c>null</c> when no participating grant is time-bound.
+    /// </summary>
+    private readonly record struct BulkPermissionEvaluation(bool IsGranted, DateTime? EarliestExpiryUtc);
+
+    /// <summary>
+    ///     A database evaluation of a bulk permission request, carrying the request alongside its
+    ///     decision and grant-expiry envelope so the cache layer can store both.
+    /// </summary>
+    private readonly record struct BulkPermissionDatabaseResult(
+        BulkPermissionCheckRequest Request,
+        bool IsGranted,
+        DateTime? EarliestExpiryUtc);
 
     private static bool TenantGrantApplies(TenantPermission grant, BulkPermissionCheckRequest request)
         => (grant.UserId == null && grant.TenantId == null) ||
