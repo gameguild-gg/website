@@ -31,6 +31,15 @@ public sealed class InvoiceGenerationServiceTests
                 _invoices.Add(entity);
                 return null!;
             });
+        // The service persists through the synchronous DbSet.Add (EF's canonical path),
+        // so the fake must capture that too or the in-memory invoice list stays empty.
+        invoiceSet
+            .Setup(set => set.Add(It.IsAny<Invoice>()))
+            .Returns((Invoice entity) =>
+            {
+                _invoices.Add(entity);
+                return entity;
+            });
         invoiceSet
             .Setup(set => set.Remove(It.IsAny<Invoice>()))
             .Returns((Invoice entity) => null!);
