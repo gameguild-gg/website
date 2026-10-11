@@ -49,8 +49,8 @@ public sealed class CapabilityAuthorizationHttpTests
     public static IEnumerable<object[]> InvalidSubjects()
     {
         foreach (var endpoint in Endpoints)
-        foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
-            { yield return [endpoint, subject]; }
+        { foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
+            { yield return [endpoint, subject]; } }
     }
 
     public static IEnumerable<object[]> Administrators()
