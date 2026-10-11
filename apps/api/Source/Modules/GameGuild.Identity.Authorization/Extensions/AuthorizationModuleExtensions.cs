@@ -370,6 +370,12 @@ public static class AuthorizationModuleExtensions
         // Resource Permissions
         services.AddScoped<IResourcePermissionService, ResourcePermissionService>();
 
+        // Resource ownership (issue #372): read-side ownership lookup feeding the
+        // effective-permission resolver's owner-override layer. Ownership is recorded on
+        // creation (creator auto-grant) and moves only through the guarded, versioned and
+        // audited TransferOwnershipCommand.
+        services.AddScoped<IResourceOwnershipProvider, ResourceOwnershipService>();
+
         // Advanced repositories
         services.AddScoped<IAbacPolicyRepository, AbacPolicyRepository>();
         services.AddScoped<IConditionalPolicyRepository, ConditionalPolicyRepository>();
