@@ -34,6 +34,14 @@ public interface IStripeCustomerService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Retrieves the gateway's authoritative payment-method details (display metadata
+    ///     and card fingerprint) for a previously tokenized payment method.
+    /// </summary>
+    Task<GatewayPaymentMethodDetailsResult> GetPaymentMethodAsync(
+        string paymentMethodId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Cancels a subscription in Stripe.
     /// </summary>
     Task<GatewayCancellationResult> CancelSubscriptionAsync(
@@ -59,5 +67,30 @@ public sealed record GatewayDefaultPaymentMethodRequest(
 
 public sealed record GatewayDefaultPaymentMethodResult(
     bool Success,
+    string? ErrorCode,
+    string? ErrorMessage);
+
+/// <summary>
+///     Display-safe payment-method details resolved from the gateway (issue #414).
+///     Contains only gateway references and display metadata — never raw card data.
+/// </summary>
+public sealed record GatewayPaymentMethodDetails(
+    string Type,
+    string? CardBrand,
+    string? CardLast4,
+    int? CardExpMonth,
+    int? CardExpYear,
+    string? CardFingerprint,
+    string? BankName,
+    string? BankLast4,
+    string? WalletEmail);
+
+/// <summary>
+///     Result of resolving payment-method details from the gateway.
+/// </summary>
+public sealed record GatewayPaymentMethodDetailsResult(
+    bool Success,
+    string? PaymentMethodId,
+    GatewayPaymentMethodDetails? Details,
     string? ErrorCode,
     string? ErrorMessage);
