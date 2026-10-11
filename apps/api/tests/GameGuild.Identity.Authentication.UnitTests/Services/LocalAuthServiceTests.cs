@@ -258,7 +258,7 @@ public class LocalAuthServiceTests
         {
             entry.Arguments[3].Should().BeNull("exception objects can carry private values in three separate channels");
             var rendered = entry.Arguments[2].ToString()!;
-            var fields = (IEnumerable<KeyValuePair<string, object?>>)entry.Arguments[2];
+            var fields = entry.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
             fields.Should().Contain(pair => pair.Key == "ErrorType" && Equals(pair.Value, failure.GetType().FullName));
             foreach (var privateValue in privateValues)
             {

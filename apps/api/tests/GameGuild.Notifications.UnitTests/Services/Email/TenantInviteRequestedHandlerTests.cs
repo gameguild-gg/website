@@ -132,7 +132,7 @@ public sealed class TenantInviteRequestedHandlerTests
         entry.Arguments[3].Should().BeNull("exception messages, inner exceptions and data may contain private values");
         var rendered = entry.Arguments[2].ToString()!;
         rendered.Should().NotContain(email).And.NotContain(privateDetail);
-        var fields = (IEnumerable<KeyValuePair<string, object?>>)entry.Arguments[2];
+        var fields = entry.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
         fields.Should().Contain(pair => pair.Key == "Email" && Equals(pair.Value, LogRedaction.MaskEmail(email)));
         fields.Should().Contain(pair => pair.Key == "ErrorType" && Equals(pair.Value, failure.GetType().FullName));
         foreach (var field in fields)
