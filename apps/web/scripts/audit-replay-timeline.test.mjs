@@ -62,7 +62,8 @@ test('tenant isolation is enforced before any filtering', () => {
 test('global events require an explicit null tenant on both input and scope', () => {
   const global = event(1, 0, { tenantId: null })
   assert.equal(new Timeline([global], { tenantId: null, totalCount: 1 }).tenantId, null)
-  const { tenantId: ignored, ...missing } = global
+  const missing = { ...global }
+  delete missing.tenantId
   assert.throws(() => new Timeline([missing], { tenantId: null, totalCount: 1 }), /tenant/i)
   assert.throws(() => new Timeline([global], { totalCount: 1 }), /tenant/i)
 })

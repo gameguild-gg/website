@@ -71,6 +71,12 @@ export const MAX_REPLAY_BOOKMARKS = 1000
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
+function requiredItem<T>(items: readonly T[], index: number): T {
+  const item = items.at(index)
+  if (item === undefined) throw new RangeError('Replay collection index is outside its bounds.')
+  return item
+}
+
 function guid(value: string, label: string): string {
   if (typeof value !== 'string' || !GUID.test(value) || value.toLowerCase() === EMPTY_GUID) {
     throw new TypeError(label + ' must be a non-empty GUID.')
@@ -96,20 +102,21 @@ export function parseReplayTimestamp(value: string): bigint {
   if (typeof value !== 'string') throw new TypeError('Timestamp must be a string.')
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(Z|[+-]\d{2}:\d{2})$/.exec(value)
   if (!match) throw new TypeError('Timestamp requires an explicit ISO-8601 timezone and at most seven fraction digits.')
-  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number)
-  if (year! < 1 || year! > 9999 || month! < 1 || month! > 12 || day! < 1 ||
-      hour! > 23 || minute! > 59 || second! > 59) {
+  const year = Number(requiredItem(match, 1)), month = Number(requiredItem(match, 2)), day = Number(requiredItem(match, 3))
+  const hour = Number(requiredItem(match, 4)), minute = Number(requiredItem(match, 5)), second = Number(requiredItem(match, 6))
+  if (year < 1 || year > 9999 || month < 1 || month > 12 || day < 1 ||
+      hour > 23 || minute > 59 || second > 59) {
     throw new RangeError('Timestamp contains an invalid calendar value.')
   }
   const local = new Date(0)
-  local.setUTCFullYear(year!, month! - 1, day!)
-  local.setUTCHours(hour!, minute!, second!, 0)
-  if (local.getUTCFullYear() !== year || local.getUTCMonth() !== month! - 1 ||
+  local.setUTCFullYear(year, month - 1, day)
+  local.setUTCHours(hour, minute, second, 0)
+  if (local.getUTCFullYear() !== year || local.getUTCMonth() !== month - 1 ||
       local.getUTCDate() !== day || local.getUTCHours() !== hour ||
       local.getUTCMinutes() !== minute || local.getUTCSeconds() !== second) {
     throw new RangeError('Timestamp contains an invalid calendar date.')
   }
-  const offset = match[8]!
+  const offset = requiredItem(match, 8)
   let offsetMinutes = 0
   if (offset !== 'Z') {
     const hours = Number(offset.slice(1, 3)), minutes = Number(offset.slice(4, 6))
@@ -214,8 +221,9 @@ function analyzeReplaySequences(events: readonly ReplayEvent[], rules: readonly 
       if (!prefixes) { prefixes = []; groups.set(groupKey, prefixes) }
       const cutoff = event.timestampNs - rule.windowNs
       for (let index = rule.tokens.length - 1; index >= 0; index--) {
-        if (prefixes[index] && prefixes[index]!.startedAtNs < cutoff) prefixes[index] = undefined
-        const token = rule.tokens[index]!
+        const prefix = prefixes[index]
+        if (prefix && prefix.startedAtNs < cutoff) prefixes[index] = undefined
+        const token = requiredItem(rule.tokens, index)
         if (!token.actions.has(event.actionType) || (token.success !== undefined && event.success !== token.success)) continue
         const previous = index === 0 ? null : prefixes[index - 1]
         if (previous === undefined || (previous !== null && previous.startedAtNs < cutoff)) continue
@@ -231,7 +239,7 @@ function analyzeReplaySequences(events: readonly ReplayEvent[], rules: readonly 
         evidence.reverse()
         const finding = Object.freeze({ key: JSON.stringify([rule.id, groupKey, event.id]), ruleId: rule.id,
           ruleLabel: rule.label, ruleDefinition: rule.definition, groupBy: rule.groupBy, groupKey,
-          startedAt: evidence[0]!.createdAt, endedAt: event.createdAt,
+          startedAt: requiredItem(evidence, 0).createdAt, endedAt: event.createdAt,
           elapsedNs: (event.timestampNs - chain.startedAtNs).toString(), eventIds: Object.freeze(evidence.map(item => item.id)) })
         findings.push({ end: event.timestampNs, finding })
       }
@@ -271,7 +279,7 @@ export class AuditReplayTimeline {
   get revision(): number { return this.viewRevision }
   get durationNs(): bigint {
     return this.selected.length < 2 ? 0n :
-      this.selected[this.selected.length - 1]!.timestampNs - this.selected[0]!.timestampNs
+      requiredItem(this.selected, this.selected.length - 1).timestampNs - requiredItem(this.selected, 0).timestampNs
   }
   private event(id: string): ReplayEvent {
     const key = guid(id, 'Event ID')
@@ -280,7 +288,7 @@ export class AuditReplayTimeline {
     return found
   }
   positionOf(id: string): bigint {
-    return this.event(id).timestampNs - this.selected[0]!.timestampNs
+    return this.event(id).timestampNs - requiredItem(this.selected, 0).timestampNs
   }
   /** Inclusive range, matching the existing date-range audit API semantics. An
    * explicitly empty selection matches no events; an omitted selection matches all. */
@@ -310,11 +318,11 @@ export class AuditReplayTimeline {
   frameAt(positionNs: bigint): readonly ReplayEvent[] {
     this.validatePosition(positionNs)
     if (!this.selected.length) return Object.freeze([])
-    const deadline = this.selected[0]!.timestampNs + positionNs
+    const deadline = requiredItem(this.selected, 0).timestampNs + positionNs
     let low = 0, high = this.selected.length
     while (low < high) {
       const middle = (low + high) >>> 1
-      if (this.selected[middle]!.timestampNs <= deadline) low = middle + 1
+      if (requiredItem(this.selected, middle).timestampNs <= deadline) low = middle + 1
       else high = middle
     }
     return Object.freeze(this.selected.slice(0, low))
@@ -328,7 +336,7 @@ export class AuditReplayTimeline {
     this.validatePosition(startNs); this.validatePosition(endNs)
     if (startNs > endNs) throw new RangeError('Viewport start must not follow its end.')
     if (!this.selected.length) return Object.freeze([])
-    const first = this.selected[0]!.timestampNs
+    const first = requiredItem(this.selected, 0).timestampNs
     return Object.freeze(this.selected.filter(event => event.timestampNs >= first + startNs && event.timestampNs <= first + endNs))
   }
   journeys(): readonly Readonly<{ userId: string | null; sessionId: string | null; events: readonly ReplayEvent[] }>[] {
@@ -339,7 +347,7 @@ export class AuditReplayTimeline {
       grouped.get(key)!.push(event)
     }
     return Object.freeze([...grouped.values()].map(events => Object.freeze({
-      userId: events[0]!.userId, sessionId: events[0]!.sessionId, events: Object.freeze(events),
+      userId: requiredItem(events, 0).userId, sessionId: requiredItem(events, 0).sessionId, events: Object.freeze(events),
     })))
   }
   relatedEvents(id: string): readonly ReplayEvent[] {
@@ -461,7 +469,7 @@ export class AuditReplayPlayback {
     if (!this.timeline.events.length) return
     const index = this.focus === null ? -1 : this.timeline.events.findIndex(event => event.id === this.focus)
     const next = Math.max(0, Math.min(this.timeline.events.length - 1, index + direction))
-    this.seekEvent(this.timeline.events[next]!.id)
+    this.seekEvent(requiredItem(this.timeline.events, next).id)
   }
   reset(): void {
     this.position = 0n; this.anchorPosition = 0n; this.running = false
