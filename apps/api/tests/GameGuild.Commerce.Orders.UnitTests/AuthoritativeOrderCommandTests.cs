@@ -666,14 +666,18 @@ public sealed class AuthoritativeOrderCommandTests
     {
         var fixture = CreatePricingFixture();
 
-        var result = await fixture.Handler.Handle(fixture.Command, CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
+        // Capture must be registered BEFORE Handle dispatches the command, otherwise the
+        // RecordAsync invocation (matched by the loose mock's default setup) never runs the
+        // callback and `recorded` stays null.
         GameGuild.Commerce.PricingDecisionRecord? recorded = null;
         fixture.PricingLedgerWriter
             .Setup(mock => mock.RecordAsync(It.IsAny<GameGuild.Commerce.PricingDecisionRecord>(), It.IsAny<CancellationToken>()))
             .Callback<GameGuild.Commerce.PricingDecisionRecord, CancellationToken>((decision, _) => recorded = decision)
             .ReturnsAsync((GameGuild.Commerce.PricingDecisionRecordingStatus.Recorded, new GameGuild.Commerce.PricingDecisionLedgerEntry()));
+
+        var result = await fixture.Handler.Handle(fixture.Command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
 
         fixture.PricingLedgerWriter.Verify(
             mock => mock.RecordAsync(
