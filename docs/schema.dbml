@@ -646,6 +646,23 @@ Table "AuditRetentionSimulationRuns" {
   }
 }
 
+Table "billing_provider_states" {
+  "Id" uuid [not null]
+  "ProviderKey" "character varying(50)" [not null]
+  "IsEnabled" boolean [not null]
+  "LastChangedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_billing_provider_states"]
+    ProviderKey [unique, name: "ix_billing_provider_states_provider_key"]
+  }
+}
+
 Table "billing_webhook_events" {
   "Id" uuid [not null]
   "Provider" "character varying(50)" [not null]
@@ -2702,6 +2719,7 @@ Table "invoices" {
   "Id" uuid [not null]
   "InvoiceNumber" "character varying(50)" [not null]
   "ExternalId" "character varying(255)"
+  "IdempotencyKey" "character varying(200)"
   "SubscriptionId" uuid [not null]
   "PeriodStart" timestamp
   "PeriodEnd" timestamp
@@ -2730,6 +2748,7 @@ Table "invoices" {
     Id [pk, name: "PK_invoices"]
     DueDate [name: "IX_invoices_DueDate"]
     ExternalId [unique, name: "IX_invoices_ExternalId"]
+    IdempotencyKey [unique, name: "IX_invoices_IdempotencyKey"]
     InvoiceNumber [unique, name: "IX_invoices_InvoiceNumber"]
     IssuedAt [name: "IX_invoices_IssuedAt"]
     PaymentId [unique, name: "IX_invoices_PaymentId_Unique"]
@@ -10783,6 +10802,8 @@ Ref "FK_testing_lab_settings_Tenants_TenantId":"Tenants"."Id" ?<? "testing_lab_s
 
 Ref "FK_UsageTracking_Tenants_TenantId":"Tenants"."Id" <? "UsageTracking"."TenantId" [delete: cascade]
 
+Ref "FK_totp_replay_state_user_mfa_configuration_configuration_id":"gameguild.authentication"."user_mfa_configuration"."id" <? "gameguild.authentication"."totp_replay_state"."configuration_id" [delete: cascade]
+
 Ref "FK_wallet_transactions_user_wallets_WalletId":"user_wallets"."Id" <? "wallet_transactions"."WalletId" [delete: cascade]
 
 Ref "FK_orders_Users_UserId":"Users"."Id" <? "orders"."UserId" [delete: cascade]
@@ -10834,6 +10855,8 @@ Ref "FK_UserProfiles_Users_UserId":"Users"."Id" <? "UserProfiles"."UserId" [dele
 Ref "FK_refreshtoken_refreshtoken_ParentTokenId":"gameguild.authentication"."refreshtoken"."id" ?<? "gameguild.authentication"."refreshtoken"."ParentTokenId" [delete: restrict]
 
 Ref "FK_refreshtoken_usersession_SessionId":"gameguild.authentication"."usersession"."id" ?<? "gameguild.authentication"."refreshtoken"."SessionId" [delete: restrict]
+
+Ref "FK_session_mfa_evidence_usersession_session_id":"gameguild.authentication"."usersession"."id" <? "gameguild.authentication"."session_mfa_evidence"."session_id" [delete: cascade]
 
 Ref "FK_AssessmentTestRunSubjects_AssessmentTestRuns_TestRunId":"AssessmentTestRuns"."Id" <? "AssessmentTestRunSubjects"."TestRunId" [delete: cascade]
 
@@ -11891,6 +11914,43 @@ Table "gameguild.authentication"."service_accounts" {
   }
 }
 
+Table "gameguild.authentication"."sign_in_mfa_challenges" {
+  "id" uuid [not null]
+  "subject_id" uuid [not null]
+  "tenant_id" uuid [not null]
+  "subject_token_version" integer [not null]
+  "token_hash" "character varying(64)" [not null]
+  "policy_fingerprint" "character varying(64)" [not null]
+  "purpose" "character varying(32)" [not null]
+  "first_factor" "character varying(32)" [not null]
+  "created_at" timestamp [not null]
+  "expires_at" timestamp [not null]
+  "consumed_at" timestamp
+  "revoked_at" timestamp
+  "verification_method" "character varying(32)"
+  "enrollment_configuration_id" uuid
+  "enrollment_secret_fingerprint" "character varying(64)"
+  "enrollment_initialized_at" timestamp
+
+  Checks {
+    `(enrollment_configuration_id IS NULL AND enrollment_secret_fingerprint IS NULL AND enrollment_initialized_at IS NULL)
+OR (purpose = 'EnrollFactor' AND enrollment_configuration_id IS NOT NULL
+    AND enrollment_configuration_id <> '00000000-0000-0000-0000-000000000000'::uuid
+    AND enrollment_secret_fingerprint IS NOT NULL AND enrollment_secret_fingerprint ~ '^[a-f0-9]{64}$'
+    AND enrollment_initialized_at IS NOT NULL AND enrollment_initialized_at >= created_at AND enrollment_initialized_at < expires_at)` [name: 'ck_sign_in_mfa_enrollment_binding']
+    `expires_at > created_at AND expires_at <= created_at + INTERVAL '5 minutes'` [name: 'ck_sign_in_mfa_lifetime']
+    `policy_fingerprint ~ '^[a-f0-9]{64}$'` [name: 'ck_sign_in_mfa_policy_hash']
+    `subject_token_version > 0` [name: 'ck_sign_in_mfa_subject_version']
+    `token_hash ~ '^[a-f0-9]{64}$'` [name: 'ck_sign_in_mfa_token_hash']
+  }
+
+  Indexes {
+    id [pk, name: "PK_sign_in_mfa_challenges"]
+    (subject_id, expires_at) [name: "ix_sign_in_mfa_challenges_subject_expiry"]
+    token_hash [unique, name: "ux_sign_in_mfa_challenges_token_hash"]
+  }
+}
+
 Table "gameguild.authentication"."step_up_challenges" {
   "id" uuid [not null]
   "tenant_id" uuid [not null]
@@ -11960,7 +12020,7 @@ Table "gameguild.authentication"."user_mfa_configuration" {
 
   Indexes {
     id [pk, name: "PK_user_mfa_configuration"]
-    user_id [name: "ix_user_mfa_configuration_user_id"]
+    user_id [unique, name: "ix_user_mfa_configuration_user_id"]
   }
 }
 
@@ -12015,6 +12075,21 @@ Table "gameguild.authentication"."user_role" {
   }
 }
 
+Table "gameguild.authentication"."totp_replay_state" {
+  "configuration_id" uuid [not null]
+  "secret_fingerprint" "character varying(64)" [not null]
+  "last_accepted_step" bigint [not null]
+  "last_accepted_at" timestamp [not null]
+
+  Checks {
+    `last_accepted_step >= 0` [name: 'ck_totp_replay_state_nonnegative_step']
+  }
+
+  Indexes {
+    (configuration_id, secret_fingerprint) [pk, name: "PK_totp_replay_state"]
+  }
+}
+
 Table "gameguild.authentication"."refreshtoken" {
   "id" uuid [not null]
   "UserId" uuid [not null]
@@ -12037,6 +12112,31 @@ Table "gameguild.authentication"."refreshtoken" {
     SessionId [name: "ix_refreshtoken_session_id"]
     Token [unique, name: "ix_refreshtoken_token"]
     UserId [name: "ix_refreshtoken_user_id"]
+  }
+}
+
+Table "gameguild.authentication"."session_mfa_evidence" {
+  "session_id" uuid [not null]
+  "challenge_id" uuid [not null]
+  "subject_id" uuid [not null]
+  "tenant_id" uuid [not null]
+  "token_version" integer [not null]
+  "policy_fingerprint" "character varying(64)" [not null]
+  "first_factor" "character varying(32)" [not null]
+  "first_factor_verified_at" timestamp [not null]
+  "verified_at" timestamp [not null]
+  "method" "character varying(32)" [not null]
+
+  Checks {
+    `method IN ('Totp', 'BackupCode', 'WebAuthn')` [name: 'ck_session_mfa_method']
+    `policy_fingerprint ~ '^[a-f0-9]{64}$'` [name: 'ck_session_mfa_policy']
+    `verified_at >= first_factor_verified_at AND verified_at <= first_factor_verified_at + INTERVAL '5 minutes'` [name: 'ck_session_mfa_time']
+    `token_version > 0` [name: 'ck_session_mfa_version']
+  }
+
+  Indexes {
+    session_id [pk, name: "PK_session_mfa_evidence"]
+    challenge_id [unique, name: "ux_session_mfa_evidence_challenge"]
   }
 }
 
