@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 namespace GameGuild.Commerce.Subscriptions.PerformanceTests;
 
 /// <summary>
-///     Issue #416: "Plan comparison query completes in <200ms". Benchmarks the
+///     Issue #416: "Plan comparison query completes in under 200ms". Benchmarks the
 ///     feature-matrix construction in CompareSubscriptionPlansQueryHandler over a
 ///     representative plan set (repository lookups are primary-key indexed).
 /// </summary>
