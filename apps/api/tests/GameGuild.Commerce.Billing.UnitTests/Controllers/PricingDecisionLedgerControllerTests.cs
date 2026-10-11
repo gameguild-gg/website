@@ -75,7 +75,7 @@ public sealed class PricingDecisionLedgerControllerTests
         ListPricingDecisionLedgerEntriesQuery? captured = null;
         _sender
             .Setup(sender => sender.Send(It.IsAny<ListPricingDecisionLedgerEntriesQuery>(), It.IsAny<CancellationToken>()))
-            .Callback<ListPricingDecisionLedgerEntriesQuery, CancellationToken>((query, _) => captured = query)
+            .Callback<GameGuild.CQRS.IRequest<PagedResult<PricingDecisionLedgerEntryDto>>, CancellationToken>((query, _) => captured = (ListPricingDecisionLedgerEntriesQuery)query)
             .ReturnsAsync(new PagedResult<PricingDecisionLedgerEntryDto>([], 0, 0, 20));
 
         var controller = CreateController();
@@ -114,7 +114,7 @@ public sealed class PricingDecisionLedgerControllerTests
         GetPricingLedgerEffectivenessQuery? captured = null;
         _sender
             .Setup(sender => sender.Send(It.IsAny<GetPricingLedgerEffectivenessQuery>(), It.IsAny<CancellationToken>()))
-            .Callback<GetPricingLedgerEffectivenessQuery, CancellationToken>((query, _) => captured = query)
+            .Callback<GameGuild.CQRS.IRequest<PricingLedgerEffectivenessAggregate>, CancellationToken>((query, _) => captured = (GetPricingLedgerEffectivenessQuery)query)
             .ReturnsAsync(new PricingLedgerEffectivenessAggregate(
                 from.UtcDateTime, null, tenantId,
                 new PricingLedgerTotals(0, 0, 0, 0, 0, 0, 0),
@@ -134,7 +134,7 @@ public sealed class PricingDecisionLedgerControllerTests
         ValidatePricingLedgerDriftCommand? captured = null;
         _sender
             .Setup(sender => sender.Send(It.IsAny<ValidatePricingLedgerDriftCommand>(), It.IsAny<CancellationToken>()))
-            .Callback<ValidatePricingLedgerDriftCommand, CancellationToken>((command, _) => captured = command)
+            .Callback<GameGuild.CQRS.IRequest<PricingLedgerDriftValidationResult>, CancellationToken>((command, _) => captured = (ValidatePricingLedgerDriftCommand)command)
             .ReturnsAsync(new PricingLedgerDriftValidationResult(0, 0, 0, 0, 0, null, null, DateTime.UtcNow, []));
 
         var controller = CreateController();

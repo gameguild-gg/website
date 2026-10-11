@@ -122,7 +122,7 @@ public sealed class PricingDecisionLedgerWriterTests
         var zeroQuantity = await writer.RecordAsync(
             ValidDecision("k3") with
             {
-                Breakdown = PricingDecisionBreakdown.Empty("USD", 0) with { FinalAmount = 1m }
+                Breakdown = PricingDecisionBreakdown.Empty("USD") with { Quantity = 0, FinalAmount = 1m }
             },
             CancellationToken.None);
         zeroQuantity.Status.Should().Be(PricingDecisionRecordingStatus.Rejected);

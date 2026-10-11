@@ -102,6 +102,7 @@ public sealed class ValidatePricingLedgerDriftCommandHandler(
             if (breakdown is null)
             {
                 skipped++;
+                drifted++;
                 entry.StampValidation(
                     PricingDecisionDriftStatus.Drifted,
                     entry.FinalAmount,

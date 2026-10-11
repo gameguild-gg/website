@@ -49,10 +49,10 @@ public sealed class PricingDecisionLedgerRepositoryTests
         var cutoff = DateTime.UtcNow;
 
         context.Set<PricingDecisionLedgerEntry>().AddRange(
-            Entry(idempotencyKey: "t-a", tenantId: tenantA),
-            Entry(idempotencyKey: "t-b", tenantId: tenantB),
-            Entry(idempotencyKey: "o-a", orderId: orderA),
-            Entry(idempotencyKey: "s-1", subscriptionId: subscription),
+            Entry(idempotencyKey: "t-a", tenantId: tenantA, createdAtUtc: cutoff.AddMinutes(30)),
+            Entry(idempotencyKey: "t-b", tenantId: tenantB, createdAtUtc: cutoff.AddMinutes(30)),
+            Entry(idempotencyKey: "o-a", orderId: orderA, createdAtUtc: cutoff.AddMinutes(30)),
+            Entry(idempotencyKey: "s-1", subscriptionId: subscription, createdAtUtc: cutoff.AddMinutes(30)),
             Entry(idempotencyKey: "old", createdAtUtc: cutoff.AddHours(-2)),
             Entry(idempotencyKey: "new", createdAtUtc: cutoff.AddHours(2)));
         await context.SaveChangesAsync();
@@ -64,9 +64,9 @@ public sealed class PricingDecisionLedgerRepositoryTests
         (await repository.SearchAsync(new PricingDecisionLedgerSearchCriteria(SubscriptionId: subscription), 0, 10))
             .TotalCount.Should().Be(1);
         (await repository.SearchAsync(new PricingDecisionLedgerSearchCriteria(FromUtc: cutoff), 0, 10))
-            .TotalCount.Should().Be(1);
+            .TotalCount.Should().Be(5, "only the entry decided before the cutoff is excluded by FromUtc");
         (await repository.SearchAsync(new PricingDecisionLedgerSearchCriteria(ToUtc: cutoff), 0, 10))
-            .TotalCount.Should().Be(1);
+            .TotalCount.Should().Be(1, "only the entry decided before the cutoff is included by ToUtc");
     }
 
     [Fact]
