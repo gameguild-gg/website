@@ -1943,6 +1943,211 @@ export interface CommercePaymentsCreateWalletInput {
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
 
+/** Result of an accept or challenge action on a dispute. */
+export interface CommercePaymentsDisputeActionResult {
+  /** The dispute the action was applied to. */
+  disputeId: string;
+  /** Failure reason when GameGuild.Commerce.Payments.DisputeActionResult.Success is false. */
+  failureReason?: string | null;
+  refund?: CommercePaymentsRefundRecord;
+  /** Whether the action was applied. */
+  success: boolean;
+}
+
+/** Entity representing dispute evidence */
+export interface CommercePaymentsDisputeEvidence {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Evidence description */
+  description?: string | null;
+  dispute?: CommercePaymentsPaymentDispute;
+  /** Foreign key to the PaymentDispute entity */
+  disputeId: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  evidenceType?: CommercePaymentsEvidenceType;
+  /** File name */
+  fileName?: string | null;
+  /** File size in bytes */
+  fileSize?: number | null;
+  /** File URL */
+  fileUrl?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  /** Whether this evidence is from the merchant */
+  isFromMerchant?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Metadata (JSON) */
+  metadata?: string | null;
+  /** MIME type */
+  mimeType?: string | null;
+  /** Submitted timestamp */
+  submittedAt?: string;
+  /** Submitted by user ID */
+  submittedBy: string;
+  tenantId?: string | null;
+  /** Evidence title */
+  title: string;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Paged read model for dispute listings. */
+export interface CommercePaymentsDisputeListPage {
+  /** Disputes for the requested page, newest first. */
+  items: CommercePaymentsDisputeRecord[] | null;
+  /** 1-based page number. */
+  page: number;
+  /** Page size used for the query. */
+  pageSize: number;
+  /** Total matches across all pages. */
+  totalCount: number;
+}
+
+/** Read model for one dispute (issue #419). */
+export interface CommercePaymentsDisputeRecord {
+  /** Disputed amount. */
+  amount: number;
+  /** When the dispute was created. */
+  createdAt: string;
+  /** Detailed description. */
+  description?: string | null;
+  /** Dispute identifier. */
+  disputeId: string;
+  /** Response due date. */
+  dueDate?: string | null;
+  /** Number of attached evidence files. */
+  evidenceCount: number;
+  /** Deadline for evidence submission, when provided by the gateway. */
+  evidenceDueBy?: string | null;
+  /** Gateway dispute id, when reconciled from a webhook. */
+  gatewayDisputeId?: string | null;
+  /** Gateway that owns the dispute. */
+  gatewayName?: string | null;
+  /** Payment the dispute was raised against. */
+  paymentId: string;
+  /** Dispute reason. */
+  reason: string | null;
+  resolution?: CommercePaymentsDisputeResolution;
+  /** Resolution notes. */
+  resolutionNotes?: string | null;
+  /** When the dispute was resolved. */
+  resolvedAt?: string | null;
+  status: CommercePaymentsDisputeStatus;
+  type: CommercePaymentsDisputeType;
+  /** User associated with the dispute. */
+  userId: string;
+}
+
+/** Dispute resolution types */
+export type CommercePaymentsDisputeResolution = 'Won' | 'Lost' | 'PartialRefund' | 'MerchantCredit' | 'Replacement' | 'MutualAgreement';
+
+/** Request body for accepting a dispute. */
+export interface CommercePaymentsDisputesControllerAcceptDisputeInput {
+  issueRefund?: boolean;
+  notes?: string | null;
+}
+
+/** Request body for attaching evidence. */
+export interface CommercePaymentsDisputesControllerAddDisputeEvidenceInput {
+  description?: string | null;
+  evidenceType?: CommercePaymentsEvidenceType;
+  fileName?: string | null;
+  fileSize?: number | null;
+  fileUrl?: string | null;
+  mimeType?: string | null;
+  title?: string | null;
+}
+
+/** Request body for cancelling a dispute. */
+export interface CommercePaymentsDisputesControllerCancelDisputeInput {
+  reason?: string | null;
+}
+
+/** Request body for challenging a dispute. */
+export interface CommercePaymentsDisputesControllerChallengeDisputeInput {
+  evidenceSummary?: string | null;
+}
+
+/** Request body for creating a dispute. */
+export interface CommercePaymentsDisputesControllerCreateDisputeInput {
+  amount?: number;
+  description?: string | null;
+  paymentId?: string;
+  reason?: string | null;
+  type?: CommercePaymentsDisputeType;
+}
+
+/** Request body for resolving a dispute. */
+export interface CommercePaymentsDisputesControllerResolveDisputeInput {
+  notes?: string | null;
+  resolution?: CommercePaymentsDisputeResolution;
+}
+
+/** Request body for responding to a dispute. */
+export interface CommercePaymentsDisputesControllerRespondDisputeInput {
+  dueDateUtc?: string | null;
+  status?: CommercePaymentsDisputeStatus;
+}
+
+/** Dispute statistics read model (issue #419). */
+export interface CommercePaymentsDisputeStatistics {
+  /** Average hours from dispute creation to resolution for resolved disputes; null when none resolved. */
+  averageResolutionHours?: number | null;
+  /** Dispute count by status in the window. */
+  countByStatus: {
+    Cancelled?: number;
+    Lost?: number;
+    PendingCustomerResponse?: number;
+    PendingMerchantResponse?: number;
+    Resolved?: number;
+    Submitted?: number;
+    UnderReview?: number;
+    Won?: number;
+  } | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Disputes lost by the merchant in the window. */
+  lostCount: number;
+  /** Total disputes considered in the window. */
+  totalCount: number;
+  /** Total disputed amount in the window (currency follows the underlying payments). */
+  totalDisputedAmount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+  /** Win/loss ratio for decided disputes; null when none were decided. */
+  winLossRatio?: number | null;
+  /** Disputes won by the merchant in the window. */
+  wonCount: number;
+}
+
+/** Dispute status */
+export type CommercePaymentsDisputeStatus =
+  'Submitted' | 'UnderReview' | 'PendingCustomerResponse' | 'PendingMerchantResponse' | 'Resolved' | 'Won' | 'Lost' | 'Cancelled';
+
+/** Dispute types */
+export type CommercePaymentsDisputeType =
+  'Fraudulent' | 'ProductNotReceived' | 'ProductNotAsDescribed' | 'Duplicate' | 'IncorrectAmount' | 'ServiceNotProvided' | 'CreditNotProcessed' | 'Other';
+
+/** Evidence types */
+export type CommercePaymentsEvidenceType =
+  'Receipt' | 'Communication' | 'Photo' | 'Video' | 'ShippingInfo' | 'Contract' | 'BankStatement' | 'Documentation' | 'Other';
+
 /** Read model for one pending fraud review. */
 export interface CommercePaymentsFraudReviewListItem {
   /** Charged amount. */
@@ -2065,6 +2270,65 @@ export interface CommercePaymentsPaymentCurrencyAmount {
   amount?: number;
   currency?: string | null;
   paymentCount?: number;
+}
+
+/** Entity representing a payment dispute */
+export interface CommercePaymentsPaymentDispute {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Dispute amount */
+  amount?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Detailed description */
+  description?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Due date for response */
+  dueDate?: string | null;
+  /** Navigation property to dispute evidence */
+  evidence?: CommercePaymentsDisputeEvidence[] | null;
+  /** Deadline by which evidence must be submitted to the gateway, when provided. */
+  evidenceDueBy?: string | null;
+  /** Gateway dispute identifier (e.g. the Stripe `dp_...` id) when this dispute was
+reconciled from a gateway webhook (issue #419). Unique per gateway dispute. */
+  gatewayDisputeId?: string | null;
+  /** Gateway that owns GameGuild.Commerce.Payments.PaymentDispute.GatewayDisputeId (e.g. stripe). */
+  gatewayName?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Foreign key to the Payment entity */
+  paymentId: string;
+  /** Dispute reason */
+  reason: string;
+  resolution?: CommercePaymentsDisputeResolution;
+  /** Resolution notes */
+  resolutionNotes?: string | null;
+  /** Resolved timestamp */
+  resolvedAt?: string | null;
+  /** Resolved by user ID */
+  resolvedBy?: string | null;
+  status?: CommercePaymentsDisputeStatus;
+  tenantId?: string | null;
+  type?: CommercePaymentsDisputeType;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Foreign key to the User entity */
+  userId: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
 }
 
 /** Dunning outcomes for failed payments in the window, as of the query execution time. */
@@ -2217,7 +2481,8 @@ export interface CommercePaymentsPaymentsControllerRefundInput {
 }
 
 /** Payment processing status */
-export type CommercePaymentsPaymentStatus = 'Pending' | 'Processing' | 'Succeeded' | 'Failed' | 'Cancelled' | 'RequiresAction' | 'Refunded' | 'Disputed';
+export type CommercePaymentsPaymentStatus =
+  'Pending' | 'Processing' | 'Succeeded' | 'Failed' | 'Cancelled' | 'RequiresAction' | 'Refunded' | 'Disputed' | 'PartiallyRefunded';
 
 /** Result model for refund processing operations */
 export interface CommercePaymentsProcessRefundResult {
@@ -2246,6 +2511,128 @@ export interface CommercePaymentsProcessRefundResult {
   /** Unique identifier for the refund transaction */
   refundId: string;
   status: CommercePaymentsTransactionStatus;
+}
+
+/** Paged read model for the pending refund-approval queue. */
+export interface CommercePaymentsRefundApprovalQueuePage {
+  /** Queue items for the requested page, oldest first. */
+  items: CommercePaymentsRefundRecord[] | null;
+  /** 1-based page number. */
+  page: number;
+  /** Page size used for the query. */
+  pageSize: number;
+  /** Total queue size across all pages. */
+  totalCount: number;
+}
+
+/** Result of an approval or rejection decision on a refund request. */
+export interface CommercePaymentsRefundDecisionResult {
+  /** Failure reason when GameGuild.Commerce.Payments.RefundDecisionResult.Success is false. */
+  failureReason?: string | null;
+  refund?: CommercePaymentsRefundRecord;
+  /** Whether the decision was applied. */
+  success: boolean;
+}
+
+/** Paged read model for refund listings. */
+export interface CommercePaymentsRefundListPage {
+  /** Refunds for the requested page, newest first. */
+  items: CommercePaymentsRefundRecord[] | null;
+  /** 1-based page number. */
+  page: number;
+  /** Page size used for the query. */
+  pageSize: number;
+  /** Total matches across all pages. */
+  totalCount: number;
+}
+
+/** Read model for a GameGuild.Commerce.Payments.Refund row (issue #419). */
+export interface CommercePaymentsRefundRecord {
+  /** Refund amount in major currency units. */
+  amount: number;
+  /** Number of gateway execution attempts. */
+  attemptCount?: number;
+  /** ISO 4217 currency code. */
+  currency: string | null;
+  /** When the approval decision was recorded. */
+  decidedAt?: string | null;
+  /** Administrator who approved or rejected the refund, when manual. */
+  decidedByUserId?: string | null;
+  /** Notes recorded with the approval or rejection decision. */
+  decisionNotes?: string | null;
+  /** Dispute that triggered this refund, when applicable. */
+  disputeId?: string | null;
+  /** When the gateway rejected the attempt. */
+  failedAt?: string | null;
+  /** Bounded failure reason, when failed. */
+  failureReason?: string | null;
+  /** Gateway that executed the refund. */
+  gatewayName?: string | null;
+  /** Gateway refund identifier once the gateway accepted the refund. */
+  gatewayRefundId?: string | null;
+  /** Payment the refund was issued against. */
+  paymentId: string;
+  /** When the gateway confirmed the refund. */
+  processedAt?: string | null;
+  /** Short machine-readable reason. */
+  reason: string | null;
+  /** Optional human-readable reason details. */
+  reasonDetails?: string | null;
+  /** Refund identifier. */
+  refundId: string;
+  /** When the refund was requested. */
+  requestedAt: string;
+  /** Identity of the requester. */
+  requestedByUserId: string;
+  /** Whether manual approval is (or was) required. */
+  requiresApproval: boolean;
+  status: CommercePaymentsRefundStatus;
+  /** Tenant that owns the refunded payment. */
+  tenantId: string;
+}
+
+/** Request body for approve/reject decisions. */
+export interface CommercePaymentsRefundsControllerRefundDecisionInput {
+  notes?: string | null;
+}
+
+/** Request body for requesting a refund. */
+export interface CommercePaymentsRefundsControllerRequestRefundHttpInput {
+  amount?: number | null;
+  idempotencyKey?: string | null;
+  paymentId?: string;
+  reason?: string | null;
+  reasonDetails?: string | null;
+}
+
+/** Refund statistics read model (issue #419). */
+export interface CommercePaymentsRefundStatistics {
+  /** Refunded amount by currency for completed refunds in the window. */
+  completedAmountByCurrency: Record<string, number> | null;
+  /** Completed refund count per reason in the window. */
+  completedCountByReason: Record<string, number> | null;
+  /** Refund count by lifecycle status in the window. */
+  countByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Total refunds considered in the window (all statuses). */
+  totalCount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+}
+
+/** Lifecycle status of a refund request (issue #419). */
+export type CommercePaymentsRefundStatus = 'Pending' | 'Approved' | 'Rejected' | 'Processing' | 'Completed' | 'Failed';
+
+/** Result of creating a refund request. */
+export interface CommercePaymentsRequestRefundResult {
+  /** Failure reason when GameGuild.Commerce.Payments.RequestRefundResult.Success is false. */
+  failureReason?: string | null;
+  refund?: CommercePaymentsRefundRecord;
+  /** Whether the refund is queued for manual approval. */
+  requiresApproval: boolean;
+  /** Whether the request was recorded (or replayed) successfully. */
+  success: boolean;
 }
 
 /** Durable alert raised when daily net revenue deviates abnormally from its trailing
@@ -21027,6 +21414,22 @@ export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommerceP
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsDisputeActionResultSchema: z.ZodType<CommercePaymentsDisputeActionResult>;
+export let CommercePaymentsDisputeEvidenceSchema: z.ZodType<CommercePaymentsDisputeEvidence>;
+export let CommercePaymentsDisputeListPageSchema: z.ZodType<CommercePaymentsDisputeListPage>;
+export let CommercePaymentsDisputeRecordSchema: z.ZodType<CommercePaymentsDisputeRecord>;
+export let CommercePaymentsDisputeResolutionSchema: z.ZodType<CommercePaymentsDisputeResolution>;
+export let CommercePaymentsDisputesControllerAcceptDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerAcceptDisputeInput>;
+export let CommercePaymentsDisputesControllerAddDisputeEvidenceInputSchema: z.ZodType<CommercePaymentsDisputesControllerAddDisputeEvidenceInput>;
+export let CommercePaymentsDisputesControllerCancelDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerCancelDisputeInput>;
+export let CommercePaymentsDisputesControllerChallengeDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerChallengeDisputeInput>;
+export let CommercePaymentsDisputesControllerCreateDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerCreateDisputeInput>;
+export let CommercePaymentsDisputesControllerResolveDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerResolveDisputeInput>;
+export let CommercePaymentsDisputesControllerRespondDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerRespondDisputeInput>;
+export let CommercePaymentsDisputeStatisticsSchema: z.ZodType<CommercePaymentsDisputeStatistics>;
+export let CommercePaymentsDisputeStatusSchema: z.ZodType<CommercePaymentsDisputeStatus>;
+export let CommercePaymentsDisputeTypeSchema: z.ZodType<CommercePaymentsDisputeType>;
+export let CommercePaymentsEvidenceTypeSchema: z.ZodType<CommercePaymentsEvidenceType>;
 export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
 export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
@@ -21040,6 +21443,7 @@ export let CommercePaymentsPatchTaxRuleInputSchema: z.ZodType<CommercePaymentsPa
 export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymentsPaymentAttemptMetrics>;
 export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePaymentsPaymentCancellationResult>;
 export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
+export let CommercePaymentsPaymentDisputeSchema: z.ZodType<CommercePaymentsPaymentDispute>;
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
 export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
 export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
@@ -21056,6 +21460,15 @@ export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodTyp
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
+export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
+export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
+export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
+export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
+export let CommercePaymentsRefundsControllerRefundDecisionInputSchema: z.ZodType<CommercePaymentsRefundsControllerRefundDecisionInput>;
+export let CommercePaymentsRefundsControllerRequestRefundHttpInputSchema: z.ZodType<CommercePaymentsRefundsControllerRequestRefundHttpInput>;
+export let CommercePaymentsRefundStatisticsSchema: z.ZodType<CommercePaymentsRefundStatistics>;
+export let CommercePaymentsRefundStatusSchema: z.ZodType<CommercePaymentsRefundStatus>;
+export let CommercePaymentsRequestRefundResultSchema: z.ZodType<CommercePaymentsRequestRefundResult>;
 export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
 export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
 export let CommercePaymentsRevenueAnomalyStatusSchema: z.ZodType<CommercePaymentsRevenueAnomalyStatus>;
@@ -24604,6 +25017,189 @@ CommercePaymentsCreateWalletInputSchema = z.object({
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
 
+/** Zod schema for CommercePaymentsDisputeActionResult. Result of an accept or challenge action on a dispute. */
+CommercePaymentsDisputeActionResultSchema = z.object({
+  disputeId: z.string().uuid(),
+  failureReason: z.string().nullable().optional(),
+  refund: z.lazy(() => CommercePaymentsRefundRecordSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsDisputeEvidence. Entity representing dispute evidence */
+CommercePaymentsDisputeEvidenceSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().max(2000).nullable().optional(),
+  dispute: z.lazy(() => CommercePaymentsPaymentDisputeSchema).optional(),
+  disputeId: z.string().uuid(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  evidenceType: z.lazy(() => CommercePaymentsEvidenceTypeSchema).optional(),
+  fileName: z.string().max(255).nullable().optional(),
+  fileSize: z.number().int().nullable().optional(),
+  fileUrl: z.string().max(1000).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isFromMerchant: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  metadata: z.string().max(2000).nullable().optional(),
+  mimeType: z.string().max(100).nullable().optional(),
+  submittedAt: z.string().datetime().optional(),
+  submittedBy: z.string().uuid(),
+  tenantId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1).max(200),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputeListPage. Paged read model for dispute listings. */
+CommercePaymentsDisputeListPageSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsDisputeRecordSchema)).nullable(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsDisputeRecord. Read model for one dispute (issue #419). */
+CommercePaymentsDisputeRecordSchema = z.object({
+  amount: z.number(),
+  createdAt: z.string().datetime(),
+  description: z.string().nullable().optional(),
+  disputeId: z.string().uuid(),
+  dueDate: z.string().datetime().nullable().optional(),
+  evidenceCount: z.number().int(),
+  evidenceDueBy: z.string().datetime().nullable().optional(),
+  gatewayDisputeId: z.string().nullable().optional(),
+  gatewayName: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().nullable(),
+  resolution: z.lazy(() => CommercePaymentsDisputeResolutionSchema).optional(),
+  resolutionNotes: z.string().nullable().optional(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsDisputeStatusSchema),
+  type: z.lazy(() => CommercePaymentsDisputeTypeSchema),
+  userId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsDisputeResolution. Dispute resolution types */
+CommercePaymentsDisputeResolutionSchema = z.enum(['Won', 'Lost', 'PartialRefund', 'MerchantCredit', 'Replacement', 'MutualAgreement']);
+
+/** Zod schema for CommercePaymentsDisputesControllerAcceptDisputeInput. Request body for accepting a dispute. */
+CommercePaymentsDisputesControllerAcceptDisputeInputSchema = z.object({
+  issueRefund: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerAddDisputeEvidenceInput. Request body for attaching evidence. */
+CommercePaymentsDisputesControllerAddDisputeEvidenceInputSchema = z.object({
+  description: z.string().nullable().optional(),
+  evidenceType: z.lazy(() => CommercePaymentsEvidenceTypeSchema).optional(),
+  fileName: z.string().nullable().optional(),
+  fileSize: z.number().int().nullable().optional(),
+  fileUrl: z.string().nullable().optional(),
+  mimeType: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerCancelDisputeInput. Request body for cancelling a dispute. */
+CommercePaymentsDisputesControllerCancelDisputeInputSchema = z.object({
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerChallengeDisputeInput. Request body for challenging a dispute. */
+CommercePaymentsDisputesControllerChallengeDisputeInputSchema = z.object({
+  evidenceSummary: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerCreateDisputeInput. Request body for creating a dispute. */
+CommercePaymentsDisputesControllerCreateDisputeInputSchema = z.object({
+  amount: z.number().optional(),
+  description: z.string().nullable().optional(),
+  paymentId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+  type: z.lazy(() => CommercePaymentsDisputeTypeSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerResolveDisputeInput. Request body for resolving a dispute. */
+CommercePaymentsDisputesControllerResolveDisputeInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+  resolution: z.lazy(() => CommercePaymentsDisputeResolutionSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerRespondDisputeInput. Request body for responding to a dispute. */
+CommercePaymentsDisputesControllerRespondDisputeInputSchema = z.object({
+  dueDateUtc: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsDisputeStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputeStatistics. Dispute statistics read model (issue #419). */
+CommercePaymentsDisputeStatisticsSchema = z.object({
+  averageResolutionHours: z.number().nullable().optional(),
+  countByStatus: z
+    .object({
+      Cancelled: z.number().int(),
+      Lost: z.number().int(),
+      PendingCustomerResponse: z.number().int(),
+      PendingMerchantResponse: z.number().int(),
+      Resolved: z.number().int(),
+      Submitted: z.number().int(),
+      UnderReview: z.number().int(),
+      Won: z.number().int(),
+    })
+    .nullable(),
+  fromUtc: z.string().datetime(),
+  lostCount: z.number().int(),
+  totalCount: z.number().int(),
+  totalDisputedAmount: z.number(),
+  toUtc: z.string().datetime(),
+  winLossRatio: z.number().nullable().optional(),
+  wonCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsDisputeStatus. Dispute status */
+CommercePaymentsDisputeStatusSchema = z.enum([
+  'Submitted',
+  'UnderReview',
+  'PendingCustomerResponse',
+  'PendingMerchantResponse',
+  'Resolved',
+  'Won',
+  'Lost',
+  'Cancelled',
+]);
+
+/** Zod schema for CommercePaymentsDisputeType. Dispute types */
+CommercePaymentsDisputeTypeSchema = z.enum([
+  'Fraudulent',
+  'ProductNotReceived',
+  'ProductNotAsDescribed',
+  'Duplicate',
+  'IncorrectAmount',
+  'ServiceNotProvided',
+  'CreditNotProcessed',
+  'Other',
+]);
+
+/** Zod schema for CommercePaymentsEvidenceType. Evidence types */
+CommercePaymentsEvidenceTypeSchema = z.enum([
+  'Receipt',
+  'Communication',
+  'Photo',
+  'Video',
+  'ShippingInfo',
+  'Contract',
+  'BankStatement',
+  'Documentation',
+  'Other',
+]);
+
 /** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
 CommercePaymentsFraudReviewListItemSchema = z.object({
   amount: z.number(),
@@ -24699,6 +25295,46 @@ CommercePaymentsPaymentCurrencyAmountSchema = z.object({
   amount: z.number().optional(),
   currency: z.string().nullable().optional(),
   paymentCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentDispute. Entity representing a payment dispute */
+CommercePaymentsPaymentDisputeSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().max(2000).nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  dueDate: z.string().datetime().nullable().optional(),
+  evidence: z
+    .array(z.lazy(() => CommercePaymentsDisputeEvidenceSchema))
+    .nullable()
+    .optional(),
+  evidenceDueBy: z.string().datetime().nullable().optional(),
+  gatewayDisputeId: z.string().max(255).nullable().optional(),
+  gatewayName: z.string().max(50).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().min(1).max(100),
+  resolution: z.lazy(() => CommercePaymentsDisputeResolutionSchema).optional(),
+  resolutionNotes: z.string().max(2000).nullable().optional(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  resolvedBy: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsDisputeStatusSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  type: z.lazy(() => CommercePaymentsDisputeTypeSchema).optional(),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  version: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentDunningOutcomeMetrics. Dunning outcomes for failed payments in the window, as of the query execution time. */
@@ -24839,7 +25475,17 @@ CommercePaymentsPaymentsControllerRefundInputSchema = z.object({
 });
 
 /** Zod schema for CommercePaymentsPaymentStatus. Payment processing status */
-CommercePaymentsPaymentStatusSchema = z.enum(['Pending', 'Processing', 'Succeeded', 'Failed', 'Cancelled', 'RequiresAction', 'Refunded', 'Disputed']);
+CommercePaymentsPaymentStatusSchema = z.enum([
+  'Pending',
+  'Processing',
+  'Succeeded',
+  'Failed',
+  'Cancelled',
+  'RequiresAction',
+  'Refunded',
+  'Disputed',
+  'PartiallyRefunded',
+]);
 
 /** Zod schema for CommercePaymentsProcessRefundResult. Result model for refund processing operations */
 CommercePaymentsProcessRefundResultSchema = z.object({
@@ -24856,6 +25502,98 @@ CommercePaymentsProcessRefundResultSchema = z.object({
   refundedAmount: z.number(),
   refundId: z.string().uuid(),
   status: z.lazy(() => CommercePaymentsTransactionStatusSchema),
+});
+
+/** Zod schema for CommercePaymentsRefundApprovalQueuePage. Paged read model for the pending refund-approval queue. */
+CommercePaymentsRefundApprovalQueuePageSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundDecisionResult. Result of an approval or rejection decision on a refund request. */
+CommercePaymentsRefundDecisionResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  refund: z.lazy(() => CommercePaymentsRefundRecordSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsRefundListPage. Paged read model for refund listings. */
+CommercePaymentsRefundListPageSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundRecord. Read model for a GameGuild.Commerce.Payments.Refund row (issue #419). */
+CommercePaymentsRefundRecordSchema = z.object({
+  amount: z.number(),
+  attemptCount: z.number().int().optional(),
+  currency: z.string().nullable(),
+  decidedAt: z.string().datetime().nullable().optional(),
+  decidedByUserId: z.string().uuid().nullable().optional(),
+  decisionNotes: z.string().nullable().optional(),
+  disputeId: z.string().uuid().nullable().optional(),
+  failedAt: z.string().datetime().nullable().optional(),
+  failureReason: z.string().nullable().optional(),
+  gatewayName: z.string().nullable().optional(),
+  gatewayRefundId: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  processedAt: z.string().datetime().nullable().optional(),
+  reason: z.string().nullable(),
+  reasonDetails: z.string().nullable().optional(),
+  refundId: z.string().uuid(),
+  requestedAt: z.string().datetime(),
+  requestedByUserId: z.string().uuid(),
+  requiresApproval: z.boolean(),
+  status: z.lazy(() => CommercePaymentsRefundStatusSchema),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsRefundsControllerRefundDecisionInput. Request body for approve/reject decisions. */
+CommercePaymentsRefundsControllerRefundDecisionInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRefundsControllerRequestRefundHttpInput. Request body for requesting a refund. */
+CommercePaymentsRefundsControllerRequestRefundHttpInputSchema = z.object({
+  amount: z.number().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  paymentId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+  reasonDetails: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRefundStatistics. Refund statistics read model (issue #419). */
+CommercePaymentsRefundStatisticsSchema = z.object({
+  completedAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  completedCountByReason: z.record(z.string(), z.number().int()).nullable(),
+  countByStatus: z
+    .object({
+      Approved: z.number().int(),
+      Completed: z.number().int(),
+      Failed: z.number().int(),
+      Pending: z.number().int(),
+      Processing: z.number().int(),
+      Rejected: z.number().int(),
+    })
+    .nullable(),
+  fromUtc: z.string().datetime(),
+  totalCount: z.number().int(),
+  toUtc: z.string().datetime(),
+});
+
+/** Zod schema for CommercePaymentsRefundStatus. Lifecycle status of a refund request (issue #419). */
+CommercePaymentsRefundStatusSchema = z.enum(['Pending', 'Approved', 'Rejected', 'Processing', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRequestRefundResult. Result of creating a refund request. */
+CommercePaymentsRequestRefundResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  refund: z.lazy(() => CommercePaymentsRefundRecordSchema).optional(),
+  requiresApproval: z.boolean(),
+  success: z.boolean(),
 });
 
 /** Zod schema for CommercePaymentsRevenueAnomalyAlert. Durable alert raised when daily net revenue deviates abnormally from its trailing

@@ -7165,6 +7165,210 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * List disputes with optional filters, newest first.
+ *
+ * Lists payment disputes with optional status, payment and user filters, newest first. Non-admin actors only see their own tenant's disputes.
+ */
+export interface GetDisputesInput {
+  query?: {
+    status?: Types.CommercePaymentsDisputeStatus;
+    paymentId?: string;
+    userId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetDisputesOutput = Types.CommercePaymentsDisputeListPage;
+export const getDisputesEndpoint = {
+  operationId: 'getDisputes' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a dispute for a payment. The disputing user is the authenticated actor.
+ *
+ * Creates a dispute against a payment. The disputing identity comes from the authenticated actor, never the request body.
+ */
+export interface PostDisputesInput {
+  body?: Types.CommercePaymentsDisputesControllerCreateDisputeInput;
+}
+export type PostDisputesOutput = Types.CommercePaymentsPaymentDispute;
+export const postDisputesEndpoint = {
+  operationId: 'postDisputes' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retrieve a single dispute by id.
+ *
+ * Retrieves a single payment dispute with its attached evidence.
+ */
+export interface GetDisputeByIdInput {
+  disputeId: string;
+}
+export type GetDisputeByIdOutput = Types.CommercePaymentsPaymentDispute;
+export const getDisputeByIdEndpoint = {
+  operationId: 'getDisputeById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/{disputeId}' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Accept a dispute: closes it as lost at the gateway and records the refund through the
+ * approval-aware refund path. Requires the `payments:admin` permission.
+ *
+ * Accepts the dispute (lost) and records the refund through the refund approval workflow. Requires the payments:admin permission.
+ */
+export interface PostDisputesAcceptInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerAcceptDisputeInput;
+}
+export type PostDisputesAcceptOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesAcceptEndpoint = {
+  operationId: 'postDisputesAccept' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:accept' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Cancel a dispute.
+ *
+ * Cancels an open dispute with a reason. Custom action per Google API guidelines.
+ */
+export interface PostDisputesCancelInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerCancelDisputeInput;
+}
+export type PostDisputesCancelOutput = void;
+export const postDisputesCancelEndpoint = {
+  operationId: 'postDisputesCancel' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:cancel' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Challenge a dispute by submitting the merchant evidence to the gateway. Requires the
+ * `payments:admin` permission.
+ *
+ * Submits the merchant evidence to the gateway to contest the chargeback. Requires the payments:admin permission.
+ */
+export interface PostDisputesChallengeInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerChallengeDisputeInput;
+}
+export type PostDisputesChallengeOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesChallengeEndpoint = {
+  operationId: 'postDisputesChallenge' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:challenge' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve a dispute with an explicit outcome.
+ *
+ * Resolves a dispute with an explicit outcome (won, lost, partial refund, ...). Custom action per Google API guidelines.
+ */
+export interface PostDisputesResolveInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerResolveDisputeInput;
+}
+export type PostDisputesResolveOutput = void;
+export const postDisputesResolveEndpoint = {
+  operationId: 'postDisputesResolve' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:resolve' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Respond to a dispute by advancing its status (review, customer or merchant response).
+ *
+ * Advances a dispute's status (under review, pending customer or merchant response). Custom action per Google API guidelines.
+ */
+export interface PostDisputesRespondInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerRespondDisputeInput;
+}
+export type PostDisputesRespondOutput = void;
+export const postDisputesRespondEndpoint = {
+  operationId: 'postDisputesRespond' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:respond' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the evidence attached to a dispute.
+ *
+ * Lists the evidence files attached to a payment dispute, newest first.
+ */
+export interface GetDisputesEvidenceInput {
+  disputeId: string;
+}
+export type GetDisputesEvidenceOutput = Types.CommercePaymentsDisputeEvidence[];
+export const getDisputesEvidenceEndpoint = {
+  operationId: 'getDisputesEvidence' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/{disputeId}/evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Attach evidence to a dispute. The submitting user is the authenticated actor.
+ *
+ * Attaches an evidence entry to a payment dispute. The submitting identity comes from the authenticated actor, never the request body.
+ */
+export interface PostDisputesEvidenceInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerAddDisputeEvidenceInput;
+}
+export type PostDisputesEvidenceOutput = Types.CommercePaymentsDisputeEvidence;
+export const postDisputesEvidenceEndpoint = {
+  operationId: 'postDisputesEvidence' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}/evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dispute statistics for an inclusive window.
+ *
+ * Returns dispute counts by status, win/loss ratio for decided disputes and the average time to resolution for an inclusive window.
+ */
+export interface GetDisputesStatisticsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetDisputesStatisticsOutput = Types.CommercePaymentsDisputeStatistics;
+export const getDisputesStatisticsEndpoint = {
+  operationId: 'getDisputesStatistics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/statistics' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface PostEconomyAdRewardsSessionsInput {
   body?: Types.APIControllersStartMyAdRewardSessionInput;
 }
@@ -8578,6 +8782,144 @@ export const getPostsTrendingEndpoint = {
   path: '/api/v1/posts/trending' as const,
   tags: ['SocialPosts'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * List refunds with optional filters, newest first.
+ *
+ * Lists refunds with optional status and period filters, newest first. Non-admin actors are scoped to their own tenant.
+ */
+export interface GetRefundsInput {
+  query?: {
+    status?: Types.CommercePaymentsRefundStatus;
+    fromUtc?: string;
+    toUtc?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetRefundsOutput = Types.CommercePaymentsRefundListPage;
+export const getRefundsEndpoint = {
+  operationId: 'getRefunds' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Request a refund for a payment. Amounts at or above the manual-approval threshold
+ * are queued as pending; amounts below it (or all refunds when no threshold is
+ * configured) execute immediately.
+ *
+ * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.
+ */
+export interface PostRefundsInput {
+  body?: Types.CommercePaymentsRefundsControllerRequestRefundHttpInput;
+}
+export type PostRefundsOutput = Types.CommercePaymentsRequestRefundResult;
+export const postRefundsEndpoint = {
+  operationId: 'postRefunds' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retrieve a single refund by id.
+ *
+ * Retrieves a single refund with its lifecycle state, decision trail and gateway references.
+ */
+export interface GetRefundByIdInput {
+  refundId: string;
+}
+export type GetRefundByIdOutput = Types.CommercePaymentsRefundRecord;
+export const getRefundByIdEndpoint = {
+  operationId: 'getRefundById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/{refundId}' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending refund and execute it. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Approves the pending refund and executes it through the gateway. Requires the payments:refunds:approve permission. Custom action per Google API guidelines.
+ */
+export interface PostRefundsApproveInput {
+  refundId: string;
+  body?: Types.CommercePaymentsRefundsControllerRefundDecisionInput;
+}
+export type PostRefundsApproveOutput = Types.CommercePaymentsRefundDecisionResult;
+export const postRefundsApproveEndpoint = {
+  operationId: 'postRefundsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds/{refundId}:approve' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reject a pending refund; no money moves. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Rejects the pending refund; no money moves. Requires the payments:refunds:approve permission. Custom action per Google API guidelines.
+ */
+export interface PostRefundsRejectInput {
+  refundId: string;
+  body?: Types.CommercePaymentsRefundsControllerRefundDecisionInput;
+}
+export type PostRefundsRejectOutput = Types.CommercePaymentsRefundDecisionResult;
+export const postRefundsRejectEndpoint = {
+  operationId: 'postRefundsReject' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds/{refundId}:reject' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * The pending refund-approval queue, oldest first. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Lists refunds waiting for a manual approval decision, oldest first. Requires the payments:refunds:approve permission; non-admin actors are scoped to their own tenant.
+ */
+export interface GetRefundsPendingApprovalsInput {
+  query?: {
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetRefundsPendingApprovalsOutput = Types.CommercePaymentsRefundApprovalQueuePage;
+export const getRefundsPendingApprovalsEndpoint = {
+  operationId: 'getRefundsPendingApprovals' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/pending-approvals' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Refund statistics for an inclusive window.
+ *
+ * Returns refund counts by status, completed refund amounts by currency and the reason breakdown for an inclusive window.
+ */
+export interface GetRefundsStatisticsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetRefundsStatisticsOutput = Types.CommercePaymentsRefundStatistics;
+export const getRefundsStatisticsEndpoint = {
+  operationId: 'getRefundsStatistics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/statistics' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -27537,6 +27879,17 @@ export const endpoints = {
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
   postBillingWebhooksWebhookEventsRetry: postBillingWebhooksWebhookEventsRetryEndpoint,
+  getDisputes: getDisputesEndpoint,
+  postDisputes: postDisputesEndpoint,
+  getDisputeById: getDisputeByIdEndpoint,
+  postDisputesAccept: postDisputesAcceptEndpoint,
+  postDisputesCancel: postDisputesCancelEndpoint,
+  postDisputesChallenge: postDisputesChallengeEndpoint,
+  postDisputesResolve: postDisputesResolveEndpoint,
+  postDisputesRespond: postDisputesRespondEndpoint,
+  getDisputesEvidence: getDisputesEvidenceEndpoint,
+  postDisputesEvidence: postDisputesEvidenceEndpoint,
+  getDisputesStatistics: getDisputesStatisticsEndpoint,
   postEconomyAdRewardsSessions: postEconomyAdRewardsSessionsEndpoint,
   getEconomyAdRewardsSessions: getEconomyAdRewardsSessionsEndpoint,
   postEconomyAdRewardsSessionsComplete: postEconomyAdRewardsSessionsCompleteEndpoint,
@@ -27619,6 +27972,13 @@ export const endpoints = {
   getPostsTagsPopular: getPostsTagsPopularEndpoint,
   getPostsTagsSearch: getPostsTagsSearchEndpoint,
   getPostsTrending: getPostsTrendingEndpoint,
+  getRefunds: getRefundsEndpoint,
+  postRefunds: postRefundsEndpoint,
+  getRefundById: getRefundByIdEndpoint,
+  postRefundsApprove: postRefundsApproveEndpoint,
+  postRefundsReject: postRefundsRejectEndpoint,
+  getRefundsPendingApprovals: getRefundsPendingApprovalsEndpoint,
+  getRefundsStatistics: getRefundsStatisticsEndpoint,
   getReportsChurn: getReportsChurnEndpoint,
   postSlaSlis: postSlaSlisEndpoint,
   getSlaSlosForGetSlaSlos: getSlaSlosForGetSlaSlosEndpoint,
