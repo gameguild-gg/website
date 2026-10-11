@@ -113,3 +113,48 @@ test("never selects benchmark harnesses for the affected API test run", () => {
     [],
   );
 });
+
+
+for (const module of ["Authentication", "Authorization", "Context"]) {
+  test("identity " + module + " changes select the mandatory identity and host security suites", () => {
+    assert.deepEqual(
+      selectAffectedDotnetTestNames(
+        ["apps/api/Source/Modules/GameGuild.Identity." + module + "/Services/Example.cs"],
+        [
+          ...availableProjects,
+          "GameGuild.Identity.Authentication.UnitTests",
+          "GameGuild.Identity.Authorization.UnitTests",
+        ],
+      ),
+      [
+        "GameGuild.API.UnitTests",
+        "GameGuild.Identity.Authentication.UnitTests",
+        "GameGuild.Identity.Authorization.UnitTests",
+        "GameGuild.SharedKernel.UnitTests",
+      ],
+    );
+  });
+}
+
+test("mandatory identity security selection deduplicates multiple source changes", () => {
+  assert.deepEqual(
+    selectAffectedDotnetTestNames(
+      [
+        "apps/api/Source/Modules/GameGuild.Identity.Authentication/Services/SessionManagementService.cs",
+        "apps/api/Source/Modules/GameGuild.Identity.Authorization/Services/PermissionAuditService.cs",
+        "apps/api/tests/GameGuild.Identity.Authentication.UnitTests/Services/SessionManagementServiceTests.cs",
+      ],
+      [
+        ...availableProjects,
+        "GameGuild.Identity.Authentication.UnitTests",
+        "GameGuild.Identity.Authorization.UnitTests",
+      ],
+    ),
+    [
+      "GameGuild.API.UnitTests",
+      "GameGuild.Identity.Authentication.UnitTests",
+      "GameGuild.Identity.Authorization.UnitTests",
+      "GameGuild.SharedKernel.UnitTests",
+    ],
+  );
+});

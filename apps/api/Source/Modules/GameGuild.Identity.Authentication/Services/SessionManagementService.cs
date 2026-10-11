@@ -369,6 +369,7 @@ public sealed class SessionManagementService(
             session.TerminationReason = SessionTerminationReason.MaxSessionsExceeded.ToString();
             session.TerminatedAt = SystemClock.UtcNow;
             await sessionRepository.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
+            await ForwardSessionAuditEventAsync(session, "Authentication.SessionTerminated", cancellationToken, session.TerminationReason).ConfigureAwait(false);
         }
     }
 
