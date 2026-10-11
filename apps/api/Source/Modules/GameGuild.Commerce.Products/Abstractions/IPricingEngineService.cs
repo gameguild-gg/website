@@ -12,6 +12,8 @@ public interface IPricingEngineService
     /// <param name="pricing">The pricing option to use (null = default pricing)</param>
     /// <param name="promoCodes">Optional list of promo codes to apply</param>
     /// <param name="userId">Optional user ID for user-specific discounts</param>
+    /// <param name="quantity">Quantity being priced; drives volume-tier pricing rules (issue #395)</param>
+    /// <param name="customerSegment">Optional customer segment for segment-scoped rules (issue #395)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Pricing calculation result</returns>
     Task<PricingCalculationResult> CalculatePriceAsync(
@@ -19,6 +21,8 @@ public interface IPricingEngineService
         ProductPricing? pricing = null,
         IEnumerable<string>? promoCodes = null,
         Guid? userId = null,
+        int quantity = 1,
+        string? customerSegment = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -29,6 +33,8 @@ public interface IPricingEngineService
         Guid? pricingId = null,
         IEnumerable<string>? promoCodes = null,
         Guid? userId = null,
+        int quantity = 1,
+        string? customerSegment = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

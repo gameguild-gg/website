@@ -15,6 +15,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="Moq"/>
         <PackageReference Include="xunit"/>
         <PackageReference Include="xunit.runner.visualstudio"/>
     </ItemGroup>
@@ -22,6 +23,10 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Source\GameGuild.API\GameGuild.API.csproj"/>
         <ProjectReference Include="..\..\Source\Modules\GameGuild.Commerce.Products\GameGuild.Commerce.Products.csproj"/>
+        <!-- Real-PostgreSQL fixture support (pricing-engine endpoint tests): gives CI's
+             disposable-postgres gate (ECONOMY_POSTGRES_CONNECTION) and Testcontainers
+             for local runs, matching the GameGuild.API.IntegrationTests convention. -->
+        <ProjectReference Include="..\GameGuild.TestSupport.Finance.Economy\GameGuild.TestSupport.Finance.Economy.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
