@@ -117,12 +117,18 @@ run_case mixed 0 '' "$api_source" "$economy_source"
 grep -Eq '^dotnet test .*GameGuild.API.UnitTests.* \| template=$' "$MOCK_LOG"
 grep -Eq '^dotnet test .*SharedKernel.UnitTests' "$MOCK_LOG"
 [[ "$(grep -c '^docker run ' "$MOCK_LOG")" == 1 ]]
-[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 3 ]]
+[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 5 ]]
+for mandatory_suite in GameGuild.API.UnitTests GameGuild.Identity.Authentication.UnitTests GameGuild.Identity.Authorization.UnitTests GameGuild.SharedKernel.UnitTests; do
+  grep -Fq "/$mandatory_suite.csproj" "$MOCK_LOG"
+done
 printf 'PASS migration-sensitive API tests retain empty databases and every selected suite runs\n'
 
 run_case core 0 '' "$api_source"
 ! grep -q '^docker ' "$MOCK_LOG"
-[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 2 ]]
+[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 4 ]]
+for mandatory_suite in GameGuild.API.UnitTests GameGuild.Identity.Authentication.UnitTests GameGuild.Identity.Authorization.UnitTests GameGuild.SharedKernel.UnitTests; do
+  grep -Fq "/$mandatory_suite.csproj" "$MOCK_LOG"
+done
 printf 'PASS ordinary core selection does not start Economy infrastructure\n'
 
 run_case migration_failure 41 migration "$economy_source"
