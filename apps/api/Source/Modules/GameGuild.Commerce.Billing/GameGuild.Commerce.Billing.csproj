@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="GameGuild.Commerce.Billing.IntegrationTests"/>
         <PackageReference Include="FluentValidation"/>
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
@@ -16,6 +17,7 @@
     <ItemGroup>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj"/>
         <ProjectReference Include="..\GameGuild.Commerce\GameGuild.Commerce.csproj"/>
+        <ProjectReference Include="..\GameGuild.Commerce.Payments\GameGuild.Commerce.Payments.csproj"/>
         <ProjectReference Include="..\GameGuild.Commerce.Subscriptions\GameGuild.Commerce.Subscriptions.csproj"/>
         <ProjectReference Include="..\GameGuild.Compliance.Audit\GameGuild.Compliance.Audit.csproj"/>
         <ProjectReference Include="..\GameGuild.Identity.Authorization\GameGuild.Identity.Authorization.csproj"/>

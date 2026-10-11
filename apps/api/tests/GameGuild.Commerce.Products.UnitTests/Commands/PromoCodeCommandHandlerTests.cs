@@ -228,6 +228,7 @@ public class ApplyPromoCodesCommandHandlerTests
             _mockPromoRepository.Object,
             _mockRecorder.Object,
             Mock.Of<IPromoCodeAuditLogger>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             NullLogger<ApplyPromoCodesCommandHandler>.Instance);
     }
 
