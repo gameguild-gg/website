@@ -69,13 +69,11 @@ export async function SocialFeed({
 
   const emptyFeed = { items: [], nextCursor: null };
   // Captured, not awaited: a rejection must not kill the parallel batch below.
-  let primaryError = false;
-  const primaryPromise = loadSocialFeed({ scope, tag }).catch(() => {
-    primaryError = true;
-    return emptyFeed;
-  });
+  const primaryPromise = loadSocialFeed({ scope, tag })
+    .then((feed) => ({ failed: false as const, feed }))
+    .catch(() => ({ failed: true as const, feed: emptyFeed }));
 
-  const [primary, storiesTrack, currentProfile, suggestedProfiles, trendingTags, community] =
+  const [primaryResult, storiesTrack, currentProfile, suggestedProfiles, trendingTags, community] =
     await Promise.all([
       primaryPromise,
       optional(
@@ -97,10 +95,11 @@ export async function SocialFeed({
         : Promise.resolve([]),
       optional(loadTrendingTags(6), []),
       scope === "community"
-        ? primaryPromise
+        ? primaryPromise.then(({ feed }) => feed)
         : optional(loadSocialFeed({ scope: "community", take: 8 }), emptyFeed),
     ]);
 
+  const { failed: primaryError, feed: primary } = primaryResult;
   const { stories, authorProfiles } = storiesTrack;
   const storyAuthorIds = [...new Set(stories.map((story) => story.authorId))];
   const storyProfiles = new Map<string, SocialProfile>();
