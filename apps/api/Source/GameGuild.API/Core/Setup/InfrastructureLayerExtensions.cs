@@ -268,6 +268,11 @@ public static class InfrastructureLayerExtensions
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)
         stepStopwatch.Restart();
         services.AddOrdersModule();
+        // Promo engine (issue #418): the atomic usage recorder and the audit logger do not
+        // match the I{Name}Service/Repository/Reader convention scan, so they need explicit
+        // registration for the promo apply/checkout flows to resolve.
+        services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeUsageRecorder, global::GameGuild.Commerce.Products.PromoCodeUsageRecorder>();
+        services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeAuditLogger, global::GameGuild.Commerce.Products.PromoCodeAuditLogger>();
         logger.LogInformation("Commerce Orders Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)
