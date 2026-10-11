@@ -385,17 +385,25 @@ public sealed class UserEnumerationProtectionCompensationTests
         public override long GetTimestamp() => timestamp;
         public void Age() => timestamp += TimeSpan.FromMilliseconds(450).Ticks;
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
-            throw new InvalidOperationException("An already-aged compensation window must not create a timer.");
+            throw new InvalidOperationException($"An already-aged compensation window must not create a timer: {callback.Method.Name}, state {state?.GetType().Name ?? "null"}, due {dueTime}, period {period}.");
     }
 
     private sealed class DummyCostLogger : Microsoft.Extensions.Logging.ILogger<PasswordHasher>
     {
         public List<int> Costs { get; } = [];
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel level) => true;
+        public List<(Microsoft.Extensions.Logging.LogLevel Level, Microsoft.Extensions.Logging.EventId EventId, string Message, Exception? Exception)> Entries { get; } = [];
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            ArgumentNullException.ThrowIfNull(state);
+            return null;
+        }
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel level) =>
+            level is >= Microsoft.Extensions.Logging.LogLevel.Trace and < Microsoft.Extensions.Logging.LogLevel.None;
         public void Log<TState>(Microsoft.Extensions.Logging.LogLevel level, Microsoft.Extensions.Logging.EventId eventId,
             TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
+            if (!IsEnabled(level)) { return; }
+            Entries.Add((level, eventId, formatter(state, exception), exception));
             if (state is IEnumerable<KeyValuePair<string, object?>> values)
             {
                 foreach (var pair in values)
@@ -427,6 +435,8 @@ public sealed class UserEnumerationProtectionCompensationTests
 
         await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
 
+        logger.Entries.Should().ContainSingle(entry => entry.Level == Microsoft.Extensions.Logging.LogLevel.Debug &&
+            entry.EventId.Id == 0 && entry.Exception == null && entry.Message.Contains("Dummy", StringComparison.OrdinalIgnoreCase));
         logger.Costs.Should().Equal(new[] { ConfiguredWorkFactor },
             "the real hasher must complete exactly one dummy operation at the configured factor");
     }

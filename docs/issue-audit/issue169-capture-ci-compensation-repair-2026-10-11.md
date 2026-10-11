@@ -9,3 +9,9 @@ The repair preserves public hasher contracts, the same reload-aware cost policy,
 The compensation test invokes the real hasher and checks its completed operation at the configured cost exactly once. A pre-aged deterministic monotonic clock rejects any unnecessary timer. The completed-work branch uses a strict hasher mock to prove that no dummy method is invoked. This replaces both scheduler-dependent ratios. Existing fresh-window, monotonic-floor, cancellation and boundary tests remain.
 
 One native reload case was added. No local SDK/database/application/browser runner was launched. All native tests, OpenAPI/client consistency and required quality/security/CLA gates must qualify the exact repaired PR head in hosted CI before normal merge. Issue169 remains open for its retained full scope.
+
+## Hosted qualification and fixture diagnostics
+
+At signed source `dde3ad9c98c712db086af9d1617807469cf43fdc`, hosted run38156853036 passed all9590 distinct native cases across six suites, with zero failures or skipped cases. The16 full-application OpenAPI HTTP cases also passed and were verified as repetitions of API integration cases:9606 total executions. Web, OpenAPI client consistency and the PR Required Gate passed. This is native qualification of that exact revision, not approval to merge.
+
+Codacy reported five unused fixture parameters in the deterministic clock and test logger. The follow-up retains their override/interface signatures and records meaningful timer diagnostics, validates logger scope input, respects enabled log levels, and records/formats logger entries. The real dummy-work regression checks the completed debug entry along with exactly one configured cost. No production code or endpoint contract changes in this follow-up. All quality gates and native tests must qualify its new signed head before merge; no waiver or manual CI restart/cancellation is used.
