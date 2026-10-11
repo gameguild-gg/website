@@ -96,7 +96,7 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
         [FromBody] CreatePricingRuleRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _)) { return Forbid(); }
 
         var command = new CreatePricingRuleCommand(
             request.ProductId,
@@ -179,7 +179,7 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
         Guid ruleId,
         CancellationToken cancellationToken = default)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _)) { return Forbid(); }
 
         var command = new ActivatePricingRuleCommand(ruleId);
         var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
@@ -197,7 +197,7 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
         Guid ruleId,
         CancellationToken cancellationToken = default)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _)) { return Forbid(); }
 
         var command = new DeactivatePricingRuleCommand(ruleId);
         var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
@@ -215,7 +215,7 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
         Guid ruleId,
         CancellationToken cancellationToken = default)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _)) { return Forbid(); }
 
         var command = new DeletePricingRuleCommand(ruleId);
         await mediator.Send(command, cancellationToken).ConfigureAwait(false);

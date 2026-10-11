@@ -49,7 +49,7 @@ public class VersioningController : BaseApiController
     [ProducesResponseType(403)]
     public async Task<IActionResult> CreateDraft([FromBody] CreateDraftRequest request, CancellationToken ct)
     {
-        if (!HasEditorialPermission(DraftPermissions)) return Forbid();
+        if (!HasEditorialPermission(DraftPermissions)) { return Forbid(); }
 
         var result = await _sender.Send(new CreateContentDraftCommand(request), ct).ConfigureAwait(false);
 
@@ -244,7 +244,7 @@ public class VersioningController : BaseApiController
     [ProducesResponseType(404)]
     public async Task<IActionResult> CancelSchedule(Guid versionId, CancellationToken ct)
     {
-        if (!HasEditorialPermission(SchedulePermissions)) return Forbid();
+        if (!HasEditorialPermission(SchedulePermissions)) { return Forbid(); }
 
         var result = await _sender.Send(new CancelContentPublishCommand(versionId), ct).ConfigureAwait(false);
         return result.IsSuccess

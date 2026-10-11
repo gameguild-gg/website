@@ -351,7 +351,7 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
-            return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false);
+            { return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false); }
 
         var existingSubmission = await context.Set<AssessmentSubmission>()
             .Where(value => value.AssessmentId == assessmentId && value.EnrollmentId == command.EnrollmentId)
@@ -376,7 +376,7 @@ public sealed class AssessmentGradingRuntimeService(
         }
 
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
-            throw new InvalidOperationException("Assessment does not have a published executable revision.");
+            { throw new InvalidOperationException("Assessment does not have a published executable revision."); }
         var revision = await RequireRevisionAsync(assessment.PublishedDefinitionRevisionId.Value, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         ValidateStartPolicy(snapshot.AuthoringSource.Policy);
@@ -436,7 +436,7 @@ public sealed class AssessmentGradingRuntimeService(
             requestHash,
             cancellationToken).ConfigureAwait(false);
         if (replay is not null)
-            return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false);
+            { return await GetSubmissionAsync(replay.ResourceId, command.ActorId, false, cancellationToken).ConfigureAwait(false); }
 
         var existingSubmission = await context.Set<AssessmentSubmission>()
             .Where(value => value.AssessmentId == assessmentId && value.CourseGroupId == command.CourseGroupId)
@@ -460,7 +460,7 @@ public sealed class AssessmentGradingRuntimeService(
         }
 
         if (!assessment.PublishedDefinitionRevisionId.HasValue)
-            throw new InvalidOperationException("Assessment does not have a published executable revision.");
+            { throw new InvalidOperationException("Assessment does not have a published executable revision."); }
         var revision = await RequireRevisionAsync(assessment.PublishedDefinitionRevisionId.Value, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         ValidateStartPolicy(snapshot.AuthoringSource.Policy);

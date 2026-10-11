@@ -37,14 +37,14 @@ public sealed class PaymentMethodsController(
         CancellationToken ct = default)
     {
         var actor = PaymentMethodActors.Resolve(actorContextAccessor);
-        if (actor is null) return Forbid();
+        if (actor is null) { return Forbid(); }
 
         var actorContext = actorContextAccessor.ActorContext;
         if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
         {
             var requestedTenantId = tenantId ?? actorContext.TenantId ?? Guid.Empty;
             var validationError = ValidateTenantAccess(requestedTenantId, "list payment methods");
-            if (validationError != null) return validationError;
+            if (validationError != null) { return validationError; }
 
             tenantId = actorContext.TenantId;
         }

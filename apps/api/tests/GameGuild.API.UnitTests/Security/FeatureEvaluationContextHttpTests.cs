@@ -123,10 +123,10 @@ public sealed class FeatureEvaluationContextHttpTests
     public static IEnumerable<object[]> InvalidSubjects()
     {
         foreach (var endpoint in new[] { "evaluate", "bulk", "value", "enabled" })
-        foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
+        { foreach (var subject in new[] { "missing", "invalid", Guid.Empty.ToString() })
         {
             yield return [endpoint, subject];
-        }
+        } }
     }
 
     [Theory]

@@ -24,25 +24,22 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
     ///     Throws <see cref="InvalidOperationException" /> when no key is configured or the key is
     ///     shorter than 32 bytes — the service never falls back to a shared or built-in key.
     /// </summary>
-    private string EncryptionKey
+    private string GetEncryptionKey()
     {
-        get
-        {
-            var configuredKey = configuration["Encryption:EncryptionKey"];
-            if (string.IsNullOrWhiteSpace(configuredKey))
-                { configuredKey = configuration["Encryption:Key"]; }
+        var configuredKey = configuration["Encryption:EncryptionKey"];
+        if (string.IsNullOrWhiteSpace(configuredKey))
+            { configuredKey = configuration["Encryption:Key"]; }
 
-            if (string.IsNullOrWhiteSpace(configuredKey))
-                throw new InvalidOperationException(
-                    "Encryption:EncryptionKey (or Encryption:Key) is not configured. Credential encryption fails closed; set a key of at least 32 bytes in configuration (deployment secret store, environment variables or appsettings) before encrypting or decrypting data.");
+        if (string.IsNullOrWhiteSpace(configuredKey))
+            { throw new InvalidOperationException(
+                "Encryption:EncryptionKey (or Encryption:Key) is not configured. Credential encryption fails closed; set a key of at least 32 bytes in configuration (deployment secret store, environment variables or appsettings) before encrypting or decrypting data."); }
 
-            var keyLengthBytes = Encoding.UTF8.GetByteCount(configuredKey);
-            if (keyLengthBytes < MinimumKeyLengthBytes)
-                { throw new InvalidOperationException(
-                    $"Encryption:EncryptionKey (or Encryption:Key) must contain at least {MinimumKeyLengthBytes} bytes; found {keyLengthBytes}. Credential encryption fails closed and will not use a weak key."); }
+        var keyLengthBytes = Encoding.UTF8.GetByteCount(configuredKey);
+        if (keyLengthBytes < MinimumKeyLengthBytes)
+            { throw new InvalidOperationException(
+                $"Encryption:EncryptionKey (or Encryption:Key) must contain at least {MinimumKeyLengthBytes} bytes; found {keyLengthBytes}. Credential encryption fails closed and will not use a weak key."); }
 
-            return configuredKey;
-        }
+        return configuredKey;
     }
 
     // AES-GCM parameters
@@ -157,7 +154,7 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
         logger.LogDebug("Encrypting data with AES-256-GCM");
 
         var plaintextBytes = Encoding.UTF8.GetBytes(plainText);
-        var key = DeriveKey(EncryptionKey);
+        var key = DeriveKey(GetEncryptionKey());
 
         var nonce = new byte[NonceSize];
         using var rng = RandomNumberGenerator.Create();
@@ -203,7 +200,7 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
             Buffer.BlockCopy(combined, NonceSize, ciphertextBytes, 0, ciphertextBytes.Length);
             Buffer.BlockCopy(combined, NonceSize + ciphertextBytes.Length, tag, 0, TagSize);
 
-            var key = DeriveKey(EncryptionKey);
+            var key = DeriveKey(GetEncryptionKey());
             var plaintext = new byte[ciphertextBytes.Length];
 
             using var aesGcm = new AesGcm(key, TagSize);

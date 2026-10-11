@@ -150,7 +150,7 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         var migration = new ProtectNotificationCredentialMetadata();
         var generator = context.GetService<IMigrationsSqlGenerator>();
         foreach (var sql in generator.Generate(migration.UpOperations))
-            { await context.Database.ExecuteSqlRawAsync(sql.CommandText); }
+            { await sql.ExecuteNonQueryAsync(context.GetService<IRelationalConnection>()); }
         var id = Guid.NewGuid();
         var value = new string('x', wide ? 5000 : 4000);
         await context.Database.ExecuteSqlRawAsync("INSERT INTO \"Notifications\" (\"Id\",\"Metadata\") VALUES ({0},{1})", id, value);
@@ -158,7 +158,7 @@ public sealed class NotificationTokenStoragePostgreSqlTests(NotificationTokenSto
         async Task Down()
         {
             foreach (var sql in generator.Generate(migration.DownOperations))
-                { await context.Database.ExecuteSqlRawAsync(sql.CommandText); }
+                { await sql.ExecuteNonQueryAsync(context.GetService<IRelationalConnection>()); }
         }
         if (wide)
         {
