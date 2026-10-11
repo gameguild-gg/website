@@ -1821,6 +1821,7 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentSubscriptionSyncService>().Object,
             new Mock<ISubscriptionPaymentContextService>().Object,
             Options.Create(new PaymentRetryOptions()),
+            FraudTestHelpers.AllowAllDetectionService(),
             NullLogger<ProcessPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }

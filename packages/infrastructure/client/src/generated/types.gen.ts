@@ -1943,6 +1943,57 @@ export interface CommercePaymentsCreateWalletInput {
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
 
+/** Read model for one pending fraud review. */
+export interface CommercePaymentsFraudReviewListItem {
+  /** Charged amount. */
+  amount: number;
+  /** When the payment attempt was created. */
+  createdAt: string;
+  /** ISO 4217 currency code. */
+  currency: string | null;
+  /** Bounded JSON signal evidence bundle. */
+  evidence?: string | null;
+  /** Provider customer reference, when bound. */
+  externalCustomerId?: string | null;
+  /** Payment awaiting review. */
+  paymentId: string;
+  /** Bounded decision reason. */
+  reason: string | null;
+  riskLevel: CommercePaymentsFraudRiskLevel;
+  /** Aggregate fraud score (0-100). */
+  score: number;
+  /** Subscription the payment was charged for. */
+  subscriptionId?: string | null;
+  /** Tenant that owns the payment. */
+  tenantId: string;
+}
+
+/** Result of resolving a fraud review. */
+export interface CommercePaymentsFraudReviewResolutionResult {
+  /** Failure reason when GameGuild.Commerce.Payments.FraudReviewResolutionResult.Success is false. */
+  failureReason?: string | null;
+  /** Payment whose review was resolved. */
+  paymentId: string;
+  /** When the review was resolved. */
+  resolvedAt?: string | null;
+  /** Administrator who resolved the review. */
+  reviewedByUserId?: string | null;
+  reviewStatus?: CommercePaymentsFraudReviewStatus;
+  /** Whether the review was resolved successfully. */
+  success: boolean;
+}
+
+/** Request body for resolving a fraud review. */
+export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewInput {
+  notes?: string | null;
+}
+
+/** Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | 'Declined';
+
+/** Risk band derived from the aggregate fraud score. */
+export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
 /** Data model for Commerce Payments Lock Wallet Request. */
 export interface CommercePaymentsLockWalletInput {
   reason: string | null;
@@ -20613,6 +20664,11 @@ export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommerceP
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
+export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
+export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
+export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
+export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
@@ -24167,6 +24223,42 @@ CommercePaymentsCreateWalletInputSchema = z.object({
 
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
+
+/** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
+CommercePaymentsFraudReviewListItemSchema = z.object({
+  amount: z.number(),
+  createdAt: z.string().datetime(),
+  currency: z.string().nullable(),
+  evidence: z.string().nullable().optional(),
+  externalCustomerId: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().nullable(),
+  riskLevel: z.lazy(() => CommercePaymentsFraudRiskLevelSchema),
+  score: z.number().int(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewResolutionResult. Result of resolving a fraud review. */
+CommercePaymentsFraudReviewResolutionResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  reviewedByUserId: z.string().uuid().nullable().optional(),
+  reviewStatus: z.lazy(() => CommercePaymentsFraudReviewStatusSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewInput. Request body for resolving a fraud review. */
+CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewStatus. Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', 'Declined']);
+
+/** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
+CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
 
 /** Zod schema for CommercePaymentsLockWalletInput. Data model for Commerce Payments Lock Wallet Request. */
 CommercePaymentsLockWalletInputSchema = z.object({

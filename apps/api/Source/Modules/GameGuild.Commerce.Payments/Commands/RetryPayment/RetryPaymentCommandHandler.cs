@@ -42,7 +42,9 @@ public sealed class RetryPaymentCommandHandler(
         {
             var reason = payment.MaxRetriesReached
                 ? $"Maximum retry attempts ({payment.MaxRetries}) reached"
-                : $"Payment in status {payment.Status} cannot be retried";
+                : payment.FraudBlocksRetry
+                    ? "Payment is held by the fraud gate; resolve the fraud review before retrying"
+                    : $"Payment in status {payment.Status} cannot be retried";
 
             logger.LogWarning("Payment {PaymentId} cannot be retried: {Reason}", request.PaymentId, reason);
 

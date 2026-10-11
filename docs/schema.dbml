@@ -3434,6 +3434,14 @@ Table "payments" {
   "RefundReason" "character varying(500)"
   "RefundedAt" timestamp
   "Metadata" jsonb
+  "FraudScore" integer
+  "FraudDecision" integer
+  "FraudDecisionReason" "character varying(500)"
+  "FraudEvidence" jsonb
+  "FraudReviewStatus" integer
+  "FraudReviewedByUserId" uuid
+  "FraudReviewedAt" timestamp
+  "FraudReviewNotes" "character varying(500)"
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -3448,7 +3456,9 @@ Table "payments" {
   Indexes {
     Id [pk, name: "PK_payments"]
     ExternalPaymentId [unique, name: "IX_payments_ExternalPaymentId"]
+    (TenantId, ExternalCustomerId, CreatedAt) [name: "ix_payments_fraud_velocity_lookup"]
     IdempotencyKey [unique, name: "IX_payments_IdempotencyKey"]
+    (TenantId, CreatedAt) [name: "ix_payments_open_fraud_reviews"]
     (Provider, ProviderEnvironment, ProviderAccountId, ProviderObjectId, ProviderMonetaryLeg) [unique, name: "ix_payments_provider_object_leg"]
     SubscriptionId [name: "IX_payments_SubscriptionId"]
     (TenantId, Status) [name: "IX_payments_TenantId_Status"]
