@@ -6491,6 +6491,111 @@ export const postBillingInvoicesRetryEndpoint = {
 } as const;
 
 /**
+ * List registered payment methods (own methods; system admins see the whole tenant).
+ *
+ * Lists the live payment methods registered for the tenant. Non-admin actors see their own methods; system admins see all methods in the requested tenant.
+ */
+export interface GetBillingPaymentMethodsInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto[];
+export const getBillingPaymentMethodsEndpoint = {
+  operationId: 'getBillingPaymentMethods' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Register a payment method from a tokenized gateway result.
+ *
+ * Registers a payment method from a Stripe payment method token (pm_...) produced by Stripe.js/Elements or a confirmed SetupIntent. Raw card data is never accepted; only display metadata returned by the gateway is stored.
+ */
+export interface PostBillingPaymentMethodsInput {
+  body?: Types.CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody;
+}
+export type PostBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsEndpoint = {
+  operationId: 'postBillingPaymentMethods' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a single payment method by ID.
+ *
+ * Returns a single registered payment method. Only the owner or a system administrator can read it.
+ */
+export interface GetPaymentMethodByIdInput {
+  paymentMethodId: string;
+}
+export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
+export const getPaymentMethodByIdEndpoint = {
+  operationId: 'getPaymentMethodById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update display-only fields of a payment method.
+ *
+ * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
+ */
+export interface PutBillingPaymentMethodsInput {
+  paymentMethodId: string;
+  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
+}
+export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const putBillingPaymentMethodsEndpoint = {
+  operationId: 'putBillingPaymentMethods' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Remove a payment method (soft delete).
+ *
+ * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
+ */
+export interface DeleteBillingPaymentMethodsInput {
+  paymentMethodId: string;
+}
+export type DeleteBillingPaymentMethodsOutput = void;
+export const deleteBillingPaymentMethodsEndpoint = {
+  operationId: 'deleteBillingPaymentMethods' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Make this payment method the default (custom action per Google API guidelines).
+ *
+ * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
+ */
+export interface PostBillingPaymentMethodsSetDefaultInput {
+  paymentMethodId: string;
+}
+export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsSetDefaultEndpoint = {
+  operationId: 'postBillingPaymentMethodsSetDefault' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
  *
  * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
@@ -7425,6 +7530,63 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
   method: 'DELETE' as const,
   path: '/api/v1/email-delivery/suppressions/{email}' as const,
   tags: ['Notifications'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the pending manual fraud reviews, oldest first.
+ *
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ */
+export interface GetFraudReviewsInput {
+  query?: {
+    tenantId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
+export const getFraudReviewsEndpoint = {
+  operationId: 'getFraudReviews' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fraud/reviews' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending fraud review, releasing the fraud hold so the payment may be retried.
+ *
+ * Approves the fraud review for a held payment, releasing the fraud hold so the payment can be retried through the manual retry flow. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsApproveInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsApproveOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsApproveEndpoint = {
+  operationId: 'postFraudReviewsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decline a pending fraud review, keeping the payment failed and non-retryable.
+ *
+ * Declines the fraud review for a held payment; it stays failed and is never retried. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsDenyInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsDenyOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsDenyEndpoint = {
+  operationId: 'postFraudReviewsDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
   requiresAuth: true,
 } as const;
 
@@ -27117,6 +27279,12 @@ export const endpoints = {
   postBillingExternalProvidersEnable: postBillingExternalProvidersEnableEndpoint,
   postBillingExternalProvidersMigrationDryRun: postBillingExternalProvidersMigrationDryRunEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
+  getPaymentMethodById: getPaymentMethodByIdEndpoint,
+  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
+  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
@@ -27173,6 +27341,9 @@ export const endpoints = {
   getEmailDeliveryNotificationsTimeline: getEmailDeliveryNotificationsTimelineEndpoint,
   getEmailDeliverySuppressions: getEmailDeliverySuppressionsEndpoint,
   deleteEmailDeliverySuppressions: deleteEmailDeliverySuppressionsEndpoint,
+  getFraudReviews: getFraudReviewsEndpoint,
+  postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
+  postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
   postIntegrationsEconomyStripeConnectWebhook: postIntegrationsEconomyStripeConnectWebhookEndpoint,
   postIntegrationsEconomySumsubWebhook: postIntegrationsEconomySumsubWebhookEndpoint,
   postNotificationsEmailEvents: postNotificationsEmailEventsEndpoint,

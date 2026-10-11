@@ -1799,6 +1799,32 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<int?>("FraudDecision")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FraudDecisionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("FraudEvidence")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("FraudReviewNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("FraudReviewStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("FraudReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FraudReviewedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("FraudScore")
+                        .HasColumnType("integer");
+
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1806,11 +1832,6 @@ namespace GameGuild.API.Database.Migrations
 
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("IsRetriable")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
 
                     b.Property<int>("MaxRetries")
                         .HasColumnType("integer");
@@ -1899,9 +1920,17 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.HasIndex("Status", "NextRetryAt");
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_payments_open_fraud_reviews")
+                        .HasFilter("\"FraudDecision\" = 1 AND \"FraudReviewStatus\" = 0")
+                        .HasAnnotation("Npgsql:CreatedConcurrently", true);
 
                     b.HasIndex("TenantId", "Status");
+
+                    b.HasIndex("TenantId", "ExternalCustomerId", "CreatedAt")
+                        .HasDatabaseName("ix_payments_fraud_velocity_lookup")
+                        .HasFilter("\"Status\" <> 4 AND (\"FraudDecision\" IS NULL OR \"FraudDecision\" = 0)")
+                        .HasAnnotation("Npgsql:CreatedConcurrently", true);
 
                     b.HasIndex("Provider", "ProviderEnvironment", "ProviderAccountId", "ProviderObjectId", "ProviderMonetaryLeg")
                         .IsUnique()
@@ -1919,14 +1948,33 @@ namespace GameGuild.API.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentMethod", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("AttemptNumber")
+                    b.Property<string>("BillingAddress")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("CardBrand")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("CardExpMonth")
                         .HasColumnType("integer");
+
+                    b.Property<int?>("CardExpYear")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CardFingerprint")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("CardLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1934,40 +1982,56 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("ExecutedAtUtc")
+                    b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<DateTime?>("ExpiryNotice14SentAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("FailureMessage")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                    b.Property<DateTime?>("ExpiryNotice30SentAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Gateway")
+                    b.Property<DateTime?>("ExpiryNotice7SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GatewayPaymentMethodId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("GatewayProvider")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("GatewayTransactionId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
 
-                    b.Property<int>("Outcome")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PaymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ScheduledForUtc")
+                    b.Property<DateTime?>("LastUsedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("TenantId")
+                    b.Property<string>("Nickname")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
@@ -1975,13 +2039,23 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaymentId")
-                        .HasDatabaseName("ix_payment_retry_attempts_payment_id");
+                    b.HasIndex("ExpiresAt");
 
-                    b.HasIndex("PaymentId", "AttemptNumber")
-                        .IsUnique();
+                    b.HasIndex("GatewayPaymentMethodId");
 
-                    b.ToTable("payment_retry_attempts");
+                    b.HasIndex("TenantId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payment_methods_single_default")
+                        .HasFilter("\"IsDefault\" AND \"DeletedAt\" IS NULL");
+
+                    b.HasIndex("TenantId", "GatewayProvider", "GatewayPaymentMethodId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payment_methods_tenant_gateway_unique")
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.HasIndex("TenantId", "UserId", "IsDefault");
+
+                    b.ToTable("payment_methods");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueAnomalyAlert", b =>
@@ -3856,6 +3930,9 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime>("NextBillingDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("PaymentMethodId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
 
@@ -3905,6 +3982,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("TrialEndDate");
+
+                    b.HasIndex("TenantId", "PaymentMethodId")
+                        .HasDatabaseName("ix_subscriptions_tenant_payment_method");
 
                     b.HasIndex("TenantId", "Status");
 
@@ -15002,7 +15082,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.ToTable("sign_in_mfa_challenges", "gameguild.authentication", t =>
                         {
-                            t.HasCheckConstraint("ck_sign_in_mfa_enrollment_binding", "(enrollment_configuration_id IS NULL AND enrollment_secret_fingerprint IS NULL AND enrollment_initialized_at IS NULL)\r\nOR (purpose = 'EnrollFactor' AND enrollment_configuration_id IS NOT NULL\r\n    AND enrollment_configuration_id <> '00000000-0000-0000-0000-000000000000'::uuid\r\n    AND enrollment_secret_fingerprint IS NOT NULL AND enrollment_secret_fingerprint ~ '^[a-f0-9]{64}$'\r\n    AND enrollment_initialized_at IS NOT NULL AND enrollment_initialized_at >= created_at AND enrollment_initialized_at < expires_at)");
+                            t.HasCheckConstraint("ck_sign_in_mfa_enrollment_binding", "(enrollment_configuration_id IS NULL AND enrollment_secret_fingerprint IS NULL AND enrollment_initialized_at IS NULL)\nOR (purpose = 'EnrollFactor' AND enrollment_configuration_id IS NOT NULL\n    AND enrollment_configuration_id <> '00000000-0000-0000-0000-000000000000'::uuid\n    AND enrollment_secret_fingerprint IS NOT NULL AND enrollment_secret_fingerprint ~ '^[a-f0-9]{64}$'\n    AND enrollment_initialized_at IS NOT NULL AND enrollment_initialized_at >= created_at AND enrollment_initialized_at < expires_at)");
 
                             t.HasCheckConstraint("ck_sign_in_mfa_lifetime", "expires_at > created_at AND expires_at <= created_at + INTERVAL '5 minutes'");
 
@@ -31321,17 +31401,6 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("UserProduct");
-                });
-
-            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
-                {
-                    b.HasOne("GameGuild.Commerce.Payments.Payment", "Payment")
-                        .WithMany()
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueReconciliationDiscrepancy", b =>

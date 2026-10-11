@@ -14,6 +14,7 @@ internal sealed class PaymentsPersistenceTestDbContext(DbContextOptions<Payments
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<PaymentMethod>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserWallet).Assembly);
         modelBuilder.Entity<Payment>();
         modelBuilder.Entity<PaymentRetryAttempt>();

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -27,7 +28,8 @@ public sealed class PaymentsController(
     IActorContextAccessor actorContextAccessor,
     IStripeCustomerService stripeCustomerService,
     ISubscriptionPaymentContextService subscriptionPaymentContextService,
-    IPaymentRetryMethodChangeService retryMethodChangeService) : BaseApiController
+    IPaymentRetryMethodChangeService retryMethodChangeService,
+    ILogger<PaymentsController> logger) : BaseApiController
 {
     /// <summary>
     ///     Retrieve all payment transactions with optional filtering
@@ -264,6 +266,10 @@ public sealed class PaymentsController(
         }
 
         await retryMethodChangeService.ResumeAfterMethodChangeAsync(body.TenantId, body.SubscriptionId, body.PaymentMethodId, ct).ConfigureAwait(false);
+
+        // Mirror the confirmed gateway method into the local payment-method registry
+        // (issue #414). Additive only — a registry failure must not fail the charge.
+        await UpsertLocalPaymentMethodAsync(body, ct).ConfigureAwait(false);
 
         var result = await sender.Send(
             new ProcessPaymentCommand(body.TenantId, body.SubscriptionId, subscription.Amount, body.PaymentMethodId),
@@ -606,6 +612,36 @@ public sealed class PaymentsController(
     public sealed record CancelPaymentRequest(string CancellationReason, Guid? CanceledBy = null, string? Notes = null);
 
     #region Private Methods
+
+    /// <summary>
+    ///     Mirrors a confirmed checkout payment method into the local registry (issue #414).
+    ///     Failures are logged and swallowed: the gateway state is already authoritative and
+    ///     the first charge must proceed.
+    /// </summary>
+    private async Task UpsertLocalPaymentMethodAsync(CompleteSubscriptionCheckoutRequest body, CancellationToken ct)
+    {
+        try
+        {
+            var upsertResult = await sender.Send(
+                new UpsertCheckoutPaymentMethodCommand(body.TenantId, body.SubscriptionId, body.PaymentMethodId),
+                ct).ConfigureAwait(false);
+
+            if (!upsertResult.IsSuccess)
+            {
+                logger.LogWarning(
+                    "Local payment-method registry upsert skipped for subscription {SubscriptionId}: {Reason}",
+                    body.SubscriptionId,
+                    upsertResult.Error?.Description ?? "unknown error");
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Local payment-method registry upsert failed for subscription {SubscriptionId}; checkout continues.",
+                body.SubscriptionId);
+        }
+    }
 
     /// <summary>
     ///     Validates that the authenticated user has access to the specified tenant.

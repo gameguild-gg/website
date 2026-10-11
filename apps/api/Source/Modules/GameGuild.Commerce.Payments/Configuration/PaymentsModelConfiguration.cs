@@ -4,7 +4,7 @@ namespace GameGuild.Commerce.Payments;
 
 /// <summary>
 ///     EF Core model configuration for the Payments module (payments, retry-attempt history,
-///     tax-related and revenue auditing entities).
+///     payment methods, tax-related and revenue auditing entities).
 /// </summary>
 public sealed class PaymentsModelConfiguration : IModelConfiguration
 {
@@ -53,6 +53,36 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
                 .IsUnique()
                 .IsCreatedConcurrently()
                 .HasDatabaseName("ix_payments_provider_object_leg");
+
+            // Fraud assessment (issue #409): bounded reasons, evidence and review state.
+            builder.Property(payment => payment.FraudDecisionReason)
+                .HasMaxLength(500);
+            builder.Property(payment => payment.FraudEvidence)
+                .HasColumnType("jsonb");
+            builder.Property(payment => payment.FraudReviewNotes)
+                .HasMaxLength(500);
+
+            // Partial index backing the tenant+customer velocity lookup: only rows the
+            // velocity provider counts (non-cancelled and not fraud-rejected).
+            builder.HasIndex(payment => new
+                {
+                    payment.TenantId,
+                    payment.ExternalCustomerId,
+                    payment.CreatedAt
+                })
+                .HasFilter("\"Status\" <> 4 AND (\"FraudDecision\" IS NULL OR \"FraudDecision\" = 0)")
+                .IsCreatedConcurrently()
+                .HasDatabaseName("ix_payments_fraud_velocity_lookup");
+
+            // Partial index backing the admin fraud-review queue: open reviews per tenant.
+            builder.HasIndex(payment => new
+                {
+                    payment.TenantId,
+                    payment.CreatedAt
+                })
+                .HasFilter("\"FraudDecision\" = 1 AND \"FraudReviewStatus\" = 0")
+                .IsCreatedConcurrently()
+                .HasDatabaseName("ix_payments_open_fraud_reviews");
         });
         // Retry-attempt history for the automated retry queue (issue #415): one row per
         // executed retry attempt, written by RetryPaymentCommandHandler.
@@ -70,6 +100,7 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
         modelBuilder.ApplyConfiguration(new TaxRateConfiguration());
         modelBuilder.ApplyConfiguration(new TaxRuleConfiguration());
         modelBuilder.ApplyConfiguration(new UserWalletConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentMethodConfiguration());
 
         // Revenue auditing (issue #404): the audited revenue events themselves plus the
         // reconciliation runs, their discrepancies and the anomaly alerts.

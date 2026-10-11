@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using GameGuild;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Configuration.PresentationLayer.Authorization;
 using GameGuild.Identity.Authorization;
@@ -240,7 +241,7 @@ public sealed class JwtTokenService(
         cancellationToken.ThrowIfCancellationRequested();
         RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.Issued);
 
-        logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, deviceInfo.DeviceId);
+        logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, LogRedaction.Sanitize(deviceInfo.DeviceId));
 
         try
         {

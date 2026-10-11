@@ -60,9 +60,11 @@ public sealed class RetryPaymentCommandHandler(
         {
             var reason = payment.MaxRetriesReached
                 ? $"Maximum retry attempts ({payment.MaxRetries}) reached"
-                : payment.IsRetriable
-                    ? $"Payment in status {payment.Status} cannot be retried"
-                    : "Payment failure is non-retriable (hard decline)";
+                : payment.FraudBlocksRetry
+                    ? "Payment is held by the fraud gate; resolve the fraud review before retrying"
+                    : payment.IsRetriable
+                        ? $"Payment in status {payment.Status} cannot be retried"
+                        : "Payment failure is non-retriable (hard decline)";
 
             logger.LogWarning("Payment {PaymentId} cannot be retried: {Reason}", request.PaymentId, reason);
 

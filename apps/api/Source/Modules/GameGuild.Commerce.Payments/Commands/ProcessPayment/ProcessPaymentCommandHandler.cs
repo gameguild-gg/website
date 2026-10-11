@@ -15,6 +15,7 @@ public sealed class ProcessPaymentCommandHandler(
     ISubscriptionPaymentContextService subscriptionPaymentContextService,
     IOptions<PaymentRetryOptions> retryOptions,
     IPaymentRetryPolicyResolver retryPolicyResolver,
+    IFraudDetectionService fraudDetectionService,
     ILogger<ProcessPaymentCommandHandler> logger) : ICommandHandler<ProcessPaymentCommand, PaymentResult>
 {
     public async Task<PaymentResult> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
@@ -85,11 +86,52 @@ public sealed class ProcessPaymentCommandHandler(
 
         await paymentRepository.AddAsync(payment, cancellationToken).ConfigureAwait(false);
 
-        // 3. Mark as processing
+        // 3. Pre-gateway fraud assessment (issue #409): Review/Block hold the payment as
+        //    failed without gateway execution and without an automatic retry.
+        var fraudContext = new FraudSignalContext(
+            payment.TenantId,
+            payment.Id,
+            request.SubscriptionId,
+            externalCustomerId,
+            request.PaymentMethodId,
+            subscription.Amount,
+            subscription.Currency);
+
+        var assessment = await fraudDetectionService.AssessPaymentAsync(fraudContext, cancellationToken)
+            .ConfigureAwait(false);
+
+        payment.RecordFraudAssessment(
+            assessment.Decision,
+            assessment.Score,
+            assessment.Reason,
+            assessment.ToEvidenceJson());
+
+        await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
+
+        if (assessment.Decision != FraudDecision.Allow)
+        {
+            logger.LogWarning(
+                "Payment {PaymentId} held by fraud gate: decision {Decision}, score {Score}, reason {Reason}",
+                payment.Id, assessment.Decision, assessment.Score, assessment.Reason);
+
+            return new PaymentResult
+            {
+                TenantId = payment.TenantId,
+                Success = false,
+                PaymentId = payment.Id.ToString(),
+                Amount = new Money(payment.Amount, payment.Currency),
+                ProcessedAt = payment.ProcessedAt,
+                Status = payment.Status,
+                FailureReason = payment.FailureReason,
+                PaymentMethodId = request.PaymentMethodId
+            };
+        }
+
+        // 4. Mark as processing
         payment.MarkAsProcessing();
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
 
-        // 4. Process through payment gateway
+        // 5. Process through payment gateway
         var gatewayRequest = new GatewayPaymentRequest(
             IdempotencyKey: idempotencyKey,
             Amount: subscription.Amount,
@@ -108,7 +150,7 @@ public sealed class ProcessPaymentCommandHandler(
             .ConfigureAwait(false);
         GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
 
-        // 5. Update payment based on gateway result
+        // 6. Update payment based on gateway result
         if (gatewayResult.Success)
         {
             payment.MarkAsSucceeded(
@@ -157,7 +199,7 @@ public sealed class ProcessPaymentCommandHandler(
                 cancellationToken).ConfigureAwait(false);
         }
 
-        // 6. Return result
+        // 7. Return result
         return new PaymentResult
         {
             TenantId = payment.TenantId,
