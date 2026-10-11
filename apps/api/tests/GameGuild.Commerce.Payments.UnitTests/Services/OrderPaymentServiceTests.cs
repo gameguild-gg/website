@@ -692,7 +692,7 @@ public sealed class OrderPaymentServiceTests
             idempotencyKey,
             orderId: orderId,
             paymentMethodId: "pm_declined");
-        for (var retry = 0; retry < 3; retry++)
+        for (var retry = 0; retry < exhausted.MaxRetries; retry++)
         {
             exhausted.MarkAsProcessing();
             exhausted.MarkAsFailed("Card declined", "card_declined");
@@ -751,7 +751,7 @@ public sealed class OrderPaymentServiceTests
             idempotencyKey,
             orderId: orderId,
             paymentMethodId: "pm_declined");
-        for (var retry = 0; retry < 3; retry++)
+        for (var retry = 0; retry < exhausted.MaxRetries; retry++)
         {
             exhausted.MarkAsProcessing();
             exhausted.MarkAsFailed("Card declined", "card_declined");

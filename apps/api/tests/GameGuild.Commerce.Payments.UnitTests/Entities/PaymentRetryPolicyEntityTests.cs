@@ -22,7 +22,7 @@ public class PaymentRetryPolicyEntityTests
     {
         var payment = Payment.Create(Guid.NewGuid(), 25m, "USD", "idem-1");
 
-        payment.MaxRetries.Should().Be(3);
+        payment.MaxRetries.Should().Be(4);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class PaymentRetryPolicyEntityTests
         payment.MarkAsFailed("card declined");
 
         payment.RetryCount.Should().Be(0);
-        payment.MaxRetries.Should().Be(3);
+        payment.MaxRetries.Should().Be(4);
         payment.NextRetryAt.Should().NotBeNull();
         payment.NextRetryAt.Should().BeOnOrAfter(before.AddMinutes(0.99));
         payment.NextRetryAt.Should().BeBefore(before.AddMinutes(1.01));

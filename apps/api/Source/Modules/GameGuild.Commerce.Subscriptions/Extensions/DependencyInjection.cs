@@ -47,6 +47,10 @@ public static class DependencyInjection
         services.AddScoped<IPlanPricingResolver, SubscriptionPlanPricingResolver>();
         services.AddScoped<IPaymentSubscriptionSyncService, PaymentSubscriptionSyncService>();
 
+        // Payment recovery lifecycle (issue #415): dunning suspension after retry exhaustion
+        // and reason-guarded reactivation after a successful recovery payment.
+        services.AddScoped<IPaymentDunningLifecycleService, PaymentDunningLifecycleService>();
+
         // Register Command Handlers (only existing ones)
         services.AddScoped<ICommandHandler<ActivateSubscriptionCommand>, ActivateSubscriptionCommandHandler>();
         services.AddScoped<IRequestHandler<ActivateSubscriptionCommand, Unit>>(sp => sp.GetRequiredService<ICommandHandler<ActivateSubscriptionCommand>>());
