@@ -63,12 +63,12 @@ public sealed class PermissionServiceBulkCacheExpiryEnvelopeTests
 
             writes.Should().HaveCount(2, "the lapsed allow is re-evaluated and the fresh deny re-cached");
             var writeSnapshots = writes.ToArray();
-            writeSnapshots[0].Values.Single().IsGranted.Should().BeTrue();
-            writeSnapshots[0].Values.Single().EffectiveUntilUtc.Should().Be(StartTime.AddSeconds(30));
+            writeSnapshots[0].Values.Values.Single().IsGranted.Should().BeTrue();
+            writeSnapshots[0].Values.Values.Single().EffectiveUntilUtc.Should().Be(StartTime.AddSeconds(30));
             writeSnapshots[0].TtlSecondsByKey.Should().ContainSingle().Which.Value.Should().Be(30,
                 "the cache write TTL must be floored to the grant's remaining lifetime");
-            writeSnapshots[1].Values.Single().IsGranted.Should().BeFalse();
-            writeSnapshots[1].Values.Single().EffectiveUntilUtc.Should().BeNull(
+            writeSnapshots[1].Values.Values.Single().IsGranted.Should().BeFalse();
+            writeSnapshots[1].Values.Values.Single().EffectiveUntilUtc.Should().BeNull(
                 "the re-evaluated deny no longer has a participating time-bound grant");
         }
         finally
@@ -119,7 +119,7 @@ public sealed class PermissionServiceBulkCacheExpiryEnvelopeTests
             writes.Should().HaveCount(1);
             var writeSnapshot = writes.ToArray();
             writeSnapshot[0].Values.Should().ContainSingle();
-            writeSnapshot[0].Values.Single().EffectiveUntilUtc.Should().Be(StartTime.AddSeconds(30),
+            writeSnapshot[0].Values.Values.Single().EffectiveUntilUtc.Should().Be(StartTime.AddSeconds(30),
                 "the envelope must carry the earliest participating grant expiration");
             writeSnapshot[0].TtlSecondsByKey.Should().ContainSingle().Which.Value.Should().Be(30,
                 "the entry TTL must be the minimum remaining grant lifetime, not the longer one");
@@ -262,7 +262,7 @@ public sealed class PermissionServiceBulkCacheExpiryEnvelopeTests
 
             writes.Should().HaveCount(1, "only the cache-miss call writes");
             var writeSnapshot = writes.ToArray();
-            writeSnapshot[0].Values.Single().EffectiveUntilUtc.Should().BeNull(
+            writeSnapshot[0].Values.Values.Single().EffectiveUntilUtc.Should().BeNull(
                 "decisions from unbounded grants carry no expiry envelope");
             writeSnapshot[0].TtlSecondsByKey.Should().BeEmpty(
                 "unbounded decisions use the configured cache TTL, not a clamped one");
