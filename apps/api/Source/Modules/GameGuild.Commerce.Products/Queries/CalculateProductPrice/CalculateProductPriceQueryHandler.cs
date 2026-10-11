@@ -19,6 +19,6 @@ public sealed class CalculateProductPriceQueryHandler(IPricingEngineService pric
             request.PricingId,
             request.PromoCodes,
             request.UserId,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 }
