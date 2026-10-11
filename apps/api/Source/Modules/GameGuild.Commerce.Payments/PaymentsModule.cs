@@ -27,6 +27,7 @@ public static class PaymentsModule
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IRevenueEventRepository, RevenueEventRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
 
         // Revenue auditing (issue #404): external statement reconciliation, anomaly
         // detection, compliance reporting and CSV/JSON exports.
@@ -57,6 +58,15 @@ public static class PaymentsModule
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentProcessor, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentAuthority, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentIntentPreparer, OrderPaymentIntentService>());
+
+        // Payment-method registry (issue #414): self-service management plus the daily
+        // expiry monitor (30/14/7-day notices through the Notifications module).
+        services.AddScoped<IPaymentMethodService, PaymentMethodRegistryService>();
+        services.AddScoped<IPaymentMethodExpiryMonitor, PaymentMethodExpiryMonitor>();
+        services.AddOptions<PaymentMethodExpiryOptions>()
+            .Bind(configuration.GetSection(PaymentMethodExpiryOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<PaymentMethodExpiryMonitorBackgroundService>();
 
         // Register payment gateway and sub-services
         services.AddSingleton<IValidateOptions<StripeGatewayOptions>, StripeGatewayOptionsValidator>();
