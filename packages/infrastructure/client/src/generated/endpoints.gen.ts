@@ -6379,116 +6379,6 @@ export const getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint = 
 } as const;
 
 /**
- * Retry invoice payment
- *
- * Pages through the durable billing webhook inbox: provider events accepted from Stripe, PayPal, Apple App Store and Google Pay, with their processing status, attempt counters and error details. Supports filtering by status (processed/failed/pending), provider, provider event type and acceptance date range. Payload bodies are never returned.
- */
-export interface GetBillingEventsForGetBillingEventsInput {
-  query?: {
-    status?: string;
-    provider?: string;
-    eventType?: string;
-    fromUtc?: string;
-    toUtc?: string;
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetBillingEventsForGetBillingEventsOutput = Types.PagedResultBillingWebhookEventListItemDto;
-export const getBillingEventsForGetBillingEventsEndpoint = {
-  operationId: 'getBillingEventsForGetBillingEvents' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/events' as const,
-  tags: ['CommerceBillingEvents'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get a billing webhook inbox event by id
- *
- * Retrieves one durable webhook inbox event by its local identifier, including processing status, attempt count, error message and tenant/subscription references.
- */
-export interface GetBillingEventsForGetBillingEventsByEventIdInput {
-  eventId: string;
-}
-export type GetBillingEventsForGetBillingEventsByEventIdOutput = Types.CommerceBillingBillingWebhookEventDto;
-export const getBillingEventsForGetBillingEventsByEventIdEndpoint = {
-  operationId: 'getBillingEventsForGetBillingEventsByEventId' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/events/{eventId}' as const,
-  tags: ['CommerceBillingEvents'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * List durable billing integration events from the platform outbox
- *
- * Pages through the named billing integration events (webhook processed/failed, invoice paid, subscription renewed/cancelled) recorded in the platform durable outbox, with their delivery status. Dead-lettered events can be replayed through the platform admin event transport endpoints.
- */
-export interface GetBillingEventsOutboxForGetBillingEventsOutboxInput {
-  query?: {
-    eventName?: string;
-    status?: string;
-    fromUtc?: string;
-    toUtc?: string;
- * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
- *
- * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
- */
-export interface GetBillingRevenueAuditingInput {
-  query?: {
-    tenantId?: string;
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetBillingEventsOutboxForGetBillingEventsOutboxOutput = Types.PagedResultBillingOutboxEventDto;
-export const getBillingEventsOutboxForGetBillingEventsOutboxEndpoint = {
-  operationId: 'getBillingEventsOutboxForGetBillingEventsOutbox' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/events/outbox' as const,
-  tags: ['CommerceBillingEvents'] as const,
-export type GetBillingRevenueAuditingOutput = Types.PagedResultRevenueReconciliationRun;
-export const getBillingRevenueAuditingEndpoint = {
-  operationId: 'getBillingRevenueAuditing' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get one durable billing integration event by id
- *
- * Retrieves a single named billing integration event from the platform outbox read model by its durable event identifier.
- */
-export interface GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdInput {
-  eventId: string;
-}
-export type GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdOutput = Types.CommerceBillingBillingOutboxEventDto;
-export const getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint = {
-  operationId: 'getBillingEventsOutboxForGetBillingEventsOutboxByEventId' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/events/outbox/{eventId}' as const,
-  tags: ['CommerceBillingEvents'] as const,
- * Run a reconciliation comparing an external accounting/ERP statement against internal
- * revenue events for an inclusive period. Requires the SystemAdmin role.
- *
- * Compares external accounting/ERP statement lines against internal revenue events for an inclusive period, records an immutable reconciliation run and persists every discrepancy (missing internal/external references, amount and currency mismatches, duplicate external references). When no inline lines are supplied, lines are read from the configured external statement source.
- */
-export interface PostBillingRevenueAuditingInput {
-  body?: Types.CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput;
-}
-export type PostBillingRevenueAuditingOutput = Types.CommercePaymentsRevenueReconciliationRun;
-export const postBillingRevenueAuditingEndpoint = {
-  operationId: 'postBillingRevenueAuditing' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/revenue/auditing' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
  * List the configured external billing providers with health and enabled state
  *
  * Returns one entry per supported external billing provider (stripe, paypal, applepay,
@@ -6504,21 +6394,6 @@ export const getBillingExternalProvidersForGetBillingExternalProvidersEndpoint =
   method: 'GET' as const,
   path: '/api/v1/billing/external-providers' as const,
   tags: ['CommerceBillingExternalProviders'] as const,
- * Trigger anomaly detection for the trailing days and persist alerts. Requires the
- * SystemAdmin role; the periodic worker performs the same pass automatically when
- * `RevenueAuditing:WorkerEnabled` is set.
- *
- * Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Baselines and z-scores are computed per currency; detection is idempotent per kind, day and currency.
- */
-export interface PostBillingRevenueAuditingAnomaliesDetectInput {
-  body?: Types.CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput;
-}
-export type PostBillingRevenueAuditingAnomaliesDetectOutput = Types.CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult;
-export const postBillingRevenueAuditingAnomaliesDetectEndpoint = {
-  operationId: 'postBillingRevenueAuditingAnomaliesDetect' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/revenue/auditing/anomalies/detect' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6536,24 +6411,6 @@ export const getBillingExternalProvidersForGetBillingExternalProvidersByProvider
   method: 'GET' as const,
   path: '/api/v1/billing/external-providers/{providerKey}' as const,
   tags: ['CommerceBillingExternalProviders'] as const,
- * List revenue anomaly alerts, newest detection first. Tenant-scoped for non-admin actors.
- *
- * Returns a paged list of revenue anomaly alerts, newest detection first, optionally filtered by status (Open, Acknowledged). Non-admin actors only see alerts of their own tenant.
- */
-export interface GetBillingRevenueAuditingAnomalyAlertsInput {
-  query?: {
-    tenantId?: string;
-    status?: Types.CommercePaymentsRevenueAnomalyStatus;
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetBillingRevenueAuditingAnomalyAlertsOutput = Types.PagedResultRevenueAnomalyAlert;
-export const getBillingRevenueAuditingAnomalyAlertsEndpoint = {
-  operationId: 'getBillingRevenueAuditingAnomalyAlerts' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing/anomaly-alerts' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6572,21 +6429,6 @@ export const postBillingExternalProvidersDisableEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/external-providers/{providerKey}:disable' as const,
   tags: ['CommerceBillingExternalProviders'] as const,
- * Acknowledge an open anomaly alert, recording the reviewing operator. Requires the
- * SystemAdmin role.
- *
- * Marks an open revenue anomaly alert as acknowledged, recording the reviewing operator and optional notes. The acting identity is taken from the authenticated actor, never from the request body.
- */
-export interface PostBillingRevenueAuditingAnomalyAlertsAcknowledgeInput {
-  alertId: string;
-  body?: Types.CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput;
-}
-export type PostBillingRevenueAuditingAnomalyAlertsAcknowledgeOutput = void;
-export const postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint = {
-  operationId: 'postBillingRevenueAuditingAnomalyAlertsAcknowledge' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/revenue/auditing/anomaly-alerts/{alertId}/acknowledge' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6606,24 +6448,6 @@ export const postBillingExternalProvidersEnableEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/external-providers/{providerKey}:enable' as const,
   tags: ['CommerceBillingExternalProviders'] as const,
- * Compliance report for an inclusive period: totals by event type, source and status,
- * uncounted events, reconciliation coverage and an attestation statement.
- *
- * Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status with a per-currency breakdown (amounts are never consolidated across currencies), uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.
- */
-export interface GetBillingRevenueAuditingComplianceReportInput {
-  query?: {
-    fromUtc?: string;
-    toUtc?: string;
-    tenantId?: string;
-  };
-}
-export type GetBillingRevenueAuditingComplianceReportOutput = Types.CommercePaymentsRevenueComplianceReport;
-export const getBillingRevenueAuditingComplianceReportEndpoint = {
-  operationId: 'getBillingRevenueAuditingComplianceReport' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing/compliance-report' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6636,209 +6460,6 @@ export const getBillingRevenueAuditingComplianceReportEndpoint = {
  * review), and subscriptions without external identifiers. The report never mutates
  * state; executing provider switching is out of scope and gateway routing/failover is
  * tracked in issue #413. Fails closed with 400 for unknown or identical provider keys.
- * Export the audit report for a period as CSV (RFC 4180) or JSON for external
- * accounting and ERP systems.
- *
- * Serializes the compliance summary and daily trend for the inclusive period as RFC 4180 CSV or JSON, ready for delivery to external accounting and ERP systems.
- */
-export interface GetBillingRevenueAuditingExportInput {
-  query?: {
-    fromUtc?: string;
-    toUtc?: string;
-    format?: string;
-    tenantId?: string;
-  };
-}
-export type GetBillingRevenueAuditingExportOutput = Blob;
-export const getBillingRevenueAuditingExportEndpoint = {
-  operationId: 'getBillingRevenueAuditingExport' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing/export' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get one reconciliation run with its counters and summary.
- *
- * Returns one reconciliation run, including matched/discrepancy counters and the machine-readable summary captured at completion.
- */
-export interface GetRunByIdInput {
-  runId: string;
-}
-export type GetRunByIdOutput = Types.CommercePaymentsRevenueReconciliationRun;
-export const getRunByIdEndpoint = {
-  operationId: 'getRunById' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing/runs/{runId}' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * List the discrepancies recorded by a reconciliation run.
- *
- * Returns a paged list of the discrepancies recorded by a reconciliation run, optionally filtered by kind (MissingInternal, MissingExternal, AmountMismatch, CurrencyMismatch, DuplicateExternalReference).
- */
-export interface GetBillingRevenueAuditingRunsDiscrepanciesInput {
-  runId: string;
-  query?: {
-    kind?: Types.CommercePaymentsRevenueDiscrepancyKind;
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetBillingRevenueAuditingRunsDiscrepanciesOutput = Types.PagedResultRevenueReconciliationDiscrepancy;
-export const getBillingRevenueAuditingRunsDiscrepanciesEndpoint = {
-  operationId: 'getBillingRevenueAuditingRunsDiscrepancies' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing/runs/{runId}/discrepancies' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Historical daily net-revenue trend for an inclusive period, with zero-activity days included.
- *
- * Returns one net-revenue point per UTC day and currency in the inclusive period (credit total, debit total, net total and event count, in that point's currency), including days without activity for every observed currency, plus range totals per currency. Amounts are never consolidated across currencies.
- */
-export interface GetBillingRevenueAuditingTrendsInput {
-  query?: {
-    fromUtc?: string;
-    toUtc?: string;
-    tenantId?: string;
-  };
-}
-export type GetBillingRevenueAuditingTrendsOutput = Types.CommercePaymentsRevenueTrendReport;
-export const getBillingRevenueAuditingTrendsEndpoint = {
-  operationId: 'getBillingRevenueAuditingTrends' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/revenue/auditing/trends' as const,
-  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * List billing subscriptions
- *
- * Compatibility billing endpoint backed by the subscription query model.
- */
-export interface GetBillingSubscriptionsInput {
-  query?: {
-    tenantId?: string;
-    status?: Types.CommerceSubscriptionsSubscriptionStatus;
-    planId?: string;
-    page?: number;
-    pageSize?: number;
-  };
-}
-export type GetBillingSubscriptionsOutput = Types.PagedResultSubscription;
-export const getBillingSubscriptionsEndpoint = {
-  operationId: 'getBillingSubscriptions' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/subscriptions' as const,
-  tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Create billing subscription
- */
-export interface PostBillingSubscriptionsInput {
-  body?: Types.CommerceSubscriptionsBillingSubscriptionsControllerCreateBillingSubscriptionInput;
-}
-export type PostBillingSubscriptionsOutput = void;
-export const postBillingSubscriptionsEndpoint = {
-  operationId: 'postBillingSubscriptions' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/subscriptions' as const,
-  tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get billing subscription
- */
-export interface GetBillingSubscriptionByIdInput {
-  subscriptionId: string;
-}
-export type GetBillingSubscriptionByIdOutput = Types.CommerceSubscriptionsSubscription;
-export const getBillingSubscriptionByIdEndpoint = {
-  operationId: 'getBillingSubscriptionById' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/subscriptions/{subscriptionId}' as const,
-  tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Cancel billing subscription
- */
-export interface PostBillingSubscriptionsCancelInput {
-  subscriptionId: string;
-  body?: Types.CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInput;
-}
-export type PostBillingSubscriptionsCancelOutput = void;
-export const postBillingSubscriptionsCancelEndpoint = {
-  operationId: 'postBillingSubscriptionsCancel' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/subscriptions/{subscriptionId}:cancel' as const,
-  tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Renew billing subscription
- */
-export interface PostBillingSubscriptionsRenewInput {
-  subscriptionId: string;
-}
-export type PostBillingSubscriptionsRenewOutput = void;
-export const postBillingSubscriptionsRenewEndpoint = {
-  operationId: 'postBillingSubscriptionsRenew' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/subscriptions/{subscriptionId}:renew' as const,
-  tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Handle Apple Pay webhook events
- *
- * Processes Apple Pay webhook notifications for payment processing and transaction updates.
- * Required Headers:
- * - Apple-Pay-Merchant-Id: Merchant identifier for validation
- * - Apple-Pay-Signature: Signature for webhook verification
- */
-export type PostBillingWebhooksApplePayInput = void;
-export type PostBillingWebhooksApplePayOutput = Record<string, unknown>;
-export const postBillingWebhooksApplePayEndpoint = {
-  operationId: 'postBillingWebhooksApplePay' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/webhooks/apple-pay' as const,
-  tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
-} as const;
-
-/**
- * Handle Google Pay webhook events for transaction notifications
- *
- * Processes Google Pay webhook notifications for payment processing, subscription billing,
- * and transaction status updates. Google Pay webhooks provide real-time notifications for
- * payment completions, failures, refunds, and subscription lifecycle events.
- * Google Pay webhook events include:
- * - Payment authorization and capture events
- * - Subscription creation and renewal notifications
- * - Refund and chargeback notifications
- * - Payment method updates and changes
- * - Account and billing profile modifications
- * Authentication and Security:
- * - Google Pay webhooks use JWT-based authentication
- * - Webhook signatures should be verified using Google's public keys
- * - Payload verification ensures event authenticity and prevents replay attacks
- * Required Headers:
- * - Authorization: Bearer token for webhook authentication
- * - Google-Cloud-Project-Id: Project identifier for multi-tenant validation
  */
 export interface PostBillingExternalProvidersMigrationDryRunInput {
   body?: Types.CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput;
@@ -6856,47 +6477,6 @@ export const postBillingExternalProvidersMigrationDryRunEndpoint = {
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
- * Processes PayPal Instant Payment Notification (IPN) webhook events for subscription billing,
- * payment confirmations, and account updates. PayPal IPN provides real-time transaction status
- * updates and subscription lifecycle management for PayPal-based billing integrations.
- * Note: PayPal IPN requires additional verification by sending the payload back to PayPal for validation.
- */
-export type PostBillingWebhooksPaypalInput = void;
-export type PostBillingWebhooksPaypalOutput = Record<string, unknown>;
-export const postBillingWebhooksPaypalEndpoint = {
-  operationId: 'postBillingWebhooksPaypal' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/webhooks/paypal' as const,
-  tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
-} as const;
-
-/**
- * Get the billing webhook security monitoring summary
- *
- * Admin-facing monitoring surface for the billing webhook security controls: the state of
- * the source IP allowlist, the suspicious-activity threshold blocking (currently blocked
- * sources), and the delivery health of the central security event pipeline that persists
- * verification failures, allowlist rejections, and replay detections.
- */
-export type GetBillingWebhooksSecurityInput = void;
-export type GetBillingWebhooksSecurityOutput = Types.CommerceBillingBillingWebhookSecuritySummaryDto;
-export const getBillingWebhooksSecurityEndpoint = {
-  operationId: 'getBillingWebhooksSecurity' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/webhooks/security' as const,
-  tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Handle Stripe webhook events with signature verification
- *
- * Processes Stripe webhook notifications with enhanced security through signature verification.
- * Handles subscription lifecycle events, payment confirmations, invoice updates, and customer changes.
- * Stripe signatures are verified using the webhook signing secret to ensure event authenticity.
- * Required Headers:
- * - Stripe-Signature: The signature provided by Stripe for webhook verification
  */
 export interface PostBillingInvoicesRetryInput {
   invoiceId: string;
@@ -6928,8 +6508,6 @@ export const getBillingRevenueAuditingEndpoint = {
   method: 'GET' as const,
   path: '/api/v1/billing/revenue/auditing' as const,
   tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  path: '/api/v1/billing/webhooks/webhook-events/{eventId}' as const,
-  tags: ['CommerceBillingWebhooks'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6948,8 +6526,6 @@ export const postBillingRevenueAuditingEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/revenue/auditing' as const,
   tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
-  path: '/api/v1/billing/webhooks/webhook-events/{eventId}:retry' as const,
-  tags: ['CommerceBillingWebhooks'] as const,
   requiresAuth: true,
 } as const;
 
@@ -7029,9 +6605,6 @@ export interface GetBillingRevenueAuditingComplianceReportInput {
 export type GetBillingRevenueAuditingComplianceReportOutput = Types.CommercePaymentsRevenueComplianceReport;
 export const getBillingRevenueAuditingComplianceReportEndpoint = {
   operationId: 'getBillingRevenueAuditingComplianceReport' as const,
-export type GetEconomyBountiesForGetEconomyBountiesOutput = Types.FinanceEconomyBountiesDurableBountyView[];
-export const getEconomyBountiesForGetEconomyBountiesEndpoint = {
-  operationId: 'getEconomyBountiesForGetEconomyBounties' as const,
   method: 'GET' as const,
   path: '/api/v1/billing/revenue/auditing/compliance-report' as const,
   tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
@@ -7138,10 +6711,6 @@ export interface GetBillingSubscriptionsInput {
 export type GetBillingSubscriptionsOutput = Types.PagedResultSubscription;
 export const getBillingSubscriptionsEndpoint = {
   operationId: 'getBillingSubscriptions' as const,
-export type GetEconomyCapabilitiesInput = void;
-export type GetEconomyCapabilitiesOutput = Types.APIControllersEconomySelfServiceCapabilityDto[];
-export const getEconomyCapabilitiesEndpoint = {
-  operationId: 'getEconomyCapabilities' as const,
   method: 'GET' as const,
   path: '/api/v1/billing/subscriptions' as const,
   tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
@@ -7206,12 +6775,6 @@ export const postBillingSubscriptionsRenewEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/subscriptions/{subscriptionId}:renew' as const,
   tags: ['CommerceSubscriptionsBillingSubscriptions'] as const,
-export type GetEconomyPayoutRequestsOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto[];
-export const getEconomyPayoutRequestsEndpoint = {
-  operationId: 'getEconomyPayoutRequests' as const,
-  method: 'GET' as const,
-  path: '/api/v1/economy/payout-requests' as const,
-  tags: ['Economy'] as const,
   requiresAuth: true,
 } as const;
 
@@ -7261,26 +6824,6 @@ export const postBillingWebhooksGooglePayEndpoint = {
   path: '/api/v1/billing/webhooks/google-pay' as const,
   tags: ['CommerceBillingWebhooks'] as const,
   requiresAuth: false,
-  path: '/api/v1/economy/payout-requests/{requestId}/cancel' as const,
-  tags: ['Economy'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * List my payout operations
- */
-export interface GetEconomyPayoutsForGetEconomyPayoutsInput {
-  query?: {
-    take?: number;
-  };
-}
-export type GetEconomyPayoutsForGetEconomyPayoutsOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutOperationDto[];
-export const getEconomyPayoutsForGetEconomyPayoutsEndpoint = {
-  operationId: 'getEconomyPayoutsForGetEconomyPayouts' as const,
-  method: 'GET' as const,
-  path: '/api/v1/economy/payouts' as const,
-  tags: ['Economy'] as const,
-  requiresAuth: true,
 } as const;
 
 /**
@@ -7357,9 +6900,6 @@ export interface GetBillingWebhooksWebhookEventsInput {
 export type GetBillingWebhooksWebhookEventsOutput = Record<string, unknown>;
 export const getBillingWebhooksWebhookEventsEndpoint = {
   operationId: 'getBillingWebhooksWebhookEvents' as const,
-export type GetEconomyTopUpsForGetEconomyTopUpsOutput = Types.FinanceEconomyFundingEconomyTopUpStatusDto[];
-export const getEconomyTopUpsForGetEconomyTopUpsEndpoint = {
-  operationId: 'getEconomyTopUpsForGetEconomyTopUps' as const,
   method: 'GET' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}' as const,
   tags: ['CommerceBillingWebhooks'] as const,
@@ -7436,9 +6976,6 @@ export interface GetEconomyBountiesForGetEconomyBountiesInput {
 export type GetEconomyBountiesForGetEconomyBountiesOutput = Types.FinanceEconomyBountiesDurableBountyView[];
 export const getEconomyBountiesForGetEconomyBountiesEndpoint = {
   operationId: 'getEconomyBountiesForGetEconomyBounties' as const,
-export type GetEconomyWalletTransactionsOutput = Types.FinanceEconomyContractsEconomyWalletTransactionDto[];
-export const getEconomyWalletTransactionsEndpoint = {
-  operationId: 'getEconomyWalletTransactions' as const,
   method: 'GET' as const,
   path: '/api/v1/economy/bounties' as const,
   tags: ['EconomyBounties'] as const,
@@ -7614,12 +7151,6 @@ export const postEconomyPayoutRequestsEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/economy/payout-requests' as const,
   tags: ['Economy'] as const,
-export type GetPaymentsOutput = Types.CommercePaymentsPaymentResult[];
-export const getPaymentsEndpoint = {
-  operationId: 'getPayments' as const,
-  method: 'GET' as const,
-  path: '/api/v1/payments' as const,
-  tags: ['CommercePayments'] as const,
   requiresAuth: true,
 } as const;
 
@@ -7698,56 +7229,6 @@ export const postEconomyPayoutsOnboardingEndpoint = {
 
 /**
  * List my HardCoin top-ups
- * Payment success and failed-payment recovery metrics for an inclusive window.
- *
- * Aggregates the recovery analytics that billing administrators need to steer retry and
- * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
- * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
- * exhausted). Non-admin actors are scoped to their own tenant.
- */
-export interface GetPaymentsRecoveryMetricsInput {
-  query?: {
-    fromUtc?: string;
-    toUtc?: string;
-    tenantId?: string;
-  };
-}
-export type GetPaymentsRecoveryMetricsOutput = Types.CommercePaymentsPaymentRecoveryMetrics;
-export const getPaymentsRecoveryMetricsEndpoint = {
-  operationId: 'getPaymentsRecoveryMetrics' as const,
-  method: 'GET' as const,
-  path: '/api/v1/payments/recovery-metrics' as const,
-  tags: ['CommercePayments'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Failed payments that are due for a retry right now (retry-queue candidates).
- *
- * Returns the candidate set an automated retry queue would consume (issue #403; the queue
- * itself is tracked in #415): failed payments with retry budget left whose configured
- * backoff has elapsed, ordered by the scheduled next-retry time. Non-admin actors are
- * scoped to their own tenant.
- */
-export interface GetPaymentsRetryingCandidatesInput {
-  query?: {
-    tenantId?: string;
-    take?: number;
-  };
-}
-export type GetPaymentsRetryingCandidatesOutput = Types.CommercePaymentsPaymentResult[];
-export const getPaymentsRetryingCandidatesEndpoint = {
-  operationId: 'getPaymentsRetryingCandidates' as const,
-  method: 'GET' as const,
-  path: '/api/v1/payments/retrying-candidates' as const,
-  tags: ['CommercePayments'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Creates a Stripe SetupIntent for a subscription checkout.
- *
- * Creates or reuses a Stripe customer for the subscription and returns a SetupIntent client secret for PaymentElement-based card collection.
  */
 export interface GetEconomyTopUpsForGetEconomyTopUpsInput {
   query?: {
@@ -8248,6 +7729,53 @@ export const postPaymentsRetryEndpoint = {
 } as const;
 
 /**
+ * Payment success and failed-payment recovery metrics for an inclusive window.
+ *
+ * Aggregates the recovery analytics that billing administrators need to steer retry and
+ * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
+ * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
+ * exhausted). Non-admin actors are scoped to their own tenant.
+ */
+export interface GetPaymentsRecoveryMetricsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetPaymentsRecoveryMetricsOutput = Types.CommercePaymentsPaymentRecoveryMetrics;
+export const getPaymentsRecoveryMetricsEndpoint = {
+  operationId: 'getPaymentsRecoveryMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/recovery-metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Failed payments that are due for a retry right now (retry-queue candidates).
+ *
+ * Returns the candidate set an automated retry queue would consume (issue #403; the queue
+ * itself is tracked in #415): failed payments with retry budget left whose configured
+ * backoff has elapsed, ordered by the scheduled next-retry time. Non-admin actors are
+ * scoped to their own tenant.
+ */
+export interface GetPaymentsRetryingCandidatesInput {
+  query?: {
+    tenantId?: string;
+    take?: number;
+  };
+}
+export type GetPaymentsRetryingCandidatesOutput = Types.CommercePaymentsPaymentResult[];
+export const getPaymentsRetryingCandidatesEndpoint = {
+  operationId: 'getPaymentsRetryingCandidates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/retrying-candidates' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Creates a Stripe SetupIntent for a subscription checkout.
  *
  * Creates or reuses a Stripe customer for the subscription and returns a SetupIntent client secret for PaymentElement-based card collection.
@@ -8368,12 +7896,6 @@ export const postPostsEndpoint = {
  */
 export interface GetPostsForGetPostsByPostIdInput {
   postId: string;
-export interface GetPostsTagsSearchInput {
-  query?: {
-    tags?: string[];
-    skip?: number;
-    take?: number;
-  };
 }
 export type GetPostsForGetPostsByPostIdOutput = void;
 export const getPostsForGetPostsByPostIdEndpoint = {
@@ -8429,9 +7951,6 @@ export interface GetPostsCommentsInput {
 export type GetPostsCommentsOutput = void;
 export const getPostsCommentsEndpoint = {
   operationId: 'getPostsComments' as const,
-export type GetSlaSlosForGetSlaSlosOutput = Types.MonitoringSLASloDto[];
-export const getSlaSlosForGetSlaSlosEndpoint = {
-  operationId: 'getSlaSlosForGetSlaSlos' as const,
   method: 'GET' as const,
   path: '/api/v1/posts/{postId}/comments' as const,
   tags: ['SocialPostsComments'] as const,
@@ -8548,12 +8067,6 @@ export const postPostsLikeEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/posts/{postId}/like' as const,
   tags: ['SocialPostsInteractions'] as const,
-export type GetSlaViolationsOutput = Types.MonitoringSLASloViolationDto[];
-export const getSlaViolationsEndpoint = {
-  operationId: 'getSlaViolations' as const,
-  method: 'GET' as const,
-  path: '/api/v1/sla/violations' as const,
-  tags: ['MonitoringSla'] as const,
   requiresAuth: true,
 } as const;
 
@@ -9199,9 +8712,6 @@ export interface GetSubscriptionPlansSuggestUpgradesInput {
 export type GetSubscriptionPlansSuggestUpgradesOutput = void;
 export const getSubscriptionPlansSuggestUpgradesEndpoint = {
   operationId: 'getSubscriptionPlansSuggestUpgrades' as const,
-export type GetSubscriptionsBillingHistoryOutput = Types.CommerceSubscriptionsBillingHistoryDto[];
-export const getSubscriptionsBillingHistoryEndpoint = {
-  operationId: 'getSubscriptionsBillingHistory' as const,
   method: 'GET' as const,
   path: '/api/v1/subscription-plans/{planId}/suggest-upgrades' as const,
   tags: ['CommerceSubscriptionsPlans'] as const,
@@ -9252,20 +8762,6 @@ export const getSubscriptionsForGetSubscriptionsEndpoint = {
 
 /**
  * Create a new subscription
- * Get all tax jurisdictions
- */
-export type GetTaxJurisdictionsForGetTaxJurisdictionsInput = void;
-export type GetTaxJurisdictionsForGetTaxJurisdictionsOutput = Types.CommercePaymentsTaxRate[];
-export const getTaxJurisdictionsForGetTaxJurisdictionsEndpoint = {
-  operationId: 'getTaxJurisdictionsForGetTaxJurisdictions' as const,
-  method: 'GET' as const,
-  path: '/api/v1/tax-jurisdictions' as const,
-  tags: ['CommercePaymentsTaxJurisdictions'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Create a new tax jurisdiction
  *
  * Creates a new subscription with the provided information.
  */
@@ -9345,12 +8841,6 @@ export const deleteSubscriptionsEndpoint = {
   method: 'DELETE' as const,
   path: '/api/v1/subscriptions/{subscriptionId}' as const,
   tags: ['CommerceSubscriptions'] as const,
-export type GetTaxRulesForGetTaxRulesOutput = Types.CommercePaymentsTaxRate[];
-export const getTaxRulesForGetTaxRulesEndpoint = {
-  operationId: 'getTaxRulesForGetTaxRules' as const,
-  method: 'GET' as const,
-  path: '/api/v1/tax-rules' as const,
-  tags: ['CommercePaymentsTaxRules'] as const,
   requiresAuth: true,
 } as const;
 
@@ -10942,18 +10432,6 @@ export const getAdminAssetsEndpoint = {
   requiresAuth: true,
 } as const;
 
-export interface PostScimV2BulkInput {
-  body?: Types.IdentityProvisioningScimScimBulkInput;
-}
-export type PostScimV2BulkOutput = Types.IdentityProvisioningScimScimBulkOutput;
-export const postScimV2BulkEndpoint = {
-  operationId: 'postScimV2Bulk' as const,
-  method: 'POST' as const,
-  path: '/scim/v2/Bulk' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
 /**
  * Trigger manual garbage collection.
  *
@@ -10973,21 +10451,6 @@ export const postAdminAssetsRunGcEndpoint = {
   method: 'POST' as const,
   path: '/v1/admin/assets/:run-gc' as const,
   tags: ['AssetsAdmin'] as const,
- * Lists provisioned groups with optional filter and 1-based pagination.
- */
-export interface GetScimV2GroupsForGetScimV2GroupsInput {
-  query?: {
-    filter?: string;
-    startIndex?: string;
-    count?: string;
-  };
-}
-export type GetScimV2GroupsForGetScimV2GroupsOutput = Types.IdentityProvisioningScimScimListResponseScimGroupResource;
-export const getScimV2GroupsForGetScimV2GroupsEndpoint = {
-  operationId: 'getScimV2GroupsForGetScimV2Groups' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/Groups' as const,
-  tags: ['IdentityProvisioningScim'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11007,17 +10470,6 @@ export const postAdminAssetsMarkUndeletableEndpoint = {
   method: 'POST' as const,
   path: '/v1/admin/assets/{contentId}:mark-undeletable' as const,
   tags: ['AssetsAdmin'] as const,
- * Creates a group. Idempotent on externalId (repeat POST returns 200).
- */
-export interface PostScimV2GroupsInput {
-  body?: Types.IdentityProvisioningScimScimGroupInput;
-}
-export type PostScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
-export const postScimV2GroupsEndpoint = {
-  operationId: 'postScimV2Groups' as const,
-  method: 'POST' as const,
-  path: '/scim/v2/Groups' as const,
-  tags: ['IdentityProvisioningScim'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11037,17 +10489,6 @@ export const postAdminAssetsReviewModerationEndpoint = {
   method: 'POST' as const,
   path: '/v1/admin/assets/{contentId}:review-moderation' as const,
   tags: ['AssetsAdmin'] as const,
- * Fetches one provisioned group with its members.
- */
-export interface GetScimV2GroupsForGetScimV2GroupsByRoleIdInput {
-  roleId: string;
-}
-export type GetScimV2GroupsForGetScimV2GroupsByRoleIdOutput = Types.IdentityProvisioningScimScimGroupResource;
-export const getScimV2GroupsForGetScimV2GroupsByRoleIdEndpoint = {
-  operationId: 'getScimV2GroupsForGetScimV2GroupsByRoleId' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/Groups/{roleId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11064,18 +10505,6 @@ export const postAdminAssetsRunVirusScanEndpoint = {
   method: 'POST' as const,
   path: '/v1/admin/assets/{contentId}:run-virus-scan' as const,
   tags: ['AssetsAdmin'] as const,
- * Replaces a group, including its full member list (RFC 7644 §3.5.1).
- */
-export interface PutScimV2GroupsInput {
-  roleId: string;
-  body?: Types.IdentityProvisioningScimScimGroupInput;
-}
-export type PutScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
-export const putScimV2GroupsEndpoint = {
-  operationId: 'putScimV2Groups' as const,
-  method: 'PUT' as const,
-  path: '/scim/v2/Groups/{roleId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11091,246 +10520,6 @@ export const postAdminAssetsUnmarkUndeletableEndpoint = {
   method: 'POST' as const,
   path: '/v1/admin/assets/{contentId}:unmark-undeletable' as const,
   tags: ['AssetsAdmin'] as const,
- * Deletes a group: memberships are removed and the backing role deactivated.
- */
-export interface DeleteScimV2GroupsInput {
-  roleId: string;
-}
-export type DeleteScimV2GroupsOutput = void;
-export const deleteScimV2GroupsEndpoint = {
-  operationId: 'deleteScimV2Groups' as const,
-  method: 'DELETE' as const,
-  path: '/scim/v2/Groups/{roleId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Patches a group: displayName, externalId and the members paths
- * (`members`, `members[value eq "…"]`). Membership changes are
- * audited and bump the tenant security version.
- */
-export interface PatchScimV2GroupsInput {
-  roleId: string;
-  body?: Types.IdentityProvisioningScimScimPatchInput;
-}
-export type PatchScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
-export const patchScimV2GroupsEndpoint = {
-  operationId: 'patchScimV2Groups' as const,
-  method: 'PATCH' as const,
-  path: '/scim/v2/Groups/{roleId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-export type GetScimV2ResourcetypesInput = void;
-export type GetScimV2ResourcetypesOutput = void;
-export const getScimV2ResourcetypesEndpoint = {
-  operationId: 'getScimV2Resourcetypes' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/ResourceTypes' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-export type GetScimV2SchemasForGetScimV2SchemasInput = void;
-export type GetScimV2SchemasForGetScimV2SchemasOutput = void;
-export const getScimV2SchemasForGetScimV2SchemasEndpoint = {
-  operationId: 'getScimV2SchemasForGetScimV2Schemas' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/Schemas' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetScimV2SchemasForGetScimV2SchemasBySchemaIdInput {
-  schemaId: string;
-}
-export type GetScimV2SchemasForGetScimV2SchemasBySchemaIdOutput = void;
-export const getScimV2SchemasForGetScimV2SchemasBySchemaIdEndpoint = {
-  operationId: 'getScimV2SchemasForGetScimV2SchemasBySchemaId' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/Schemas/{schemaId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-export type GetScimV2ServiceproviderconfigInput = void;
-export type GetScimV2ServiceproviderconfigOutput = void;
-export const getScimV2ServiceproviderconfigEndpoint = {
-  operationId: 'getScimV2Serviceproviderconfig' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/ServiceProviderConfig' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Lists provisioned users with optional filter and 1-based pagination.
- */
-export interface GetScimV2UsersForGetScimV2UsersInput {
-  query?: {
-    filter?: string;
-    startIndex?: string;
-    count?: string;
-  };
-}
-export type GetScimV2UsersForGetScimV2UsersOutput = Types.IdentityProvisioningScimScimListResponseScimUserResource;
-export const getScimV2UsersForGetScimV2UsersEndpoint = {
-  operationId: 'getScimV2UsersForGetScimV2Users' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/Users' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Creates a user. Idempotent on externalId: a repeated POST with the same
- * externalId returns the existing resource with 200 instead of creating a copy.
- */
-export interface PostScimV2UsersInput {
-  body?: Types.IdentityProvisioningScimScimUserInput;
-}
-export type PostScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
-export const postScimV2UsersEndpoint = {
-  operationId: 'postScimV2Users' as const,
-  method: 'POST' as const,
-  path: '/scim/v2/Users' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Fetches one provisioned user by id.
- */
-export interface GetScimV2UsersForGetScimV2UsersByUserIdInput {
-  userId: string;
-}
-export type GetScimV2UsersForGetScimV2UsersByUserIdOutput = Types.IdentityProvisioningScimScimUserResource;
-export const getScimV2UsersForGetScimV2UsersByUserIdEndpoint = {
-  operationId: 'getScimV2UsersForGetScimV2UsersByUserId' as const,
-  method: 'GET' as const,
-  path: '/scim/v2/Users/{userId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Replaces a provisioned user (RFC 7644 §3.5.1).
- */
-export interface PutScimV2UsersInput {
-  userId: string;
-  body?: Types.IdentityProvisioningScimScimUserInput;
-}
-export type PutScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
-export const putScimV2UsersEndpoint = {
-  operationId: 'putScimV2Users' as const,
-  method: 'PUT' as const,
-  path: '/scim/v2/Users/{userId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Deprovisions a user: soft delete plus immediate session and token revocation.
- */
-export interface DeleteScimV2UsersInput {
-  userId: string;
-}
-export type DeleteScimV2UsersOutput = void;
-export const deleteScimV2UsersEndpoint = {
-  operationId: 'deleteScimV2Users' as const,
-  method: 'DELETE' as const,
-  path: '/scim/v2/Users/{userId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Patches a provisioned user (RFC 7644 §3.5.2 add/remove/replace).
- */
-export interface PatchScimV2UsersInput {
-  userId: string;
-  body?: Types.IdentityProvisioningScimScimPatchInput;
-}
-export type PatchScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
-export const patchScimV2UsersEndpoint = {
-  operationId: 'patchScimV2Users' as const,
-  method: 'PATCH' as const,
-  path: '/scim/v2/Users/{userId}' as const,
-  tags: ['IdentityProvisioningScim'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Serve transformed asset (resized, cropped, etc.) with CDN caching.
- *
- * URL format: /t/{transformation}/{referenceId}/{token}
- * Transformations use standard format: w=100,h=100,fit=cover
- */
-export interface GetTInput {
-  transformation: string;
-  referenceId: string;
-  token: string;
-}
-export type GetTOutput = void;
-export const getTEndpoint = {
-  operationId: 'getT' as const,
-  method: 'GET' as const,
-  path: '/t/{transformation}/{referenceId}/{token}' as const,
-  tags: ['AssetsCdn'] as const,
-  requiresAuth: false,
-} as const;
-
-export interface PostVCoursesCheckoutCompleteInput {
-  courseId: string;
-  version: string;
-  body?: Types.LearningCoursesCompleteCourseCheckoutInput;
-}
-export type PostVCoursesCheckoutCompleteOutput = Types.LearningCoursesCompleteCourseCheckoutOutput;
-export const postVCoursesCheckoutCompleteEndpoint = {
-  operationId: 'postVCoursesCheckoutComplete' as const,
-  method: 'POST' as const,
-  path: '/v{version}/courses/{courseId}/checkout/complete' as const,
-  tags: ['LearningCoursesCheckout'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetVMarketplaceCartInput {
-  version: string;
-}
-export type GetVMarketplaceCartOutput = Types.CommerceOrdersMarketplaceCartDto;
-export const getVMarketplaceCartEndpoint = {
-  operationId: 'getVMarketplaceCart' as const,
-  method: 'GET' as const,
-  path: '/v{version}/marketplace/cart' as const,
-  tags: ['CommerceMarketplaceCart'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostVMarketplaceCartCheckoutInput {
-  version: string;
-  body?: Types.CommerceOrdersCheckoutMarketplaceCartInput;
-}
-export type PostVMarketplaceCartCheckoutOutput = Types.CommerceOrdersMarketplaceCheckoutDto;
-export const postVMarketplaceCartCheckoutEndpoint = {
-  operationId: 'postVMarketplaceCartCheckout' as const,
-  method: 'POST' as const,
-  path: '/v{version}/marketplace/cart/checkout' as const,
-  tags: ['CommerceMarketplaceCart'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostVMarketplaceCartItemsInput {
-  version: string;
-  body?: Types.CommerceOrdersAddMarketplaceCartItemInput;
-}
-export type PostVMarketplaceCartItemsOutput = Types.CommerceOrdersMarketplaceCartDto;
-export const postVMarketplaceCartItemsEndpoint = {
-  operationId: 'postVMarketplaceCartItems' as const,
-  method: 'POST' as const,
-  path: '/v{version}/marketplace/cart/items' as const,
-  tags: ['CommerceMarketplaceCart'] as const,
   requiresAuth: true,
 } as const;
 
@@ -11376,9 +10565,6 @@ export interface GetAdminAssetsGcCandidatesInput {
 export type GetAdminAssetsGcCandidatesOutput = void;
 export const getAdminAssetsGcCandidatesEndpoint = {
   operationId: 'getAdminAssetsGcCandidates' as const,
-export type GetVTestingTemplatesOutput = Types.TestingLabTestingEventTemplateProjection[];
-export const getVTestingTemplatesEndpoint = {
-  operationId: 'getVTestingTemplates' as const,
   method: 'GET' as const,
   path: '/v1/admin/assets/gc-candidates' as const,
   tags: ['AssetsAdmin'] as const,
@@ -11605,9 +10791,6 @@ export interface GetAdminAuditLogsScheduledExportsInput {
 export type GetAdminAuditLogsScheduledExportsOutput = Types.ComplianceAuditScheduledAuditExportOutput[];
 export const getAdminAuditLogsScheduledExportsEndpoint = {
   operationId: 'getAdminAuditLogsScheduledExports' as const,
-export type GetAccessReviewsCampaignsActiveOutput = Types.IdentityAuthorizationAccessReviewCampaign[];
-export const getAccessReviewsCampaignsActiveEndpoint = {
-  operationId: 'getAccessReviewsCampaignsActive' as const,
   method: 'GET' as const,
   path: '/v1/admin/audit-logs/scheduled-exports' as const,
   tags: ['ComplianceAudit'] as const,
@@ -11663,9 +10846,6 @@ export interface GetAdminAuditLogsScheduledExportsHistoryInput {
 export type GetAdminAuditLogsScheduledExportsHistoryOutput = Types.ComplianceAuditAuditExportHistoryOutput[];
 export const getAdminAuditLogsScheduledExportsHistoryEndpoint = {
   operationId: 'getAdminAuditLogsScheduledExportsHistory' as const,
-export type GetAccessReviewsItemsPendingOutput = Types.IdentityAuthorizationAccessReviewItem[];
-export const getAccessReviewsItemsPendingEndpoint = {
-  operationId: 'getAccessReviewsItemsPending' as const,
   method: 'GET' as const,
   path: '/v1/admin/audit-logs/scheduled-exports/{exportId}/history' as const,
   tags: ['ComplianceAudit'] as const,
@@ -12095,9 +11275,6 @@ export interface PostAiPromptTemplatesInput {
 export type PostAiPromptTemplatesOutput = Types.AIAiPromptTemplateDto;
 export const postAiPromptTemplatesEndpoint = {
   operationId: 'postAiPromptTemplates' as const,
-export type PostAdminAuditLogsExportOutput = Blob;
-export const postAdminAuditLogsExportEndpoint = {
-  operationId: 'postAdminAuditLogsExport' as const,
   method: 'POST' as const,
   path: '/v1/ai/prompt-templates' as const,
   tags: ['AiPromptTemplates'] as const,
@@ -12126,12 +11303,6 @@ export const putAiPromptTemplatesEndpoint = {
   method: 'PUT' as const,
   path: '/v1/ai/prompt-templates/{id}' as const,
   tags: ['AiPromptTemplates'] as const,
-export type PostAdminAuditLogsExportCsvOutput = Blob;
-export const postAdminAuditLogsExportCsvEndpoint = {
-  operationId: 'postAdminAuditLogsExportCsv' as const,
-  method: 'POST' as const,
-  path: '/v1/admin/audit-logs/export/csv' as const,
-  tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12202,75 +11373,6 @@ export const getAiStatusEndpoint = {
   method: 'GET' as const,
   path: '/v1/ai/status' as const,
   tags: ['Ai'] as const,
-/**
- * Downloads a completed scheduled export stored for its tenant.
- */
-export interface GetAdminAuditLogsScheduledExportHistoryDownloadInput {
-  historyId: string;
-  query?: {
-    tenantId?: string;
-  };
-}
-export type GetAdminAuditLogsScheduledExportHistoryDownloadOutput = void;
-export const getAdminAuditLogsScheduledExportHistoryDownloadEndpoint = {
-  operationId: 'getAdminAuditLogsScheduledExportHistoryDownload' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/scheduled-export-history/{historyId}/download' as const,
-  tags: ['ComplianceAudit'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Lists recurring audit exports for a tenant.
- */
-export interface GetAdminAuditLogsScheduledExportsInput {
-  query?: {
-    tenantId?: string;
-  };
-}
-export type GetAdminAuditLogsScheduledExportsOutput = Types.ComplianceAuditScheduledAuditExportOutput[];
-export const getAdminAuditLogsScheduledExportsEndpoint = {
-  operationId: 'getAdminAuditLogsScheduledExports' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/scheduled-exports' as const,
-  tags: ['ComplianceAudit'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Creates a recurring audit export delivered to the tenant's configured storage.
- *
- * Uses a five-field cron expression and the supplied timezone. During a repeated local time at the end of daylight
- * saving, the first UTC occurrence is used. Files are removed after the configured retention period while their
- * execution history remains available.
- */
-export interface PostAdminAuditLogsScheduledExportsInput {
-  body?: Types.ComplianceAuditCreateScheduledAuditExportInput;
-}
-export type PostAdminAuditLogsScheduledExportsOutput = Types.ComplianceAuditScheduledAuditExportOutput;
-export const postAdminAuditLogsScheduledExportsEndpoint = {
-  operationId: 'postAdminAuditLogsScheduledExports' as const,
-  method: 'POST' as const,
-  path: '/v1/admin/audit-logs/scheduled-exports' as const,
-  tags: ['ComplianceAudit'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Disables a recurring audit export without deleting its execution history.
- */
-export interface DeleteAdminAuditLogsScheduledExportsInput {
-  exportId: string;
-  query?: {
-    tenantId?: string;
-  };
-}
-export type DeleteAdminAuditLogsScheduledExportsOutput = void;
-export const deleteAdminAuditLogsScheduledExportsEndpoint = {
-  operationId: 'deleteAdminAuditLogsScheduledExports' as const,
-  method: 'DELETE' as const,
-  path: '/v1/admin/audit-logs/scheduled-exports/{exportId}' as const,
-  tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12286,20 +11388,6 @@ export const postAssessmentsEndpoint = {
   method: 'POST' as const,
   path: '/v1/assessments' as const,
   tags: ['LearningAssessments'] as const,
- * Lists recent executions for a scheduled audit export.
- */
-export interface GetAdminAuditLogsScheduledExportsHistoryInput {
-  exportId: string;
-  query?: {
-    tenantId?: string;
-  };
-}
-export type GetAdminAuditLogsScheduledExportsHistoryOutput = Types.ComplianceAuditAuditExportHistoryOutput[];
-export const getAdminAuditLogsScheduledExportsHistoryEndpoint = {
-  operationId: 'getAdminAuditLogsScheduledExportsHistory' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/scheduled-exports/{exportId}/history' as const,
-  tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12333,33 +11421,6 @@ export const getAssessmentsGradingQueueEndpoint = {
   method: 'GET' as const,
   path: '/v1/assessments/{assessmentId}/grading-queue' as const,
   tags: ['LearningAssessments'] as const,
- * Searches audit events by multiple action types, groups, and taxonomy categories.
- */
-export interface GetAdminAuditLogsSearchByActionTypeInput {
-  query?: {
-    ActionTypes?: string[];
-    ActionGroups?: string[];
-    Categories?: string[];
-    LogicalOperator?: Types.ComplianceAuditAuditActionTypeLogicalOperator;
-    UserId?: string;
-    TenantId?: string;
-    StartDate?: string;
-    EndDate?: string;
-    Skip?: number;
-    Take?: number;
-    SortBy?: Types.ComplianceAuditAuditActionTypeSortField;
-    SortDirection?: Types.ComplianceAuditAuditActionTypeSortDirection;
-    IncludeTrends?: boolean;
-    TrendBucketSize?: Types.ComplianceAuditAuditActivityBucketSize;
-    IncludeRelatedActions?: boolean;
-  };
-}
-export type GetAdminAuditLogsSearchByActionTypeOutput = Types.ComplianceAuditAuditActionTypeSearchOutput;
-export const getAdminAuditLogsSearchByActionTypeEndpoint = {
-  operationId: 'getAdminAuditLogsSearchByActionType' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/search/by-action-type' as const,
-  tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12377,34 +11438,6 @@ export const getAssessmentsInteractiveVideoCuesContentEnrollmentsEndpoint = {
   method: 'GET' as const,
   path: '/v1/assessments/{assessmentId}/interactive-video-cues/content/{contentId}/enrollments/{enrollmentId}' as const,
   tags: ['LearningAssessments'] as const,
- * Exports matching action-type audit events as CSV or JSON.
- */
-export interface GetAdminAuditLogsSearchByActionTypeExportInput {
-  query?: {
-    format?: string;
-    ActionTypes?: string[];
-    ActionGroups?: string[];
-    Categories?: string[];
-    LogicalOperator?: Types.ComplianceAuditAuditActionTypeLogicalOperator;
-    UserId?: string;
-    TenantId?: string;
-    StartDate?: string;
-    EndDate?: string;
-    Skip?: number;
-    Take?: number;
-    SortBy?: Types.ComplianceAuditAuditActionTypeSortField;
-    SortDirection?: Types.ComplianceAuditAuditActionTypeSortDirection;
-    IncludeTrends?: boolean;
-    TrendBucketSize?: Types.ComplianceAuditAuditActivityBucketSize;
-    IncludeRelatedActions?: boolean;
-  };
-}
-export type GetAdminAuditLogsSearchByActionTypeExportOutput = void;
-export const getAdminAuditLogsSearchByActionTypeExportEndpoint = {
-  operationId: 'getAdminAuditLogsSearchByActionTypeExport' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/search/by-action-type/export' as const,
-  tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12413,186 +11446,6 @@ export const getAdminAuditLogsSearchByActionTypeExportEndpoint = {
  */
 export interface PostAssessmentsPeerReviewsClaimInput {
   assessmentId: string;
- * Lists the hierarchical action type taxonomy and predefined investigation groups.
- */
-export type GetAdminAuditLogsSearchByActionTypeTaxonomyInput = void;
-export type GetAdminAuditLogsSearchByActionTypeTaxonomyOutput = Types.ComplianceAuditAuditActionTypeTaxonomyOutput;
-export const getAdminAuditLogsSearchByActionTypeTaxonomyEndpoint = {
-  operationId: 'getAdminAuditLogsSearchByActionTypeTaxonomy' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/search/by-action-type/taxonomy' as const,
-  tags: ['ComplianceAudit'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Searches audit records over an explicit or relative date range and returns matching events with a time histogram.
- *
- * Use `start`/`end` with ISO-8601 timestamps, Unix seconds or milliseconds, or relative expressions
- * such as `now-7d` and `now`. Alternatively use `period=last24h|last7d|last30d|today|thisWeek|thisMonth`.
- * Offset-free values are interpreted in `timeZoneId` (UTC by default). Date-only end values include that
- * calendar day. Hourly or daily histogram buckets include both UTC and local timestamps.
- */
-export interface GetAdminAuditLogsSearchByDateRangeInput {
-  query?: {
-    Start?: string;
-    End?: string;
-    Period?: string;
-    TimeZoneId?: string;
-    BucketSize?: Types.ComplianceAuditAuditActivityBucketSize;
-    UserId?: string;
-    TenantId?: string;
-    ActionType?: string;
-    ResourceType?: string;
-    Category?: Types.ComplianceAuditAuditCategory;
-    RiskLevel?: Types.ComplianceAuditAuditRiskLevel;
-    Success?: boolean;
-    IpAddress?: string;
-    Skip?: number;
-    Take?: number;
-  };
-}
-export type GetAdminAuditLogsSearchByDateRangeOutput = Types.ComplianceAuditAuditDateRangeSearchOutput;
-export const getAdminAuditLogsSearchByDateRangeEndpoint = {
-  operationId: 'getAdminAuditLogsSearchByDateRange' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/search/by-date-range' as const,
-  tags: ['ComplianceAudit'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get audit log statistics
- */
-export interface GetAdminAuditLogsStatisticsInput {
-  query?: {
-    StartDate?: string;
-    EndDate?: string;
-  };
-}
-export type GetAdminAuditLogsStatisticsOutput = Types.ComplianceAuditAuditStatisticsOutput;
-export const getAdminAuditLogsStatisticsEndpoint = {
-  operationId: 'getAdminAuditLogsStatistics' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/audit-logs/statistics' as const,
-  tags: ['ComplianceAudit'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAdminEventsReplayInput {
-  eventId: string;
-  query?: {
-    consumerName?: string;
-  };
-}
-export type PostAdminEventsReplayOutput = void;
-export const postAdminEventsReplayEndpoint = {
-  operationId: 'postAdminEventsReplay' as const,
-  method: 'POST' as const,
-  path: '/v1/admin/events/{eventId}:replay' as const,
-  tags: ['ApiAdminEvents'] as const,
-  requiresAuth: true,
-} as const;
-
-export type GetAdminEventsDeadLettersInput = void;
-export type GetAdminEventsDeadLettersOutput = Types.APIEventingDeadLetterEvent[];
-export const getAdminEventsDeadLettersEndpoint = {
-  operationId: 'getAdminEventsDeadLetters' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/events/dead-letters' as const,
-  tags: ['ApiAdminEvents'] as const,
-  requiresAuth: true,
-} as const;
-
-export type GetAdminEventsStatusInput = void;
-export type GetAdminEventsStatusOutput = Types.APIEventingEventTransportStatus;
-export const getAdminEventsStatusEndpoint = {
-  operationId: 'getAdminEventsStatus' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/events/status' as const,
-  tags: ['ApiAdminEvents'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get unified security audit logs from all sources with filtering and pagination.
- */
-export interface GetAdminSecurityAuditInput {
-  query?: {
-    SourceType?: Types.ComplianceAuditSecurityAuditSourceType;
-    UserId?: string;
-    TenantId?: string;
-    ActionType?: string;
-    Success?: boolean;
-    RiskLevel?: Types.ComplianceAuditAuditRiskLevel;
-    StartDate?: string;
-    EndDate?: string;
-    IpAddress?: string;
-    SearchText?: string;
-    Skip?: number;
-    Take?: number;
-    SortBy?: string;
-    SortDirection?: string;
-  };
-}
-export type GetAdminSecurityAuditOutput = Types.ComplianceAuditUnifiedSecurityAuditOutput;
-export const getAdminSecurityAuditEndpoint = {
-  operationId: 'getAdminSecurityAudit' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/security-audit' as const,
-  tags: ['ComplianceAuditSecurity'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Export unified security audit logs to CSV.
- */
-export interface PostAdminSecurityAuditExportInput {
-  body?: Types.ComplianceAuditUnifiedSecurityAuditInput;
-}
-export type PostAdminSecurityAuditExportOutput = Blob;
-export const postAdminSecurityAuditExportEndpoint = {
-  operationId: 'postAdminSecurityAuditExport' as const,
-  method: 'POST' as const,
-  path: '/v1/admin/security-audit/:export' as const,
-  tags: ['ComplianceAuditSecurity'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get authentication attempt logs specifically.
- */
-export interface GetAdminSecurityAuditAuthenticationInput {
-  query?: {
-    UserId?: string;
-    Email?: string;
-    IpAddress?: string;
-    Success?: boolean;
-    FailureReason?: string;
-    StartDate?: string;
-    EndDate?: string;
-    Skip?: number;
-    Take?: number;
-  };
-}
-export type GetAdminSecurityAuditAuthenticationOutput = Types.ComplianceAuditAuthenticationAuditOutput;
-export const getAdminSecurityAuditAuthenticationEndpoint = {
-  operationId: 'getAdminSecurityAuditAuthentication' as const,
-  method: 'GET' as const,
-  path: '/v1/admin/security-audit/authentication' as const,
-  tags: ['ComplianceAuditSecurity'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Get security audit dashboard with aggregated statistics.
- */
-export interface GetAdminSecurityAuditDashboardInput {
-  query?: {
-    startDate?: string;
-    endDate?: string;
-    tenantId?: string;
-  };
 }
 export type PostAssessmentsPeerReviewsClaimOutput = Types.LearningAssessmentsPeerReviewClaimDto;
 export const postAssessmentsPeerReviewsClaimEndpoint = {
@@ -12737,9 +11590,6 @@ export interface GetAssessmentsAuthoringStateInput {
 export type GetAssessmentsAuthoringStateOutput = Types.LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult;
 export const getAssessmentsAuthoringStateEndpoint = {
   operationId: 'getAssessmentsAuthoringState' as const,
-export type GetAiHistoryOutput = Types.AIAiConversationHistoryEntryDto[];
-export const getAiHistoryEndpoint = {
-  operationId: 'getAiHistory' as const,
   method: 'GET' as const,
   path: '/v1/assessments/{id}/authoring-state' as const,
   tags: ['LearningAssessments'] as const,
@@ -12771,9 +11621,6 @@ export interface GetAssessmentsInteractiveVideoCuesInput {
 export type GetAssessmentsInteractiveVideoCuesOutput = Types.LearningAssessmentsInteractiveVideoAssessmentCueDto[];
 export const getAssessmentsInteractiveVideoCuesEndpoint = {
   operationId: 'getAssessmentsInteractiveVideoCues' as const,
-export type GetAiPromptTemplatesForGetAiPromptTemplatesOutput = Types.AIAiPromptTemplateDto[];
-export const getAiPromptTemplatesForGetAiPromptTemplatesEndpoint = {
-  operationId: 'getAiPromptTemplatesForGetAiPromptTemplates' as const,
   method: 'GET' as const,
   path: '/v1/assessments/{id}/interactive-video-cues' as const,
   tags: ['LearningAssessments'] as const,
@@ -12974,11 +11821,6 @@ export const putAssessmentsCourseContentDraftEndpoint = {
   operationId: 'putAssessmentsCourseContentDraft' as const,
   method: 'PUT' as const,
   path: '/v1/assessments/course/{courseId}/content/{contentId}/draft' as const,
-export type GetAssessmentsInteractiveVideoCuesContentEnrollmentsOutput = Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto[];
-export const getAssessmentsInteractiveVideoCuesContentEnrollmentsEndpoint = {
-  operationId: 'getAssessmentsInteractiveVideoCuesContentEnrollments' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/{assessmentId}/interactive-video-cues/content/{contentId}/enrollments/{enrollmentId}' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13056,11 +11898,6 @@ export const deleteAssessmentsGroupsEndpoint = {
   operationId: 'deleteAssessmentsGroups' as const,
   method: 'DELETE' as const,
   path: '/v1/assessments/groups/{id}' as const,
-export type GetAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissionsOutput = Types.LearningAssessmentsAssessmentSubmissionDto[];
-export const getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissionsEndpoint = {
-  operationId: 'getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissions' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/{assessmentId}/submissions' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13172,11 +12009,6 @@ export const postAssessmentsRuntimeSubmissionsReleaseEndpoint = {
   operationId: 'postAssessmentsRuntimeSubmissionsRelease' as const,
   method: 'POST' as const,
   path: '/v1/assessments/runtime-submissions/{submissionId}/release' as const,
-export type GetAssessmentsInteractiveVideoCuesOutput = Types.LearningAssessmentsInteractiveVideoAssessmentCueDto[];
-export const getAssessmentsInteractiveVideoCuesEndpoint = {
-  operationId: 'getAssessmentsInteractiveVideoCues' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/{id}/interactive-video-cues' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -13344,12 +12176,6 @@ export const postAssetLibrariesAssetsCopyEndpoint = {
   method: 'POST' as const,
   path: '/v1/asset-libraries/assets/{referenceId}/copy' as const,
   tags: ['AssetsLibraries'] as const,
-export type GetAssessmentsCourseOutput = Types.LearningAssessmentsAssessmentDto[];
-export const getAssessmentsCourseEndpoint = {
-  operationId: 'getAssessmentsCourse' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/course/{courseId}' as const,
-  tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
 
@@ -13408,9 +12234,6 @@ export interface GetAssetsForGetAssetsInput {
 export type GetAssetsForGetAssetsOutput = void;
 export const getAssetsForGetAssetsEndpoint = {
   operationId: 'getAssetsForGetAssets' as const,
-export type GetAssessmentsCourseGroupsOutput = Types.LearningAssessmentsAssessmentGroupDto[];
-export const getAssessmentsCourseGroupsEndpoint = {
-  operationId: 'getAssessmentsCourseGroups' as const,
   method: 'GET' as const,
   path: '/v1/assets' as const,
   tags: ['Assets'] as const,
@@ -13486,12 +12309,6 @@ export const patchAssetsEndpoint = {
   method: 'PATCH' as const,
   path: '/v1/assets/{id}' as const,
   tags: ['Assets'] as const,
-export type GetAssessmentsMySubmissionsOutput = Types.LearningAssessmentsLearnerAssessmentSubmissionDto[];
-export const getAssessmentsMySubmissionsEndpoint = {
-  operationId: 'getAssessmentsMySubmissions' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/my-submissions/{enrollmentId}' as const,
-  tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
 
@@ -13638,451 +12455,6 @@ export const postAssetsBulkDownloadEndpoint = {
 
 /**
  * Upload multiple assets in one request.
- */
-export interface PostAssetsBulkUploadInput {
-  query?: {
-    accessPolicy?: Types.AssetsAssetAccessPolicy;
-    parentResourceType?: string;
-    parentResourceId?: string;
-    folderId?: string;
-  };
-  body?: FormData;
-}
-export type PostAssetsBulkUploadOutput = Types.AssetsCommandsBulkUploadAssetsOutput;
-export const postAssetsBulkUploadEndpoint = {
-  operationId: 'postAssetsBulkUpload' as const,
-  method: 'POST' as const,
-  path: '/v1/assets/bulk-upload' as const,
-  tags: ['Assets'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Initialize a chunked upload for large files.
- */
-export interface PostAssetsChunkedUploadsInput {
-  query?: {
-    fileName?: string;
-    mimeType?: string;
-    totalSize?: number;
-  };
-}
-export type PostAssetsChunkedUploadsOutput = Types.AssetsChunkedUploadSession;
-export const postAssetsChunkedUploadsEndpoint = {
-  operationId: 'postAssetsChunkedUploads' as const,
-  method: 'POST' as const,
-  path: '/v1/assets/chunked-uploads' as const,
-  tags: ['Assets'] as const,
-export type GetAssessmentsSubmissionsPeerReviewsOutput = Types.LearningAssessmentsInstructorPeerReviewDto[];
-export const getAssessmentsSubmissionsPeerReviewsEndpoint = {
-  operationId: 'getAssessmentsSubmissionsPeerReviews' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/submissions/{submissionId}/peer-reviews' as const,
-  tags: ['LearningAssessmentsPeerReviews'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Abort an in-progress chunked upload.
- */
-export interface DeleteAssetsChunkedUploadsInput {
-  uploadId: string;
-}
-export type DeleteAssetsChunkedUploadsOutput = void;
-export const deleteAssetsChunkedUploadsEndpoint = {
-  operationId: 'deleteAssetsChunkedUploads' as const,
-  method: 'DELETE' as const,
-  path: '/v1/assets/chunked-uploads/{uploadId}' as const,
-  tags: ['Assets'] as const,
-export type GetAssessmentsSubmissionsReceivedPeerReviewsOutput = Types.LearningAssessmentsReceivedPeerReviewDto[];
-export const getAssessmentsSubmissionsReceivedPeerReviewsEndpoint = {
-  operationId: 'getAssessmentsSubmissionsReceivedPeerReviews' as const,
-  method: 'GET' as const,
-  path: '/v1/assessments/submissions/{submissionId}/received-peer-reviews' as const,
-  tags: ['LearningAssessmentsPeerReviews'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Complete a chunked upload and create the asset.
- */
-export interface PostAssetsChunkedUploadsCompleteInput {
-  uploadId: string;
-  query?: {
-    displayName?: string;
-    accessPolicy?: Types.AssetsAssetAccessPolicy;
-    parentResourceType?: string;
-    parentResourceId?: string;
-    folderId?: string;
-  };
-}
-export type PostAssetsChunkedUploadsCompleteOutput = Types.AssetsAssetUploadResult;
-export const postAssetsChunkedUploadsCompleteEndpoint = {
-  operationId: 'postAssetsChunkedUploadsComplete' as const,
-  method: 'POST' as const,
-  path: '/v1/assets/chunked-uploads/{uploadId}:complete' as const,
-  tags: ['Assets'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Upload a chunk for an in-progress chunked upload.
- */
-export interface PostAssetsChunkedUploadsPartsInput {
-  uploadId: string;
-  query?: {
-    chunkIndex?: number;
-  };
-  body?: FormData;
-}
-export type PostAssetsChunkedUploadsPartsOutput = void;
-export const postAssetsChunkedUploadsPartsEndpoint = {
-  operationId: 'postAssetsChunkedUploadsParts' as const,
-  method: 'POST' as const,
-  path: '/v1/assets/chunked-uploads/{uploadId}/parts' as const,
-  tags: ['Assets'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Search document and media assets by metadata, parent, MIME type, and storage key.
- */
-export interface GetAssetsSearchInput {
-  query?: {
-    q?: string;
-    kind?: Types.AssetsAssetKind;
-    parentType?: string;
-    parentId?: string;
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetAssetsSearchOutput = Types.AssetsQueriesAssetSearchOutput;
-export const getAssetsSearchEndpoint = {
-  operationId: 'getAssetsSearch' as const,
-  method: 'GET' as const,
-  path: '/v1/assets/search' as const,
-  tags: ['Assets'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAssetsSocialMediaInput {
-  body?: FormData;
-}
-export type PostAssetsSocialMediaOutput = Types.SocialAssetsSocialMediaSocialMediaAssetDescriptor;
-export const postAssetsSocialMediaEndpoint = {
-  operationId: 'postAssetsSocialMedia' as const,
-  method: 'POST' as const,
-  path: '/v1/assets/social-media' as const,
-  tags: ['SocialAssetsSocialMediaAssets'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAssetsSocialMediaInput {
-  assetReferenceId: string;
-}
-export type GetAssetsSocialMediaOutput = Types.SocialAssetsSocialMediaSocialMediaAssetDescriptor;
-export const getAssetsSocialMediaEndpoint = {
-  operationId: 'getAssetsSocialMedia' as const,
-  method: 'GET' as const,
-  path: '/v1/assets/social-media/{assetReferenceId}' as const,
-  tags: ['SocialAssetsSocialMediaAssets'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditCompliancePackagingForGetAuditCompliancePackagingInput {
-  query?: {
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetAuditCompliancePackagingForGetAuditCompliancePackagingOutput = Types.ComplianceAuditCompliancePackageSummary[];
-export const getAuditCompliancePackagingForGetAuditCompliancePackagingEndpoint = {
-  operationId: 'getAuditCompliancePackagingForGetAuditCompliancePackaging' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAuditCompliancePackagingInput {
-  body?: Types.ComplianceAuditCreateCompliancePackageInput;
-}
-export type PostAuditCompliancePackagingOutput = Types.ComplianceAuditCompliancePackageOutput;
-export const postAuditCompliancePackagingEndpoint = {
-  operationId: 'postAuditCompliancePackaging' as const,
-  method: 'POST' as const,
-  path: '/v1/audit/compliance-packaging' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditCompliancePackagingForGetAuditCompliancePackagingByIdInput {
-  id: string;
-}
-export type GetAuditCompliancePackagingForGetAuditCompliancePackagingByIdOutput = Types.ComplianceAuditCompliancePackageOutput;
-export const getAuditCompliancePackagingForGetAuditCompliancePackagingByIdEndpoint = {
-  operationId: 'getAuditCompliancePackagingForGetAuditCompliancePackagingById' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging/{id}' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditCompliancePackagingDownloadInput {
-  id: string;
-}
-export type GetAuditCompliancePackagingDownloadOutput = Blob;
-export const getAuditCompliancePackagingDownloadEndpoint = {
-  operationId: 'getAuditCompliancePackagingDownload' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging/{id}/download' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditCompliancePackagingVerificationInput {
-  id: string;
-}
-export type GetAuditCompliancePackagingVerificationOutput = Types.ComplianceAuditComplianceArtifactVerification;
-export const getAuditCompliancePackagingVerificationEndpoint = {
-  operationId: 'getAuditCompliancePackagingVerification' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging/{id}/verification' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsInput {
-  query?: {
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsOutput = Types.ComplianceAuditComplianceDocumentOutput[];
-export const getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsEndpoint = {
-  operationId: 'getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocuments' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging/documents' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAuditCompliancePackagingDocumentsInput {
-  body?: Types.ComplianceAuditUploadComplianceDocumentInput;
-}
-export type PostAuditCompliancePackagingDocumentsOutput = Types.ComplianceAuditComplianceDocumentOutput;
-export const postAuditCompliancePackagingDocumentsEndpoint = {
-  operationId: 'postAuditCompliancePackagingDocuments' as const,
-  method: 'POST' as const,
-  path: '/v1/audit/compliance-packaging/documents' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdInput {
-  id: string;
-}
-export type GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdOutput = Types.ComplianceAuditComplianceDocumentOutput;
-export const getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint = {
-  operationId: 'getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsById' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging/documents/{id}' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAuditCompliancePackagingDocumentsReviewInput {
-  id: string;
-  body?: Types.ComplianceAuditReviewComplianceDocumentInput;
-}
-export type PostAuditCompliancePackagingDocumentsReviewOutput = Types.ComplianceAuditComplianceDocumentOutput;
-export const postAuditCompliancePackagingDocumentsReviewEndpoint = {
-  operationId: 'postAuditCompliancePackagingDocumentsReview' as const,
-  method: 'POST' as const,
-  path: '/v1/audit/compliance-packaging/documents/{id}/review' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export type GetAuditCompliancePackagingTemplatesInput = void;
-export type GetAuditCompliancePackagingTemplatesOutput = Types.ComplianceAuditComplianceFrameworkTemplate[];
-export const getAuditCompliancePackagingTemplatesEndpoint = {
-  operationId: 'getAuditCompliancePackagingTemplates' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/compliance-packaging/templates' as const,
-  tags: ['ComplianceAuditCompliancePackaging'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesInput {
-  query?: {
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
-export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint = {
-  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPolicies' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-policies' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAuditRetentionPoliciesInput {
-  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
-}
-export type PostAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
-export const postAuditRetentionPoliciesEndpoint = {
-  operationId: 'postAuditRetentionPolicies' as const,
-  method: 'POST' as const,
-  path: '/v1/audit/retention-policies' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdInput {
-  id: string;
-}
-export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
-export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint = {
-  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPoliciesById' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-policies/{id}' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Gets the tenant retention policy configuration. With includeInherited, a tenant
- * without an explicit configuration receives the platform baseline template the policy tree inherits from.
- */
-export interface GetAuditRetentionPoliciesConfigurationInput {
-  query?: {
-    includeInherited?: boolean;
-  };
-}
-export type GetAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
-export const getAuditRetentionPoliciesConfigurationEndpoint = {
-  operationId: 'getAuditRetentionPoliciesConfiguration' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-policies/configuration' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PutAuditRetentionPoliciesConfigurationInput {
-  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
-}
-export type PutAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
-export const putAuditRetentionPoliciesConfigurationEndpoint = {
-  operationId: 'putAuditRetentionPoliciesConfiguration' as const,
-  method: 'PUT' as const,
-  path: '/v1/audit/retention-policies/configuration' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
- * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
- */
-export type GetAuditRetentionPoliciesTemplatesInput = void;
-export type GetAuditRetentionPoliciesTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
-export const getAuditRetentionPoliciesTemplatesEndpoint = {
-  operationId: 'getAuditRetentionPoliciesTemplates' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-policies/templates' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditRetentionSimulationForGetAuditRetentionSimulationInput {
-  query?: {
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetAuditRetentionSimulationForGetAuditRetentionSimulationOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
-export const getAuditRetentionSimulationForGetAuditRetentionSimulationEndpoint = {
-  operationId: 'getAuditRetentionSimulationForGetAuditRetentionSimulation' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-simulation' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PostAuditRetentionSimulationInput {
-  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
-}
-export type PostAuditRetentionSimulationOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
-export const postAuditRetentionSimulationEndpoint = {
-  operationId: 'postAuditRetentionSimulation' as const,
-  method: 'POST' as const,
-  path: '/v1/audit/retention-simulation' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface GetAuditRetentionSimulationForGetAuditRetentionSimulationByIdInput {
-  id: string;
-}
-export type GetAuditRetentionSimulationForGetAuditRetentionSimulationByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
-export const getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoint = {
-  operationId: 'getAuditRetentionSimulationForGetAuditRetentionSimulationById' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-simulation/{id}' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Gets the tenant retention policy configuration. With includeInherited, a tenant
- * without an explicit configuration receives the platform baseline template the policy tree inherits from.
- */
-export interface GetAuditRetentionSimulationConfigurationInput {
-  query?: {
-    includeInherited?: boolean;
-  };
-}
-export type GetAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
-export const getAuditRetentionSimulationConfigurationEndpoint = {
-  operationId: 'getAuditRetentionSimulationConfiguration' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-simulation/configuration' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-export interface PutAuditRetentionSimulationConfigurationInput {
-  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
-}
-export type PutAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
-export const putAuditRetentionSimulationConfigurationEndpoint = {
-  operationId: 'putAuditRetentionSimulationConfiguration' as const,
-  method: 'PUT' as const,
-  path: '/v1/audit/retention-simulation/configuration' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
- * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
- */
-export type GetAuditRetentionSimulationTemplatesInput = void;
-export type GetAuditRetentionSimulationTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
-export const getAuditRetentionSimulationTemplatesEndpoint = {
-  operationId: 'getAuditRetentionSimulationTemplates' as const,
-  method: 'GET' as const,
-  path: '/v1/audit/retention-simulation/templates' as const,
-  tags: ['ComplianceAuditRetentionSimulation'] as const,
-  requiresAuth: true,
-} as const;
-
-/**
- * Returns the security alert queue for the current tenant.
  */
 export interface PostAssetsBulkUploadInput {
   query?: {
