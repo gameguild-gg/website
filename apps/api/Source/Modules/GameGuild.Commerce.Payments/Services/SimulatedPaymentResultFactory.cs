@@ -170,6 +170,50 @@ public static class SimulatedPaymentResultFactory
     }
 
     /// <summary>
+    ///     Creates a successful simulated payment-method details result (issue #414).
+    /// </summary>
+    /// <param name="paymentMethodId">The payment method ID to resolve</param>
+    /// <param name="testCard">Optional test card configuration (defaults to Visa 4242)</param>
+    /// <param name="logger">Optional logger for debug output</param>
+    public static GatewayPaymentMethodDetailsResult PaymentMethodDetails(
+        string paymentMethodId,
+        SimulatedTestCard? testCard = null,
+        ILogger? logger = null)
+    {
+        testCard ??= SimulatedTestCard.Visa4242;
+        logger?.LogDebug("Generated simulated Stripe payment method details for: {PaymentMethodId}", paymentMethodId);
+
+        return new GatewayPaymentMethodDetailsResult(
+            Success: true,
+            PaymentMethodId: paymentMethodId,
+            Details: new GatewayPaymentMethodDetails(
+                Type: "card",
+                CardBrand: testCard.Brand,
+                CardLast4: testCard.Last4,
+                CardExpMonth: testCard.ExpiryMonth,
+                CardExpYear: testCard.ExpiryYear,
+                CardFingerprint: "fp_" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(paymentMethodId)))[..16].ToLowerInvariant(),
+                BankName: null,
+                BankLast4: null,
+                WalletEmail: null),
+            ErrorCode: null,
+            ErrorMessage: null);
+    }
+
+    /// <summary>
+    ///     Creates a failed simulated payment-method details result.
+    /// </summary>
+    public static GatewayPaymentMethodDetailsResult PaymentMethodDetailsFailure(string errorMessage, string errorCode = "stripe_error")
+    {
+        return new GatewayPaymentMethodDetailsResult(
+            Success: false,
+            PaymentMethodId: null,
+            Details: null,
+            ErrorCode: errorCode,
+            ErrorMessage: errorMessage);
+    }
+
+    /// <summary>
     ///     Creates a successful simulated setup intent result.
     /// </summary>
     public static GatewaySetupIntentResult SetupIntentSuccess(string customerId, ILogger? logger = null)
