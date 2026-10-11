@@ -52,6 +52,15 @@ public sealed class AcceptDisputeCommandHandler(
         }
 
         // Close the dispute at the gateway when it was reconciled from a gateway webhook.
+        if (request.IssueRefund && dispute.Amount > payment.Amount - payment.RefundedAmount)
+        {
+            // Fail before touching the gateway: the dispute amount cannot be recorded against
+            // the payment without exceeding its refundable balance.
+            return Failure(
+                request.DisputeId,
+                $"Dispute amount {dispute.Amount} exceeds the remaining refundable {payment.Amount - payment.RefundedAmount} for payment {payment.Id}");
+        }
+
         if (dispute.GatewayDisputeId is not null)
         {
             var gatewayResult = await paymentGateway.AcceptDisputeAsync(
