@@ -40,7 +40,8 @@ public class LocalAuthService(
     TimeProvider? timeProvider = null,
     IOptions<SignInComplianceGateOptions>? complianceGateOptions = null,
     ISignInCompliancePolicy? compliancePolicy = null,
-    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null
+    ISuspiciousLoginAlertPublisher? suspiciousLoginAlerts = null,
+    IOptions<LocalSignInPolicyOptions>? localSignInPolicyOptions = null
 ) : ILocalAuthService
 {
     private const string ComplianceDeniedAuditAction = "Authentication.ComplianceDenied";
@@ -213,6 +214,12 @@ public class LocalAuthService(
             await DefaultTenantMembershipProvisioner.EnsureAsync(sender, authenticatedUserId, cancellationToken).ConfigureAwait(false);
             var tenantAccessContext = await ResolveTenantAccessContextAsync(authenticatedUserId, request.TenantId, cancellationToken).ConfigureAwait(false);
             RequireActiveTenantAccess(tenantAccessContext);
+            // Evaluate server configuration using the resolved active tenant, never a caller-supplied policy.
+            var localSignInPolicy = localSignInPolicyOptions?.Value ?? new LocalSignInPolicyOptions();
+            if (localSignInPolicy.RequiresVerifiedEmail(tenantAccessContext.TenantId) && !authenticatedUser.IsEmailVerified)
+            {
+                throw new UnauthorizedAccessException(enumerationProtection.GetGenericErrorMessage("login"));
+            }
             // Sign-in compliance gate (issue #267): after credential validation and tenant
             // access are confirmed, but before any token is generated or any session is
             // created, the compliance policy decides whether the sign-in may proceed.
