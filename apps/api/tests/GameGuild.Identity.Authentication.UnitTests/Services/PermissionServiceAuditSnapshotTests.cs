@@ -46,12 +46,12 @@ public sealed class PermissionServiceAuditSnapshotTests
         grant.ExpiresAt = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         await fixture.Db.SaveChangesAsync();
 
-        await fixture.GrantAsync(layer, PermissionType.Write);
+        await fixture.GrantAsync(layer, PermissionType.Edit);
         var entry = fixture.Entries.Should().ContainSingle().Which;
         var before = Parse(entry.OldValue);
         var after = Parse(entry.NewValue);
         ReadPermissions(before).Should().Equal(Encode(layer, PermissionType.Read));
-        ReadPermissions(after).Should().Equal(Encode(layer, PermissionType.Read), Encode(layer, PermissionType.Write));
+        ReadPermissions(after).Should().Equal(Encode(layer, PermissionType.Read), Encode(layer, PermissionType.Edit));
         before.GetProperty("isActive").GetBoolean().Should().BeFalse();
         before.GetProperty("expiresAt").GetDateTime().Should().Be(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         after.GetProperty("isActive").GetBoolean().Should().BeTrue();
@@ -73,7 +73,7 @@ public sealed class PermissionServiceAuditSnapshotTests
         grant.Metadata = new Dictionary<string, object> { ["private"] = "private metadata" };
         await fixture.Db.SaveChangesAsync();
 
-        await fixture.GrantAsync("Tenant", PermissionType.Write);
+        await fixture.GrantAsync("Tenant", PermissionType.Edit);
         var entry = fixture.Entries.Should().ContainSingle().Which;
         foreach (var value in new[] { entry.OldValue, entry.NewValue })
         {
@@ -92,13 +92,13 @@ public sealed class PermissionServiceAuditSnapshotTests
     public async Task PartialRevoke_RecordsRemainingPermissions(string layer)
     {
         await using var fixture = new Fixture();
-        fixture.Seed(layer, [PermissionType.Read, PermissionType.Write]);
+        fixture.Seed(layer, [PermissionType.Read, PermissionType.Edit]);
         await fixture.Db.SaveChangesAsync();
 
-        await fixture.RevokeAsync(layer, PermissionType.Write);
+        await fixture.RevokeAsync(layer, PermissionType.Edit);
         var entry = fixture.Entries.Should().ContainSingle().Which;
         entry.Operation.Should().Be(PermissionOperationType.Revoke);
-        ReadPermissions(Parse(entry.OldValue)).Should().Equal(Encode(layer, PermissionType.Read), Encode(layer, PermissionType.Write));
+        ReadPermissions(Parse(entry.OldValue)).Should().Equal(Encode(layer, PermissionType.Read), Encode(layer, PermissionType.Edit));
         ReadPermissions(Parse(entry.NewValue)).Should().Equal(Encode(layer, PermissionType.Read));
     }
 
@@ -149,12 +149,12 @@ public sealed class PermissionServiceAuditSnapshotTests
         if (global)
         {
             await fixture.Service.SetGlobalDefaultPermissionsAsync([PermissionType.Read]);
-            await fixture.Service.SetGlobalDefaultPermissionsAsync([PermissionType.Write]);
+            await fixture.Service.SetGlobalDefaultPermissionsAsync([PermissionType.Edit]);
         }
         else
         {
             await fixture.Service.SetTenantDefaultPermissionsAsync(fixture.TenantId, [PermissionType.Read]);
-            await fixture.Service.SetTenantDefaultPermissionsAsync(fixture.TenantId, [PermissionType.Write]);
+            await fixture.Service.SetTenantDefaultPermissionsAsync(fixture.TenantId, [PermissionType.Edit]);
         }
 
         fixture.Entries.Should().HaveCount(2);
@@ -181,7 +181,7 @@ public sealed class PermissionServiceAuditSnapshotTests
         var expiry = new DateTime(2030, 2, 1, 0, 0, 0, DateTimeKind.Utc);
         var savesBefore = fixture.Db.SuccessfulSaveCount;
 
-        await fixture.Service.ShareResourceAsync<GenericResourcePermission, EntityBase>(fixture.ResourceId, fixture.UserId, fixture.TenantId, [PermissionType.Write], expiry);
+        await fixture.Service.ShareResourceAsync<GenericResourcePermission, EntityBase>(fixture.ResourceId, fixture.UserId, fixture.TenantId, [PermissionType.Edit], expiry);
         fixture.Db.SuccessfulSaveCount.Should().Be(savesBefore + 1);
         var entry = fixture.Entries.Should().ContainSingle().Which;
         if (existing)
@@ -338,7 +338,7 @@ public sealed class PermissionServiceAuditSnapshotTests
             resource.ResourceTitle = "private resource title";
         }
         await fixture.Db.SaveChangesAsync();
-        await fixture.GrantAsync(layer, PermissionType.Write);
+        await fixture.GrantAsync(layer, PermissionType.Edit);
         var entry = fixture.Entries.Should().ContainSingle().Which;
         foreach (var value in new[] { entry.OldValue, entry.NewValue })
         {
