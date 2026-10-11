@@ -186,6 +186,8 @@ public class ApplyInvoiceAccountCreditsHandlerTests
         anonymous.SetupGet(value => value.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
+            Roles = new HashSet<string>(),
+            Permissions = new HashSet<string>(),
             IsAuthenticated = false
         });
         var handler = new ApplyInvoiceAccountCreditsHandler(context, new AccountCreditService(context), anonymous.Object);

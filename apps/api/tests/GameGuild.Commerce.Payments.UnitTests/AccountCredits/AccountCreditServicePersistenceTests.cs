@@ -191,9 +191,9 @@ public class AccountCreditServicePersistenceTests
 
         context.Set<AccountCreditGrant>().AddRange(
             new AccountCreditGrant(tenantId, userId, 10m, "USD", AccountCreditSource.Manual,
-                AccountCreditType.General, "due", ExpiresAt: now.AddHours(-1)),
+                AccountCreditType.General, "due", expiresAt: now.AddHours(-1)),
             new AccountCreditGrant(tenantId, userId, 10m, "USD", AccountCreditSource.Manual,
-                AccountCreditType.General, "not due", ExpiresAt: now.AddHours(1)));
+                AccountCreditType.General, "not due", expiresAt: now.AddHours(1)));
 
         var giftCode = GiftRedemptionCodeGenerator.HashCode(GiftRedemptionCodeGenerator.GenerateCode());
         context.Set<GiftSubscription>().Add(new GiftSubscription(
