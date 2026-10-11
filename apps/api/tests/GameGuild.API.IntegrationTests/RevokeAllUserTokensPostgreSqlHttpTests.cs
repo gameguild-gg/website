@@ -283,7 +283,7 @@ public sealed class RevokeAllUserTokensPostgreSqlHttpTests(ApiPostgreSqlFixture 
     }
 
     private WebApplicationFactory<Program> CreateFactory(Action<IServiceCollection>? configure = null) =>
-        fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.PostConfigure<AuthenticationOptions>(options =>
             {

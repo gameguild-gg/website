@@ -646,6 +646,26 @@ Table "AuditRetentionSimulationRuns" {
   }
 }
 
+<<<<<<< HEAD
+Table "billing_provider_states" {
+  "Id" uuid [not null]
+  "ProviderKey" "character varying(50)" [not null]
+  "IsEnabled" boolean [not null]
+  "LastChangedByUserId" uuid
+  "Version" integer [not null]
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+  "DeletedAt" timestamp
+  "TenantId" uuid
+
+  Indexes {
+    Id [pk, name: "PK_billing_provider_states"]
+    ProviderKey [unique, name: "ix_billing_provider_states_provider_key"]
+  }
+}
+
+=======
+>>>>>>> origin/develop
 Table "billing_webhook_events" {
   "Id" uuid [not null]
   "Provider" "character varying(50)" [not null]
@@ -4233,6 +4253,12 @@ Table "SecurityAlerts" {
   "AcknowledgedByUserId" uuid
   "AcknowledgedAtUtc" timestamp
   "AcknowledgementNotes" "character varying(1000)"
+<<<<<<< HEAD
+  "ResolvedByUserId" uuid
+  "ResolvedAtUtc" timestamp
+  "ResolutionNotes" "character varying(1000)"
+=======
+>>>>>>> origin/develop
   "Version" integer [not null]
   "CreatedAt" timestamp [not null]
   "UpdatedAt" timestamp [not null]
@@ -11466,6 +11492,33 @@ Table "resources"."usage_records" {
   }
 }
 
+Table "gameguild.authentication"."adaptivebehaviorbaseline" {
+  "id" uuid [not null]
+  "TenantId" uuid
+  "UserId" uuid
+  "SubjectKey" "character varying(64)" [not null]
+  "HourMeanX" doubleprecision [not null]
+  "HourMeanY" doubleprecision [not null]
+  "HourMeanSquaredDeviation" doubleprecision [not null]
+  "IpSurpriseMean" doubleprecision [not null]
+  "IpSurpriseMeanSquaredDeviation" doubleprecision [not null]
+  "IpWeightsJson" "character varying(2000)"
+  "CadenceLogSecondsMean" doubleprecision [not null]
+  "CadenceLogSecondsMeanSquaredDeviation" doubleprecision [not null]
+  "CadenceObservationCount" integer [not null]
+  "ObservationCount" integer [not null]
+  "LastObservedAtUtc" timestamp
+  "CreatedAt" timestamp [not null]
+  "UpdatedAt" timestamp [not null]
+
+  Indexes {
+    id [pk, name: "PK_adaptivebehaviorbaseline"]
+    LastObservedAtUtc [name: "ix_adaptivebehaviorbaseline_last_observed_at"]
+    SubjectKey [unique, name: "ix_adaptivebehaviorbaseline_subject_key"]
+    TenantId [name: "ix_adaptivebehaviorbaseline_tenant_id"]
+  }
+}
+
 Table "gameguild.authentication"."api_keys" {
   "id" uuid [not null]
   "user_id" uuid [not null]
@@ -11809,9 +11862,13 @@ Table "gameguild.authentication"."service_accounts" {
   "is_locked" boolean [not null, default: false]
   "locked_at" timestamp
   "allowed_ip_addresses" "character varying(2000)"
+  "certificate_thumbprint" "character varying(40)"
+  "certificate_spki_sha256" "character varying(64)"
 
   Indexes {
     id [pk, name: "PK_service_accounts"]
+    certificate_spki_sha256 [unique, name: "idx_service_accounts_certificate_spki_sha256"]
+    certificate_thumbprint [unique, name: "idx_service_accounts_certificate_thumbprint"]
     client_id [unique, name: "idx_service_accounts_client_id"]
     (tenant_id, is_active) [name: "idx_service_accounts_tenant_active"]
     tenant_id [name: "idx_service_accounts_tenant_id"]

@@ -35,7 +35,7 @@ export class CommerceProductsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -104,7 +104,7 @@ export class CommerceProductsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -192,7 +192,7 @@ export class CommerceProductsModule {
       method: 'HEAD',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -271,7 +271,7 @@ export class CommerceProductsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.CommerceProductsProductPricingDto[], ApiError>;

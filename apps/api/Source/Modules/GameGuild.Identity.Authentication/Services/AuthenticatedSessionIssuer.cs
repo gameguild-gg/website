@@ -14,13 +14,25 @@ public sealed class AuthenticatedSessionIssuer(
     IJwtTokenService jwtTokenService,
     IRefreshTokenHasher refreshTokenHasher,
     IRefreshTokenRepository refreshTokenRepository,
-    ISessionManagementService sessionManagementService) : IAuthenticatedSessionIssuer
+    ISessionManagementService sessionManagementService,
+    ISessionMfaEvidenceStore mfaEvidence) : IAuthenticatedSessionIssuer
 {
-    public async Task<SignInResponse> IssueAsync(
+    public Task<SignInResponse> IssueAsync(
         User user,
         Guid? requestedTenantId,
         DeviceInfo deviceInfo,
         CancellationToken cancellationToken)
+        => IssueCoreAsync(user, requestedTenantId, deviceInfo, null, cancellationToken);
+
+    public Task<SignInResponse> IssueMfaAsync(User user, Guid? requestedTenantId, DeviceInfo deviceInfo,
+        SignInMfaProof proof, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(proof);
+        return IssueCoreAsync(user, requestedTenantId, deviceInfo, proof, cancellationToken);
+    }
+
+    private async Task<SignInResponse> IssueCoreAsync(User user, Guid? requestedTenantId, DeviceInfo deviceInfo,
+        SignInMfaProof? proof, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(user);
@@ -44,7 +56,8 @@ public sealed class AuthenticatedSessionIssuer(
             throw new AuthenticationRequiredException("No authorized tenant is available for authentication.");
         }
 
-        var authenticatedAt = new DateTimeOffset(SystemClock.UtcNow);
+        var authenticatedAt = proof?.FirstFactorVerifiedAt ?? new DateTimeOffset(SystemClock.UtcNow);
+        proof?.RequireBinding(user.Id, context.TenantId, user.TokenVersion, authenticatedAt, DateTimeOffset.UtcNow);
         var rawRefreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
             user.Id, deviceInfo, authenticatedAt, cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
@@ -78,9 +91,20 @@ public sealed class AuthenticatedSessionIssuer(
         }
         cancellationToken.ThrowIfCancellationRequested();
 
-        var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
-            user.Id, user.Email, context.Roles.ToArray(), context.TenantId, user.TokenVersion,
-            new DateTimeOffset(storedToken.CreatedAt), sessionId, cancellationToken).ConfigureAwait(false);
+        string accessToken;
+        if (proof is not null)
+        {
+            await mfaEvidence.AddAsync(sessionId, proof, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            accessToken = await jwtTokenService.GenerateMfaAccessTokenAsync(user.Id, user.Email, context.Roles.ToArray(),
+                context.TenantId, user.TokenVersion, authenticatedAt, sessionId, proof, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            accessToken = await jwtTokenService.GenerateAccessTokenAsync(
+                user.Id, user.Email, context.Roles.ToArray(), context.TenantId, user.TokenVersion,
+                new DateTimeOffset(storedToken.CreatedAt), sessionId, cancellationToken).ConfigureAwait(false);
+        }
         cancellationToken.ThrowIfCancellationRequested();
         var handler = new JwtSecurityTokenHandler();
         if (!handler.CanReadToken(accessToken))

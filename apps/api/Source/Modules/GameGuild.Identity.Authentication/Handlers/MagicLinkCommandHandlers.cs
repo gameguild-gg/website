@@ -72,7 +72,7 @@ public sealed class ConsumeMagicLinkCommandHandler : ICommandHandler<ConsumeMagi
     private readonly IUserRepository userRepository;
     private readonly IEmailVerificationService emailVerificationService;
     private readonly ILogger<ConsumeMagicLinkCommandHandler> logger;
-    private readonly IAuthenticatedSessionIssuer? sessionIssuer;
+    private readonly ISignInMfaService? signInMfa;
 
     public ConsumeMagicLinkCommandHandler(IUserRepository userRepository, IEmailVerificationService emailVerificationService,
         IJwtTokenService jwtTokenService, IConfiguration configuration, ILogger<ConsumeMagicLinkCommandHandler> logger)
@@ -91,11 +91,22 @@ public sealed class ConsumeMagicLinkCommandHandler : ICommandHandler<ConsumeMagi
         ILogger<ConsumeMagicLinkCommandHandler> logger,
         IOptions<JwtOptions>? jwtOptions,
         IAuthenticatedSessionIssuer? sessionIssuer)
+        : this(userRepository, emailVerificationService, jwtTokenService, configuration, logger, jwtOptions, sessionIssuer, null) { }
+
+    public ConsumeMagicLinkCommandHandler(
+        IUserRepository userRepository,
+        IEmailVerificationService emailVerificationService,
+        IJwtTokenService jwtTokenService,
+        IConfiguration configuration,
+        ILogger<ConsumeMagicLinkCommandHandler> logger,
+        IOptions<JwtOptions>? jwtOptions,
+        IAuthenticatedSessionIssuer? sessionIssuer,
+        ISignInMfaService? signInMfa)
     {
         this.userRepository = userRepository;
         this.emailVerificationService = emailVerificationService;
         this.logger = logger;
-        this.sessionIssuer = sessionIssuer;
+        this.signInMfa = signInMfa;
     }
 
     public async Task<SignInResponse> Handle(ConsumeMagicLinkCommand request, CancellationToken cancellationToken)
@@ -115,9 +126,10 @@ public sealed class ConsumeMagicLinkCommandHandler : ICommandHandler<ConsumeMagi
             throw new AuthenticationRequiredException("Invalid or expired magic-link token");
         }
 
-        var issuer = sessionIssuer ?? throw new InvalidOperationException("Authenticated session issuer is not configured.");
-        var response = await issuer.IssueAsync(
-            user,
+        var mfa = signInMfa ?? throw new InvalidOperationException("Sign-in MFA policy service is not configured.");
+        var response = await mfa.BeginAsync(
+            user.Id,
+            user.TokenVersion,
             request.TenantId,
             new DeviceInfo
             {
@@ -127,9 +139,12 @@ public sealed class ConsumeMagicLinkCommandHandler : ICommandHandler<ConsumeMagi
                 DeviceName = "Magic Link",
                 DeviceType = "Web"
             },
+            SignInFirstFactor.MagicLink,
+            requiresRiskStepUp: false,
             cancellationToken).ConfigureAwait(false);
-        response.Message = "Magic-link sign-in successful";
-        logger.LogInformation("User {UserId} signed in with magic-link authentication", user.Id);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (response.Success) { response.Message = "Magic-link sign-in successful"; }
+        logger.LogInformation("Magic-link first factor verified for user {UserId}; authentication complete: {Complete}", user.Id, response.Success);
         return response;
     }
 

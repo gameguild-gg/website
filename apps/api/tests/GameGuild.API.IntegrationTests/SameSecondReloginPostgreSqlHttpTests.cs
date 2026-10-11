@@ -30,7 +30,7 @@ public sealed class SameSecondReloginPostgreSqlHttpTests(ApiPostgreSqlFixture fi
     [Fact]
     public async Task ActualCredentialReloginCurrentVersionBearerIsAcceptedAtTheLogoutSecondWhilePriorBearerIsDenied()
     {
-        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        using var factory = fixture.CreateFactory(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
                 new Dictionary<string, string?> { ["Authentication:TokenRevocation:UseDistributedCache"] = "true", ["Redis:Enabled"] = "false" }));

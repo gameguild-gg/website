@@ -305,6 +305,8 @@ economy_gate_error() { return 1; }
 run_logged() {
   shift
   [[ "$1" == timeout && "$2" == --kill-after=30s && "$3" == "$expected_timeout" ]] || return 1
+  [[ " $* " == *' --blame-hang-timeout 5m '* ]] || return 1
+  [[ " $* " != *' --filter '* ]] || return 1
   local results="${@: -1}" name
   name="$(basename "$results")"
   mkdir -p "$results"
@@ -319,6 +321,13 @@ run_whole_solution_test_project \
 expected_timeout=5m
 run_whole_solution_test_project \
   apps/api/tests/GameGuild.Identity.Authentication.UnitTests/GameGuild.Identity.Authentication.UnitTests.csproj "$1" || exit 1
+api_integration_test_timeout=23m
+expected_timeout=23m
+run_whole_solution_test_project \
+  apps/api/tests/GameGuild.API.IntegrationTests/GameGuild.API.IntegrationTests.csproj "$1" || exit 1
+expected_timeout=12m
+run_whole_solution_test_project \
+  apps/api/tests/GameGuild.API.UnitTests/GameGuild.API.UnitTests.csproj "$1" || exit 1
 SCRIPT
   bash "$runner" "$fixture_root/api-suite-deadlines"
 }
@@ -337,7 +346,7 @@ test_economy_gate_sizes_only_its_shared_test_database_lock_table() {
   test_server="$(sed -n '/gate_stage=.postgres-economy-tests./,/economy_postgres_probe()/p' "$gate")"
   app_server="$(sed -n '/gate_stage=.postgres-app./,/app_postgres_probe()/p' "$gate")"
   migration_server="$(sed -n '/gate_stage=.postgres-whole-solution-migrations./,/whole_solution_postgres_probe()/p' "$gate")"
-  grep -Fq 'public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512' <<< "$test_server" || return 1
+  grep -Fq '"$postgres_image" -c max_locks_per_transaction=512' <<< "$test_server" || return 1
   ! grep -Fq 'max_locks_per_transaction' <<< "$app_server" || return 1
   ! grep -Fq 'max_locks_per_transaction' <<< "$migration_server" || return 1
   grep -Fq 'whole_solution_jobs=2' "$gate"

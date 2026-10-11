@@ -36,7 +36,7 @@ public sealed class RefreshTokenExpirationPostgreSqlHttpTests(ApiPostgreSqlFixtu
     [InlineData(false, 43200)]
     public async Task RotationPersistsAndReportsTheConfiguredLifetime(bool sliding, int absoluteMinutes)
     {
-        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        using var factory = fixture.CreateFactory(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
                 new Dictionary<string, string?> { ["Jwt:RefreshTokenSlidingExpiration"] = sliding.ToString() }));

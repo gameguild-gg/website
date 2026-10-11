@@ -227,7 +227,7 @@ public sealed class RefreshTokenLifecyclePostgreSqlHttpTests(ApiPostgreSqlFixtur
     }
 
     private WebApplicationFactory<Program> CreateFactory(int days, RefreshReadRendezvous? rendezvous = null, int? absoluteTimeoutMinutes = null,
-        RefreshTokenReplayScope replayScope = RefreshTokenReplayScope.Family) => fixture.Factory.WithWebHostBuilder(builder =>
+        RefreshTokenReplayScope replayScope = RefreshTokenReplayScope.Family) => fixture.CreateFactory(builder =>
         builder.ConfigureTestServices(services =>
         {
             services.PostConfigure<AuthenticationOptions>(options =>

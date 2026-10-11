@@ -238,7 +238,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         var service = new Mock<IAuditService>();
         service.Setup(value => value.GetAuditLogCountAsync(It.IsAny<AuditLogQuery>()))
             .ThrowsAsync(new InvalidOperationException("private database password and connection details"));
-        using var factory = fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IAuditService>();
             services.AddSingleton(service.Object);
@@ -267,7 +267,7 @@ public sealed class AuditExportPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             .Returns(() => { entered.TrySetResult(); return release.Task; });
         service.Setup(value => value.StreamAuditLogsAsync(It.IsAny<AuditLogQuery>(), It.IsAny<CancellationToken>()))
             .Returns(EmptyRecords());
-        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        using var factory = fixture.CreateFactory(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
                 new Dictionary<string, string?>

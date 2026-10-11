@@ -5,6 +5,35 @@ import type { OpenApiSpec } from '../../scripts/fetch-spec.js';
 
 describe('Module Generator', () => {
   it.each([
+    { label: 'explicit anonymous endpoint', marker: true, security: undefined, requiresAuth: false },
+    { label: 'explicit protected endpoint', marker: false, security: undefined, requiresAuth: true },
+    { label: 'non-boolean anonymous marker', marker: 'true', security: undefined, requiresAuth: true },
+    { label: 'unmarked endpoint', marker: undefined, security: undefined, requiresAuth: true },
+    { label: 'explicit empty security', marker: undefined, security: [], requiresAuth: false },
+  ])('preserves the native authentication decision for $label', ({ marker, security, requiresAuth }) => {
+    const spec = {
+      openapi: '3.0.1',
+      info: { title: 'Test API', version: '1.0.0' },
+      security: [{ Bearer: [] }],
+      paths: {
+        '/v1/auth/mfa/sign-in/enrollment': {
+          post: {
+            operationId: 'postAuthMfaSignInEnrollment',
+            tags: ['Auth'],
+            'x-gameguild-allow-anonymous': marker,
+            security,
+            responses: { '200': { description: 'OK' } },
+          },
+        },
+      },
+    } as OpenApiSpec;
+
+    const output = generateModules(spec)['auth'];
+
+    expect(output).toContain(`requiresAuth: ${requiresAuth},`);
+  });
+
+  it.each([
     { label: 'named DTOs', items: { $ref: '#/components/schemas/User' }, expectedType: 'Types.User' },
     { label: 'unstructured objects', items: { type: 'object' }, expectedType: 'Record<string, unknown>' },
   ])('reproduces equivalent shorthand array response types for $label', ({ items, expectedType }) => {

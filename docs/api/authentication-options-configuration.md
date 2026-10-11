@@ -4,6 +4,10 @@ The API host binds `PresentationLayer:Authentication` to the typed
 `AuthenticationOptions` contract. The `SetupAuthentication` overload that is called without an options object
 binds the root `Authentication` section; the host uses the nested presentation-layer section.
 
+For an existing installation, follow the [authentication migration guide](authentication-migration-guide.md)
+to map legacy settings, preserve account/token compatibility, adapt MFA consumers,
+rehearse acceptance, and retain a rollback path.
+
 ```json
 {
   "PresentationLayer": {

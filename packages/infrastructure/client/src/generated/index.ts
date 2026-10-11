@@ -72,6 +72,7 @@ export * from './modules/access-control-permission-sync.gen.js';
 export * from './modules/access-control-tenant-permissions.gen.js';
 export * from './modules/commerce-payments-billing-charges.gen.js';
 export * from './modules/commerce-billing-events.gen.js';
+export * from './modules/commerce-billing-external-providers.gen.js';
 export * from './modules/commerce-billing-invoices.gen.js';
 export * from './modules/commerce-payments-billing-revenue-auditing.gen.js';
 export * from './modules/commerce-subscriptions-billing-subscriptions.gen.js';

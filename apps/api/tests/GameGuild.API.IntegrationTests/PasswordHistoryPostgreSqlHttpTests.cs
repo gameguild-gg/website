@@ -166,7 +166,7 @@ public sealed class PasswordHistoryPostgreSqlHttpTests(ApiPostgreSqlFixture fixt
         Assert.Equal(before.Version + 1, after.Version);
     }
 
-    private WebApplicationFactory<Program> CreateFactory() => fixture.Factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> CreateFactory() => fixture.CreateFactory(builder =>
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"

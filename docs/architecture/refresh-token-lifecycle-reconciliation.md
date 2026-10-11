@@ -1,5 +1,33 @@
 # Refresh-token lifecycle and unavailable accounts — #262 / #263
 
+## Final acceptance after merged PR #699 — 2026-10-07 UTC
+
+[PR #699](https://github.com/gameguild-gg/gameguild/pull/699) merged into `develop`
+at `d5f417328e9ff9d3fa0517796a623e310aeb1ef0`; accepted implementation head `bf2775e5dcfeab72e78afa7be69ec16e36034276`.
+[Issue #263 acceptance](https://github.com/gameguild-gg/gameguild/issues/263#issuecomment-6038587329) retains all 19 original criteria;
+the issue is now **CLOSED/COMPLETED**. No failing-check exception was used.
+
+The already-closed duplicate #264 now has a
+[published and verified canonical acceptance follow-up](https://github.com/gameguild-gg/gameguild/issues/264#issuecomment-6046080570).
+Its duplicate state and original criteria are preserved. This reconciliation
+adds no issue closure to the count.
+
+Matching-head native validation passed 6,037 main API cases,
+15 repeated OpenAPI cases and 2,998 Web cases. The actual Code
+cycle passed 36 green assertions, zero red and
+2 console observations: learner submission, trusted private
+execution, frozen instructor rubric, score 100 and persisted feedback. C++ passed
+21 cases with 5 skipped and zero
+failed/flaky/interrupted; skipped cases are not executed passes. Complete Emception
+release, consumers, Pages and deployable validation plus all selected security
+checks passed. The original 55 dirty primary files remain unchanged.
+
+Earlier partial, pending, failed and superseded checkpoints below remain historical.
+The fixed 328-ID inventory currently has 73 closed and
+255 open; closure counts include administrative dispositions.
+#287/#288 remain independently open with executed failing baselines. Production
+email/provider receipt and production deployment are not claimed by this acceptance.
+
 ## All-user revocation accepted — #694
 
 [#694](https://github.com/gameguild-gg/gameguild/pull/694) merged into develop at

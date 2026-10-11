@@ -82,8 +82,11 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
     // (ReplayCommitsContainmentAuditAndMetricWhileReturningNoCredentials,
     // ExplicitRevocationCommitsAuditAndMetricForOwnedTokenOrWholeAccount).
 
-    [Fact]
-    public async Task LocalAuth_SignIn_WithTenantMemberships_ShouldPopulateTenantContext()
+    [Theory]
+    [InlineData("Member", false)]
+    [InlineData("Owner", true)]
+    [InlineData("Admin", true)]
+    public async Task LocalAuth_SignIn_WithTenantMemberships_ShouldPopulateTenantContext(string membershipRole, bool requiresMfa)
     {
         // Arrange
         var email = $"tenant.flow.{Guid.NewGuid()}@test.com";
@@ -123,7 +126,7 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
             {
                 UserId = userId,
                 TenantId = tenantOne.Id,
-                Role = "Owner",
+                Role = membershipRole,
                 IsActive = true,
                 Tenant = tenantOne
             },
@@ -131,7 +134,7 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
             {
                 UserId = userId,
                 TenantId = tenantTwo.Id,
-                Role = "Owner",
+                Role = membershipRole,
                 IsActive = true,
                 Tenant = tenantTwo
             });
@@ -143,12 +146,33 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
             Password = password,
             TenantId = tenantTwo.Id
         };
+        var sessionsBefore = await _dbContext.Set<UserSession>().CountAsync(session => session.UserId == userId);
 
         // Act
         var signInResult = await _authService.LocalSignInAsync(signInRequest);
 
         // Assert
         signInResult.TenantId.Should().Be(tenantTwo.Id);
+        signInResult.UserId.Should().Be(userId);
+        signInResult.RequiresMfa.Should().Be(requiresMfa);
+        if (requiresMfa)
+        {
+            // Elevated memberships retain the resolved binding, but need a verified second factor
+            // before the complete tenant list or ordinary credentials can be returned.
+            signInResult.Success.Should().BeFalse();
+            signInResult.MfaToken.Should().NotBeNullOrEmpty();
+            signInResult.AvailableTenants.Should().BeNull();
+            signInResult.AccessToken.Should().BeEmpty();
+            signInResult.RefreshToken.Should().BeEmpty();
+            signInResult.SessionId.Should().BeEmpty();
+            (await _dbContext.Set<UserSession>().CountAsync(session => session.UserId == userId)).Should().Be(sessionsBefore);
+            return;
+        }
+
+        signInResult.Success.Should().BeTrue();
+        signInResult.AccessToken.Should().NotBeNullOrEmpty();
+        signInResult.RefreshToken.Should().NotBeNullOrEmpty();
+        signInResult.SessionId.Should().NotBeEmpty();
         signInResult.AvailableTenants.Should().NotBeNull();
         signInResult.AvailableTenants!.Should().HaveCount(3, "every authenticated user is provisioned into the default tenant");
         signInResult.AvailableTenants.Should().Contain(tenant => tenant.Id == tenantOne.Id && tenant.Name == tenantOne.Name);

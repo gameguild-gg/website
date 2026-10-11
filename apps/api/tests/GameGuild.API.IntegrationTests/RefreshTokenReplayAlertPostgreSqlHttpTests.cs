@@ -160,7 +160,7 @@ public sealed class RefreshTokenReplayAlertPostgreSqlHttpTests(ApiPostgreSqlFixt
     private WebApplicationFactory<Program> CreateFactory(AdvancingTimeProvider clock,
         QueueWriteFailure? queueFailure = null, AlertOutboxWriteFailure? outboxFailure = null,
         RefreshTokenReplayScope policy = RefreshTokenReplayScope.Account) =>
-        fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.PostConfigure<JwtOptions>(options => options.RefreshTokenReplayContainmentScope = policy);
             services.PostConfigure<AuthenticationOptions>(options =>
