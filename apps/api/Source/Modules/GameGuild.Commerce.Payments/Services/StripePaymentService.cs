@@ -34,10 +34,11 @@ public class StripePaymentService(
         Func<string, DisputeUpdateOptions, RequestOptions, CancellationToken, Task<Dispute>>? updateDisputeAsync = null)
         : this(options, logger)
     {
-        if (createPaymentIntentAsync is not null)
-        {
-            _createPaymentIntentAsync = createPaymentIntentAsync;
-        }
+        // The payment-intent factory is mandatory (fail-fast wiring contract asserted by
+        // StripePaymentIntentCreationTests): a null factory means the service would silently
+        // fall through to a misconfigured delegate.
+        ArgumentNullException.ThrowIfNull(createPaymentIntentAsync);
+        _createPaymentIntentAsync = createPaymentIntentAsync;
 
         if (closeDisputeAsync is not null)
         {

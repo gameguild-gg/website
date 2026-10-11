@@ -73,7 +73,9 @@ public class RefundAndDisputeStatisticsTests
         stats.WonCount.Should().Be(2);
         stats.LostCount.Should().Be(1);
         stats.WinLossRatio.Should().BeApproximately(2.0 / 3.0, 0.0001);
-        stats.AverageResolutionHours.Should().BeApproximately(20.0, 0.5); // (10 + 30) / 2
+        // Resolution time spans creation to resolution: the won dispute took 48h-10h=38h,
+        // the lost one 72h-30h=42h, so the average is (38 + 42) / 2 = 40h.
+        stats.AverageResolutionHours.Should().BeApproximately(40.0, 0.5);
         stats.TotalDisputedAmount.Should().Be(1000m);
     }
 

@@ -168,7 +168,9 @@ public class RefundApprovalWorkflowTests
     public async Task ApproveRefundCommand_PendingRefund_ExecutesThroughTheGateway()
     {
         _options.ManualApprovalThresholdAmount = 100m;
-        var payment = SucceededPayment(150m);
+        // The refund must belong to the approver's tenant for the fail-closed tenant guard
+        // in ApproveRefundCommandHandler to pass: seed the payment with the actor's tenant.
+        var payment = SucceededPayment(150m, _actor.TenantId);
         await using var db = NewDatabase();
         db.Add(payment);
         await db.SaveChangesAsync();
@@ -200,6 +202,9 @@ public class RefundApprovalWorkflowTests
     [Fact]
     public async Task ApproveRefundCommand_RefundFromAnotherTenant_FailsClosed()
     {
+        // Queue the refund for manual approval so the arrange phase never touches the
+        // (unstubbed) gateway: the test exercises the handler's tenant guard, not execution.
+        _options.ManualApprovalThresholdAmount = 100m;
         var payment = SucceededPayment(150m);
         await using var db = NewDatabase();
         db.Add(payment);
@@ -227,7 +232,9 @@ public class RefundApprovalWorkflowTests
     public async Task RejectRefundCommand_MarksRejectedWithoutMovingMoney()
     {
         _options.ManualApprovalThresholdAmount = 100m;
-        var payment = SucceededPayment(150m);
+        // The refund must belong to the reviewer's tenant for the fail-closed tenant guard
+        // in RejectRefundCommandHandler to pass: seed the payment with the actor's tenant.
+        var payment = SucceededPayment(150m, _actor.TenantId);
         await using var db = NewDatabase();
         db.Add(payment);
         await db.SaveChangesAsync();
