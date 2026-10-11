@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
     paths:
       - tools/emception/toolchain/overlays/libcurl-lite/**
+      - tools/emception/toolchain/toolchain.lock.json
       - tools/emception/scripts/verify-curl-lite-regressions.mjs
       - .github/workflows/curl-lite-security.yml
   workflow_dispatch:
