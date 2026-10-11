@@ -16,6 +16,7 @@ public class ApplyPromoCodesRecordingTests
     private readonly Mock<IPromoCodeRepository> _promoRepo = new();
     private readonly Mock<IPromoCodeUsageRecorder> _recorder = new();
     private readonly Mock<IPromoCodeAuditLogger> _audit = new();
+    private readonly Mock<GameGuild.Commerce.IPricingDecisionLedgerWriter> _pricingLedger = new();
 
     private ApplyPromoCodesCommandHandler CreateHandler(Mock<IPricingEngineService>? engine = null)
     {
@@ -25,6 +26,7 @@ public class ApplyPromoCodesRecordingTests
             _promoRepo.Object,
             _recorder.Object,
             _audit.Object,
+            _pricingLedger.Object,
             NullLogger<ApplyPromoCodesCommandHandler>.Instance);
     }
 
@@ -180,5 +182,50 @@ public class ApplyPromoCodesRecordingTests
             command.OrderId,
             null,
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_RecordsPricingDecisionLedgerEntry_WhenKeyOrOrderCorrelationExists()
+    {
+        var promo = Promo("SAVE20");
+        var engine = new Mock<IPricingEngineService>();
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(EngineResult(("SAVE20", 20m)));
+        _promoRepo.Setup(r => r.GetByCodeAsync("SAVE20", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(promo);
+        _recorder.Setup(r => r.RecordAsync(It.IsAny<PromoCode>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PromoUsageRecordingStatus.Recorded, new PromoCodeUse()));
+
+        var command = new ApplyPromoCodesCommand(100m, ["SAVE20"], UserId: Guid.NewGuid(), IdempotencyKey: "checkout-9", OrderId: Guid.NewGuid());
+        await CreateHandler(engine).Handle(command, CancellationToken.None);
+
+        _pricingLedger.Verify(writer => writer.RecordAsync(
+            It.Is<GameGuild.Commerce.PricingDecisionRecord>(decision =>
+                decision.DecisionType == GameGuild.Commerce.PricingDecisionType.OrderPromoApply &&
+                decision.Order == command.OrderId &&
+                decision.ActorUserId == command.UserId &&
+                decision.IdempotencyKey == "checkout-9:pricing" &&
+                decision.Breakdown.BaseAmount == 100m &&
+                decision.Breakdown.PromoApplications.Count == 1 &&
+                decision.Breakdown.PromoApplications[0].Code == "SAVE20" &&
+                decision.Breakdown.PromoApplications[0].Amount == 20m &&
+                decision.Breakdown.PromoDiscountTotal == 20m &&
+                decision.Breakdown.FinalAmount == 80m),
+            It.IsAny<CancellationToken>()), Times.Once,
+            "an order-level promo application that produces a final price must append a ledger row (issue #400)");
+    }
+
+    [Fact]
+    public async Task Handle_SkipsLedgerRecording_WhenNoStableCorrelationKeyExists()
+    {
+        var engine = new Mock<IPricingEngineService>();
+        engine.Setup(e => e.ApplyPromoCodesAsync(100m, It.IsAny<IEnumerable<string>>(), null, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(EngineResult(("ANON", 5m)));
+
+        var command = new ApplyPromoCodesCommand(100m, ["ANON"]);
+        await CreateHandler(engine).Handle(command, CancellationToken.None);
+
+        _pricingLedger.Verify(writer => writer.RecordAsync(It.IsAny<GameGuild.Commerce.PricingDecisionRecord>(), It.IsAny<CancellationToken>()), Times.Never,
+            "anonymous preview calls without a key or order linkage never write the ledger");
     }
 }

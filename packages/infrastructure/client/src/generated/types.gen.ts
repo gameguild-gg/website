@@ -1658,6 +1658,14 @@ export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
   windowSeconds?: number;
 }
 
+/** Drift outcome count row. */
+export interface CommerceBillingDriftOutcomeRow {
+  /** Drift status. */
+  driftStatus?: string | null;
+  /** Ledger entries in this status. */
+  entries?: number;
+}
+
 /** Read-only management and health snapshot of one configured external
 billing provider (issue #397 provider-management API). */
 export interface CommerceBillingExternalBillingProviderStatusDto {
@@ -1701,6 +1709,190 @@ export interface CommerceBillingInvoicePaymentRetryResult {
 
 /** Invoice status enumeration with monotonic transitions */
 export type CommerceBillingInvoiceStatus = 'Draft' | 'Open' | 'Paid' | 'Void' | 'PastDue' | 'Uncollectible';
+
+/** Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
+the drift-validation outcome (recomputed amount, reason). */
+export interface CommerceBillingPricingDecisionLedgerEntryDetailDto {
+  /** Client IP captured with the decision. */
+  actorIpAddress?: string | null;
+  /** Full calculation breakdown (JSON). */
+  breakdownJson?: string | null;
+  /** Why the entry drifted, when it did. */
+  driftReason?: string | null;
+  entry?: CommerceBillingPricingDecisionLedgerEntryDto;
+  /** Calculation idempotency key. */
+  idempotencyKey?: string | null;
+  /** Final amount recomputed from the breakdown by the drift validator. */
+  recomputedFinalAmount?: number | null;
+}
+
+/** Ledger list item (issue #400): one pricing decision with its correlation ids and
+headline amounts. The full breakdown document is returned on the detail read only. */
+export interface CommerceBillingPricingDecisionLedgerEntryDto {
+  /** Ledger row identifier. */
+  id?: string;
+  /** User the price was computed for. */
+  actorUserId?: string | null;
+  /** Winning pricing rule, when one applied. */
+  appliedPricingRuleId?: string | null;
+  /** Normalized applied promo codes. */
+  appliedPromoCodes?: string[] | null;
+  /** Stacking rule name, when one governed resolution. */
+  appliedStackingRuleName?: string | null;
+  /** Baseline amount. */
+  baseAmount?: number;
+  /** Billing cycle for renewal quotes. */
+  billingCycleNumber?: number | null;
+  /** Currency (ISO 4217). */
+  currency?: string | null;
+  /** Decision timestamp (UTC). */
+  decidedAtUtc?: string;
+  /** Decision type (CheckoutLineItem, RenewalQuote, OrderPromoApply). */
+  decisionType?: string | null;
+  /** Drift validation status. */
+  driftStatus?: string | null;
+  /** Final committed amount. */
+  finalAmount?: number;
+  /** Order correlation. */
+  orderId?: string | null;
+  /** Order line item correlation. */
+  orderLineItemId?: string | null;
+  /** Engine version stamp. */
+  pricingEngineVersion?: string | null;
+  /** Product correlation. */
+  productId?: string | null;
+  /** Promo discount total. */
+  promoDiscountTotal?: number;
+  /** Quantity priced. */
+  quantity?: number;
+  /** Pricing-rule reduction total. */
+  ruleAdjustmentTotal?: number;
+  /** Subscription correlation. */
+  subscriptionId?: string | null;
+  /** Tenant scope. */
+  tenantId?: string | null;
+  /** When drift validation last stamped the entry. */
+  validatedAtUtc?: string | null;
+}
+
+/** Result of one drift-validated ledger entry. */
+export interface CommerceBillingPricingLedgerDriftOutcome {
+  /** Whether the two diverge beyond tolerance. */
+  drifted?: boolean;
+  /** Ledger row identifier. */
+  entryId?: string;
+  /** Why the entry drifted (or could not be validated), when applicable. */
+  reason?: string | null;
+  /** Final amount recomputed from the breakdown. */
+  recomputedFinalAmount?: number;
+  /** Final amount as persisted. */
+  storedFinalAmount?: number;
+}
+
+/** Drift-validation summary (issue #400). */
+export interface CommerceBillingPricingLedgerDriftValidationResult {
+  /** Entries whose recomputation diverged beyond tolerance. */
+  driftedCount?: number;
+  /** Per-entry outcomes, drifted entries first. */
+  outcomes?: CommerceBillingPricingLedgerDriftOutcome[] | null;
+  /** Entries selected for validation. */
+  sampleSize?: number;
+  /** Entries skipped because their breakdown could not be parsed. */
+  skippedCount?: number;
+  /** Entries successfully recomputed (verified or drifted). */
+  validated?: number;
+  /** When the validation pass ran. */
+  validatedAtUtc?: string;
+  /** Entries whose recomputation matched the stored final. */
+  verifiedCount?: number;
+  /** Window end (null = unbounded). */
+  windowEnd?: string | null;
+  /** Window start (null = unbounded). */
+  windowStart?: string | null;
+}
+
+/** Full effectiveness aggregation result. */
+export interface CommerceBillingPricingLedgerEffectivenessAggregate {
+  /** Entries per drift status. */
+  driftOutcomes?: CommerceBillingDriftOutcomeRow[] | null;
+  /** Window start (null = unbounded). */
+  fromUtc?: string | null;
+  /** Decisions per stacking outcome. */
+  stackingOutcomes?: CommerceBillingStackingOutcomeRow[] | null;
+  /** Tenant scope, when filtered. */
+  tenantId?: string | null;
+  /** Promo codes ranked by discount given (top 20). */
+  topPromoCodes?: CommerceBillingPromoCodeEffectivenessRow[] | null;
+  /** Pricing rules ranked by adjustment total (top 20). */
+  topRules?: CommerceBillingPricingRuleImpactRow[] | null;
+  totals?: CommerceBillingPricingLedgerTotals;
+  /** Window end (null = unbounded). */
+  toUtc?: string | null;
+}
+
+/** Overall totals of the effectiveness aggregation. */
+export interface CommerceBillingPricingLedgerTotals {
+  /** Sum of base amounts (pre-discount). */
+  baselineRevenue?: number;
+  /** Baseline minus final revenue. */
+  discountGiven?: number;
+  /** Decisions that applied at least one promo code. */
+  entriesWithPromo?: number;
+  /** Decisions that applied a pricing rule. */
+  entriesWithRule?: number;
+  /** Decisions in the window. */
+  entryCount?: number;
+  /** Sum of final amounts (post-discount). */
+  finalRevenue?: number;
+  /** Total promo applications (an entry may apply several codes). */
+  promoRedemptions?: number;
+}
+
+/** Per-pricing-rule impact row. */
+export interface CommerceBillingPricingRuleImpactRow {
+  /** Rule adjustment total across those entries. */
+  adjustmentTotal?: number;
+  /** Baseline revenue of those entries. */
+  baselineRevenue?: number;
+  /** Ledger entries that applied this rule. */
+  decisions?: number;
+  /** Final revenue of those entries. */
+  finalRevenue?: number;
+  /** Applied rule identifier. */
+  ruleId?: string;
+}
+
+/** Per-promo-code effectiveness row (discount ROI view). */
+export interface CommerceBillingPromoCodeEffectivenessRow {
+  /** Baseline (pre-discount) revenue of those entries. */
+  baselineRevenue?: number;
+  /** Normalized promo code. */
+  code?: string | null;
+  /** Discount total attributed to this code. */
+  discountGiven?: number;
+  /** Ledger entries that applied this code. */
+  redemptions?: number;
+  /** Final revenue collected on those entries. */
+  revenueInfluenced?: number;
+}
+
+/** Stacking outcome count row. */
+export interface CommerceBillingStackingOutcomeRow {
+  /** Ledger entries resolved under this outcome. */
+  decisions?: number;
+  /** Rule name, or "(no stacking rule)" for single/default resolution. */
+  stackingRuleName?: string | null;
+}
+
+/** Request body for the drift-validation endpoint. */
+export interface CommerceBillingValidatePricingLedgerDriftInput {
+  /** Inclusive window start (null = unbounded). */
+  fromUtc?: string | null;
+  /** How many entries to validate (1-200, default 25). */
+  sampleSize?: number;
+  /** Inclusive window end (null = unbounded). */
+  toUtc?: string | null;
+}
 
 /** OpenAPI schema for Commerce Order Charge State. */
 export type CommerceOrderChargeState = 'Succeeded' | 'Failed' | 'Processing' | 'RequiresAction' | 'RequiresReconciliation';
@@ -16051,6 +16243,29 @@ export interface PagedResultEmailSuppressionDto {
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultPricingDecisionLedgerEntryDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingPricingDecisionLedgerEntryDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultPricingRuleDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -21017,9 +21232,20 @@ export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<Commer
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
+export let CommerceBillingDriftOutcomeRowSchema: z.ZodType<CommerceBillingDriftOutcomeRow>;
 export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<CommerceBillingExternalBillingProviderStatusDto>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
+export let CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDetailDto>;
+export let CommerceBillingPricingDecisionLedgerEntryDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDto>;
+export let CommerceBillingPricingLedgerDriftOutcomeSchema: z.ZodType<CommerceBillingPricingLedgerDriftOutcome>;
+export let CommerceBillingPricingLedgerDriftValidationResultSchema: z.ZodType<CommerceBillingPricingLedgerDriftValidationResult>;
+export let CommerceBillingPricingLedgerEffectivenessAggregateSchema: z.ZodType<CommerceBillingPricingLedgerEffectivenessAggregate>;
+export let CommerceBillingPricingLedgerTotalsSchema: z.ZodType<CommerceBillingPricingLedgerTotals>;
+export let CommerceBillingPricingRuleImpactRowSchema: z.ZodType<CommerceBillingPricingRuleImpactRow>;
+export let CommerceBillingPromoCodeEffectivenessRowSchema: z.ZodType<CommerceBillingPromoCodeEffectivenessRow>;
+export let CommerceBillingStackingOutcomeRowSchema: z.ZodType<CommerceBillingStackingOutcomeRow>;
+export let CommerceBillingValidatePricingLedgerDriftInputSchema: z.ZodType<CommerceBillingValidatePricingLedgerDriftInput>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
@@ -22301,6 +22527,7 @@ export let PagedResultBillingWebhookEventListItemDtoSchema: z.ZodType<PagedResul
 export let PagedResultDeadLetterDtoSchema: z.ZodType<PagedResultDeadLetterDto>;
 export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDeliveryEventDto>;
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
+export let PagedResultPricingDecisionLedgerEntryDtoSchema: z.ZodType<PagedResultPricingDecisionLedgerEntryDto>;
 export let PagedResultPricingRuleDtoSchema: z.ZodType<PagedResultPricingRuleDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
@@ -24338,6 +24565,12 @@ CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema = z.object({
   windowSeconds: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceBillingDriftOutcomeRow. Drift outcome count row. */
+CommerceBillingDriftOutcomeRowSchema = z.object({
+  driftStatus: z.string().nullable().optional(),
+  entries: z.number().int().optional(),
+});
+
 /** Zod schema for CommerceBillingExternalBillingProviderStatusDto. Read-only management and health snapshot of one configured external
 billing provider (issue #397 provider-management API). */
 CommerceBillingExternalBillingProviderStatusDtoSchema = z.object({
@@ -24364,6 +24597,135 @@ CommerceBillingInvoicePaymentRetryResultSchema = z.object({
 
 /** Zod schema for CommerceBillingInvoiceStatus. Invoice status enumeration with monotonic transitions */
 CommerceBillingInvoiceStatusSchema = z.enum(['Draft', 'Open', 'Paid', 'Void', 'PastDue', 'Uncollectible']);
+
+/** Zod schema for CommerceBillingPricingDecisionLedgerEntryDetailDto. Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
+the drift-validation outcome (recomputed amount, reason). */
+CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema = z.object({
+  actorIpAddress: z.string().nullable().optional(),
+  breakdownJson: z.string().nullable().optional(),
+  driftReason: z.string().nullable().optional(),
+  entry: z.lazy(() => CommerceBillingPricingDecisionLedgerEntryDtoSchema).optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  recomputedFinalAmount: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingDecisionLedgerEntryDto. Ledger list item (issue #400): one pricing decision with its correlation ids and
+headline amounts. The full breakdown document is returned on the detail read only. */
+CommerceBillingPricingDecisionLedgerEntryDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  actorUserId: z.string().uuid().nullable().optional(),
+  appliedPricingRuleId: z.string().uuid().nullable().optional(),
+  appliedPromoCodes: z.array(z.string()).nullable().optional(),
+  appliedStackingRuleName: z.string().nullable().optional(),
+  baseAmount: z.number().optional(),
+  billingCycleNumber: z.number().int().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  decidedAtUtc: z.string().datetime().optional(),
+  decisionType: z.string().nullable().optional(),
+  driftStatus: z.string().nullable().optional(),
+  finalAmount: z.number().optional(),
+  orderId: z.string().uuid().nullable().optional(),
+  orderLineItemId: z.string().uuid().nullable().optional(),
+  pricingEngineVersion: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  promoDiscountTotal: z.number().optional(),
+  quantity: z.number().int().optional(),
+  ruleAdjustmentTotal: z.number().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  validatedAtUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerDriftOutcome. Result of one drift-validated ledger entry. */
+CommerceBillingPricingLedgerDriftOutcomeSchema = z.object({
+  drifted: z.boolean().optional(),
+  entryId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+  recomputedFinalAmount: z.number().optional(),
+  storedFinalAmount: z.number().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerDriftValidationResult. Drift-validation summary (issue #400). */
+CommerceBillingPricingLedgerDriftValidationResultSchema = z.object({
+  driftedCount: z.number().int().optional(),
+  outcomes: z
+    .array(z.lazy(() => CommerceBillingPricingLedgerDriftOutcomeSchema))
+    .nullable()
+    .optional(),
+  sampleSize: z.number().int().optional(),
+  skippedCount: z.number().int().optional(),
+  validated: z.number().int().optional(),
+  validatedAtUtc: z.string().datetime().optional(),
+  verifiedCount: z.number().int().optional(),
+  windowEnd: z.string().datetime().nullable().optional(),
+  windowStart: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerEffectivenessAggregate. Full effectiveness aggregation result. */
+CommerceBillingPricingLedgerEffectivenessAggregateSchema = z.object({
+  driftOutcomes: z
+    .array(z.lazy(() => CommerceBillingDriftOutcomeRowSchema))
+    .nullable()
+    .optional(),
+  fromUtc: z.string().datetime().nullable().optional(),
+  stackingOutcomes: z
+    .array(z.lazy(() => CommerceBillingStackingOutcomeRowSchema))
+    .nullable()
+    .optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  topPromoCodes: z
+    .array(z.lazy(() => CommerceBillingPromoCodeEffectivenessRowSchema))
+    .nullable()
+    .optional(),
+  topRules: z
+    .array(z.lazy(() => CommerceBillingPricingRuleImpactRowSchema))
+    .nullable()
+    .optional(),
+  totals: z.lazy(() => CommerceBillingPricingLedgerTotalsSchema).optional(),
+  toUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerTotals. Overall totals of the effectiveness aggregation. */
+CommerceBillingPricingLedgerTotalsSchema = z.object({
+  baselineRevenue: z.number().optional(),
+  discountGiven: z.number().optional(),
+  entriesWithPromo: z.number().int().optional(),
+  entriesWithRule: z.number().int().optional(),
+  entryCount: z.number().int().optional(),
+  finalRevenue: z.number().optional(),
+  promoRedemptions: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingRuleImpactRow. Per-pricing-rule impact row. */
+CommerceBillingPricingRuleImpactRowSchema = z.object({
+  adjustmentTotal: z.number().optional(),
+  baselineRevenue: z.number().optional(),
+  decisions: z.number().int().optional(),
+  finalRevenue: z.number().optional(),
+  ruleId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommerceBillingPromoCodeEffectivenessRow. Per-promo-code effectiveness row (discount ROI view). */
+CommerceBillingPromoCodeEffectivenessRowSchema = z.object({
+  baselineRevenue: z.number().optional(),
+  code: z.string().nullable().optional(),
+  discountGiven: z.number().optional(),
+  redemptions: z.number().int().optional(),
+  revenueInfluenced: z.number().optional(),
+});
+
+/** Zod schema for CommerceBillingStackingOutcomeRow. Stacking outcome count row. */
+CommerceBillingStackingOutcomeRowSchema = z.object({
+  decisions: z.number().int().optional(),
+  stackingRuleName: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingValidatePricingLedgerDriftInput. Request body for the drift-validation endpoint. */
+CommerceBillingValidatePricingLedgerDriftInputSchema = z.object({
+  fromUtc: z.string().datetime().nullable().optional(),
+  sampleSize: z.number().int().optional(),
+  toUtc: z.string().datetime().nullable().optional(),
+});
 
 /** Zod schema for CommerceOrderChargeState. OpenAPI schema for Commerce Order Charge State. */
 CommerceOrderChargeStateSchema = z.enum(['Succeeded', 'Failed', 'Processing', 'RequiresAction', 'RequiresReconciliation']);
@@ -37983,6 +38345,23 @@ PagedResultEmailSuppressionDtoSchema = z.object({
   totalPages: z.number().int().optional(),
 });
 
+/** Zod schema for PagedResultPricingDecisionLedgerEntryDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultPricingDecisionLedgerEntryDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingPricingDecisionLedgerEntryDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultPricingRuleDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultPricingRuleDtoSchema = z.object({
@@ -42339,6 +42718,10 @@ export type CommerceBillingBillingWebhookSuspiciousActivityStatus = CommerceBill
 export { CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema as CommerceBillingBillingWebhookSuspiciousActivityStatusSchema };
 export type CommerceBillingExternalBillingProviderStatus = CommerceBillingExternalBillingProviderStatusDto;
 export { CommerceBillingExternalBillingProviderStatusDtoSchema as CommerceBillingExternalBillingProviderStatusSchema };
+export type CommerceBillingPricingDecisionLedgerEntryDetail = CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export { CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema as CommerceBillingPricingDecisionLedgerEntryDetailSchema };
+export type CommerceBillingPricingDecisionLedgerEntry = CommerceBillingPricingDecisionLedgerEntryDto;
+export { CommerceBillingPricingDecisionLedgerEntryDtoSchema as CommerceBillingPricingDecisionLedgerEntrySchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -42841,6 +43224,8 @@ export type PagedResultEmailDeliveryEvent = PagedResultEmailDeliveryEventDto;
 export { PagedResultEmailDeliveryEventDtoSchema as PagedResultEmailDeliveryEventSchema };
 export type PagedResultEmailSuppression = PagedResultEmailSuppressionDto;
 export { PagedResultEmailSuppressionDtoSchema as PagedResultEmailSuppressionSchema };
+export type PagedResultPricingDecisionLedgerEntry = PagedResultPricingDecisionLedgerEntryDto;
+export { PagedResultPricingDecisionLedgerEntryDtoSchema as PagedResultPricingDecisionLedgerEntrySchema };
 export type PagedResultPricingRule = PagedResultPricingRuleDto;
 export { PagedResultPricingRuleDtoSchema as PagedResultPricingRuleSchema };
 export type PagedResultProduct = PagedResultProductDto;
