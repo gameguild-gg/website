@@ -190,7 +190,10 @@ public sealed class CapabilitiesController : BaseApiController
         [FromQuery] DateTimeOffset? toDate,
         CancellationToken ct)
     {
-        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
+        if (ValidateTenantAccess(tenantId, true) is { } failure)
+        {
+            return failure;
+        }
         var logs = await _capabilityService.GetAuditLogAsync(tenantId, capability, fromDate, toDate, ct).ConfigureAwait(false);
         var dtos = logs.Select(log => new CapabilityAuditLogDto(
             log.Id,
