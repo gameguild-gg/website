@@ -5,7 +5,7 @@ namespace GameGuild.Commerce.Billing;
 /// <summary>
 ///     Applies the calling user's account credits to one of their invoices (issue #410 v1,
 ///     manual multi-tender settlement). Requires an idempotency key (from the
-///     Idempotency-Key header); an optional <paramref name="maxAmount" /> caps the credit
+///     Idempotency-Key header); an optional <paramref name="MaxAmount" /> caps the credit
 ///     tender. Credits are consumed FIFO by expiry in the same SaveChanges batch as the
 ///     invoice update and the settlement row, so the settlement is atomic.
 /// </summary>
