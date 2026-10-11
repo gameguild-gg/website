@@ -49,6 +49,14 @@ public static class PaymentsModule
         services.AddOptions<PaymentRetryOptions>()
             .Bind(configuration.GetSection(PaymentRetryOptions.SectionName))
             .ValidateOnStart();
+        // Fraud assessment gate (issue #409): tenant-scoped options, velocity signal
+        // provider and the aggregate Allow/Review/Block detection service.
+        services.AddSingleton<IValidateOptions<FraudAssessmentOptions>, FraudAssessmentOptionsValidator>();
+        services.AddOptions<FraudAssessmentOptions>()
+            .Bind(configuration.GetSection(FraudAssessmentOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IFraudSignalProvider, VelocityFraudSignalProvider>();
+        services.AddScoped<IFraudDetectionService, FraudDetectionService>();
 
         // Register services
         services.AddScoped<IDisputeService, DisputeService>();

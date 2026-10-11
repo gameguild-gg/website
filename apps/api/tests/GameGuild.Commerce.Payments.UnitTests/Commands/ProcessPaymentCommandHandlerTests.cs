@@ -218,6 +218,7 @@ public class ProcessPaymentCommandHandlerTests
             paymentSubscriptionSyncService.Object,
             paymentContextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            FraudTestHelpers.AllowAllDetectionService(),
             logger);
 
         var result = await handler.Handle(
@@ -294,7 +295,7 @@ public class ProcessPaymentCommandHandlerTests
             syncService.Object,
             contextService.Object,
             Options.Create(new PaymentRetryOptions()),
-            Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
+            FraudTestHelpers.AllowAllDetectionService(),            Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
 
         return new PaymentHandlerFixture(
             Guid.NewGuid(),
