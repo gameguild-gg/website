@@ -1,10 +1,12 @@
+// @vitest-environment node
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { expect, it } from 'vitest';
 
 // The normal Web suite owns this check; the bounded child starts no app or browser.
 it('verifies all replay source cases with the isolated Node runner', () => {
-  const script = fileURLToPath(new URL('../../../scripts/audit-replay-timeline.test.mjs', import.meta.url));
+  const script = resolve(dirname(fileURLToPath(import.meta.url)), '../../../scripts/audit-replay-timeline.test.mjs');
   const output = execFileSync(process.execPath, ['--max-old-space-size=128', '--test', '--test-reporter=tap', script], {
     encoding: 'utf8',
     timeout: 10_000,
