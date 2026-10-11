@@ -112,7 +112,7 @@ public class PricingEngineService(
         var rejectedCodes = new List<RejectedPromoCode>();
 
         // Normalize (trim + uppercase) end to end so lookups are case-insensitive.
-        var normalizedCodes = promoCodes
+        var normalizedCodes = (promoCodes ?? [])
             .Select(PromoCodeNormalizer.Normalize)
             .Where(c => c is not null)
             .Select(c => c!)
@@ -124,8 +124,8 @@ public class PricingEngineService(
             return new PromoCodeApplicationResult(orderAmount, orderAmount, 0, appliedCodes, rejectedCodes);
         }
 
-        var fetchedCodes = await promoCodeRepository.GetByCodesAsync(normalizedCodes, cancellationToken)
-            .ConfigureAwait(false);
+        var fetchedCodes = (await promoCodeRepository.GetByCodesAsync(normalizedCodes, cancellationToken)
+            .ConfigureAwait(false)) ?? [];
 
         var byCode = fetchedCodes.ToDictionary(c => c.Code, StringComparer.OrdinalIgnoreCase);
 

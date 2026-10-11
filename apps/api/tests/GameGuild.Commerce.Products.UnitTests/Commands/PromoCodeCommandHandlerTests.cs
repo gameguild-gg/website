@@ -216,6 +216,8 @@ public class ValidatePromoCodeCommandHandlerTests
 public class ApplyPromoCodesCommandHandlerTests
 {
     private readonly Mock<IPricingEngineService> _mockPricingEngine;
+    private readonly Mock<IPromoCodeRepository> _mockPromoRepository = new();
+    private readonly Mock<IPromoCodeUsageRecorder> _mockRecorder = new();
     private readonly ApplyPromoCodesCommandHandler _handler;
 
     public ApplyPromoCodesCommandHandlerTests()
@@ -223,8 +225,8 @@ public class ApplyPromoCodesCommandHandlerTests
         _mockPricingEngine = new Mock<IPricingEngineService>();
         _handler = new ApplyPromoCodesCommandHandler(
             _mockPricingEngine.Object,
-            Mock.Of<IPromoCodeRepository>(),
-            Mock.Of<IPromoCodeUsageRecorder>(),
+            _mockPromoRepository.Object,
+            _mockRecorder.Object,
             Mock.Of<IPromoCodeAuditLogger>(),
             NullLogger<ApplyPromoCodesCommandHandler>.Instance);
     }
@@ -260,6 +262,25 @@ public class ApplyPromoCodesCommandHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
+        // The handler resolves each applied code and records its usage atomically.
+        var promo = new PromoCode
+        {
+            Id = Guid.NewGuid(),
+            Code = "SAVE10",
+            Name = "SAVE10",
+            Type = PromoCodeType.PercentageOff,
+            DiscountPercentage = 10m,
+            Currency = "USD",
+            IsActive = true,
+            CreatedBy = Guid.NewGuid()
+        };
+        _mockPromoRepository
+            .Setup(r => r.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(promo);
+        _mockRecorder
+            .Setup(r => r.RecordAsync(promo, command.UserId!.Value, 10m, "USD", It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PromoUsageRecordingStatus.Recorded, new PromoCodeUse { Id = Guid.NewGuid(), PromoCodeId = promo.Id }));
+
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -267,6 +288,7 @@ public class ApplyPromoCodesCommandHandlerTests
         result.Should().NotBeNull();
         result.TotalDiscount.Should().Be(10m);
         result.FinalAmount.Should().Be(90m);
+        result.UsageRecorded.Should().BeTrue();
     }
 
     [Fact]

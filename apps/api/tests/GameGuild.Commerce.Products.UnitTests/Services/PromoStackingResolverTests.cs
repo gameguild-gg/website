@@ -102,7 +102,7 @@ public class PromoStackingResolverTests
             Code("WELCOME20", percentage: 20m, priority: 100)
         };
 
-        var (applied, rejected, ruleName) = PromoStackingResolver.Resolve(100m, candidates, Rule());
+        var (applied, rejected, ruleName) = PromoStackingResolver.Resolve(100m, candidates, Rule(allowSameType: true));
 
         ruleName.Should().Be("test-rule");
         rejected.Should().BeEmpty();
@@ -154,7 +154,7 @@ public class PromoStackingResolverTests
             Code("A-LATER", percentage: 10m, priority: 10)
         };
 
-        var (applied, rejected, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(allowExclusive: true));
+        var (applied, rejected, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(allowExclusive: true, allowSameType: true));
 
         rejected.Should().BeEmpty();
         applied.Should().HaveCount(2);
@@ -171,7 +171,7 @@ public class PromoStackingResolverTests
             Code("C", percentage: 10m, priority: 10)
         };
 
-        var (applied, rejected, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(maxStackable: 2));
+        var (applied, rejected, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(maxStackable: 2, allowSameType: true));
 
         applied.Should().HaveCount(2);
         applied.Select(a => a.Code).Should().ContainInOrder("A", "B");
@@ -219,7 +219,7 @@ public class PromoStackingResolverTests
         };
 
         // Raw: 30 + 21 = 51; capped at 40% of 100 = 40.
-        var (applied, rejected, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(maxTotalPercentage: 40m));
+        var (applied, rejected, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(maxTotalPercentage: 40m, allowSameType: true));
 
         rejected.Should().BeEmpty();
         applied.Sum(a => a.DiscountAmount).Should().Be(40m);
@@ -235,7 +235,7 @@ public class PromoStackingResolverTests
             Code("B", PromoCodeType.FixedAmountOff, amount: 25m, priority: 10)
         };
 
-        var (applied, _, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(maxTotalAmount: 40m));
+        var (applied, _, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(maxTotalAmount: 40m, allowSameType: true));
 
         applied.Sum(a => a.DiscountAmount).Should().Be(40m);
     }
@@ -307,7 +307,7 @@ public class PromoStackingResolverTests
             Code("B", percentage: 10m, priority: 10)
         };
 
-        var (applied, _, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(strategy: ConflictResolutionStrategy.Additive));
+        var (applied, _, _) = PromoStackingResolver.Resolve(100m, candidates, Rule(strategy: ConflictResolutionStrategy.Additive, allowSameType: true));
 
         applied.Sum(a => a.DiscountAmount).Should().Be(30m, "20% and 10% both computed on the original 100");
     }
