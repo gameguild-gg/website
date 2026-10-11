@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Commerce.Payments;
 
 /// <summary>
-///     EF Core model configuration for the Payments module (tax-related and revenue
-///     auditing entities). Additional payment entities are currently disabled.
+///     EF Core model configuration for the Payments module (payments, retry-attempt history,
+///     tax-related and revenue auditing entities).
 /// </summary>
 public sealed class PaymentsModelConfiguration : IModelConfiguration
 {
@@ -36,6 +36,11 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
             builder.Property(payment => payment.ProviderMonetaryLeg)
                 .HasMaxLength(100);
 
+            // Failure retriability (issue #415): existing rows must stay retriable when the
+            // column is introduced — the flag only flips to false for hard declines.
+            builder.Property(payment => payment.IsRetriable)
+                .HasDefaultValue(true);
+
             builder.HasIndex(payment => new
                 {
                     payment.Provider,
@@ -48,6 +53,18 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
                 .IsUnique()
                 .IsCreatedConcurrently()
                 .HasDatabaseName("ix_payments_provider_object_leg");
+        });
+        // Retry-attempt history for the automated retry queue (issue #415): one row per
+        // executed retry attempt, written by RetryPaymentCommandHandler.
+        modelBuilder.Entity<PaymentRetryAttempt>(builder =>
+        {
+            builder.HasOne(attempt => attempt.Payment)
+                .WithMany()
+                .HasForeignKey(attempt => attempt.PaymentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(attempt => attempt.PaymentId)
+                .HasDatabaseName("ix_payment_retry_attempts_payment_id");
         });
         modelBuilder.ApplyConfiguration(new TaxJurisdictionConfiguration());
         modelBuilder.ApplyConfiguration(new TaxRateConfiguration());

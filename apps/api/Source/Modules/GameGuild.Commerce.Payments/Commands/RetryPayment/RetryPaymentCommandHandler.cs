@@ -7,13 +7,31 @@ using Microsoft.Extensions.Options;
 namespace GameGuild.Commerce.Payments;
 
 /// <summary>
-///     Handler for retrying failed payments
+///     Actor attribution for retry attempts executed without an interactive administrator:
+///     the automated retry queue (issue #415) dispatches retries as a well-known system actor.
+///     Follows the Finance.Economy ledger precedent of well-known system-actor GUIDs.
+/// </summary>
+public static class PaymentRetryAuditActors
+{
+    /// <summary>Audit <c>changedBy</c> used for retries dispatched by the automated retry queue.</summary>
+    public static readonly Guid RetryQueueSystemActorId = new("b6a4d201-4c15-4f7e-9a63-2d8c05f41500");
+}
+
+/// <summary>
+///     Handler for retrying failed payments. Both the manual admin retry endpoint and the
+///     automated retry queue (issue #415) dispatch through this single path: each attempt is
+///     claimed via <see cref="Payment.PrepareForRetry" />, executed at the gateway, recorded in
+///     the <see cref="PaymentRetryAttempt" /> history, scheduled by the failure-code retry
+///     policy, and — when the retry budget is exhausted — escalated to a dunning suspension of
+///     the subscription. A successful retry of a dunning-suspended subscription reactivates it.
 /// </summary>
 public sealed class RetryPaymentCommandHandler(
     IPaymentRepository paymentRepository,
     IPaymentGateway paymentGateway,
     IPaymentSubscriptionSyncService paymentSubscriptionSyncService,
     IOptions<PaymentRetryOptions> retryOptions,
+    IPaymentRetryPolicyResolver retryPolicyResolver,
+    IPaymentDunningLifecycleService dunningLifecycleService,
     IRevenueAuditService revenueAuditService,
     IActorContextAccessor actorContextAccessor,
     ILogger<RetryPaymentCommandHandler> logger) : ICommandHandler<RetryPaymentCommand, PaymentRetryResult>
@@ -42,7 +60,9 @@ public sealed class RetryPaymentCommandHandler(
         {
             var reason = payment.MaxRetriesReached
                 ? $"Maximum retry attempts ({payment.MaxRetries}) reached"
-                : $"Payment in status {payment.Status} cannot be retried";
+                : payment.IsRetriable
+                    ? $"Payment in status {payment.Status} cannot be retried"
+                    : "Payment failure is non-retriable (hard decline)";
 
             logger.LogWarning("Payment {PaymentId} cannot be retried: {Reason}", request.PaymentId, reason);
 
@@ -57,8 +77,11 @@ public sealed class RetryPaymentCommandHandler(
 
         var statusBeforeRetry = payment.Status;
         var retryCountBeforeRetry = payment.RetryCount;
+        var scheduledForUtc = payment.NextRetryAt; // When the queue scheduled this attempt.
 
-        // 3. Prepare for retry (increments retry count, resets status)
+        // 3. Prepare for retry (increments retry count, resets status). The persisted
+        //    Failed → Pending transition is the queue's claim: a second dispatcher loading
+        //    the payment afterwards no longer sees a Failed payment to retry.
         payment.PrepareForRetry();
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
 
@@ -87,8 +110,10 @@ public sealed class RetryPaymentCommandHandler(
             .ConfigureAwait(false);
         GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
 
-        // 6. Update payment based on gateway result (retry schedule resolved from Payments:Retry, issue #403)
+        // 6. Update payment based on gateway result. The retry schedule is resolved from the
+        //    failure-code retry policy (issue #415) on top of the Payments:Retry options.
         PaymentResult? paymentResult = null;
+        PaymentRetrySchedule? failureSchedule = null;
 
         if (gatewayResult.Success)
         {
@@ -112,28 +137,53 @@ public sealed class RetryPaymentCommandHandler(
         }
         else
         {
+            failureSchedule = retryPolicyResolver.ComputeSchedule(gatewayResult.ErrorCode, payment.RetryCount);
+
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Payment retry failed",
                 gatewayResult.ErrorCode,
-                maxRetries: retryOptions.Value.MaxRetries,
+                maxRetries: failureSchedule.EffectiveMaxRetries,
                 backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
-                backoffMultiplier: retryOptions.Value.BackoffMultiplier);
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier,
+                nextRetryAt: failureSchedule.NextRetryAt,
+                isRetriable: failureSchedule.IsRetriable);
 
-            logger.LogWarning("Payment {PaymentId} retry failed on attempt {RetryCount}: {ErrorMessage}",
-                request.PaymentId, payment.RetryCount, gatewayResult.ErrorMessage);
+            logger.LogWarning(
+                "Payment {PaymentId} retry failed on attempt {RetryCount}: {ErrorMessage} (class {Classification}, next retry {NextRetryAt})",
+                request.PaymentId, payment.RetryCount, gatewayResult.ErrorMessage,
+                failureSchedule.Classification, failureSchedule.NextRetryAt);
 
             paymentResult = PaymentResult.Failed(gatewayResult.ErrorMessage ?? "Payment retry failed");
         }
 
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);
 
-        // 7. Persist an audit-trail entry for the retry attempt (issue #403)
+        // 7. Persist the retry-attempt history entry (issue #415).
+        var attempt = PaymentRetryAttempt.Create(
+            paymentId: payment.Id,
+            attemptNumber: payment.RetryCount,
+            scheduledForUtc: scheduledForUtc,
+            executedAtUtc: SystemClock.UtcNow,
+            outcome: payment.Status,
+            gateway: paymentGateway.ProviderId,
+            failureCode: gatewayResult.Success ? null : gatewayResult.ErrorCode,
+            failureMessage: gatewayResult.Success ? null : gatewayResult.ErrorMessage,
+            gatewayTransactionId: gatewayResult.TransactionId);
+
+        await RecordAttemptHistoryAsync(attempt, cancellationToken).ConfigureAwait(false);
+
+        // 8. Persist an audit-trail entry for the retry attempt (issue #403)
         await RecordRetryAuditTrailAsync(
             payment,
             statusBeforeRetry,
             retryCountBeforeRetry,
             gatewayResult.ErrorMessage,
             cancellationToken).ConfigureAwait(false);
+
+        // 9. Recovery lifecycle (issue #415): a successful retry lifts a dunning suspension;
+        //    a terminal failure suspends the subscription and sends the final dunning notice.
+        await ApplyRecoveryLifecycleAsync(payment, gatewayResult.Success, gatewayResult.ErrorMessage, cancellationToken)
+            .ConfigureAwait(false);
 
         if (gatewayResult.Success && payment.ProcessedAt.HasValue)
         {
@@ -157,7 +207,7 @@ public sealed class RetryPaymentCommandHandler(
             }
         }
 
-        // 8. Return retry result
+        // 10. Return retry result
         return new PaymentRetryResult
         {
             Success = gatewayResult.Success,
@@ -167,6 +217,89 @@ public sealed class RetryPaymentCommandHandler(
             MaxRetriesReached = payment.MaxRetriesReached,
             FailureReason = gatewayResult.Success ? null : gatewayResult.ErrorMessage
         };
+    }
+
+    private async Task RecordAttemptHistoryAsync(
+        PaymentRetryAttempt attempt,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await paymentRepository.AddRetryAttemptAsync(attempt, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // The attempt history must never fail the payment retry itself: the payment state
+            // transition already persisted, and the history row can be reconciled from the
+            // audit trail if the write is lost.
+            logger.LogError(exception,
+                "Failed to persist the retry-attempt history for payment {PaymentId} attempt {AttemptNumber}.",
+                attempt.PaymentId,
+                attempt.AttemptNumber);
+        }
+    }
+
+    private async Task ApplyRecoveryLifecycleAsync(
+        Payment payment,
+        bool retrySucceeded,
+        string? failureMessage,
+        CancellationToken cancellationToken)
+    {
+        if (!payment.SubscriptionId.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            if (retrySucceeded)
+            {
+                var reactivated = await dunningLifecycleService
+                    .TryReactivateAfterRecoveryAsync(payment.SubscriptionId.Value, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (reactivated)
+                {
+                    PaymentRetryQueueMetrics.RecordRecovery(payment.Provider);
+                }
+
+                return;
+            }
+
+            if (!payment.CanRetry)
+            {
+                // Terminal failure: the budget is exhausted or the failure class is a hard
+                // decline. Suspend the subscription and trigger the final dunning notice.
+                var suspended = await dunningLifecycleService
+                    .SuspendForRetryExhaustionAsync(
+                        payment.SubscriptionId.Value,
+                        payment.TenantId,
+                        failureMessage ?? payment.FailureReason ?? "payment retry exhausted",
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (suspended)
+                {
+                    PaymentRetryQueueMetrics.RecordExhausted(payment.Provider);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // Dunning lifecycle failures must not roll back the recorded payment outcome.
+            logger.LogError(exception,
+                "Recovery lifecycle step failed for payment {PaymentId} (subscription {SubscriptionId}).",
+                payment.Id,
+                payment.SubscriptionId);
+        }
     }
 
     private async Task RecordRetryAuditTrailAsync(
@@ -201,6 +334,25 @@ public sealed class RetryPaymentCommandHandler(
             cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
-    private Guid RequireActorId() => actorContextAccessor.ActorContext.SubjectIdAsGuid
-        ?? throw new UnauthorizedAccessException("An authenticated administrator is required.");
+    /// <summary>
+    ///     Interactive administrators stay the audit actor; retries dispatched by the automated
+    ///     retry queue run as a well-known system actor (issue #415). Anonymous callers still
+    ///     fail closed.
+    /// </summary>
+    private Guid RequireActorId()
+    {
+        var actorContext = actorContextAccessor.ActorContext;
+
+        if (actorContext.SubjectIdAsGuid is { } actorId)
+        {
+            return actorId;
+        }
+
+        if (actorContext.ActorKind == ActorKind.System)
+        {
+            return PaymentRetryAuditActors.RetryQueueSystemActorId;
+        }
+
+        throw new UnauthorizedAccessException("An authenticated administrator is required.");
+    }
 }

@@ -218,6 +218,7 @@ public class ProcessPaymentCommandHandlerTests
             paymentSubscriptionSyncService.Object,
             paymentContextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
             logger);
 
         var result = await handler.Handle(
@@ -294,6 +295,7 @@ public class ProcessPaymentCommandHandlerTests
             syncService.Object,
             contextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
             Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
 
         return new PaymentHandlerFixture(

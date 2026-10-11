@@ -14,6 +14,7 @@ public sealed class ProcessPaymentCommandHandler(
     IPaymentSubscriptionSyncService paymentSubscriptionSyncService,
     ISubscriptionPaymentContextService subscriptionPaymentContextService,
     IOptions<PaymentRetryOptions> retryOptions,
+    IPaymentRetryPolicyResolver retryPolicyResolver,
     ILogger<ProcessPaymentCommandHandler> logger) : ICommandHandler<ProcessPaymentCommand, PaymentResult>
 {
     public async Task<PaymentResult> Handle(ProcessPaymentCommand request, CancellationToken cancellationToken)
@@ -124,15 +125,22 @@ public sealed class ProcessPaymentCommandHandler(
         }
         else
         {
+            // First-failure classification (issue #415): hard declines are marked non-retriable
+            // immediately and never enter the retry queue; everything else is scheduled by the
+            // failure-code policy on top of the Payments:Retry options.
+            var schedule = retryPolicyResolver.ComputeSchedule(gatewayResult.ErrorCode, payment.RetryCount);
+
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Payment processing failed",
                 gatewayResult.ErrorCode,
-                maxRetries: retryOptions.Value.MaxRetries,
+                maxRetries: schedule.EffectiveMaxRetries,
                 backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
-                backoffMultiplier: retryOptions.Value.BackoffMultiplier);
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier,
+                nextRetryAt: schedule.NextRetryAt,
+                isRetriable: schedule.IsRetriable);
 
-            logger.LogWarning("Payment {PaymentId} failed: {ErrorMessage} ({ErrorCode})",
-                payment.Id, gatewayResult.ErrorMessage, gatewayResult.ErrorCode);
+            logger.LogWarning("Payment {PaymentId} failed: {ErrorMessage} ({ErrorCode}, class {Classification}, retriable {IsRetriable})",
+                payment.Id, gatewayResult.ErrorMessage, gatewayResult.ErrorCode, schedule.Classification, schedule.IsRetriable);
         }
 
         await paymentRepository.UpdateAsync(payment, cancellationToken).ConfigureAwait(false);

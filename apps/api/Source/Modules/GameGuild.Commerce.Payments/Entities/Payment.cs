@@ -10,11 +10,12 @@ namespace GameGuild.Commerce.Payments;
 [Table("payments")]
 [Index(nameof(TenantId), nameof(Status))]
 [Index(nameof(SubscriptionId))]
+[Index(nameof(Status), nameof(NextRetryAt))]
 [Index(nameof(ExternalPaymentId), IsUnique = true)]
 [Index(nameof(IdempotencyKey), IsUnique = true)]
 public class Payment : EntityBase
 {
-    private const int DefaultMaxRetries = 3;
+    private const int DefaultMaxRetries = 4;
     private const double DefaultBackoffBaseMinutes = 1.0;
     private const double DefaultBackoffMultiplier = 5.0;
 
@@ -139,6 +140,14 @@ public class Payment : EntityBase
 
     /// <summary>Next retry date if failed</summary>
     public DateTime? NextRetryAt { get; private set; }
+
+    /// <summary>
+    ///     Whether the recorded failure is eligible for further retry attempts (issue #415).
+    ///     Hard declines (expired card, incorrect CVC, fraud, ...) are marked non-retriable
+    ///     immediately by the failure-code retry policy; soft declines and transient errors
+    ///     stay retriable until the retry budget is exhausted.
+    /// </summary>
+    public bool IsRetriable { get; private set; } = true;
 
     /// <summary>Refund amount if partially or fully refunded</summary>
     [Column(TypeName = "decimal(18,2)")]
@@ -330,13 +339,19 @@ public class Payment : EntityBase
     ///     Marks the payment as failed. Retry-policy parameters may be supplied by the caller from
     ///     <c>Payments:Retry</c> options (issue #403); when omitted the legacy entity defaults apply
     ///     (max 3 retries, exponential backoff of <c>Math.Pow(5, RetryCount)</c> minutes).
+    ///     Callers that resolve a failure-code retry policy (issue #415) pass an explicit
+    ///     <paramref name="nextRetryAt" /> computed by <c>PaymentRetryPolicyResolver</c> (which may
+    ///     be <c>null</c> when the failure class is non-retriable or the budget is exhausted) and
+    ///     <paramref name="isRetriable" />; the entity itself stays free of policy logic.
     /// </summary>
     public void MarkAsFailed(
         string failureReason,
         string? errorCode = null,
         int? maxRetries = null,
         double? backoffBaseMinutes = null,
-        double? backoffMultiplier = null)
+        double? backoffMultiplier = null,
+        DateTime? nextRetryAt = null,
+        bool? isRetriable = null)
     {
         TransitionTo(PaymentStatus.Failed);
         FailureReason = failureReason;
@@ -350,13 +365,30 @@ public class Payment : EntityBase
             MaxRetries = maxRetries.Value;
         }
 
-        if (RetryCount < effectiveMaxRetries)
+        if (isRetriable.HasValue)
+        {
+            IsRetriable = isRetriable.Value;
+        }
+
+        if (nextRetryAt.HasValue)
+        {
+            // Failure-code policy already computed the schedule (issue #415): honor it as-is,
+            // including a deliberate null for non-retriable or exhausted payments.
+            NextRetryAt = nextRetryAt.Value;
+            return;
+        }
+
+        if (IsRetriable && RetryCount < effectiveMaxRetries)
         {
             // Exponential backoff: legacy default is 1 min, 5 min, 25 min, etc.
             var baseMinutes = backoffBaseMinutes ?? DefaultBackoffBaseMinutes;
             var multiplier = backoffMultiplier ?? DefaultBackoffMultiplier;
             var delayMinutes = baseMinutes * Math.Pow(multiplier, RetryCount);
             NextRetryAt = SystemClock.UtcNow.AddMinutes(delayMinutes);
+        }
+        else
+        {
+            NextRetryAt = null;
         }
     }
 
@@ -407,9 +439,11 @@ public class Payment : EntityBase
             throw new InvalidOperationException("Can only retry failed payments");
         }
 
-        if (RetryCount >= MaxRetries)
+        if (!CanRetry)
         {
-            throw new InvalidOperationException($"Maximum retry attempts ({MaxRetries}) reached");
+            throw new InvalidOperationException(MaxRetriesReached
+                ? $"Maximum retry attempts ({MaxRetries}) reached"
+                : "Payment is marked non-retriable for its recorded failure code");
         }
 
         RetryCount++;
@@ -418,11 +452,79 @@ public class Payment : EntityBase
         ErrorCode = null;
         NextRetryAt = null;
         ExternalTransactionId = null;
+        IsRetriable = true; // The new attempt is classified afresh when its outcome is recorded.
         if (!string.IsNullOrWhiteSpace(paymentMethodId))
         {
             PaymentMethodId = paymentMethodId;
         }
 
+        Touch();
+    }
+
+    /// <summary>
+    ///     Pauses automatic retries for this failed payment (issue #415): the scheduled next-retry
+    ///     time is cleared so the retry queue stops picking the payment up until it is resumed.
+    /// </summary>
+    public void PauseRetryQueue()
+    {
+        if (Status != PaymentStatus.Failed)
+        {
+            throw new InvalidOperationException("Only failed payments can have their retry schedule paused");
+        }
+
+        if (NextRetryAt is null)
+        {
+            return; // Already paused, exhausted or non-retriable — idempotent.
+        }
+
+        NextRetryAt = null;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Resumes automatic retries that were previously paused for a payment-method change
+    ///     (issue #415): the payment becomes eligible again on the next retry-queue pass.
+    ///     Only payments that still have retry budget and are retriable can be resumed.
+    /// </summary>
+    public void ResumeRetryQueue(DateTime? eligibleAtUtc = null)
+    {
+        if (Status != PaymentStatus.Failed)
+        {
+            throw new InvalidOperationException("Only failed payments can have their retry schedule resumed");
+        }
+
+        if (!IsRetriable || RetryCount >= MaxRetries)
+        {
+            return; // Non-retriable or exhausted payments stay out of the queue.
+        }
+
+        NextRetryAt = eligibleAtUtc ?? SystemClock.UtcNow;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Re-points the payment at a newly confirmed payment method (issue #415). Used when a
+    ///     customer replaces their payment method mid-dunning so queued retries charge the new
+    ///     instrument instead of the failed one. Terminal payments cannot change methods.
+    /// </summary>
+    public void ApplyPaymentMethodChange(string paymentMethodId)
+    {
+        if (string.IsNullOrWhiteSpace(paymentMethodId))
+        {
+            throw new ArgumentException("Payment method id is required", nameof(paymentMethodId));
+        }
+
+        if (IsTerminal)
+        {
+            throw new InvalidOperationException($"Cannot change the payment method of a payment in status {Status}");
+        }
+
+        if (string.Equals(PaymentMethodId, paymentMethodId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        PaymentMethodId = paymentMethodId;
         Touch();
     }
 
@@ -476,9 +578,9 @@ public class Payment : EntityBase
     public string? ResolveUnverifiedLegacyProviderObjectId() => ExternalPaymentId ?? ExternalTransactionId;
 
     /// <summary>Whether the payment can be retried</summary>
-    public bool CanRetry => Status == PaymentStatus.Failed && RetryCount < MaxRetries;
+    public bool CanRetry => Status == PaymentStatus.Failed && RetryCount < MaxRetries && IsRetriable;
 
-    /// <summary>Whether max retries have been reached</summary>
+    /// <summary>Whether the retry budget is exhausted (attempts reached the persisted maximum)</summary>
     public bool MaxRetriesReached => RetryCount >= MaxRetries;
 
     /// <summary>Whether the payment is in a terminal state</summary>

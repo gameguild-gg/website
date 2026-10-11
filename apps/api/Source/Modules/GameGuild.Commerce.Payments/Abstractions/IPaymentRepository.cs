@@ -58,9 +58,27 @@ public interface IPaymentRepository
     Task<IEnumerable<Payment>> GetByStatusAsync(PaymentStatus status, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Gets payments due for retry
+    ///     Gets payments due for retry: failed, retriable, with budget left and a scheduled
+    ///     next-retry time that has passed (issue #415 retry-queue claim query).
     /// </summary>
-    Task<IEnumerable<Payment>> GetDueForRetryAsync(CancellationToken cancellationToken = default);
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="take">Optional cap on the number of payments returned per pass.</param>
+    Task<IEnumerable<Payment>> GetDueForRetryAsync(CancellationToken cancellationToken = default, int? take = null);
+
+    /// <summary>
+    ///     Gets the persisted retry-attempt history for a payment, ordered by attempt number
+    ///     (issue #415).
+    /// </summary>
+    Task<IReadOnlyList<PaymentRetryAttempt>> GetRetryAttemptsAsync(
+        Guid paymentId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Persists one retry-attempt history entry (issue #415).
+    /// </summary>
+    Task AddRetryAttemptAsync(
+        PaymentRetryAttempt attempt,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Gets payments within a date range

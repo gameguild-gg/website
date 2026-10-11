@@ -262,7 +262,7 @@ public class PaymentsControllerTests
         var accessor = new Mock<IActorContextAccessor>();
         accessor.SetupGet(value => value.ActorContext).Returns(actorContext);
 
-        return new PaymentsController(sender, accessor.Object, stripeCustomerService, paymentContextService)
+        return new PaymentsController(sender, accessor.Object, stripeCustomerService, paymentContextService, Mock.Of<IPaymentRetryMethodChangeService>())
         {
             ControllerContext = new ControllerContext
             {
@@ -271,7 +271,7 @@ public class PaymentsControllerTests
         };
     }
 
-    private static Mock<ISender> CreateSenderWithPayment(Guid paymentId, Guid tenantId)
+    private static Mock<ISender> CreateSenderWithPayment(Guid paymentId, Guid tenantId, decimal? netAmount = null)
     {
         var sender = new Mock<ISender>();
         sender
@@ -282,7 +282,7 @@ public class PaymentsControllerTests
             {
                 PaymentId = paymentId.ToString(),
                 TenantId = tenantId,
-                Amount = new Money(25m, "USD"),
+                Amount = new Money(netAmount ?? 25m, "USD"),
                 Status = PaymentStatus.Succeeded,
                 Success = true
             });
@@ -303,6 +303,135 @@ public class PaymentsControllerTests
             AuthScheme = "Test",
             IsAuthenticated = true
         };
+    }
+
+    [Fact]
+    public async Task Refund_WithNullAmount_CoalescesToTheRemainingAmountForAFullRefund()
+    {
+        // Regression (issue #415 verifier finding): the endpoint used to pass body.Amount ?? 0
+        // into ProcessRefundCommand while Payment.ProcessRefund rejects amounts <= 0, so a
+        // null-amount "full refund" always failed. Null must mean the remaining refundable
+        // amount, which GetPaymentByIdQuery already reports as the net amount.
+        var tenantId = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
+        var sender = CreateSenderWithPayment(paymentId, tenantId, netAmount: 18.5m);
+        var controller = CreateController(
+            sender.Object,
+            CreateAuthenticatedActorContext(tenantId),
+            Mock.Of<IStripeCustomerService>(),
+            Mock.Of<ISubscriptionPaymentContextService>());
+
+        var result = await controller.Refund(
+            paymentId,
+            new PaymentsController.RefundRequest(null, "goodwill"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        sender.Verify(
+            service => service.Send(
+                It.Is<ProcessRefundCommand>(command => command.Amount == 18.5m),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Refund_WithNullAmountAndNothingLeftToRefund_ReturnsBadRequest()
+    {
+        var tenantId = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
+        var sender = CreateSenderWithPayment(paymentId, tenantId, netAmount: 0m);
+        var controller = CreateController(
+            sender.Object,
+            CreateAuthenticatedActorContext(tenantId),
+            Mock.Of<IStripeCustomerService>(),
+            Mock.Of<ISubscriptionPaymentContextService>());
+
+        var result = await controller.Refund(
+            paymentId,
+            new PaymentsController.RefundRequest(null, "goodwill"),
+            CancellationToken.None);
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+        sender.Verify(
+            service => service.Send(It.IsAny<ProcessRefundCommand>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Refund_WithExplicitAmount_PassesItThroughUnchanged()
+    {
+        var tenantId = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
+        var sender = CreateSenderWithPayment(paymentId, tenantId, netAmount: 25m);
+        var controller = CreateController(
+            sender.Object,
+            CreateAuthenticatedActorContext(tenantId),
+            Mock.Of<IStripeCustomerService>(),
+            Mock.Of<ISubscriptionPaymentContextService>());
+
+        await controller.Refund(
+            paymentId,
+            new PaymentsController.RefundRequest(5m, "partial"),
+            CancellationToken.None);
+
+        sender.Verify(
+            service => service.Send(
+                It.Is<ProcessRefundCommand>(command => command.Amount == 5m),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetRetryAttempts_ShouldRejectPaymentFromAnotherTenant()
+    {
+        var paymentId = Guid.NewGuid();
+        var sender = CreateSenderWithPayment(paymentId, Guid.NewGuid());
+        var controller = CreateController(
+            sender.Object,
+            CreateAuthenticatedActorContext(Guid.NewGuid()),
+            Mock.Of<IStripeCustomerService>(),
+            Mock.Of<ISubscriptionPaymentContextService>());
+
+        var result = await controller.GetRetryAttempts(paymentId, CancellationToken.None);
+
+        result.Should().BeOfType<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        sender.Verify(
+            service => service.Send(It.IsAny<GetPaymentRetryAttemptsQuery>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetRetryAttempts_ReturnsThePersistedHistoryForThePayment()
+    {
+        var tenantId = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
+        var sender = CreateSenderWithPayment(paymentId, tenantId);
+        var attempt = new PaymentRetryAttemptDto(
+            paymentId,
+            1,
+            ScheduledForUtc: SystemClock.UtcNow.AddHours(-1),
+            ExecutedAtUtc: SystemClock.UtcNow,
+            Outcome: PaymentStatus.Failed,
+            FailureCode: "insufficient_funds",
+            FailureMessage: "Not enough funds",
+            Gateway: "stripe",
+            GatewayTransactionId: null);
+        sender
+            .Setup(service => service.Send(
+                It.Is<GetPaymentRetryAttemptsQuery>(query => query.PaymentId == paymentId),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([attempt]);
+        var controller = CreateController(
+            sender.Object,
+            CreateAuthenticatedActorContext(tenantId),
+            Mock.Of<IStripeCustomerService>(),
+            Mock.Of<ISubscriptionPaymentContextService>());
+
+        var result = await controller.GetRetryAttempts(paymentId, CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().BeEquivalentTo(new[] { attempt });
     }
 
 }

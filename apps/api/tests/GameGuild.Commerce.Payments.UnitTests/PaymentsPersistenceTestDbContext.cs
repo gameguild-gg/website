@@ -16,6 +16,7 @@ internal sealed class PaymentsPersistenceTestDbContext(DbContextOptions<Payments
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserWallet).Assembly);
         modelBuilder.Entity<Payment>();
+        modelBuilder.Entity<PaymentRetryAttempt>();
         modelBuilder.Entity<CustomerTaxExemption>();
         modelBuilder.Entity<RevenueReconciliationRun>();
         modelBuilder.Entity<RevenueReconciliationDiscrepancy>();

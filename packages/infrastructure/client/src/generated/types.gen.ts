@@ -2058,6 +2058,27 @@ Links payment to specific invoice for audit trail and preventing duplicate appli
   transactionId?: string | null;
 }
 
+/** Read model for one persisted GameGuild.Commerce.Payments.PaymentRetryAttempt (issue #415). */
+export interface CommercePaymentsPaymentRetryAttemptDto {
+  /** 1-based retry attempt number. */
+  attemptNumber?: number;
+  /** When the attempt was executed. */
+  executedAtUtc?: string;
+  /** Gateway failure code when the attempt failed. */
+  failureCode?: string | null;
+  /** Gateway failure message when the attempt failed. */
+  failureMessage?: string | null;
+  /** Gateway that executed the attempt. */
+  gateway?: string | null;
+  /** Gateway transaction reference when one exists. */
+  gatewayTransactionId?: string | null;
+  outcome?: CommercePaymentsPaymentStatus;
+  /** Payment the attempt belongs to. */
+  paymentId?: string;
+  /** When the attempt was scheduled to run; null for immediate manual retries. */
+  scheduledForUtc?: string | null;
+}
+
 /** Retry-recovery counters for payments that failed at least once. */
 export interface CommercePaymentsPaymentRetryRecoveryMetrics {
   /** Payments that failed at least once (currently failed or with retry history). */
@@ -20581,6 +20602,7 @@ export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymen
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
 export let CommercePaymentsPaymentRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRecoveryMetrics>;
 export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymentResult>;
+export let CommercePaymentsPaymentRetryAttemptDtoSchema: z.ZodType<CommercePaymentsPaymentRetryAttemptDto>;
 export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
 export let CommercePaymentsPaymentRetryResultSchema: z.ZodType<CommercePaymentsPaymentRetryResult>;
 export let CommercePaymentsPaymentsControllerCancelPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCancelPaymentInput>;
@@ -24213,6 +24235,19 @@ CommercePaymentsPaymentResultSchema = z.object({
   success: z.boolean().optional(),
   tenantId: z.string().uuid().optional(),
   transactionId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRetryAttemptDto. Read model for one persisted GameGuild.Commerce.Payments.PaymentRetryAttempt (issue #415). */
+CommercePaymentsPaymentRetryAttemptDtoSchema = z.object({
+  attemptNumber: z.number().int().optional(),
+  executedAtUtc: z.string().datetime().optional(),
+  failureCode: z.string().nullable().optional(),
+  failureMessage: z.string().nullable().optional(),
+  gateway: z.string().nullable().optional(),
+  gatewayTransactionId: z.string().nullable().optional(),
+  outcome: z.lazy(() => CommercePaymentsPaymentStatusSchema).optional(),
+  paymentId: z.string().uuid().optional(),
+  scheduledForUtc: z.string().datetime().nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentRetryRecoveryMetrics. Retry-recovery counters for payments that failed at least once. */
@@ -41460,6 +41495,8 @@ export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAttemptDto;
+export { CommercePaymentsPaymentRetryAttemptDtoSchema as CommercePaymentsPaymentRetryAttemptSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;

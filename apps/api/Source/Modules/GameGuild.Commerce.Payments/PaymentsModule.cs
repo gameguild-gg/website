@@ -49,6 +49,19 @@ public static class PaymentsModule
             .Bind(configuration.GetSection(PaymentRetryOptions.SectionName))
             .ValidateOnStart();
 
+        // Failure-code retry policy + automated retry queue (issue #415): classifies gateway
+        // failure codes into retriable/non-retriable schedules, and (opt-in) polls due retries
+        // hourly through the existing RetryPaymentCommand path. Default disabled, matching the
+        // revenue-auditing worker: automatic charging must be a deliberate deployment decision.
+        services.AddSingleton<IValidateOptions<PaymentRetryQueueOptions>, PaymentRetryQueueOptionsValidator>();
+        services.AddOptions<PaymentRetryQueueOptions>()
+            .Bind(configuration.GetSection(PaymentRetryQueueOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IPaymentRetryPolicyResolver, PaymentRetryPolicyResolver>();
+        services.AddScoped<IPaymentRetryMethodChangeService, PaymentRetryMethodChangeService>();
+        services.AddScoped<IPaymentRetryQueueWorker, PaymentRetryQueueWorker>();
+        services.AddHostedService<PaymentRetryQueueBackgroundService>();
+
         // Register services
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IRevenueAuditService, RevenueAuditService>();
