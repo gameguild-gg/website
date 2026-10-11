@@ -218,7 +218,7 @@ jobs:
         id: web-release-provenance
         env:
           SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: python3 scripts/ci/acquire-emception-release.py --prepare
+        run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --prepare
 
       - name: Upload verified Toolchain CDN for Web
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

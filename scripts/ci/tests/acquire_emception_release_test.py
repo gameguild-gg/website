@@ -3,11 +3,11 @@
 import copy
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
 import stat
-import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -42,6 +42,32 @@ class FakeGitHub:
             return [{"jobs": [{"steps": [{"name": name,
                      "conclusion": "success" if self.steps_passed else None} for name in names]}]}]
         raise AssertionError("Unexpected endpoint: " + endpoint)
+
+
+class FakeResponse(io.BytesIO):
+    def __init__(self, data=b"{}", status=200, headers=None):
+        super().__init__(data)
+        self.status = status
+        self.headers = headers or {}
+
+    def getheader(self, name, default=None):
+        return self.headers.get(name, default)
+
+
+class FakeConnection:
+    def __init__(self, response):
+        self.response = response
+        self.requests = []
+        self.closed = False
+
+    def request(self, method, path, headers):
+        self.requests.append((method, path, headers))
+
+    def getresponse(self):
+        return self.response
+
+    def close(self):
+        self.closed = True
 
 
 class ArtifactContractTests(unittest.TestCase):
@@ -164,7 +190,7 @@ class ArtifactContractTests(unittest.TestCase):
         def lookup(api, head, tree):
             calls.append((api, head, tree))
             if len(calls) == 1:
-                raise subprocess.TimeoutExpired("gh", 90)
+                raise TimeoutError("GitHub request timeout")
             if len(calls) == 2:
                 return None
             return artifact
@@ -254,14 +280,116 @@ class ArtifactContractTests(unittest.TestCase):
     def test_wait_retries_transient_api_errors_but_propagates_permission_failures(self):
         _, artifact = self.bundle()
         with patch.object(release, "choose_artifact", side_effect=[
-            subprocess.CalledProcessError(1, "gh", stderr=b"HTTP 503"), artifact,
+            release.GitHubHTTPError(503), artifact,
         ]):
             self.assertEqual(release.wait_for_artifact(FakeGitHub(), HEAD, TREE, 60,
                              clock=lambda: 0, sleep=lambda seconds: self.assertEqual(seconds, 30))["id"], 7)
         with patch.object(release, "choose_artifact", side_effect=
-                          subprocess.CalledProcessError(1, "gh", stderr=b"HTTP 403 permission denied")):
-            with self.assertRaises(subprocess.CalledProcessError):
+                          release.GitHubHTTPError(403)):
+            with self.assertRaises(release.GitHubHTTPError):
                 release.wait_for_artifact(FakeGitHub(), HEAD, TREE, 60)
+
+    def api(self):
+        mock_credential = hashlib.sha256(b"HTTPS header verification fixture").hexdigest()
+        return release.GitHub("gameguild-gg/gameguild", mock_credential)
+
+    def test_checkout_tree_is_explicit_and_rejects_missing_or_invalid_identity(self):
+        with patch.dict(os.environ, {"SOURCE_TREE_SHA": TREE}):
+            self.assertEqual(release.source_tree(self.root), TREE)
+        with patch.dict(os.environ, {"SOURCE_TREE_SHA": "latest"}):
+            with self.assertRaises(ValueError):
+                release.source_tree(self.root)
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(KeyError):
+                release.source_tree(self.root)
+
+    def test_authenticated_api_rejects_other_origins_and_path_escape_before_connecting(self):
+        api = self.api()
+        urls = ["http://api.github.com/repos/gameguild-gg/gameguild/actions/runs",
+                "https://api.github.com.evil.test/repos/gameguild-gg/gameguild/actions/runs",
+                "https://api.github.com/repos/other/repository/actions/runs",
+                "https://api.github.com/repos/gameguild-gg/gameguild/actions/../issues",
+                "https://api.github.com/repos/gameguild-gg/gameguild/actions/%2e%2e/issues",
+                "https://api.github.com:444/repos/gameguild-gg/gameguild/actions/runs",
+                "https://user@api.github.com/repos/gameguild-gg/gameguild/actions/runs",
+                "https://api.github.com/repos/gameguild-gg/gameguild/actions/runs#fragment",
+                "https://api.github.com/\r\nInjected: value"]
+        with patch.object(release.http.client, "HTTPSConnection") as connect:
+            for url in urls:
+                with self.subTest(url=url), self.assertRaises(ValueError):
+                    api.request(url, authenticated=True)
+            connect.assert_not_called()
+
+    def test_api_pagination_preserves_repository_origin_and_closes_connections(self):
+        api = self.api()
+        next_url = "https://api.github.com/repos/gameguild-gg/gameguild/actions/runs?page=2"
+        first = FakeConnection(FakeResponse(b'{"workflow_runs":[{"id":1}]}',
+                               headers={"Link": f'<{next_url}>; rel="next"'}))
+        second = FakeConnection(FakeResponse(b'{"workflow_runs":[{"id":2}]}'))
+        with patch.object(release.http.client, "HTTPSConnection", side_effect=[first, second]) as connect:
+            pages = api.json("actions/runs?per_page=100")
+        self.assertEqual([page["workflow_runs"][0]["id"] for page in pages], [1, 2])
+        self.assertTrue(first.closed and second.closed)
+        self.assertEqual([call.args[0] for call in connect.call_args_list], ["api.github.com"] * 2)
+        self.assertEqual(first.requests[0][2]["Authorization"], "Bearer " + api.token)
+
+    def test_api_rejects_off_origin_and_repeated_pagination(self):
+        api = self.api()
+        for next_url in ["https://evil.test/page", "https://api.github.com/repos/gameguild-gg/gameguild/actions/runs"]:
+            with self.subTest(url=next_url):
+                first = FakeConnection(FakeResponse(headers={"Link": f'<{next_url}>; rel="next"'}))
+                with patch.object(release.http.client, "HTTPSConnection", return_value=first) as connect:
+                    with self.assertRaises(ValueError):
+                        api.json("actions/runs")
+                    self.assertEqual(connect.call_count, 1)
+                self.assertTrue(first.closed)
+
+    def test_archive_redirect_does_not_forward_authentication_to_storage(self):
+        api = self.api()
+        storage_url = "https://results.blob.core.windows.net/archive.zip?signature=fixture"
+        first = FakeConnection(FakeResponse(status=302, headers={"Location": storage_url}))
+        second = FakeConnection(FakeResponse(b"ZIP fixture bytes", headers={"Content-Length": "17"}))
+        target = self.root / "download.zip"
+        with patch.object(release.http.client, "HTTPSConnection", side_effect=[first, second]) as connect:
+            api.archive(7, target)
+        self.assertEqual(target.read_bytes(), b"ZIP fixture bytes")
+        self.assertIn("Authorization", first.requests[0][2])
+        self.assertNotIn("Authorization", second.requests[0][2])
+        self.assertEqual([call.args[0] for call in connect.call_args_list], ["api.github.com", "results.blob.core.windows.net"])
+        self.assertTrue(first.closed and second.closed)
+
+    def test_archive_rejects_untrusted_redirects_and_oversized_streams(self):
+        api = self.api()
+        for url in ["http://results.blob.core.windows.net/archive.zip", "file:///outside",
+                    "https://evil.test/archive.zip", "https://blob.core.windows.net.evil.test/archive.zip"]:
+            with self.subTest(url=url):
+                first = FakeConnection(FakeResponse(status=302, headers={"Location": url}))
+                with patch.object(release.http.client, "HTTPSConnection", return_value=first) as connect:
+                    with self.assertRaises(ValueError):
+                        api.archive(7, self.root / "invalid.zip")
+                    self.assertEqual(connect.call_count, 1)
+                self.assertTrue(first.closed)
+        first = FakeConnection(FakeResponse(status=302, headers={"Location": "https://results.blob.core.windows.net/archive.zip"}))
+        second = FakeConnection(FakeResponse(b"oversized fixture"))
+        with patch.object(release.http.client, "HTTPSConnection", side_effect=[first, second]), \
+                patch.object(release, "MAX_ARCHIVE_BYTES", 1):
+            with self.assertRaisesRegex(ValueError, "byte or time budget"):
+                api.archive(7, self.root / "oversized.zip")
+        self.assertTrue(first.closed and second.closed)
+
+    def test_api_error_classification_preserves_permission_failure(self):
+        api = self.api()
+        for status, headers, retryable in [(503, {}, True), (429, {}, True),
+                                           (403, {"X-RateLimit-Remaining": "0"}, True),
+                                           (403, {}, False), (401, {"X-RateLimit-Remaining": "0"}, False)]:
+            with self.subTest(status=status, headers=headers):
+                connection = FakeConnection(FakeResponse(status=status, headers=headers))
+                with patch.object(release.http.client, "HTTPSConnection", return_value=connection):
+                    with self.assertRaises(release.GitHubHTTPError) as error:
+                        api.request("https://api.github.com/repos/gameguild-gg/gameguild/actions/runs", authenticated=True)
+                self.assertEqual(error.exception.retryable, retryable)
+                self.assertNotIn(api.token, str(error.exception))
+                self.assertTrue(connection.closed)
 
 
 if __name__ == "__main__":

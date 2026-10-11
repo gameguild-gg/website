@@ -114,7 +114,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}
           CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}
-        run: python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
+        run: SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
       - name: Verify acquired frozen Toolchain identity
         if: steps.emception-web-release.outputs.required == 'true'
         run: |

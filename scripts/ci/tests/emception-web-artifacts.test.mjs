@@ -32,7 +32,7 @@ const acquire = step(web, 'Acquire verified Toolchain release for Web');
 
 test('Web acquires a producer release independently of an optional build cache', () => {
   assert.match(acquire, /id: emception-web-release/);
-  assert.match(acquire, /run: python3 scripts\/ci\/acquire-emception-release\.py --wait-seconds 19800/);
+  assert.ok(acquire.includes('run: SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')" python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800'));
   assert.doesNotMatch(acquire, /        if:|cache-hit|cache-matched-key|continue-on-error|\|\| true/);
   assert.doesNotMatch(web, /Restore verified Toolchain builds for Web|Prepare and verify cached Toolchain release/);
   assert.ok(web.indexOf('Acquire verified Toolchain release for Web') < web.indexOf('Build Web runtime dependencies'));
@@ -59,6 +59,7 @@ test('the producer publishes only after release gates and before the independent
   const prepare = step(producer, 'Prepare verified Toolchain CDN provenance');
   const upload = step(producer, 'Upload verified Toolchain CDN for Web');
   assert.match(prepare, /python3 scripts\/ci\/acquire-emception-release\.py --prepare/);
+  assert.ok(prepare.includes('SOURCE_TREE_SHA="$(git rev-parse \'HEAD^{tree}\')"'));
   assert.ok(prepare.includes('SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}'));
   assert.match(upload, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.ok(upload.includes('name: ${{ steps.web-release-provenance.outputs.artifact-name }}'));

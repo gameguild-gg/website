@@ -2,16 +2,17 @@
 
 import argparse
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
-import subprocess
 import tempfile
 import time
 import zipfile
+from urllib.parse import urlsplit
 
 
 MAX_ARCHIVE_BYTES = 512 * 1024 * 1024
@@ -56,11 +57,8 @@ def file_digest(path):
 
 
 def source_tree(root):
-    result = subprocess.run(
-        ["git", "-c", "gc.auto=0", "-c", "maintenance.auto=false", "rev-parse", "HEAD^{tree}"],
-        cwd=root, check=True, capture_output=True, text=True, timeout=30,
-    )
-    return require_sha(result.stdout.strip())
+    # Each hosted caller supplies the tree of its actual checkout, not a branch tip.
+    return require_sha(os.environ["SOURCE_TREE_SHA"])
 
 
 def prepare_provenance(root, head, run_id):
@@ -99,28 +97,117 @@ def prepare_provenance(root, head, run_id):
     return artifact_name(head, tree)
 
 
+class GitHubHTTPError(RuntimeError):
+    def __init__(self, status, rate_limited=False):
+        super().__init__(f"GitHub request failed with HTTP {status}")
+        self.status = status
+        self.retryable = status == 429 or status >= 500 or rate_limited
+
+
 class GitHub:
-    def __init__(self, repository):
+    def __init__(self, repository, token=None):
         if (re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}", repository) is None or
                 repository.rsplit("/", 1)[1] in {".", ".."}):
             raise ValueError("Invalid repository identity")
-        self.prefix = f"repos/{repository}/"
+        self.prefix = f"/repos/{repository}/actions/"
+        self.token = token if token is not None else os.environ.get("GH_TOKEN")
+
+    def request(self, url, authenticated, timeout=90):
+        if any(character in url for character in ["\r", "\n", "\\"]):
+            raise ValueError("Invalid GitHub request URL")
+        parsed = urlsplit(url)
+        if (parsed.scheme != "https" or parsed.username or parsed.password or
+                parsed.port not in {None, 443} or parsed.fragment):
+            raise ValueError("Requests require an ordinary HTTPS origin")
+        headers = {"User-Agent": "gameguild-ci-toolchain-release"}
+        if authenticated:
+            if (parsed.hostname != "api.github.com" or not parsed.path.startswith(self.prefix) or
+                    "%" in parsed.path or any(part in {".", ".."} for part in parsed.path.split("/"))):
+                raise ValueError("Authenticated requests must stay in this repository's Actions API")
+            if not self.token:
+                raise ValueError("GitHub Actions read token is required")
+            headers.update({"Authorization": "Bearer " + self.token,
+                            "Accept": "application/vnd.github+json",
+                            "X-GitHub-Api-Version": "2022-11-28"})
+        elif not parsed.hostname or not any(
+            parsed.hostname.endswith(suffix) for suffix in [".blob.core.windows.net", ".actions.githubusercontent.com"]
+        ):
+            raise ValueError("Artifact redirects must use GitHub Actions storage")
+        connection = http.client.HTTPSConnection(parsed.hostname, timeout=timeout)
+        try:
+            connection.request("GET", parsed.path + ("?" + parsed.query if parsed.query else ""), headers=headers)
+            response = connection.getresponse()
+            if response.status not in {200, 302, 307}:
+                rate_limited = response.status == 403 and (
+                    response.getheader("X-RateLimit-Remaining") == "0" or response.getheader("Retry-After") is not None
+                )
+                raise GitHubHTTPError(response.status, rate_limited)
+            return connection, response
+        except Exception:
+            connection.close()
+            raise
 
     def json(self, endpoint):
-        result = subprocess.run(
-            ["gh", "api", self.prefix + endpoint, "--paginate", "--slurp"],
-            check=True, capture_output=True, timeout=90,
-        )
-        return json.loads(result.stdout)
+        if not endpoint.startswith("actions/"):
+            raise ValueError("Unexpected Actions endpoint")
+        url = "https://api.github.com" + self.prefix + endpoint[len("actions/"):]
+        pages, seen = [], set()
+        deadline = time.monotonic() + 90
+        while url:
+            if url in seen or len(seen) >= 1_000:
+                raise ValueError("Repeated or oversized API pagination")
+            seen.add(url)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("GitHub API pagination exceeded its time budget")
+            connection, response = self.request(url, authenticated=True, timeout=remaining)
+            try:
+                if response.status != 200:
+                    raise ValueError("Unexpected API redirect")
+                data = response.read(16 * 1024 * 1024 + 1)
+                if len(data) > 16 * 1024 * 1024:
+                    raise ValueError("API page exceeds its byte budget")
+                pages.append(json.loads(data))
+                links = response.getheader("Link", "")
+                match = re.search(r'<([^>]+)>;\s*rel="next"', links)
+                url = match.group(1) if match else None
+            finally:
+                connection.close()
+        return pages
 
     def archive(self, artifact_id, target):
         if not isinstance(artifact_id, int) or artifact_id <= 0:
             raise ValueError("Invalid artifact identity")
-        with target.open("xb") as stream:
-            subprocess.run(
-                ["gh", "api", f"{self.prefix}actions/artifacts/{artifact_id}/zip"],
-                check=True, stdout=stream, stderr=subprocess.PIPE, timeout=180,
-            )
+        url = f"https://api.github.com{self.prefix}artifacts/{artifact_id}/zip"
+        deadline = time.monotonic() + 180
+        for redirect in range(4):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("Artifact download exceeded its time budget")
+            connection, response = self.request(url, authenticated=redirect == 0, timeout=min(90, remaining))
+            try:
+                if response.status in {302, 307}:
+                    url = response.getheader("Location")
+                    if not url:
+                        raise ValueError("Missing artifact redirect")
+                    continue
+                declared = response.getheader("Content-Length")
+                if declared and not 0 < int(declared) <= MAX_ARCHIVE_BYTES:
+                    raise ValueError("Artifact exceeds its archive budget")
+                count = 0
+                with target.open("xb") as stream:
+                    while True:
+                        chunk = response.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        count += len(chunk)
+                        if count > MAX_ARCHIVE_BYTES or time.monotonic() > deadline:
+                            raise ValueError("Artifact download exceeds its byte or time budget")
+                        stream.write(chunk)
+                return
+            finally:
+                connection.close()
+        raise ValueError("Too many artifact redirects")
 
 
 def choose_artifact(api, head, tree):
@@ -163,11 +250,10 @@ def wait_for_artifact(api, head, tree, wait_seconds, clock=time.monotonic, sleep
     while True:
         try:
             artifact = choose_artifact(api, head, tree)
-        except subprocess.TimeoutExpired:
+        except (TimeoutError, http.client.HTTPException):
             artifact = None
-        except subprocess.CalledProcessError as error:
-            detail = (error.stderr or b"").decode("utf8", errors="replace")
-            if not re.search(r"HTTP (429|5\d\d)|rate limit", detail, re.IGNORECASE):
+        except GitHubHTTPError as error:
+            if not error.retryable:
                 raise
             artifact = None
         if artifact is not None:
