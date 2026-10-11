@@ -17,7 +17,7 @@ public sealed class DiscoverOidcProvidersQueryHandler(
         var domain = ExtractDomain(request.Email);
         var providers = oidcFederationService.FindProvidersForEmailDomain(domain);
 
-        logger.LogInformation("OIDC domain discovery matched {Count} provider(s) for domain {Domain}", providers.Count, domain);
+        logger.LogInformation("OIDC provider discovery matched {Count} provider(s)", providers.Count);
 
         return Task.FromResult(new OidcDiscoverProviderResponse { Providers = providers });
     }
