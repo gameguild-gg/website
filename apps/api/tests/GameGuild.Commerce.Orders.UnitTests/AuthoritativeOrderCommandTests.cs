@@ -702,6 +702,7 @@ public sealed class AuthoritativeOrderCommandTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
             dbContext.Object,
             CreateActor(userId, orderTenantId));
         var command = new AddProductToOrderCommand(

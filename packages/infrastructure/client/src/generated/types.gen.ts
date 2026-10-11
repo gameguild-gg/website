@@ -2917,11 +2917,18 @@ export interface CommerceProductsAppliedPromoCode {
   discountAmount?: number;
   /** Discount percentage from this code */
   discountPercentage?: number | null;
+  /** Billing periods granted (FreeMonths only) */
+  freeMonthsGranted?: number | null;
+  /** Trial days granted (FreeTrialExtension only) */
+  trialExtensionDays?: number | null;
+  type?: CommerceProductsPromoCodeType;
 }
 
 /** Request to apply promo codes */
 export interface CommerceProductsApplyPromoCodesInput {
+  idempotencyKey?: string | null;
   orderAmount?: number;
+  orderId?: string | null;
   productId?: string | null;
   promoCodes?: string[] | null;
 }
@@ -2960,6 +2967,56 @@ export interface CommerceProductsCalculatePricingInput {
   quantity?: number;
 }
 
+/** A campaign code approaching expiry */
+export interface CommerceProductsCampaignExpiringCodeDto {
+  /** Promo code string */
+  code?: string | null;
+  /** Promo code ID */
+  promoCodeId?: string;
+  /** Expiry timestamp */
+  validUntil?: string;
+}
+
+/** Aggregated performance for a promo campaign within a window */
+export interface CommerceProductsCampaignPerformanceDto {
+  /** Number of currently active codes */
+  activeCodes?: number;
+  /** Average discount per use */
+  averageDiscountPerUse?: number;
+  /** Campaign identifier */
+  campaignId?: string | null;
+  /** Campaign codes expiring within the next 30 days */
+  expiringCodes?: CommerceProductsCampaignExpiringCodeDto[] | null;
+  /** Uses divided by total MaxUses capacity (null when no code declares limits) */
+  redemptionRate?: number | null;
+  /** Codes ranked by uses within the window */
+  topCodes?: CommerceProductsCampaignTopCodeDto[] | null;
+  /** Number of codes in the campaign */
+  totalCodes?: number;
+  /** Sum of discounts given within the window */
+  totalDiscountGiven?: number;
+  /** Recorded uses within the window */
+  totalUses?: number;
+  /** Distinct users within the window */
+  uniqueUsers?: number;
+  /** Window end (null = unbounded) */
+  windowEnd?: string | null;
+  /** Window start (null = unbounded) */
+  windowStart?: string | null;
+}
+
+/** A campaign code ranked by usage */
+export interface CommerceProductsCampaignTopCodeDto {
+  /** Promo code string */
+  code?: string | null;
+  /** Discount given within the window */
+  discountGiven?: number;
+  /** Promo code ID */
+  promoCodeId?: string;
+  /** Recorded uses within the window */
+  uses?: number;
+}
+
 /** Data model for Commerce Products Change Support Ticket Priority Request. */
 export interface CommerceProductsChangeSupportTicketPriorityInput {
   priority?: CommerceProductsSupportTicketPriority;
@@ -2974,6 +3031,9 @@ export interface CommerceProductsCheckMultipleAccessInput {
 export interface CommerceProductsCloseSupportTicketInput {
   closingNotes?: string | null;
 }
+
+/** Conflict resolution strategies for stacked promo codes */
+export type CommerceProductsConflictResolutionStrategy = 'HighestDiscount' | 'LowestDiscount' | 'FirstCodeOnly' | 'LastCodeOnly' | 'Sequential' | 'Additive';
 
 /** Data model for Commerce Products Create My Support Ticket Request. */
 export interface CommerceProductsCreateMySupportTicketInput {
@@ -3024,13 +3084,18 @@ export interface CommerceProductsCreateProductInput {
 
 /** Request to create a promo code */
 export interface CommerceProductsCreatePromoCodeInput {
+  applyToRenewal?: boolean;
+  campaignId?: string | null;
   code?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
   isActive?: boolean;
   isExclusive?: boolean;
+  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -3040,6 +3105,19 @@ export interface CommerceProductsCreatePromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
+}
+
+/** Request to create a promo stacking rule */
+export interface CommerceProductsCreatePromoStackingRuleInput {
+  allowExclusiveStacking?: boolean;
+  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
+  description?: string | null;
+  isActive?: boolean;
+  maxStackableCount?: number;
+  maxTotalDiscountAmount?: number | null;
+  maxTotalDiscountPercentage?: number | null;
+  name?: string | null;
+  priority?: number;
 }
 
 /** Data model for Commerce Products Create Support Ticket Request. */
@@ -3071,6 +3149,30 @@ export interface CommerceProductsEntitlementInfoDto {
   subscriptionStatus?: string | null;
 }
 
+/** Request to bulk-generate promo codes with a shared prefix and random suffixes */
+export interface CommerceProductsGenerateBulkPromoCodesInput {
+  applyToRenewal?: boolean;
+  campaignId?: string | null;
+  count?: number;
+  currency?: string | null;
+  description?: string | null;
+  discountAmount?: number | null;
+  discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
+  maxDiscountAmount?: number | null;
+  maxUses?: number | null;
+  maxUsesPerUser?: number | null;
+  minimumOrderAmount?: number | null;
+  name?: string | null;
+  prefix?: string | null;
+  productId?: string | null;
+  stackingPriority?: number;
+  type?: CommerceProductsPromoCodeType;
+  validFrom?: string | null;
+  validUntil?: string | null;
+}
+
 /** Request to grant an entitlement */
 export interface CommerceProductsGrantEntitlementInput {
   acquisitionType?: CommerceProductsProductAcquisitionType;
@@ -3098,12 +3200,17 @@ export interface CommerceProductsPatchProductInput {
 
 /** Request to partially update a promo code (PATCH) */
 export interface CommerceProductsPatchPromoCodeInput {
+  applyToRenewal?: boolean | null;
+  campaignId?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
   isActive?: boolean | null;
   isExclusive?: boolean | null;
+  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -3311,30 +3418,46 @@ export interface CommerceProductsPromoCodeApplicationResult {
   originalAmount?: number;
   /** List of codes that were rejected with reasons */
   rejectedCodes?: CommerceProductsRejectedPromoCode[] | null;
+  /** Name of the stacking rule that governed resolution (null = single-code default) */
+  stackingRuleName?: string | null;
   /** Total discount applied */
   totalDiscount?: number;
+  /** Whether usage rows were persisted for the applied codes */
+  usageRecorded?: boolean;
 }
 
 /** Promo code data transfer object */
 export interface CommerceProductsPromoCodeDto {
   /** Promo code ID */
   id?: string;
+  /** Whether the discount applies to renewals */
+  applyToRenewal?: boolean;
+  /** Campaign identifier for tracking */
+  campaignId?: string | null;
   /** The promo code string */
   code?: string | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Currency code */
   currency?: string | null;
+  /** Number of recorded uses */
+  currentUses?: number;
   /** Description of the promo */
   description?: string | null;
-  /** Fixed amount discount (for fixed type) */
+  /** Fixed amount discount (target price for SetPrice) */
   discountAmount?: number | null;
   /** Percentage discount (for percentage type) */
   discountPercentage?: number | null;
+  /** Free months granted / discount duration */
+  durationMonths?: number | null;
+  /** Trial days granted by FreeTrialExtension codes */
+  freeTrialExtensionDays?: number | null;
   /** Whether the code is active */
   isActive?: boolean;
   /** Whether the code cannot be stacked */
   isExclusive?: boolean;
+  /** Cap for percentage discounts */
+  maxDiscountAmount?: number | null;
   /** Maximum total uses */
   maxUses?: number | null;
   /** Maximum uses per user */
@@ -3359,7 +3482,8 @@ export interface CommerceProductsPromoCodeDto {
 }
 
 /** Represents the type of promo code discount */
-export type CommerceProductsPromoCodeType = 'PercentageOff' | 'FixedAmountOff' | 'FreeTrial' | 'BuyOneGetOne' | 'FreeShipping';
+export type CommerceProductsPromoCodeType =
+  'PercentageOff' | 'FixedAmountOff' | 'FreeTrial' | 'BuyOneGetOne' | 'FreeShipping' | 'FreeTrialExtension' | 'FreeMonths' | 'SetPrice';
 
 /** Promo code usage statistics DTO */
 export interface CommerceProductsPromoCodeUsageDto {
@@ -3397,6 +3521,29 @@ export interface CommerceProductsPromoCodeValidationResult {
   errorMessage?: string | null;
   /** Whether the code is valid */
   isValid?: boolean;
+}
+
+/** Promo stacking rule DTO */
+export interface CommerceProductsPromoStackingRuleDto {
+  /** Rule ID */
+  id?: string;
+  /** Allow exclusive code stacking */
+  allowExclusiveStacking?: boolean;
+  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
+  /** Rule description */
+  description?: string | null;
+  /** Whether the rule is active */
+  isActive?: boolean;
+  /** Max codes that can stack */
+  maxStackableCount?: number;
+  /** Max total discount amount */
+  maxTotalDiscountAmount?: number | null;
+  /** Max total discount percentage */
+  maxTotalDiscountPercentage?: number | null;
+  /** Rule name */
+  name?: string | null;
+  /** Priority level */
+  priority?: number;
 }
 
 /** Details of a rejected promo code */
@@ -3537,12 +3684,17 @@ export interface CommerceProductsUpdateProductInput {
 
 /** Request to update a promo code */
 export interface CommerceProductsUpdatePromoCodeInput {
+  applyToRenewal?: boolean | null;
+  campaignId?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
   isActive?: boolean | null;
   isExclusive?: boolean | null;
+  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -3552,6 +3704,18 @@ export interface CommerceProductsUpdatePromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
+}
+
+/** Request to update a promo stacking rule */
+export interface CommerceProductsUpdatePromoStackingRuleInput {
+  allowExclusiveStacking?: boolean | null;
+  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
+  description?: string | null;
+  isActive?: boolean | null;
+  maxStackableCount?: number | null;
+  maxTotalDiscountAmount?: number | null;
+  maxTotalDiscountPercentage?: number | null;
+  priority?: number | null;
 }
 
 /** Request to validate a promo code */
@@ -20935,16 +21099,22 @@ export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommercePro
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
 export let CommerceProductsCalculatePricingInputSchema: z.ZodType<CommerceProductsCalculatePricingInput>;
+export let CommerceProductsCampaignExpiringCodeDtoSchema: z.ZodType<CommerceProductsCampaignExpiringCodeDto>;
+export let CommerceProductsCampaignPerformanceDtoSchema: z.ZodType<CommerceProductsCampaignPerformanceDto>;
+export let CommerceProductsCampaignTopCodeDtoSchema: z.ZodType<CommerceProductsCampaignTopCodeDto>;
 export let CommerceProductsChangeSupportTicketPriorityInputSchema: z.ZodType<CommerceProductsChangeSupportTicketPriorityInput>;
 export let CommerceProductsCheckMultipleAccessInputSchema: z.ZodType<CommerceProductsCheckMultipleAccessInput>;
 export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProductsCloseSupportTicketInput>;
+export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
 export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
+export let CommerceProductsCreatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsCreatePromoStackingRuleInput>;
 export let CommerceProductsCreateSupportTicketInputSchema: z.ZodType<CommerceProductsCreateSupportTicketInput>;
 export let CommerceProductsEntitlementCheckResultSchema: z.ZodType<CommerceProductsEntitlementCheckResult>;
 export let CommerceProductsEntitlementInfoDtoSchema: z.ZodType<CommerceProductsEntitlementInfoDto>;
+export let CommerceProductsGenerateBulkPromoCodesInputSchema: z.ZodType<CommerceProductsGenerateBulkPromoCodesInput>;
 export let CommerceProductsGrantEntitlementInputSchema: z.ZodType<CommerceProductsGrantEntitlementInput>;
 export let CommerceProductsPatchProductInputSchema: z.ZodType<CommerceProductsPatchProductInput>;
 export let CommerceProductsPatchPromoCodeInputSchema: z.ZodType<CommerceProductsPatchPromoCodeInput>;
@@ -20961,6 +21131,7 @@ export let CommerceProductsPromoCodeDtoSchema: z.ZodType<CommerceProductsPromoCo
 export let CommerceProductsPromoCodeTypeSchema: z.ZodType<CommerceProductsPromoCodeType>;
 export let CommerceProductsPromoCodeUsageDtoSchema: z.ZodType<CommerceProductsPromoCodeUsageDto>;
 export let CommerceProductsPromoCodeValidationResultSchema: z.ZodType<CommerceProductsPromoCodeValidationResult>;
+export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProductsPromoStackingRuleDto>;
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
@@ -20975,6 +21146,7 @@ export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProd
 export let CommerceProductsUpdatePricingRuleInputSchema: z.ZodType<CommerceProductsUpdatePricingRuleInput>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
+export let CommerceProductsUpdatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsUpdatePromoStackingRuleInput>;
 export let CommerceProductsValidatePromoCodeInputSchema: z.ZodType<CommerceProductsValidatePromoCodeInput>;
 export let CommerceSubscriptionsBillingHistoryDtoSchema: z.ZodType<CommerceSubscriptionsBillingHistoryDto>;
 export let CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInput>;
@@ -25216,11 +25388,16 @@ CommerceProductsAppliedPromoCodeSchema = z.object({
   code: z.string().nullable().optional(),
   discountAmount: z.number().optional(),
   discountPercentage: z.number().nullable().optional(),
+  freeMonthsGranted: z.number().int().nullable().optional(),
+  trialExtensionDays: z.number().int().nullable().optional(),
+  type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
 });
 
 /** Zod schema for CommerceProductsApplyPromoCodesInput. Request to apply promo codes */
 CommerceProductsApplyPromoCodesInputSchema = z.object({
+  idempotencyKey: z.string().nullable().optional(),
   orderAmount: z.number().optional(),
+  orderId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   promoCodes: z.array(z.string()).nullable().optional(),
 });
@@ -25262,6 +25439,43 @@ CommerceProductsCalculatePricingInputSchema = z.object({
   quantity: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceProductsCampaignExpiringCodeDto. A campaign code approaching expiry */
+CommerceProductsCampaignExpiringCodeDtoSchema = z.object({
+  code: z.string().nullable().optional(),
+  promoCodeId: z.string().uuid().optional(),
+  validUntil: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommerceProductsCampaignPerformanceDto. Aggregated performance for a promo campaign within a window */
+CommerceProductsCampaignPerformanceDtoSchema = z.object({
+  activeCodes: z.number().int().optional(),
+  averageDiscountPerUse: z.number().optional(),
+  campaignId: z.string().nullable().optional(),
+  expiringCodes: z
+    .array(z.lazy(() => CommerceProductsCampaignExpiringCodeDtoSchema))
+    .nullable()
+    .optional(),
+  redemptionRate: z.number().nullable().optional(),
+  topCodes: z
+    .array(z.lazy(() => CommerceProductsCampaignTopCodeDtoSchema))
+    .nullable()
+    .optional(),
+  totalCodes: z.number().int().optional(),
+  totalDiscountGiven: z.number().optional(),
+  totalUses: z.number().int().optional(),
+  uniqueUsers: z.number().int().optional(),
+  windowEnd: z.string().datetime().nullable().optional(),
+  windowStart: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsCampaignTopCodeDto. A campaign code ranked by usage */
+CommerceProductsCampaignTopCodeDtoSchema = z.object({
+  code: z.string().nullable().optional(),
+  discountGiven: z.number().optional(),
+  promoCodeId: z.string().uuid().optional(),
+  uses: z.number().int().optional(),
+});
+
 /** Zod schema for CommerceProductsChangeSupportTicketPriorityInput. Data model for Commerce Products Change Support Ticket Priority Request. */
 CommerceProductsChangeSupportTicketPriorityInputSchema = z.object({
   priority: z.lazy(() => CommerceProductsSupportTicketPrioritySchema).optional(),
@@ -25276,6 +25490,9 @@ CommerceProductsCheckMultipleAccessInputSchema = z.object({
 CommerceProductsCloseSupportTicketInputSchema = z.object({
   closingNotes: z.string().nullable().optional(),
 });
+
+/** Zod schema for CommerceProductsConflictResolutionStrategy. Conflict resolution strategies for stacked promo codes */
+CommerceProductsConflictResolutionStrategySchema = z.enum(['HighestDiscount', 'LowestDiscount', 'FirstCodeOnly', 'LastCodeOnly', 'Sequential', 'Additive']);
 
 /** Zod schema for CommerceProductsCreateMySupportTicketInput. Data model for Commerce Products Create My Support Ticket Request. */
 CommerceProductsCreateMySupportTicketInputSchema = z.object({
@@ -25329,13 +25546,18 @@ CommerceProductsCreateProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsCreatePromoCodeInput. Request to create a promo code */
 CommerceProductsCreatePromoCodeInputSchema = z.object({
+  applyToRenewal: z.boolean().optional(),
+  campaignId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
   isExclusive: z.boolean().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25345,6 +25567,19 @@ CommerceProductsCreatePromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsCreatePromoStackingRuleInput. Request to create a promo stacking rule */
+CommerceProductsCreatePromoStackingRuleInputSchema = z.object({
+  allowExclusiveStacking: z.boolean().optional(),
+  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxStackableCount: z.number().int().optional(),
+  maxTotalDiscountAmount: z.number().nullable().optional(),
+  maxTotalDiscountPercentage: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsCreateSupportTicketInput. Data model for Commerce Products Create Support Ticket Request. */
@@ -25376,6 +25611,30 @@ CommerceProductsEntitlementInfoDtoSchema = z.object({
   subscriptionStatus: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsGenerateBulkPromoCodesInput. Request to bulk-generate promo codes with a shared prefix and random suffixes */
+CommerceProductsGenerateBulkPromoCodesInputSchema = z.object({
+  applyToRenewal: z.boolean().optional(),
+  campaignId: z.string().nullable().optional(),
+  count: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
+  maxUses: z.number().int().nullable().optional(),
+  maxUsesPerUser: z.number().int().nullable().optional(),
+  minimumOrderAmount: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  prefix: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  stackingPriority: z.number().int().optional(),
+  type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
+  validFrom: z.string().datetime().nullable().optional(),
+  validUntil: z.string().datetime().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsGrantEntitlementInput. Request to grant an entitlement */
 CommerceProductsGrantEntitlementInputSchema = z.object({
   acquisitionType: z.lazy(() => CommerceProductsProductAcquisitionTypeSchema).optional(),
@@ -25403,12 +25662,17 @@ CommerceProductsPatchProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsPatchPromoCodeInput. Request to partially update a promo code (PATCH) */
 CommerceProductsPatchPromoCodeInputSchema = z.object({
+  applyToRenewal: z.boolean().nullable().optional(),
+  campaignId: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().nullable().optional(),
   isExclusive: z.boolean().nullable().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25555,20 +25819,28 @@ CommerceProductsPromoCodeApplicationResultSchema = z.object({
     .array(z.lazy(() => CommerceProductsRejectedPromoCodeSchema))
     .nullable()
     .optional(),
+  stackingRuleName: z.string().nullable().optional(),
   totalDiscount: z.number().optional(),
+  usageRecorded: z.boolean().optional(),
 });
 
 /** Zod schema for CommerceProductsPromoCodeDto. Promo code data transfer object */
 CommerceProductsPromoCodeDtoSchema = z.object({
   id: z.string().uuid().optional(),
+  applyToRenewal: z.boolean().optional(),
+  campaignId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
   createdAt: z.string().datetime().optional(),
   currency: z.string().nullable().optional(),
+  currentUses: z.number().int().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
   isExclusive: z.boolean().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25583,7 +25855,16 @@ CommerceProductsPromoCodeDtoSchema = z.object({
 });
 
 /** Zod schema for CommerceProductsPromoCodeType. Represents the type of promo code discount */
-CommerceProductsPromoCodeTypeSchema = z.enum(['PercentageOff', 'FixedAmountOff', 'FreeTrial', 'BuyOneGetOne', 'FreeShipping']);
+CommerceProductsPromoCodeTypeSchema = z.enum([
+  'PercentageOff',
+  'FixedAmountOff',
+  'FreeTrial',
+  'BuyOneGetOne',
+  'FreeShipping',
+  'FreeTrialExtension',
+  'FreeMonths',
+  'SetPrice',
+]);
 
 /** Zod schema for CommerceProductsPromoCodeUsageDto. Promo code usage statistics DTO */
 CommerceProductsPromoCodeUsageDtoSchema = z.object({
@@ -25606,6 +25887,20 @@ CommerceProductsPromoCodeValidationResultSchema = z.object({
   discountPercentage: z.number().nullable().optional(),
   errorMessage: z.string().nullable().optional(),
   isValid: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceProductsPromoStackingRuleDto. Promo stacking rule DTO */
+CommerceProductsPromoStackingRuleDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  allowExclusiveStacking: z.boolean().optional(),
+  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxStackableCount: z.number().int().optional(),
+  maxTotalDiscountAmount: z.number().nullable().optional(),
+  maxTotalDiscountPercentage: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsRejectedPromoCode. Details of a rejected promo code */
@@ -25750,12 +26045,17 @@ CommerceProductsUpdateProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsUpdatePromoCodeInput. Request to update a promo code */
 CommerceProductsUpdatePromoCodeInputSchema = z.object({
+  applyToRenewal: z.boolean().nullable().optional(),
+  campaignId: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().nullable().optional(),
   isExclusive: z.boolean().nullable().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25765,6 +26065,18 @@ CommerceProductsUpdatePromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsUpdatePromoStackingRuleInput. Request to update a promo stacking rule */
+CommerceProductsUpdatePromoStackingRuleInputSchema = z.object({
+  allowExclusiveStacking: z.boolean().nullable().optional(),
+  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().nullable().optional(),
+  maxStackableCount: z.number().int().nullable().optional(),
+  maxTotalDiscountAmount: z.number().nullable().optional(),
+  maxTotalDiscountPercentage: z.number().nullable().optional(),
+  priority: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsValidatePromoCodeInput. Request to validate a promo code */
@@ -42008,6 +42320,12 @@ export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
 export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
 export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
+export type CommerceProductsCampaignExpiringCode = CommerceProductsCampaignExpiringCodeDto;
+export { CommerceProductsCampaignExpiringCodeDtoSchema as CommerceProductsCampaignExpiringCodeSchema };
+export type CommerceProductsCampaignPerformance = CommerceProductsCampaignPerformanceDto;
+export { CommerceProductsCampaignPerformanceDtoSchema as CommerceProductsCampaignPerformanceSchema };
+export type CommerceProductsCampaignTopCode = CommerceProductsCampaignTopCodeDto;
+export { CommerceProductsCampaignTopCodeDtoSchema as CommerceProductsCampaignTopCodeSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
 export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
@@ -42022,6 +42340,8 @@ export type CommerceProductsPromoCode = CommerceProductsPromoCodeDto;
 export { CommerceProductsPromoCodeDtoSchema as CommerceProductsPromoCodeSchema };
 export type CommerceProductsPromoCodeUsage = CommerceProductsPromoCodeUsageDto;
 export { CommerceProductsPromoCodeUsageDtoSchema as CommerceProductsPromoCodeUsageSchema };
+export type CommerceProductsPromoStackingRule = CommerceProductsPromoStackingRuleDto;
+export { CommerceProductsPromoStackingRuleDtoSchema as CommerceProductsPromoStackingRuleSchema };
 export type CommerceProductsSupportAgent = CommerceProductsSupportAgentDto;
 export { CommerceProductsSupportAgentDtoSchema as CommerceProductsSupportAgentSchema };
 export type CommerceProductsSupportTicket = CommerceProductsSupportTicketDto;

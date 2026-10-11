@@ -281,17 +281,6 @@ public sealed class PaymentsCoverageCompletionTests
         unboundedExemption.MarkVerified("coverage");
         unboundedExemption.IsValidOn(DateTime.UtcNow).Should().BeTrue();
 
-        var stackingRule = new PromoStackingRule
-        {
-            AllowedPromoCodeIds = "null",
-            ExcludedPromoCodeIds = "null",
-            PromoCodeTypes = "null"
-        };
-
-        stackingRule.GetAllowedPromoCodeIds().Should().BeEmpty();
-        stackingRule.GetExcludedPromoCodeIds().Should().BeEmpty();
-        stackingRule.GetPromoCodeTypes().Should().BeEmpty();
-
         LedgerAccount.Cash.GetDescription().Should().NotBeNullOrWhiteSpace();
         ((LedgerAccount)9999).GetDescription().Should().Be("9999");
         ((LedgerAccount)999).IsAsset().Should().BeFalse();

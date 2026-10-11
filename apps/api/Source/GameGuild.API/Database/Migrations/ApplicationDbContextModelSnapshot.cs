@@ -3372,6 +3372,13 @@ namespace GameGuild.API.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("ApplyToRenewal")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("CampaignId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -3390,6 +3397,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(3)")
                         .HasDefaultValue("USD");
 
+                    b.Property<int>("CurrentUses")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -3405,11 +3415,21 @@ namespace GameGuild.API.Database.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<int?>("DurationMonths")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FreeTrialExtensionDays")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsExclusive")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<int?>("MaxUses")
                         .HasColumnType("integer");
@@ -3452,6 +3472,8 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CampaignId");
+
                     b.HasIndex("Code")
                         .IsUnique();
 
@@ -3467,6 +3489,8 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("ValidUntil");
 
+                    b.HasIndex("IsActive", "ValidUntil");
+
                     b.ToTable("promo_codes");
                 });
 
@@ -3479,12 +3503,29 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasDefaultValue("USD");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("DiscountApplied")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrderLineItemId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PromoCodeId")
                         .HasColumnType("uuid");
@@ -3493,6 +3534,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UsedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
@@ -3504,11 +3548,42 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
                     b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("UsedAt");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("PromoCodeId", "UserId");
+
                     b.ToTable("promo_code_uses");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Products.PromoCodeUserUsageCounter", b =>
+                {
+                    b.Property<Guid>("PromoCodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UseCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("PromoCodeId", "UserId");
+
+                    b.ToTable("promo_code_user_usage_counters");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Products.PromoStackingRule", b =>

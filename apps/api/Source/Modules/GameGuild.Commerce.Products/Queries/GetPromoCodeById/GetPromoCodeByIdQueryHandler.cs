@@ -23,27 +23,6 @@ public sealed class GetPromoCodeByIdQueryHandler(IPromoCodeRepository promoCodeR
         var usageCount = await promoCodeRepository.GetUsageCountAsync(promoCode.Id, cancellationToken)
             .ConfigureAwait(false);
 
-        return new PromoCodeDto(
-            promoCode.Id,
-            promoCode.Code,
-            promoCode.Name,
-            promoCode.Description,
-            promoCode.Type,
-            promoCode.DiscountPercentage,
-            promoCode.DiscountAmount,
-            promoCode.Currency,
-            promoCode.MinimumOrderAmount,
-            promoCode.MaxUses,
-            promoCode.MaxUsesPerUser,
-            promoCode.ValidFrom,
-            promoCode.ValidUntil,
-            promoCode.IsActive,
-            promoCode.IsExclusive,
-            promoCode.StackingPriority,
-            promoCode.ProductId,
-            usageCount,
-            promoCode.CreatedAt,
-            promoCode.UpdatedAt
-        );
+        return promoCode.ToDto(usageCount);
     }
 }

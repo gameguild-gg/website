@@ -215,7 +215,7 @@ public class UpdatePromoCodeCommandValidatorTests
     }
 
     [Theory]
-    [InlineData(0.01)]
+    [InlineData(1)]
     [InlineData(50)]
     [InlineData(100)]
     public void DiscountPercentage_ValidRange_ShouldPass(double pct)
@@ -227,6 +227,7 @@ public class UpdatePromoCodeCommandValidatorTests
 
     [Theory]
     [InlineData(0)]
+    [InlineData(0.01)]
     [InlineData(-1)]
     [InlineData(100.01)]
     public void DiscountPercentage_OutOfRange_ShouldFail(double pct)
