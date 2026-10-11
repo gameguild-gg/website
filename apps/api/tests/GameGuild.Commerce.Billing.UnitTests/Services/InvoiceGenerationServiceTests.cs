@@ -43,7 +43,7 @@ public sealed class InvoiceGenerationServiceTests
             .Returns((Invoice entity) => null!);
         invoiceSet
             .Setup(set => set.Update(It.IsAny<Invoice>()))
-            .Returns((Invoice entity) => null!);
+            .Returns((Invoice _) => null!);
         _context.Setup(context => context.Set<Invoice>()).Returns(invoiceSet.Object);
         _context
             .Setup(context => context.SaveChangesAsync(It.IsAny<CancellationToken>()))

@@ -293,7 +293,7 @@ public class PermissionSyncServiceTests
             .ReturnsAsync(false);
         _roleRepository
             .Setup(repo => repo.GetByTenantAsync(It.IsAny<Guid?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid? tenantId, bool includeGlobal, CancellationToken _) => tenantId.HasValue
+            .ReturnsAsync((Guid? tenantId, bool _, CancellationToken _) => tenantId.HasValue
                 ? ExistingRoles.Where(role => role.TenantId == tenantId).ToList()
                 : ExistingRoles.Where(role => role.TenantId == null).ToList());
         _permissionRepository
