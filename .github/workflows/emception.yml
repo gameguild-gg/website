@@ -67,7 +67,7 @@ jobs:
               heavy=true
             else
               CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
-              if grep -Eq '^(\.changeset/|\.github/workflows/emception\.yml|apps/web/(Dockerfile|scripts/(sync-emception-cdn|coding-cycle-browser-e2e)\.mjs|src/lib/emception/)|demos/emception-[^/]+/|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|scripts/devops/(emception-release-policy|publish-emception|version-emception)\.mjs|scripts/sync-emception-cdn\.mjs|tools/emception/)' <<< "$CHANGED"; then
+              if grep -Eq '^(\.changeset/|\.github/workflows/(emception|pr-verify)\.yml|scripts/ci/(acquire-emception-release\.py|tests/(acquire_emception_release_test\.py|emception-web-artifacts\.test\.mjs))|apps/web/(Dockerfile|scripts/(sync-emception-cdn|coding-cycle-browser-e2e)\.mjs|src/lib/emception/)|demos/emception-[^/]+/|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|scripts/devops/(emception-release-policy|publish-emception|version-emception)\.mjs|scripts/sync-emception-cdn\.mjs|tools/emception/)' <<< "$CHANGED"; then
                 required=true
               fi
               if grep -Eq '^tools/emception/(toolchain/|scripts/(build-|deploy-|generate-|patch-|populate-|setup-|stage-|toolchain/|warmup-)|package\.json)' <<< "$CHANGED"; then
@@ -213,6 +213,23 @@ jobs:
           for DIR in "${PACKAGE_DIRS[@]}"; do
             npm pack "./tools/emception/packages/${DIR}" --dry-run --json --ignore-scripts >/dev/null
           done
+
+      - name: Prepare verified Toolchain CDN provenance
+        id: web-release-provenance
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci/acquire-emception-release.py --prepare
+
+      - name: Upload verified Toolchain CDN for Web
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ steps.web-release-provenance.outputs.artifact-name }}
+          path: |
+            tools/emception/artifacts/toolchain/release/cdn
+            tools/emception/artifacts/toolchain/release/provenance.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Install Chromium for browser smoke tests
         run: pnpm --dir tools/emception exec playwright install --with-deps chromium

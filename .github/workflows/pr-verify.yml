@@ -70,7 +70,9 @@ jobs:
         id: identity
         run: echo "treeSha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
       - name: Test classifier contract
-        run: node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs scripts/ci/tests/emception-web-artifacts.test.mjs
+        run: |
+          node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs scripts/ci/tests/emception-web-artifacts.test.mjs
+          python3 -m unittest discover -s scripts/ci/tests -p 'acquire_emception_release_test.py'
 
   repository-policy:
     name: Repository policy
@@ -94,7 +96,11 @@ jobs:
     needs: classify
     if: needs.classify.outputs.web == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Include the bounded producer wait and the existing Web gates.
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
@@ -102,36 +108,16 @@ jobs:
         run: pnpm --filter @game-guild/client build
       - name: Test credentials and MFA client integration
         run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
-      - name: Restore verified Toolchain builds for Web
-        id: web-toolchain-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            tools/emception/.cache/toolchain/sources
-            tools/emception/.cache/toolchain/builds
-            tools/emception/.cache/toolchain/emsdk
-            tools/emception/artifacts/toolchain/tools
-            tools/emception/artifacts/toolchain/sysroot
-            tools/emception/artifacts/toolchain/receipts
-          key: emception-builds-linux-v2-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.npmrc', 'tools/emception/package.json', 'tools/emception/toolchain/**', 'tools/emception/scripts/*', 'tools/emception/scripts/toolchain/**', '.github/workflows/emception.yml') }}
-          restore-keys: |
-            emception-builds-linux-v2-
-            emception-builds-linux-
-
-      - name: Install native Toolchain release dependencies
-        if: steps.web-toolchain-cache.outputs.cache-matched-key != ''
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --fix-missing brotli build-essential cmake ninja-build pkg-config
-      - name: Prepare and verify cached Toolchain release
-        if: steps.web-toolchain-cache.outputs.cache-matched-key != ''
+      - name: Acquire verified Toolchain release for Web
+        id: emception-web-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_HEAD_SHA: ${{ needs.classify.outputs.headSha }}
+          CHANGED_PATHS: ${{ needs.classify.outputs.changedFiles }}
+        run: python3 scripts/ci/acquire-emception-release.py --wait-seconds 19800
+      - name: Verify acquired frozen Toolchain identity
+        if: steps.emception-web-release.outputs.required == 'true'
         run: |
-          pnpm --dir tools/emception toolchain doctor
-          pnpm --dir tools/emception toolchain release
-          pnpm run build:emception
-          pnpm --dir tools/emception run verify:release
           node --input-type=module -e "import { verifyCodingCycleToolchain } from './apps/web/scripts/coding-cycle-toolchain-support.mjs'; await verifyCodingCycleToolchain('./tools/emception/artifacts/toolchain/release/cdn/manifest.json');"
       - name: Build Web runtime dependencies
         run: pnpm --filter @game-guild/web run build:emception-dependencies
