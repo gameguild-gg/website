@@ -2119,12 +2119,6 @@ public class EntityConstructorTests
         entity.Should().NotBeNull();
     }
 
-    [Fact]
-    public void PromoStackingRule_PartialConstructor()
-    {
-        var entity = new PromoStackingRule(new { });
-        entity.Should().NotBeNull();
-    }
 }
 
 #endregion

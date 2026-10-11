@@ -197,6 +197,7 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductRepository>(),
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor());
 
@@ -254,6 +255,7 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
             CreatePricingDbContext(pricingVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -288,6 +290,7 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductRepository>(),
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -316,6 +319,7 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -365,6 +369,7 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
             CreatePricingDbContext(firstVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -420,6 +425,7 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
+            Mock.Of<IPromoCodeUsageRecorder>(),
             CreatePricingDbContext(pricingVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -430,8 +436,9 @@ public sealed class OrderCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         var lineItem = order.LineItems.Should().ContainSingle().Subject;
         lineItem.UnitPriceSnapshot.Should().Be(30m);
-        lineItem.DiscountAmount.Should().Be(15m);
-        lineItem.LineTotal.Should().Be(75m);
+        // A fixed-amount code discounts once per application (engine semantics), not per unit.
+        lineItem.DiscountAmount.Should().Be(5m);
+        lineItem.LineTotal.Should().Be(85m);
         lineItem.PromoCodesApplied.Should().Contain("LESS5");
     }
 
@@ -455,6 +462,7 @@ public sealed class OrderCommandHandlerTests
             productRepository.Object,
             pricingRepository.Object,
             Mock.Of<IPromoCodeService>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 

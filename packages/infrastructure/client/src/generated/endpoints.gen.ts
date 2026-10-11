@@ -20919,6 +20919,7 @@ export interface GetPromoCodesForGetPromoCodesInput {
     type?: Types.CommerceProductsPromoCodeType;
     productId?: string;
     searchTerm?: string;
+    campaignId?: string;
     skip?: number;
     take?: number;
   };
@@ -20948,7 +20949,8 @@ export const postPromoCodesEndpoint = {
 } as const;
 
 /**
- * Apply promo codes to an order
+ * Apply promo codes to an order. Usage is recorded atomically per applied code
+ * (idempotent on the supplied key, fail-closed on usage limits).
  */
 export interface PostPromoCodesApplyInput {
   body?: Types.CommerceProductsApplyPromoCodesInput;
@@ -20958,6 +20960,21 @@ export const postPromoCodesApplyEndpoint = {
   operationId: 'postPromoCodesApply' as const,
   method: 'POST' as const,
   path: '/v1/promo-codes/:apply' as const,
+  tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-generate promo codes with a shared prefix and random suffixes
+ */
+export interface PostPromoCodesGenerateBulkInput {
+  body?: Types.CommerceProductsGenerateBulkPromoCodesInput;
+}
+export type PostPromoCodesGenerateBulkOutput = Types.CommerceProductsPromoCodeDto[];
+export const postPromoCodesGenerateBulkEndpoint = {
+  operationId: 'postPromoCodesGenerateBulk' as const,
+  method: 'POST' as const,
+  path: '/v1/promo-codes/:generate-bulk' as const,
   tags: ['CommerceProductsPromoCodes'] as const,
   requiresAuth: true,
 } as const;
@@ -21111,6 +21128,103 @@ export const getPromoCodesByCodeEndpoint = {
   method: 'GET' as const,
   path: '/v1/promo-codes/by-code/{code}' as const,
   tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get aggregated campaign performance (uses, redemption rate, discount totals, top codes) within an optional window
+ */
+export interface GetPromoCodesCampaignsPerformanceInput {
+  campaignId: string;
+  query?: {
+    from?: string;
+    to?: string;
+  };
+}
+export type GetPromoCodesCampaignsPerformanceOutput = Types.CommerceProductsCampaignPerformanceDto;
+export const getPromoCodesCampaignsPerformanceEndpoint = {
+  operationId: 'getPromoCodesCampaignsPerformance' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-codes/campaigns/{campaignId}/performance' as const,
+  tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List stacking rules ordered by priority (descending)
+ */
+export interface GetPromoStackingRulesForGetPromoStackingRulesInput {
+  query?: {
+    includeInactive?: boolean;
+  };
+}
+export type GetPromoStackingRulesForGetPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto[];
+export const getPromoStackingRulesForGetPromoStackingRulesEndpoint = {
+  operationId: 'getPromoStackingRulesForGetPromoStackingRules' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-stacking-rules' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a stacking rule
+ */
+export interface PostPromoStackingRulesInput {
+  body?: Types.CommerceProductsCreatePromoStackingRuleInput;
+}
+export type PostPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const postPromoStackingRulesEndpoint = {
+  operationId: 'postPromoStackingRules' as const,
+  method: 'POST' as const,
+  path: '/v1/promo-stacking-rules' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a stacking rule by ID
+ */
+export interface GetPromoStackingRulesForGetPromoStackingRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetPromoStackingRulesForGetPromoStackingRulesByRuleIdOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const getPromoStackingRulesForGetPromoStackingRulesByRuleIdEndpoint = {
+  operationId: 'getPromoStackingRulesForGetPromoStackingRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a stacking rule
+ */
+export interface PutPromoStackingRulesInput {
+  ruleId: string;
+  body?: Types.CommerceProductsUpdatePromoStackingRuleInput;
+}
+export type PutPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const putPromoStackingRulesEndpoint = {
+  operationId: 'putPromoStackingRules' as const,
+  method: 'PUT' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a stacking rule
+ */
+export interface DeletePromoStackingRulesInput {
+  ruleId: string;
+}
+export type DeletePromoStackingRulesOutput = void;
+export const deletePromoStackingRulesEndpoint = {
+  operationId: 'deletePromoStackingRules' as const,
+  method: 'DELETE' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
   requiresAuth: true,
 } as const;
 
@@ -28286,6 +28400,7 @@ export const endpoints = {
   getPromoCodesForGetPromoCodes: getPromoCodesForGetPromoCodesEndpoint,
   postPromoCodes: postPromoCodesEndpoint,
   postPromoCodesApply: postPromoCodesApplyEndpoint,
+  postPromoCodesGenerateBulk: postPromoCodesGenerateBulkEndpoint,
   postPromoCodesValidate: postPromoCodesValidateEndpoint,
   getPromoCodesForGetPromoCodesByPromoCodeId: getPromoCodesForGetPromoCodesByPromoCodeIdEndpoint,
   putPromoCodes: putPromoCodesEndpoint,
@@ -28296,6 +28411,12 @@ export const endpoints = {
   postPromoCodesDeactivate: postPromoCodesDeactivateEndpoint,
   getPromoCodesUsage: getPromoCodesUsageEndpoint,
   getPromoCodesByCode: getPromoCodesByCodeEndpoint,
+  getPromoCodesCampaignsPerformance: getPromoCodesCampaignsPerformanceEndpoint,
+  getPromoStackingRulesForGetPromoStackingRules: getPromoStackingRulesForGetPromoStackingRulesEndpoint,
+  postPromoStackingRules: postPromoStackingRulesEndpoint,
+  getPromoStackingRulesForGetPromoStackingRulesByRuleId: getPromoStackingRulesForGetPromoStackingRulesByRuleIdEndpoint,
+  putPromoStackingRules: putPromoStackingRulesEndpoint,
+  deletePromoStackingRules: deletePromoStackingRulesEndpoint,
   postRecommendationsDismiss: postRecommendationsDismissEndpoint,
   postRecommendationsViewed: postRecommendationsViewedEndpoint,
   getRecommendationsCoursesSimilar: getRecommendationsCoursesSimilarEndpoint,
