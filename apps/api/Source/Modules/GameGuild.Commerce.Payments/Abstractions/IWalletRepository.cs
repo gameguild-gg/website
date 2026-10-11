@@ -65,4 +65,22 @@ public interface IWalletRepository
     ///     Gets the total count of transactions for a wallet
     /// </summary>
     Task<int> GetTransactionCountAsync(Guid walletId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Checks whether a wallet already has a completed transaction with the given reference
+    ///     identifier (issue #406 ReferenceId idempotency for credits, debits and transfers).
+    /// </summary>
+    Task<bool> HasCompletedTransactionAsync(Guid walletId, string referenceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Gets the most recent completed transaction with the given reference identifier for a
+    ///     wallet, or null when the reference has not been applied (issue #406 idempotent replay).
+    /// </summary>
+    Task<WalletTransaction?> GetCompletedTransactionByReferenceAsync(Guid walletId, string referenceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Lists active wallets below the configured low-balance threshold or previously alerted
+    ///     (issue #406), so the monitor can issue notices and re-arm them after recovery.
+    /// </summary>
+    Task<List<UserWallet>> ListBalanceAlertCandidatesAsync(decimal threshold, CancellationToken cancellationToken = default);
 }

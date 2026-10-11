@@ -28,9 +28,13 @@ public class WalletRepository(
     public async Task<UserWallet?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         logger.LogDebug("Getting wallet by user ID: {UserId}", userId);
+        // Issue #406: a user may hold one wallet per currency; the "primary" wallet used by
+        // currency-agnostic call sites is the earliest-created one, deterministically.
         return await Query
             .Include(w => w.Transactions)
-            .FirstOrDefaultAsync(w => w.UserId == userId, cancellationToken)
+            .Where(w => w.UserId == userId)
+            .OrderBy(w => w.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -134,6 +138,40 @@ public class WalletRepository(
         return await WalletTransactions
             .Where(t => t.WalletId == walletId && t.DeletedAt == null)
             .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<bool> HasCompletedTransactionAsync(Guid walletId, string referenceId, CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Checking reference idempotency for wallet: {WalletId}, reference: {ReferenceId}", walletId, referenceId);
+
+        return await WalletTransactions
+            .Where(t => t.WalletId == walletId && t.DeletedAt == null && t.ReferenceId == referenceId && t.Status == TransactionStatus.Completed)
+            .AnyAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<WalletTransaction?> GetCompletedTransactionByReferenceAsync(Guid walletId, string referenceId, CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Resolving completed transaction for wallet: {WalletId}, reference: {ReferenceId}", walletId, referenceId);
+
+        return await WalletTransactions
+            .Where(t => t.WalletId == walletId && t.DeletedAt == null && t.ReferenceId == referenceId && t.Status == TransactionStatus.Completed)
+            .OrderByDescending(t => t.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<UserWallet>> ListBalanceAlertCandidatesAsync(decimal threshold, CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Listing low-balance monitoring candidates (threshold {Threshold})", threshold);
+
+        // Issue #406: candidates are wallets currently below the configured threshold plus
+        // wallets that were previously alerted (so a recovery back above the threshold can
+        // clear LowBalanceAlertedAt and re-arm the notice).
+        return await Query
+            .Where(w => w.IsActive && (w.Balance < threshold || w.LowBalanceAlertedAt != null))
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 }

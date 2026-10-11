@@ -106,6 +106,15 @@ public static class PaymentsModule
             .ValidateOnStart();
         services.AddHostedService<PaymentMethodExpiryMonitorBackgroundService>();
 
+        // Wallet operations (issue #406): low-balance threshold alerts through the
+        // Notifications module, following the payment-method expiry monitor pattern.
+        services.AddSingleton<IValidateOptions<WalletsOptions>, WalletsOptionsValidator>();
+        services.AddOptions<WalletsOptions>()
+            .Bind(configuration.GetSection(WalletsOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IWalletBalanceAlertMonitor, WalletBalanceAlertMonitor>();
+        services.AddHostedService<WalletBalanceAlertMonitorBackgroundService>();
+
         // Register payment gateway and sub-services
         services.AddSingleton<IValidateOptions<StripeGatewayOptions>, StripeGatewayOptionsValidator>();
         services.AddOptions<StripeGatewayOptions>()

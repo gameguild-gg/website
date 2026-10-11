@@ -12,14 +12,15 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
     {
         logger.LogInformation("Creating wallet for user {UserId} with currency {Currency}", userId, currency);
 
-        // Check if wallet already exists
-        var existing = await GetWalletByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        // Issue #406: uniqueness is per (user, currency) — a user may hold one wallet in each
+        // currency concurrently, but never two in the same currency.
+        var existing = await walletRepository.GetByUserIdAndCurrencyAsync(userId, currency, cancellationToken).ConfigureAwait(false);
 
         if (existing != null)
         {
-            logger.LogWarning("Wallet already exists for user {UserId}", userId);
+            logger.LogWarning("Wallet already exists for user {UserId} in currency {Currency}", userId, currency);
 
-            throw new InvalidOperationException($"Wallet already exists for user {userId}");
+            throw new InvalidOperationException($"Wallet already exists for user {userId} in currency {currency}");
         }
 
         var wallet = new UserWallet { UserId = userId, Currency = currency, Balance = 0, IsActive = true, IsLocked = false };
@@ -49,16 +50,23 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
         return wallet?.Balance ?? 0;
     }
 
-    public async Task<WalletTransaction> AddFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, CancellationToken cancellationToken = default)
+    public async Task<WalletTransaction> AddFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, string? currency = null, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Adding {Amount} funds to wallet for user {UserId}", amount, userId);
 
-        var wallet = await GetWalletByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        var wallet = await ResolveWalletForCreditAsync(userId, currency, cancellationToken).ConfigureAwait(false);
 
-        if (wallet == null)
+        // Issue #406: ReferenceId idempotency — replays of an already-applied reference (e.g. a
+        // duplicated provider webhook credit or an admin retried adjustment) return the original
+        // transaction instead of double-crediting the balance.
+        if (!string.IsNullOrEmpty(referenceId))
         {
-            logger.LogWarning("Wallet not found for user {UserId}, creating new wallet", userId);
-            wallet = await CreateWalletAsync(userId, cancellationToken : cancellationToken).ConfigureAwait(false);
+            var existing = await walletRepository.GetCompletedTransactionByReferenceAsync(wallet.Id, referenceId, cancellationToken).ConfigureAwait(false);
+            if (existing is not null)
+            {
+                logger.LogInformation("Funds reference {ReferenceId} already applied to wallet {WalletId}; returning the existing transaction", referenceId, wallet.Id);
+                return existing;
+            }
         }
 
         wallet.AddFunds(amount, description, referenceId);
@@ -70,17 +78,20 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
         return transaction;
     }
 
-    public async Task<WalletTransaction> DeductFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, CancellationToken cancellationToken = default)
+    public async Task<WalletTransaction> DeductFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, string? currency = null, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Deducting {Amount} funds from wallet for user {UserId}", amount, userId);
 
-        var wallet = await GetWalletByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
+        var wallet = await ResolveExistingWalletAsync(userId, currency, cancellationToken).ConfigureAwait(false);
 
-        if (wallet == null)
+        if (!string.IsNullOrEmpty(referenceId))
         {
-            logger.LogError("Wallet not found for user {UserId}", userId);
-
-            throw new InvalidOperationException($"Wallet not found for user {userId}");
+            var existing = await walletRepository.GetCompletedTransactionByReferenceAsync(wallet.Id, referenceId, cancellationToken).ConfigureAwait(false);
+            if (existing is not null)
+            {
+                logger.LogInformation("Funds reference {ReferenceId} already applied to wallet {WalletId}; returning the existing transaction", referenceId, wallet.Id);
+                return existing;
+            }
         }
 
         wallet.DeductFunds(amount, description, referenceId);
@@ -98,14 +109,18 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
         decimal amount,
         string description,
         string? referenceId = null,
+        string? currency = null,
         CancellationToken cancellationToken = default
     )
     {
         logger.LogInformation("Transferring {Amount} from user {FromUserId} to user {ToUserId}", amount, fromUserId, toUserId);
 
-        // Get both wallets
-        var fromWallet = await GetWalletByUserIdAsync(fromUserId, cancellationToken).ConfigureAwait(false);
-        var toWallet = await GetWalletByUserIdAsync(toUserId, cancellationToken).ConfigureAwait(false);
+        // Get both wallets (issue #406: currency-aware resolution keeps a multi-currency user's
+        // funds in the intended wallet).
+        var fromWallet = await ResolveExistingWalletAsync(fromUserId, currency, cancellationToken).ConfigureAwait(false);
+        var toWallet = currency is null
+            ? await GetWalletByUserIdAsync(toUserId, cancellationToken).ConfigureAwait(false)
+            : await walletRepository.GetByUserIdAndCurrencyAsync(toUserId, currency, cancellationToken).ConfigureAwait(false);
 
         if (fromWallet == null) throw new InvalidOperationException($"Source wallet not found for user {fromUserId}");
 
@@ -117,6 +132,17 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
 
         // Currency check
         if (fromWallet.Currency != toWallet.Currency) throw new InvalidOperationException($"Currency mismatch: {fromWallet.Currency} != {toWallet.Currency}");
+
+        // Issue #406: ReferenceId idempotency on the source wallet.
+        if (!string.IsNullOrEmpty(referenceId) && await walletRepository.HasCompletedTransactionAsync(fromWallet.Id, referenceId, cancellationToken).ConfigureAwait(false))
+        {
+            logger.LogInformation("Transfer reference {ReferenceId} already applied from wallet {WalletId}; returning the existing transactions", referenceId, fromWallet.Id);
+            var existingDebit = await walletRepository.GetCompletedTransactionByReferenceAsync(fromWallet.Id, referenceId, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException($"Transfer reference {referenceId} already applied but the debit transaction could not be resolved.");
+            var existingCredit = await walletRepository.GetCompletedTransactionByReferenceAsync(toWallet.Id, referenceId, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException($"Transfer reference {referenceId} already applied but the credit transaction could not be resolved.");
+            return (existingDebit, existingCredit);
+        }
 
         // Perform transfer
         var debitDescription = $"Transfer out: {description}";
@@ -137,6 +163,44 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
         logger.LogInformation("Transfer completed: Debit {DebitId}, Credit {CreditId}", debitTransaction.Id, creditTransaction.Id);
 
         return (debitTransaction, creditTransaction);
+    }
+
+    /// <summary>
+    ///     Resolves the wallet a credit applies to (issue #406): the user's wallet in the
+    ///     requested currency when specified (created on demand), otherwise the primary
+    ///     (earliest-created) wallet, created on demand in USD.
+    /// </summary>
+    private async Task<UserWallet> ResolveWalletForCreditAsync(Guid userId, string? currency, CancellationToken cancellationToken)
+    {
+        if (currency is null)
+        {
+            return await GetWalletByUserIdAsync(userId, cancellationToken).ConfigureAwait(false)
+                ?? await CreateWalletAsync(userId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        return await walletRepository.GetByUserIdAndCurrencyAsync(userId, currency, cancellationToken).ConfigureAwait(false)
+            ?? await CreateWalletAsync(userId, currency, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Resolves an existing wallet for debits (issue #406): currency-specific when
+    ///     specified, otherwise the user's primary wallet. Unlike credits, debits never create a
+    ///     wallet implicitly — deducting from a wallet that does not exist is an error.
+    /// </summary>
+    private async Task<UserWallet> ResolveExistingWalletAsync(Guid userId, string? currency, CancellationToken cancellationToken)
+    {
+        var wallet = currency is null
+            ? await GetWalletByUserIdAsync(userId, cancellationToken).ConfigureAwait(false)
+            : await walletRepository.GetByUserIdAndCurrencyAsync(userId, currency, cancellationToken).ConfigureAwait(false);
+
+        if (wallet == null)
+        {
+            logger.LogError("Wallet not found for user {UserId} (currency {Currency})", userId, currency ?? "primary");
+
+            throw new InvalidOperationException($"Wallet not found for user {userId}" + (currency is null ? string.Empty : $" in currency {currency}"));
+        }
+
+        return wallet;
     }
 
     public async Task LockWalletAsync(Guid userId, string reason, CancellationToken cancellationToken = default)

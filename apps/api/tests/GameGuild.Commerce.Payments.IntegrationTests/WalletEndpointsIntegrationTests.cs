@@ -88,6 +88,29 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
     }
 
     [Fact]
+    public async Task CreateWallet_ShouldAllowOneWalletPerCurrencyButRejectDuplicates()
+    {
+        var subjectId = Guid.NewGuid();
+
+        using var firstRequest = CreateRequest(HttpMethod.Post, "/api/v1/wallet", subjectId);
+        firstRequest.Content = JsonContent.Create(new { Currency = "USD" });
+        var firstResponse = await _client.SendAsync(firstRequest);
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Issue #406: a user may hold one wallet in each currency concurrently.
+        using var secondRequest = CreateRequest(HttpMethod.Post, "/api/v1/wallet", subjectId);
+        secondRequest.Content = JsonContent.Create(new { Currency = "EUR" });
+        var secondResponse = await _client.SendAsync(secondRequest);
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.Created, await secondResponse.Content.ReadAsStringAsync());
+
+        // ... but never two wallets in the same currency.
+        using var duplicateRequest = CreateRequest(HttpMethod.Post, "/api/v1/wallet", subjectId);
+        duplicateRequest.Content = JsonContent.Create(new { Currency = "USD" });
+        var duplicateResponse = await _client.SendAsync(duplicateRequest);
+        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     public async Task GetWallet_ShouldReturnOnlyTheAuthenticatedActorsWallet()
     {
         var subjectId = Guid.NewGuid();
@@ -193,8 +216,11 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
     [InlineData("add-funds")]
     [InlineData("deduct-funds")]
     [InlineData("transfer")]
-    public async Task ArbitraryValueMutationRoutes_ShouldNotBePublic(string operation)
+    public async Task LegacyUserScopedValueMutationRoutes_ShouldNotBeExposed(string operation)
     {
+        // Issue #406: wallet value mutations moved to the admin-gated
+        // POST wallets/{id}:adjust and POST wallets:transfer routes; the legacy
+        // user-scoped routes stay unexposed so self-service actors cannot mint balances.
         var subjectId = Guid.NewGuid();
         using var request = CreateRequest(
             HttpMethod.Post,
@@ -210,6 +236,213 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed);
+    }
+
+    [Fact]
+    public async Task AdjustWallet_ShouldRequireWalletAdminPermission()
+    {
+        var wallet = await SeedWalletAsync(Guid.NewGuid());
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            $"/api/v1/wallets/{wallet.Id}:adjust",
+            Guid.NewGuid(),
+            roles: "TenantAdmin");
+        request.Content = JsonContent.Create(new { Direction = "credit", Amount = 10m, Reason = "support credit" });
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task AdjustWallet_Credit_ShouldAdjustTheBalanceAndPersistTheAuditEvent()
+    {
+        var administratorId = Guid.NewGuid();
+        var wallet = await SeedWalletAsync(Guid.NewGuid());
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            $"/api/v1/wallets/{wallet.Id}:adjust",
+            administratorId,
+            roles: "Admin",
+            permissions: "wallets:admin");
+        request.Content = JsonContent.Create(new { Direction = "credit", Amount = 25m, Reason = "goodwill credit" });
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        var transaction = await response.Content.ReadFromJsonAsync<WalletTransaction>();
+        transaction!.Amount.Should().Be(25m);
+        transaction.BalanceAfter.Should().Be(25m);
+
+        using var balanceRequest = CreateRequest(
+            HttpMethod.Get,
+            $"/api/v1/wallets/{wallet.Id}",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        var balanceResponse = await _client.SendAsync(balanceRequest);
+        balanceResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await balanceResponse.Content.ReadFromJsonAsync<UserWallet>();
+        updated!.Balance.Should().Be(25m);
+
+        var auditService = _factory.Services.GetRequiredService<TestRevenueAuditService>();
+        var audit = auditService.Entries.SingleOrDefault(entry => entry.EntityId == wallet.Id);
+        audit.Should().NotBeNull();
+        audit!.ChangedBy.Should().Be(administratorId);
+        audit.Reason.Should().Be("goodwill credit");
+    }
+
+    [Fact]
+    public async Task AdjustWallet_DebitWithInsufficientBalance_ShouldReturnConflict()
+    {
+        var wallet = await SeedWalletAsync(Guid.NewGuid());
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            $"/api/v1/wallets/{wallet.Id}:adjust",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        request.Content = JsonContent.Create(new { Direction = "debit", Amount = 100m, Reason = "correction" });
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task AdjustWallet_ReplayWithTheSameReferenceId_ShouldBeIdempotent()
+    {
+        var wallet = await SeedWalletAsync(Guid.NewGuid());
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            using var request = CreateRequest(
+                HttpMethod.Post,
+                $"/api/v1/wallets/{wallet.Id}:adjust",
+                Guid.NewGuid(),
+                permissions: "wallets:admin");
+            request.Content = JsonContent.Create(new { Direction = "credit", Amount = 15m, Reason = "webhook replay", ReferenceId = "charge_123" });
+
+            var response = await _client.SendAsync(request);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        using var balanceRequest = CreateRequest(
+            HttpMethod.Get,
+            $"/api/v1/wallets/{wallet.Id}",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        var balanceResponse = await _client.SendAsync(balanceRequest);
+        var updated = await balanceResponse.Content.ReadFromJsonAsync<UserWallet>();
+        updated!.Balance.Should().Be(15m, "a replayed reference must not double-credit the wallet");
+    }
+
+    [Fact]
+    public async Task TransferWallets_ShouldRequireWalletAdminPermission()
+    {
+        var fromWallet = await SeedWalletAsync(Guid.NewGuid());
+        var toWallet = await SeedWalletAsync(Guid.NewGuid());
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            "/api/v1/wallets:transfer",
+            Guid.NewGuid(),
+            roles: "TenantAdmin");
+        request.Content = JsonContent.Create(new { FromWalletId = fromWallet.Id, ToWalletId = toWallet.Id, Amount = 5m, Description = "transfer" });
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task TransferWallets_ShouldMoveFundsBetweenSameCurrencyWallets()
+    {
+        var fromWallet = await SeedWalletAsync(Guid.NewGuid(), balance: 50m);
+        var toWallet = await SeedWalletAsync(Guid.NewGuid());
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            "/api/v1/wallets:transfer",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        request.Content = JsonContent.Create(new { FromWalletId = fromWallet.Id, ToWalletId = toWallet.Id, Amount = 20m, Description = "consolidation" });
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        var fromWalletAfter = await GetWalletAsync(fromWallet.Id);
+        var toWalletAfter = await GetWalletAsync(toWallet.Id);
+        fromWalletAfter!.Balance.Should().Be(30m);
+        toWalletAfter!.Balance.Should().Be(20m);
+    }
+
+    [Fact]
+    public async Task TransferWallets_WithCurrencyMismatch_ShouldReturnBadRequest()
+    {
+        var fromWallet = await SeedWalletAsync(Guid.NewGuid(), currency: "USD", balance: 50m);
+        var toWallet = await SeedWalletAsync(Guid.NewGuid(), currency: "EUR");
+        using var request = CreateRequest(
+            HttpMethod.Post,
+            "/api/v1/wallets:transfer",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        request.Content = JsonContent.Create(new { FromWalletId = fromWallet.Id, ToWalletId = toWallet.Id, Amount = 20m, Description = "cross-currency" });
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task WalletMetrics_ShouldRequireWalletAdminPermission()
+    {
+        using var deniedRequest = CreateRequest(HttpMethod.Get, "/api/v1/wallets/metrics", Guid.NewGuid(), roles: "TenantAdmin");
+        var deniedResponse = await _client.SendAsync(deniedRequest);
+        deniedResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        using var allowedRequest = CreateRequest(HttpMethod.Get, "/api/v1/wallets/metrics", Guid.NewGuid(), permissions: "wallets:admin");
+        var allowedResponse = await _client.SendAsync(allowedRequest);
+        allowedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await allowedResponse.Content.ReadAsStringAsync();
+        content.Should().Contain("balancesByCurrency");
+    }
+
+    [Fact]
+    public async Task WalletReconciliation_ShouldReportConsistencyAndDetectDiscrepancies()
+    {
+        // Seed a wallet whose balance agrees with its completed transaction history.
+        var consistentWallet = await SeedWalletAsync(Guid.NewGuid(), balance: 0m);
+        using var adjustRequest = CreateRequest(
+            HttpMethod.Post,
+            $"/api/v1/wallets/{consistentWallet.Id}:adjust",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        adjustRequest.Content = JsonContent.Create(new { Direction = "credit", Amount = 40m, Reason = "seed" });
+        (await _client.SendAsync(adjustRequest)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Corrupt a second wallet's balance so the report-only check has something to find.
+        var corruptedWallet = await SeedWalletAsync(Guid.NewGuid(), balance: 0m);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var stored = await dbContext.Set<UserWallet>().SingleAsync(w => w.Id == corruptedWallet.Id);
+            stored.Balance = 999m; // no matching transactions
+            await dbContext.SaveChangesAsync();
+        }
+
+        using var request = CreateRequest(
+            HttpMethod.Get,
+            "/api/v1/wallets/reconciliation",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var report = await response.Content.ReadFromJsonAsync<WalletReconciliationReportResponse>();
+        report!.WalletsChecked.Should().BeGreaterThanOrEqualTo(2);
+        report.DiscrepanciesFound.Should().BeGreaterThanOrEqualTo(1);
+        var consistent = report.Items.Single(item => item.WalletId == consistentWallet.Id);
+        consistent.BalanceMatchesLatest.Should().BeTrue();
+        consistent.BalanceMatchesTransactionSum.Should().BeTrue();
+        var corrupted = report.Items.Single(item => item.WalletId == corruptedWallet.Id);
+        corrupted.BalanceMatchesTransactionSum.Should().BeFalse();
     }
 
     [Fact]
@@ -285,7 +518,7 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
         return request;
     }
 
-    private async Task<UserWallet> SeedWalletAsync(Guid userId)
+    private async Task<UserWallet> SeedWalletAsync(Guid userId, string currency = "USD", decimal balance = 0m)
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -293,13 +526,25 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            Currency = "USD",
-            Balance = 0m,
+            Currency = currency,
+            Balance = balance,
             IsActive = true
         };
         dbContext.Set<UserWallet>().Add(wallet);
         await dbContext.SaveChangesAsync();
         return wallet;
+    }
+
+    private async Task<UserWallet?> GetWalletAsync(Guid walletId)
+    {
+        using var request = CreateRequest(
+            HttpMethod.Get,
+            $"/api/v1/wallets/{walletId}",
+            Guid.NewGuid(),
+            permissions: "wallets:admin");
+        var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        return await response.Content.ReadFromJsonAsync<UserWallet>();
     }
 
     public void Dispose()
