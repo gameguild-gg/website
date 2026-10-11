@@ -31,7 +31,7 @@ export function SocialFeedTabs({
         return (
           <Link
             key={tab.id}
-            href={tab.id === "foryou" ? "/" : `/?tab=${tab.id}`}
+            href={tab.id === "foryou" ? "/feed" : `/feed?tab=${tab.id}`}
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "relative flex h-full items-center text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

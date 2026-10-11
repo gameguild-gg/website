@@ -111,6 +111,47 @@ describe("InfinitePostFeed", () => {
     expect(screen.queryByText("Only for you")).not.toBeInTheDocument();
   });
 
+  it("resets the visible items and the dedupe set when the feed identity changes", async () => {
+    // PostCard also creates IntersectionObservers, and stale observers (old scope
+    // closures) must not fire after disconnect — trigger only connected instances.
+    const instances: { cb: IntersectionObserverCallback; connected: boolean }[] = [];
+    vi.stubGlobal("IntersectionObserver", class {
+      record: { cb: IntersectionObserverCallback; connected: boolean };
+      constructor(cb: IntersectionObserverCallback) {
+        this.record = { cb, connected: true };
+        instances.push(this.record);
+      }
+      observe = vi.fn();
+      disconnect = () => { this.record.connected = false; };
+    });
+    const trigger = () => act(() => {
+      for (const { cb, connected } of [...instances]) if (connected) cb([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+    });
+
+    // B's pagination returns an ID A already showed: proves the dedupe (seenRef) reset, not just the item list.
+    mocks.loadSocialFeedPage
+      .mockResolvedValueOnce({ items: [post("a-3", "Shared across scopes")], nextCursor: null })
+      .mockResolvedValueOnce({ items: [post("a-3", "Shared across scopes")], nextCursor: null });
+
+    const view = render(
+      <InfinitePostFeed scope="following" initialItems={[post("a-1", "A only"), post("a-2", "A second")]} initialNextCursor="cursor-a" />,
+    );
+    expect(screen.getAllByTestId("post-card")).toHaveLength(2);
+    trigger();
+    await waitFor(() => expect(screen.getAllByTestId("post-card")).toHaveLength(3));
+
+    view.rerender(<InfinitePostFeed scope="community" initialItems={[post("b-1", "B only")]} initialNextCursor="cursor-b" />);
+
+    await waitFor(() => expect(screen.queryByText("A only")).not.toBeInTheDocument());
+    expect(screen.queryByText("A second")).not.toBeInTheDocument();
+    expect(screen.getByText("B only")).toBeInTheDocument();
+    expect(screen.getAllByTestId("post-card")).toHaveLength(1);
+
+    trigger();
+    await waitFor(() => expect(mocks.loadSocialFeedPage).toHaveBeenCalledWith(expect.objectContaining({ scope: "community", cursor: "cursor-b" })));
+    await waitFor(() => expect(screen.getAllByTestId("post-card")).toHaveLength(2));
+  });
+
   it("keeps the SSR tag on every subsequent page request", async () => {
     const io = intersectionCallback();
     mocks.loadSocialFeedPage.mockResolvedValue({ items: [post("p-2")], nextCursor: null });
