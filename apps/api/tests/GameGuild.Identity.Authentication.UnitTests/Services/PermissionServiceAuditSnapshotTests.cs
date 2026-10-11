@@ -147,13 +147,15 @@ public sealed class PermissionServiceAuditSnapshotTests
     {
         await using var fixture = new Fixture();
         if (global)
+        {
             await fixture.Service.SetGlobalDefaultPermissionsAsync([PermissionType.Read]);
-        else
-            await fixture.Service.SetTenantDefaultPermissionsAsync(fixture.TenantId, [PermissionType.Read]);
-        if (global)
             await fixture.Service.SetGlobalDefaultPermissionsAsync([PermissionType.Write]);
+        }
         else
+        {
+            await fixture.Service.SetTenantDefaultPermissionsAsync(fixture.TenantId, [PermissionType.Read]);
             await fixture.Service.SetTenantDefaultPermissionsAsync(fixture.TenantId, [PermissionType.Write]);
+        }
 
         fixture.Entries.Should().HaveCount(2);
         fixture.Entries[0].OldValue.Should().BeNull();
@@ -182,8 +184,14 @@ public sealed class PermissionServiceAuditSnapshotTests
         await fixture.Service.ShareResourceAsync<GenericResourcePermission, EntityBase>(fixture.ResourceId, fixture.UserId, fixture.TenantId, [PermissionType.Write], expiry);
         fixture.Db.SuccessfulSaveCount.Should().Be(savesBefore + 1);
         var entry = fixture.Entries.Should().ContainSingle().Which;
-        if (existing) ReadPermissions(Parse(entry.OldValue)).Should().Equal(Encode("Resource", PermissionType.Read));
-        else entry.OldValue.Should().BeNull();
+        if (existing)
+        {
+            ReadPermissions(Parse(entry.OldValue)).Should().Equal(Encode("Resource", PermissionType.Read));
+        }
+        else
+        {
+            entry.OldValue.Should().BeNull();
+        }
         var after = Parse(entry.NewValue);
         after.GetProperty("expiresAt").GetDateTime().Should().Be(expiry);
         after.GetProperty("resourceId").GetGuid().Should().Be(fixture.ResourceId);
@@ -213,7 +221,9 @@ public sealed class PermissionServiceAuditSnapshotTests
         await using var fixture = new Fixture();
         var expiry = SystemClock.UtcNow.AddDays(-1);
         foreach (var layer in new[] { "Tenant", "ContentType", "Resource" })
+        {
             fixture.Seed(layer, [PermissionType.Read]).ExpiresAt = expiry;
+        }
         fixture.Db.Set<TenantPermission>().Add(new TenantPermission { Version = 1, UserId = null, TenantId = null, Permissions = ["Read"], ExpiresAt = expiry });
         fixture.Db.Set<TenantPermission>().Add(new TenantPermission { Version = 1, UserId = Guid.NewGuid(), TenantId = fixture.TenantId, Permissions = ["Read"], ExpiresAt = SystemClock.UtcNow.AddDays(1) });
         fixture.Db.Set<TenantPermission>().Add(new TenantPermission { Version = 1, UserId = Guid.NewGuid(), TenantId = fixture.TenantId, Permissions = ["Read"], ExpiresAt = expiry, IsActive = false });
@@ -319,8 +329,14 @@ public sealed class PermissionServiceAuditSnapshotTests
         var grant = (WithPermissions)fixture.Seed(layer, [PermissionType.Read]);
         grant.Notes = "private free-form notes";
         grant.GrantedBy = fixture.ActorId;
-        if (grant is ContentTypePermission content) content.Description = "private description";
-        if (grant is GenericResourcePermission resource) resource.ResourceTitle = "private resource title";
+        if (grant is ContentTypePermission content)
+        {
+            content.Description = "private description";
+        }
+        if (grant is GenericResourcePermission resource)
+        {
+            resource.ResourceTitle = "private resource title";
+        }
         await fixture.Db.SaveChangesAsync();
         await fixture.GrantAsync(layer, PermissionType.Write);
         var entry = fixture.Entries.Should().ContainSingle().Which;
@@ -342,8 +358,14 @@ public sealed class PermissionServiceAuditSnapshotTests
         state.GetProperty("layer").GetString().Should().Be(layer);
         state.GetProperty("userId").GetGuid().Should().Be(fixture.UserId);
         state.GetProperty("tenantId").GetGuid().Should().Be(fixture.TenantId);
-        if (layer == "ContentType") state.GetProperty("contentTypeName").GetString().Should().Be("Document");
-        if (layer == "Resource") state.GetProperty("resourceId").GetGuid().Should().Be(fixture.ResourceId);
+        if (layer == "ContentType")
+        {
+            state.GetProperty("contentTypeName").GetString().Should().Be("Document");
+        }
+        if (layer == "Resource")
+        {
+            state.GetProperty("resourceId").GetGuid().Should().Be(fixture.ResourceId);
+        }
     }
 
     private static string Encode(string layer, PermissionType permission) => layer == "Tenant" ? permission.ToString() : ((int)permission).ToString(CultureInfo.InvariantCulture);
