@@ -13,6 +13,7 @@ public class RefundAndRetryAuditTrailTests
     private readonly Mock<IPaymentGateway> _gateway = new();
     private readonly Mock<IRevenueAuditService> _revenueAuditService = new();
     private readonly Mock<IActorContextAccessor> _actorAccessor = new();
+    private readonly Mock<IPaymentDunningLifecycleService> _dunningLifecycle = new();
 
     public RefundAndRetryAuditTrailTests()
     {
@@ -246,6 +247,8 @@ public class RefundAndRetryAuditTrailTests
         var payment = FailedPayment();
         SetupGatewayPaymentFailure();
         var handler = CreateRetryHandler(payment, maxRetries: 3, backoffBaseMinutes: 30.0, backoffMultiplier: 2.0);
+        // The retry handler resolves schedules through PaymentRetryPolicyResolver; the factory
+        // wires a zero-jitter resolver so the exact backoff can be asserted.
         var before = SystemClock.UtcNow;
 
         var result = await handler.Handle(new RetryPaymentCommand(payment.Id), CancellationToken.None);
@@ -318,6 +321,14 @@ public class RefundAndRetryAuditTrailTests
                 BackoffBaseMinutes = backoffBaseMinutes,
                 BackoffMultiplier = backoffMultiplier
             }),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions
+            {
+                MaxRetries = maxRetries,
+                BackoffBaseMinutes = backoffBaseMinutes,
+                BackoffMultiplier = backoffMultiplier,
+                JitterRatio = 0.0
+            })),
+            _dunningLifecycle.Object,
             _revenueAuditService.Object,
             _actorAccessor.Object,
             NullLogger<RetryPaymentCommandHandler>.Instance);

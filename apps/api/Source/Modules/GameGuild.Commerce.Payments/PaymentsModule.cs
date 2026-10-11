@@ -67,6 +67,19 @@ public static class PaymentsModule
         services.AddScoped<IFraudSignalProvider, VelocityFraudSignalProvider>();
         services.AddScoped<IFraudDetectionService, FraudDetectionService>();
 
+        // Failure-code retry policy + automated retry queue (issue #415): classifies gateway
+        // failure codes into retriable/non-retriable schedules, and (opt-in) polls due retries
+        // hourly through the existing RetryPaymentCommand path. Default disabled, matching the
+        // revenue-auditing worker: automatic charging must be a deliberate deployment decision.
+        services.AddSingleton<IValidateOptions<PaymentRetryQueueOptions>, PaymentRetryQueueOptionsValidator>();
+        services.AddOptions<PaymentRetryQueueOptions>()
+            .Bind(configuration.GetSection(PaymentRetryQueueOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IPaymentRetryPolicyResolver, PaymentRetryPolicyResolver>();
+        services.AddScoped<IPaymentRetryMethodChangeService, PaymentRetryMethodChangeService>();
+        services.AddScoped<IPaymentRetryQueueWorker, PaymentRetryQueueWorker>();
+        services.AddHostedService<PaymentRetryQueueBackgroundService>();
+
         // Multi-gateway processing (issue #413): config-driven fail-closed routing,
         // failover policy with per-gateway circuit breaker, and per-gateway metrics.
         services.AddSingleton<IValidateOptions<GatewayRoutingOptions>, GatewayRoutingOptionsValidator>();

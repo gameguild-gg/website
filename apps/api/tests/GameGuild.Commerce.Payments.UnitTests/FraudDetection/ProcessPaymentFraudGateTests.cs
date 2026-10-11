@@ -126,6 +126,8 @@ public class ProcessPaymentFraudGateTests
             fixture.PaymentGateway.Object,
             Mock.Of<IPaymentSubscriptionSyncService>(),
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            Mock.Of<IPaymentDunningLifecycleService>(),
             Mock.Of<IRevenueAuditService>(),
             Mock.Of<IActorContextAccessor>(),
             Mock.Of<ILogger<RetryPaymentCommandHandler>>());
@@ -206,6 +208,7 @@ public class ProcessPaymentFraudGateTests
             syncService.Object,
             contextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
             fraudDetectionService,
             Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
 

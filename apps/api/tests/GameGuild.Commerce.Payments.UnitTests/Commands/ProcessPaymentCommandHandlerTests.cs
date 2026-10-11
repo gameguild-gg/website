@@ -218,6 +218,7 @@ public class ProcessPaymentCommandHandlerTests
             paymentSubscriptionSyncService.Object,
             paymentContextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
             FraudTestHelpers.AllowAllDetectionService(),
             logger);
 
@@ -295,7 +296,9 @@ public class ProcessPaymentCommandHandlerTests
             syncService.Object,
             contextService.Object,
             Options.Create(new PaymentRetryOptions()),
-            FraudTestHelpers.AllowAllDetectionService(),            Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            FraudTestHelpers.AllowAllDetectionService(),
+            Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
 
         return new PaymentHandlerFixture(
             Guid.NewGuid(),
