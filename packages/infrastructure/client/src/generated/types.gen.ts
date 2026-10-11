@@ -8406,6 +8406,9 @@ export interface IdentityAuthenticationAssignRoleToUserInput {
   userId?: string;
 }
 
+/** Multi-step authentication flow steps */
+export type IdentityAuthenticationAuthenticationStep = 'PrimaryCredential' | 'MfaVerification' | 'DeviceTrust' | 'RiskChallenge';
+
 /** Backup codes response */
 export interface IdentityAuthenticationBackupCodesOutput {
   codes?: string[] | null;
@@ -8726,6 +8729,20 @@ export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
   requestedScopes: string[] | null;
 }
 
+/** Request body for the GitHub OAuth callback endpoint */
+export interface IdentityAuthenticationGitHubCallbackRequestDto {
+  /** OAuth authorization code from the GitHub callback */
+  code: string;
+  /** The same redirect URI used in the authorization request */
+  redirectUri: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
+  /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
+  state: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
 /** Response for GitHub sign-in initiation */
 export interface IdentityAuthenticationGitHubSignInOutput {
   /** GitHub OAuth authorization URL */
@@ -8737,6 +8754,19 @@ export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   idToken: string;
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
+  tenantId?: string | null;
+}
+
+/** Request body to initiate an orchestrated authentication flow. */
+export interface IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto {
+  /** Optional device fingerprint used for trusted-device recognition.
+Missing or unrecognized fingerprints fail closed to a device-trust challenge. */
+  deviceFingerprint?: string | null;
+  /** Credential identifier (email) of the account signing in. */
+  identifier: string;
+  /** The account password; verified as the primary credential at initiation. */
+  password: string;
+  /** Optional tenant context for the resulting sign-in. */
   tenantId?: string | null;
 }
 
@@ -8957,6 +8987,28 @@ so the caller can stash it in its state cookie) */
   state: string | null;
 }
 
+/** Response describing the state of an orchestrated authentication flow. */
+export interface IdentityAuthenticationOrchestratedFlowStateOutput {
+  /** Steps already satisfied. */
+  completedSteps?: IdentityAuthenticationAuthenticationStep[] | null;
+  currentStep?: IdentityAuthenticationAuthenticationStep;
+  /** When the flow expires; expired flows fail closed. */
+  expiresAt?: string;
+  /** Unique identifier of the flow; carried by the client across step processing and completion. */
+  flowId?: string;
+  /** When the flow was initiated. */
+  initiatedAt?: string;
+  /** Whether every required step is satisfied and the flow can be completed. */
+  isComplete?: boolean;
+  nextStep?: IdentityAuthenticationAuthenticationStep;
+  /** Every step the flow requires before completion. */
+  requiredSteps?: IdentityAuthenticationAuthenticationStep[] | null;
+  /** Risk score (0–1) that drove the challenge ladder for this flow. */
+  riskScore?: number | null;
+  /** The authenticated user, identified after primary-credential validation. */
+  userId?: string | null;
+}
+
 /** Request to change password for authenticated user */
 export interface IdentityAuthenticationPasswordChangeInput {
   /** Password confirmation */
@@ -9018,6 +9070,18 @@ export interface IdentityAuthenticationPolymorphicSignInInput {
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
   tenantId?: string | null;
+}
+
+/** Request body to satisfy one challenge step of an orchestrated authentication flow.
+Exactly one proof field (TOTP code, backup code or WebAuthn assertion) is required. */
+export interface IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto {
+  /** One-time backup code, when satisfying the step with a recovery code. */
+  backupCode?: string | null;
+  step: IdentityAuthenticationAuthenticationStep;
+  /** TOTP verification code, when satisfying the step with the authenticator app. */
+  totpCode?: string | null;
+  /** Serialized WebAuthn assertion, when satisfying the step with a passkey/security key. */
+  webAuthnAssertion?: string | null;
 }
 
 /** Request DTO for refreshing tokens */
@@ -22205,6 +22269,7 @@ export let GameJamsScoreJamSubmissionInputSchema: z.ZodType<GameJamsScoreJamSubm
 export let GameJamsSubmitJamEntryInputSchema: z.ZodType<GameJamsSubmitJamEntryInput>;
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
+export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
 export let IdentityAuthenticationBackupCodesOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesOutput>;
 export let IdentityAuthenticationBackupCodesStatusOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesStatusOutput>;
 export let IdentityAuthenticationBeginWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnAuthenticationInput>;
@@ -22241,8 +22306,10 @@ export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<Identit
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
 export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
+export let IdentityAuthenticationGitHubCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationGitHubCallbackRequestDto>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
+export let IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema: z.ZodType<IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
 export let IdentityAuthenticationLinkGoogleAccountInputSchema: z.ZodType<IdentityAuthenticationLinkGoogleAccountInput>;
 export let IdentityAuthenticationLocalSignInInputSchema: z.ZodType<IdentityAuthenticationLocalSignInInput>;
@@ -22266,12 +22333,14 @@ export let IdentityAuthenticationOidcDiscoveredProviderSchema: z.ZodType<Identit
 export let IdentityAuthenticationOidcDiscoverProviderOutputSchema: z.ZodType<IdentityAuthenticationOidcDiscoverProviderOutput>;
 export let IdentityAuthenticationOidcEndSessionUrlOutputSchema: z.ZodType<IdentityAuthenticationOidcEndSessionUrlOutput>;
 export let IdentityAuthenticationOidcSignInOutputSchema: z.ZodType<IdentityAuthenticationOidcSignInOutput>;
+export let IdentityAuthenticationOrchestratedFlowStateOutputSchema: z.ZodType<IdentityAuthenticationOrchestratedFlowStateOutput>;
 export let IdentityAuthenticationPasswordChangeInputSchema: z.ZodType<IdentityAuthenticationPasswordChangeInput>;
 export let IdentityAuthenticationPasswordChangeResultSchema: z.ZodType<IdentityAuthenticationPasswordChangeResult>;
 export let IdentityAuthenticationPasswordResetRequestResultSchema: z.ZodType<IdentityAuthenticationPasswordResetRequestResult>;
 export let IdentityAuthenticationPasswordResetResultSchema: z.ZodType<IdentityAuthenticationPasswordResetResult>;
 export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<IdentityAuthenticationPatchServiceAccountInput>;
 export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
+export let IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema: z.ZodType<IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
 export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
@@ -31444,6 +31513,9 @@ IdentityAuthenticationAssignRoleToUserInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationAuthenticationStep. Multi-step authentication flow steps */
+IdentityAuthenticationAuthenticationStepSchema = z.enum(['PrimaryCredential', 'MfaVerification', 'DeviceTrust', 'RiskChallenge']);
+
 /** Zod schema for IdentityAuthenticationBackupCodesOutput. Backup codes response */
 IdentityAuthenticationBackupCodesOutputSchema = z.object({
   codes: z.array(z.string()).nullable().optional(),
@@ -31711,6 +31783,15 @@ IdentityAuthenticationExternalLoginLinkPreviewOutputSchema = z.object({
   requestedScopes: z.array(z.string()).nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationGitHubCallbackRequestDto. Request body for the GitHub OAuth callback endpoint */
+IdentityAuthenticationGitHubCallbackRequestDtoSchema = z.object({
+  code: z.string().min(1),
+  redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
+  state: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationGitHubSignInOutput. Response for GitHub sign-in initiation */
 IdentityAuthenticationGitHubSignInOutputSchema = z.object({
   authUrl: z.string().nullable(),
@@ -31720,6 +31801,14 @@ IdentityAuthenticationGitHubSignInOutputSchema = z.object({
 IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   idToken: z.string().min(1),
   rememberMe: z.boolean().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto. Request body to initiate an orchestrated authentication flow. */
+IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema = z.object({
+  deviceFingerprint: z.string().nullable().optional(),
+  identifier: z.string().min(1),
+  password: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -31898,6 +31987,26 @@ IdentityAuthenticationOidcSignInOutputSchema = z.object({
   state: z.string().nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationOrchestratedFlowStateOutput. Response describing the state of an orchestrated authentication flow. */
+IdentityAuthenticationOrchestratedFlowStateOutputSchema = z.object({
+  completedSteps: z
+    .array(z.lazy(() => IdentityAuthenticationAuthenticationStepSchema))
+    .nullable()
+    .optional(),
+  currentStep: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema).optional(),
+  expiresAt: z.string().datetime().optional(),
+  flowId: z.string().uuid().optional(),
+  initiatedAt: z.string().datetime().optional(),
+  isComplete: z.boolean().optional(),
+  nextStep: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema).optional(),
+  requiredSteps: z
+    .array(z.lazy(() => IdentityAuthenticationAuthenticationStepSchema))
+    .nullable()
+    .optional(),
+  riskScore: z.number().nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationPasswordChangeInput. Request to change password for authenticated user */
 IdentityAuthenticationPasswordChangeInputSchema = z.object({
   confirmPassword: z.string().min(1),
@@ -31943,6 +32052,15 @@ IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
   password: z.string().nullable().optional(),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto. Request body to satisfy one challenge step of an orchestrated authentication flow.
+Exactly one proof field (TOTP code, backup code or WebAuthn assertion) is required. */
+IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema = z.object({
+  backupCode: z.string().nullable().optional(),
+  step: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema),
+  totpCode: z.string().nullable().optional(),
+  webAuthnAssertion: z.string().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationRefreshTokenInput. Request DTO for refreshing tokens */
@@ -43590,14 +43708,20 @@ export type IdentityAuthenticationApiKey = IdentityAuthenticationApiKeyDto;
 export { IdentityAuthenticationApiKeyDtoSchema as IdentityAuthenticationApiKeySchema };
 export type IdentityAuthenticationDiscordCallbackRequest = IdentityAuthenticationDiscordCallbackRequestDto;
 export { IdentityAuthenticationDiscordCallbackRequestDtoSchema as IdentityAuthenticationDiscordCallbackRequestSchema };
+export type IdentityAuthenticationGitHubCallbackRequest = IdentityAuthenticationGitHubCallbackRequestDto;
+export { IdentityAuthenticationGitHubCallbackRequestDtoSchema as IdentityAuthenticationGitHubCallbackRequestSchema };
 export type IdentityAuthenticationGoogleIdTokenRequest = IdentityAuthenticationGoogleIdTokenRequestDto;
 export { IdentityAuthenticationGoogleIdTokenRequestDtoSchema as IdentityAuthenticationGoogleIdTokenRequestSchema };
+export type IdentityAuthenticationInitiateOrchestratedAuthenticationRequest = IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+export { IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema as IdentityAuthenticationInitiateOrchestratedAuthenticationRequestSchema };
 export type IdentityAuthenticationJwtKeyInfo = IdentityAuthenticationJwtKeyInfoDto;
 export { IdentityAuthenticationJwtKeyInfoDtoSchema as IdentityAuthenticationJwtKeyInfoSchema };
 export type IdentityAuthenticationOidcAuthorizeRequest = IdentityAuthenticationOidcAuthorizeRequestDto;
 export { IdentityAuthenticationOidcAuthorizeRequestDtoSchema as IdentityAuthenticationOidcAuthorizeRequestSchema };
 export type IdentityAuthenticationOidcCallbackRequest = IdentityAuthenticationOidcCallbackRequestDto;
 export { IdentityAuthenticationOidcCallbackRequestDtoSchema as IdentityAuthenticationOidcCallbackRequestSchema };
+export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest = IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationEffectivePermission = IdentityAuthorizationEffectivePermissionDto;

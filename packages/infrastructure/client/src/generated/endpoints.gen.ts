@@ -14071,18 +14071,15 @@ export const getAuthGithubAuthorizeEndpoint = {
 /**
  * Handle GitHub OAuth callback
  *
- * Handles the GitHub OAuth callback, exchanging the authorization code for tokens.
+ * Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.
  */
-export interface GetAuthGithubCallbackInput {
-  query?: {
-    code?: string;
-    state?: string;
-  };
+export interface PostAuthGithubCallbackInput {
+  body?: Types.IdentityAuthenticationGitHubCallbackRequestDto;
 }
-export type GetAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
-export const getAuthGithubCallbackEndpoint = {
-  operationId: 'getAuthGithubCallback' as const,
-  method: 'GET' as const,
+export type PostAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthGithubCallbackEndpoint = {
+  operationId: 'postAuthGithubCallback' as const,
+  method: 'POST' as const,
   path: '/v1/auth/github:callback' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
@@ -14404,6 +14401,92 @@ export const postAuthOidcSignInCallbackEndpoint = {
   operationId: 'postAuthOidcSignInCallback' as const,
   method: 'POST' as const,
   path: '/v1/auth/oidc/{slug}:sign-in-callback' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Initiate an orchestrated authentication flow
+ *
+ * Validates the local primary credential (identifier + password), assesses sign-in risk and returns the persisted flow state with the required challenge ladder (MFA verification, device trust, risk challenge). Expired, inactive or unknown credentials fail closed.
+ */
+export interface PostAuthOrchestratedInitiateInput {
+  body?: Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+}
+export type PostAuthOrchestratedInitiateOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedInitiateEndpoint = {
+  operationId: 'postAuthOrchestratedInitiate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated:initiate' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Get the current state of an orchestrated authentication flow
+ *
+ * Returns the current state of the flow. Abandoned, expired and unknown flows are not observable and return 404.
+ */
+export interface GetAuthOrchestratedInput {
+  flowId: string;
+}
+export type GetAuthOrchestratedOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const getAuthOrchestratedEndpoint = {
+  operationId: 'getAuthOrchestrated' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/orchestrated/{flowId}' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Abandon an in-flight orchestrated authentication flow
+ *
+ * Terminates the flow; later step, completion and lookup calls fail closed.
+ */
+export interface PostAuthOrchestratedAbandonInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedAbandonOutput = void;
+export const postAuthOrchestratedAbandonEndpoint = {
+  operationId: 'postAuthOrchestratedAbandon' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:abandon' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Complete an orchestrated authentication flow and issue tokens
+ *
+ * Issues access and refresh tokens once every required step of the flow is satisfied. Pending steps, abandoned, expired or already-unknown flows fail closed.
+ */
+export interface PostAuthOrchestratedCompleteInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOrchestratedCompleteEndpoint = {
+  operationId: 'postAuthOrchestratedComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Satisfy one challenge step of an orchestrated authentication flow
+ *
+ * Verifies one challenge step (TOTP code, backup code or WebAuthn assertion) against the persisted flow and returns the updated state. Out-of-order, repeated, abandoned, expired or locked-out steps fail closed.
+ */
+export interface PostAuthOrchestratedProcessStepInput {
+  flowId: string;
+  body?: Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+}
+export type PostAuthOrchestratedProcessStepOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedProcessStepEndpoint = {
+  operationId: 'postAuthOrchestratedProcessStep' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:process-step' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
@@ -28402,7 +28485,7 @@ export const endpoints = {
   postAuthExternalLoginsDiscordLinkCallback: postAuthExternalLoginsDiscordLinkCallbackEndpoint,
   postAuthExternalLoginsGoogle: postAuthExternalLoginsGoogleEndpoint,
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
-  getAuthGithubCallback: getAuthGithubCallbackEndpoint,
+  postAuthGithubCallback: postAuthGithubCallbackEndpoint,
   postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
@@ -28422,6 +28505,11 @@ export const endpoints = {
   getAuthOidcEndSessionUrl: getAuthOidcEndSessionUrlEndpoint,
   postAuthOidcSignInAuthorize: postAuthOidcSignInAuthorizeEndpoint,
   postAuthOidcSignInCallback: postAuthOidcSignInCallbackEndpoint,
+  postAuthOrchestratedInitiate: postAuthOrchestratedInitiateEndpoint,
+  getAuthOrchestrated: getAuthOrchestratedEndpoint,
+  postAuthOrchestratedAbandon: postAuthOrchestratedAbandonEndpoint,
+  postAuthOrchestratedComplete: postAuthOrchestratedCompleteEndpoint,
+  postAuthOrchestratedProcessStep: postAuthOrchestratedProcessStepEndpoint,
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,
