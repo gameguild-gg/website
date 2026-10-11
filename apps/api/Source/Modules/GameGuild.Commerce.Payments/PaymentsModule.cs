@@ -49,6 +49,23 @@ public static class PaymentsModule
             .Bind(configuration.GetSection(PaymentRetryOptions.SectionName))
             .ValidateOnStart();
 
+        // Multi-gateway processing (issue #413): config-driven fail-closed routing,
+        // failover policy with per-gateway circuit breaker, and per-gateway metrics.
+        services.AddSingleton<IValidateOptions<GatewayRoutingOptions>, GatewayRoutingOptionsValidator>();
+        services.AddOptions<GatewayRoutingOptions>()
+            .Bind(configuration.GetSection(GatewayRoutingOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<GatewayFailoverOptions>, GatewayFailoverOptionsValidator>();
+        services.AddOptions<GatewayFailoverOptions>()
+            .Bind(configuration.GetSection(GatewayFailoverOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<PayPalGatewayOptions>, PayPalGatewayOptionsValidator>();
+        services.AddOptions<PayPalGatewayOptions>()
+            .Bind(configuration.GetSection(PayPalGatewayOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHttpClient<PayPalApiClient>();
+        services.AddScoped<IPayPalApiClient>(provider => provider.GetRequiredService<PayPalApiClient>());
+
         // Register services
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IRevenueAuditService, RevenueAuditService>();
@@ -65,7 +82,22 @@ public static class PaymentsModule
             .ValidateOnStart();
         services.AddScoped<IStripePaymentService, StripePaymentService>();
         services.AddScoped<IStripeCustomerService, StripeCustomerService>();
-        services.AddScoped<IPaymentGateway, StripePaymentGateway>();
+
+        // Multi-gateway processing (issue #413): both adapters are registered explicitly;
+        // the registry is the routing surface, the selector orders/filters it, the circuit
+        // breaker tracks per-gateway health, and the failover composite is the single
+        // IPaymentGateway resolved by the payment path.
+        services.AddScoped<StripePaymentGateway>();
+        services.AddScoped<PayPalPaymentGateway>();
+        services.AddScoped<IGatewayRegistry, GatewayRegistry>();
+        services.AddScoped<IPaymentGatewaySelector, ConfigPaymentGatewaySelector>();
+        services.AddSingleton<IGatewayCircuitBreaker>(provider =>
+            new InMemoryGatewayCircuitBreaker(
+                provider.GetRequiredService<IOptions<GatewayFailoverOptions>>().Value));
+        services.AddSingleton<IGatewayAvailabilityAlerter, NotificationGatewayAvailabilityAlerter>();
+        services.AddScoped<IGatewayMetricsService, GatewayMetricsService>();
+        services.AddScoped<IPaymentGateway, FailoverPaymentGateway>();
+
         // Register controllers
         services.AddControllers().AddApplicationPart(typeof(PaymentsModule).Assembly);
 
