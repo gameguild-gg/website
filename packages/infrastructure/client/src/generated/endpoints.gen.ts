@@ -6491,24 +6491,6 @@ export const postBillingInvoicesRetryEndpoint = {
 } as const;
 
 /**
- * Get pricing rules (paginated) with optional filters
- */
-export interface GetBillingPricingEngineForGetBillingPricingEngineInput {
-  query?: {
-    isActive?: boolean;
-    ruleType?: Types.CommercePricingRuleType;
-    productId?: string;
-    searchTerm?: string;
-    skip?: number;
-    take?: number;
-  };
-}
-export type GetBillingPricingEngineForGetBillingPricingEngineOutput = Types.PagedResultPricingRuleDto;
-export const getBillingPricingEngineForGetBillingPricingEngineEndpoint = {
-  operationId: 'getBillingPricingEngineForGetBillingPricingEngine' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/pricing-engine' as const,
-  tags: ['CommerceProductsBillingPricingEngine'] as const,
  * List registered payment methods (own methods; system admins see the whole tenant).
  *
  * Lists the live payment methods registered for the tenant. Non-admin actors see their own methods; system admins see all methods in the requested tenant.
@@ -6528,17 +6510,6 @@ export const getBillingPaymentMethodsEndpoint = {
 } as const;
 
 /**
- * Create a new pricing rule
- */
-export interface PostBillingPricingEngineInput {
-  body?: Types.CommerceProductsCreatePricingRuleInput;
-}
-export type PostBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
-export const postBillingPricingEngineEndpoint = {
-  operationId: 'postBillingPricingEngine' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/pricing-engine' as const,
-  tags: ['CommerceProductsBillingPricingEngine'] as const,
  * Register a payment method from a tokenized gateway result.
  *
  * Registers a payment method from a Stripe payment method token (pm_...) produced by Stripe.js/Elements or a confirmed SetupIntent. Raw card data is never accepted; only display metadata returned by the gateway is stored.
@@ -6552,6 +6523,112 @@ export const postBillingPaymentMethodsEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/payment-methods' as const,
   tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a single payment method by ID.
+ *
+ * Returns a single registered payment method. Only the owner or a system administrator can read it.
+ */
+export interface GetPaymentMethodByIdInput {
+  paymentMethodId: string;
+}
+export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
+export const getPaymentMethodByIdEndpoint = {
+  operationId: 'getPaymentMethodById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update display-only fields of a payment method.
+ *
+ * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
+ */
+export interface PutBillingPaymentMethodsInput {
+  paymentMethodId: string;
+  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
+}
+export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const putBillingPaymentMethodsEndpoint = {
+  operationId: 'putBillingPaymentMethods' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Remove a payment method (soft delete).
+ *
+ * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
+ */
+export interface DeleteBillingPaymentMethodsInput {
+  paymentMethodId: string;
+}
+export type DeleteBillingPaymentMethodsOutput = void;
+export const deleteBillingPaymentMethodsEndpoint = {
+  operationId: 'deleteBillingPaymentMethods' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Make this payment method the default (custom action per Google API guidelines).
+ *
+ * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
+ */
+export interface PostBillingPaymentMethodsSetDefaultInput {
+  paymentMethodId: string;
+}
+export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsSetDefaultEndpoint = {
+  operationId: 'postBillingPaymentMethodsSetDefault' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get pricing rules (paginated) with optional filters
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineInput {
+  query?: {
+    isActive?: boolean;
+    ruleType?: Types.CommercePricingRuleType;
+    productId?: string;
+    searchTerm?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineOutput = Types.PagedResultPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngine' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a new pricing rule
+ */
+export interface PostBillingPricingEngineInput {
+  body?: Types.CommerceProductsCreatePricingRuleInput;
+}
+export type PostBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineEndpoint = {
+  operationId: 'postBillingPricingEngine' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6583,19 +6660,6 @@ export const getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint =
   method: 'GET' as const,
   path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
   tags: ['CommerceProductsBillingPricingEngine'] as const,
- * Get a single payment method by ID.
- *
- * Returns a single registered payment method. Only the owner or a system administrator can read it.
- */
-export interface GetPaymentMethodByIdInput {
-  paymentMethodId: string;
-}
-export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
-export const getPaymentMethodByIdEndpoint = {
-  operationId: 'getPaymentMethodById' as const,
-  method: 'GET' as const,
-  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
-  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6612,20 +6676,6 @@ export const putBillingPricingEngineEndpoint = {
   method: 'PUT' as const,
   path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
   tags: ['CommerceProductsBillingPricingEngine'] as const,
- * Update display-only fields of a payment method.
- *
- * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
- */
-export interface PutBillingPaymentMethodsInput {
-  paymentMethodId: string;
-  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
-}
-export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
-export const putBillingPaymentMethodsEndpoint = {
-  operationId: 'putBillingPaymentMethods' as const,
-  method: 'PUT' as const,
-  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
-  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6656,19 +6706,6 @@ export const postBillingPricingEngineActivateEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/pricing-engine/{ruleId}:activate' as const,
   tags: ['CommerceProductsBillingPricingEngine'] as const,
- * Remove a payment method (soft delete).
- *
- * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
- */
-export interface DeleteBillingPaymentMethodsInput {
-  paymentMethodId: string;
-}
-export type DeleteBillingPaymentMethodsOutput = void;
-export const deleteBillingPaymentMethodsEndpoint = {
-  operationId: 'deleteBillingPaymentMethods' as const,
-  method: 'DELETE' as const,
-  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
-  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6684,19 +6721,6 @@ export const postBillingPricingEngineDeactivateEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/pricing-engine/{ruleId}:deactivate' as const,
   tags: ['CommerceProductsBillingPricingEngine'] as const,
- * Make this payment method the default (custom action per Google API guidelines).
- *
- * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
- */
-export interface PostBillingPaymentMethodsSetDefaultInput {
-  paymentMethodId: string;
-}
-export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
-export const postBillingPaymentMethodsSetDefaultEndpoint = {
-  operationId: 'postBillingPaymentMethodsSetDefault' as const,
-  method: 'POST' as const,
-  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
-  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
   requiresAuth: true,
 } as const;
 
@@ -27363,6 +27387,12 @@ export const endpoints = {
   postBillingExternalProvidersEnable: postBillingExternalProvidersEnableEndpoint,
   postBillingExternalProvidersMigrationDryRun: postBillingExternalProvidersMigrationDryRunEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
+  getPaymentMethodById: getPaymentMethodByIdEndpoint,
+  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
+  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
   getBillingPricingEngineForGetBillingPricingEngine: getBillingPricingEngineForGetBillingPricingEngineEndpoint,
   postBillingPricingEngine: postBillingPricingEngineEndpoint,
   postBillingPricingEngineCalculate: postBillingPricingEngineCalculateEndpoint,
@@ -27371,12 +27401,6 @@ export const endpoints = {
   deleteBillingPricingEngine: deleteBillingPricingEngineEndpoint,
   postBillingPricingEngineActivate: postBillingPricingEngineActivateEndpoint,
   postBillingPricingEngineDeactivate: postBillingPricingEngineDeactivateEndpoint,
-  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
-  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
-  getPaymentMethodById: getPaymentMethodByIdEndpoint,
-  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
-  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
-  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
