@@ -160,11 +160,11 @@ public static class PromoStackingResolver
                 if (selected.Count == 0)
                 {
                     selected.Add(code);
-                    RejectRest(ordered, code, rejected, "Cannot stack with exclusive promo code");
+                    RejectRest(ordered, code, rejected, "Cannot stack with exclusive promo code", includeStop: false);
                     return selected;
                 }
 
-                RejectRest(ordered, code, rejected, "Stopped at non-stackable (exclusive) promo code");
+                RejectRest(ordered, code, rejected, "Stopped at non-stackable (exclusive) promo code", includeStop: true);
                 return selected;
             }
 
@@ -190,10 +190,15 @@ public static class PromoStackingResolver
         List<PromoCode> ordered,
         PromoCode stopCode,
         List<RejectedPromoCode> rejected,
-        string stopReason)
+        string stopReason,
+        bool includeStop)
     {
         var stopIndex = ordered.IndexOf(stopCode);
-        rejected.Add(new RejectedPromoCode(stopCode.Code, stopReason));
+        if (includeStop)
+        {
+            rejected.Add(new RejectedPromoCode(stopCode.Code, stopReason));
+        }
+
         foreach (var rest in ordered.Skip(stopIndex + 1))
         {
             rejected.Add(new RejectedPromoCode(rest.Code, $"Not applied after {stopCode.Code} stopped stacking"));
