@@ -3123,11 +3123,6 @@
       "count": 1
     }
   },
-  "src/components/sign-in-form.tsx": {
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    }
-  },
   "src/components/signup-form.tsx": {
     "@typescript-eslint/no-misused-promises": {
       "count": 1

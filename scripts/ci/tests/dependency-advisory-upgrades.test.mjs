@@ -7,6 +7,8 @@ import test from 'node:test';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const webRequire = createRequire(join(root, 'apps/web/package.json'));
+const clientRequire = createRequire(join(root, 'packages/infrastructure/client/package.json'));
+const handlebars = clientRequire('handlebars');
 const nextRequire = createRequire(webRequire.resolve('next/package.json'));
 const sharp = nextRequire('sharp');
 const rootRequire = createRequire(join(root, 'package.json'));
@@ -56,4 +58,32 @@ for (const [name, separator] of [['LF', '\n'], ['CR', '\r'], ['line separator', 
 test('ordinary shell quoting still preserves literal arguments', () => {
   const values = ['echo', 'two words', '#literal', '$literal', "a'b"];
   assert.deepEqual(shellQuote.parse(shellQuote.quote(values)), values);
+});
+
+test('the client template compiler resolves the corrected Handlebars release', () => {
+  assert.equal(handlebars.VERSION, '4.7.10');
+});
+
+test('precompiled template text cannot terminate an inline script element', () => {
+  const output = handlebars.precompile('safe</script><!--<script>synthetic</script>');
+  assert.doesNotMatch(output, /<\/script|<!--|<script/i);
+});
+
+test('the template compiler rejects a non-array AST block parameter list', () => {
+  const ast = handlebars.parse('{{#if visible}}ok{{/if}}');
+  ast.body[0].program.blockParams = { length: 'syntheticInvalidLength' };
+  assert.throws(() => handlebars.precompile(ast));
+});
+
+test('the template property lookup denies an own constructor on a prototype', () => {
+  const template = handlebars.compile('{{lookup prototype "constructor"}}');
+  assert.equal(template({ prototype: Function.prototype }, { allowProtoMethodsByDefault: true }), '');
+});
+
+test('ordinary and valid pre-parsed templates retain rendering behavior', () => {
+  const source = '{{#each items}}{{name}};{{/each}}';
+  const context = { items: [{ name: 'one' }, { name: '<two>' }] };
+  const expected = 'one;&lt;two&gt;;';
+  assert.equal(handlebars.compile(source)(context), expected);
+  assert.equal(handlebars.compile(handlebars.parse(source))(context), expected);
 });

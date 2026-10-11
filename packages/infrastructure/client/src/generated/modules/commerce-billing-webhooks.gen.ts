@@ -29,7 +29,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;
@@ -61,7 +61,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;
@@ -81,7 +81,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;
@@ -128,7 +128,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;

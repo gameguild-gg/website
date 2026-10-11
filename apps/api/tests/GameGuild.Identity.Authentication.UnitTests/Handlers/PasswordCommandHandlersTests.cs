@@ -264,8 +264,9 @@ public sealed class PasswordCommandHandlersTests
             .ReturnsAsync("access-token");
         jwtTokenService.Setup(s => s.GenerateRefreshTokenAsync(userId, It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("refresh-token");
-        var sessionIssuer = new Mock<IAuthenticatedSessionIssuer>();
-        sessionIssuer.Setup(s => s.IssueAsync(user, null, It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+        var signInMfa = new Mock<ISignInMfaService>(MockBehavior.Strict);
+        signInMfa.Setup(s => s.BeginAsync(userId, user.TokenVersion, null, It.IsAny<DeviceInfo>(),
+                SignInFirstFactor.MagicLink, false, CancellationToken.None))
             .ReturnsAsync(new SignInResponse { Success = true, UserId = userId, Email = user.Email,
                 AccessToken = "access-token", RefreshToken = "refresh-token", ExpiresIn = 900, SessionId = Guid.NewGuid() });
 
@@ -275,7 +276,7 @@ public sealed class PasswordCommandHandlersTests
             jwtTokenService.Object,
             configuration,
             NullLogger<ConsumeMagicLinkCommandHandler>.Instance,
-            jwtOptions: null, sessionIssuer: sessionIssuer.Object);
+            jwtOptions: null, sessionIssuer: null, signInMfa: signInMfa.Object);
 
         var result = await handler.Handle(new ConsumeMagicLinkCommand { Token = "magic-token" }, CancellationToken.None);
 
@@ -285,8 +286,11 @@ public sealed class PasswordCommandHandlersTests
         result.ExpiresIn.Should().Be(900);
         result.UserId.Should().Be(userId);
         result.SessionId.Should().NotBeEmpty();
-        sessionIssuer.Verify(s => s.IssueAsync(user, null,
-            It.Is<DeviceInfo>(device => device.DeviceName == "Magic Link" && device.DeviceType == "Web"), CancellationToken.None), Times.Once);
+        signInMfa.Verify(s => s.BeginAsync(userId, user.TokenVersion, null,
+            It.Is<DeviceInfo>(device => device.DeviceName == "Magic Link" && device.DeviceType == "Web"),
+            SignInFirstFactor.MagicLink, false, CancellationToken.None), Times.Once);
+        jwtTokenService.Verify(s => s.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(),
+            It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

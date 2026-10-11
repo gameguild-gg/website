@@ -23,25 +23,16 @@ public interface IPasswordHasher
     /// <returns>True if password matches</returns>
     bool VerifyPassword(string hashedPassword, string providedPassword);
 
-    /// <summary>
-    ///     Verifies a password against a stored hash and reports whether expensive
-    ///     cryptographic verification actually ran. Early rejections — missing input, a
-    ///     malformed stored hash, or an input beyond BCrypt's 72-byte boundary — return a
-    ///     failure with <see cref="PasswordVerificationResult.PerformedCryptographicWork" />
-    ///     set to false so callers can supply equivalent timing-compensation work instead of
-    ///     misclassifying the short path as completed credential work.
-    /// </summary>
-    /// <param name="hashedPassword">The stored password hash</param>
-    /// <param name="providedPassword">The password to verify</param>
-    /// <returns>Verification outcome together with the credential-work classification</returns>
-    PasswordVerificationResult VerifyPasswordWithWorkClassification(string hashedPassword, string providedPassword);
+    /// <summary>Opaque providers remain conservative; work-aware implementations override this operation.</summary>
+    PasswordVerificationResult VerifyPasswordWithWorkClassification(string hashedPassword, string providedPassword) =>
+        new PasswordVerificationResult(VerifyPassword(hashedPassword, providedPassword), false);
 
-    /// <summary>
-    ///     Performs verification-equivalent cryptographic work at the configured BCrypt work
-    ///     factor. Used by timing protection to equalize paths that completed no usable
-    ///     credential verification (missing, passwordless or unusable credentials).
-    /// </summary>
-    Task PerformDummyVerificationAsync(CancellationToken cancellationToken = default);
+    /// <summary>Native providers perform verification-equivalent work at their configured factor.</summary>
+    Task PerformDummyVerificationAsync() => PerformDummyVerificationAsync(CancellationToken.None);
+
+    /// <summary>Native providers perform cancellable verification-equivalent work at their configured factor.</summary>
+    Task PerformDummyVerificationAsync(CancellationToken cancellationToken) =>
+        throw new NotSupportedException("This password provider does not expose dummy credential work.");
 
     /// <summary>
     ///     Checks if a hash is malformed, unsupported or below the configured BCrypt work factor.

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>
@@ -29,19 +27,22 @@ public enum CredentialWorkClassification
 
 /// <summary>
 ///     Server-owned monotonic timing scope for one authentication attempt. The origin is a
-///     <see cref="Stopwatch.GetTimestamp()" /> value captured by the constructor itself, so
+///     timestamp captured by the constructor itself, so
 ///     callers can never supply a wall-clock instant after the fact; the scope must simply be
 ///     created <em>before</em> account resolution so the lookup and all credential work fall
 ///     inside the compensated window.
 /// </summary>
 public sealed class AuthenticationTimingScope
 {
-    private readonly long _originTimestamp;
+    internal AuthenticationTimingOrigin Origin { get; }
 
     /// <summary>Captures the server-owned monotonic origin at construction time.</summary>
-    public AuthenticationTimingScope()
+    public AuthenticationTimingScope() : this(AuthenticationTimingOrigin.Start()) { }
+
+    internal AuthenticationTimingScope(AuthenticationTimingOrigin origin)
     {
-        _originTimestamp = Stopwatch.GetTimestamp();
+        ArgumentNullException.ThrowIfNull(origin);
+        Origin = origin;
     }
 
     /// <summary>
@@ -49,5 +50,5 @@ public sealed class AuthenticationTimingScope
     ///     the scope was created: account resolution, real credential verification and any
     ///     compensation-side dummy work performed so far.
     /// </summary>
-    public TimeSpan ElapsedSinceOrigin => Stopwatch.GetElapsedTime(_originTimestamp);
+    public TimeSpan ElapsedSinceOrigin => Origin.Elapsed;
 }

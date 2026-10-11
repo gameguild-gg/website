@@ -60,7 +60,7 @@ export class LearningExperienceRecommendationsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.LearningExperienceRecommendationsSimilarCourseDto[], ApiError>;
@@ -258,7 +258,7 @@ export class LearningExperienceRecommendationsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.LearningExperienceRecommendationsPopularCourseDto[], ApiError>;
@@ -281,7 +281,7 @@ export class LearningExperienceRecommendationsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.LearningExperienceRecommendationsTrendingCourseDto[], ApiError>;

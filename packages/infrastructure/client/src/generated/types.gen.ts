@@ -1483,6 +1483,12 @@ export interface BulkOperationOutput {
   totalRequested?: number;
 }
 
+/** Request body for the migration dry-run endpoint. */
+export interface CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput {
+  sourceProvider?: string | null;
+  targetProvider?: string | null;
+}
+
 /** Read model over a durable billing integration event published through the platform outbox. */
 export interface CommerceBillingBillingOutboxEventDto {
   /** Aggregate identifier the event refers to. */
@@ -1508,6 +1514,52 @@ export interface CommerceBillingBillingOutboxEventDto {
 
 /** Delivery status of a durable billing event in the platform outbox. */
 export type CommerceBillingBillingOutboxEventStatus = 'Pending' | 'Completed' | 'DeadLettered';
+
+/** Classification of a subscription row within a provider-migration dry-run report. */
+export type CommerceBillingBillingProviderMigrationEntryClassification =
+  'BoundToSourceMissingTargetExternalId' | 'AlreadyOnTargetProvider' | 'UnattributedExternalId' | 'NotExternallyBound';
+
+/** Report-only result of a provider-migration dry-run (issue #397). No state is
+mutated; executing the actual migration is explicitly out of scope and deferred
+(gateway routing/failover is tracked separately in #413). */
+export interface CommerceBillingBillingProviderMigrationReport {
+  /** Subscriptions already carrying a target-provider external identifier. */
+  alreadyOnTargetProviderCount: number;
+  /** Subscriptions bound to the source provider lacking a target external identifier — the migration work list. */
+  boundToSourceMissingTargetExternalIdCount: number;
+  /** Always true: this report never mutates state. */
+  dryRun: boolean;
+  /** Classified subscription entries (capped for response size; the counts above
+always reflect the full scan). */
+  entries?: CommerceBillingBillingProviderMigrationReportEntry[] | null;
+  /** When the report was produced. */
+  generatedAtUtc: string;
+  /** Always false: reassurance flag for API consumers. */
+  mutationApplied: boolean;
+  /** Subscriptions without any external identifier (out of scope). */
+  notExternallyBoundCount: number;
+  /** Provider the subscriptions would be migrated away from. */
+  sourceProvider: string | null;
+  /** Provider the subscriptions would be migrated to. */
+  targetProvider: string | null;
+  /** Total subscriptions scanned. */
+  totalSubscriptionsScanned: number;
+  /** Subscriptions whose external identifier could not be attributed — manual review required. */
+  unattributedExternalIdCount: number;
+}
+
+/** One subscription row of a GameGuild.Commerce.Billing.BillingProviderMigrationReport. */
+export interface CommerceBillingBillingProviderMigrationReportEntry {
+  classification: CommerceBillingBillingProviderMigrationEntryClassification;
+  /** External (provider) subscription identifier as stored. */
+  externalId: string | null;
+  /** Current subscription status. */
+  status: string | null;
+  /** Internal subscription identifier. */
+  subscriptionId: string;
+  /** Owning tenant identifier. */
+  tenantId: string;
+}
 
 /** State of the CIDR source allowlist enforced on the provider callback endpoints. */
 export interface CommerceBillingBillingWebhookAllowlistStatusDto {
@@ -1604,6 +1656,36 @@ export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
   isEnabled?: boolean;
   /** Sliding window (seconds) in which failures are counted per source. */
   windowSeconds?: number;
+}
+
+/** Read-only management and health snapshot of one configured external
+billing provider (issue #397 provider-management API). */
+export interface CommerceBillingExternalBillingProviderStatusDto {
+  /** Provider configuration validation errors (read-only, never contains secrets). */
+  configurationErrors?: string[] | null;
+  /** Whether the provider has its API credentials configured. */
+  configured: boolean;
+  /** Whether the provider's configuration passes validation
+(M:GameGuild.Commerce.Billing.BillingConfiguration.ValidateProvider(System.String) plus provider-specific
+credential completeness). Validation errors are surfaced read-only in
+GameGuild.Commerce.Billing.ExternalBillingProviderStatusDto.ConfigurationErrors. */
+  configValid: boolean;
+  /** Whether the provider is enabled at runtime. Defaults to true; an explicit
+administrator disable persists a management state row. */
+  enabled: boolean;
+  /** When the enabled state was last changed by an administrator (null when the
+provider keeps its default enabled disposition). */
+  enabledStateChangedAt?: string | null;
+  /** Derived health summary: "healthy" (configured, valid config, webhook endpoint
+ready), "degraded" (configured but incomplete — webhook verification or config
+validation issues) or "not-configured" (no credentials). */
+  health: string | null;
+  /** Provider key from GameGuild.Commerce.PaymentProviders (stripe, paypal, ...). */
+  providerKey: string | null;
+  /** Whether the provider's webhook verification material is configured so the
+callback endpoint can authenticate provider events (signing secret / webhook
+id / shared secret / verification keys). */
+  webhookEndpointConfigured: boolean;
 }
 
 /** Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -7558,6 +7640,14 @@ export interface IdentityAuthenticationCompleteMfaSetupInput {
   secretKey: string;
 }
 
+/** Completes the bound, expiring sign-in challenge. The server supplies identity and tenant. */
+export interface IdentityAuthenticationCompleteMfaSignInInput {
+  code: string;
+  deviceFingerprint?: string | null;
+  method?: IdentityAuthenticationMfaMethod;
+  mfaToken: string;
+}
+
 /** Request to complete password reset */
 export interface IdentityAuthenticationCompletePasswordResetInput {
   /** Password confirmation */
@@ -7934,6 +8024,14 @@ export interface IdentityAuthenticationMfaSetupOutput {
   secretKey?: string | null;
 }
 
+/** Provisioning data only; this response never grants an authenticated session. */
+export interface IdentityAuthenticationMfaSignInEnrollmentOutput {
+  expiresAt?: string;
+  qrCodeUri?: string | null;
+  secretKey?: string | null;
+  success?: boolean;
+}
+
 /** Success response for MFA operations */
 export interface IdentityAuthenticationMfaSuccessOutput {
   /** Success message */
@@ -8292,6 +8390,8 @@ identity provider for this sign-in. Null for non-federated flows. */
   expiresIn?: number;
   /** Response message */
   message?: string | null;
+  /** Recovery codes returned once, only when a limited enrollment finishes with verified TOTP. */
+  mfaEnrollmentBackupCodes?: string[] | null;
   /** MFA session ID if MFA is required */
   mfaSessionId?: string | null;
   /** MFA token */
@@ -8341,6 +8441,11 @@ export interface IdentityAuthenticationSmsMfaSetupOutput {
   message: string | null;
   /** Masked phone number for confirmation */
   phoneNumberMasked: string | null;
+}
+
+/** Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
+export interface IdentityAuthenticationStartMfaSignInEnrollmentInput {
+  mfaToken: string;
 }
 
 /** Data model for Identity Authentication Step Up Challenge Response. */
@@ -20610,8 +20715,12 @@ export let AssetsVirusScanStatusSchema: z.ZodType<AssetsVirusScanStatus>;
 export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
+export let CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema: z.ZodType<CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput>;
 export let CommerceBillingBillingOutboxEventDtoSchema: z.ZodType<CommerceBillingBillingOutboxEventDto>;
 export let CommerceBillingBillingOutboxEventStatusSchema: z.ZodType<CommerceBillingBillingOutboxEventStatus>;
+export let CommerceBillingBillingProviderMigrationEntryClassificationSchema: z.ZodType<CommerceBillingBillingProviderMigrationEntryClassification>;
+export let CommerceBillingBillingProviderMigrationReportSchema: z.ZodType<CommerceBillingBillingProviderMigrationReport>;
+export let CommerceBillingBillingProviderMigrationReportEntrySchema: z.ZodType<CommerceBillingBillingProviderMigrationReportEntry>;
 export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookAllowlistStatusDto>;
 export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
 export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
@@ -20619,6 +20728,7 @@ export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<Commer
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
+export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<CommerceBillingExternalBillingProviderStatusDto>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
@@ -21162,6 +21272,7 @@ export let IdentityAuthenticationCleanupKeysInputSchema: z.ZodType<IdentityAuthe
 export let IdentityAuthenticationCleanupResultSchema: z.ZodType<IdentityAuthenticationCleanupResult>;
 export let IdentityAuthenticationClientCredentialsTokenOutputSchema: z.ZodType<IdentityAuthenticationClientCredentialsTokenOutput>;
 export let IdentityAuthenticationCompleteMfaSetupInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSetupInput>;
+export let IdentityAuthenticationCompleteMfaSignInInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSignInInput>;
 export let IdentityAuthenticationCompletePasswordResetInputSchema: z.ZodType<IdentityAuthenticationCompletePasswordResetInput>;
 export let IdentityAuthenticationCompleteWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnRegistrationInput>;
@@ -21200,6 +21311,7 @@ export let IdentityAuthenticationMfaMethodSchema: z.ZodType<IdentityAuthenticati
 export let IdentityAuthenticationMfaMethodInfoSchema: z.ZodType<IdentityAuthenticationMfaMethodInfo>;
 export let IdentityAuthenticationMfaMethodsOutputSchema: z.ZodType<IdentityAuthenticationMfaMethodsOutput>;
 export let IdentityAuthenticationMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationMfaSetupOutput>;
+export let IdentityAuthenticationMfaSignInEnrollmentOutputSchema: z.ZodType<IdentityAuthenticationMfaSignInEnrollmentOutput>;
 export let IdentityAuthenticationMfaSuccessOutputSchema: z.ZodType<IdentityAuthenticationMfaSuccessOutput>;
 export let IdentityAuthenticationMfaVerificationOutputSchema: z.ZodType<IdentityAuthenticationMfaVerificationOutput>;
 export let IdentityAuthenticationOAuth2ErrorOutputSchema: z.ZodType<IdentityAuthenticationOAuth2ErrorOutput>;
@@ -21241,6 +21353,7 @@ export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<Ident
 export let IdentityAuthenticationSignInOutputSchema: z.ZodType<IdentityAuthenticationSignInOutput>;
 export let IdentityAuthenticationSmsMfaSetupInputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupInput>;
 export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupOutput>;
+export let IdentityAuthenticationStartMfaSignInEnrollmentInputSchema: z.ZodType<IdentityAuthenticationStartMfaSignInEnrollmentInput>;
 export let IdentityAuthenticationStepUpChallengeOutputSchema: z.ZodType<IdentityAuthenticationStepUpChallengeOutput>;
 export let IdentityAuthenticationStepUpReceiptOutputSchema: z.ZodType<IdentityAuthenticationStepUpReceiptOutput>;
 export let IdentityAuthenticationTrustDeviceInputSchema: z.ZodType<IdentityAuthenticationTrustDeviceInput>;
@@ -23778,6 +23891,12 @@ BulkOperationOutputSchema = z.object({
   totalRequested: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput. Request body for the migration dry-run endpoint. */
+CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema = z.object({
+  sourceProvider: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingBillingOutboxEventDto. Read model over a durable billing integration event published through the platform outbox. */
 CommerceBillingBillingOutboxEventDtoSchema = z.object({
   aggregateId: z.string().nullable().optional(),
@@ -23794,6 +23913,43 @@ CommerceBillingBillingOutboxEventDtoSchema = z.object({
 
 /** Zod schema for CommerceBillingBillingOutboxEventStatus. Delivery status of a durable billing event in the platform outbox. */
 CommerceBillingBillingOutboxEventStatusSchema = z.enum(['Pending', 'Completed', 'DeadLettered']);
+
+/** Zod schema for CommerceBillingBillingProviderMigrationEntryClassification. Classification of a subscription row within a provider-migration dry-run report. */
+CommerceBillingBillingProviderMigrationEntryClassificationSchema = z.enum([
+  'BoundToSourceMissingTargetExternalId',
+  'AlreadyOnTargetProvider',
+  'UnattributedExternalId',
+  'NotExternallyBound',
+]);
+
+/** Zod schema for CommerceBillingBillingProviderMigrationReport. Report-only result of a provider-migration dry-run (issue #397). No state is
+mutated; executing the actual migration is explicitly out of scope and deferred
+(gateway routing/failover is tracked separately in #413). */
+CommerceBillingBillingProviderMigrationReportSchema = z.object({
+  alreadyOnTargetProviderCount: z.number().int(),
+  boundToSourceMissingTargetExternalIdCount: z.number().int(),
+  dryRun: z.boolean(),
+  entries: z
+    .array(z.lazy(() => CommerceBillingBillingProviderMigrationReportEntrySchema))
+    .nullable()
+    .optional(),
+  generatedAtUtc: z.string().datetime(),
+  mutationApplied: z.boolean(),
+  notExternallyBoundCount: z.number().int(),
+  sourceProvider: z.string().nullable(),
+  targetProvider: z.string().nullable(),
+  totalSubscriptionsScanned: z.number().int(),
+  unattributedExternalIdCount: z.number().int(),
+});
+
+/** Zod schema for CommerceBillingBillingProviderMigrationReportEntry. One subscription row of a GameGuild.Commerce.Billing.BillingProviderMigrationReport. */
+CommerceBillingBillingProviderMigrationReportEntrySchema = z.object({
+  classification: z.lazy(() => CommerceBillingBillingProviderMigrationEntryClassificationSchema),
+  externalId: z.string().nullable(),
+  status: z.string().nullable(),
+  subscriptionId: z.string().uuid(),
+  tenantId: z.string().uuid(),
+});
 
 /** Zod schema for CommerceBillingBillingWebhookAllowlistStatusDto. State of the CIDR source allowlist enforced on the provider callback endpoints. */
 CommerceBillingBillingWebhookAllowlistStatusDtoSchema = z.object({
@@ -23874,6 +24030,19 @@ CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema = z.object({
   failureThreshold: z.number().int().optional(),
   isEnabled: z.boolean().optional(),
   windowSeconds: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingExternalBillingProviderStatusDto. Read-only management and health snapshot of one configured external
+billing provider (issue #397 provider-management API). */
+CommerceBillingExternalBillingProviderStatusDtoSchema = z.object({
+  configurationErrors: z.array(z.string()).nullable().optional(),
+  configured: z.boolean(),
+  configValid: z.boolean(),
+  enabled: z.boolean(),
+  enabledStateChangedAt: z.string().datetime().nullable().optional(),
+  health: z.string().nullable(),
+  providerKey: z.string().nullable(),
+  webhookEndpointConfigured: z.boolean(),
 });
 
 /** Zod schema for CommerceBillingInvoicePaymentRetryResult. Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -29724,6 +29893,14 @@ IdentityAuthenticationCompleteMfaSetupInputSchema = z.object({
   secretKey: z.string().min(1),
 });
 
+/** Zod schema for IdentityAuthenticationCompleteMfaSignInInput. Completes the bound, expiring sign-in challenge. The server supplies identity and tenant. */
+IdentityAuthenticationCompleteMfaSignInInputSchema = z.object({
+  code: z.string().min(0).max(64),
+  deviceFingerprint: z.string().min(0).max(64).nullable().optional(),
+  method: z.lazy(() => IdentityAuthenticationMfaMethodSchema).optional(),
+  mfaToken: z.string().min(43).max(43),
+});
+
 /** Zod schema for IdentityAuthenticationCompletePasswordResetInput. Request to complete password reset */
 IdentityAuthenticationCompletePasswordResetInputSchema = z.object({
   confirmPassword: z.string().min(1),
@@ -30022,6 +30199,14 @@ IdentityAuthenticationMfaSetupOutputSchema = z.object({
   qrCodeData: z.string().nullable().optional(),
   qrCodeUri: z.string().nullable().optional(),
   secretKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaSignInEnrollmentOutput. Provisioning data only; this response never grants an authenticated session. */
+IdentityAuthenticationMfaSignInEnrollmentOutputSchema = z.object({
+  expiresAt: z.string().datetime().optional(),
+  qrCodeUri: z.string().nullable().optional(),
+  secretKey: z.string().nullable().optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationMfaSuccessOutput. Success response for MFA operations */
@@ -30327,6 +30512,7 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   expiresAt: z.string().datetime().optional(),
   expiresIn: z.number().int().optional(),
   message: z.string().nullable().optional(),
+  mfaEnrollmentBackupCodes: z.array(z.string()).nullable().optional(),
   mfaSessionId: z.string().nullable().optional(),
   mfaToken: z.string().nullable().optional(),
   mfaVerifiedByProvider: z.boolean().optional(),
@@ -30356,6 +30542,11 @@ IdentityAuthenticationSmsMfaSetupOutputSchema = z.object({
   expiresInSeconds: z.number().int(),
   message: z.string().nullable(),
   phoneNumberMasked: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationStartMfaSignInEnrollmentInput. Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
+IdentityAuthenticationStartMfaSignInEnrollmentInputSchema = z.object({
+  mfaToken: z.string().min(43).max(43),
 });
 
 /** Zod schema for IdentityAuthenticationStepUpChallengeOutput. Data model for Identity Authentication Step Up Challenge Response. */
@@ -41603,6 +41794,8 @@ export type CommerceBillingBillingWebhookSecuritySummary = CommerceBillingBillin
 export { CommerceBillingBillingWebhookSecuritySummaryDtoSchema as CommerceBillingBillingWebhookSecuritySummarySchema };
 export type CommerceBillingBillingWebhookSuspiciousActivityStatus = CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
 export { CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema as CommerceBillingBillingWebhookSuspiciousActivityStatusSchema };
+export type CommerceBillingExternalBillingProviderStatus = CommerceBillingExternalBillingProviderStatusDto;
+export { CommerceBillingExternalBillingProviderStatusDtoSchema as CommerceBillingExternalBillingProviderStatusSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;

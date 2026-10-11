@@ -1,6 +1,7 @@
 import {
   AuthServiceUnavailableError,
   CredentialsSignInError,
+  MfaRequiredError,
   parseBackendAuthResponse,
   type CredentialsProviderConfig,
 } from "@game-guild/client";
@@ -12,8 +13,8 @@ const EMAIL_CODE_CONSUME_PATH = "/v1/auth/email-code:consume";
 /**
  * Extend the credentials provider with the one-time email-code flow while
  * keeping other credentials (magic link, email/password) on their existing
- * implementations. Codes are exchanged server-side by the same API session
- * issuance used for the magic-link consume.
+ * implementations. The API verifies the first factor and applies current MFA
+ * policy before issuing an ordinary session.
  */
 export function createEmailCodeCredentialsAuthorize(
   fallbackAuthorize: CredentialsAuthorize,
@@ -21,7 +22,9 @@ export function createEmailCodeCredentialsAuthorize(
 ): CredentialsAuthorize {
   return async (credentials, request) => {
     const rawCode = credentials.emailCode;
-    if (rawCode === undefined) return fallbackAuthorize(credentials, request);
+    if (Object.hasOwn(credentials, "mfaToken") || rawCode === undefined) {
+      return fallbackAuthorize(credentials, request);
+    }
 
     const email = credentials.emailCodeEmail;
     if (
@@ -88,7 +91,16 @@ export function createEmailCodeCredentialsAuthorize(
       );
     }
 
-    const result = parseBackendAuthResponse(data as Record<string, unknown>);
+    const payload = data as Record<string, unknown>;
+    if (payload.requiresMfa === true) {
+      throw new MfaRequiredError("Multi-factor authentication required", {
+        mfaToken: typeof payload.mfaToken === "string" ? payload.mfaToken : undefined,
+        availableMethods: Array.isArray(payload.availableMethods)
+          ? payload.availableMethods.filter((method): method is string => typeof method === "string")
+          : undefined,
+      });
+    }
+    const result = parseBackendAuthResponse(payload);
     if (
       !result.user.id ||
       !result.tokens.accessToken ||

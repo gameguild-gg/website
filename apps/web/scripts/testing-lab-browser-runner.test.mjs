@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { win32 } from "node:path";
 import test from "node:test";
@@ -29,6 +30,22 @@ test("resolves Git Bash without falling through to the WSL app alias", () => {
   );
 });
 
+test("skips WSL aliases when deriving Git Bash from PATH", () => {
+  const expected = win32.join("C:\\Program Files", "Git", "bin", "bash.exe");
+  for (const aliasDirectory of [
+    "C:\\Windows\\System32",
+    "C:\\Windows\\SysWOW64",
+    "C:\\Users\\Example\\AppData\\Local\\Microsoft\\WindowsApps",
+  ]) {
+    const alias = win32.join(aliasDirectory, "bash.exe");
+    assert.equal(resolveBashExecutable({
+      platform: "win32",
+      env: { Path: aliasDirectory + ";C:\\Program Files\\Git\\cmd" },
+      exists: (candidate) => candidate === alias || candidate === expected,
+    }), expected);
+  }
+});
+
 test("isolates the browser journey in a disposable PostgreSQL database", async () => {
   const runner = await readFile(
     new URL("./testing-lab-browser-e2e.sh", import.meta.url),
@@ -40,15 +57,15 @@ test("isolates the browser journey in a disposable PostgreSQL database", async (
   assert.match(runner, /postgres:16-alpine/);
   assert.match(
     runner,
-    /POSTGRES_PORT="\$\{TESTING_LAB_E2E_POSTGRES_PORT:-\$\(\(43000 \+ RANDOM % 1000\)\)\}"/,
+    /POSTGRES_PORT="\$\{TESTING_LAB_E2E_POSTGRES_PORT:-\$\(pick_default_port 43000\)\}"/,
   );
   assert.match(
     runner,
-    /API_PORT="\$\{TESTING_LAB_E2E_API_PORT:-\$\(\(42000 \+ RANDOM % 1000\)\)\}"/,
+    /API_PORT="\$\{TESTING_LAB_E2E_API_PORT:-\$\(pick_default_port 42000\)\}"/,
   );
   assert.match(
     runner,
-    /WEB_PORT="\$\{TESTING_LAB_E2E_WEB_PORT:-\$\(\(44000 \+ RANDOM % 1000\)\)\}"/,
+    /WEB_PORT="\$\{TESTING_LAB_E2E_WEB_PORT:-\$\(pick_default_port 44000\)\}"/,
   );
   assert.match(runner, /TESTING_LAB_E2E_DATABASE_MODE=disposable/);
   assert.match(runner, /POSTGRES_HOST=127\.0\.0\.1/);
@@ -105,6 +122,88 @@ test("isolates the browser journey in a disposable PostgreSQL database", async (
   assert.match(runner, /kill -0 "\$\{process_pid\}"/);
   assert.match(runner, /docker rm -f/);
   assert.doesNotMatch(runner, /docker compose down/);
+});
+
+async function readPortProbe() {
+  const runner = await readFile(
+    new URL("./testing-lab-browser-e2e.sh", import.meta.url),
+    "utf8",
+  );
+  const functionSource = runner.match(
+    /pick_default_port\(\) \{[\s\S]*?\r?\n\}/,
+  )?.[0];
+  assert.ok(functionSource, "the default port probe must be present");
+  const initializers = [...runner.matchAll(/^(?:POSTGRES|API|WEB)_PORT=.*$/gm)]
+    .map((match) => match[0]);
+  assert.equal(initializers.length, 3);
+  return { functionSource, initializers };
+}
+
+function runMockPortProbe(functionSource, commands, env = {}) {
+  // Execute only the helper with a mocked node command. No socket, application,
+  // database, container or SDK is started.
+  const result = spawnSync(
+    resolveBashExecutable({ platform: process.platform, env: process.env }),
+    [
+      "--noprofile",
+      "--norc",
+      "-c",
+      ["set -eu", functionSource, ...commands].join("\n"),
+    ],
+    { encoding: "utf8", env: { ...process.env, ...env }, timeout: 10_000 },
+  );
+  assert.ifError(result.error);
+  return result;
+}
+
+test("retries occupied default ports and returns the first successful probe", async (context) => {
+  const { functionSource } = await readPortProbe();
+  const result = runMockPortProbe(functionSource, [
+    "mock_calls=0",
+    'node() { mock_calls=$((mock_calls + 1)); printf "PROBE:%s\\n" "$3" >&2; test "$mock_calls" -ge 3; }',
+    "pick_default_port 43000",
+  ]);
+  context.diagnostic("Mock Bash PID: " + result.pid);
+  assert.equal(result.status, 0, result.stderr);
+  const probes = result.stderr.trim().split(/\r?\n/);
+  assert.equal(probes.length, 3);
+  for (const probe of probes) {
+    assert.match(probe, /^PROBE:43\d{3}$/);
+  }
+  assert.equal(result.stdout.trim(), probes[2].slice("PROBE:".length));
+});
+
+test("fails after ten unsuccessful default port probes", async (context) => {
+  const { functionSource } = await readPortProbe();
+  const result = runMockPortProbe(functionSource, [
+    'node() { printf "PROBE:%s\\n" "$3" >&2; return 1; }',
+    "pick_default_port 42000",
+  ]);
+  context.diagnostic("Mock Bash PID: " + result.pid);
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  const probes = result.stderr.split(/\r?\n/)
+    .filter((line) => line.startsWith("PROBE:"));
+  assert.equal(probes.length, 10);
+  assert.ok(probes.every((probe) => /^PROBE:42\d{3}$/.test(probe)));
+  assert.match(result.stderr, /no free port in the 42000 band after 10 attempts/);
+});
+
+test("preserves explicitly configured ports without probing defaults", async (context) => {
+  const { functionSource, initializers } = await readPortProbe();
+  const result = runMockPortProbe(functionSource, [
+    'node() { printf "unexpected default probe\\n" >&2; return 1; }',
+    ...initializers,
+    'printf "%s,%s,%s\\n" "$POSTGRES_PORT" "$API_PORT" "$WEB_PORT"',
+  ], {
+    TESTING_LAB_E2E_POSTGRES_PORT: "43123",
+    TESTING_LAB_E2E_API_PORT: "42123",
+    TESTING_LAB_E2E_WEB_PORT: "44123",
+  });
+  context.diagnostic("Mock Bash PID: " + result.pid);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), "43123,42123,44123");
+  assert.equal(result.stderr, "");
 });
 
 test("allows cold SSR route compilation without aborting browser navigation", async () => {
@@ -284,7 +383,7 @@ test("sequences fixture sign-ins that share the source-IP lockout budget", async
 
   assert.match(
     journey,
-    /const owner = await createFixtureIdentity\("owner"\);\s+const reviewer = await createFixtureIdentity\("reviewer"\);\s+const tester = await createFixtureIdentity\("tester"\);/,
+    /const \[owner, reviewer, tester\] =\s+await createTestingLabFixtureIdentities\(createFixtureIdentity\);/,
   );
   assert.doesNotMatch(journey, /Promise\.all\(\[\s*createFixtureIdentity/);
 });

@@ -11,15 +11,21 @@ namespace GameGuild.Identity.Authentication;
 ///     Password hashing service using BCrypt, with versioned PBKDF2 for inputs beyond BCrypt's byte limit.
 ///     Provides password hashing, verification, strength validation, and rehashing detection.
 /// </summary>
-public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguration configuration) : IPasswordHasher
+public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguration configuration) : IPasswordHasher, IPasswordVerificationWork
 {
     private static readonly Regex BcryptHashPattern = new(
         @"\A\$2[abxy]?\$(0[4-9]|1[0-6])\$[./A-Za-z0-9]{53}\z",
         RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
-    private int GetBCryptWorkFactor()
+    private int GetBCryptWorkFactor() => ResolveBCryptWorkFactor(configuration);
+
+    // Resolve on every operation, including dummy work, so configuration reloads cannot drift.
+    internal static int ResolveBCryptWorkFactor(IConfiguration? configuration)
     {
-        var workFactor = GetPolicyInteger("BCryptWorkFactor", 12);
+        var workFactor = configuration?.GetValue<int?>("PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor")
+            ?? configuration?.GetValue<int?>("Authentication:PasswordPolicy:BCryptWorkFactor")
+            ?? configuration?.GetValue<int?>("PasswordPolicy:BCryptWorkFactor")
+            ?? 12;
         if (workFactor is < 10 or > 16)
         {
             throw new InvalidOperationException("BCrypt work factor must be between 10 and 16.");
@@ -72,24 +78,20 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
         return Task.FromResult(result);
     }
 
-    /// <summary>
-    ///     Performs verification-equivalent BCrypt work at the configured work factor for
-    ///     timing-compensation paths that completed no usable credential verification.
-    /// </summary>
-    public Task PerformDummyVerificationAsync(CancellationToken cancellationToken = default)
+    internal const string DummyCredentialMaterial = "dummy";
+
+    /// <summary>Uses the same reload-aware work factor as real BCrypt verification.</summary>
+    public Task PerformDummyVerificationAsync() => PerformDummyVerificationAsync(CancellationToken.None);
+
+    /// <summary>Uses the same reload-aware work factor as real BCrypt verification, with caller cancellation.</summary>
+    public async Task PerformDummyVerificationAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var workFactor = GetBCryptWorkFactor();
-        // HashPassword at the configured factor performs the same bcrypt key-schedule work
-        // as a verification against a hash stored at that factor.
-        return Task.Run(() => BCrypt.Net.BCrypt.HashPassword(DummyCredentialMaterial, workFactor), cancellationToken);
+        await Task.Run(() => BCrypt.Net.BCrypt.HashPassword(DummyCredentialMaterial, workFactor), cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        logger.LogDebug("Dummy credential work completed (BCrypt work factor: {WorkFactor})", workFactor);
     }
-
-    /// <summary>
-    ///     Dummy credential material for timing compensation. Not a secret: it exists so the
-    ///     compensation path performs realistic bcrypt work on attacker-independent input.
-    /// </summary>
-    internal const string DummyCredentialMaterial = "dummy";
 
     /// <summary>
     ///     Validates password strength against policy requirements.
@@ -207,39 +209,31 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
     }
 
     /// <summary>
-    ///     Verifies a password against a stored hash.
+    ///     Verifies a password against its hash.
     /// </summary>
-    public bool VerifyPassword(string hashedPassword, string providedPassword)
-    {
-        return VerifyPasswordWithWorkClassification(hashedPassword, providedPassword).IsValid;
-    }
+    public bool VerifyPassword(string hashedPassword, string providedPassword) =>
+        VerifyPasswordWithWork(hashedPassword, providedPassword).IsValid;
 
-    /// <summary>
-    ///     Verifies a password against a stored hash and reports whether expensive
-    ///     cryptographic verification ran. Every rejection taken <em>before</em> the
-    ///     underlying KDF (missing input, malformed hash, input beyond BCrypt's 72-byte
-    ///     boundary, and hasher failures) reports no cryptographic work so timing
-    ///     compensation can supply equivalent dummy work.
-    /// </summary>
-    public PasswordVerificationResult VerifyPasswordWithWorkClassification(string hashedPassword, string providedPassword)
+    public PasswordVerificationResult VerifyPasswordWithWorkClassification(string hashedPassword, string providedPassword) =>
+        VerifyPasswordWithWork(hashedPassword, providedPassword);
+
+    /// <summary>Reports only credential work that actually completed, never merely account existence.</summary>
+    public PasswordVerificationResult VerifyPasswordWithWork(string hashedPassword, string providedPassword)
     {
-        if (string.IsNullOrWhiteSpace(hashedPassword) || string.IsNullOrWhiteSpace(providedPassword)) { return PasswordVerificationResult.RejectedWithoutWork; }
+        if (string.IsNullOrWhiteSpace(hashedPassword) || string.IsNullOrWhiteSpace(providedPassword))
+        {
+            return default;
+        }
 
         if (hashedPassword.StartsWith(LongPasswordHash.Prefix, StringComparison.Ordinal))
         {
-            // A malformed full-length row cannot reach the PBKDF2 comparison: no work runs.
-            if (!LongPasswordHash.IsValid(hashedPassword)) { return PasswordVerificationResult.RejectedWithoutWork; }
-
-            return LongPasswordHash.Verify(hashedPassword, providedPassword)
-                ? new PasswordVerificationResult(IsValid: true, PerformedCryptographicWork: true)
-                : new PasswordVerificationResult(IsValid: false, PerformedCryptographicWork: true);
+            return LongPasswordHash.VerifyWithWork(hashedPassword, providedPassword);
         }
 
-        // A legacy BCrypt row cannot establish bytes after 72. Recovery must create a full-length hash.
-        // Both rejection reasons run before the expensive verify: report no cryptographic work.
+        // Legacy BCrypt cannot establish bytes after 72. Reject before costly work, then compensate upstream.
         if (Encoding.UTF8.GetByteCount(providedPassword) > 72 || !BcryptHashPattern.IsMatch(hashedPassword))
         {
-            return PasswordVerificationResult.RejectedWithoutWork;
+            return default;
         }
 
         try
@@ -247,13 +241,12 @@ public sealed class PasswordHasher(ILogger<PasswordHasher> logger, IConfiguratio
             logger.LogDebug("Verifying password");
             var isValid = BCrypt.Net.BCrypt.Verify(providedPassword, hashedPassword);
             logger.LogDebug("Password verification result: {IsValid}", isValid);
-            return new PasswordVerificationResult(isValid, PerformedCryptographicWork: true);
+            return new PasswordVerificationResult(isValid, true);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error verifying password");
-            // The bcrypt failure prevented completion of the verification work.
-            return PasswordVerificationResult.RejectedWithoutWork;
+            return default;
         }
     }
 

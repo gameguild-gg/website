@@ -28,7 +28,7 @@ export class LearningCoursesProgramContentModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
@@ -71,7 +71,7 @@ export class LearningCoursesProgramContentModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

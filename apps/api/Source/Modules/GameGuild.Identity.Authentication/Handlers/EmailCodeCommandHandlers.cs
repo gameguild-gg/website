@@ -70,7 +70,7 @@ public sealed class RequestEmailCodeCommandHandler(
 public sealed class ConsumeEmailCodeCommandHandler(
     IUserRepository userRepository,
     IEmailCodeService emailCodeService,
-    IAuthenticatedSessionIssuer sessionIssuer,
+    ISignInMfaService signInMfa,
     ILogger<ConsumeEmailCodeCommandHandler> logger) : ICommandHandler<ConsumeEmailCodeCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(ConsumeEmailCodeCommand request, CancellationToken cancellationToken)
@@ -90,9 +90,10 @@ public sealed class ConsumeEmailCodeCommandHandler(
             throw new AuthenticationRequiredException("Invalid or expired email sign-in code");
         }
 
-        // Same issuance path as magic-link consume: one shared authenticated session issuer.
-        var response = await sessionIssuer.IssueAsync(
-            user,
+        // A verified email code is a first factor, not permission to skip current MFA policy.
+        var response = await signInMfa.BeginAsync(
+            user.Id,
+            user.TokenVersion,
             request.TenantId,
             new DeviceInfo
             {
@@ -102,9 +103,12 @@ public sealed class ConsumeEmailCodeCommandHandler(
                 DeviceName = "Email Code",
                 DeviceType = "Web"
             },
+            SignInFirstFactor.EmailCode,
+            requiresRiskStepUp: false,
             cancellationToken).ConfigureAwait(false);
-        response.Message = "Email-code sign-in successful";
-        logger.LogInformation("User {UserId} signed in with an email sign-in code", user.Id);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (response.Success) { response.Message = "Email-code sign-in successful"; }
+        logger.LogInformation("Email-code first factor verified for user {UserId}; authentication complete: {Complete}", user.Id, response.Success);
         return response;
     }
 }

@@ -927,7 +927,7 @@ export class TestingLabTestingEventsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.TestingLabPublicTestingEventProjection[], ApiError>;
@@ -941,7 +941,7 @@ export class TestingLabTestingEventsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

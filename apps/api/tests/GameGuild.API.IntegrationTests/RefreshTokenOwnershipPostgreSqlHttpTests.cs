@@ -33,7 +33,7 @@ public sealed class RefreshTokenOwnershipPostgreSqlHttpTests(ApiPostgreSqlFixtur
     [InlineData("anonymous", HttpStatusCode.Unauthorized)]
     public async Task ActualRevocationRequiresAuthenticatedTokenOwner(string callerKind, HttpStatusCode expected)
     {
-        using var factory = fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
             services.PostConfigure<AuthenticationOptions>(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -93,7 +93,7 @@ public sealed class RefreshTokenOwnershipPostgreSqlHttpTests(ApiPostgreSqlFixtur
     [InlineData("terminated")]
     public async Task InvalidSignedSessionIsDeniedWithoutMutatingTokens(string scenario)
     {
-        using var factory = fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
             services.PostConfigure<AuthenticationOptions>(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

@@ -23,7 +23,7 @@ export class LearningLtiModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -39,7 +39,7 @@ export class LearningLtiModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -57,7 +57,7 @@ export class LearningLtiModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
