@@ -30,7 +30,9 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
         {
             var configuredKey = configuration["Encryption:EncryptionKey"];
             if (string.IsNullOrWhiteSpace(configuredKey))
+            {
                 configuredKey = configuration["Encryption:Key"];
+            }
 
             if (string.IsNullOrWhiteSpace(configuredKey))
                 throw new InvalidOperationException(
@@ -38,8 +40,10 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
 
             var keyLengthBytes = Encoding.UTF8.GetByteCount(configuredKey);
             if (keyLengthBytes < MinimumKeyLengthBytes)
+            {
                 throw new InvalidOperationException(
                     $"Encryption:EncryptionKey (or Encryption:Key) must contain at least {MinimumKeyLengthBytes} bytes; found {keyLengthBytes}. Credential encryption fails closed and will not use a weak key.");
+            }
 
             return configuredKey;
         }

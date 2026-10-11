@@ -194,7 +194,10 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [ProducesResponseType(403)]
     public async Task<ActionResult<PageSectionDto>> UpdateSection(Guid pageId, Guid sectionId, [FromBody] UpdatePageSectionDto dto)
     {
-        if (!CanEditContent) return Forbid();
+        if (!CanEditContent)
+        {
+            return Forbid();
+        }
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var section = await sender.Send(new UpdatePageSectionCommand(pageId, sectionId, dto)).ConfigureAwait(false);
         if (section is null) return NotFound();

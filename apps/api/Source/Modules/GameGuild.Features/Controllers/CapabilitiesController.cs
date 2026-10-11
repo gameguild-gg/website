@@ -78,7 +78,10 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CheckCapability(Guid tenantId, string capability, CancellationToken ct)
     {
-        if (ValidateTenantAccess(tenantId, false) is { } failure) return failure;
+        if (ValidateTenantAccess(tenantId, false) is { } failure)
+        {
+            return failure;
+        }
         var isEnabled = await _capabilityService.IsCapabilityEnabledAsync(tenantId, capability, ct).ConfigureAwait(false);
         return Ok(new CapabilityCheckResponse(capability, isEnabled));
     }
@@ -157,7 +160,10 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SyncFromPlan(Guid tenantId, CancellationToken ct)
     {
-        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
+        if (ValidateTenantAccess(tenantId, true) is { } failure)
+        {
+            return failure;
+        }
         await _sender.Send(new SyncCapabilitiesFromPlanCommand(tenantId), ct).ConfigureAwait(false);
         return NoContent();
     }

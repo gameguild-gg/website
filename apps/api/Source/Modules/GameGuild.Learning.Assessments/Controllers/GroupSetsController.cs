@@ -153,7 +153,10 @@ public class GroupSetsController : BaseApiController
         if (!actorUserId.HasValue) return Unauthorized();
         if (!await _courseAccessEvaluator
                 .HasCapabilityAsync(courseId, CourseCapability.Learn, HttpContext.RequestAborted)
-                .ConfigureAwait(false)) return Forbid();
+                .ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new JoinCourseGroupEndpointCommand(courseId, groupId, actorUserId.Value)).ConfigureAwait(false);
         if (!result.IsSuccess)

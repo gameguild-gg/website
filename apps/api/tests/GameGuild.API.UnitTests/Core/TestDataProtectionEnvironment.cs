@@ -12,7 +12,10 @@ internal static class TestDataProtectionEnvironment
 
     public static void EnsureConfigured()
     {
-        if (HasAnyConfiguration()) return;
+        if (HasAnyConfiguration())
+        {
+            return;
+        }
 
         lock (Sync)
         {
