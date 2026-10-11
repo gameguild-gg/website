@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using GameGuild.Identity.Tenants;
 using GameGuild.Notifications.Services.Email.Handlers;
 using GameGuild.Notifications.UnitTests.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Notifications.UnitTests.Services.Email;
 
@@ -88,6 +89,56 @@ public sealed class TenantInviteRequestedHandlerTests
             resend: true), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Theory]
+    [InlineData("message")]
+    [InlineData("inner")]
+    [InlineData("data")]
+    public async Task Handle_LogPrivacy_QueueFailurePreservesRetryWithoutExposingException(string channel)
+    {
+        var email = $"private-{Guid.NewGuid():N}@example.test";
+        var privateDetail = Guid.NewGuid().ToString("N");
+        var payload = $"{email}; {privateDetail}";
+        var failure = new InvalidOperationException(
+            channel == "message" ? payload : "Queue unavailable",
+            channel == "inner" ? new Exception(payload) : null);
+        if (channel == "data")
+        {
+            failure.Data["detail"] = payload;
+        }
+        var notificationService = new Mock<INotificationService>();
+        notificationService.Setup(service => service.SendAsync(
+                It.IsAny<Guid?>(), It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<NotificationChannel>(), It.IsAny<Guid?>(), It.IsAny<string?>(),
+                It.IsAny<NotificationPriority>(), It.IsAny<Guid?>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+        var logger = new Mock<ILogger<TenantInviteRequestedHandler>>();
+        var handler = new TenantInviteRequestedHandler(notificationService.Object, logger.Object,
+            Mock.Of<ITenantMemberRepository>(), Mock.Of<ITenantRepository>(),
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            handler.Handle(new TenantInviteRequestedNotification(
+                Guid.NewGuid(), email, null, null, "Private tenant", "Member",
+                "https://app.example.test/sign-in", "https://app.example.test/forgot-password",
+                resend: true), CancellationToken.None));
+
+        result.Should().BeSameAs(failure, "the durable outbox must still retry queue failures");
+        var entry = logger.Invocations.Should().ContainSingle(invocation =>
+            invocation.Method.Name == nameof(ILogger.Log)).Subject;
+        entry.Arguments[0].Should().Be(LogLevel.Warning);
+        entry.Arguments[3].Should().BeNull("exception messages, inner exceptions and data may contain private values");
+        var rendered = entry.Arguments[2].ToString()!;
+        rendered.Should().NotContain(email).And.NotContain(privateDetail);
+        var fields = (IEnumerable<KeyValuePair<string, object?>>)entry.Arguments[2];
+        fields.Should().Contain(pair => pair.Key == "Email" && Equals(pair.Value, LogRedaction.MaskEmail(email)));
+        fields.Should().Contain(pair => pair.Key == "ErrorType" && Equals(pair.Value, failure.GetType().FullName));
+        foreach (var field in fields)
+        {
+            (field.Value?.ToString() ?? string.Empty).Should().NotContain(email).And.NotContain(privateDetail);
+        }
     }
 
     private static NotificationsTestDbContext CreateContext()
