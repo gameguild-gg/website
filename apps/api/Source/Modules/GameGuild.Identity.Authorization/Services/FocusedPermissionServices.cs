@@ -597,7 +597,10 @@ public sealed class PermissionQueryService(
         // SECURITY (deny-by-default, #327): inactive or expired grants contribute nothing;
         // the row is treated as absent. Mirrors EffectivePermissionResolverService's
         // layer rule so list results can never widen an authorization decision.
-        if (!IsGrantEffective(existing)) return new List<string>();
+        if (!IsGrantEffective(existing))
+        {
+            return new List<string>();
+        }
 
         return existing.Permissions.ToList();
     }

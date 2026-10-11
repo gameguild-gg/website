@@ -860,7 +860,9 @@ public class AuthenticationFlowsE2ETests : IClassFixture<AuthenticationApiFactor
                     .ToList();
 
                 foreach (var descriptor in descriptorsToRemove)
+                {
                     services.Remove(descriptor);
+                }
 
                 services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase(_databaseName));
                 services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
