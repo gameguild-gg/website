@@ -76,7 +76,7 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
         // Request.IsHttps comes from direct TLS or trusted forwarded-header
         // middleware. Forwarded HTTPS schemes are accepted only from explicitly configured trusted proxies.
         // Forwarded-header processing is disabled when the trusted-proxy list is empty.
-        if (!Request.IsHttps)
+        if (!Request.IsHttps) // codeql[cs/user-controlled-bypass] X-Forwarded-Proto honored only from explicitly configured trusted proxies; processing disabled entirely when the trusted-proxy list is empty
         {
             return await FailAsync("Basic authentication requires HTTPS.").ConfigureAwait(false);
         }

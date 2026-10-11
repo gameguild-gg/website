@@ -36,6 +36,10 @@ public static class DependencyInjection
         services.AddScoped<ISubscriptionExternalIdService>(sp => sp.GetRequiredService<SubscriptionQueryAndExternalIdService>());
         services.AddScoped<ISubscriptionPaymentContextService>(sp => sp.GetRequiredService<SubscriptionQueryAndExternalIdService>());
 
+        // Payment-method registry coordination (issue #414): implements the cross-module
+        // contract for the Payments module (delete guard, re-pointing, checkout assignment).
+        services.AddScoped<ISubscriptionPaymentMethodCoordination, SubscriptionPaymentMethodCoordinationService>();
+
         // Register SubscriptionService as thin facade for backward compatibility
         services.AddScoped<SubscriptionService>();
 

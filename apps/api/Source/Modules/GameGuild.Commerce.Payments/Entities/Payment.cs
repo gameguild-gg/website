@@ -1,3 +1,5 @@
+using FraudDecisionCode = GameGuild.Commerce.Payments.FraudDecision;
+using FraudReviewStateCode = GameGuild.Commerce.Payments.FraudReviewStatus;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -158,6 +160,36 @@ public class Payment : EntityBase
     /// <summary>JSON metadata for additional payment details</summary>
     [Column(TypeName = "jsonb")]
     public string? Metadata { get; private set; }
+
+    /// <summary>Aggregate fraud score (0-100) from the pre-gateway assessment; null when never assessed.</summary>
+    public int? FraudScore { get; private set; }
+
+    /// <summary>Fraud gate decision recorded for this payment; null when never assessed.</summary>
+    public FraudDecision? FraudDecision { get; private set; }
+
+    /// <summary>Bounded human-readable reason for the recorded fraud decision.</summary>
+    [MaxLength(500)]
+    public string? FraudDecisionReason { get; private set; }
+
+    /// <summary>
+    ///     Bounded JSON evidence bundle (score, risk level, signals) backing the fraud
+    ///     decision. Internal assessment evidence only — never provider tokens.
+    /// </summary>
+    [Column(TypeName = "jsonb")]
+    public string? FraudEvidence { get; private set; }
+
+    /// <summary>Manual review state when the fraud decision was <see cref="FraudDecision.Review"/>.</summary>
+    public FraudReviewStatus? FraudReviewStatus { get; private set; }
+
+    /// <summary>Administrator who resolved the manual fraud review.</summary>
+    public Guid? FraudReviewedByUserId { get; private set; }
+
+    /// <summary>When the manual fraud review was resolved.</summary>
+    public DateTime? FraudReviewedAt { get; private set; }
+
+    /// <summary>Administrator notes recorded with the fraud review resolution.</summary>
+    [MaxLength(500)]
+    public string? FraudReviewNotes { get; private set; }
 
     /// <summary>Creates a new payment with proper validation</summary>
     public static Payment Create(
@@ -439,6 +471,12 @@ public class Payment : EntityBase
             throw new InvalidOperationException($"Maximum retry attempts ({MaxRetries}) reached");
         }
 
+        if (FraudBlocksRetry)
+        {
+            throw new InvalidOperationException(
+                "A fraud-held payment cannot be retried; resolve the fraud review first.");
+        }
+
         RetryCount++;
         Status = PaymentStatus.Pending;
         FailureReason = null;
@@ -497,13 +535,88 @@ public class Payment : EntityBase
     }
 
     /// <summary>
+    ///     Records the pre-gateway fraud assessment (issue #409). For
+    ///     <see cref="FraudDecision.Review"/> and <see cref="FraudDecision.Block"/> the
+    ///     payment transitions to <see cref="PaymentStatus.Failed"/> without scheduling an
+    ///     automatic retry, and Review decisions additionally enter the manual review queue.
+    /// </summary>
+    /// <param name="decision">Gate decision to record.</param>
+    /// <param name="score">Aggregate fraud score (0-100).</param>
+    /// <param name="reason">Bounded decision reason.</param>
+    /// <param name="evidenceJson">Bounded JSON evidence bundle; never provider tokens.</param>
+    public void RecordFraudAssessment(FraudDecision decision, int score, string reason, string? evidenceJson)
+    {
+        if (score is < 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(score), "Fraud score must be between 0 and 100.");
+        }
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
+        FraudScore = score;
+        FraudDecision = decision;
+        FraudDecisionReason = reason.Length <= 500 ? reason : reason[..500];
+        FraudEvidence = evidenceJson;
+        FraudReviewStatus = decision == FraudDecisionCode.Review ? FraudReviewStateCode.PendingReview : null;
+
+        if (decision != FraudDecisionCode.Allow)
+        {
+            TransitionTo(PaymentStatus.Failed);
+            FailureReason = $"Fraud gate {decision.ToString().ToLowerInvariant()}: {FraudDecisionReason}";
+            ErrorCode = $"fraud_{decision.ToString().ToLowerInvariant()}";
+            ProcessedAt = SystemClock.UtcNow;
+            NextRetryAt = null; // Fraud-held payments are never auto-retried.
+        }
+
+        Touch();
+    }
+
+    /// <summary>
+    ///     Resolves a pending manual fraud review (issue #409). Approving releases the fraud
+    ///     hold so the payment may be retried through the existing (manual) retry flow;
+    ///     declining keeps it failed and permanently non-retryable.
+    /// </summary>
+    /// <param name="approved">Whether the review is approved.</param>
+    /// <param name="reviewedByUserId">Administrator resolving the review.</param>
+    /// <param name="notes">Optional administrator notes (bounded).</param>
+    public void ResolveFraudReview(bool approved, Guid reviewedByUserId, string? notes = null)
+    {
+        if (reviewedByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("A reviewer identity is required to resolve a fraud review.", nameof(reviewedByUserId));
+        }
+
+        if (FraudDecision != FraudDecisionCode.Review || FraudReviewStatus != FraudReviewStateCode.PendingReview)
+        {
+            throw new InvalidOperationException(
+                $"Cannot resolve a fraud review for a payment with decision {FraudDecision} and review status {FraudReviewStatus}.");
+        }
+
+        FraudReviewStatus = approved ? FraudReviewStateCode.Approved : FraudReviewStateCode.Declined;
+        FraudReviewedByUserId = reviewedByUserId;
+        FraudReviewedAt = SystemClock.UtcNow;
+        FraudReviewNotes = string.IsNullOrWhiteSpace(notes)
+            ? null
+            : (notes.Length <= 500 ? notes : notes[..500]);
+
+        Touch();
+    }
+
+    /// <summary>
     ///     Returns a legacy external reference for compatibility reads only.
     ///     This value is not a scoped provider identity and must never authorize value movement.
     /// </summary>
     public string? ResolveUnverifiedLegacyProviderObjectId() => ExternalPaymentId ?? ExternalTransactionId;
 
-    /// <summary>Whether the payment can be retried</summary>
-    public bool CanRetry => Status == PaymentStatus.Failed && RetryCount < MaxRetries;
+    /// <summary>Whether the payment can be retried. Fraud-held payments are excluded:
+    /// blocked payments never retry, and review-held payments only retry once the fraud
+    /// review has been approved (issue #409).</summary>
+    public bool CanRetry => Status == PaymentStatus.Failed && RetryCount < MaxRetries && !FraudBlocksRetry;
+
+    /// <summary>Whether the recorded fraud decision currently blocks retrying this payment.</summary>
+    public bool FraudBlocksRetry =>
+        FraudDecision == FraudDecisionCode.Block
+        || (FraudDecision == FraudDecisionCode.Review && FraudReviewStatus != FraudReviewStateCode.Approved);
 
     /// <summary>Whether max retries have been reached</summary>
     public bool MaxRetriesReached => RetryCount >= MaxRetries;

@@ -1943,6 +1943,57 @@ export interface CommercePaymentsCreateWalletInput {
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
 
+/** Read model for one pending fraud review. */
+export interface CommercePaymentsFraudReviewListItem {
+  /** Charged amount. */
+  amount: number;
+  /** When the payment attempt was created. */
+  createdAt: string;
+  /** ISO 4217 currency code. */
+  currency: string | null;
+  /** Bounded JSON signal evidence bundle. */
+  evidence?: string | null;
+  /** Provider customer reference, when bound. */
+  externalCustomerId?: string | null;
+  /** Payment awaiting review. */
+  paymentId: string;
+  /** Bounded decision reason. */
+  reason: string | null;
+  riskLevel: CommercePaymentsFraudRiskLevel;
+  /** Aggregate fraud score (0-100). */
+  score: number;
+  /** Subscription the payment was charged for. */
+  subscriptionId?: string | null;
+  /** Tenant that owns the payment. */
+  tenantId: string;
+}
+
+/** Result of resolving a fraud review. */
+export interface CommercePaymentsFraudReviewResolutionResult {
+  /** Failure reason when GameGuild.Commerce.Payments.FraudReviewResolutionResult.Success is false. */
+  failureReason?: string | null;
+  /** Payment whose review was resolved. */
+  paymentId: string;
+  /** When the review was resolved. */
+  resolvedAt?: string | null;
+  /** Administrator who resolved the review. */
+  reviewedByUserId?: string | null;
+  reviewStatus?: CommercePaymentsFraudReviewStatus;
+  /** Whether the review was resolved successfully. */
+  success: boolean;
+}
+
+/** Request body for resolving a fraud review. */
+export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewInput {
+  notes?: string | null;
+}
+
+/** Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | 'Declined';
+
+/** Risk band derived from the aggregate fraud score. */
+export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
 /** Data model for Commerce Payments Lock Wallet Request. */
 export interface CommercePaymentsLockWalletInput {
   reason: string | null;
@@ -2024,6 +2075,45 @@ export interface CommercePaymentsPaymentDunningOutcomeMetrics {
   exhaustedPayments?: number;
   /** Failed payments with retries remaining and a future next-retry time (recovery in flight). */
   pendingRetryPayments?: number;
+}
+
+/** Display-safe projection of a registered payment method. */
+export interface CommercePaymentsPaymentMethodDto {
+  id?: string;
+  billingAddress?: string | null;
+  cardBrand?: string | null;
+  cardExpMonth?: number | null;
+  cardExpYear?: number | null;
+  cardLast4?: string | null;
+  createdAt?: string;
+  expiresAt?: string | null;
+  expiresInDays?: number | null;
+  gatewayPaymentMethodId?: string | null;
+  gatewayProvider?: string | null;
+  isDefault?: boolean;
+  lastUsedAt?: string | null;
+  nickname?: string | null;
+  status?: string | null;
+  tenantId?: string;
+  type?: string | null;
+  updatedAt?: string;
+  userId?: string;
+}
+
+/** Request body for registering a payment method from a gateway token. */
+export interface CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  gatewayPaymentMethodId?: string | null;
+  nickname?: string | null;
+  ownerUserId?: string | null;
+  setAsDefault?: boolean;
+  tenantId?: string;
+}
+
+/** Request body for updating payment-method display fields. */
+export interface CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  nickname?: string | null;
 }
 
 /** Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
@@ -3420,6 +3510,10 @@ If null, the subscription uses the current plan price on renewal. */
   metadata?: string | null;
   /** When the next billing cycle occurs */
   nextBillingDate?: string;
+  /** Local payment-method registry ID (GameGuild.Commerce.Payments, issue #414) used to
+bill this subscription. Plain reference — no cross-module FK; guarded by the
+Payments module's delete rule. */
+  paymentMethodId?: string | null;
   plan?: CommerceSubscriptionsSubscriptionPlan;
   /** Reference to the subscription plan */
   planId: string;
@@ -20570,6 +20664,11 @@ export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommerceP
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
+export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
+export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
+export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
+export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
@@ -20579,6 +20678,9 @@ export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymen
 export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePaymentsPaymentCancellationResult>;
 export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
+export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
+export let CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody>;
 export let CommercePaymentsPaymentRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRecoveryMetrics>;
 export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymentResult>;
 export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
@@ -24122,6 +24224,42 @@ CommercePaymentsCreateWalletInputSchema = z.object({
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
 
+/** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
+CommercePaymentsFraudReviewListItemSchema = z.object({
+  amount: z.number(),
+  createdAt: z.string().datetime(),
+  currency: z.string().nullable(),
+  evidence: z.string().nullable().optional(),
+  externalCustomerId: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().nullable(),
+  riskLevel: z.lazy(() => CommercePaymentsFraudRiskLevelSchema),
+  score: z.number().int(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewResolutionResult. Result of resolving a fraud review. */
+CommercePaymentsFraudReviewResolutionResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  reviewedByUserId: z.string().uuid().nullable().optional(),
+  reviewStatus: z.lazy(() => CommercePaymentsFraudReviewStatusSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewInput. Request body for resolving a fraud review. */
+CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewStatus. Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', 'Declined']);
+
+/** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
+CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
 /** Zod schema for CommercePaymentsLockWalletInput. Data model for Commerce Payments Lock Wallet Request. */
 CommercePaymentsLockWalletInputSchema = z.object({
   reason: z.string().nullable(),
@@ -24188,6 +24326,45 @@ CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
   dueForRetryPayments: z.number().int().optional(),
   exhaustedPayments: z.number().int().optional(),
   pendingRetryPayments: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodDto. Display-safe projection of a registered payment method. */
+CommercePaymentsPaymentMethodDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  billingAddress: z.string().nullable().optional(),
+  cardBrand: z.string().nullable().optional(),
+  cardExpMonth: z.number().int().nullable().optional(),
+  cardExpYear: z.number().int().nullable().optional(),
+  cardLast4: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  expiresInDays: z.number().int().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  gatewayProvider: z.string().nullable().optional(),
+  isDefault: z.boolean().optional(),
+  lastUsedAt: z.string().datetime().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  type: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody. Request body for registering a payment method from a gateway token. */
+CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  ownerUserId: z.string().uuid().nullable().optional(),
+  setAsDefault: z.boolean().optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody. Request body for updating payment-method display fields. */
+CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentRecoveryMetrics. Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
@@ -25349,6 +25526,7 @@ CommerceSubscriptionsSubscriptionSchema = z.object({
   lockedPriceVersionId: z.string().uuid().nullable().optional(),
   metadata: z.string().max(2000).nullable().optional(),
   nextBillingDate: z.string().datetime().optional(),
+  paymentMethodId: z.string().uuid().nullable().optional(),
   plan: z.lazy(() => CommerceSubscriptionsSubscriptionPlanSchema).optional(),
   planId: z.string().uuid(),
   rowVersion: z.string().nullable().optional(),
@@ -41460,6 +41638,8 @@ export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
+export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;

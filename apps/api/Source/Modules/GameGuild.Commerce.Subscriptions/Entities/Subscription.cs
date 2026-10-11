@@ -187,6 +187,13 @@ public class Subscription : StatefulEntity<SubscriptionStatus>, ISubscription
     public string? ExternalCustomerId { get; private set; }
 
     /// <summary>
+    ///     Local payment-method registry ID (GameGuild.Commerce.Payments, issue #414) used to
+    ///     bill this subscription. Plain reference — no cross-module FK; guarded by the
+    ///     Payments module's delete rule.
+    /// </summary>
+    public Guid? PaymentMethodId { get; private set; }
+
+    /// <summary>
     ///     Whether this subscription auto-renews
     /// </summary>
     public bool AutoRenew { get; private set; } = true;
@@ -503,6 +510,22 @@ public class Subscription : StatefulEntity<SubscriptionStatus>, ISubscription
         ExternalCustomerId = customerId;
 
         Raise(new SubscriptionExternalIdUpdatedEvent(Id, subscriptionId ?? string.Empty));
+    }
+
+    /// <summary>
+    ///     Assigns the local payment method that bills this subscription (issue #414).
+    /// </summary>
+    public void SetPaymentMethod(Guid? paymentMethodId)
+    {
+        if (paymentMethodId == Guid.Empty)
+            throw new ArgumentException("PaymentMethodId must be a non-empty GUID or null to clear.", nameof(paymentMethodId));
+
+        if (PaymentMethodId == paymentMethodId)
+        {
+            return; // Idempotent
+        }
+
+        PaymentMethodId = paymentMethodId;
     }
 
     /// <summary>
