@@ -223,6 +223,11 @@ jobs:
       - name: Prepare certificate for disposable API test storage
         run: bash scripts/ci/prepare-data-protection-test-certificate.sh
 
+      - name: Pull pinned coding-cycle PostgreSQL image
+        shell: bash
+        run: |
+          source scripts/ci/pull-ci-image.sh
+          pull_ci_image "$GAMEGUILD_TEST_POSTGRES_17_IMAGE"
       - name: Run instructor and learner coding assessment cycle
         run: pnpm --dir apps/web run test:browser:coding-cycle
 
