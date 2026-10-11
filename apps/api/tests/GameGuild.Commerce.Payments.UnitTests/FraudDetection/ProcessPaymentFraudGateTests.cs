@@ -133,7 +133,7 @@ public class ProcessPaymentFraudGateTests
         var retryResult = await retryHandler.Handle(new RetryPaymentCommand(blockedPayment.Id), CancellationToken.None);
 
         retryResult.Success.Should().BeFalse();
-        retryResult.FailureReason.Should().Contain("cannot be retried");
+        retryResult.FailureReason.Should().Contain("held by the fraud gate");
         fixture.PaymentGateway.Verify(
             gateway => gateway.ProcessPaymentAsync(It.IsAny<GatewayPaymentRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
