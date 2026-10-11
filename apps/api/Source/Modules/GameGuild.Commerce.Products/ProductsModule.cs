@@ -20,6 +20,7 @@ public static class ProductsModule
         services.AddScoped<IPromoCodeRepository, PromoCodeRepository>();
         services.AddScoped<IPromoStackingRuleRepository, PromoStackingRuleRepository>();
         services.AddScoped<IUserProductRepository, UserProductRepository>();
+        services.AddScoped<IPricingRuleRepository, PricingRuleRepository>();
 
         // Register services
         services.AddScoped<IPricingEngineService, PricingEngineService>();

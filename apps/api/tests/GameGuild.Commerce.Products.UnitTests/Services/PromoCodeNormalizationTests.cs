@@ -163,7 +163,7 @@ public class PromoCodeNormalizationTests
         ruleRepo.Setup(r => r.GetActiveRuleAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((PromoStackingRule?)null);
 
-        var engine = new PricingEngineService(Mock.Of<IProductRepository>(), promoRepo.Object, ruleRepo.Object);
+        var engine = new PricingEngineService(Mock.Of<IProductRepository>(), promoRepo.Object, ruleRepo.Object, Mock.Of<IPricingRuleRepository>(), new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
 
         // Lowercase + padded input must resolve the uppercase-stored code.
         var result = await engine.ApplyPromoCodesAsync(100m, new List<string> { "  summer-25  " });

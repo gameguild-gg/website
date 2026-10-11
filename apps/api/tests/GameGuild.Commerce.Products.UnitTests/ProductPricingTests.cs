@@ -170,7 +170,12 @@ public class ProductPricingTests
         stackingRules
             .Setup(r => r.GetActiveRuleAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(activeRule);
-        return new PricingEngineService(_productRepository.Object, _promoCodeRepository.Object, stackingRules.Object);
+        return new PricingEngineService(
+            _productRepository.Object,
+            _promoCodeRepository.Object,
+            stackingRules.Object,
+            Mock.Of<IPricingRuleRepository>(),
+            new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
     }
 
     private static Product CreateProductWithPricing(decimal basePrice, decimal? salePrice = null)
