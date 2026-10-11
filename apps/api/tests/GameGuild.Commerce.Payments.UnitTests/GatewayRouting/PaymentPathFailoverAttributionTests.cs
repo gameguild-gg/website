@@ -164,6 +164,7 @@ internal sealed class PaymentHandlerFixture
             SyncService.Object,
             ContextService.Object,
             Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
             FraudGate.Object,
             Mock.Of<ILogger<ProcessPaymentCommandHandler>>());
     }

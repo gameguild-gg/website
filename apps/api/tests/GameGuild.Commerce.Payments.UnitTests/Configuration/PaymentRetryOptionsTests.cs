@@ -7,13 +7,67 @@ namespace GameGuild.Commerce.Payments.UnitTests.Configuration;
 public class PaymentRetryOptionsTests
 {
     [Fact]
-    public void Defaults_ReproduceTheLegacyHardcodedSchedule()
+    public void Defaults_ReproduceTheLegacyScheduleWithTheIssue415RetryBudget()
     {
         var options = new PaymentRetryOptions();
 
-        options.MaxRetries.Should().Be(3);
+        options.MaxRetries.Should().Be(4);
         options.BackoffBaseMinutes.Should().Be(1.0);
         options.BackoffMultiplier.Should().Be(5.0);
+        options.JitterRatio.Should().Be(0.2);
+    }
+
+    [Theory]
+    [InlineData(-0.1, "JitterRatio")]
+    [InlineData(0.51, "JitterRatio")]
+    public void Validator_RejectsOutOfRangeJitter(double jitterRatio, string expectedFailureFragment)
+    {
+        var validator = new PaymentRetryOptionsValidator();
+        var result = validator.Validate(null, new PaymentRetryOptions { JitterRatio = jitterRatio });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(expectedFailureFragment);
+    }
+
+    [Fact]
+    public void RetryQueue_DefaultsAreOptInWithAnHourlyPoll()
+    {
+        var options = new PaymentRetryQueueOptions();
+
+        options.Enabled.Should().BeFalse();
+        options.PollIntervalMinutes.Should().Be(60);
+        options.MaxBatchSize.Should().Be(100);
+        PaymentRetryQueueOptions.SectionName.Should().Be("Payments:RetryQueue");
+    }
+
+    [Theory]
+    [InlineData(0, 60, "PollIntervalMinutes")]
+    [InlineData(1441, 60, "PollIntervalMinutes")]
+    [InlineData(60, 0, "MaxBatchSize")]
+    [InlineData(60, 501, "MaxBatchSize")]
+    public void RetryQueue_Validator_RejectsOutOfRangeValues(
+        int pollIntervalMinutes,
+        int maxBatchSize,
+        string expectedFailureFragment)
+    {
+        var validator = new PaymentRetryQueueOptionsValidator();
+        var result = validator.Validate(null, new PaymentRetryQueueOptions
+        {
+            PollIntervalMinutes = pollIntervalMinutes,
+            MaxBatchSize = maxBatchSize
+        });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(expectedFailureFragment);
+    }
+
+    [Fact]
+    public void RetryQueue_Validator_AcceptsDefaults()
+    {
+        var validator = new PaymentRetryQueueOptionsValidator();
+        var result = validator.Validate(null, new PaymentRetryQueueOptions());
+
+        result.Succeeded.Should().BeTrue();
     }
 
     [Theory]

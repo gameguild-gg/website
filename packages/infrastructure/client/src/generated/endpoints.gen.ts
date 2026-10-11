@@ -8038,6 +8038,27 @@ export const postPaymentsRetryEndpoint = {
 } as const;
 
 /**
+ * Retry-attempt history for one payment (issue #415)
+ *
+ * Every executed retry attempt — manual or dispatched by the automated retry queue — is
+ * persisted as a history entry recording when the attempt was scheduled and executed,
+ * its outcome, the gateway that ran it, and the gateway failure code and transaction
+ * reference when the attempt failed. Use this to audit dunning timelines and explain
+ * recovery outcomes.
+ */
+export interface GetPaymentsRetryAttemptsInput {
+  paymentId: string;
+}
+export type GetPaymentsRetryAttemptsOutput = Types.CommercePaymentsPaymentRetryAttemptDto[];
+export const getPaymentsRetryAttemptsEndpoint = {
+  operationId: 'getPaymentsRetryAttempts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/{paymentId}:retry-attempts' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Payment success and failed-payment recovery metrics for an inclusive window.
  *
  * Aggregates the recovery analytics that billing administrators need to steer retry and
@@ -27623,6 +27644,7 @@ export const endpoints = {
   postPaymentsCancel: postPaymentsCancelEndpoint,
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
+  getPaymentsRetryAttempts: getPaymentsRetryAttemptsEndpoint,
   getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
   getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,

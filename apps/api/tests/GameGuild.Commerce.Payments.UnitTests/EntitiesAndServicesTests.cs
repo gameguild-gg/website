@@ -252,23 +252,17 @@ public class PaymentTransitionTests
     public void PrepareForRetry_WhenMaxRetriesReached_ShouldThrow()
     {
         var p = CreatePendingPayment();
-        // Exhaust all retries
-        for (var i = 0; i < 3; i++)
+        // Exhaust the full retry budget (issue #415 default: 4 attempts)
+        for (var i = 0; i < p.MaxRetries; i++)
         {
             p.MarkAsProcessing();
             p.MarkAsFailed("fail");
-            if (i < 2)
-            {
-                p.PrepareForRetry();
-            }
+            p.PrepareForRetry();
         }
-
-        // At this point RetryCount == 2, one more retry allowed
-        p.PrepareForRetry();
         p.MarkAsProcessing();
         p.MarkAsFailed("fail again");
 
-        // Now RetryCount == 3 == MaxRetries
+        // Now RetryCount == MaxRetries
         var act = () => p.PrepareForRetry();
         act.Should().Throw<InvalidOperationException>();
     }
