@@ -6,13 +6,17 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Commerce.Orders;
 
 /// <summary>
-/// Handler for adding a product to an existing order
+/// Handler for adding a product to an existing order. Promo redemptions on the line item
+/// are recorded atomically (idempotent per order line, fail-closed on usage limits) via
+/// <see cref="IPromoCodeUsageRecorder"/>; the usage row carries the order/line linkage and
+/// the actual discount applied.
 /// </summary>
 public sealed class AddProductToOrderCommandHandler(
     IOrderRepository orderRepository,
     IProductRepository productRepository,
     IProductPricingRepository pricingRepository,
     IPromoCodeService promoCodeService,
+    IPromoCodeUsageRecorder promoUsageRecorder,
     IApplicationDbContext dbContext,
     IActorContextAccessor actorContextAccessor)
     : ICommandHandler<AddProductToOrderCommand, Result<Order>>
@@ -106,8 +110,9 @@ public sealed class AddProductToOrderCommandHandler(
                 Error.Validation("Orders.MixedCurrency", "All order line items must use the same currency."));
         }
 
-        // Calculate discount if promo code provided
+        // Calculate discount if promo code provided (all monetary discount types supported).
         decimal discountAmount = 0;
+        PromoCode? appliedPromo = null;
         string? promoCodesApplied = null;
         if (!string.IsNullOrEmpty(request.PromoCode))
         {
@@ -121,10 +126,16 @@ public sealed class AddProductToOrderCommandHandler(
                         Error.Validation("Orders.MixedCurrency", "Fixed discounts must use the line-item currency."));
                 }
 
-                discountAmount = promo.Type == PromoCodeType.PercentageOff
-                    ? price * request.Quantity * (promo.DiscountPercentage ?? 0) / 100m
-                    : (promo.DiscountAmount ?? 0) * request.Quantity;
+                if (promo.Type is PromoCodeType.FreeTrialExtension or PromoCodeType.FreeMonths)
+                {
+                    return Result.Failure<Order>(
+                        Error.Validation("Orders.UnsupportedPromoType",
+                            "Free trial extension and free months codes apply at subscription billing, not order line items."));
+                }
+
+                discountAmount = promo.CalculateDiscount(price * request.Quantity);
                 promoCodesApplied = System.Text.Json.JsonSerializer.Serialize(new[] { promo.Code });
+                appliedPromo = promo;
             }
         }
 
@@ -135,7 +146,7 @@ public sealed class AddProductToOrderCommandHandler(
         }
 
         // Add line item with price snapshot
-        order.AddLineItem(
+        var lineItem = order.AddLineItem(
             request.ProductId,
             product.Name,
             new OrderLineItemPricingSnapshot(
@@ -151,6 +162,30 @@ public sealed class AddProductToOrderCommandHandler(
             promoCodesApplied,
             pricing.Name,
             product.Type == ProductType.Subscription);
+
+        // Record the redemption atomically before persisting the order so that a rejected
+        // (limit-exhausted) code fails the whole add. Usage is idempotent per order line.
+        if (appliedPromo is not null)
+        {
+            var idempotencyKey = $"order:{order.Id}:line:{lineItem.Id}:code:{appliedPromo.Code}";
+            var (status, _) = await promoUsageRecorder
+                .RecordAsync(
+                    appliedPromo,
+                    order.UserId,
+                    discountAmount,
+                    pricingVersion.Currency,
+                    idempotencyKey,
+                    order.Id,
+                    lineItem.Id,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (status is PromoUsageRecordingStatus.RejectedTotalLimit or PromoUsageRecordingStatus.RejectedPerUserLimit)
+            {
+                return Result.Failure<Order>(
+                    Error.Conflict("Orders.PromoLimitReached", "The promo code has reached its usage limit."));
+            }
+        }
 
         await orderRepository.UpdateAsync(order, cancellationToken).ConfigureAwait(false);
         await orderRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

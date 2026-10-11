@@ -1,9 +1,11 @@
 using Asp.Versioning;
+using GameGuild.Configuration.PresentationLayer.RateLimiting;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GameGuild.Commerce.Products;
 
@@ -25,6 +27,7 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
     /// <param name="type">Filter by promo code type</param>
     /// <param name="productId">Filter by product ID</param>
     /// <param name="searchTerm">Search term</param>
+    /// <param name="campaignId">Filter by campaign identifier</param>
     /// <param name="skip">Items to skip</param>
     /// <param name="take">Items to take</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -35,14 +38,15 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
         [FromQuery] PromoCodeType? type = null,
         [FromQuery] Guid? productId = null,
         [FromQuery] string? searchTerm = null,
+        [FromQuery] string? campaignId = null,
         [FromQuery] int skip = 0,
         [FromQuery] int take = 50,
         CancellationToken cancellationToken = default)
     {
         // If status=active is passed, filter for active codes
         var activeFilter = string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ? true : isActive;
-        
-        var query = new GetPromoCodesQuery(activeFilter, type, productId, searchTerm, skip, take);
+
+        var query = new GetPromoCodesQuery(activeFilter, type, productId, searchTerm, campaignId, skip, take);
         var result = await mediator.Send(query, cancellationToken).ConfigureAwait(false);
         return Ok(result);
     }
@@ -120,6 +124,25 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
     }
 
     /// <summary>
+    /// Get aggregated campaign performance (uses, redemption rate, discount totals, top codes) within an optional window
+    /// </summary>
+    /// <param name="campaignId">Campaign identifier</param>
+    /// <param name="from">Window start (null = unbounded)</param>
+    /// <param name="to">Window end (null = unbounded)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("campaigns/{campaignId}/performance")]
+    public async Task<ActionResult<CampaignPerformanceDto>> GetCampaignPerformance(
+        string campaignId,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetCampaignPerformanceQuery(campaignId, from, to);
+        var result = await mediator.Send(query, cancellationToken).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Create a new promo code
     /// </summary>
     [HttpPost]
@@ -135,15 +158,20 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
             request.Type,
             request.DiscountPercentage,
             request.DiscountAmount,
+            request.MaxDiscountAmount,
             request.Currency,
             request.MinimumOrderAmount,
             request.MaxUses,
             request.MaxUsesPerUser,
+            request.FreeTrialExtensionDays,
+            request.DurationMonths,
+            request.ApplyToRenewal,
             request.ValidFrom,
             request.ValidUntil,
             request.IsActive,
             request.IsExclusive,
             request.StackingPriority,
+            request.CampaignId,
             request.ProductId,
             GetUserId()
         );
@@ -172,15 +200,20 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
             request.Type,
             request.DiscountPercentage,
             request.DiscountAmount,
+            request.MaxDiscountAmount,
             request.Currency,
             request.MinimumOrderAmount,
             request.MaxUses,
             request.MaxUsesPerUser,
+            request.FreeTrialExtensionDays,
+            request.DurationMonths,
+            request.ApplyToRenewal,
             request.ValidFrom,
             request.ValidUntil,
             request.IsActive,
             request.IsExclusive,
             request.StackingPriority,
+            request.CampaignId,
             request.ProductId
         );
 
@@ -208,15 +241,20 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
             request.Type,
             request.DiscountPercentage,
             request.DiscountAmount,
+            request.MaxDiscountAmount,
             request.Currency,
             request.MinimumOrderAmount,
             request.MaxUses,
             request.MaxUsesPerUser,
+            request.FreeTrialExtensionDays,
+            request.DurationMonths,
+            request.ApplyToRenewal,
             request.ValidFrom,
             request.ValidUntil,
             request.IsActive,
             request.IsExclusive,
             request.StackingPriority,
+            request.CampaignId,
             request.ProductId
         );
 
@@ -276,6 +314,7 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
     /// Validate a promo code
     /// </summary>
     [HttpPost(":validate")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
     public async Task<ActionResult<PromoCodeValidationResult>> ValidatePromoCode(
         [FromBody] ValidatePromoCodeRequest request,
         CancellationToken cancellationToken = default)
@@ -292,9 +331,11 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
     }
 
     /// <summary>
-    /// Apply promo codes to an order
+    /// Apply promo codes to an order. Usage is recorded atomically per applied code
+    /// (idempotent on the supplied key, fail-closed on usage limits).
     /// </summary>
     [HttpPost(":apply")]
+    [EnableRateLimiting(RateLimitPolicies.Api)]
     public async Task<ActionResult<PromoCodeApplicationResult>> ApplyPromoCodes(
         [FromBody] ApplyPromoCodesRequest request,
         CancellationToken cancellationToken = default)
@@ -302,6 +343,45 @@ public class PromoCodesController(IMediator mediator) : BaseApiController
         var command = new ApplyPromoCodesCommand(
             request.OrderAmount,
             request.PromoCodes,
+            request.ProductId,
+            GetUserId(),
+            request.IdempotencyKey,
+            request.OrderId
+        );
+
+        var result = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Bulk-generate promo codes with a shared prefix and random suffixes
+    /// </summary>
+    [HttpPost(":generate-bulk")]
+    [RequirePermission(PromoCodesPermission.Keys.Create)]
+    public async Task<ActionResult<IReadOnlyList<PromoCodeDto>>> GenerateBulkPromoCodes(
+        [FromBody] GenerateBulkPromoCodesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new GenerateBulkPromoCodesCommand(
+            request.Count,
+            request.Prefix,
+            request.Name,
+            request.Description,
+            request.Type,
+            request.DiscountPercentage,
+            request.DiscountAmount,
+            request.MaxDiscountAmount,
+            request.Currency,
+            request.MinimumOrderAmount,
+            request.MaxUses,
+            request.MaxUsesPerUser,
+            request.FreeTrialExtensionDays,
+            request.DurationMonths,
+            request.ApplyToRenewal,
+            request.ValidFrom,
+            request.ValidUntil,
+            request.StackingPriority,
+            request.CampaignId,
             request.ProductId,
             GetUserId()
         );
@@ -327,15 +407,20 @@ public sealed record CreatePromoCodeRequest(
     PromoCodeType Type = PromoCodeType.PercentageOff,
     decimal? DiscountPercentage = null,
     decimal? DiscountAmount = null,
+    decimal? MaxDiscountAmount = null,
     string Currency = "USD",
     decimal? MinimumOrderAmount = null,
     int? MaxUses = null,
     int? MaxUsesPerUser = null,
+    int? FreeTrialExtensionDays = null,
+    int? DurationMonths = null,
+    bool ApplyToRenewal = false,
     DateTime? ValidFrom = null,
     DateTime? ValidUntil = null,
     bool IsActive = true,
     bool IsExclusive = false,
     int StackingPriority = 0,
+    string? CampaignId = null,
     Guid? ProductId = null
 );
 
@@ -348,15 +433,20 @@ public sealed record UpdatePromoCodeRequest(
     PromoCodeType? Type = null,
     decimal? DiscountPercentage = null,
     decimal? DiscountAmount = null,
+    decimal? MaxDiscountAmount = null,
     string? Currency = null,
     decimal? MinimumOrderAmount = null,
     int? MaxUses = null,
     int? MaxUsesPerUser = null,
+    int? FreeTrialExtensionDays = null,
+    int? DurationMonths = null,
+    bool? ApplyToRenewal = null,
     DateTime? ValidFrom = null,
     DateTime? ValidUntil = null,
     bool? IsActive = null,
     bool? IsExclusive = null,
     int? StackingPriority = null,
+    string? CampaignId = null,
     Guid? ProductId = null
 );
 
@@ -369,15 +459,20 @@ public sealed record PatchPromoCodeRequest(
     PromoCodeType? Type = null,
     decimal? DiscountPercentage = null,
     decimal? DiscountAmount = null,
+    decimal? MaxDiscountAmount = null,
     string? Currency = null,
     decimal? MinimumOrderAmount = null,
     int? MaxUses = null,
     int? MaxUsesPerUser = null,
+    int? FreeTrialExtensionDays = null,
+    int? DurationMonths = null,
+    bool? ApplyToRenewal = null,
     DateTime? ValidFrom = null,
     DateTime? ValidUntil = null,
     bool? IsActive = null,
     bool? IsExclusive = null,
     int? StackingPriority = null,
+    string? CampaignId = null,
     Guid? ProductId = null
 );
 
@@ -396,5 +491,33 @@ public sealed record ValidatePromoCodeRequest(
 public sealed record ApplyPromoCodesRequest(
     decimal OrderAmount,
     List<string> PromoCodes,
+    Guid? ProductId = null,
+    string? IdempotencyKey = null,
+    Guid? OrderId = null
+);
+
+/// <summary>
+/// Request to bulk-generate promo codes with a shared prefix and random suffixes
+/// </summary>
+public sealed record GenerateBulkPromoCodesRequest(
+    int Count,
+    string Prefix,
+    string Name,
+    string? Description = null,
+    PromoCodeType Type = PromoCodeType.PercentageOff,
+    decimal? DiscountPercentage = null,
+    decimal? DiscountAmount = null,
+    decimal? MaxDiscountAmount = null,
+    string Currency = "USD",
+    decimal? MinimumOrderAmount = null,
+    int? MaxUses = null,
+    int? MaxUsesPerUser = null,
+    int? FreeTrialExtensionDays = null,
+    int? DurationMonths = null,
+    bool ApplyToRenewal = false,
+    DateTime? ValidFrom = null,
+    DateTime? ValidUntil = null,
+    int StackingPriority = 0,
+    string? CampaignId = null,
     Guid? ProductId = null
 );

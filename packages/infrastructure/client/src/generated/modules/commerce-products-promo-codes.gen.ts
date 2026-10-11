@@ -24,6 +24,7 @@ export class CommerceProductsPromoCodesModule {
     type?: Types.CommerceProductsPromoCodeType;
     productId?: string;
     searchTerm?: string;
+    campaignId?: string;
     skip?: number;
     take?: number;
   }): Promise<Result<Types.PagedResultPromoCodeDto, ApiError>> {
@@ -71,7 +72,8 @@ export class CommerceProductsPromoCodesModule {
   }
 
   /**
-   * Apply promo codes to an order
+   * Apply promo codes to an order. Usage is recorded atomically per applied code
+   * (idempotent on the supplied key, fail-closed on usage limits).
    */
   async postPromoCodesApply(body: Types.CommerceProductsApplyPromoCodesInput): Promise<Result<Types.CommerceProductsPromoCodeApplicationResult, ApiError>> {
     const url = '/v1/promo-codes/:apply';
@@ -93,6 +95,25 @@ export class CommerceProductsPromoCodesModule {
     }
 
     return result;
+  }
+
+  /**
+   * Bulk-generate promo codes with a shared prefix and random suffixes
+   */
+  async postPromoCodesGenerateBulk(body: Types.CommerceProductsGenerateBulkPromoCodesInput): Promise<Result<Types.CommerceProductsPromoCodeDto[], ApiError>> {
+    const url = '/v1/promo-codes/:generate-bulk';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceProductsGenerateBulkPromoCodesInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<Types.CommerceProductsPromoCodeDto[], ApiError>;
   }
 
   /**
@@ -299,6 +320,31 @@ export class CommerceProductsPromoCodesModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Get aggregated campaign performance (uses, redemption rate, discount totals, top codes) within an optional window
+   */
+  async getPromoCodesCampaignsPerformance(
+    campaignId: string,
+    query?: { from?: string; to?: string },
+  ): Promise<Result<Types.CommerceProductsCampaignPerformanceDto, ApiError>> {
+    const url = `/v1/promo-codes/campaigns/${campaignId}/performance`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceProductsCampaignPerformanceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

@@ -159,5 +159,17 @@ public enum PromoCodeType
 
     /// <summary>Free shipping</summary>
     [Description("Free shipping")]
-    FreeShipping = 4
+    FreeShipping = 4,
+
+    /// <summary>Extends the trial period by a number of days (FreeTrialExtensionDays)</summary>
+    [Description("Free trial extension in days")]
+    FreeTrialExtension = 5,
+
+    /// <summary>Grants a number of free billing periods (DurationMonths)</summary>
+    [Description("Free months (skipped billing periods)")]
+    FreeMonths = 6,
+
+    /// <summary>Overrides the final price to a specific amount (DiscountAmount holds the set price)</summary>
+    [Description("Set price override")]
+    SetPrice = 7
 }

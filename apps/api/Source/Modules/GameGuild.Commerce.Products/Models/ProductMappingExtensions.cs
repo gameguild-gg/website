@@ -46,19 +46,44 @@ public static class ProductMappingExtensions
             promoCode.Type,
             promoCode.DiscountPercentage,
             promoCode.DiscountAmount,
+            promoCode.MaxDiscountAmount,
             promoCode.Currency,
             promoCode.MinimumOrderAmount,
             promoCode.MaxUses,
             promoCode.MaxUsesPerUser,
+            promoCode.CurrentUses,
+            promoCode.FreeTrialExtensionDays,
+            promoCode.DurationMonths,
+            promoCode.ApplyToRenewal,
             promoCode.ValidFrom,
             promoCode.ValidUntil,
             promoCode.IsActive,
             promoCode.IsExclusive,
             promoCode.StackingPriority,
+            promoCode.CampaignId,
             promoCode.ProductId,
-            usageCount ?? promoCode.PromoCodeUses?.Count ?? 0,
+            usageCount ?? promoCode.CurrentUses,
             promoCode.CreatedAt,
             promoCode.UpdatedAt
+        );
+    }
+
+    /// <summary>
+    /// Maps a PromoStackingRule entity to PromoStackingRuleDto
+    /// </summary>
+    public static PromoStackingRuleDto ToDto(this PromoStackingRule rule)
+    {
+        return new PromoStackingRuleDto(
+            rule.Id,
+            rule.Name,
+            rule.Description,
+            rule.IsActive,
+            rule.Priority,
+            rule.MaxStackableCount,
+            rule.AllowExclusiveStacking,
+            rule.MaxTotalDiscountPercentage,
+            rule.MaxTotalDiscountAmount,
+            rule.ConflictStrategy
         );
     }
 
