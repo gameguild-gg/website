@@ -7333,6 +7333,63 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * List the pending manual fraud reviews, oldest first.
+ *
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ */
+export interface GetFraudReviewsInput {
+  query?: {
+    tenantId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
+export const getFraudReviewsEndpoint = {
+  operationId: 'getFraudReviews' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fraud/reviews' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending fraud review, releasing the fraud hold so the payment may be retried.
+ *
+ * Approves the fraud review for a held payment, releasing the fraud hold so the payment can be retried through the manual retry flow. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsApproveInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsApproveOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsApproveEndpoint = {
+  operationId: 'postFraudReviewsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decline a pending fraud review, keeping the payment failed and non-retryable.
+ *
+ * Declines the fraud review for a held payment; it stays failed and is never retried. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsDenyInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsDenyOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsDenyEndpoint = {
+  operationId: 'postFraudReviewsDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
 export type PostIntegrationsEconomyStripeConnectWebhookInput = void;
 export type PostIntegrationsEconomyStripeConnectWebhookOutput = Types.APIControllersEconomyPayoutExecutionOperationDto;
 export const postIntegrationsEconomyStripeConnectWebhookEndpoint = {
@@ -27018,6 +27075,9 @@ export const endpoints = {
   getEmailDeliveryNotificationsTimeline: getEmailDeliveryNotificationsTimelineEndpoint,
   getEmailDeliverySuppressions: getEmailDeliverySuppressionsEndpoint,
   deleteEmailDeliverySuppressions: deleteEmailDeliverySuppressionsEndpoint,
+  getFraudReviews: getFraudReviewsEndpoint,
+  postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
+  postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
   postIntegrationsEconomyStripeConnectWebhook: postIntegrationsEconomyStripeConnectWebhookEndpoint,
   postIntegrationsEconomySumsubWebhook: postIntegrationsEconomySumsubWebhookEndpoint,
   postNotificationsEmailEvents: postNotificationsEmailEventsEndpoint,

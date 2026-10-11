@@ -80,6 +80,7 @@ export * from './modules/economy-ad-rewards.gen.js';
 export * from './modules/economy-bounties.gen.js';
 export * from './modules/economy-kyc.gen.js';
 export * from './modules/economy-marketplace.gen.js';
+export * from './modules/commerce-payments-fraud-reviews.gen.js';
 export * from './modules/economy-integrations.gen.js';
 export * from './modules/notifications-subscriptions.gen.js';
 export * from './modules/commerce-payments.gen.js';
