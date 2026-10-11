@@ -6396,6 +6396,111 @@ export const postBillingInvoicesRetryEndpoint = {
 } as const;
 
 /**
+ * List registered payment methods (own methods; system admins see the whole tenant).
+ *
+ * Lists the live payment methods registered for the tenant. Non-admin actors see their own methods; system admins see all methods in the requested tenant.
+ */
+export interface GetBillingPaymentMethodsInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto[];
+export const getBillingPaymentMethodsEndpoint = {
+  operationId: 'getBillingPaymentMethods' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Register a payment method from a tokenized gateway result.
+ *
+ * Registers a payment method from a Stripe payment method token (pm_...) produced by Stripe.js/Elements or a confirmed SetupIntent. Raw card data is never accepted; only display metadata returned by the gateway is stored.
+ */
+export interface PostBillingPaymentMethodsInput {
+  body?: Types.CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody;
+}
+export type PostBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsEndpoint = {
+  operationId: 'postBillingPaymentMethods' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a single payment method by ID.
+ *
+ * Returns a single registered payment method. Only the owner or a system administrator can read it.
+ */
+export interface GetPaymentMethodByIdInput {
+  paymentMethodId: string;
+}
+export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
+export const getPaymentMethodByIdEndpoint = {
+  operationId: 'getPaymentMethodById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update display-only fields of a payment method.
+ *
+ * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
+ */
+export interface PutBillingPaymentMethodsInput {
+  paymentMethodId: string;
+  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
+}
+export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const putBillingPaymentMethodsEndpoint = {
+  operationId: 'putBillingPaymentMethods' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Remove a payment method (soft delete).
+ *
+ * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
+ */
+export interface DeleteBillingPaymentMethodsInput {
+  paymentMethodId: string;
+}
+export type DeleteBillingPaymentMethodsOutput = void;
+export const deleteBillingPaymentMethodsEndpoint = {
+  operationId: 'deleteBillingPaymentMethods' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Make this payment method the default (custom action per Google API guidelines).
+ *
+ * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
+ */
+export interface PostBillingPaymentMethodsSetDefaultInput {
+  paymentMethodId: string;
+}
+export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsSetDefaultEndpoint = {
+  operationId: 'postBillingPaymentMethodsSetDefault' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
  *
  * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
@@ -26962,6 +27067,12 @@ export const endpoints = {
   getBillingEventsOutboxForGetBillingEventsOutbox: getBillingEventsOutboxForGetBillingEventsOutboxEndpoint,
   getBillingEventsOutboxForGetBillingEventsOutboxByEventId: getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
+  getPaymentMethodById: getPaymentMethodByIdEndpoint,
+  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
+  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
