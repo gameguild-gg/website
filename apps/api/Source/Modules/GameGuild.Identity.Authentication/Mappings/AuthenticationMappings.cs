@@ -125,10 +125,10 @@ public static class AuthenticationMappings
         {
             Success = result.IsSuccess,
             Message = result.IsSuccess ? "Authentication complete" : result.FailureReason ?? "Authentication failed",
-            AccessToken = result.AccessToken,
-            RefreshToken = result.RefreshToken,
-            ExpiresAt = result.TokenExpiresAt ?? default(DateTime),
-            AccessTokenExpiresAt = result.TokenExpiresAt,
+            AccessToken = result.AccessToken ?? string.Empty,
+            RefreshToken = result.RefreshToken ?? string.Empty,
+            ExpiresAt = result.TokenExpiresAt ?? default,
+            AccessTokenExpiresAt = result.TokenExpiresAt ?? default,
             UserId = result.UserId,
             SessionId = result.SessionId ?? Guid.Empty
         };

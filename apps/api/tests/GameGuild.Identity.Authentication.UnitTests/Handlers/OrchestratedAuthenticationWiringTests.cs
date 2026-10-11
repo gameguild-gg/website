@@ -301,10 +301,10 @@ public class OrchestratedAuthenticationWiringTests
         var state = FlowState(flowId);
         _senderMock
             .Setup(x => x.Send(It.IsAny<InitiateOrchestratedAuthenticationCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(state);
+            .ReturnsAsync(state.ToDto());
         _senderMock
             .Setup(x => x.Send(It.IsAny<ProcessOrchestratedAuthenticationStepCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(state);
+            .ReturnsAsync(state.ToDto());
         _senderMock
             .Setup(x => x.Send(It.IsAny<CompleteOrchestratedAuthenticationCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SignInResponse { Success = true, AccessToken = "token" });
@@ -314,7 +314,7 @@ public class OrchestratedAuthenticationWiringTests
             .ReturnsAsync((OrchestratedFlowStateResponse?)null);
         _senderMock
             .Setup(x => x.Send(It.IsAny<AbandonOrchestratedAuthenticationCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(GameGuild.CQRS.Unit.Value);
+            .Returns(Task.CompletedTask);
 
         var controller = new OrchestratedAuthController(_senderMock.Object);
 
