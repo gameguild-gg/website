@@ -427,7 +427,7 @@ public sealed class UserEnumerationProtectionCompensationTests
 
         await sut.AddTimingProtectionDelayAsync(CreatePreAgedScope(), CredentialWorkClassification.None);
 
-        logger.Costs.Should().Equal(ConfiguredWorkFactor,
+        logger.Costs.Should().Equal(new[] { ConfiguredWorkFactor },
             "the real hasher must complete exactly one dummy operation at the configured factor");
     }
 
@@ -552,29 +552,7 @@ public sealed class PasswordVerificationWorkClassificationTests
 
         var hash = await sut.GenerateDummyCredentialHashAsync(CancellationToken.None);
 
-        hash.Split('
-
-    [Fact]
-    public async Task PerformDummyVerification_ExplicitCancellationPreventsWork()
-    {
-        using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
-        var sut = CreateSut();
-
-        Func<Task> performWork = () => sut.PerformDummyVerificationAsync(cancellation.Token);
-
-        await performWork.Should().ThrowAsync<OperationCanceledException>();
-    }
-
-    [Fact]
-    public async Task PerformDummyVerification_ConcreteNoArgumentOverloadCompletes()
-    {
-        var sut = (PasswordHasher)CreateSut();
-
-        await sut.PerformDummyVerificationAsync();
-    }
-}
-)[2].Should().Be("10");
+        hash.Split('$')[2].Should().Be("10");
         BCrypt.Net.BCrypt.Verify(PasswordHasher.DummyCredentialMaterial, hash).Should().BeTrue();
     }
 
@@ -591,51 +569,7 @@ public sealed class PasswordVerificationWorkClassificationTests
         configuration.Reload();
         var second = await sut.GenerateDummyCredentialHashAsync(CancellationToken.None);
 
-        first.Split('
-
-    [Fact]
-    public async Task PerformDummyVerification_ExplicitCancellationPreventsWork()
-    {
-        using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
-        var sut = CreateSut();
-
-        Func<Task> performWork = () => sut.PerformDummyVerificationAsync(cancellation.Token);
-
-        await performWork.Should().ThrowAsync<OperationCanceledException>();
-    }
-
-    [Fact]
-    public async Task PerformDummyVerification_ConcreteNoArgumentOverloadCompletes()
-    {
-        var sut = (PasswordHasher)CreateSut();
-
-        await sut.PerformDummyVerificationAsync();
-    }
-}
-)[2].Should().Be("10"); second.Split('
-
-    [Fact]
-    public async Task PerformDummyVerification_ExplicitCancellationPreventsWork()
-    {
-        using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
-        var sut = CreateSut();
-
-        Func<Task> performWork = () => sut.PerformDummyVerificationAsync(cancellation.Token);
-
-        await performWork.Should().ThrowAsync<OperationCanceledException>();
-    }
-
-    [Fact]
-    public async Task PerformDummyVerification_ConcreteNoArgumentOverloadCompletes()
-    {
-        var sut = (PasswordHasher)CreateSut();
-
-        await sut.PerformDummyVerificationAsync();
-    }
-}
-)[2].Should().Be("11");
+        first.Split('$')[2].Should().Be("10"); second.Split('$')[2].Should().Be("11");
         BCrypt.Net.BCrypt.Verify(PasswordHasher.DummyCredentialMaterial, first).Should().BeTrue();
         BCrypt.Net.BCrypt.Verify(PasswordHasher.DummyCredentialMaterial, second).Should().BeTrue();
     }
