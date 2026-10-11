@@ -68,7 +68,9 @@ public sealed class AuditReplaySnapshotTests
         Assert.Equal(10, node.EnumerateObject().Count());
         Assert.Equal(JsonValueKind.Null, node.GetProperty("tenantId").ValueKind);
         foreach (var excluded in new[] { "description", "ipAddress", "userAgent", "errorMessage", "metadata" })
+        {
             Assert.False(node.TryGetProperty(excluded, out _));
+        }
     }
 
     [Fact]
@@ -111,6 +113,7 @@ public sealed class AuditReplaySnapshotTests
             case 1: input.UserId = Guid.Empty; break;
             case 2: input.SessionId = Guid.Empty; break;
             case 3: input.TenantId = Guid.Empty; break;
+            default: throw new ArgumentOutOfRangeException(nameof(field));
         }
         Assert.Throws<ArgumentException>(() => Capture([input]));
     }
@@ -129,8 +132,8 @@ public sealed class AuditReplaySnapshotTests
     {
         var input = Event(1);
         var tenant = scenario == 0 ? (Guid?)null : Tenant;
-        if (scenario == 1) input.TenantId = null;
-        if (scenario == 2) input.TenantId = Id(99);
+        if (scenario == 1) { input.TenantId = null; }
+        if (scenario == 2) { input.TenantId = Id(99); }
         Assert.Throws<ArgumentException>(() => AuditReplaySnapshot.Capture(tenant, [input], 1, Start, End, Captured));
     }
 
@@ -166,6 +169,7 @@ public sealed class AuditReplaySnapshotTests
             case 5: input.ResourceId = new string('c', 501); break;
             case 6: input.CorrelationId = ""; break;
             case 7: input.CorrelationId = new string('d', 101); break;
+            default: throw new ArgumentOutOfRangeException(nameof(field));
         }
         Assert.Throws<ArgumentException>(() => Capture([input]));
     }
@@ -241,11 +245,22 @@ public sealed class AuditReplaySnapshotTests
         Assert.Equal("9999-12-31T23:59:59.9999999Z", snapshot.Events[1].CreatedAt);
     }
 
+    [Fact]
+    public void PublicConstructorEnforcesTheSameCaptureInvariants()
+    {
+        var valid = new AuditReplaySnapshot(Tenant, [Event(1)], 1, Start, End, Captured);
+        Assert.Equal(Capture([Event(1)]).Json, valid.Json);
+        Assert.Throws<ArgumentException>(() => new AuditReplaySnapshot(null, [Event(1)], 1, Start, End, Captured));
+        Assert.Throws<ArgumentException>(() => new AuditReplaySnapshot(Tenant, [Event(1)], 0, Start, End, Captured));
+    }
+
     public static IEnumerable<object[]> ContractVectors()
     {
         using var document = JsonDocument.Parse(ProjectionVectors);
         foreach (var vector in document.RootElement.EnumerateArray())
+        {
             yield return [vector.GetProperty("label").GetString()!, vector.GetRawText()];
+        }
     }
 
     [Theory]
