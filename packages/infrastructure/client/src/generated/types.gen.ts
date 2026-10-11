@@ -2026,6 +2026,45 @@ export interface CommercePaymentsPaymentDunningOutcomeMetrics {
   pendingRetryPayments?: number;
 }
 
+/** Display-safe projection of a registered payment method. */
+export interface CommercePaymentsPaymentMethodDto {
+  id?: string;
+  billingAddress?: string | null;
+  cardBrand?: string | null;
+  cardExpMonth?: number | null;
+  cardExpYear?: number | null;
+  cardLast4?: string | null;
+  createdAt?: string;
+  expiresAt?: string | null;
+  expiresInDays?: number | null;
+  gatewayPaymentMethodId?: string | null;
+  gatewayProvider?: string | null;
+  isDefault?: boolean;
+  lastUsedAt?: string | null;
+  nickname?: string | null;
+  status?: string | null;
+  tenantId?: string;
+  type?: string | null;
+  updatedAt?: string;
+  userId?: string;
+}
+
+/** Request body for registering a payment method from a gateway token. */
+export interface CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  gatewayPaymentMethodId?: string | null;
+  nickname?: string | null;
+  ownerUserId?: string | null;
+  setAsDefault?: boolean;
+  tenantId?: string;
+}
+
+/** Request body for updating payment-method display fields. */
+export interface CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  nickname?: string | null;
+}
+
 /** Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
 Powers `GET api/v{v}/payments/recovery-metrics`. */
 export interface CommercePaymentsPaymentRecoveryMetrics {
@@ -3420,6 +3459,10 @@ If null, the subscription uses the current plan price on renewal. */
   metadata?: string | null;
   /** When the next billing cycle occurs */
   nextBillingDate?: string;
+  /** Local payment-method registry ID (GameGuild.Commerce.Payments, issue #414) used to
+bill this subscription. Plain reference — no cross-module FK; guarded by the
+Payments module's delete rule. */
+  paymentMethodId?: string | null;
   plan?: CommerceSubscriptionsSubscriptionPlan;
   /** Reference to the subscription plan */
   planId: string;
@@ -20579,6 +20622,9 @@ export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymen
 export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePaymentsPaymentCancellationResult>;
 export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
+export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
+export let CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody>;
 export let CommercePaymentsPaymentRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRecoveryMetrics>;
 export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymentResult>;
 export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
@@ -24190,6 +24236,45 @@ CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
   pendingRetryPayments: z.number().int().optional(),
 });
 
+/** Zod schema for CommercePaymentsPaymentMethodDto. Display-safe projection of a registered payment method. */
+CommercePaymentsPaymentMethodDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  billingAddress: z.string().nullable().optional(),
+  cardBrand: z.string().nullable().optional(),
+  cardExpMonth: z.number().int().nullable().optional(),
+  cardExpYear: z.number().int().nullable().optional(),
+  cardLast4: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  expiresInDays: z.number().int().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  gatewayProvider: z.string().nullable().optional(),
+  isDefault: z.boolean().optional(),
+  lastUsedAt: z.string().datetime().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  type: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody. Request body for registering a payment method from a gateway token. */
+CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  ownerUserId: z.string().uuid().nullable().optional(),
+  setAsDefault: z.boolean().optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody. Request body for updating payment-method display fields. */
+CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsPaymentRecoveryMetrics. Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
 Powers `GET api/v{v}/payments/recovery-metrics`. */
 CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
@@ -25349,6 +25434,7 @@ CommerceSubscriptionsSubscriptionSchema = z.object({
   lockedPriceVersionId: z.string().uuid().nullable().optional(),
   metadata: z.string().max(2000).nullable().optional(),
   nextBillingDate: z.string().datetime().optional(),
+  paymentMethodId: z.string().uuid().nullable().optional(),
   plan: z.lazy(() => CommerceSubscriptionsSubscriptionPlanSchema).optional(),
   planId: z.string().uuid(),
   rowVersion: z.string().nullable().optional(),
@@ -41460,6 +41546,8 @@ export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
+export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;

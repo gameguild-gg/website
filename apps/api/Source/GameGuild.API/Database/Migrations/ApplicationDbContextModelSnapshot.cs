@@ -1912,6 +1912,116 @@ namespace GameGuild.API.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BillingAddress")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("CardBrand")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("CardExpMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CardExpYear")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CardFingerprint")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("CardLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiryNotice14SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiryNotice30SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiryNotice7SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GatewayPaymentMethodId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("GatewayProvider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nickname")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("GatewayPaymentMethodId");
+
+                    b.HasIndex("TenantId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payment_methods_single_default")
+                        .HasFilter("\"IsDefault\" AND \"DeletedAt\" IS NULL");
+
+                    b.HasIndex("TenantId", "GatewayProvider", "GatewayPaymentMethodId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payment_methods_tenant_gateway_unique")
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.HasIndex("TenantId", "UserId", "IsDefault");
+
+                    b.ToTable("payment_methods");
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueAnomalyAlert", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3784,6 +3894,9 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<DateTime>("NextBillingDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("PaymentMethodId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
 
@@ -3833,6 +3946,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("TrialEndDate");
+
+                    b.HasIndex("TenantId", "PaymentMethodId")
+                        .HasDatabaseName("ix_subscriptions_tenant_payment_method");
 
                     b.HasIndex("TenantId", "Status");
 
