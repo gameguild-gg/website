@@ -1745,6 +1745,85 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("order_line_items");
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Payments.DisputeEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("DisputeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsFromMerchant")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Metadata")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("MimeType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmittedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisputeId");
+
+                    b.HasIndex("EvidenceType");
+
+                    b.HasIndex("IsFromMerchant");
+
+                    b.HasIndex("SubmittedAt");
+
+                    b.ToTable("dispute_evidence");
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.Payments.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1923,9 +2002,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
-                    b.HasIndex("SubscriptionId");
-
                     b.HasIndex("Status", "NextRetryAt");
+
+                    b.HasIndex("SubscriptionId");
 
                     b.HasIndex("TenantId", "CreatedAt")
                         .HasDatabaseName("ix_payments_open_fraud_reviews")
@@ -1953,6 +2032,101 @@ namespace GameGuild.API.Database.Migrations
 
                             t.HasCheckConstraint("ck_payments_stripe_value_mapping_required", "(lower(\"Provider\") <> 'stripe' OR \"Status\" NOT IN (1, 2, 5, 6, 7) OR (\"ProviderEnvironment\" IS NOT NULL AND \"ProviderAccountId\" IS NOT NULL AND \"ProviderObjectId\" IS NOT NULL AND \"ProviderObjectType\" IS NOT NULL AND \"ProviderMonetaryLeg\" IS NOT NULL))");
                         });
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentDispute", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EvidenceDueBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GatewayDisputeId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("GatewayName")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResolutionNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("GatewayDisputeId")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("payment_disputes");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentMethod", b =>
@@ -2063,6 +2237,120 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId", "UserId", "IsDefault");
 
                     b.ToTable("payment_methods");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.Refund", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DecisionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DisputeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("GatewayName")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("GatewayRefundId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReasonDetails")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_refunds_created_at");
+
+                    b.HasIndex("PaymentId")
+                        .HasDatabaseName("ix_refunds_payment_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_refunds_status");
+
+                    b.HasIndex("PaymentId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refunds_payment_idempotency_key");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_refunds_tenant_status");
+
+                    b.ToTable("refunds", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
@@ -31699,6 +31987,35 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("UserProduct");
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Payments.DisputeEvidence", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.Payments.PaymentDispute", "Dispute")
+                        .WithMany("Evidence")
+                        .HasForeignKey("DisputeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dispute");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentDispute", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.Payments.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.Refund", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.Payments.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
                 {
                     b.HasOne("GameGuild.Commerce.Payments.Payment", "Payment")
@@ -34768,6 +35085,11 @@ namespace GameGuild.API.Database.Migrations
             modelBuilder.Entity("GameGuild.Commerce.Orders.Order", b =>
                 {
                     b.Navigation("LineItems");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentDispute", b =>
+                {
+                    b.Navigation("Evidence");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueReconciliationRun", b =>

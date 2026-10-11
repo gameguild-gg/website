@@ -80,6 +80,10 @@ public static class ServiceCollectionExtensions
         // Register webhook services for each payment provider
         services.AddScoped<IBillingWebhookService, StripeBillingWebhookService>();
         services.AddScoped<StripeBillingWebhookService>();
+
+        // Stripe dispute webhook reconciliation (issue #419): consumes verified
+        // charge.dispute.* events into the payments dispute surface.
+        services.AddScoped<IStripeVerifiedEventConsumer, StripeDisputeEventConsumer>();
         services.AddScoped<PayPalBillingWebhookService>();
         services.AddScoped<ApplePayBillingWebhookService>();
         services.AddSingleton<IGooglePayWebhookVerificationService, GooglePayWebhookVerificationService>();
