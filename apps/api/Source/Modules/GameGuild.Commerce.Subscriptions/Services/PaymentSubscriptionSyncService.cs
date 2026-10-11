@@ -124,7 +124,13 @@ public sealed class PaymentSubscriptionSyncService(
             result.Message);
     }
 
-    private Task MaterializeInvoiceAsync(
+    /// <summary>
+    ///     Materializes the cycle invoice on top of an already-persisted subscription payment.
+    ///     Best effort by contract: the payment-success flow must never be rolled back by a
+    ///     materialization failure (the materializer is idempotent per cycle, so later replays
+    ///     re-attempt the write through the same key). Cancellation is the only propagation.
+    /// </summary>
+    private async Task MaterializeInvoiceAsync(
         Guid subscriptionId,
         int billingCycleNumber,
         decimal amount,
@@ -132,13 +138,31 @@ public sealed class PaymentSubscriptionSyncService(
         DateTime processedAt,
         Guid paymentId,
         CancellationToken cancellationToken)
-        => invoiceMaterializer.MaterializeForConfirmedCycleAsync(
-            subscriptionId,
-            billingCycleNumber,
-            amount,
-            currency,
-            processedAt,
-            paymentId,
-            providerInvoiceId: null,
-            cancellationToken);
+    {
+        try
+        {
+            await invoiceMaterializer.MaterializeForConfirmedCycleAsync(
+                subscriptionId,
+                billingCycleNumber,
+                amount,
+                currency,
+                processedAt,
+                paymentId,
+                providerInvoiceId: null,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Invoice materialization failed for subscription {SubscriptionId} cycle {Cycle} after payment {PaymentId}; the payment sync itself stays applied",
+                subscriptionId,
+                billingCycleNumber,
+                paymentId);
+        }
+    }
 }
