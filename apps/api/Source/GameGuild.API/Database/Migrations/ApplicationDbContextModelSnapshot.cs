@@ -1833,6 +1833,11 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsRetriable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<int>("MaxRetries")
                         .HasColumnType("integer");
 
@@ -1919,6 +1924,8 @@ namespace GameGuild.API.Database.Migrations
                         .IsUnique();
 
                     b.HasIndex("SubscriptionId");
+
+                    b.HasIndex("Status", "NextRetryAt");
 
                     b.HasIndex("TenantId", "CreatedAt")
                         .HasDatabaseName("ix_payments_open_fraud_reviews")
@@ -2056,6 +2063,71 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId", "UserId", "IsDefault");
 
                     b.ToTable("payment_methods");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExecutedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FailureMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Gateway")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("GatewayTransactionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ScheduledForUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId")
+                        .HasDatabaseName("ix_payment_retry_attempts_payment_id");
+
+                    b.HasIndex("PaymentId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("payment_retry_attempts");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueAnomalyAlert", b =>
@@ -31625,6 +31697,17 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("UserProduct");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Payments.PaymentRetryAttempt", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.Payments.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("GameGuild.Commerce.Payments.RevenueReconciliationDiscrepancy", b =>
