@@ -278,6 +278,18 @@ public sealed class PayPalPaymentGateway(
     }
 
     /// <inheritdoc />
+    /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(DisputeActionsNotSupported());
+
+    /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(DisputeActionsNotSupported());
+
     public Task<GatewayCancellationResult> CancelSubscriptionAsync(
         string externalSubscriptionId,
         CancellationToken cancellationToken = default)
@@ -292,6 +304,11 @@ public sealed class PayPalPaymentGateway(
             ErrorMessage: "PayPal subscription cancellation is handled by the Commerce.Billing subscription integration.",
             EffectiveDate: null));
     }
+
+    private static GatewayDisputeActionResult DisputeActionsNotSupported() => new(
+        Success: false,
+        ErrorCode: "paypal_dispute_actions_unsupported",
+        ErrorMessage: "PayPal dispute actions are not implemented on this adapter; manage the dispute in the PayPal business console.");
 
     private const string AdapterDisabledMessage =
         "The PayPal adapter is disabled (PaymentGateways:PayPal:IsEnabled is false); fail closed.";

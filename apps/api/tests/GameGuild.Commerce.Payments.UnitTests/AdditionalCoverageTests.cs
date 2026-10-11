@@ -1867,10 +1867,7 @@ public class PaymentCommandHandlerConstructorTests
     public void ProcessRefundCommandHandler_CanBeConstructed()
     {
         var handler = new ProcessRefundCommandHandler(
-            new Mock<IPaymentRepository>().Object,
-            new Mock<IPaymentGateway>().Object,
-            new Mock<IRevenueAuditService>().Object,
-            new Mock<IActorContextAccessor>().Object,
+            new Mock<IRefundProcessingService>().Object,
             NullLogger<ProcessRefundCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }

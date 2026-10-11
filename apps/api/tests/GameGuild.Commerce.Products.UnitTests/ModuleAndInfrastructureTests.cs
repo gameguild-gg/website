@@ -222,6 +222,7 @@ public class ModuleAndInfrastructureTests
             Mock.Of<IPromoCodeRepository>(),
             Mock.Of<IPromoCodeUsageRecorder>(),
             Mock.Of<IPromoCodeAuditLogger>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             NullLogger<ApplyPromoCodesCommandHandler>.Instance);
         h.Should().NotBeNull();
     }

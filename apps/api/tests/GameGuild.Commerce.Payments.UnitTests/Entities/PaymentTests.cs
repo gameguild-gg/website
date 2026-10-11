@@ -288,7 +288,8 @@ public class PaymentTests
         payment.ProcessRefund(partialAmount, "re_partial", "Partial refund");
 
         // Assert
-        payment.Status.Should().Be(PaymentStatus.Succeeded); // Still succeeded
+        // Partial refunds transition to PartiallyRefunded (issue #419), never straight to Refunded.
+        payment.Status.Should().Be(PaymentStatus.PartiallyRefunded);
         payment.RefundedAmount.Should().Be(partialAmount);
         payment.NetAmount.Should().Be(payment.Amount - partialAmount);
     }

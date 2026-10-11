@@ -25,9 +25,18 @@ public static class PaymentsModule
         services.AddScoped<IAuditTrailRepository, AuditTrailRepository>();
         services.AddScoped<IFinancialLedgerRepository, FinancialLedgerRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IRefundRepository, RefundRepository>();
         services.AddScoped<IRevenueEventRepository, RevenueEventRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+
+        // Refund approval workflow (issue #419): configurable manual-approval threshold,
+        // approver notifications and the shared refund execution core.
+        services.AddSingleton<IValidateOptions<RefundApprovalOptions>, RefundApprovalOptionsValidator>();
+        services.AddOptions<RefundApprovalOptions>()
+            .Bind(configuration.GetSection(RefundApprovalOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IRefundProcessingService, RefundProcessingService>();
 
         // Revenue auditing (issue #404): external statement reconciliation, anomaly
         // detection, compliance reporting and CSV/JSON exports.
