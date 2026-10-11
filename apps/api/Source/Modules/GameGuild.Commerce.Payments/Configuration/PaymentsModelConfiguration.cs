@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GameGuild.Commerce.Payments;
 
 /// <summary>
-///     EF Core model configuration for the Payments module (tax-related and revenue
-///     auditing entities). Additional payment entities are currently disabled.
+///     EF Core model configuration for the Payments module (payment methods, tax-related
+///     and revenue auditing entities).
 /// </summary>
 public sealed class PaymentsModelConfiguration : IModelConfiguration
 {
@@ -53,6 +53,7 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
         modelBuilder.ApplyConfiguration(new TaxRateConfiguration());
         modelBuilder.ApplyConfiguration(new TaxRuleConfiguration());
         modelBuilder.ApplyConfiguration(new UserWalletConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentMethodConfiguration());
 
         // Revenue auditing (issue #404): the audited revenue events themselves plus the
         // reconciliation runs, their discrepancies and the anomaly alerts.
