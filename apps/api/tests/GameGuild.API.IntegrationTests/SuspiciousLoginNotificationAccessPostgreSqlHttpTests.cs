@@ -146,7 +146,10 @@ public sealed class SuspiciousLoginNotificationAccessPostgreSqlHttpTests(ApiPost
         for (var attempt = 0; attempt < 10; attempt++)
         {
             await using var scope = factory.Services.CreateAsyncScope();
-            if (await scope.ServiceProvider.GetRequiredService<IOutboxDispatcher>().DispatchPendingAsync() == 0) break;
+            if (await scope.ServiceProvider.GetRequiredService<IOutboxDispatcher>().DispatchPendingAsync() == 0)
+            {
+                break;
+            }
             Assert.True(attempt < 9, "Synthetic security alert outbox did not settle.");
         }
         await using var verify = factory.Services.CreateAsyncScope();
