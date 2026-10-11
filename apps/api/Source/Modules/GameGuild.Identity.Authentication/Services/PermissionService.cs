@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Authorization.Caching;
@@ -59,6 +60,7 @@ public class PermissionService(
     public async Task<TenantPermission> GrantTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             grant = new TenantPermission
@@ -80,7 +82,9 @@ public class PermissionService(
             PermissionOperationType.Grant,
             userId,
             tenantId,
-            ToPermissionNames(permissions)).ConfigureAwait(false);
+            ToPermissionNames(permissions),
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
 
         return grant;
     }
@@ -126,6 +130,7 @@ public class PermissionService(
     public async Task RevokeTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             return;
@@ -144,7 +149,9 @@ public class PermissionService(
             PermissionOperationType.Revoke,
             userId,
             tenantId,
-            ToPermissionNames(permissions)).ConfigureAwait(false);
+            ToPermissionNames(permissions),
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
     public async Task<TenantPermission> JoinTenantAsync(Guid userId, Guid tenantId)
@@ -206,6 +213,7 @@ public class PermissionService(
         ArgumentException.ThrowIfNullOrWhiteSpace(contentTypeName);
 
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             grant = new ContentTypePermission(userId, tenantId, contentTypeName);
@@ -223,7 +231,9 @@ public class PermissionService(
             userId,
             tenantId,
             permissions.Select(p => p.ToString()),
-            contentTypeName).ConfigureAwait(false);
+            contentTypeName,
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
 
         return grant;
     }
@@ -242,13 +252,15 @@ public class PermissionService(
     public async Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
     {
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             return;
         }
 
         grant.RemovePermissions(permissions);
-        if (!grant.GetPermissionsAsEnum().Any())
+        var removed = !grant.GetPermissionsAsEnum().Any();
+        if (removed)
         {
             context.Set<ContentTypePermission>().Remove(grant);
         }
@@ -260,7 +272,9 @@ public class PermissionService(
             userId,
             tenantId,
             permissions.Select(p => p.ToString()),
-            contentTypeName).ConfigureAwait(false);
+            contentTypeName,
+            oldValue: oldValue,
+            newValue: removed ? null : CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<PermissionType>> GetEffectiveContentTypePermissionsAsync(Guid? userId, Guid? tenantId, string contentTypeName)
@@ -282,10 +296,15 @@ public class PermissionService(
         return permissions;
     }
 
-    public async Task<TPermission> GrantResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions)
+    public Task<TPermission> GrantResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions)
+        where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
+        => GrantResourcePermissionCoreAsync<TPermission, TResource>(userId, tenantId, resourceId, permissions, null);
+
+    private async Task<TPermission> GrantResourcePermissionCoreAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions, DateTime? expiresAt)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId);
         if (grant == null)
         {
             grant = new TPermission
@@ -301,7 +320,7 @@ public class PermissionService(
 
         grant.AddPermissions(permissions);
         grant.IsActive = true;
-        grant.ExpiresAt = null;
+        grant.ExpiresAt = expiresAt;
 
         await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -311,7 +330,9 @@ public class PermissionService(
             tenantId,
             permissions.Select(p => p.ToString()),
             resourceTypeName: typeof(TResource).Name,
-            resourceId: resourceId).ConfigureAwait(false);
+            resourceId: resourceId,
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId)).ConfigureAwait(false);
 
         return grant;
     }
@@ -358,15 +379,14 @@ public class PermissionService(
     public async Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt = null)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
-        var grant = await GrantResourcePermissionAsync<TPermission, TResource>(targetUserId, tenantId, resourceId, permissions).ConfigureAwait(false);
-        grant.ExpiresAt = expiresAt;
-        await context.SaveChangesAsync().ConfigureAwait(false);
+        await GrantResourcePermissionCoreAsync<TPermission, TResource>(targetUserId, tenantId, resourceId, permissions, expiresAt).ConfigureAwait(false);
     }
 
     public async Task RevokeResourceAccessAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId);
         if (grant == null)
         {
             return;
@@ -381,7 +401,9 @@ public class PermissionService(
             tenantId,
             [],
             resourceTypeName: typeof(TResource).Name,
-            resourceId: resourceId).ConfigureAwait(false);
+            resourceId: resourceId,
+            oldValue: oldValue,
+            newValue: null).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<PermissionType>> GetEffectiveResourcePermissionsAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId, string? contentTypeName = null)
@@ -1174,28 +1196,38 @@ public class PermissionService(
 
     public async Task CleanupExpiredPermissionsAsync()
     {
+        var cutoff = SystemClock.UtcNow;
         var tenantPermissions = await context.Set<TenantPermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= SystemClock.UtcNow)
+            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
+        var tenantSnapshots = tenantPermissions
+            .Select(grant => (Grant: grant, OldValue: CapturePermissionSnapshot(grant)))
+            .ToArray();
         foreach (var grant in tenantPermissions)
         {
             grant.IsActive = false;
         }
 
         var contentPermissions = await context.Set<ContentTypePermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= SystemClock.UtcNow)
+            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
+        var contentSnapshots = contentPermissions
+            .Select(grant => (Grant: grant, OldValue: CapturePermissionSnapshot(grant)))
+            .ToArray();
         foreach (var grant in contentPermissions)
         {
             grant.Expire();
         }
 
         var resourcePermissions = await context.Set<GenericResourcePermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= SystemClock.UtcNow)
+            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
+        var resourceSnapshots = resourcePermissions
+            .Select(grant => (Grant: grant, OldValue: CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId)))
+            .ToArray();
         foreach (var grant in resourcePermissions)
         {
             grant.Expire();
@@ -1203,31 +1235,64 @@ public class PermissionService(
 
         await context.SaveChangesAsync().ConfigureAwait(false);
 
-        // Expiring grants changes effective permissions: bump every affected tenant's
-        // security version so stale caches are discarded, then audit the cleanup.
-        var affectedTenants = tenantPermissions
-            .Select(p => p.TenantId)
-            .Concat(contentPermissions.Select(p => (Guid?)p.TenantId))
-            .Concat(resourcePermissions.Select(p => (Guid?)p.TenantId))
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToArray();
+        // Invalidate every affected scope, including global defaults, before writing
+        // one audit entry per changed grant. Multiple grants share one version bump.
+        var affectedScopes = tenantPermissions.Select(grant => grant.PermissionTenantId)
+            .Concat(contentPermissions.Select(grant => grant.PermissionTenantId))
+            .Concat(resourcePermissions.Select(grant => grant.PermissionTenantId))
+            .Distinct();
+        foreach (var tenantId in affectedScopes)
+        {
+            await InvalidateMutationScopeAsync(tenantId).ConfigureAwait(false);
+        }
 
-        foreach (var tenantId in affectedTenants)
+        foreach (var snapshot in tenantSnapshots)
         {
             await TrackMutationAsync(
                 PermissionOperationType.Update,
-                userId: null,
-                tenantId: tenantId,
-                permissionNames: [],
-                reason: "Expired permissions cleanup").ConfigureAwait(false);
+                snapshot.Grant.UserId,
+                snapshot.Grant.PermissionTenantId,
+                snapshot.Grant.Permissions,
+                reason: "Expired permissions cleanup",
+                oldValue: snapshot.OldValue,
+                newValue: CapturePermissionSnapshot(snapshot.Grant),
+                invalidateScope: false).ConfigureAwait(false);
+        }
+
+        foreach (var snapshot in contentSnapshots)
+        {
+            await TrackMutationAsync(
+                PermissionOperationType.Update,
+                snapshot.Grant.UserId,
+                snapshot.Grant.PermissionTenantId,
+                snapshot.Grant.GetPermissionsAsEnum().Select(permission => permission.ToString()),
+                contentTypeName: snapshot.Grant.ContentTypeName,
+                reason: "Expired permissions cleanup",
+                oldValue: snapshot.OldValue,
+                newValue: CapturePermissionSnapshot(snapshot.Grant),
+                invalidateScope: false).ConfigureAwait(false);
+        }
+
+        foreach (var snapshot in resourceSnapshots)
+        {
+            await TrackMutationAsync(
+                PermissionOperationType.Update,
+                snapshot.Grant.UserId,
+                snapshot.Grant.PermissionTenantId,
+                snapshot.Grant.GetPermissionsAsEnum().Select(permission => permission.ToString()),
+                resourceTypeName: snapshot.Grant.ResourceType,
+                resourceId: snapshot.Grant.ResourceId,
+                reason: "Expired permissions cleanup",
+                oldValue: snapshot.OldValue,
+                newValue: CapturePermissionSnapshot(snapshot.Grant, snapshot.Grant.ResourceType, snapshot.Grant.ResourceId),
+                invalidateScope: false).ConfigureAwait(false);
         }
     }
 
     private async Task SetTenantGrantAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions, string reason)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             grant = new TenantPermission
@@ -1250,7 +1315,9 @@ public class PermissionService(
             userId,
             tenantId,
             permissions.Select(p => p.ToString()),
-            reason: reason).ConfigureAwait(false);
+            reason: reason,
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
     private Task<TenantPermission?> GetTenantGrantAsync(Guid? userId, Guid? tenantId)
@@ -1286,15 +1353,17 @@ public class PermissionService(
         string? contentTypeName = null,
         string? resourceTypeName = null,
         Guid? resourceId = null,
-        string? reason = null)
+        string? reason = null,
+        string? oldValue = null,
+        string? newValue = null,
+        bool invalidateScope = true)
     {
         var permissionList = permissionNames as string[] ?? permissionNames.ToArray();
         var performedBy = actorContextAccessor?.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
 
-        if (securityVersionStore is not null)
+        if (invalidateScope)
         {
-            var tenantKey = tenantId?.ToString() ?? Guid.Empty.ToString();
-            await securityVersionStore.IncrementVersionAsync(tenantKey).ConfigureAwait(false);
+            await InvalidateMutationScopeAsync(tenantId).ConfigureAwait(false);
         }
 
         if (auditService is not null)
@@ -1307,8 +1376,57 @@ public class PermissionService(
                 permissionType: permissionList.Length > 0 ? string.Join(",", permissionList) : contentTypeName ?? resourceTypeName,
                 resourceId: resourceId,
                 resourceType: resourceTypeName ?? contentTypeName,
+                oldValue: oldValue,
+                newValue: newValue,
                 reason: reason ?? $"{operation} via legacy permission facade").ConfigureAwait(false);
         }
+    }
+
+    private async Task InvalidateMutationScopeAsync(Guid? tenantId)
+    {
+        if (securityVersionStore is not null)
+        {
+            var tenantKey = tenantId?.ToString() ?? Guid.Empty.ToString();
+            await securityVersionStore.IncrementVersionAsync(tenantKey).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    ///     Captures an immutable, versioned permission-state projection before mutation.
+    ///     Arbitrary metadata, notes, descriptions and entity navigation properties are
+    ///     deliberately excluded; only grant identity and access-control state are recorded.
+    /// </summary>
+    private static string CapturePermissionSnapshot(PermissionBase grant, string? resourceType = null, Guid? resourceId = null)
+    {
+        var tenantGrant = grant as TenantPermission;
+        var contentGrant = grant as ContentTypePermission;
+        var storedPermissions = grant switch
+        {
+            TenantPermission tenant => tenant.Permissions.ToArray(),
+            WithPermissions permission => permission.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            _ => throw new ArgumentException("Unsupported legacy permission grant.", nameof(grant))
+        };
+
+        return JsonSerializer.Serialize(new
+        {
+            schemaVersion = 1,
+            grantId = grant.Id,
+            layer = tenantGrant != null ? "Tenant" : contentGrant != null ? "ContentType" : "Resource",
+            userId = grant.UserId,
+            tenantId = grant.PermissionTenantId,
+            permissionEncoding = tenantGrant != null ? "name" : "enumValue",
+            permissions = storedPermissions,
+            deniedPermissions = tenantGrant?.DenyPermissions.ToArray() ?? [],
+            isActive = grant.IsActive,
+            expiresAt = grant.ExpiresAt,
+            grantedAt = grant.GrantedAt,
+            grantedBy = grant.CreatedBy,
+            isDeleted = grant.IsDeleted,
+            deletedAt = grant.DeletedAt,
+            contentTypeName = contentGrant?.ContentTypeName,
+            resourceType,
+            resourceId
+        });
     }
 
     private static string[] ToPermissionNames(IEnumerable<PermissionType> permissions)
