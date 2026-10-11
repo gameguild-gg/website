@@ -483,8 +483,14 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var user = await db.Set<User>().SingleAsync(value => value.Id == account.User.Id);
-            if (suspended) user.Suspend();
-            else user.IsActive = false;
+            if (suspended)
+            {
+                user.Suspend();
+            }
+            else
+            {
+                user.IsActive = false;
+            }
             await db.SaveChangesAsync();
         }
         using var client = factory.CreateClient();
@@ -607,7 +613,10 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         var user = User.CreateWithPassword($"poly-{marker}@example.test", "Synthetic credential account", hasher.HashPassword(password), $"poly-{marker}");
         user.PhoneNumber = "+1" + RandomNumberGenerator.GetInt32(100_000_000, 999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture) + RandomNumberGenerator.GetInt32(1000, 9999).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (verifiedEmail) user.VerifyEmail();
+        if (verifiedEmail)
+        {
+            user.VerifyEmail();
+        }
         var tenant = tenantId ?? Guid.NewGuid();
         if (persist)
         {

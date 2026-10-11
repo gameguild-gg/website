@@ -19,7 +19,10 @@ public sealed class LocalSignInPolicyOptionsTests
     {
         var tenantId = Guid.NewGuid();
         var options = new LocalSignInPolicyOptions { RequireEmailVerification = true };
-        if (listed) options.RequireEmailVerificationForTenants.Add(tenantId);
+        if (listed)
+        {
+            options.RequireEmailVerificationForTenants.Add(tenantId);
+        }
         Assert.True(options.RequiresVerifiedEmail(tenantId));
     }
 

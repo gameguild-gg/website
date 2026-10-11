@@ -3,7 +3,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>Server-owned local password sign-in policy. Existing hosts remain compatible until enabled.</summary>
 public sealed class LocalSignInPolicyOptions
 {
-    public const string SectionName = "Authentication:LocalSignIn";
+    public static string SectionName { get; } = "Authentication:LocalSignIn";
 
     /// <summary>Require verified email for local password sign-in in every tenant.</summary>
     public bool RequireEmailVerification { get; set; }
