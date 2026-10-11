@@ -34,6 +34,18 @@ public static class ServiceCollectionExtensions
 
         // Register repositories
         services.AddScoped<IBillingWebhookRepository, BillingWebhookRepository>();
+        services.AddScoped<IBillingProviderStateRepository, BillingProviderStateRepository>();
+
+        // Register external provider management (issue #397): the registry merges
+        // per-provider configuration health with the persisted enable/disable overrides.
+        services.AddScoped<IExternalBillingProviderRegistry, ExternalBillingProviderRegistry>();
+
+        // Named billing integration events (issue #396): publish through the durable transport.
+        services.AddScoped<IBillingIntegrationEventPublisher, BillingIntegrationEventPublisher>();
+
+        // Hosted asynchronous retry of failed webhook inbox events (issue #396).
+        services.AddScoped<IBillingWebhookRetryWorker, BillingWebhookRetryWorker>();
+        services.AddHostedService<BillingWebhookRetryBackgroundService>();
 
         // Invoice materialization (issue #411): the production writer behind both payment-success
         // paths (first-party charges via the Subscriptions port, provider-billed cycles via the
