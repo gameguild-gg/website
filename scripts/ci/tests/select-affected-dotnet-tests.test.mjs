@@ -158,3 +158,37 @@ test("mandatory identity security selection deduplicates multiple source changes
     ],
   );
 });
+
+const auditProjects = [
+  ...availableProjects,
+  "GameGuild.Audit.UnitTests",
+  "GameGuild.Identity.Authentication.UnitTests",
+  "GameGuild.Identity.Authorization.UnitTests",
+];
+const auditExpected = [
+  "GameGuild.API.UnitTests",
+  "GameGuild.Audit.UnitTests",
+  "GameGuild.Identity.Authentication.UnitTests",
+  "GameGuild.Identity.Authorization.UnitTests",
+  "GameGuild.SharedKernel.UnitTests",
+];
+
+test("audit source-only changes select the historical audit suite and mandatory security regressions", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/Source/Modules/GameGuild.Compliance.Audit/Services/AuditReplaySnapshot.cs",
+  ], auditProjects), auditExpected);
+});
+
+test("audit source and test paths deduplicate the historical project alias", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/Source/Modules/GameGuild.Compliance.Audit/Services/AuditReplaySnapshot.cs",
+    "apps/api/Source/Modules/GameGuild.Compliance.Audit/Entities/AuditLog.cs",
+    "apps/api/tests/GameGuild.Audit.UnitTests/Services/AuditReplaySnapshotTests.cs",
+  ], auditProjects), auditExpected);
+});
+
+test("audit test-only changes select the changed native suite", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/tests/GameGuild.Audit.UnitTests/Services/AuditReplaySnapshotTests.cs",
+  ], auditProjects), ["GameGuild.Audit.UnitTests"]);
+});
