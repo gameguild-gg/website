@@ -1,6 +1,8 @@
 using FluentAssertions;
 using GameGuild.CQRS;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -78,8 +80,7 @@ public class GetActiveSubscriptionPlansQueryHandlerTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        var memoryCache = new Microsoft.Extensions.Caching.Memory.MemoryCache(
-            Microsoft.Extensions.Caching.Memory.MemoryCacheOptions.Default);
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
         return new SubscriptionPlanListCache(
             memoryCache,
             services.BuildServiceProvider().GetRequiredService<ILogger<SubscriptionPlanListCache>>());
