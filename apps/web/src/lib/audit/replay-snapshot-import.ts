@@ -85,7 +85,7 @@ export async function importAuditReplaySnapshot(
   });
   const timeline = new AuditReplayTimeline(events, {
     tenantId: document.tenantId as string | null,
-    totalCount: document.totalCount as number,
+    totalCount: document.totalCount,
   });
   if (timeline.tenantId !== authorizedTenant) {
     throw new RangeError('Replay snapshot does not match the current authorized tenant.');
