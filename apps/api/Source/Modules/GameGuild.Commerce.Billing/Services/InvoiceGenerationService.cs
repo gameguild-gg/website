@@ -36,6 +36,7 @@ public sealed class InvoiceGenerationService(
     ISubscriptionRepository subscriptionRepository,
     IUserRepository userRepository,
     INotificationService notificationService,
+    GameGuild.Commerce.Payments.IReferralService referralService,
     ILogger<InvoiceGenerationService> logger) : IInvoiceGenerationService
 {
     private static readonly JsonSerializerOptions MetadataOptions = new(JsonSerializerDefaults.Web);
@@ -171,6 +172,15 @@ public sealed class InvoiceGenerationService(
 
         await DispatchInvoiceIssuedEmailAsync(invoice, subscription, request, cancellationToken).ConfigureAwait(false);
 
+        // Issue #410 referral conversion: a confirmed paid invoice for this subscription is
+        // the referee's "first paid invoice" trigger. Best effort — the invoice row is
+        // already persisted, so a referral failure is logged, never propagated.
+        if (invoice.Status == InvoiceStatus.Paid)
+        {
+            await DispatchReferralConversionAsync(tenantId, subscription.CreatedByUserId, request, invoice, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         return new InvoiceGenerationResult(invoice, Created: true);
     }
 
@@ -300,6 +310,50 @@ public sealed class InvoiceGenerationService(
             logger.LogError(
                 exception,
                 "Invoice {InvoiceId} issued email dispatch failed; the invoice itself is persisted",
+                invoice.Id);
+        }
+    }
+
+    /// <summary>
+    ///     Issue #410 referral conversion dispatch: notifies the referral service that the
+    ///     subscription owner's invoice was paid. The referral service is idempotent (no
+    ///     SignedUp referral for the user → no-op; already converted → no-op; reward grants
+    ///     carry their own idempotency keys), and failures are logged, never propagated.
+    /// </summary>
+    private async Task DispatchReferralConversionAsync(
+        Guid tenantId,
+        Guid subscriptionOwnerId,
+        ConfirmedCycleInvoiceRequest request,
+        Invoice invoice,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await referralService
+                .HandleInvoicePaidAsync(tenantId, subscriptionOwnerId, request.SubscriptionId, invoice.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (result.IsSuccess)
+            {
+                logger.LogDebug(
+                    "Referral conversion check completed for invoice {InvoiceId} (user {UserId})",
+                    invoice.Id,
+                    subscriptionOwnerId);
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Referral conversion skipped for invoice {InvoiceId} (user {UserId}): {Reason}",
+                    invoice.Id,
+                    subscriptionOwnerId,
+                    result.Error.Description);
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Referral conversion dispatch failed for invoice {InvoiceId}; the invoice itself is persisted",
                 invoice.Id);
         }
     }

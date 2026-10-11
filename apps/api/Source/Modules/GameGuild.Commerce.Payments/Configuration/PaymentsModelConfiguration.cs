@@ -130,5 +130,14 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
             builder.Property(alert => alert.Kind).HasConversion<string>().IsRequired();
             builder.Property(alert => alert.Status).HasConversion<string>().IsRequired();
         });
+
+        // Account credits, gifting and referrals (issue #410 v1): credit grants with their
+        // immutable transaction ledger and invoice settlements, gift subscriptions with the
+        // hashed redemption-code status machine, and referral tracking records.
+        modelBuilder.ApplyConfiguration(new AccountCreditGrantConfiguration());
+        modelBuilder.ApplyConfiguration(new AccountCreditTransactionConfiguration());
+        modelBuilder.ApplyConfiguration(new AccountCreditInvoiceSettlementConfiguration());
+        modelBuilder.ApplyConfiguration(new GiftSubscriptionConfiguration());
+        modelBuilder.ApplyConfiguration(new ReferralConfiguration());
     }
 }
