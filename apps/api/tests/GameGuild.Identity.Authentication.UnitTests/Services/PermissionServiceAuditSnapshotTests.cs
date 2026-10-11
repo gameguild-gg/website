@@ -161,7 +161,7 @@ public sealed class PermissionServiceAuditSnapshotTests
         fixture.Entries[0].OldValue.Should().BeNull();
         var replaced = fixture.Entries[1];
         ReadPermissions(Parse(replaced.OldValue)).Should().Equal("Read");
-        ReadPermissions(Parse(replaced.NewValue)).Should().Equal("Write");
+        ReadPermissions(Parse(replaced.NewValue)).Should().Equal("Edit");
         Parse(replaced.NewValue).GetProperty("userId").ValueKind.Should().Be(JsonValueKind.Null);
         replaced.TenantId.Should().Be(global ? null : fixture.TenantId);
         fixture.VersionStore.Verify(store => store.IncrementVersionAsync(global ? Guid.Empty.ToString() : fixture.TenantId.ToString(), It.IsAny<CancellationToken>()), Times.Exactly(2));
