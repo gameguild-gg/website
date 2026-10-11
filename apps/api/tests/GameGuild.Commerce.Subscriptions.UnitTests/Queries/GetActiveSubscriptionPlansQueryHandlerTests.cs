@@ -78,8 +78,11 @@ public class GetActiveSubscriptionPlansQueryHandlerTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddMemoryCache();
-        return services.BuildServiceProvider().GetRequiredService<ISubscriptionPlanListCache>();
+        var memoryCache = new Microsoft.Extensions.Caching.Memory.MemoryCache(
+            Microsoft.Extensions.Caching.Memory.MemoryCacheOptions.Default);
+        return new SubscriptionPlanListCache(
+            memoryCache,
+            services.BuildServiceProvider().GetRequiredService<ILogger<SubscriptionPlanListCache>>());
     }
 
     private static SubscriptionPlan CreatePlan(string slug, long monthlyPriceInCents)

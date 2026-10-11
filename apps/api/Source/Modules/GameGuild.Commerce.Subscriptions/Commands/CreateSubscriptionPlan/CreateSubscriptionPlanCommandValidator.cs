@@ -43,6 +43,8 @@ public sealed class CreateSubscriptionPlanCommandValidator : AbstractValidator<C
             .WithMessage("Currency is required")
             .Length(3)
             .WithMessage("Currency must be exactly 3 characters (ISO 4217)")
+            .Matches("^[A-Z]{3}$")
+            .WithMessage("Currency must be uppercase letters only")
             .Must(CurrencyCodes.IsSupported)
             .WithMessage($"Currency must be a supported ISO 4217 code ({SupportedCurrencies})");
 
