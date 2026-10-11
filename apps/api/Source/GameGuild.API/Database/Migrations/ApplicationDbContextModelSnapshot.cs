@@ -1799,6 +1799,32 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<int?>("FraudDecision")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FraudDecisionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("FraudEvidence")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("FraudReviewNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("FraudReviewStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("FraudReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FraudReviewedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("FraudScore")
+                        .HasColumnType("integer");
+
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1894,7 +1920,17 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("SubscriptionId");
 
+                    b.HasIndex("TenantId", "CreatedAt")
+                        .HasDatabaseName("ix_payments_open_fraud_reviews")
+                        .HasFilter("\"FraudDecision\" = 1 AND \"FraudReviewStatus\" = 0")
+                        .HasAnnotation("Npgsql:CreatedConcurrently", true);
+
                     b.HasIndex("TenantId", "Status");
+
+                    b.HasIndex("TenantId", "ExternalCustomerId", "CreatedAt")
+                        .HasDatabaseName("ix_payments_fraud_velocity_lookup")
+                        .HasFilter("\"Status\" <> 4 AND (\"FraudDecision\" IS NULL OR \"FraudDecision\" = 0)")
+                        .HasAnnotation("Npgsql:CreatedConcurrently", true);
 
                     b.HasIndex("Provider", "ProviderEnvironment", "ProviderAccountId", "ProviderObjectId", "ProviderMonetaryLeg")
                         .IsUnique()
