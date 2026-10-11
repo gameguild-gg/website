@@ -6596,6 +6596,89 @@ export const postBillingPaymentMethodsSetDefaultEndpoint = {
 } as const;
 
 /**
+ * List pricing-decision ledger entries
+ *
+ * Pages through the durable pricing-decision ledger: one row per checkout/renewal calculation that produced a final price, with headline amounts, applied promo codes, winning pricing rule and drift status. Filterable by tenant, order, subscription, promo code, decision type, drift status and decision date range.
+ */
+export interface GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerInput {
+  query?: {
+    tenantId?: string;
+    orderId?: string;
+    subscriptionId?: string;
+    promoCode?: string;
+    decisionType?: string;
+    driftStatus?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerOutput = Types.PagedResultPricingDecisionLedgerEntryDto;
+export const getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedger' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate a sample of ledger entries for pricing drift
+ *
+ * Drift detection over the pricing-decision ledger: samples entries (preferring never-validated ones), recomputes each final amount from its own breakdown document and stamps the entry Verified or Drifted. Drifted entries — where the stored final no longer follows from the recorded arithmetic — are surfaced first for review.
+ */
+export interface PostBillingPricingDiscountsLedgerValidateDriftInput {
+  body?: Types.CommerceBillingValidatePricingLedgerDriftInput;
+}
+export type PostBillingPricingDiscountsLedgerValidateDriftOutput = Types.CommerceBillingPricingLedgerDriftValidationResult;
+export const postBillingPricingDiscountsLedgerValidateDriftEndpoint = {
+  operationId: 'postBillingPricingDiscountsLedgerValidateDrift' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/:validate-drift' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a pricing-decision ledger entry by id
+ *
+ * Retrieves one pricing-decision ledger entry, including the full calculation breakdown JSON (base, per-rule adjustments, per-code promo applications, caps, final amount), correlation ids and the drift-validation outcome.
+ */
+export interface GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdInput {
+  entryId: string;
+}
+export type GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdOutput = Types.CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export const getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/{entryId}' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Discount effectiveness and pricing analytics over the ledger
+ *
+ * Aggregates the pricing-decision ledger over a window: total decisions, baseline vs final revenue, discount given, promo redemptions, per-code effectiveness (redemptions, discount given, baseline vs influenced revenue), per-pricing-rule impact, stacking outcomes and drift status counts. Feeds the monetization reporting dashboard.
+ */
+export interface GetBillingPricingDiscountsLedgerAnalyticsEffectivenessInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingPricingDiscountsLedgerAnalyticsEffectivenessOutput = Types.CommerceBillingPricingLedgerEffectivenessAggregate;
+export const getBillingPricingDiscountsLedgerAnalyticsEffectivenessEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerAnalyticsEffectiveness' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/analytics/effectiveness' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get pricing rules (paginated) with optional filters
  */
 export interface GetBillingPricingEngineForGetBillingPricingEngineInput {
@@ -27507,6 +27590,11 @@ export const endpoints = {
   putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
   deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
   postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
+  getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedger: getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerEndpoint,
+  postBillingPricingDiscountsLedgerValidateDrift: postBillingPricingDiscountsLedgerValidateDriftEndpoint,
+  getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryId:
+    getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdEndpoint,
+  getBillingPricingDiscountsLedgerAnalyticsEffectiveness: getBillingPricingDiscountsLedgerAnalyticsEffectivenessEndpoint,
   getBillingPricingEngineForGetBillingPricingEngine: getBillingPricingEngineForGetBillingPricingEngineEndpoint,
   postBillingPricingEngine: postBillingPricingEngineEndpoint,
   postBillingPricingEngineCalculate: postBillingPricingEngineCalculateEndpoint,
