@@ -81,7 +81,7 @@ public sealed class AuditReplayPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         Assert.Equal(tenant.ToString("D"), json.RootElement.GetProperty("tenantId").GetString());
         Assert.Equal(2, json.RootElement.GetProperty("totalCount").GetInt32());
         Assert.Equal([first.Id.ToString("D"), last.Id.ToString("D")],
-            json.RootElement.GetProperty("events").EnumerateArray().Select(item => item.GetProperty("id").GetString()).ToArray());
+            json.RootElement.GetProperty("events").EnumerateArray().Select(item => item.GetProperty("id").GetString()!).ToArray());
         var query = Assert.Single(probe.Reads);
         Assert.DoesNotContain("\"Description\"", query);
         Assert.DoesNotContain("\"Metadata\"", query);
@@ -262,7 +262,7 @@ public sealed class AuditReplayPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             Assert.StartsWith(prefix, requestRef);
             Assert.StartsWith(prefix, responseRef);
             Assert.Equal(["end", "start"], schemas.GetProperty(requestRef[prefix.Length..]).GetProperty("required")
-                .EnumerateArray().Select(item => item.GetString()).Order().ToArray());
+                .EnumerateArray().Select(item => item.GetString()!).Order().ToArray());
             var properties = schemas.GetProperty(responseRef[prefix.Length..]).GetProperty("properties");
             Assert.Equal(["capturedAtUtc", "endUtc", "events", "schemaVersion", "startUtc", "tenantId", "totalCount"],
                 properties.EnumerateObject().Select(item => item.Name).Order().ToArray());
@@ -281,16 +281,20 @@ public sealed class AuditReplayPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
     [InlineData(Alias, false, true)]
     public async Task CorsPreservesOriginRestrictionsAndExposesCaptureDigest(string route, bool allowed, bool preflight)
     {
-        using var factory = fixture.CreateFactory(builder => builder.ConfigureAppConfiguration((_, config) =>
-            config.AddInMemoryCollection(new Dictionary<string, string?>
+        // Apply the production policy builder after host registration so the fixture uses explicit restrictions.
+        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
+            services.SetupCors(new ConfigurationBuilder().Build(), new GameGuild.Configuration.PresentationLayer.CORS.CorsOptions
             {
-                ["Cors:AllowedOrigins:0"] = "https://audit.example",
-                ["Cors:AllowedMethods:0"] = "POST",
-                ["Cors:AllowedHeaders:0"] = "Authorization",
-                ["PresentationLayer:Cors:AllowedOrigins:0"] = "https://audit.example",
-                ["PresentationLayer:Cors:AllowedMethods:0"] = "POST",
-                ["PresentationLayer:Cors:AllowedHeaders:0"] = "Authorization"
+                AllowedOrigins = ["https://audit.example"],
+                AllowedMethods = ["POST"],
+                AllowedHeaders = ["Authorization"]
             })));
+        var cors = factory.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<
+            Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>>().Value;
+        var policy = cors.GetPolicy(cors.DefaultPolicyName);
+        Assert.NotNull(policy);
+        Assert.Equal(["https://audit.example"], policy.Origins);
+        Assert.False(policy.AllowAnyOrigin);
         using var client = factory.CreateClient();
         Authenticate(client, Guid.NewGuid(), Guid.NewGuid());
         using var request = new HttpRequestMessage(preflight ? HttpMethod.Options : HttpMethod.Post, route);
