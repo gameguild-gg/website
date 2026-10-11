@@ -21,6 +21,7 @@ import {
 } from "@game-guild/ui/components/field";
 import { Input } from "@game-guild/ui/components/input";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { SignInForm } from "./sign-in-form";
 
 export interface EmailCodeMessages {
   request: {
@@ -198,7 +199,7 @@ function EmailCodeConsumer({
   messages: EmailCodeMessages;
   onUseDifferentEmail: () => void;
 }) {
-  const { signIn } = useAuth();
+  const { signIn, mfaChallenge, mfaEnrollmentBackupCodes } = useAuth();
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -219,6 +220,10 @@ function EmailCodeConsumer({
       setPending(false);
       setFailed(true);
     }
+  }
+
+  if (mfaChallenge || mfaEnrollmentBackupCodes?.length) {
+    return <SignInForm redirectTo={redirectTo} />;
   }
 
   return (

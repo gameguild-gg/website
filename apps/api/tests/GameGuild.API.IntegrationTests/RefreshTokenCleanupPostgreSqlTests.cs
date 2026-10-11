@@ -133,7 +133,7 @@ public sealed class RefreshTokenCleanupPostgreSqlTests(ApiPostgreSqlFixture fixt
     public async Task RegisteredHostedWorkerActuallySchedulesMigratedPostgreSqlCleanup()
     {
         var seeded = await SeedAsync(includeRetained: false);
-        await using var scheduled = fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, configuration) =>
+        await using var scheduled = fixture.CreateFactory(builder => builder.ConfigureAppConfiguration((_, configuration) =>
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Authentication:RefreshTokenCleanup:Enabled"] = "true",

@@ -102,7 +102,7 @@
     <PackageVersion Include="AWSSDK.SimpleEmailV2" Version="3.7.509.10" />
     <PackageVersion Include="AWSSDK.SimpleNotificationService" Version="3.7.502.61" />
     <!-- Image Processing -->
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageVersion Include="Magick.NET-Q8-AnyCPU" Version="14.17.2" />
     <!-- Testing packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />

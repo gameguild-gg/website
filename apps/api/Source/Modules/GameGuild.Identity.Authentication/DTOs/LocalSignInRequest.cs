@@ -36,13 +36,7 @@ public class LocalSignInRequest
     // Server-only account resolution. These internal properties cannot be bound from JSON or advertised in OpenAPI.
     internal bool CredentialResolutionFailed { get; init; }
     internal Guid? ResolvedUserId { get; init; }
-
-    /// <summary>
-    ///     Server-owned timing window already opened by an entry point that resolved account
-    ///     candidates before delegating here (polymorphic sign-in). When present, compensation
-    ///     is measured from this earlier origin so candidate resolution stays inside the
-    ///     compensated window. Internal: cannot be supplied by a request.
-    /// </summary>
+    internal AuthenticationTimingOrigin? TimingOrigin { get; init; }
     internal AuthenticationTimingScope? TimingWindow { get; init; }
 
     /// <summary>

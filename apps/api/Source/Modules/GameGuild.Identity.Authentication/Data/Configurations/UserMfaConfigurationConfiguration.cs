@@ -61,6 +61,6 @@ public class UserMfaConfigurationConfiguration : IEntityTypeConfiguration<UserMf
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
 
         // Configure indexes
-        builder.HasIndex(x => x.UserId).HasDatabaseName("ix_user_mfa_configuration_user_id");
+        builder.HasIndex(x => x.UserId).IsUnique().HasDatabaseName("ix_user_mfa_configuration_user_id");
     }
 }

@@ -51,6 +51,10 @@ public interface IJwtTokenService
 
     Task<string> GenerateRefreshTokenAsync(Guid userId, DeviceInfo deviceInfo, CancellationToken cancellationToken = default);
 
+    Task<string> GenerateMfaAccessTokenAsync(Guid userId, string email, string[] roles, Guid? tenantId,
+        int tokenVersion, DateTimeOffset authenticatedAt, Guid sessionId, SignInMfaProof proof,
+        CancellationToken cancellationToken = default);
+
     Task<string> GenerateRefreshTokenAsync(
         Guid userId,
         DeviceInfo deviceInfo,

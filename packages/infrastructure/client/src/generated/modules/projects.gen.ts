@@ -47,7 +47,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -91,7 +91,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -372,7 +372,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -538,7 +538,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -557,7 +557,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -573,7 +573,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -663,7 +663,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -679,7 +679,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -694,7 +694,7 @@ export class ProjectsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>[], ApiError>;
@@ -709,7 +709,7 @@ export class ProjectsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.IdentityAuthorizationPermissionType[], ApiError>;
@@ -735,7 +735,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
@@ -754,7 +754,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

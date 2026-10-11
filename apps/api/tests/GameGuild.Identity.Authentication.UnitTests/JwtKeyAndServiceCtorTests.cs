@@ -247,7 +247,7 @@ public class JwtKeyAndServiceCtorTests
             NullLogger<TotpMfaService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptTrackingService>(),
-            Mock.Of<IEncryptionService>()
+            Mock.Of<IEncryptionService>(), NativeTotpReplayStub.Create()
         );
         svc.Should().NotBeNull();
     }

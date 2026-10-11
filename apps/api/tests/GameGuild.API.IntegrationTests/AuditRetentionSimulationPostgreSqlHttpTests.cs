@@ -234,7 +234,7 @@ public sealed class AuditRetentionSimulationPostgreSqlHttpTests(ApiPostgreSqlFix
     [Fact]
     public async Task OpenApiDocumentsSimulationRoutesAndTypedInputs()
     {
-        using var developmentFactory = fixture.Factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        using var developmentFactory = fixture.CreateFactory(builder => builder.UseEnvironment("Development"));
         using var client = developmentFactory.CreateClient();
         var response = await client.GetAsync("/swagger/v1/swagger.json");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

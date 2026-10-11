@@ -10,13 +10,16 @@ namespace GameGuild.Compliance.Audit;
 /// </summary>
 public sealed class CentralAuthenticationAuditEventSink(
     ISecurityEventLogger securityEventLogger,
-    ILogger<CentralAuthenticationAuditEventSink> logger) : IAuthenticationAuditEventSink
+    ILogger<CentralAuthenticationAuditEventSink> logger,
+    IApplicationDbContext context) : IAuthenticationAuditEventSink
 {
     public async Task RecordAsync(AuthenticationAuditEvent auditEvent, CancellationToken cancellationToken)
     {
+        var requiresTransactionalPersistence = auditEvent.ActionType is "Authentication.MfaSignInRequired" or "Authentication.MfaSignInDenied" or
+            "Authentication.MfaSignInEnrollmentStarted" or "Authentication.MfaSignInVerified";
         try
         {
-            var result = await securityEventLogger.RecordAsync(new CreateAuditLogRequest
+            var request = new CreateAuditLogRequest
             {
                 ActionType = auditEvent.ActionType,
                 ResourceType = "User",
@@ -39,7 +42,15 @@ public sealed class CentralAuthenticationAuditEventSink(
                     _ => auditEvent.Success ? AuditRiskLevel.Low : AuditRiskLevel.High
                 },
                 Category = AuditCategory.Authentication
-            }, cancellationToken).ConfigureAwait(false);
+            };
+            var result = requiresTransactionalPersistence
+                ? await securityEventLogger.RecordInCommandAsync(context, request, cancellationToken).ConfigureAwait(false)
+                : await securityEventLogger.RecordAsync(request, cancellationToken).ConfigureAwait(false);
+
+            if (requiresTransactionalPersistence && result.Outcome != SecurityEventCaptureOutcome.PersistedToDatabase)
+            {
+                throw new InvalidOperationException("Required MFA audit did not persist in the owning command transaction.");
+            }
 
             if (result.Outcome is SecurityEventCaptureOutcome.SpooledLocally or SecurityEventCaptureOutcome.SpoolingDisabled)
             {
@@ -52,8 +63,9 @@ public sealed class CentralAuthenticationAuditEventSink(
         }
         catch (Exception exception)
         {
-            // The audit transport must not make a login, MFA, or session operation fail.
             logger.LogError(exception, "Could not forward authentication event {ActionType} to the security event pipeline", auditEvent.ActionType);
+            // Limited challenges and MFA proof must not commit without their required durable audit.
+            if (requiresTransactionalPersistence) { throw; }
         }
     }
 }

@@ -39,7 +39,7 @@ export class TestingLabTestingSessionsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.TestingLabTestingSession[], ApiError>;
