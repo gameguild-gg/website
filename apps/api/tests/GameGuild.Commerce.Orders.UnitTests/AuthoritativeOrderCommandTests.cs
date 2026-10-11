@@ -633,6 +633,76 @@ public sealed class AuthoritativeOrderCommandTests
         dbContext.Verify(mock => mock.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task AddProduct_RecordsPricingDecisionLedgerEntryWithFullBreakdown()
+    {
+        var fixture = CreatePricingFixture(basePrice: 100m, salePrice: 80m, currency: "BRL", quantity: 2);
+
+        var result = await fixture.Handler.Handle(fixture.Command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        fixture.PricingLedgerWriter.Verify(
+            mock => mock.RecordAsync(
+                It.Is<GameGuild.Commerce.PricingDecisionRecord>(decision =>
+                    decision.DecisionType == GameGuild.Commerce.PricingDecisionType.CheckoutLineItem &&
+                    decision.TenantId == fixture.Order.TenantId &&
+                    decision.ActorUserId == fixture.Order.UserId &&
+                    decision.Order == fixture.Order.Id &&
+                    decision.Product == fixture.Command.ProductId &&
+                    decision.Breakdown.Quantity == 2 &&
+                    decision.Breakdown.BaseUnitPrice == 100m &&
+                    decision.Breakdown.SaleUnitPrice == 80m &&
+                    decision.Breakdown.SaleActive &&
+                    decision.Breakdown.BaseAmount == 160m &&
+                    decision.Breakdown.PromoApplications.Count == 0 &&
+                    decision.Breakdown.FinalAmount == 160m),
+                It.IsAny<CancellationToken>()),
+            Times.Once,
+            "every committed checkout price must append one durable pricing decision");
+    }
+
+    [Fact]
+    public async Task AddProduct_LedgerReplayKey_IsStablePerOrderLine()
+    {
+        var fixture = CreatePricingFixture();
+
+        // Capture must be registered BEFORE Handle dispatches the command, otherwise the
+        // RecordAsync invocation (matched by the loose mock's default setup) never runs the
+        // callback and `recorded` stays null.
+        GameGuild.Commerce.PricingDecisionRecord? recorded = null;
+        fixture.PricingLedgerWriter
+            .Setup(mock => mock.RecordAsync(It.IsAny<GameGuild.Commerce.PricingDecisionRecord>(), It.IsAny<CancellationToken>()))
+            .Callback<GameGuild.Commerce.PricingDecisionRecord, CancellationToken>((decision, _) => recorded = decision)
+            .ReturnsAsync((GameGuild.Commerce.PricingDecisionRecordingStatus.Recorded, new GameGuild.Commerce.PricingDecisionLedgerEntry()));
+
+        var result = await fixture.Handler.Handle(fixture.Command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+
+        fixture.PricingLedgerWriter.Verify(
+            mock => mock.RecordAsync(
+                It.Is<GameGuild.Commerce.PricingDecisionRecord>(decision =>
+                    !string.IsNullOrWhiteSpace(decision.IdempotencyKey) &&
+                    decision.IdempotencyKey!.StartsWith($"order:{fixture.Order.Id}:line:", StringComparison.Ordinal)),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        recorded.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task AddProduct_FailsClosedWhenLedgerRejectsTheDecision()
+    {
+        var fixture = CreatePricingFixture();
+        fixture.PricingLedgerWriter
+            .Setup(mock => mock.RecordAsync(It.IsAny<GameGuild.Commerce.PricingDecisionRecord>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((GameGuild.Commerce.PricingDecisionRecordingStatus.Rejected, (GameGuild.Commerce.PricingDecisionLedgerEntry?)null));
+
+        var result = await fixture.Handler.Handle(fixture.Command, CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Orders.PricingLedgerRejected");
+    }
+
     private static PricingFixture CreatePricingFixture(
         bool isPublished = true,
         Guid? productTenantId = null,
@@ -697,12 +767,18 @@ public sealed class AuthoritativeOrderCommandTests
                 .ReturnsAsync(true);
         }
 
+        var pricingLedgerWriter = new Mock<GameGuild.Commerce.IPricingDecisionLedgerWriter>();
+        pricingLedgerWriter
+            .Setup(mock => mock.RecordAsync(It.IsAny<GameGuild.Commerce.PricingDecisionRecord>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((GameGuild.Commerce.PricingDecisionRecordingStatus.Recorded, new GameGuild.Commerce.PricingDecisionLedgerEntry()));
+
         var handler = new AddProductToOrderCommandHandler(
             orderRepository.Object,
             productRepository.Object,
             pricingRepository.Object,
             promoCodeService.Object,
             Mock.Of<IPromoCodeUsageRecorder>(),
+            pricingLedgerWriter.Object,
             dbContext.Object,
             CreateActor(userId, orderTenantId));
         var command = new AddProductToOrderCommand(
@@ -713,7 +789,7 @@ public sealed class AuthoritativeOrderCommandTests
             quantity,
             fixedPromoCurrency is null ? null : "FIXED");
 
-        return new PricingFixture(order, pricing, requestedVersion, command, handler);
+        return new PricingFixture(order, pricing, requestedVersion, command, handler, pricingLedgerWriter);
     }
 
     private static Mock<IOrderRepository> RepositoryWith(Order order, bool withLineItems = false)
@@ -756,5 +832,6 @@ public sealed class AuthoritativeOrderCommandTests
         ProductPricing Pricing,
         ProductPricingVersion Version,
         AddProductToOrderCommand Command,
-        AddProductToOrderCommandHandler Handler);
+        AddProductToOrderCommandHandler Handler,
+        Mock<GameGuild.Commerce.IPricingDecisionLedgerWriter> PricingLedgerWriter);
 }
