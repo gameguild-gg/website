@@ -227,8 +227,8 @@ public sealed class PermissionExpirationAlertHandlerTests
                 It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(nullResult ? (Result<Notification>)null!
                 : Result.Failure<Notification>(Error.Failure("Notification." + privateValue, email + " " + privateValue)));
-        var logger = new Mock<Microsoft.Extensions.Logging.ILogger<PermissionExpirationAlertHandler>>();
-        var handler = new PermissionExpirationAlertHandler(_users.Object, _notifications.Object, Options.Create(_options), logger.Object);
+        var logger = new CapturingLogger();
+        var handler = new PermissionExpirationAlertHandler(_users.Object, _notifications.Object, Options.Create(_options), logger);
 
         await handler.Handle(notification, CancellationToken.None);
 
@@ -239,20 +239,20 @@ public sealed class PermissionExpirationAlertHandlerTests
         _notifications.Verify(service => service.SendAsync(userId, NotificationType.Security, It.IsAny<string>(), It.IsAny<string>(),
             NotificationChannel.Email, notification.TenantId, null, priority, notification.PermissionId,
             nameof(PermissionExpirationNotification), null, email, CancellationToken.None), Times.Once);
-        var logs = logger.Invocations.Where(invocation => invocation.Method.Name == "Log").ToArray();
-        logs.Should().ContainSingle();
-        var log = logs[0];
-        log.Arguments[0].Should().Be(Microsoft.Extensions.Logging.LogLevel.Warning);
-        log.Arguments[3].Should().BeNull();
-        var properties = ((IEnumerable<KeyValuePair<string, object?>>)log.Arguments[2]).ToArray();
+        logger.Entries.Should().ContainSingle();
+        var log = logger.Entries[0];
+        log.Level.Should().Be(Microsoft.Extensions.Logging.LogLevel.Warning);
+        log.Exception.Should().BeNull();
+        var properties = log.Properties;
         properties.Single(pair => pair.Key == "Kind").Value.Should().Be(kind);
         properties.Single(pair => pair.Key == "PermissionId").Value.Should().Be(notification.PermissionId);
-        properties.Single(pair => pair.Key == "Channel").Value.Should().Be(failedChannel);
+        properties.Single(pair => pair.Key == "Channel").Value.Should().Be(
+            failedChannel == NotificationChannel.InApp ? "in-app" : "email");
         properties.Single(pair => pair.Key == "TenantId").Value.Should().Be(notification.TenantId);
         properties.Should().NotContain(pair => pair.Key == "Error" || pair.Key == "UserId" || pair.Key == "Email" || pair.Key == "Token");
         foreach (var privateText in new[] { email, privateValue, userId.ToString() })
         {
-            log.Arguments[2].ToString().Should().NotContain(privateText);
+            log.Message.Should().NotContain(privateText);
             properties.Should().OnlyContain(pair => pair.Value == null || !pair.Value.ToString()!.Contains(privateText, StringComparison.Ordinal));
         }
     }
@@ -266,8 +266,8 @@ public sealed class PermissionExpirationAlertHandlerTests
         _users.Setup(repository => repository.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateUser(userId, email));
         SetupSendSuccess();
-        var logger = new Mock<Microsoft.Extensions.Logging.ILogger<PermissionExpirationAlertHandler>>();
-        var handler = new PermissionExpirationAlertHandler(_users.Object, _notifications.Object, Options.Create(_options), logger.Object);
+        var logger = new CapturingLogger();
+        var handler = new PermissionExpirationAlertHandler(_users.Object, _notifications.Object, Options.Create(_options), logger);
 
         await handler.Handle(notification, CancellationToken.None);
 
@@ -277,6 +277,36 @@ public sealed class PermissionExpirationAlertHandlerTests
         _notifications.Verify(service => service.SendAsync(userId, NotificationType.Security, It.IsAny<string>(), It.IsAny<string>(),
             NotificationChannel.Email, notification.TenantId, null, NotificationPriority.Normal, notification.PermissionId,
             nameof(PermissionExpirationNotification), null, email, CancellationToken.None), Times.Once);
-        logger.Invocations.Should().NotContain(invocation => invocation.Method.Name == "Log");
+        logger.Entries.Should().BeEmpty();
     }
+    private sealed class CapturingLogger : Microsoft.Extensions.Logging.ILogger<PermissionExpirationAlertHandler>
+    {
+        public List<CapturedLog> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            Microsoft.Extensions.Logging.LogLevel logLevel,
+            Microsoft.Extensions.Logging.EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            IReadOnlyList<KeyValuePair<string, object?>> properties =
+                state is IEnumerable<KeyValuePair<string, object?>> values
+                    ? values.ToArray()
+                    : Array.Empty<KeyValuePair<string, object?>>();
+            Entries.Add(new CapturedLog(logLevel, eventId, properties, exception, formatter(state, exception)));
+        }
+    }
+
+    private sealed record CapturedLog(
+        Microsoft.Extensions.Logging.LogLevel Level,
+        Microsoft.Extensions.Logging.EventId EventId,
+        IReadOnlyList<KeyValuePair<string, object?>> Properties,
+        Exception? Exception,
+        string Message);
+
 }
