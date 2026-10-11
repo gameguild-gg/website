@@ -268,11 +268,29 @@ public class RefundAndRetryAuditTrailTests
             .Setup(repo => repo.UpdateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Payment updated, CancellationToken _) => updated);
 
-        return new ProcessRefundCommandHandler(
+        var refundRepository = new Mock<IRefundRepository>();
+        refundRepository
+            .Setup(repo => repo.GetByPaymentAndIdempotencyKeyAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund?)null);
+        refundRepository
+            .Setup(repo => repo.AddAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund refund, CancellationToken _) => refund);
+        refundRepository
+            .Setup(repo => repo.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund refund, CancellationToken _) => refund);
+
+        var processingService = new RefundProcessingService(
+            refundRepository.Object,
             repository.Object,
             _gateway.Object,
             _revenueAuditService.Object,
             _actorAccessor.Object,
+            Microsoft.Extensions.Options.Options.Create(new RefundApprovalOptions()),
+            Mock.Of<GameGuild.Notifications.Services.INotificationService>(),
+            NullLogger<RefundProcessingService>.Instance);
+
+        return new ProcessRefundCommandHandler(
+            processingService,
             NullLogger<ProcessRefundCommandHandler>.Instance);
     }
 

@@ -60,6 +60,18 @@ public class StripePaymentGateway(
         paymentService.ProcessRefundAsync(request, cancellationToken);
 
     /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default) =>
+        paymentService.AcceptDisputeAsync(request, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default) =>
+        paymentService.ChallengeDisputeAsync(request, cancellationToken);
+
+    /// <inheritdoc />
     public Task<bool> ValidateWebhookSignatureAsync(
         string payload,
         string signature,

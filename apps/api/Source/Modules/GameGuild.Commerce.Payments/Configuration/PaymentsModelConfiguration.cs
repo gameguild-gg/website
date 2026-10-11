@@ -84,6 +84,29 @@ public sealed class PaymentsModelConfiguration : IModelConfiguration
         modelBuilder.ApplyConfiguration(new TaxRuleConfiguration());
         modelBuilder.ApplyConfiguration(new UserWalletConfiguration());
         modelBuilder.ApplyConfiguration(new PaymentMethodConfiguration());
+        modelBuilder.ApplyConfiguration(new RefundConfiguration());
+
+        // Dispute persistence (issue #419): register the existing dispute entities into the
+        // production model so the dispute HTTP surface and gateway webhook reconciliation have
+        // durable storage. Enum-to-string conversions keep the columns auditable.
+        modelBuilder.Entity<PaymentDispute>(builder =>
+        {
+            builder.Property(dispute => dispute.Status).HasConversion<string>().IsRequired();
+            builder.Property(dispute => dispute.Type).HasConversion<string>().IsRequired();
+            builder.Property(dispute => dispute.Resolution).HasConversion<string>();
+            builder.HasOne<Payment>()
+                .WithMany()
+                .HasForeignKey(dispute => dispute.PaymentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.HasMany(dispute => dispute.Evidence)
+                .WithOne(evidence => evidence.Dispute)
+                .HasForeignKey(evidence => evidence.DisputeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DisputeEvidence>(builder =>
+        {
+            builder.Property(evidence => evidence.EvidenceType).HasConversion<string>().IsRequired();
+        });
 
         // Revenue auditing (issue #404): the audited revenue events themselves plus the
         // reconciliation runs, their discrepancies and the anomaly alerts.

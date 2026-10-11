@@ -25,11 +25,13 @@ public class Payment : EntityBase
         { PaymentStatus.Pending, new() { PaymentStatus.Processing, PaymentStatus.Cancelled, PaymentStatus.Failed } },
         { PaymentStatus.Processing, new() { PaymentStatus.Succeeded, PaymentStatus.Failed, PaymentStatus.RequiresAction, PaymentStatus.Cancelled } },
         { PaymentStatus.RequiresAction, new() { PaymentStatus.Processing, PaymentStatus.Succeeded, PaymentStatus.Failed, PaymentStatus.Cancelled } },
-        { PaymentStatus.Succeeded, new() { PaymentStatus.Refunded, PaymentStatus.Disputed } },
+        { PaymentStatus.Succeeded, new() { PaymentStatus.Refunded, PaymentStatus.PartiallyRefunded, PaymentStatus.Disputed } },
         { PaymentStatus.Failed, new() { PaymentStatus.Pending } }, // Retry allowed
         { PaymentStatus.Cancelled, new HashSet<PaymentStatus>() }, // Terminal state
         { PaymentStatus.Refunded, new HashSet<PaymentStatus>() }, // Terminal state
-        { PaymentStatus.Disputed, new() { PaymentStatus.Succeeded, PaymentStatus.Refunded } }
+        { PaymentStatus.Disputed, new() { PaymentStatus.Succeeded, PaymentStatus.Refunded, PaymentStatus.PartiallyRefunded } },
+        // Further partial refunds allowed until the cumulative total reaches the original amount.
+        { PaymentStatus.PartiallyRefunded, new() { PaymentStatus.PartiallyRefunded, PaymentStatus.Refunded } }
     };
 
     /// <summary>Default constructor for EF Core</summary>
@@ -467,9 +469,9 @@ public class Payment : EntityBase
     /// <summary>Processes a full or partial refund</summary>
     public void ProcessRefund(decimal refundAmount, string refundId, string reason)
     {
-        if (Status != PaymentStatus.Succeeded && Status != PaymentStatus.Disputed)
+        if (Status is not (PaymentStatus.Succeeded or PaymentStatus.Disputed or PaymentStatus.PartiallyRefunded))
         {
-            throw new InvalidOperationException($"Can only refund succeeded or disputed payments, current status: {Status}");
+            throw new InvalidOperationException($"Can only refund succeeded, disputed or partially refunded payments, current status: {Status}");
         }
 
         if (refundAmount <= 0)
@@ -487,10 +489,18 @@ public class Payment : EntityBase
         RefundReason = reason;
         RefundedAt = SystemClock.UtcNow;
 
-        // If fully refunded, transition to Refunded status
+        // If fully refunded, transition to Refunded status; otherwise PartiallyRefunded (issue #419)
         if (RefundedAmount >= Amount)
         {
             TransitionTo(PaymentStatus.Refunded);
+        }
+        else if (Status != PaymentStatus.PartiallyRefunded)
+        {
+            TransitionTo(PaymentStatus.PartiallyRefunded);
+        }
+        else
+        {
+            Touch();
         }
     }
 
