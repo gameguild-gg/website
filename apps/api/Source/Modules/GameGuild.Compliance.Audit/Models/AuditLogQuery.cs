@@ -25,6 +25,12 @@ public class AuditLogQuery
 
     public string? IpAddress { get; set; }
 
+    /// <summary>
+    /// Free-text search over descriptions and serialized context/metadata, matched in
+    /// the database (ILIKE). Null or empty means no filter.
+    /// </summary>
+    public string? SearchText { get; set; }
+
     public int Skip { get; set; } = 0;
 
     public int Take { get; set; } = 100;

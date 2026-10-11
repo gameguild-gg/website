@@ -65,6 +65,7 @@ public class AuditController(
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             IpAddress = request.IpAddress,
+            SearchText = request.SearchText,
             Skip = request.Skip,
             Take = Math.Min(request.Take, 1000) // Cap at 1000 records
         };
