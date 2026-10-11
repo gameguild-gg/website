@@ -196,12 +196,22 @@ public static class PromoStackingResolver
         var stopIndex = ordered.IndexOf(stopCode);
         if (includeStop)
         {
+            // The exclusive code terminated accumulation of an existing selection:
+            // it is rejected with the stop reason, trailing codes with a follow-on reason.
             rejected.Add(new RejectedPromoCode(stopCode.Code, stopReason));
+            foreach (var rest in ordered.Skip(stopIndex + 1))
+            {
+                rejected.Add(new RejectedPromoCode(rest.Code, $"Not applied after {stopCode.Code} stopped stacking"));
+            }
         }
-
-        foreach (var rest in ordered.Skip(stopIndex + 1))
+        else
         {
-            rejected.Add(new RejectedPromoCode(rest.Code, $"Not applied after {stopCode.Code} stopped stacking"));
+            // The exclusive code applies alone: every trailing code is rejected for
+            // the same reason — it cannot stack with the exclusive winner.
+            foreach (var rest in ordered.Skip(stopIndex + 1))
+            {
+                rejected.Add(new RejectedPromoCode(rest.Code, stopReason));
+            }
         }
     }
 
