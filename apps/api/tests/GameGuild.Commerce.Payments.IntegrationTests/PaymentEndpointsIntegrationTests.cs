@@ -3,7 +3,7 @@ using GameGuild.API.Database;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.TestServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -216,7 +216,11 @@ public class PaymentEndpointsIntegrationTests : IClassFixture<WebApplicationFact
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var attempts = await response.Content.ReadFromJsonAsync<List<PaymentRetryAttemptDto>>();
+        // The API serializes enums as strings (JsonStringEnumConverter), so the client-side
+        // deserializer needs the same converter to read the attempt outcome.
+        var serializerOptions = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        serializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        var attempts = await response.Content.ReadFromJsonAsync<List<PaymentRetryAttemptDto>>(serializerOptions);
         attempts.Should().ContainSingle().Which.AttemptNumber.Should().Be(1);
     }
 
