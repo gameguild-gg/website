@@ -349,6 +349,7 @@ public sealed class AuditReplayPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command,
             CommandEventData eventData, InterceptionResult<DbDataReader> result)
         {
+            ArgumentNullException.ThrowIfNull(eventData);
             Record(command);
             return result;
         }
@@ -356,6 +357,8 @@ public sealed class AuditReplayPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
             CommandEventData eventData, InterceptionResult<DbDataReader> result,
             CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(eventData);
+            cancellationToken.ThrowIfCancellationRequested();
             Record(command);
             return ValueTask.FromResult(result);
         }

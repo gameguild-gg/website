@@ -56,8 +56,9 @@ for (const [label, value, scope] of [
   test('rejects ' + label, async () => { await assert.rejects(() => importDoc(value, scope)); });
 }
 test('checks the original response bytes rather than reserialized JSON', async () => {
-  const value = doc(); value.events[0].actionType = "Read café <item> 😀";
-  const json = JSON.stringify(value).replace('é', '\\u00E9').replace('<', '\\u003C').replace('>', '\\u003E');
+  const value = doc(); value.events[0].actionType = "Read café <item> café <item> 😀";
+  const json = JSON.stringify(value).replaceAll('é', '\\u00E9').replaceAll('<', '\\u003C').replaceAll('>', '\\u003E');
+  assert.doesNotMatch(json, /[é<>]/);
   const result = await read(json, hash(json), tenant);
   assert.equal(result.timeline.events[0].actionType, value.events[0].actionType);
   await assert.rejects(() => read(json, hash(JSON.stringify(value)), tenant), /digest/);
