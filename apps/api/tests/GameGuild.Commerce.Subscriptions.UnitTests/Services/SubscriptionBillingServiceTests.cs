@@ -117,6 +117,29 @@ public sealed class SubscriptionBillingServiceTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task RecordPaymentAsync_ShouldRecordTheNextExpectedCycle()
+    {
+        // Provider-confirmed payments arrive without an explicit local cycle number; the service
+        // must pass the subscription's next unprocessed cycle so the entity accepts the recording
+        // (a cycle-less recording is rejected) and Stripe invoice.payment_succeeded can complete.
+        var subscription = CreatePaidActiveSubscription(Guid.NewGuid());
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _repository
+            .Setup(repository => repository.UpdateAsync(subscription, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.RecordPaymentAsync(subscription.Id, 29.99m, "USD", PeriodStart.AddMonths(1));
+
+        subscription.LastProcessedBillingCycle.Should().Be(2);
+        subscription.BillingCycleCount.Should().Be(2);
+        _repository.Verify(
+            repository => repository.UpdateAsync(subscription, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     private static Subscription CreatePaidActiveSubscription(Guid id)
     {
         var subscription = new Subscription(
