@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -106,7 +107,9 @@ public class ModuleAndInfrastructureTests
     {
         var svc = new PricingEngineService(
             Mock.Of<IProductRepository>(),
-            Mock.Of<IPromoCodeRepository>());
+            Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPricingRuleRepository>(),
+            new MemoryCache(new MemoryCacheOptions()));
         svc.Should().NotBeNull();
     }
 
