@@ -131,6 +131,7 @@ public sealed class AuthenticationRuntimeConfigurationTests
             repository.Object,
             attempts.Object,
             encryption.Object,
+            NativeTotpReplayStub.Create(),
             new MfaOptions { SetupSessionDurationMinutes = 10 });
 
         var result = await service.VerifyTotpAsync(userId, "123456");

@@ -33,7 +33,7 @@ public sealed partial class CompliancePackagingPostgreSqlHttpTests(ApiPostgreSql
         var options = new AuditSigningOptions { ActiveKeyId = "packaging-test" };
         options.Keys["packaging-test"] = new AuditSigningKeyOptions { PrivateKeyPem = key.ExportECPrivateKeyPem() };
         var signer = new EcdsaCryptographicSigningService(Options.Create(options));
-        return fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        return fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<ICryptographicSigningService>();
             services.AddSingleton<ICryptographicSigningService>(signer);
@@ -237,7 +237,7 @@ public sealed partial class CompliancePackagingPostgreSqlHttpTests(ApiPostgreSql
     [Fact]
     public async Task Missing_private_signing_keys_return_service_unavailable_and_never_persist_a_package()
     {
-        using var factory = fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        using var factory = fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<ICryptographicSigningService>();
             services.AddSingleton<ICryptographicSigningService>(new EcdsaCryptographicSigningService(Options.Create(new AuditSigningOptions())));
@@ -301,7 +301,7 @@ public sealed partial class CompliancePackagingPostgreSqlHttpTests(ApiPostgreSql
     [Fact]
     public async Task OpenApi_exposes_both_routes_typed_metadata_UTC_inputs_and_the_ZIP_download_contract()
     {
-        using var factory = fixture.Factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        using var factory = fixture.CreateFactory(builder => builder.UseEnvironment("Development"));
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/swagger/v1/swagger.json");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

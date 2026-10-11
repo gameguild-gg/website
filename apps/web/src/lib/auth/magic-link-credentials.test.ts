@@ -3,6 +3,7 @@ import {
   AuthServiceUnavailableError,
   CredentialsProvider,
   CredentialsSignInError,
+  MfaRequiredError,
 } from "@game-guild/client";
 import { createMagicLinkCredentialsAuthorize } from "./magic-link-credentials";
 
@@ -18,6 +19,30 @@ const signInResponse = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("createMagicLinkCredentialsAuthorize", () => {
+  it("uses the existing MFA completion authorizer before any stale magic link", async () => {
+    const fallback = vi.fn().mockResolvedValue({ user: { id: "completed" } });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const credentials = { mfaToken: "x".repeat(43), method: "Totp", code: "654321", magicLinkToken: "already-used" };
+    const authorize = createMagicLinkCredentialsAuthorize(fallback, "https://api.gameguild.example");
+    await expect(authorize(credentials)).resolves.toEqual({ user: { id: "completed" } });
+    expect(fallback).toHaveBeenCalledWith(credentials, undefined);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("preserves a limited MFA challenge without accepting an ordinary session", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      success: false, requiresMfa: true, mfaToken: "x".repeat(43),
+      availableMethods: ["Totp", "BackupCode"], accessToken: "", refreshToken: "",
+    }), { status: 200 })));
+    const fallback = vi.fn();
+    const authorize = createMagicLinkCredentialsAuthorize(fallback, "https://api.gameguild.example");
+    const error = await authorize({ magicLinkToken: "verified-link" }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(MfaRequiredError);
+    expect(error).toMatchObject({ mfaToken: "x".repeat(43), availableMethods: ["Totp", "BackupCode"] });
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
   it("keeps password sign-in on the existing credentials authorizer", async () => {
     const passwordAuthorize = vi
       .fn()

@@ -46,6 +46,8 @@ public static class AnonymousEndpointRegistry
             // ── Authentication entry points (necessarily anonymous) ──
             ["AuthController.LocalSignUp"] = "Sign-up entry point; creates the account it then authenticates.",
             ["AuthController.LocalSignIn"] = "Sign-in entry point; verifies credentials and issues tokens.",
+            ["AuthController.StartMfaSignInEnrollment"] = "Provisions an unenrolled account only through a current first-factor challenge; supplies no authenticated session or recovery codes.",
+            ["AuthController.CompleteMfaSignIn"] = "Consumes an expiring first-factor challenge bound to the server-side subject, tenant and policy; issues credentials only after enrolled MFA proof.",
             ["AuthController.PolymorphicSignIn"] = "Password sign-in entry point; resolves a unique identifier and applies the local authentication controls.",
             ["AuthController.RefreshToken"] = "Refresh-token rotation; the rotating refresh token itself is the credential.",
             ["AuthController.RequestMagicLink"] = "Requests an emailed sign-in link; only schedules an email.",

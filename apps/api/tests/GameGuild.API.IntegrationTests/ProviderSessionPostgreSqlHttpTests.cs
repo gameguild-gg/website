@@ -10,6 +10,7 @@ using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public sealed class ProviderSessionPostgreSqlFixture : IAsyncLifetime
 {
     private readonly ApiPostgreSqlFixture inner = new();
     public WebApplicationFactory<Program> Factory => inner.Factory;
+    public WebApplicationFactory<Program> CreateFactory(Action<IWebHostBuilder> configuration) => inner.CreateFactory(configuration);
     public Guid TenantId { get; } = Guid.NewGuid();
 
     public async Task InitializeAsync()
@@ -177,7 +179,7 @@ public sealed class ProviderSessionPostgreSqlHttpTests(ProviderSessionPostgreSql
     }
 
     private WebApplicationFactory<Program> CreateFactory(User user, Action<IServiceCollection>? extraServices = null) =>
-        fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        fixture.CreateFactory(builder => builder.ConfigureTestServices(services =>
         {
             services.PostConfigure<AuthenticationOptions>(options =>
             {

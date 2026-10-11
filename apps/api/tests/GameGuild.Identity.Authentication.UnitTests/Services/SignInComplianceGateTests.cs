@@ -36,6 +36,7 @@ public sealed class SignInComplianceGateTests
     private readonly Mock<ISender> _senderMock = new();
     private readonly Mock<ISessionManagementService> _sessionManagementServiceMock = new();
     private readonly Mock<ISignInCompliancePolicy> _compliancePolicyMock = new();
+    private readonly Mock<ISignInMfaService> _signInMfaMock = SignInMfaPreparationStub.CreateMock();
 
     private readonly Guid _tenantId = Guid.NewGuid();
     private readonly User _user = User.CreateWithPassword(
@@ -70,7 +71,7 @@ public sealed class SignInComplianceGateTests
             .Setup(x => x.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("access-token");
         _jwtTokenServiceMock
-            .Setup(x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("refresh-token");
         _userRepoMock.Setup(x => x.GetByEmailAsync("compliance@example.com", It.IsAny<CancellationToken>())).ReturnsAsync(_user);
         _userRepoMock.Setup(x => x.GetByIdAsync(_user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_user);
@@ -122,6 +123,7 @@ public sealed class SignInComplianceGateTests
             NullLogger<LocalAuthService>.Instance,
             _senderMock.Object,
             _sessionManagementServiceMock.Object,
+            _signInMfaMock.Object,
             auditEventSink: _authenticationAuditEventSinkMock.Object,
             complianceGateOptions: gateOptions is null ? null : Options.Create(gateOptions),
             compliancePolicy: _compliancePolicyMock.Object);
@@ -188,7 +190,7 @@ public sealed class SignInComplianceGateTests
             tokens => tokens.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _jwtTokenServiceMock.Verify(
-            tokens => tokens.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()),
+            tokens => tokens.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _sessionManagementServiceMock.Verify(
             sessions => sessions.CreateSessionAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
@@ -223,7 +225,7 @@ public sealed class SignInComplianceGateTests
             tokens => tokens.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _jwtTokenServiceMock.Verify(
-            tokens => tokens.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()),
+            tokens => tokens.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _sessionManagementServiceMock.Verify(
             sessions => sessions.CreateSessionAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
@@ -339,5 +341,106 @@ public sealed class SignInComplianceGateTests
         metadataProperties.Should().BeEquivalentTo(new[] { "Reason", "GateMode", "CorrelationId" });
         var reason = (string)capturedAuditEvent.Metadata.GetType().GetProperty("Reason")!.GetValue(capturedAuditEvent.Metadata)!;
         reason.Should().Be(SignInComplianceReasons.VerificationSuspended);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task NonAllowComplianceDecision_PreventsMfaChallengeFromBypassingTheGate(bool deny)
+    {
+        ConfigureMfaChallenge();
+        SetupPolicyDecision(deny
+            ? SignInComplianceDecision.Deny(SignInComplianceReasons.ComplianceHold)
+            : SignInComplianceDecision.Challenge(SignInComplianceReasons.VerificationPending));
+        var sut = CreateSut(Gate(SignInComplianceGateMode.Enforce));
+
+        if (deny)
+        {
+            await Assert.ThrowsAsync<AccessDeniedException>(() => sut.LocalSignInAsync(ValidRequest));
+        }
+        else
+        {
+            var result = await sut.LocalSignInAsync(ValidRequest);
+            result.RequiresStepUp.Should().BeTrue();
+            result.RequiresMfa.Should().BeFalse();
+            result.MfaToken.Should().BeNull();
+        }
+
+        _compliancePolicyMock.Verify(
+            policy => policy.EvaluateAsync(It.IsAny<SignInComplianceContext>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        VerifyNoMfaPreparation();
+        VerifyNoOrdinaryCredentials();
+    }
+
+    [Fact]
+    public async Task AllowedComplianceDecision_IsEvaluatedBeforeReturningTheMfaChallenge()
+    {
+        var order = new List<string>();
+        _compliancePolicyMock
+            .Setup(policy => policy.EvaluateAsync(It.IsAny<SignInComplianceContext>(), It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("compliance"))
+            .ReturnsAsync(SignInComplianceDecision.Allow);
+        _signInMfaMock
+            .Setup(service => service.PrepareAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<Guid?>(),
+                It.IsAny<DeviceInfo>(), It.IsAny<SignInFirstFactor>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("mfa"))
+            .ReturnsAsync(CreateMfaChallenge());
+        var sut = CreateSut(Gate(SignInComplianceGateMode.Enforce));
+
+        var result = await sut.LocalSignInAsync(ValidRequest);
+
+        order.Should().Equal("compliance", "mfa");
+        result.RequiresMfa.Should().BeTrue();
+        result.MfaToken.Should().NotBeNullOrEmpty();
+        VerifyNoOrdinaryCredentials();
+    }
+
+    [Fact]
+    public async Task CancelledComplianceEvaluation_PropagatesCancellationBeforeMfaOrCredentials()
+    {
+        using var cancellation = new CancellationTokenSource();
+        _compliancePolicyMock
+            .Setup(policy => policy.EvaluateAsync(It.IsAny<SignInComplianceContext>(), cancellation.Token))
+            .Callback(() => cancellation.Cancel())
+            .ThrowsAsync(new OperationCanceledException(cancellation.Token));
+        var sut = CreateSut(Gate(SignInComplianceGateMode.Enforce));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => sut.LocalSignInAsync(ValidRequest, cancellation.Token));
+
+        VerifyNoMfaPreparation();
+        VerifyNoOrdinaryCredentials();
+        _authenticationAuditEventSinkMock.Verify(
+            sink => sink.RecordAsync(It.IsAny<AuthenticationAuditEvent>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    private SignInMfaPreparation CreateMfaChallenge() => SignInMfaPreparation.WithOutcome(
+        new SignInMfaPendingResponse(SignInMfaChallengeToken.Create(), DateTimeOffset.UtcNow.AddMinutes(5),
+            SignInMfaPurpose.VerifyFactor, false, _user, _tenantId));
+
+    private void ConfigureMfaChallenge() => _signInMfaMock
+        .Setup(service => service.PrepareAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<Guid?>(),
+            It.IsAny<DeviceInfo>(), It.IsAny<SignInFirstFactor>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+        .ReturnsAsync(CreateMfaChallenge());
+
+    private void VerifyNoMfaPreparation() => _signInMfaMock.Verify(
+        service => service.PrepareAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<Guid?>(),
+            It.IsAny<DeviceInfo>(), It.IsAny<SignInFirstFactor>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+        Times.Never);
+
+    private void VerifyNoOrdinaryCredentials()
+    {
+        _jwtTokenServiceMock.Verify(
+            tokens => tokens.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(),
+                It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _jwtTokenServiceMock.Verify(
+            tokens => tokens.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(),
+                It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sessionManagementServiceMock.Verify(
+            sessions => sessions.CreateSessionAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()), Times.Never);
     }
 }

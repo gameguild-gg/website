@@ -20,12 +20,18 @@ public static class AuthenticationMappings
     {
         ArgumentNullException.ThrowIfNull(domainResponse);
         ArgumentNullException.ThrowIfNull(userRepository);
+        // These outcomes are created only after their trusted persistence/audit succeeds.
+        // Replacing them with a DTO would make the command owner roll back that durable state.
+        if (domainResponse is SignInMfaPendingResponse or SignInMfaCommittedDenial)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return domainResponse;
+        }
 
         // Try to fetch user details from repository
         // Note: In some scenarios (e.g., tests with separate DbContext scopes), the user might not be available yet
         var user = await userRepository.GetByIdAsync(domainResponse.UserId, cancellationToken).ConfigureAwait(false);
         var now = SystemClock.UtcNow;
-        var nameParts = user?.Name?.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         var authenticationComplete = domainResponse.Success && !domainResponse.RequiresMfa && !domainResponse.RequiresStepUp
             && !string.IsNullOrWhiteSpace(domainResponse.AccessToken);
 
@@ -52,19 +58,8 @@ public static class AuthenticationMappings
             SessionId = domainResponse.SessionId,
             TempToken = domainResponse.TempToken,
             MfaToken = domainResponse.MfaToken,
-            User = new UserDto
-            {
-                Id = domainResponse.UserId,
-                Email = user?.Email ?? domainResponse.Email,
-                Username = user?.Username ?? domainResponse.Email,
-                FirstName = nameParts is { Length: > 0 } ? nameParts[0] : null,
-                LastName = nameParts is { Length: > 1 } ? string.Join(' ', nameParts.Skip(1)) : null,
-                PhoneNumber = authenticationComplete ? user?.PhoneNumber : null,
-                EmailVerified = user?.IsEmailVerified ?? false,
-                PhoneNumberVerified = false,
-                CreatedAt = user?.CreatedAt ?? now,
-                LastLoginAt = user?.LastLoginAt
-            },
+            MfaEnrollmentBackupCodes = domainResponse.MfaEnrollmentBackupCodes?.ToArray(),
+            User = CreateUserProfile(user, domainResponse.UserId, domainResponse.Email, authenticationComplete, now),
             TenantId = domainResponse.TenantId,
             AvailableTenants = domainResponse.AvailableTenants?.ToArray(),
             RequiresMfa = domainResponse.RequiresMfa,
@@ -78,6 +73,24 @@ public static class AuthenticationMappings
             AuthenticationMethodReferences = domainResponse.AuthenticationMethodReferences?.ToArray(),
             AuthenticationContextClassReference = domainResponse.AuthenticationContextClassReference,
             MfaVerifiedByProvider = domainResponse.MfaVerifiedByProvider
+        };
+    }
+
+    internal static UserDto CreateUserProfile(User? user, Guid userId, string email, bool authenticationComplete, DateTime fallbackCreatedAt)
+    {
+        var nameParts = user?.Name?.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        return new UserDto
+        {
+            Id = userId,
+            Email = user?.Email ?? email,
+            Username = user?.Username ?? email,
+            FirstName = nameParts is { Length: > 0 } ? nameParts[0] : null,
+            LastName = nameParts is { Length: > 1 } ? string.Join(' ', nameParts.Skip(1)) : null,
+            PhoneNumber = authenticationComplete ? user?.PhoneNumber : null,
+            EmailVerified = user?.IsEmailVerified ?? false,
+            PhoneNumberVerified = false,
+            CreatedAt = user?.CreatedAt ?? fallbackCreatedAt,
+            LastLoginAt = user?.LastLoginAt
         };
     }
 

@@ -174,6 +174,8 @@ export interface ProviderConfig {
  * Result of a provider's authorize/authenticate call
  */
 export interface ProviderResult {
+  /** One-time enrollment recovery codes. Never copy these into JWT or session storage. */
+  mfaEnrollmentBackupCodes?: string[];
   /** The tokens from the .NET backend */
   tokens: TokenPair;
   /** User info extracted from the response */

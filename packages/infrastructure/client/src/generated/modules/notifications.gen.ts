@@ -447,7 +447,7 @@ export class NotificationsModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -463,7 +463,7 @@ export class NotificationsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

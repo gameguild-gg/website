@@ -10,6 +10,8 @@ using GameGuild.API.IntegrationTests.Infrastructure;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -211,7 +213,7 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         using var factory = CreateFactory();
         var account = await SeedAsync(factory);
         using var scope = factory.Services.CreateScope();
-            var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), scope.ServiceProvider.GetRequiredService<IUserRepository>(), scope.ServiceProvider.GetRequiredService<IUserEnumerationProtectionService>(), NullLogger<PolymorphicSignInHandler>.Instance);
+        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), scope.ServiceProvider.GetRequiredService<IUserRepository>(), NullLogger<PolymorphicSignInHandler>.Instance, scope.ServiceProvider.GetRequiredService<IPasswordSignInAdmissionService>());
         var command = new PolymorphicSignInCommand { Credential = Identifier(account, type), CredentialType = type, Password = incorrect ? SyntheticPassword() : account.Password, TenantId = account.TenantId };
         if (incorrect)
         {
@@ -260,7 +262,7 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         observed.Setup(value => value.GetByIdAsync(account.User.Id, CancellationToken.None))
             .Returns(() => repository.GetByIdAsync(account.User.Id));
         // Only the interleaving is controlled; both reads, password replacement and local authentication are real.
-        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), observed.Object, scope.ServiceProvider.GetRequiredService<IUserEnumerationProtectionService>(), NullLogger<PolymorphicSignInHandler>.Instance);
+        var handler = new PolymorphicSignInHandler(scope.ServiceProvider.GetRequiredService<IAuthService>(), observed.Object, NullLogger<PolymorphicSignInHandler>.Instance, scope.ServiceProvider.GetRequiredService<IPasswordSignInAdmissionService>());
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(new PolymorphicSignInCommand
         {
             Credential = account.User.Username!, Password = account.Password, TenantId = account.TenantId
@@ -306,7 +308,93 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         Assert.False(await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Set<UserSession>().AnyAsync(session => session.UserId == account.User.Id));
     }
 
-    private WebApplicationFactory<Program> CreateFactory(RiskLevel level = RiskLevel.Low, ConcurrentQueue<AuthenticationAttemptContext>? attempts = null)
+    [Theory]
+    [InlineData(CredentialType.Email, "account")]
+    [InlineData(CredentialType.Username, "account")]
+    [InlineData(CredentialType.Phone, "account")]
+    [InlineData(CredentialType.Email, "ip")]
+    [InlineData(CredentialType.Username, "ip")]
+    [InlineData(CredentialType.Phone, "ip")]
+    [InlineData(CredentialType.Email, "held-account")]
+    [InlineData(CredentialType.Username, "held-account")]
+    [InlineData(CredentialType.Phone, "held-account")]
+    [InlineData(CredentialType.Email, "held-ip")]
+    [InlineData(CredentialType.Username, "held-ip")]
+    [InlineData(CredentialType.Phone, "held-ip")]
+    public async Task EveryCredentialKindHonorsAccountIpAndConcurrentAdmission(CredentialType type, string gate)
+    {
+        var addressBytes = RandomNumberGenerator.GetBytes(16);
+        addressBytes[0] = 0x20;
+        addressBytes[1] = 0x01;
+        addressBytes[2] = 0x0d;
+        addressBytes[3] = 0xb8;
+        var address = new IPAddress(addressBytes);
+        using var factory = CreateFactory(sourceAddress: address);
+        var account = await SeedAsync(factory);
+        var unrelated = $"unrelated-{Guid.NewGuid():N}@example.test";
+        if (gate is "account" or "ip")
+        {
+            using var seedScope = factory.Services.CreateScope();
+            var db = seedScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var now = DateTime.UtcNow;
+            db.Set<AuthenticationAttempt>().AddRange(Enumerable.Range(0, 3).Select(index => new AuthenticationAttempt
+            {
+                Id = Guid.NewGuid(),
+                Email = gate == "account" ? account.User.Email : unrelated,
+                IpAddress = gate == "ip" ? address.ToString() : "192.0.2.253",
+                IsSuccessful = false,
+                AttemptedAt = now.AddSeconds(-index),
+                CreatedAt = now,
+                UpdatedAt = now
+            }));
+            await db.SaveChangesAsync();
+        }
+
+        await using var lockConnection = new Npgsql.NpgsqlConnection(fixture.ConnectionString);
+        if (gate.StartsWith("held-", StringComparison.Ordinal))
+        {
+            await lockConnection.OpenAsync();
+            var identifier = gate == "held-account" ? account.User.Email : address.ToString();
+            var prefix = gate == "held-account"
+                ? "gameguild:auth:local-sign-in-lockout:v1:"
+                : "gameguild:auth:local-sign-in-lockout:ip:v1:";
+            var digest = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(prefix + identifier));
+            var key = System.Buffers.Binary.BinaryPrimitives.ReadInt64BigEndian(digest);
+            await using var hold = new Npgsql.NpgsqlCommand("SELECT pg_advisory_lock(@key)", lockConnection);
+            hold.Parameters.AddWithValue("key", key);
+            await hold.ExecuteNonQueryAsync();
+        }
+
+        using var client = factory.CreateClient();
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        using var response = await client.PostAsJsonAsync(Endpoint, new
+        {
+            credential = Identifier(account, type), credentialType = type,
+            account.Password, account.TenantId
+        });
+        await AssertGenericDenialAsync(factory, response);
+        Assert.True(elapsed.Elapsed >= TimeSpan.FromMilliseconds(400));
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        using var verification = factory.Services.CreateScope();
+        var database = verification.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await database.Set<UserSession>().AnyAsync(session => session.UserId == account.User.Id));
+        Assert.False(await database.Set<AuthenticationAttempt>().AnyAsync(attempt => attempt.Email == account.User.Email && attempt.IsSuccessful));
+    }
+
+    private sealed class SourceAddressStartupFilter(IPAddress address) : IStartupFilter
+    {
+        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next) => app =>
+        {
+            app.Use(async (context, continuation) =>
+            {
+                context.Connection.RemoteIpAddress = address;
+                await continuation(context);
+            });
+            next(app);
+        };
+    }
+
+    private WebApplicationFactory<Program> CreateFactory(RiskLevel level = RiskLevel.Low, ConcurrentQueue<AuthenticationAttemptContext>? attempts = null, IPAddress? sourceAddress = null)
     {
         // Risk classification alone is controlled; CQRS, hashing, JWT, tenant checks, sessions and PostgreSQL are real.
         var risk = new Mock<IAuthenticationAnomalyDetectionService>(MockBehavior.Strict);
@@ -316,13 +404,25 @@ public sealed class PolymorphicSignInPostgreSqlHttpTests(ApiPostgreSqlFixture fi
         risk.Setup(service => service.AnalyzeBehavioralPatternsAsync(It.IsAny<Guid>(), It.IsAny<AuthenticationAttemptContext>()))
             .ReturnsAsync(new BehavioralAnalysisResult { MatchesTypicalPattern = true, RiskLevel = level });
         risk.Setup(service => service.RecordSuspiciousActivityAsync(It.IsAny<SuspiciousActivity>())).Returns(Task.CompletedTask);
-        return fixture.Factory.WithWebHostBuilder(builder =>
+        return fixture.CreateFactory(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10" }));
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IAuthenticationAnomalyDetectionService>();
                 services.AddSingleton(risk.Object);
+                if (sourceAddress is not null)
+                {
+                    services.AddSingleton<IStartupFilter>(new SourceAddressStartupFilter(sourceAddress));
+                    services.RemoveAll<GameGuild.Configuration.ApplicationLayer.AuthenticationSecurityOptions>();
+                    services.AddSingleton(new GameGuild.Configuration.ApplicationLayer.AuthenticationSecurityOptions
+                    {
+                        MaxFailedAttemptsPerHour = 3,
+                        MaxAttemptsPerIpPerHour = 3,
+                        EnableIpThrottling = true,
+                        AccountLockoutDurationMinutes = 30
+                    });
+                }
             });
         });
     }

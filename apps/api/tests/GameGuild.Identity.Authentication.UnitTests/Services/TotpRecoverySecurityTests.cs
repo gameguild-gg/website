@@ -105,7 +105,7 @@ public sealed class TotpRecoverySecurityTests
 
     private static TotpMfaService CreateService(IUserMfaConfigurationRepository repository, IEncryptionService encryption) =>
         new(NullLogger<TotpMfaService>.Instance, repository, new Mock<IMfaAttemptTrackingService>().Object,
-            encryption, new MfaOptions());
+            encryption, NativeTotpReplayStub.Create(), new MfaOptions());
 
     private static Mock<IUserMfaConfigurationRepository> CreateRepository(UserMfaConfiguration row)
     {

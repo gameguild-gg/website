@@ -109,6 +109,18 @@ public sealed class JwtTokenService(
         return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt, sessionId, cancellationToken, null);
     }
 
+    public Task<string> GenerateMfaAccessTokenAsync(Guid userId, string email, string[] roles, Guid? tenantId,
+        int tokenVersion, DateTimeOffset authenticatedAt, Guid sessionId, SignInMfaProof proof,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(proof);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (sessionId == Guid.Empty) { throw new AuthenticationRequiredException("An authenticated session is required."); }
+        proof.RequireBinding(userId, tenantId, tokenVersion, authenticatedAt, DateTimeOffset.UtcNow);
+        return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt,
+            sessionId, cancellationToken, null, proof);
+    }
+
     private async Task<string> GenerateAccessTokenCoreAsync(
         Guid userId,
         string email,
@@ -118,7 +130,8 @@ public sealed class JwtTokenService(
         DateTimeOffset authenticatedAt,
         Guid? sessionId,
         CancellationToken cancellationToken,
-        IEnumerable<Claim>? additionalClaims)
+        IEnumerable<Claim>? additionalClaims,
+        SignInMfaProof? mfaProof = null)
     {
         if (roles == null) throw new ArgumentNullException(nameof(roles));
 
@@ -150,6 +163,16 @@ public sealed class JwtTokenService(
             if (additionalClaims is not null)
             {
                 AppendAdditionalClaims(claims, additionalClaims);
+            }
+
+            if (mfaProof is not null)
+            {
+                mfaProof.RequireBinding(userId, tenantId, tokenVersion, authenticatedAt, DateTimeOffset.UtcNow);
+                claims.Add(new Claim("amr", "mfa"));
+                if (mfaProof.FirstFactor == SignInFirstFactor.Password) { claims.Add(new Claim("amr", "pwd")); }
+                if (mfaProof.Method == MfaMethod.Totp) { claims.Add(new Claim("amr", "otp")); }
+                claims.Add(new Claim(ClaimNames.MfaVerified, "true"));
+                claims.Add(new Claim(ClaimNames.MfaTime, mfaProof.VerifiedAt.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64));
             }
 
             if (groupMembershipProvider is not null)

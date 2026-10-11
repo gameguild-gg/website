@@ -150,6 +150,34 @@ public sealed class AuthenticatedSessionIssuerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.IssueAsync());
     }
 
+    [Fact]
+    public async Task MfaEvidenceMustBePersistedBeforeMfaAccessIssuance()
+    {
+        var fixture = new IssuanceFixture();
+        var proof = fixture.Proof();
+        fixture.MfaEvidence.Setup(store => store.AddAsync(It.IsAny<Guid>(), proof, It.IsAny<CancellationToken>()))
+            .Callback(() => fixture.EvidencePersisted = true).Returns(Task.CompletedTask);
+        var result = await fixture.IssueMfaAsync(proof);
+        Assert.True(result.Success);
+        fixture.MfaEvidence.Verify(store => store.AddAsync(result.SessionId, proof, CancellationToken.None), Times.Once);
+        fixture.Jwt.Verify(service => service.GenerateMfaAccessTokenAsync(fixture.User.Id, fixture.User.Email,
+            It.IsAny<string[]>(), fixture.TenantId, fixture.User.TokenVersion, proof.FirstFactorVerifiedAt,
+            result.SessionId, proof, CancellationToken.None), Times.Once);
+        fixture.VerifyNoAccessIssued();
+    }
+
+    [Fact]
+    public async Task FailedMfaEvidencePersistenceCannotIssueAccessCredentials()
+    {
+        var fixture = new IssuanceFixture();
+        fixture.MfaEvidence.Setup(store => store.AddAsync(It.IsAny<Guid>(), It.IsAny<SignInMfaProof>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("synthetic evidence failure"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.IssueMfaAsync(fixture.Proof()));
+        fixture.VerifyNoAccessIssued();
+        fixture.Jwt.Verify(service => service.GenerateMfaAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(),
+            It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<DateTimeOffset>(), It.IsAny<Guid>(), It.IsAny<SignInMfaProof>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private sealed class IssuanceFixture
     {
         public User User { get; } = new() { Id = Guid.NewGuid(), Email = "issuer@example.test", TokenVersion = 7, Version = 1 };
@@ -159,6 +187,8 @@ public sealed class AuthenticatedSessionIssuerTests
         public Mock<IJwtTokenService> Jwt { get; } = new();
         public Mock<IRefreshTokenRepository> Repository { get; } = new();
         public Mock<ISessionManagementService> Sessions { get; } = new();
+        public Mock<ISessionMfaEvidenceStore> MfaEvidence { get; } = new(MockBehavior.Strict);
+        public bool EvidencePersisted { get; set; }
         public RefreshToken Token { get; }
         public UserMembershipDto Membership { get; }
         public DateTime AccessExpiresAt { get; } = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.AddMinutes(15).ToUnixTimeSeconds()).UtcDateTime;
@@ -194,6 +224,13 @@ public sealed class AuthenticatedSessionIssuerTests
                     It.IsAny<DateTimeOffset>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => AccessFault == "not-a-jwt" ? "invalid-token" : new JwtSecurityTokenHandler().WriteToken(
                     new JwtSecurityToken(expires: AccessFault == "expired-jwt" ? SystemClock.UtcNow.AddSeconds(-1) : AccessExpiresAt)));
+            Jwt.Setup(service => service.GenerateMfaAccessTokenAsync(User.Id, User.Email, It.IsAny<string[]>(), TenantId, User.TokenVersion,
+                    It.IsAny<DateTimeOffset>(), It.IsAny<Guid>(), It.IsAny<SignInMfaProof>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    Assert.True(EvidencePersisted);
+                    return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(expires: AccessExpiresAt));
+                });
         }
 
         public void SetMemberships(IReadOnlyList<UserMembershipDto> values) => Sender
@@ -201,8 +238,15 @@ public sealed class AuthenticatedSessionIssuerTests
             .ReturnsAsync(new GetUserMembershipsResponse { Memberships = values, TotalCount = values.Count });
 
         public Task<SignInResponse> IssueAsync(Guid? requestedTenantId = null, CancellationToken cancellationToken = default) =>
-            new AuthenticatedSessionIssuer(Sender.Object, Jwt.Object, Hasher, Repository.Object, Sessions.Object)
+            new AuthenticatedSessionIssuer(Sender.Object, Jwt.Object, Hasher, Repository.Object, Sessions.Object, MfaEvidence.Object)
                 .IssueAsync(User, requestedTenantId, new DeviceInfo { Fingerprint = "synthetic-device", IpAddress = "127.0.0.1", UserAgent = "test-agent" }, cancellationToken);
+
+        public SignInMfaProof Proof() => new(Guid.NewGuid(), User.Id, TenantId, User.TokenVersion, new string('a', 64),
+            SignInFirstFactor.Password, new DateTimeOffset(Token.CreatedAt), DateTimeOffset.UtcNow, MfaMethod.BackupCode);
+
+        public Task<SignInResponse> IssueMfaAsync(SignInMfaProof proof) =>
+            new AuthenticatedSessionIssuer(Sender.Object, Jwt.Object, Hasher, Repository.Object, Sessions.Object, MfaEvidence.Object)
+                .IssueMfaAsync(User, TenantId, new DeviceInfo { Fingerprint = "synthetic-device" }, proof, CancellationToken.None);
 
         public void VerifyNoAccessIssued() => Jwt.Verify(service => service.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(),
             It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<DateTimeOffset>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);

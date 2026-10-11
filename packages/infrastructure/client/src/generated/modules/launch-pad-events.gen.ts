@@ -322,7 +322,7 @@ export class LaunchPadEventsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.LaunchPadLaunchPadEventProjection[], ApiError>;
@@ -336,7 +336,7 @@ export class LaunchPadEventsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

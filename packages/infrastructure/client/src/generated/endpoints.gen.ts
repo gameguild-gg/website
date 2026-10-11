@@ -13385,6 +13385,40 @@ export const getAuthMfaMethodsEndpoint = {
 } as const;
 
 /**
+ * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
+ *
+ * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
+ */
+export interface PostAuthMfaSignInCompleteInput {
+  body?: Types.IdentityAuthenticationCompleteMfaSignInInput;
+}
+export type PostAuthMfaSignInCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthMfaSignInCompleteEndpoint = {
+  operationId: 'postAuthMfaSignInComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sign-in/complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Provision the first TOTP factor using only the limited first-factor challenge.
+ *
+ * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
+ */
+export interface PostAuthMfaSignInEnrollmentInput {
+  body?: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput;
+}
+export type PostAuthMfaSignInEnrollmentOutput = Types.IdentityAuthenticationMfaSignInEnrollmentOutput;
+export const postAuthMfaSignInEnrollmentEndpoint = {
+  operationId: 'postAuthMfaSignInEnrollment' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sign-in/enrollment' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete SMS MFA setup by verifying the code
  *
  * Completes SMS MFA setup by verifying the code sent to the user's phone.
@@ -27385,6 +27419,8 @@ export const endpoints = {
   getAuthMfaBackupCodes: getAuthMfaBackupCodesEndpoint,
   postAuthMfaBackupCodesRegenerate: postAuthMfaBackupCodesRegenerateEndpoint,
   getAuthMfaMethods: getAuthMfaMethodsEndpoint,
+  postAuthMfaSignInComplete: postAuthMfaSignInCompleteEndpoint,
+  postAuthMfaSignInEnrollment: postAuthMfaSignInEnrollmentEndpoint,
   postAuthMfaSmsComplete: postAuthMfaSmsCompleteEndpoint,
   postAuthMfaSmsSetup: postAuthMfaSmsSetupEndpoint,
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,

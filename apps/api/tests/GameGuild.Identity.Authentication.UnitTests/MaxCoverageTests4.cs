@@ -23,6 +23,14 @@ namespace GameGuild.Identity.Authentication.UnitTests;
 // ════════════════════════════════════════════════════════════════════════════
 public sealed class UserEnumProtectionExtraTests
 {
+    internal static IConfiguration TestPasswordPolicyConfiguration =>
+        new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
+            })
+            .Build();
+
     private readonly MemoryCache _cache;
     private readonly UserEnumerationProtectionService _sut;
 
@@ -30,19 +38,7 @@ public sealed class UserEnumProtectionExtraTests
     {
         _cache = new MemoryCache(new MemoryCacheOptions());
         _sut = new UserEnumerationProtectionService(
-            Mock.Of<ILogger<UserEnumerationProtectionService>>(), _cache,
-            new PasswordHasher(Mock.Of<ILogger<PasswordHasher>>(), TestPasswordPolicyConfiguration));
-    }
-
-    internal static IConfiguration TestPasswordPolicyConfiguration
-    {
-        get
-        {
-            var data = new Dictionary<string, string?> { ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10" };
-            return new ConfigurationBuilder()
-                .AddInMemoryCollection(data)
-                .Build();
-        }
+            Mock.Of<ILogger<UserEnumerationProtectionService>>(), _cache);
     }
 
     [Fact]
@@ -60,15 +56,21 @@ public sealed class UserEnumProtectionExtraTests
     }
 
     [Fact]
-    public async Task AddTimingProtectionDelay_WithoutCredentialWork_PerformsDummyVerificationAndReturns()
+    public async Task SimulateAuthenticationDelay_UserExists()
     {
-        await _sut.AddTimingProtectionDelayAsync(_sut.BeginAuthenticationTiming(), CredentialWorkClassification.None);
+        await _sut.SimulateAuthenticationDelayAsync("test@test.com", true);
     }
 
     [Fact]
-    public async Task AddTimingProtectionDelay_WithCompletedCredentialWork_ReturnsWithoutDummyVerification()
+    public async Task SimulateAuthenticationDelay_UserNotExists()
     {
-        await _sut.AddTimingProtectionDelayAsync(_sut.BeginAuthenticationTiming(), CredentialWorkClassification.Completed);
+        await _sut.SimulateAuthenticationDelayAsync("fake@test.com", false);
+    }
+
+    [Fact]
+    public async Task PerformDummyPasswordHash_Executes()
+    {
+        await _sut.PerformDummyPasswordHashAsync("test_password");
     }
 }
 
@@ -87,19 +89,12 @@ public sealed class PolymorphicSignInHandlerCoverageTests
             .ReturnsAsync((IReadOnlyList<User>)[]);
     }
 
-    private static IUserEnumerationProtectionService TimingProtection()
-    {
-        var protection = new Mock<IUserEnumerationProtectionService>();
-        protection.Setup(p => p.BeginAuthenticationTiming()).Returns(new AuthenticationTimingScope());
-        return protection.Object;
-    }
-
     [Fact]
     public async Task Handle_ValidationFailure_Throws()
     {
         var sut = new PolymorphicSignInHandler(
-            _authService.Object, _userRepo.Object, TimingProtection(),
-            Mock.Of<ILogger<PolymorphicSignInHandler>>(), _validator.Object);
+            _authService.Object, _userRepo.Object,
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub(), _validator.Object);
 
         var cmd = new PolymorphicSignInCommand { Credential = "a@b.c", Password = "pass" };
         _validator.Setup(v => v.ValidateAsync(cmd, It.IsAny<CancellationToken>()))
@@ -114,8 +109,8 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     public async Task Handle_EmailCredential_CallsAuthService()
     {
         var sut = new PolymorphicSignInHandler(
-            _authService.Object, _userRepo.Object, TimingProtection(),
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            _authService.Object, _userRepo.Object,
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand { Credential = "user@example.com", Password = "pass" };
         _authService.Setup(a => a.LocalSignInAsync(
@@ -132,8 +127,8 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     public async Task Handle_PhoneCredential_CallsAuthService()
     {
         var sut = new PolymorphicSignInHandler(
-            _authService.Object, _userRepo.Object, TimingProtection(),
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            _authService.Object, _userRepo.Object,
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand { Credential = "+1234567890", Password = "pass" };
         _authService.Setup(a => a.LocalSignInAsync(
@@ -148,8 +143,8 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     public async Task Handle_UsernameCredential_CallsAuthService()
     {
         var sut = new PolymorphicSignInHandler(
-            _authService.Object, _userRepo.Object, TimingProtection(),
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            _authService.Object, _userRepo.Object,
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand { Credential = "johndoe", Password = "pass" };
         _authService.Setup(a => a.LocalSignInAsync(
@@ -164,8 +159,8 @@ public sealed class PolymorphicSignInHandlerCoverageTests
     public async Task Handle_ExplicitCredentialType_SkipsDetection()
     {
         var sut = new PolymorphicSignInHandler(
-            _authService.Object, _userRepo.Object, TimingProtection(),
-            Mock.Of<ILogger<PolymorphicSignInHandler>>());
+            _authService.Object, _userRepo.Object,
+            Mock.Of<ILogger<PolymorphicSignInHandler>>(), new PasswordSignInAdmissionStub());
 
         var cmd = new PolymorphicSignInCommand
         {
