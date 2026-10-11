@@ -36,6 +36,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBillingWebhookRepository, BillingWebhookRepository>();
         services.AddScoped<IBillingProviderStateRepository, BillingProviderStateRepository>();
 
+        // Pricing-decision ledger (issue #400): durable append-only record of every
+        // checkout/renewal price calculation, with audit publishing, effectiveness
+        // analytics and drift verification over the recorded breakdowns.
+        services.AddScoped<GameGuild.Commerce.IPricingDecisionLedgerWriter, PricingDecisionLedgerWriter>();
+        services.AddScoped<IPricingDecisionLedgerRepository, PricingDecisionLedgerRepository>();
+
         // Register external provider management (issue #397): the registry merges
         // per-provider configuration health with the persisted enable/disable overrides.
         services.AddScoped<IExternalBillingProviderRegistry, ExternalBillingProviderRegistry>();
