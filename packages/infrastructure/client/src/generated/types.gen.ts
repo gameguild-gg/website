@@ -2905,6 +2905,20 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Wallet transaction types */
 export type CommercePaymentsWalletTransactionType = 'Credit' | 'Debit' | 'TransferIn' | 'TransferOut' | 'Refund' | 'Fee' | 'Adjustment';
 
+/** Types of pricing rules - consolidated from Products and Payments modules */
+export type CommercePricingRuleType =
+  | 'VolumeDiscount'
+  | 'FixedPriceOverride'
+  | 'TimeBased'
+  | 'RegionBased'
+  | 'SegmentBased'
+  | 'MarketBased'
+  | 'Percentage'
+  | 'FixedAmount'
+  | 'BuyXGetY'
+  | 'TieredPricing'
+  | 'Bundle';
+
 /** Data model for Commerce Products Add My Support Ticket Message Request. */
 export interface CommerceProductsAddMySupportTicketMessageInput {
   body?: string | null;
@@ -2958,6 +2972,15 @@ export interface CommerceProductsBatchProductCreateItem {
   type?: CommerceProductsProductType;
 }
 
+/** Request to calculate a price through the pricing engine. */
+export interface CommerceProductsCalculatePricingInput {
+  customerSegment?: string | null;
+  pricingId?: string | null;
+  productId?: string;
+  promoCodes?: string[] | null;
+  quantity?: number;
+}
+
 /** Data model for Commerce Products Change Support Ticket Priority Request. */
 export interface CommerceProductsChangeSupportTicketPriorityInput {
   priority?: CommerceProductsSupportTicketPriority;
@@ -2979,6 +3002,31 @@ export interface CommerceProductsCreateMySupportTicketInput {
   category?: string | null;
   priority?: CommerceProductsSupportTicketPriority;
   subject?: string | null;
+}
+
+/** Request to create a pricing rule. */
+export interface CommerceProductsCreatePricingRuleInput {
+  buyQuantity?: number | null;
+  customerSegment?: string | null;
+  daysOfWeek?: string | null;
+  description?: string | null;
+  discountAmount?: number | null;
+  discountPercentage?: number | null;
+  endDate?: string | null;
+  fixedPrice?: number | null;
+  getQuantity?: number | null;
+  isActive?: boolean;
+  maxQuantity?: number | null;
+  minQuantity?: number | null;
+  name?: string | null;
+  priority?: number;
+  productId?: string | null;
+  region?: string | null;
+  ruleType?: CommercePricingRuleType;
+  startDate?: string | null;
+  tiers?: CommerceProductsPricingRuleTierInput[] | null;
+  timeEnd?: string | null;
+  timeStart?: string | null;
 }
 
 /** Request model for creating a product */
@@ -3086,6 +3134,109 @@ export interface CommerceProductsPatchPromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
+}
+
+/** Result of pricing calculation */
+export interface CommerceProductsPricingCalculationResult {
+  /** List of applied promo codes */
+  appliedPromoCodes?: string[] | null;
+  /** ID of the winning pricing rule, if any (issue #395) */
+  appliedRuleId?: string | null;
+  /** Name of the winning pricing rule, if any (issue #395) */
+  appliedRuleName?: string | null;
+  /** Original base price */
+  basePrice?: number;
+  /** Currency code */
+  currency?: string | null;
+  /** Final calculated price */
+  finalPrice?: number;
+  /** Whether sale is active */
+  isSaleActive?: boolean;
+  /** Discount from promo codes */
+  promoDiscount?: number;
+  /** Per-unit discount produced by the winning pricing rule (issue #395) */
+  ruleDiscount?: number;
+  /** Sale price if active */
+  salePrice?: number | null;
+}
+
+/** Read model for a pricing rule (issue #395 dynamic & tiered pricing engine). */
+export interface CommerceProductsPricingRuleDto {
+  /** Rule ID */
+  id?: string;
+  /** Buy X (Buy X Get Y rules) */
+  buyQuantity?: number | null;
+  /** Creation timestamp (UTC) */
+  createdAt?: string;
+  /** Customer segment the rule is restricted to */
+  customerSegment?: string | null;
+  /** Days of week the rule applies to (comma-separated 0=Sunday..6=Saturday) */
+  daysOfWeek?: string | null;
+  /** Optional description */
+  description?: string | null;
+  /** Fixed discount amount */
+  discountAmount?: number | null;
+  /** Percentage discount */
+  discountPercentage?: number | null;
+  /** Optional expiry (UTC) */
+  endDate?: string | null;
+  /** Fixed per-unit price override */
+  fixedPrice?: number | null;
+  /** Get Y (Buy X Get Y rules) */
+  getQuantity?: number | null;
+  /** Whether the rule is active */
+  isActive?: boolean;
+  /** Maximum quantity for the rule to apply */
+  maxQuantity?: number | null;
+  /** Minimum quantity for the rule to apply */
+  minQuantity?: number | null;
+  /** Rule name */
+  name?: string | null;
+  /** Priority (higher wins) */
+  priority?: number;
+  /** Product the rule applies to (null = global rule) */
+  productId?: string | null;
+  /** Geographic region (RegionBased rules) */
+  region?: string | null;
+  ruleType?: CommercePricingRuleType;
+  /** Optional activation start (UTC) */
+  startDate?: string | null;
+  /** Volume tiers for tiered/volume rules */
+  tiers?: CommerceProductsPricingRuleTierDto[] | null;
+  /** Time-of-day window end (HH:MM, TimeBased rules) */
+  timeEnd?: string | null;
+  /** Time-of-day window start (HH:MM, TimeBased rules) */
+  timeStart?: string | null;
+  /** Last update timestamp (UTC) */
+  updatedAt?: string;
+  /** Optimistic concurrency version */
+  version?: number;
+}
+
+/** Read model for a pricing rule tier (volume tier of a pricing rule). */
+export interface CommerceProductsPricingRuleTierDto {
+  /** Tier ID */
+  id?: string;
+  /** Percentage discount per unit for the tier */
+  discountPercentage?: number | null;
+  /** Maximum quantity for the tier (null = no upper bound) */
+  maxQuantity?: number | null;
+  /** Minimum quantity for the tier (null = no lower bound) */
+  minQuantity?: number | null;
+  /** Fixed per-unit price for the tier */
+  price?: number | null;
+}
+
+/** Write model for a pricing rule tier. */
+export interface CommerceProductsPricingRuleTierInput {
+  /** Percentage discount per unit for the tier */
+  discountPercentage?: number | null;
+  /** Maximum quantity for the tier (null = no upper bound) */
+  maxQuantity?: number | null;
+  /** Minimum quantity for the tier (null = no lower bound) */
+  minQuantity?: number | null;
+  /** Fixed per-unit price for the tier */
+  price?: number | null;
 }
 
 /** Represents how a user acquired access to a product */
@@ -3363,6 +3514,31 @@ export interface CommerceProductsSupportTicketSummaryDto {
   inProgress?: number;
   open?: number;
   resolvedToday?: number;
+}
+
+/** Request to update a pricing rule (full update; tiers are replaced when provided). */
+export interface CommerceProductsUpdatePricingRuleInput {
+  buyQuantity?: number | null;
+  customerSegment?: string | null;
+  daysOfWeek?: string | null;
+  description?: string | null;
+  discountAmount?: number | null;
+  discountPercentage?: number | null;
+  endDate?: string | null;
+  fixedPrice?: number | null;
+  getQuantity?: number | null;
+  isActive?: boolean;
+  maxQuantity?: number | null;
+  minQuantity?: number | null;
+  name?: string | null;
+  priority?: number;
+  productId?: string | null;
+  region?: string | null;
+  ruleType?: CommercePricingRuleType;
+  startDate?: string | null;
+  tiers?: CommerceProductsPricingRuleTierInput[] | null;
+  timeEnd?: string | null;
+  timeStart?: string | null;
 }
 
 /** Request model for updating a product */
@@ -15711,6 +15887,29 @@ export interface PagedResultEmailSuppressionDto {
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultPricingRuleDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceProductsPricingRuleDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultProductDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -20749,6 +20948,7 @@ export let CommercePaymentsUserWalletSchema: z.ZodType<CommercePaymentsUserWalle
 export let CommercePaymentsValidateTaxExemptionInputSchema: z.ZodType<CommercePaymentsValidateTaxExemptionInput>;
 export let CommercePaymentsWalletTransactionSchema: z.ZodType<CommercePaymentsWalletTransaction>;
 export let CommercePaymentsWalletTransactionTypeSchema: z.ZodType<CommercePaymentsWalletTransactionType>;
+export let CommercePricingRuleTypeSchema: z.ZodType<CommercePricingRuleType>;
 export let CommerceProductsAddMySupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddMySupportTicketMessageInput>;
 export let CommerceProductsAddSupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddSupportTicketMessageInput>;
 export let CommerceProductsAppliedPromoCodeSchema: z.ZodType<CommerceProductsAppliedPromoCode>;
@@ -20756,10 +20956,12 @@ export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProduct
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
+export let CommerceProductsCalculatePricingInputSchema: z.ZodType<CommerceProductsCalculatePricingInput>;
 export let CommerceProductsChangeSupportTicketPriorityInputSchema: z.ZodType<CommerceProductsChangeSupportTicketPriorityInput>;
 export let CommerceProductsCheckMultipleAccessInputSchema: z.ZodType<CommerceProductsCheckMultipleAccessInput>;
 export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProductsCloseSupportTicketInput>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
+export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
 export let CommerceProductsCreateSupportTicketInputSchema: z.ZodType<CommerceProductsCreateSupportTicketInput>;
@@ -20768,6 +20970,10 @@ export let CommerceProductsEntitlementInfoDtoSchema: z.ZodType<CommerceProductsE
 export let CommerceProductsGrantEntitlementInputSchema: z.ZodType<CommerceProductsGrantEntitlementInput>;
 export let CommerceProductsPatchProductInputSchema: z.ZodType<CommerceProductsPatchProductInput>;
 export let CommerceProductsPatchPromoCodeInputSchema: z.ZodType<CommerceProductsPatchPromoCodeInput>;
+export let CommerceProductsPricingCalculationResultSchema: z.ZodType<CommerceProductsPricingCalculationResult>;
+export let CommerceProductsPricingRuleDtoSchema: z.ZodType<CommerceProductsPricingRuleDto>;
+export let CommerceProductsPricingRuleTierDtoSchema: z.ZodType<CommerceProductsPricingRuleTierDto>;
+export let CommerceProductsPricingRuleTierInputSchema: z.ZodType<CommerceProductsPricingRuleTierInput>;
 export let CommerceProductsProductAcquisitionTypeSchema: z.ZodType<CommerceProductsProductAcquisitionType>;
 export let CommerceProductsProductDtoSchema: z.ZodType<CommerceProductsProductDto>;
 export let CommerceProductsProductPricingDtoSchema: z.ZodType<CommerceProductsProductPricingDto>;
@@ -20788,6 +20994,7 @@ export let CommerceProductsSupportTicketMessageDtoSchema: z.ZodType<CommerceProd
 export let CommerceProductsSupportTicketPrioritySchema: z.ZodType<CommerceProductsSupportTicketPriority>;
 export let CommerceProductsSupportTicketStatusSchema: z.ZodType<CommerceProductsSupportTicketStatus>;
 export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProductsSupportTicketSummaryDto>;
+export let CommerceProductsUpdatePricingRuleInputSchema: z.ZodType<CommerceProductsUpdatePricingRuleInput>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
 export let CommerceProductsValidatePromoCodeInputSchema: z.ZodType<CommerceProductsValidatePromoCodeInput>;
@@ -21922,6 +22129,7 @@ export let PagedResultBillingWebhookEventListItemDtoSchema: z.ZodType<PagedResul
 export let PagedResultDeadLetterDtoSchema: z.ZodType<PagedResultDeadLetterDto>;
 export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDeliveryEventDto>;
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
+export let PagedResultPricingRuleDtoSchema: z.ZodType<PagedResultPricingRuleDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
 export let PagedResultRevenueAnomalyAlertSchema: z.ZodType<PagedResultRevenueAnomalyAlert>;
@@ -25012,6 +25220,21 @@ CommercePaymentsWalletTransactionSchema = z.object({
 /** Zod schema for CommercePaymentsWalletTransactionType. Wallet transaction types */
 CommercePaymentsWalletTransactionTypeSchema = z.enum(['Credit', 'Debit', 'TransferIn', 'TransferOut', 'Refund', 'Fee', 'Adjustment']);
 
+/** Zod schema for CommercePricingRuleType. Types of pricing rules - consolidated from Products and Payments modules */
+CommercePricingRuleTypeSchema = z.enum([
+  'VolumeDiscount',
+  'FixedPriceOverride',
+  'TimeBased',
+  'RegionBased',
+  'SegmentBased',
+  'MarketBased',
+  'Percentage',
+  'FixedAmount',
+  'BuyXGetY',
+  'TieredPricing',
+  'Bundle',
+]);
+
 /** Zod schema for CommerceProductsAddMySupportTicketMessageInput. Data model for Commerce Products Add My Support Ticket Message Request. */
 CommerceProductsAddMySupportTicketMessageInputSchema = z.object({
   body: z.string().nullable().optional(),
@@ -25065,6 +25288,15 @@ CommerceProductsBatchProductCreateItemSchema = z.object({
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
 });
 
+/** Zod schema for CommerceProductsCalculatePricingInput. Request to calculate a price through the pricing engine. */
+CommerceProductsCalculatePricingInputSchema = z.object({
+  customerSegment: z.string().nullable().optional(),
+  pricingId: z.string().uuid().nullable().optional(),
+  productId: z.string().uuid().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
+  quantity: z.number().int().optional(),
+});
+
 /** Zod schema for CommerceProductsChangeSupportTicketPriorityInput. Data model for Commerce Products Change Support Ticket Priority Request. */
 CommerceProductsChangeSupportTicketPriorityInputSchema = z.object({
   priority: z.lazy(() => CommerceProductsSupportTicketPrioritySchema).optional(),
@@ -25086,6 +25318,34 @@ CommerceProductsCreateMySupportTicketInputSchema = z.object({
   category: z.string().nullable().optional(),
   priority: z.lazy(() => CommerceProductsSupportTicketPrioritySchema).optional(),
   subject: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsCreatePricingRuleInput. Request to create a pricing rule. */
+CommerceProductsCreatePricingRuleInputSchema = z.object({
+  buyQuantity: z.number().int().nullable().optional(),
+  customerSegment: z.string().nullable().optional(),
+  daysOfWeek: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  getQuantity: z.number().int().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  region: z.string().nullable().optional(),
+  ruleType: z.lazy(() => CommercePricingRuleTypeSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tiers: z
+    .array(z.lazy(() => CommerceProductsPricingRuleTierInputSchema))
+    .nullable()
+    .optional(),
+  timeEnd: z.string().nullable().optional(),
+  timeStart: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsCreateProductInput. Request model for creating a product */
@@ -25193,6 +25453,69 @@ CommerceProductsPatchPromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingCalculationResult. Result of pricing calculation */
+CommerceProductsPricingCalculationResultSchema = z.object({
+  appliedPromoCodes: z.array(z.string()).nullable().optional(),
+  appliedRuleId: z.string().uuid().nullable().optional(),
+  appliedRuleName: z.string().nullable().optional(),
+  basePrice: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  finalPrice: z.number().optional(),
+  isSaleActive: z.boolean().optional(),
+  promoDiscount: z.number().optional(),
+  ruleDiscount: z.number().optional(),
+  salePrice: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingRuleDto. Read model for a pricing rule (issue #395 dynamic & tiered pricing engine). */
+CommerceProductsPricingRuleDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  buyQuantity: z.number().int().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  customerSegment: z.string().nullable().optional(),
+  daysOfWeek: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  getQuantity: z.number().int().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  region: z.string().nullable().optional(),
+  ruleType: z.lazy(() => CommercePricingRuleTypeSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tiers: z
+    .array(z.lazy(() => CommerceProductsPricingRuleTierDtoSchema))
+    .nullable()
+    .optional(),
+  timeEnd: z.string().nullable().optional(),
+  timeStart: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingRuleTierDto. Read model for a pricing rule tier (volume tier of a pricing rule). */
+CommerceProductsPricingRuleTierDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  price: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingRuleTierInput. Write model for a pricing rule tier. */
+CommerceProductsPricingRuleTierInputSchema = z.object({
+  discountPercentage: z.number().nullable().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  price: z.number().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsProductAcquisitionType. Represents how a user acquired access to a product */
@@ -25415,6 +25738,34 @@ CommerceProductsSupportTicketSummaryDtoSchema = z.object({
   inProgress: z.number().int().optional(),
   open: z.number().int().optional(),
   resolvedToday: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceProductsUpdatePricingRuleInput. Request to update a pricing rule (full update; tiers are replaced when provided). */
+CommerceProductsUpdatePricingRuleInputSchema = z.object({
+  buyQuantity: z.number().int().nullable().optional(),
+  customerSegment: z.string().nullable().optional(),
+  daysOfWeek: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  getQuantity: z.number().int().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  region: z.string().nullable().optional(),
+  ruleType: z.lazy(() => CommercePricingRuleTypeSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tiers: z
+    .array(z.lazy(() => CommerceProductsPricingRuleTierInputSchema))
+    .nullable()
+    .optional(),
+  timeEnd: z.string().nullable().optional(),
+  timeStart: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsUpdateProductInput. Request model for updating a product */
@@ -37320,6 +37671,23 @@ PagedResultEmailSuppressionDtoSchema = z.object({
   totalPages: z.number().int().optional(),
 });
 
+/** Zod schema for PagedResultPricingRuleDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultPricingRuleDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceProductsPricingRuleDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultProductDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultProductDtoSchema = z.object({
@@ -41679,6 +42047,10 @@ export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAt
 export { CommercePaymentsPaymentRetryAttemptDtoSchema as CommercePaymentsPaymentRetryAttemptSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
+export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
+export { CommerceProductsPricingRuleDtoSchema as CommerceProductsPricingRuleSchema };
+export type CommerceProductsPricingRuleTier = CommerceProductsPricingRuleTierDto;
+export { CommerceProductsPricingRuleTierDtoSchema as CommerceProductsPricingRuleTierSchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;
 export { CommerceProductsProductDtoSchema as CommerceProductsProductSchema };
 export type CommerceProductsProductPricing = CommerceProductsProductPricingDto;
@@ -42149,6 +42521,8 @@ export type PagedResultEmailDeliveryEvent = PagedResultEmailDeliveryEventDto;
 export { PagedResultEmailDeliveryEventDtoSchema as PagedResultEmailDeliveryEventSchema };
 export type PagedResultEmailSuppression = PagedResultEmailSuppressionDto;
 export { PagedResultEmailSuppressionDtoSchema as PagedResultEmailSuppressionSchema };
+export type PagedResultPricingRule = PagedResultPricingRuleDto;
+export { PagedResultPricingRuleDtoSchema as PagedResultPricingRuleSchema };
 export type PagedResultProduct = PagedResultProductDto;
 export { PagedResultProductDtoSchema as PagedResultProductSchema };
 export type PagedResultPromoCode = PagedResultPromoCodeDto;

@@ -6596,6 +6596,135 @@ export const postBillingPaymentMethodsSetDefaultEndpoint = {
 } as const;
 
 /**
+ * Get pricing rules (paginated) with optional filters
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineInput {
+  query?: {
+    isActive?: boolean;
+    ruleType?: Types.CommercePricingRuleType;
+    productId?: string;
+    searchTerm?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineOutput = Types.PagedResultPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngine' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a new pricing rule
+ */
+export interface PostBillingPricingEngineInput {
+  body?: Types.CommerceProductsCreatePricingRuleInput;
+}
+export type PostBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineEndpoint = {
+  operationId: 'postBillingPricingEngine' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run the pricing engine for a product: base/sale price, the highest-priority applicable
+ * rule (volume tiers, customer segment), and promo codes.
+ */
+export interface PostBillingPricingEngineCalculateInput {
+  body?: Types.CommerceProductsCalculatePricingInput;
+}
+export type PostBillingPricingEngineCalculateOutput = Types.CommerceProductsPricingCalculationResult;
+export const postBillingPricingEngineCalculateEndpoint = {
+  operationId: 'postBillingPricingEngineCalculate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/:calculate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a pricing rule by ID, including its volume tiers
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineByRuleIdInput {
+  ruleId: string;
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineByRuleIdOutput = Types.CommerceProductsPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngineByRuleId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a pricing rule (full update; tiers are replaced when provided)
+ */
+export interface PutBillingPricingEngineInput {
+  ruleId: string;
+  body?: Types.CommerceProductsUpdatePricingRuleInput;
+}
+export type PutBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const putBillingPricingEngineEndpoint = {
+  operationId: 'putBillingPricingEngine' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a pricing rule (soft delete)
+ */
+export interface DeleteBillingPricingEngineInput {
+  ruleId: string;
+}
+export type DeleteBillingPricingEngineOutput = void;
+export const deleteBillingPricingEngineEndpoint = {
+  operationId: 'deleteBillingPricingEngine' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Activate a pricing rule
+ */
+export interface PostBillingPricingEngineActivateInput {
+  ruleId: string;
+}
+export type PostBillingPricingEngineActivateOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineActivateEndpoint = {
+  operationId: 'postBillingPricingEngineActivate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}:activate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deactivate a pricing rule
+ */
+export interface PostBillingPricingEngineDeactivateInput {
+  ruleId: string;
+}
+export type PostBillingPricingEngineDeactivateOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineDeactivateEndpoint = {
+  operationId: 'postBillingPricingEngineDeactivate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}:deactivate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
  *
  * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
@@ -27285,6 +27414,14 @@ export const endpoints = {
   putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
   deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
   postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
+  getBillingPricingEngineForGetBillingPricingEngine: getBillingPricingEngineForGetBillingPricingEngineEndpoint,
+  postBillingPricingEngine: postBillingPricingEngineEndpoint,
+  postBillingPricingEngineCalculate: postBillingPricingEngineCalculateEndpoint,
+  getBillingPricingEngineForGetBillingPricingEngineByRuleId: getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint,
+  putBillingPricingEngine: putBillingPricingEngineEndpoint,
+  deleteBillingPricingEngine: deleteBillingPricingEngineEndpoint,
+  postBillingPricingEngineActivate: postBillingPricingEngineActivateEndpoint,
+  postBillingPricingEngineDeactivate: postBillingPricingEngineDeactivateEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
