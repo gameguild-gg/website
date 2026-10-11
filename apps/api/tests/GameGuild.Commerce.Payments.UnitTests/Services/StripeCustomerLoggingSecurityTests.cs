@@ -49,7 +49,7 @@ public sealed class StripeCustomerLoggingSecurityTests
         };
         var requests = new List<(HttpMethod Method, string Path, BaseOptions Options, RequestOptions? RequestOptions, CancellationToken Cancellation)>();
         Configure(client, new Customer { Id = CustomerId }, failure, requests);
-        Configure(client, new PaymentMethod { Id = PaymentMethodId }, failure, requests);
+        Configure(client, new Stripe.PaymentMethod { Id = PaymentMethodId }, failure, requests);
         Configure(client, new SetupIntent { Id = SetupIntentId, ClientSecret = clientSecret }, failure, requests);
         Configure(client, new Subscription { Id = SubscriptionId, Status = "canceled" }, failure, requests);
         var service = new StripeCustomerService(Options.Create(new StripeGatewayOptions { UseSimulation = false }), logger, client.Object);

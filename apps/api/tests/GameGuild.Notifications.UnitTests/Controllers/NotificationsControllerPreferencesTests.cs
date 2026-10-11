@@ -119,6 +119,13 @@ public class NotificationsControllerPreferencesTests
         monthlyStatement.Suppressible.Should().BeTrue();
         monthlyStatement.DisplayName.Should().Be("Monthly Statement");
 
+        // Issue #414: card-expiry reminders are a Billing notification (suppressible like
+        // monthly statements; delivery is re-attempted never — horizon markers persist).
+        var paymentMethodExpiring = catalog.Single(e => e.Type == "PaymentMethodExpiring");
+        paymentMethodExpiring.Category.Should().Be("Billing");
+        paymentMethodExpiring.Suppressible.Should().BeTrue();
+        paymentMethodExpiring.DisplayName.Should().Be("Payment Method Expiring");
+
         var courseEnrollment = catalog.Single(e => e.Type == "CourseEnrollment");
         courseEnrollment.Category.Should().Be("Learning");
     }

@@ -104,6 +104,16 @@ describe("PostCard", () => {
     expect(screen.getByRole("button", { name: /remove saved post/i })).toBeInTheDocument();
   });
 
+  it("links tag chips to the feed-tag filter route", () => {
+    render(<PostCard item={{ ...item, tags: ["release", "indie dev"] }} />);
+
+    expect(screen.getByRole("link", { name: "#release" })).toHaveAttribute("href", "/feed?tag=release");
+    expect(screen.getByRole("link", { name: "#indie dev" })).toHaveAttribute(
+      "href",
+      "/feed?tag=indie%20dev",
+    );
+  });
+
   it("loads comments on demand and submits a comment", async () => {
     render(<PostCard item={item} />);
     fireEvent.click(screen.getByRole("button", { name: /comments/i }));

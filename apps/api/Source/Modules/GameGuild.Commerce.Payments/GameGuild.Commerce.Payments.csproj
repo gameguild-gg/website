@@ -23,6 +23,7 @@
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj"/>
         <ProjectReference Include="..\GameGuild.Resources\GameGuild.Resources.csproj"/>
         <ProjectReference Include="..\GameGuild.Commerce\GameGuild.Commerce.csproj"/>
+        <ProjectReference Include="..\GameGuild.Notifications\GameGuild.Notifications.csproj"/>
     </ItemGroup>
 
 </Project>

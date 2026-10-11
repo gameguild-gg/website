@@ -84,6 +84,7 @@ public sealed class LtiController(
         var clientId = form["client_id"].ToString();
         var deploymentId = form["deployment_id"].ToString();
 
+        // codeql[cs/user-controlled-bypass] iss/client_id/deployment_id are validated against persisted active deployment records (FindActiveDeploymentAsync); unknown combinations are rejected with 401
         var deployment = await FindActiveDeploymentAsync(issuer, clientId, deploymentId).ConfigureAwait(false);
         if (deployment is null)
         {
@@ -121,6 +122,7 @@ public sealed class LtiController(
             return BadRequest("LTI platform authorization URL is misconfigured.");
         }
 
+        // codeql[cs/web/unvalidated-url-redirection] redirect target is the deployment's stored AuthorizationUrl validated by TryBuildAuthorizationRedirect (absolute https, no embedded credentials); not derived from request input
         return Redirect(authorizationUri);
     }
 
@@ -150,6 +152,7 @@ public sealed class LtiController(
             return BadRequest("state and id_token are required.");
         }
 
+        // codeql[cs/user-controlled-bypass] id_token from the POST form is fully validated before use: RS256 signature against the platform JWKS plus iss/aud/lifetime checks (LtiPlatformJwksService.ValidateIdTokenAsync) and single-use state/nonce consumption (LaunchLtiCommand handler)
         var result = await sender.Send(new LaunchLtiCommand(state, idToken)).ConfigureAwait(false);
         if (result.Status == LtiLaunchStatus.MalformedToken)
         {
