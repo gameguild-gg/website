@@ -40,7 +40,8 @@ printf 'dotnet %s | template=%s\n' "$*" "${ECONOMY_POSTGRES_TEMPLATE_DATABASE:-}
 printf 'fixture connection: %s\n' "${ECONOMY_POSTGRES_CONNECTION:-}"
 if [[ "$1" == ef && "${MOCK_FAILURE:-}" == migration ]]; then exit 41; fi
 if [[ "$1" == test ]]; then
-  [[ "${MOCK_FAILURE:-}" != test ]] || exit 42
+  if [[ "${MOCK_FAILURE:-}" == test && "$2" == *'/GameGuild.Finance.Economy.UnitTests.csproj' ]]; then exit 42; fi
+  if [[ "${MOCK_FAILURE:-}" == core_test && "$2" == *'/GameGuild.API.UnitTests.csproj' ]]; then exit 42; fi
   test_name="$(basename "${2%.csproj}")"
   previous=''
   for argument in "$@"; do
@@ -139,6 +140,13 @@ printf 'PASS migration failure fails closed and cleans its owned container\n'
 run_case test_failure 42 test "$economy_source"
 [[ "$(grep -c '^docker rm --force aaaa' "$MOCK_LOG")" == 1 ]]
 printf 'PASS test failure propagates and cleans its owned container\n'
+
+run_case early_core_failure 42 core_test "$economy_source"
+if grep -q '^docker ' "$MOCK_LOG"; then
+  printf 'A core test failure must not create Economy infrastructure\n' >&2
+  exit 1
+fi
+printf 'PASS a failing mandatory core suite exits before Economy infrastructure exists\n'
 
 run_case fallback 0 '' 'unused.txt'
 ! grep -q '^docker ' "$MOCK_LOG"
