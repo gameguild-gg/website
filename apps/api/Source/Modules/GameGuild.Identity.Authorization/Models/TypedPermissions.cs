@@ -723,6 +723,27 @@ public sealed class WalletsPermission : Permission
     public static readonly WalletsPermission Admin = new(Keys.Admin, "Administer wallets across the platform");
 }
 
+/// <summary>Strongly-typed permission for payment fraud-review administration (issue #409).</summary>
+public sealed class PaymentsPermission : Permission
+{
+    private PaymentsPermission(string key, string description)
+        : base(
+            resource: key.Split(':')[0],
+            action: key.Split(':')[1],
+            scope: null,
+            description: description)
+    {
+    }
+
+    public static class Keys
+    {
+        /// <summary>Administer payment fraud reviews (list, approve, decline).</summary>
+        public const string Admin = "payments:admin";
+    }
+
+    public static readonly PaymentsPermission Admin = new(Keys.Admin, "Administer payment fraud reviews");
+}
+
 /// <summary>Segregated permissions for Economy control-plane and operational duties.</summary>
 public sealed class EconomyPermission : Permission
 {

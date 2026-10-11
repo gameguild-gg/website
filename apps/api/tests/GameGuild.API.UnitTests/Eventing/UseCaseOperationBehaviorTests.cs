@@ -1,7 +1,9 @@
 using System.Text.Json;
+using System.Data.Common;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 using GameGuild.API.Database;
 using GameGuild.API.Eventing;
@@ -357,6 +359,62 @@ public sealed class UseCaseOperationBehaviorTests
 
         response.Should().BeTrue();
         CountingExecutionStrategyFactory.CreateCount.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Handle_WhenRequestIsCanceled_RollsBackWithoutRequestTokenAndPreservesOriginalFailure(bool rollbackFails)
+    {
+        var rollback = new CancellationRollbackInterceptor(rollbackFails);
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite("Data Source=:memory:")
+            .AddInterceptors(rollback)
+            .Options;
+        var operationAccessor = new UseCaseOperationContextAccessor();
+        var actorAccessor = NewActorAccessor(out var tenantId, out _);
+        await using var context = new ApplicationDbContext(options, null, operationAccessor);
+        await context.Database.OpenConnectionAsync();
+        using var requestCancellation = new CancellationTokenSource();
+        var original = new OperationCanceledException("The command was canceled during credential issuance.", requestCancellation.Token);
+        UseCaseOperationContext? observed = null;
+        var behavior = new UseCaseOperationBehavior<TestMutationCommand, bool>(context, actorAccessor, operationAccessor);
+
+        Func<Task> act = async () => await behavior.Handle(new TestMutationCommand(), () =>
+        {
+            observed = operationAccessor.Current;
+            observed!.MarkBusinessMutationObserved();
+            context.Add(new TenantPermission { UserId = Guid.NewGuid(), TenantId = tenantId, Permissions = ["project:read"] });
+            requestCancellation.Cancel();
+            throw original;
+        }, requestCancellation.Token);
+
+        var failure = await act.Should().ThrowAsync<OperationCanceledException>();
+        failure.Which.Should().BeSameAs(original);
+        rollback.CallCount.Should().Be(1);
+        rollback.RequestTokenWasPassed.Should().BeFalse();
+        context.ChangeTracker.Entries().Should().BeEmpty();
+        context.Database.CurrentTransaction.Should().BeNull();
+        observed!.BusinessMutationObserved.Should().BeFalse();
+        operationAccessor.Current.Should().BeNull();
+    }
+
+    private sealed class CancellationRollbackInterceptor(bool rollbackFails) : DbTransactionInterceptor
+    {
+        public int CallCount { get; private set; }
+        public bool RequestTokenWasPassed { get; private set; }
+
+        public override ValueTask<InterceptionResult> TransactionRollingBackAsync(DbTransaction transaction,
+            TransactionEventData eventData, InterceptionResult result, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(transaction);
+            ArgumentNullException.ThrowIfNull(eventData);
+            CallCount++;
+            RequestTokenWasPassed = cancellationToken.CanBeCanceled;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (rollbackFails) { throw new InvalidOperationException("The rollback transport failed."); }
+            return ValueTask.FromResult(result);
+        }
     }
 
     private static ActorContextAccessor NewActorAccessor(out Guid tenantId, out Guid actorId)

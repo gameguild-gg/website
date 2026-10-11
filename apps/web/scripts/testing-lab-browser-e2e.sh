@@ -28,6 +28,7 @@ WEB_PORT="${TESTING_LAB_E2E_WEB_PORT:-$(pick_default_port 44000)}"
 POSTGRES_USER="gameguild_e2e"
 POSTGRES_PASSWORD="gameguild_e2e_password"
 POSTGRES_DATABASE="gameguild_e2e"
+POSTGRES_IMAGE="${GAMEGUILD_TEST_POSTGRES_16_IMAGE:-public.ecr.aws/docker/library/postgres:16-alpine}"
 ADMIN_PASSWORD="${E2E_SYSTEM_ADMIN_PASSWORD:-Admin123!}"
 # shellcheck source=../../../../scripts/ci/pull-ci-image.sh
 source "${REPO_ROOT}/scripts/ci/pull-ci-image.sh"
@@ -204,8 +205,8 @@ if [[ "${TESTING_LAB_E2E_SKIP_CLIENT_BUILD:-0}" != "1" ]]; then
 fi
 
 echo "[testing-lab-browser-e2e] starting disposable PostgreSQL"
-pull_ci_image public.ecr.aws/docker/library/postgres:16-alpine
-docker run --detach --rm --name "${POSTGRES_CONTAINER}" --publish "127.0.0.1:${POSTGRES_PORT}:5432" --env "POSTGRES_USER=${POSTGRES_USER}" --env "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" --env "POSTGRES_DB=${POSTGRES_DATABASE}" public.ecr.aws/docker/library/postgres:16-alpine >/dev/null
+pull_ci_image "${POSTGRES_IMAGE}"
+docker run --detach --rm --name "${POSTGRES_CONTAINER}" --publish "127.0.0.1:${POSTGRES_PORT}:5432" --env "POSTGRES_USER=${POSTGRES_USER}" --env "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" --env "POSTGRES_DB=${POSTGRES_DATABASE}" "${POSTGRES_IMAGE}" >/dev/null
 for ((attempt = 1; attempt <= 60; attempt += 1)); do
   if docker exec "${POSTGRES_CONTAINER}" pg_isready --username "${POSTGRES_USER}" --dbname "${POSTGRES_DATABASE}" >/dev/null 2>&1; then
     break

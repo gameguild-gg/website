@@ -555,6 +555,7 @@ public class RememberMeSessionLifetimeTests
                 NullLogger<LocalAuthService>.Instance,
                 Sender.Object,
                 Sessions.Object,
+                SignInMfaPreparationStub.Create(),
                 auditEventSink: AuditSink.Object);
         }
 

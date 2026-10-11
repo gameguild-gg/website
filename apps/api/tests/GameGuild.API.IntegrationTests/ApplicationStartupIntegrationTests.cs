@@ -15,20 +15,27 @@ namespace GameGuild.API.IntegrationTests;
 /// <summary>
 /// Integration tests for API application startup and configuration
 /// </summary>
-public class ApplicationStartupIntegrationTests : IClassFixture<WebApplicationFactory<Program>>, IClassFixture<ApiPostgreSqlFixture>
+public class ApplicationStartupIntegrationTests : IClassFixture<ApiPostgreSqlFixture>, IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
     private readonly ApiPostgreSqlFixture _postgres;
 
-    public ApplicationStartupIntegrationTests(WebApplicationFactory<Program> factory, ApiPostgreSqlFixture postgres)
+    public ApplicationStartupIntegrationTests(ApiPostgreSqlFixture postgres)
     {
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
 
         _postgres = postgres;
 
-        _factory = factory.WithWebHostBuilder(builder =>
+        _factory = CreateInMemoryFactory("Testing");
+    }
+
+    public void Dispose() => _factory.Dispose();
+
+    private static WebApplicationFactory<Program> CreateInMemoryFactory(string environmentName)
+    {
+        return new ConfiguredApiWebApplicationFactory(builder =>
         {
-            builder.UseEnvironment("Testing");
+            builder.UseEnvironment(environmentName);
             builder.ConfigureTestServices(services =>
             {
                 // Add HttpLogging service required by the pipeline
@@ -146,9 +153,8 @@ public class ApplicationStartupIntegrationTests : IClassFixture<WebApplicationFa
     public async Task Swagger_PublicCourseEndpoints_ShouldClearInheritedSecurityRequirements()
     {
         // Arrange
-        using var client = _factory
-            .WithWebHostBuilder(builder => builder.UseEnvironment("Development"))
-            .CreateClient();
+        using var factory = CreateInMemoryFactory("Development");
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.GetAsync("/swagger/v1/swagger.json");
@@ -174,7 +180,7 @@ public class ApplicationStartupIntegrationTests : IClassFixture<WebApplicationFa
     [Fact]
     public void Application_ShouldRefuseToListen_WhenRequiredStartupMigrationFails()
     {
-        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        using var factory = new ConfiguredApiWebApplicationFactory(builder =>
         {
             builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((_, configuration) =>
@@ -277,7 +283,7 @@ public class ApplicationStartupIntegrationTests : IClassFixture<WebApplicationFa
         };
         customize?.Invoke(values);
 
-        return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        return new ConfiguredApiWebApplicationFactory(builder =>
         {
             builder.UseEnvironment(environmentName);
             foreach (var (key, value) in values)

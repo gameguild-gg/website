@@ -113,7 +113,7 @@ public sealed class AuthenticationTimingDistributionHttpTests(ApiPostgreSqlFixtu
 
     private WebApplicationFactory<Program> CreateFactory()
     {
-        return fixture.Factory.WithWebHostBuilder(builder =>
+        return fixture.CreateFactory(builder =>
         {
             // BCrypt cost 10 matches the executed HTTP observation baseline of 2026-10-07.
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>

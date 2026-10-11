@@ -6379,6 +6379,101 @@ export const getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint = 
 } as const;
 
 /**
+ * List the configured external billing providers with health and enabled state
+ *
+ * Returns one entry per supported external billing provider (stripe, paypal, applepay,
+ * apple_app_store, googlepay, google_play_store) with read-only configuration health
+ * (credentials configured, configuration valid, webhook endpoint verification material
+ * present) and the runtime enabled state (defaults to enabled; an explicit administrator
+ * disable persists a management override).
+ */
+export type GetBillingExternalProvidersForGetBillingExternalProvidersInput = void;
+export type GetBillingExternalProvidersForGetBillingExternalProvidersOutput = Types.CommerceBillingExternalBillingProviderStatusDto[];
+export const getBillingExternalProvidersForGetBillingExternalProvidersEndpoint = {
+  operationId: 'getBillingExternalProvidersForGetBillingExternalProviders' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/external-providers' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get the health and enabled state of a single external billing provider
+ *
+ * Fails closed with 404 for unknown provider keys.
+ */
+export interface GetBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyInput {
+  providerKey: string;
+}
+export type GetBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyOutput = Types.CommerceBillingExternalBillingProviderStatusDto;
+export const getBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyEndpoint = {
+  operationId: 'getBillingExternalProvidersForGetBillingExternalProvidersByProviderKey' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/external-providers/{providerKey}' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Disable an external billing provider at runtime
+ *
+ * Persists an explicit disable decision (idempotent) and writes an audit event.
+ * Fails closed with 404 for unknown provider keys.
+ */
+export interface PostBillingExternalProvidersDisableInput {
+  providerKey: string;
+}
+export type PostBillingExternalProvidersDisableOutput = Types.CommerceBillingExternalBillingProviderStatusDto;
+export const postBillingExternalProvidersDisableEndpoint = {
+  operationId: 'postBillingExternalProvidersDisable' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/external-providers/{providerKey}:disable' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Enable an external billing provider at runtime
+ *
+ * Persists an explicit enable decision (idempotent) and writes an audit event.
+ * Fails closed with 404 for unknown provider keys. Availability still requires
+ * valid provider configuration.
+ */
+export interface PostBillingExternalProvidersEnableInput {
+  providerKey: string;
+}
+export type PostBillingExternalProvidersEnableOutput = Types.CommerceBillingExternalBillingProviderStatusDto;
+export const postBillingExternalProvidersEnableEndpoint = {
+  operationId: 'postBillingExternalProvidersEnable' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/external-providers/{providerKey}:enable' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Produce a report-only migration dry-run between two external billing providers
+ *
+ * Scans subscriptions and classifies each by its external-provider binding: bound to the
+ * source provider while lacking a target-provider external identifier (the migration work
+ * list), already on the target provider, unattributable external identifiers (manual
+ * review), and subscriptions without external identifiers. The report never mutates
+ * state; executing provider switching is out of scope and gateway routing/failover is
+ * tracked in issue #413. Fails closed with 400 for unknown or identical provider keys.
+ */
+export interface PostBillingExternalProvidersMigrationDryRunInput {
+  body?: Types.CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput;
+}
+export type PostBillingExternalProvidersMigrationDryRunOutput = Types.CommerceBillingBillingProviderMigrationReport;
+export const postBillingExternalProvidersMigrationDryRunEndpoint = {
+  operationId: 'postBillingExternalProvidersMigrationDryRun' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/external-providers/migration:dry-run' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
@@ -6392,6 +6487,111 @@ export const postBillingInvoicesRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/invoices/{invoiceId}/retry' as const,
   tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List registered payment methods (own methods; system admins see the whole tenant).
+ *
+ * Lists the live payment methods registered for the tenant. Non-admin actors see their own methods; system admins see all methods in the requested tenant.
+ */
+export interface GetBillingPaymentMethodsInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto[];
+export const getBillingPaymentMethodsEndpoint = {
+  operationId: 'getBillingPaymentMethods' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Register a payment method from a tokenized gateway result.
+ *
+ * Registers a payment method from a Stripe payment method token (pm_...) produced by Stripe.js/Elements or a confirmed SetupIntent. Raw card data is never accepted; only display metadata returned by the gateway is stored.
+ */
+export interface PostBillingPaymentMethodsInput {
+  body?: Types.CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody;
+}
+export type PostBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsEndpoint = {
+  operationId: 'postBillingPaymentMethods' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a single payment method by ID.
+ *
+ * Returns a single registered payment method. Only the owner or a system administrator can read it.
+ */
+export interface GetPaymentMethodByIdInput {
+  paymentMethodId: string;
+}
+export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
+export const getPaymentMethodByIdEndpoint = {
+  operationId: 'getPaymentMethodById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update display-only fields of a payment method.
+ *
+ * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
+ */
+export interface PutBillingPaymentMethodsInput {
+  paymentMethodId: string;
+  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
+}
+export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const putBillingPaymentMethodsEndpoint = {
+  operationId: 'putBillingPaymentMethods' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Remove a payment method (soft delete).
+ *
+ * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
+ */
+export interface DeleteBillingPaymentMethodsInput {
+  paymentMethodId: string;
+}
+export type DeleteBillingPaymentMethodsOutput = void;
+export const deleteBillingPaymentMethodsEndpoint = {
+  operationId: 'deleteBillingPaymentMethods' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Make this payment method the default (custom action per Google API guidelines).
+ *
+ * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
+ */
+export interface PostBillingPaymentMethodsSetDefaultInput {
+  paymentMethodId: string;
+}
+export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsSetDefaultEndpoint = {
+  operationId: 'postBillingPaymentMethodsSetDefault' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
   requiresAuth: true,
 } as const;
 
@@ -7330,6 +7530,63 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
   method: 'DELETE' as const,
   path: '/api/v1/email-delivery/suppressions/{email}' as const,
   tags: ['Notifications'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the pending manual fraud reviews, oldest first.
+ *
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ */
+export interface GetFraudReviewsInput {
+  query?: {
+    tenantId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
+export const getFraudReviewsEndpoint = {
+  operationId: 'getFraudReviews' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fraud/reviews' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending fraud review, releasing the fraud hold so the payment may be retried.
+ *
+ * Approves the fraud review for a held payment, releasing the fraud hold so the payment can be retried through the manual retry flow. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsApproveInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsApproveOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsApproveEndpoint = {
+  operationId: 'postFraudReviewsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decline a pending fraud review, keeping the payment failed and non-retryable.
+ *
+ * Declines the fraud review for a held payment; it stays failed and is never retried. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsDenyInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsDenyOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsDenyEndpoint = {
+  operationId: 'postFraudReviewsDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
   requiresAuth: true,
 } as const;
 
@@ -13382,6 +13639,40 @@ export const getAuthMfaMethodsEndpoint = {
   path: '/v1/auth/mfa/methods' as const,
   tags: ['AuthMultiFactor'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
+ *
+ * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
+ */
+export interface PostAuthMfaSignInCompleteInput {
+  body?: Types.IdentityAuthenticationCompleteMfaSignInInput;
+}
+export type PostAuthMfaSignInCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthMfaSignInCompleteEndpoint = {
+  operationId: 'postAuthMfaSignInComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sign-in/complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Provision the first TOTP factor using only the limited first-factor challenge.
+ *
+ * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
+ */
+export interface PostAuthMfaSignInEnrollmentInput {
+  body?: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput;
+}
+export type PostAuthMfaSignInEnrollmentOutput = Types.IdentityAuthenticationMfaSignInEnrollmentOutput;
+export const postAuthMfaSignInEnrollmentEndpoint = {
+  operationId: 'postAuthMfaSignInEnrollment' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sign-in/enrollment' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -27075,7 +27366,18 @@ export const endpoints = {
   getBillingEventsForGetBillingEventsByEventId: getBillingEventsForGetBillingEventsByEventIdEndpoint,
   getBillingEventsOutboxForGetBillingEventsOutbox: getBillingEventsOutboxForGetBillingEventsOutboxEndpoint,
   getBillingEventsOutboxForGetBillingEventsOutboxByEventId: getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint,
+  getBillingExternalProvidersForGetBillingExternalProviders: getBillingExternalProvidersForGetBillingExternalProvidersEndpoint,
+  getBillingExternalProvidersForGetBillingExternalProvidersByProviderKey: getBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyEndpoint,
+  postBillingExternalProvidersDisable: postBillingExternalProvidersDisableEndpoint,
+  postBillingExternalProvidersEnable: postBillingExternalProvidersEnableEndpoint,
+  postBillingExternalProvidersMigrationDryRun: postBillingExternalProvidersMigrationDryRunEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
+  getPaymentMethodById: getPaymentMethodByIdEndpoint,
+  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
+  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
   getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
   postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
@@ -27132,6 +27434,9 @@ export const endpoints = {
   getEmailDeliveryNotificationsTimeline: getEmailDeliveryNotificationsTimelineEndpoint,
   getEmailDeliverySuppressions: getEmailDeliverySuppressionsEndpoint,
   deleteEmailDeliverySuppressions: deleteEmailDeliverySuppressionsEndpoint,
+  getFraudReviews: getFraudReviewsEndpoint,
+  postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
+  postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
   postIntegrationsEconomyStripeConnectWebhook: postIntegrationsEconomyStripeConnectWebhookEndpoint,
   postIntegrationsEconomySumsubWebhook: postIntegrationsEconomySumsubWebhookEndpoint,
   postNotificationsEmailEvents: postNotificationsEmailEventsEndpoint,
@@ -27499,6 +27804,8 @@ export const endpoints = {
   getAuthMfaBackupCodes: getAuthMfaBackupCodesEndpoint,
   postAuthMfaBackupCodesRegenerate: postAuthMfaBackupCodesRegenerateEndpoint,
   getAuthMfaMethods: getAuthMfaMethodsEndpoint,
+  postAuthMfaSignInComplete: postAuthMfaSignInCompleteEndpoint,
+  postAuthMfaSignInEnrollment: postAuthMfaSignInEnrollmentEndpoint,
   postAuthMfaSmsComplete: postAuthMfaSmsCompleteEndpoint,
   postAuthMfaSmsSetup: postAuthMfaSmsSetupEndpoint,
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,

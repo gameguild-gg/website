@@ -10,7 +10,7 @@ import { toPascalCase, toCamelCase } from '../utils/naming.js';
 import { qualifyType } from '../utils/type-qualify.js';
 import { formatJsDocLines } from '../utils/jsdoc.js';
 import { TypeMapperChain } from './strategies/SchemaTypeMapper.js';
-import { HTTP_METHODS } from './constants.js';
+import { ALLOW_ANONYMOUS_EXTENSION, HTTP_METHODS } from './constants.js';
 import { binaryResponseMediaType } from './binary-response.js';
 
 interface ModuleEndpoint {
@@ -138,7 +138,8 @@ function extractModuleEndpoint(
 
   // Check if auth is required
   const security = operation.security || spec.security || [];
-  const requiresAuth = security.length > 0;
+  const allowAnonymous = (operation as { [key: string]: unknown })[ALLOW_ANONYMOUS_EXTENSION] === true;
+  const requiresAuth = security.length > 0 && !allowAnonymous;
 
   return {
     operationId: operation.operationId || `${method}${path.replace(/\//g, '_')}`,

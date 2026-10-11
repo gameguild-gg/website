@@ -27,6 +27,7 @@ public static class PaymentsModule
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IRevenueEventRepository, RevenueEventRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
 
         // Revenue auditing (issue #404): external statement reconciliation, anomaly
         // detection, compliance reporting and CSV/JSON exports.
@@ -48,6 +49,14 @@ public static class PaymentsModule
         services.AddOptions<PaymentRetryOptions>()
             .Bind(configuration.GetSection(PaymentRetryOptions.SectionName))
             .ValidateOnStart();
+        // Fraud assessment gate (issue #409): tenant-scoped options, velocity signal
+        // provider and the aggregate Allow/Review/Block detection service.
+        services.AddSingleton<IValidateOptions<FraudAssessmentOptions>, FraudAssessmentOptionsValidator>();
+        services.AddOptions<FraudAssessmentOptions>()
+            .Bind(configuration.GetSection(FraudAssessmentOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IFraudSignalProvider, VelocityFraudSignalProvider>();
+        services.AddScoped<IFraudDetectionService, FraudDetectionService>();
 
         // Register services
         services.AddScoped<IDisputeService, DisputeService>();
@@ -57,6 +66,15 @@ public static class PaymentsModule
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentProcessor, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentAuthority, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentIntentPreparer, OrderPaymentIntentService>());
+
+        // Payment-method registry (issue #414): self-service management plus the daily
+        // expiry monitor (30/14/7-day notices through the Notifications module).
+        services.AddScoped<IPaymentMethodService, PaymentMethodRegistryService>();
+        services.AddScoped<IPaymentMethodExpiryMonitor, PaymentMethodExpiryMonitor>();
+        services.AddOptions<PaymentMethodExpiryOptions>()
+            .Bind(configuration.GetSection(PaymentMethodExpiryOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<PaymentMethodExpiryMonitorBackgroundService>();
 
         // Register payment gateway and sub-services
         services.AddSingleton<IValidateOptions<StripeGatewayOptions>, StripeGatewayOptionsValidator>();

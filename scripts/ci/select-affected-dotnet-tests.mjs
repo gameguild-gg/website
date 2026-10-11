@@ -23,6 +23,16 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
     );
 
     if (moduleMatch?.[1]) {
+      // Identity changes must also validate the shared authorization and host security invariants.
+      if (moduleMatch[1].startsWith("GameGuild.Identity.")) {
+        requiresCoreFallback = true;
+        for (const identityTests of [
+          "GameGuild.Identity.Authentication.UnitTests",
+          "GameGuild.Identity.Authorization.UnitTests",
+        ]) {
+          if (availableProjects.includes(identityTests)) selected.add(identityTests);
+        }
+      }
       const testName = `${moduleMatch[1]}.UnitTests`;
       if (availableProjects.includes(testName)) selected.add(testName);
       continue;

@@ -175,7 +175,7 @@ public sealed class RiskEventSessionRevocationPostgreSqlHttpTests(ApiPostgreSqlF
     }
 
     private WebApplicationFactory<Program> CreateFactory(AdvancingTimeProvider clock, string? enabled = null) =>
-        fixture.Factory.WithWebHostBuilder(builder =>
+        fixture.CreateFactory(builder =>
         {
             if (enabled is not null)
             {

@@ -1821,6 +1821,7 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentSubscriptionSyncService>().Object,
             new Mock<ISubscriptionPaymentContextService>().Object,
             Options.Create(new PaymentRetryOptions()),
+            FraudTestHelpers.AllowAllDetectionService(),
             NullLogger<ProcessPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1967,7 +1968,8 @@ public class PaymentControllerConstructorTests
             new Mock<ISender>().Object,
             new Mock<IActorContextAccessor>().Object,
             new Mock<IStripeCustomerService>().Object,
-            new Mock<ISubscriptionPaymentContextService>().Object);
+            new Mock<ISubscriptionPaymentContextService>().Object,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentsController>.Instance);
         controller.Should().NotBeNull();
     }
 

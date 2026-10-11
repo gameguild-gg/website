@@ -8,6 +8,7 @@ manifest_path="$script_dir/economy-projects.json"
 summary_path="$artifact_root/preflight-summary.txt"
 timings_path="$artifact_root/timings.jsonl"
 gate_stage='initializing'
+postgres_image="${GAMEGUILD_TEST_POSTGRES_17_IMAGE:-public.ecr.aws/docker/library/postgres:17-alpine}"
 run_sequence=0
 gate_started_epoch="$(date +%s)"
 gate_profile="${ECONOMY_GATE_PROFILE:-full}"
@@ -401,14 +402,14 @@ economy_postgres_password="$(new_disposable_postgres_password)"
 register_disposable_postgres_password "$app_postgres_password"
 register_disposable_postgres_password "$economy_postgres_password"
 gate_stage='postgres-app'
-pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
+pull_ci_image "$postgres_image"
 run docker run --detach --rm --name "$postgres_container" \
   --env POSTGRES_DB=economy_ci \
   --env POSTGRES_USER=postgres \
   --env "POSTGRES_PASSWORD=$app_postgres_password" \
   --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --publish 127.0.0.1::5432 \
-  public.ecr.aws/docker/library/postgres:17-alpine >/dev/null
+  "$postgres_image" >/dev/null
 
 app_postgres_probe() {
   docker exec --env "PGPASSWORD=$app_postgres_password" "$postgres_container" \
@@ -425,7 +426,7 @@ connection_string="Host=127.0.0.1;Port=$postgres_port;Database=economy_ci;Userna
 gate_stage='postgres-economy-tests'
 # Full-schema resets across isolated test databases share PostgreSQL's lock table.
 # Keep the two test workers while sizing their disposable server for both resets.
-pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
+pull_ci_image "$postgres_image"
 run docker run --detach --rm --name "$economy_postgres_container" \
   --env POSTGRES_DB=economy_tests \
   --env POSTGRES_USER=postgres \
@@ -433,7 +434,7 @@ run docker run --detach --rm --name "$economy_postgres_container" \
   --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
   --tmpfs /var/lib/postgresql/data:rw \
   --publish 127.0.0.1::5432 \
-  public.ecr.aws/docker/library/postgres:17-alpine -c max_locks_per_transaction=512 >/dev/null
+  "$postgres_image" -c max_locks_per_transaction=512 >/dev/null
 
 economy_postgres_probe() {
   docker exec --env "PGPASSWORD=$economy_postgres_password" "$economy_postgres_container" \
@@ -458,7 +459,7 @@ if [[ "$gate_profile" == full ]]; then
   whole_solution_postgres_container="gameguild-economy-ci-whole-solution-$$-$RANDOM"
   whole_solution_postgres_password="$(new_disposable_postgres_password)"
   register_disposable_postgres_password "$whole_solution_postgres_password"
-  pull_ci_image public.ecr.aws/docker/library/postgres:17-alpine
+  pull_ci_image "$postgres_image"
   run docker run --detach --rm --name "$whole_solution_postgres_container" \
     --env POSTGRES_DB=whole_solution_tests \
     --env POSTGRES_USER=postgres \
@@ -466,7 +467,7 @@ if [[ "$gate_profile" == full ]]; then
     --env POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 \
     --tmpfs /var/lib/postgresql/data:rw \
     --publish 127.0.0.1::5432 \
-    public.ecr.aws/docker/library/postgres:17-alpine >/dev/null
+    "$postgres_image" >/dev/null
 
   whole_solution_postgres_probe() {
     docker exec --env "PGPASSWORD=$whole_solution_postgres_password" "$whole_solution_postgres_container" \

@@ -1483,6 +1483,12 @@ export interface BulkOperationOutput {
   totalRequested?: number;
 }
 
+/** Request body for the migration dry-run endpoint. */
+export interface CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput {
+  sourceProvider?: string | null;
+  targetProvider?: string | null;
+}
+
 /** Read model over a durable billing integration event published through the platform outbox. */
 export interface CommerceBillingBillingOutboxEventDto {
   /** Aggregate identifier the event refers to. */
@@ -1508,6 +1514,52 @@ export interface CommerceBillingBillingOutboxEventDto {
 
 /** Delivery status of a durable billing event in the platform outbox. */
 export type CommerceBillingBillingOutboxEventStatus = 'Pending' | 'Completed' | 'DeadLettered';
+
+/** Classification of a subscription row within a provider-migration dry-run report. */
+export type CommerceBillingBillingProviderMigrationEntryClassification =
+  'BoundToSourceMissingTargetExternalId' | 'AlreadyOnTargetProvider' | 'UnattributedExternalId' | 'NotExternallyBound';
+
+/** Report-only result of a provider-migration dry-run (issue #397). No state is
+mutated; executing the actual migration is explicitly out of scope and deferred
+(gateway routing/failover is tracked separately in #413). */
+export interface CommerceBillingBillingProviderMigrationReport {
+  /** Subscriptions already carrying a target-provider external identifier. */
+  alreadyOnTargetProviderCount: number;
+  /** Subscriptions bound to the source provider lacking a target external identifier — the migration work list. */
+  boundToSourceMissingTargetExternalIdCount: number;
+  /** Always true: this report never mutates state. */
+  dryRun: boolean;
+  /** Classified subscription entries (capped for response size; the counts above
+always reflect the full scan). */
+  entries?: CommerceBillingBillingProviderMigrationReportEntry[] | null;
+  /** When the report was produced. */
+  generatedAtUtc: string;
+  /** Always false: reassurance flag for API consumers. */
+  mutationApplied: boolean;
+  /** Subscriptions without any external identifier (out of scope). */
+  notExternallyBoundCount: number;
+  /** Provider the subscriptions would be migrated away from. */
+  sourceProvider: string | null;
+  /** Provider the subscriptions would be migrated to. */
+  targetProvider: string | null;
+  /** Total subscriptions scanned. */
+  totalSubscriptionsScanned: number;
+  /** Subscriptions whose external identifier could not be attributed — manual review required. */
+  unattributedExternalIdCount: number;
+}
+
+/** One subscription row of a GameGuild.Commerce.Billing.BillingProviderMigrationReport. */
+export interface CommerceBillingBillingProviderMigrationReportEntry {
+  classification: CommerceBillingBillingProviderMigrationEntryClassification;
+  /** External (provider) subscription identifier as stored. */
+  externalId: string | null;
+  /** Current subscription status. */
+  status: string | null;
+  /** Internal subscription identifier. */
+  subscriptionId: string;
+  /** Owning tenant identifier. */
+  tenantId: string;
+}
 
 /** State of the CIDR source allowlist enforced on the provider callback endpoints. */
 export interface CommerceBillingBillingWebhookAllowlistStatusDto {
@@ -1604,6 +1656,36 @@ export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
   isEnabled?: boolean;
   /** Sliding window (seconds) in which failures are counted per source. */
   windowSeconds?: number;
+}
+
+/** Read-only management and health snapshot of one configured external
+billing provider (issue #397 provider-management API). */
+export interface CommerceBillingExternalBillingProviderStatusDto {
+  /** Provider configuration validation errors (read-only, never contains secrets). */
+  configurationErrors?: string[] | null;
+  /** Whether the provider has its API credentials configured. */
+  configured: boolean;
+  /** Whether the provider's configuration passes validation
+(M:GameGuild.Commerce.Billing.BillingConfiguration.ValidateProvider(System.String) plus provider-specific
+credential completeness). Validation errors are surfaced read-only in
+GameGuild.Commerce.Billing.ExternalBillingProviderStatusDto.ConfigurationErrors. */
+  configValid: boolean;
+  /** Whether the provider is enabled at runtime. Defaults to true; an explicit
+administrator disable persists a management state row. */
+  enabled: boolean;
+  /** When the enabled state was last changed by an administrator (null when the
+provider keeps its default enabled disposition). */
+  enabledStateChangedAt?: string | null;
+  /** Derived health summary: "healthy" (configured, valid config, webhook endpoint
+ready), "degraded" (configured but incomplete — webhook verification or config
+validation issues) or "not-configured" (no credentials). */
+  health: string | null;
+  /** Provider key from GameGuild.Commerce.PaymentProviders (stripe, paypal, ...). */
+  providerKey: string | null;
+  /** Whether the provider's webhook verification material is configured so the
+callback endpoint can authenticate provider events (signing secret / webhook
+id / shared secret / verification keys). */
+  webhookEndpointConfigured: boolean;
 }
 
 /** Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -1861,6 +1943,57 @@ export interface CommercePaymentsCreateWalletInput {
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
 
+/** Read model for one pending fraud review. */
+export interface CommercePaymentsFraudReviewListItem {
+  /** Charged amount. */
+  amount: number;
+  /** When the payment attempt was created. */
+  createdAt: string;
+  /** ISO 4217 currency code. */
+  currency: string | null;
+  /** Bounded JSON signal evidence bundle. */
+  evidence?: string | null;
+  /** Provider customer reference, when bound. */
+  externalCustomerId?: string | null;
+  /** Payment awaiting review. */
+  paymentId: string;
+  /** Bounded decision reason. */
+  reason: string | null;
+  riskLevel: CommercePaymentsFraudRiskLevel;
+  /** Aggregate fraud score (0-100). */
+  score: number;
+  /** Subscription the payment was charged for. */
+  subscriptionId?: string | null;
+  /** Tenant that owns the payment. */
+  tenantId: string;
+}
+
+/** Result of resolving a fraud review. */
+export interface CommercePaymentsFraudReviewResolutionResult {
+  /** Failure reason when GameGuild.Commerce.Payments.FraudReviewResolutionResult.Success is false. */
+  failureReason?: string | null;
+  /** Payment whose review was resolved. */
+  paymentId: string;
+  /** When the review was resolved. */
+  resolvedAt?: string | null;
+  /** Administrator who resolved the review. */
+  reviewedByUserId?: string | null;
+  reviewStatus?: CommercePaymentsFraudReviewStatus;
+  /** Whether the review was resolved successfully. */
+  success: boolean;
+}
+
+/** Request body for resolving a fraud review. */
+export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewInput {
+  notes?: string | null;
+}
+
+/** Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | 'Declined';
+
+/** Risk band derived from the aggregate fraud score. */
+export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
 /** Data model for Commerce Payments Lock Wallet Request. */
 export interface CommercePaymentsLockWalletInput {
   reason: string | null;
@@ -1942,6 +2075,45 @@ export interface CommercePaymentsPaymentDunningOutcomeMetrics {
   exhaustedPayments?: number;
   /** Failed payments with retries remaining and a future next-retry time (recovery in flight). */
   pendingRetryPayments?: number;
+}
+
+/** Display-safe projection of a registered payment method. */
+export interface CommercePaymentsPaymentMethodDto {
+  id?: string;
+  billingAddress?: string | null;
+  cardBrand?: string | null;
+  cardExpMonth?: number | null;
+  cardExpYear?: number | null;
+  cardLast4?: string | null;
+  createdAt?: string;
+  expiresAt?: string | null;
+  expiresInDays?: number | null;
+  gatewayPaymentMethodId?: string | null;
+  gatewayProvider?: string | null;
+  isDefault?: boolean;
+  lastUsedAt?: string | null;
+  nickname?: string | null;
+  status?: string | null;
+  tenantId?: string;
+  type?: string | null;
+  updatedAt?: string;
+  userId?: string;
+}
+
+/** Request body for registering a payment method from a gateway token. */
+export interface CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  gatewayPaymentMethodId?: string | null;
+  nickname?: string | null;
+  ownerUserId?: string | null;
+  setAsDefault?: boolean;
+  tenantId?: string;
+}
+
+/** Request body for updating payment-method display fields. */
+export interface CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  nickname?: string | null;
 }
 
 /** Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
@@ -2731,18 +2903,11 @@ export interface CommerceProductsAppliedPromoCode {
   discountAmount?: number;
   /** Discount percentage from this code */
   discountPercentage?: number | null;
-  /** Billing periods granted (FreeMonths only) */
-  freeMonthsGranted?: number | null;
-  /** Trial days granted (FreeTrialExtension only) */
-  trialExtensionDays?: number | null;
-  type?: CommerceProductsPromoCodeType;
 }
 
 /** Request to apply promo codes */
 export interface CommerceProductsApplyPromoCodesInput {
-  idempotencyKey?: string | null;
   orderAmount?: number;
-  orderId?: string | null;
   productId?: string | null;
   promoCodes?: string[] | null;
 }
@@ -2772,56 +2937,6 @@ export interface CommerceProductsBatchProductCreateItem {
   type?: CommerceProductsProductType;
 }
 
-/** A campaign code approaching expiry */
-export interface CommerceProductsCampaignExpiringCodeDto {
-  /** Promo code string */
-  code?: string | null;
-  /** Promo code ID */
-  promoCodeId?: string;
-  /** Expiry timestamp */
-  validUntil?: string;
-}
-
-/** Aggregated performance for a promo campaign within a window */
-export interface CommerceProductsCampaignPerformanceDto {
-  /** Number of currently active codes */
-  activeCodes?: number;
-  /** Average discount per use */
-  averageDiscountPerUse?: number;
-  /** Campaign identifier */
-  campaignId?: string | null;
-  /** Campaign codes expiring within the next 30 days */
-  expiringCodes?: CommerceProductsCampaignExpiringCodeDto[] | null;
-  /** Uses divided by total MaxUses capacity (null when no code declares limits) */
-  redemptionRate?: number | null;
-  /** Codes ranked by uses within the window */
-  topCodes?: CommerceProductsCampaignTopCodeDto[] | null;
-  /** Number of codes in the campaign */
-  totalCodes?: number;
-  /** Sum of discounts given within the window */
-  totalDiscountGiven?: number;
-  /** Recorded uses within the window */
-  totalUses?: number;
-  /** Distinct users within the window */
-  uniqueUsers?: number;
-  /** Window end (null = unbounded) */
-  windowEnd?: string | null;
-  /** Window start (null = unbounded) */
-  windowStart?: string | null;
-}
-
-/** A campaign code ranked by usage */
-export interface CommerceProductsCampaignTopCodeDto {
-  /** Promo code string */
-  code?: string | null;
-  /** Discount given within the window */
-  discountGiven?: number;
-  /** Promo code ID */
-  promoCodeId?: string;
-  /** Recorded uses within the window */
-  uses?: number;
-}
-
 /** Data model for Commerce Products Change Support Ticket Priority Request. */
 export interface CommerceProductsChangeSupportTicketPriorityInput {
   priority?: CommerceProductsSupportTicketPriority;
@@ -2836,9 +2951,6 @@ export interface CommerceProductsCheckMultipleAccessInput {
 export interface CommerceProductsCloseSupportTicketInput {
   closingNotes?: string | null;
 }
-
-/** Conflict resolution strategies for stacked promo codes */
-export type CommerceProductsConflictResolutionStrategy = 'HighestDiscount' | 'LowestDiscount' | 'FirstCodeOnly' | 'LastCodeOnly' | 'Sequential' | 'Additive';
 
 /** Data model for Commerce Products Create My Support Ticket Request. */
 export interface CommerceProductsCreateMySupportTicketInput {
@@ -2864,18 +2976,13 @@ export interface CommerceProductsCreateProductInput {
 
 /** Request to create a promo code */
 export interface CommerceProductsCreatePromoCodeInput {
-  applyToRenewal?: boolean;
-  campaignId?: string | null;
   code?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
-  durationMonths?: number | null;
-  freeTrialExtensionDays?: number | null;
   isActive?: boolean;
   isExclusive?: boolean;
-  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -2885,19 +2992,6 @@ export interface CommerceProductsCreatePromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
-}
-
-/** Request to create a promo stacking rule */
-export interface CommerceProductsCreatePromoStackingRuleInput {
-  allowExclusiveStacking?: boolean;
-  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
-  description?: string | null;
-  isActive?: boolean;
-  maxStackableCount?: number;
-  maxTotalDiscountAmount?: number | null;
-  maxTotalDiscountPercentage?: number | null;
-  name?: string | null;
-  priority?: number;
 }
 
 /** Data model for Commerce Products Create Support Ticket Request. */
@@ -2929,30 +3023,6 @@ export interface CommerceProductsEntitlementInfoDto {
   subscriptionStatus?: string | null;
 }
 
-/** Request to bulk-generate promo codes with a shared prefix and random suffixes */
-export interface CommerceProductsGenerateBulkPromoCodesInput {
-  applyToRenewal?: boolean;
-  campaignId?: string | null;
-  count?: number;
-  currency?: string | null;
-  description?: string | null;
-  discountAmount?: number | null;
-  discountPercentage?: number | null;
-  durationMonths?: number | null;
-  freeTrialExtensionDays?: number | null;
-  maxDiscountAmount?: number | null;
-  maxUses?: number | null;
-  maxUsesPerUser?: number | null;
-  minimumOrderAmount?: number | null;
-  name?: string | null;
-  prefix?: string | null;
-  productId?: string | null;
-  stackingPriority?: number;
-  type?: CommerceProductsPromoCodeType;
-  validFrom?: string | null;
-  validUntil?: string | null;
-}
-
 /** Request to grant an entitlement */
 export interface CommerceProductsGrantEntitlementInput {
   acquisitionType?: CommerceProductsProductAcquisitionType;
@@ -2980,17 +3050,12 @@ export interface CommerceProductsPatchProductInput {
 
 /** Request to partially update a promo code (PATCH) */
 export interface CommerceProductsPatchPromoCodeInput {
-  applyToRenewal?: boolean | null;
-  campaignId?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
-  durationMonths?: number | null;
-  freeTrialExtensionDays?: number | null;
   isActive?: boolean | null;
   isExclusive?: boolean | null;
-  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -3095,46 +3160,30 @@ export interface CommerceProductsPromoCodeApplicationResult {
   originalAmount?: number;
   /** List of codes that were rejected with reasons */
   rejectedCodes?: CommerceProductsRejectedPromoCode[] | null;
-  /** Name of the stacking rule that governed resolution (null = single-code default) */
-  stackingRuleName?: string | null;
   /** Total discount applied */
   totalDiscount?: number;
-  /** Whether usage rows were persisted for the applied codes */
-  usageRecorded?: boolean;
 }
 
 /** Promo code data transfer object */
 export interface CommerceProductsPromoCodeDto {
   /** Promo code ID */
   id?: string;
-  /** Whether the discount applies to renewals */
-  applyToRenewal?: boolean;
-  /** Campaign identifier for tracking */
-  campaignId?: string | null;
   /** The promo code string */
   code?: string | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Currency code */
   currency?: string | null;
-  /** Number of recorded uses */
-  currentUses?: number;
   /** Description of the promo */
   description?: string | null;
-  /** Fixed amount discount (target price for SetPrice) */
+  /** Fixed amount discount (for fixed type) */
   discountAmount?: number | null;
   /** Percentage discount (for percentage type) */
   discountPercentage?: number | null;
-  /** Free months granted / discount duration */
-  durationMonths?: number | null;
-  /** Trial days granted by FreeTrialExtension codes */
-  freeTrialExtensionDays?: number | null;
   /** Whether the code is active */
   isActive?: boolean;
   /** Whether the code cannot be stacked */
   isExclusive?: boolean;
-  /** Cap for percentage discounts */
-  maxDiscountAmount?: number | null;
   /** Maximum total uses */
   maxUses?: number | null;
   /** Maximum uses per user */
@@ -3159,8 +3208,7 @@ export interface CommerceProductsPromoCodeDto {
 }
 
 /** Represents the type of promo code discount */
-export type CommerceProductsPromoCodeType =
-  'PercentageOff' | 'FixedAmountOff' | 'FreeTrial' | 'BuyOneGetOne' | 'FreeShipping' | 'FreeTrialExtension' | 'FreeMonths' | 'SetPrice';
+export type CommerceProductsPromoCodeType = 'PercentageOff' | 'FixedAmountOff' | 'FreeTrial' | 'BuyOneGetOne' | 'FreeShipping';
 
 /** Promo code usage statistics DTO */
 export interface CommerceProductsPromoCodeUsageDto {
@@ -3198,29 +3246,6 @@ export interface CommerceProductsPromoCodeValidationResult {
   errorMessage?: string | null;
   /** Whether the code is valid */
   isValid?: boolean;
-}
-
-/** Promo stacking rule DTO */
-export interface CommerceProductsPromoStackingRuleDto {
-  /** Rule ID */
-  id?: string;
-  /** Allow exclusive code stacking */
-  allowExclusiveStacking?: boolean;
-  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
-  /** Rule description */
-  description?: string | null;
-  /** Whether the rule is active */
-  isActive?: boolean;
-  /** Max codes that can stack */
-  maxStackableCount?: number;
-  /** Max total discount amount */
-  maxTotalDiscountAmount?: number | null;
-  /** Max total discount percentage */
-  maxTotalDiscountPercentage?: number | null;
-  /** Rule name */
-  name?: string | null;
-  /** Priority level */
-  priority?: number;
 }
 
 /** Details of a rejected promo code */
@@ -3336,17 +3361,12 @@ export interface CommerceProductsUpdateProductInput {
 
 /** Request to update a promo code */
 export interface CommerceProductsUpdatePromoCodeInput {
-  applyToRenewal?: boolean | null;
-  campaignId?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
-  durationMonths?: number | null;
-  freeTrialExtensionDays?: number | null;
   isActive?: boolean | null;
   isExclusive?: boolean | null;
-  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -3356,18 +3376,6 @@ export interface CommerceProductsUpdatePromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
-}
-
-/** Request to update a promo stacking rule */
-export interface CommerceProductsUpdatePromoStackingRuleInput {
-  allowExclusiveStacking?: boolean | null;
-  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
-  description?: string | null;
-  isActive?: boolean | null;
-  maxStackableCount?: number | null;
-  maxTotalDiscountAmount?: number | null;
-  maxTotalDiscountPercentage?: number | null;
-  priority?: number | null;
 }
 
 /** Request to validate a promo code */
@@ -3502,6 +3510,10 @@ If null, the subscription uses the current plan price on renewal. */
   metadata?: string | null;
   /** When the next billing cycle occurs */
   nextBillingDate?: string;
+  /** Local payment-method registry ID (GameGuild.Commerce.Payments, issue #414) used to
+bill this subscription. Plain reference — no cross-module FK; guarded by the
+Payments module's delete rule. */
+  paymentMethodId?: string | null;
   plan?: CommerceSubscriptionsSubscriptionPlan;
   /** Reference to the subscription plan */
   planId: string;
@@ -7546,6 +7558,14 @@ export interface IdentityAuthenticationCompleteMfaSetupInput {
   secretKey: string;
 }
 
+/** Completes the bound, expiring sign-in challenge. The server supplies identity and tenant. */
+export interface IdentityAuthenticationCompleteMfaSignInInput {
+  code: string;
+  deviceFingerprint?: string | null;
+  method?: IdentityAuthenticationMfaMethod;
+  mfaToken: string;
+}
+
 /** Request to complete password reset */
 export interface IdentityAuthenticationCompletePasswordResetInput {
   /** Password confirmation */
@@ -7922,6 +7942,14 @@ export interface IdentityAuthenticationMfaSetupOutput {
   secretKey?: string | null;
 }
 
+/** Provisioning data only; this response never grants an authenticated session. */
+export interface IdentityAuthenticationMfaSignInEnrollmentOutput {
+  expiresAt?: string;
+  qrCodeUri?: string | null;
+  secretKey?: string | null;
+  success?: boolean;
+}
+
 /** Success response for MFA operations */
 export interface IdentityAuthenticationMfaSuccessOutput {
   /** Success message */
@@ -8280,6 +8308,8 @@ identity provider for this sign-in. Null for non-federated flows. */
   expiresIn?: number;
   /** Response message */
   message?: string | null;
+  /** Recovery codes returned once, only when a limited enrollment finishes with verified TOTP. */
+  mfaEnrollmentBackupCodes?: string[] | null;
   /** MFA session ID if MFA is required */
   mfaSessionId?: string | null;
   /** MFA token */
@@ -8329,6 +8359,11 @@ export interface IdentityAuthenticationSmsMfaSetupOutput {
   message: string | null;
   /** Masked phone number for confirmation */
   phoneNumberMasked: string | null;
+}
+
+/** Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
+export interface IdentityAuthenticationStartMfaSignInEnrollmentInput {
+  mfaToken: string;
 }
 
 /** Data model for Identity Authentication Step Up Challenge Response. */
@@ -15061,9 +15096,19 @@ export interface LearningWorkspacesLearnerSearchResultDto {
   title?: string | null;
 }
 
-/** Represents a money value with currency */
+/** Represents a money value with currency.
+Amounts are stored as a decimal in major units (e.g. dollars) rounded to the
+currency's ISO 4217 minor-unit exponent (see GameGuild.Iso4217CurrencyCatalog):
+JPY keeps zero decimals, USD two, KWD three. Minor-unit (integer) access is available
+through GameGuild.Money.MinorUnits and M:GameGuild.Money.FromMinorUnits(System.Int64,System.String) for provider
+integrations that speak the smallest currency unit.
+The persisted/serialized shape stays exactly { Amount, Currency } — the minor-unit
+members are computed and excluded from JSON and EF mappings, so existing invoices,
+payments, and API contracts are unaffected. */
 export interface Money {
+  /** Amount in major units, already rounded to the currency's minor-unit exponent. */
   amount?: number;
+  /** Upper-case ISO 4217 currency code. */
   currency?: string | null;
 }
 
@@ -20575,8 +20620,12 @@ export let AssetsVirusScanStatusSchema: z.ZodType<AssetsVirusScanStatus>;
 export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
+export let CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema: z.ZodType<CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput>;
 export let CommerceBillingBillingOutboxEventDtoSchema: z.ZodType<CommerceBillingBillingOutboxEventDto>;
 export let CommerceBillingBillingOutboxEventStatusSchema: z.ZodType<CommerceBillingBillingOutboxEventStatus>;
+export let CommerceBillingBillingProviderMigrationEntryClassificationSchema: z.ZodType<CommerceBillingBillingProviderMigrationEntryClassification>;
+export let CommerceBillingBillingProviderMigrationReportSchema: z.ZodType<CommerceBillingBillingProviderMigrationReport>;
+export let CommerceBillingBillingProviderMigrationReportEntrySchema: z.ZodType<CommerceBillingBillingProviderMigrationReportEntry>;
 export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookAllowlistStatusDto>;
 export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
 export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
@@ -20584,6 +20633,7 @@ export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<Commer
 export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
 export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
+export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<CommerceBillingExternalBillingProviderStatusDto>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
@@ -20614,6 +20664,11 @@ export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommerceP
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
+export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
+export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
+export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
+export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
@@ -20623,6 +20678,9 @@ export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymen
 export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePaymentsPaymentCancellationResult>;
 export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
 export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
+export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
+export let CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody>;
 export let CommercePaymentsPaymentRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRecoveryMetrics>;
 export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymentResult>;
 export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
@@ -20676,21 +20734,15 @@ export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProduct
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
-export let CommerceProductsCampaignExpiringCodeDtoSchema: z.ZodType<CommerceProductsCampaignExpiringCodeDto>;
-export let CommerceProductsCampaignPerformanceDtoSchema: z.ZodType<CommerceProductsCampaignPerformanceDto>;
-export let CommerceProductsCampaignTopCodeDtoSchema: z.ZodType<CommerceProductsCampaignTopCodeDto>;
 export let CommerceProductsChangeSupportTicketPriorityInputSchema: z.ZodType<CommerceProductsChangeSupportTicketPriorityInput>;
 export let CommerceProductsCheckMultipleAccessInputSchema: z.ZodType<CommerceProductsCheckMultipleAccessInput>;
 export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProductsCloseSupportTicketInput>;
-export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
-export let CommerceProductsCreatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsCreatePromoStackingRuleInput>;
 export let CommerceProductsCreateSupportTicketInputSchema: z.ZodType<CommerceProductsCreateSupportTicketInput>;
 export let CommerceProductsEntitlementCheckResultSchema: z.ZodType<CommerceProductsEntitlementCheckResult>;
 export let CommerceProductsEntitlementInfoDtoSchema: z.ZodType<CommerceProductsEntitlementInfoDto>;
-export let CommerceProductsGenerateBulkPromoCodesInputSchema: z.ZodType<CommerceProductsGenerateBulkPromoCodesInput>;
 export let CommerceProductsGrantEntitlementInputSchema: z.ZodType<CommerceProductsGrantEntitlementInput>;
 export let CommerceProductsPatchProductInputSchema: z.ZodType<CommerceProductsPatchProductInput>;
 export let CommerceProductsPatchPromoCodeInputSchema: z.ZodType<CommerceProductsPatchPromoCodeInput>;
@@ -20703,7 +20755,6 @@ export let CommerceProductsPromoCodeDtoSchema: z.ZodType<CommerceProductsPromoCo
 export let CommerceProductsPromoCodeTypeSchema: z.ZodType<CommerceProductsPromoCodeType>;
 export let CommerceProductsPromoCodeUsageDtoSchema: z.ZodType<CommerceProductsPromoCodeUsageDto>;
 export let CommerceProductsPromoCodeValidationResultSchema: z.ZodType<CommerceProductsPromoCodeValidationResult>;
-export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProductsPromoStackingRuleDto>;
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
@@ -20717,7 +20768,6 @@ export let CommerceProductsSupportTicketStatusSchema: z.ZodType<CommerceProducts
 export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProductsSupportTicketSummaryDto>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
-export let CommerceProductsUpdatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsUpdatePromoStackingRuleInput>;
 export let CommerceProductsValidatePromoCodeInputSchema: z.ZodType<CommerceProductsValidatePromoCodeInput>;
 export let CommerceSubscriptionsBillingHistoryDtoSchema: z.ZodType<CommerceSubscriptionsBillingHistoryDto>;
 export let CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInput>;
@@ -21127,6 +21177,7 @@ export let IdentityAuthenticationCleanupKeysInputSchema: z.ZodType<IdentityAuthe
 export let IdentityAuthenticationCleanupResultSchema: z.ZodType<IdentityAuthenticationCleanupResult>;
 export let IdentityAuthenticationClientCredentialsTokenOutputSchema: z.ZodType<IdentityAuthenticationClientCredentialsTokenOutput>;
 export let IdentityAuthenticationCompleteMfaSetupInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSetupInput>;
+export let IdentityAuthenticationCompleteMfaSignInInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSignInInput>;
 export let IdentityAuthenticationCompletePasswordResetInputSchema: z.ZodType<IdentityAuthenticationCompletePasswordResetInput>;
 export let IdentityAuthenticationCompleteWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnRegistrationInput>;
@@ -21165,6 +21216,7 @@ export let IdentityAuthenticationMfaMethodSchema: z.ZodType<IdentityAuthenticati
 export let IdentityAuthenticationMfaMethodInfoSchema: z.ZodType<IdentityAuthenticationMfaMethodInfo>;
 export let IdentityAuthenticationMfaMethodsOutputSchema: z.ZodType<IdentityAuthenticationMfaMethodsOutput>;
 export let IdentityAuthenticationMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationMfaSetupOutput>;
+export let IdentityAuthenticationMfaSignInEnrollmentOutputSchema: z.ZodType<IdentityAuthenticationMfaSignInEnrollmentOutput>;
 export let IdentityAuthenticationMfaSuccessOutputSchema: z.ZodType<IdentityAuthenticationMfaSuccessOutput>;
 export let IdentityAuthenticationMfaVerificationOutputSchema: z.ZodType<IdentityAuthenticationMfaVerificationOutput>;
 export let IdentityAuthenticationOAuth2ErrorOutputSchema: z.ZodType<IdentityAuthenticationOAuth2ErrorOutput>;
@@ -21206,6 +21258,7 @@ export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<Ident
 export let IdentityAuthenticationSignInOutputSchema: z.ZodType<IdentityAuthenticationSignInOutput>;
 export let IdentityAuthenticationSmsMfaSetupInputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupInput>;
 export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupOutput>;
+export let IdentityAuthenticationStartMfaSignInEnrollmentInputSchema: z.ZodType<IdentityAuthenticationStartMfaSignInEnrollmentInput>;
 export let IdentityAuthenticationStepUpChallengeOutputSchema: z.ZodType<IdentityAuthenticationStepUpChallengeOutput>;
 export let IdentityAuthenticationStepUpReceiptOutputSchema: z.ZodType<IdentityAuthenticationStepUpReceiptOutput>;
 export let IdentityAuthenticationTrustDeviceInputSchema: z.ZodType<IdentityAuthenticationTrustDeviceInput>;
@@ -23742,6 +23795,12 @@ BulkOperationOutputSchema = z.object({
   totalRequested: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput. Request body for the migration dry-run endpoint. */
+CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema = z.object({
+  sourceProvider: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingBillingOutboxEventDto. Read model over a durable billing integration event published through the platform outbox. */
 CommerceBillingBillingOutboxEventDtoSchema = z.object({
   aggregateId: z.string().nullable().optional(),
@@ -23758,6 +23817,43 @@ CommerceBillingBillingOutboxEventDtoSchema = z.object({
 
 /** Zod schema for CommerceBillingBillingOutboxEventStatus. Delivery status of a durable billing event in the platform outbox. */
 CommerceBillingBillingOutboxEventStatusSchema = z.enum(['Pending', 'Completed', 'DeadLettered']);
+
+/** Zod schema for CommerceBillingBillingProviderMigrationEntryClassification. Classification of a subscription row within a provider-migration dry-run report. */
+CommerceBillingBillingProviderMigrationEntryClassificationSchema = z.enum([
+  'BoundToSourceMissingTargetExternalId',
+  'AlreadyOnTargetProvider',
+  'UnattributedExternalId',
+  'NotExternallyBound',
+]);
+
+/** Zod schema for CommerceBillingBillingProviderMigrationReport. Report-only result of a provider-migration dry-run (issue #397). No state is
+mutated; executing the actual migration is explicitly out of scope and deferred
+(gateway routing/failover is tracked separately in #413). */
+CommerceBillingBillingProviderMigrationReportSchema = z.object({
+  alreadyOnTargetProviderCount: z.number().int(),
+  boundToSourceMissingTargetExternalIdCount: z.number().int(),
+  dryRun: z.boolean(),
+  entries: z
+    .array(z.lazy(() => CommerceBillingBillingProviderMigrationReportEntrySchema))
+    .nullable()
+    .optional(),
+  generatedAtUtc: z.string().datetime(),
+  mutationApplied: z.boolean(),
+  notExternallyBoundCount: z.number().int(),
+  sourceProvider: z.string().nullable(),
+  targetProvider: z.string().nullable(),
+  totalSubscriptionsScanned: z.number().int(),
+  unattributedExternalIdCount: z.number().int(),
+});
+
+/** Zod schema for CommerceBillingBillingProviderMigrationReportEntry. One subscription row of a GameGuild.Commerce.Billing.BillingProviderMigrationReport. */
+CommerceBillingBillingProviderMigrationReportEntrySchema = z.object({
+  classification: z.lazy(() => CommerceBillingBillingProviderMigrationEntryClassificationSchema),
+  externalId: z.string().nullable(),
+  status: z.string().nullable(),
+  subscriptionId: z.string().uuid(),
+  tenantId: z.string().uuid(),
+});
 
 /** Zod schema for CommerceBillingBillingWebhookAllowlistStatusDto. State of the CIDR source allowlist enforced on the provider callback endpoints. */
 CommerceBillingBillingWebhookAllowlistStatusDtoSchema = z.object({
@@ -23838,6 +23934,19 @@ CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema = z.object({
   failureThreshold: z.number().int().optional(),
   isEnabled: z.boolean().optional(),
   windowSeconds: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingExternalBillingProviderStatusDto. Read-only management and health snapshot of one configured external
+billing provider (issue #397 provider-management API). */
+CommerceBillingExternalBillingProviderStatusDtoSchema = z.object({
+  configurationErrors: z.array(z.string()).nullable().optional(),
+  configured: z.boolean(),
+  configValid: z.boolean(),
+  enabled: z.boolean(),
+  enabledStateChangedAt: z.string().datetime().nullable().optional(),
+  health: z.string().nullable(),
+  providerKey: z.string().nullable(),
+  webhookEndpointConfigured: z.boolean(),
 });
 
 /** Zod schema for CommerceBillingInvoicePaymentRetryResult. Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -24115,6 +24224,42 @@ CommercePaymentsCreateWalletInputSchema = z.object({
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
 
+/** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
+CommercePaymentsFraudReviewListItemSchema = z.object({
+  amount: z.number(),
+  createdAt: z.string().datetime(),
+  currency: z.string().nullable(),
+  evidence: z.string().nullable().optional(),
+  externalCustomerId: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().nullable(),
+  riskLevel: z.lazy(() => CommercePaymentsFraudRiskLevelSchema),
+  score: z.number().int(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewResolutionResult. Result of resolving a fraud review. */
+CommercePaymentsFraudReviewResolutionResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  reviewedByUserId: z.string().uuid().nullable().optional(),
+  reviewStatus: z.lazy(() => CommercePaymentsFraudReviewStatusSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewInput. Request body for resolving a fraud review. */
+CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewStatus. Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', 'Declined']);
+
+/** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
+CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
 /** Zod schema for CommercePaymentsLockWalletInput. Data model for Commerce Payments Lock Wallet Request. */
 CommercePaymentsLockWalletInputSchema = z.object({
   reason: z.string().nullable(),
@@ -24181,6 +24326,45 @@ CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
   dueForRetryPayments: z.number().int().optional(),
   exhaustedPayments: z.number().int().optional(),
   pendingRetryPayments: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodDto. Display-safe projection of a registered payment method. */
+CommercePaymentsPaymentMethodDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  billingAddress: z.string().nullable().optional(),
+  cardBrand: z.string().nullable().optional(),
+  cardExpMonth: z.number().int().nullable().optional(),
+  cardExpYear: z.number().int().nullable().optional(),
+  cardLast4: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  expiresInDays: z.number().int().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  gatewayProvider: z.string().nullable().optional(),
+  isDefault: z.boolean().optional(),
+  lastUsedAt: z.string().datetime().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  type: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody. Request body for registering a payment method from a gateway token. */
+CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  ownerUserId: z.string().uuid().nullable().optional(),
+  setAsDefault: z.boolean().optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody. Request body for updating payment-method display fields. */
+CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentRecoveryMetrics. Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
@@ -24809,16 +24993,11 @@ CommerceProductsAppliedPromoCodeSchema = z.object({
   code: z.string().nullable().optional(),
   discountAmount: z.number().optional(),
   discountPercentage: z.number().nullable().optional(),
-  freeMonthsGranted: z.number().int().nullable().optional(),
-  trialExtensionDays: z.number().int().nullable().optional(),
-  type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
 });
 
 /** Zod schema for CommerceProductsApplyPromoCodesInput. Request to apply promo codes */
 CommerceProductsApplyPromoCodesInputSchema = z.object({
-  idempotencyKey: z.string().nullable().optional(),
   orderAmount: z.number().optional(),
-  orderId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   promoCodes: z.array(z.string()).nullable().optional(),
 });
@@ -24851,43 +25030,6 @@ CommerceProductsBatchProductCreateItemSchema = z.object({
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
 });
 
-/** Zod schema for CommerceProductsCampaignExpiringCodeDto. A campaign code approaching expiry */
-CommerceProductsCampaignExpiringCodeDtoSchema = z.object({
-  code: z.string().nullable().optional(),
-  promoCodeId: z.string().uuid().optional(),
-  validUntil: z.string().datetime().optional(),
-});
-
-/** Zod schema for CommerceProductsCampaignPerformanceDto. Aggregated performance for a promo campaign within a window */
-CommerceProductsCampaignPerformanceDtoSchema = z.object({
-  activeCodes: z.number().int().optional(),
-  averageDiscountPerUse: z.number().optional(),
-  campaignId: z.string().nullable().optional(),
-  expiringCodes: z
-    .array(z.lazy(() => CommerceProductsCampaignExpiringCodeDtoSchema))
-    .nullable()
-    .optional(),
-  redemptionRate: z.number().nullable().optional(),
-  topCodes: z
-    .array(z.lazy(() => CommerceProductsCampaignTopCodeDtoSchema))
-    .nullable()
-    .optional(),
-  totalCodes: z.number().int().optional(),
-  totalDiscountGiven: z.number().optional(),
-  totalUses: z.number().int().optional(),
-  uniqueUsers: z.number().int().optional(),
-  windowEnd: z.string().datetime().nullable().optional(),
-  windowStart: z.string().datetime().nullable().optional(),
-});
-
-/** Zod schema for CommerceProductsCampaignTopCodeDto. A campaign code ranked by usage */
-CommerceProductsCampaignTopCodeDtoSchema = z.object({
-  code: z.string().nullable().optional(),
-  discountGiven: z.number().optional(),
-  promoCodeId: z.string().uuid().optional(),
-  uses: z.number().int().optional(),
-});
-
 /** Zod schema for CommerceProductsChangeSupportTicketPriorityInput. Data model for Commerce Products Change Support Ticket Priority Request. */
 CommerceProductsChangeSupportTicketPriorityInputSchema = z.object({
   priority: z.lazy(() => CommerceProductsSupportTicketPrioritySchema).optional(),
@@ -24902,9 +25044,6 @@ CommerceProductsCheckMultipleAccessInputSchema = z.object({
 CommerceProductsCloseSupportTicketInputSchema = z.object({
   closingNotes: z.string().nullable().optional(),
 });
-
-/** Zod schema for CommerceProductsConflictResolutionStrategy. Conflict resolution strategies for stacked promo codes */
-CommerceProductsConflictResolutionStrategySchema = z.enum(['HighestDiscount', 'LowestDiscount', 'FirstCodeOnly', 'LastCodeOnly', 'Sequential', 'Additive']);
 
 /** Zod schema for CommerceProductsCreateMySupportTicketInput. Data model for Commerce Products Create My Support Ticket Request. */
 CommerceProductsCreateMySupportTicketInputSchema = z.object({
@@ -24930,18 +25069,13 @@ CommerceProductsCreateProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsCreatePromoCodeInput. Request to create a promo code */
 CommerceProductsCreatePromoCodeInputSchema = z.object({
-  applyToRenewal: z.boolean().optional(),
-  campaignId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
-  durationMonths: z.number().int().nullable().optional(),
-  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
   isExclusive: z.boolean().optional(),
-  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -24951,19 +25085,6 @@ CommerceProductsCreatePromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
-});
-
-/** Zod schema for CommerceProductsCreatePromoStackingRuleInput. Request to create a promo stacking rule */
-CommerceProductsCreatePromoStackingRuleInputSchema = z.object({
-  allowExclusiveStacking: z.boolean().optional(),
-  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
-  description: z.string().nullable().optional(),
-  isActive: z.boolean().optional(),
-  maxStackableCount: z.number().int().optional(),
-  maxTotalDiscountAmount: z.number().nullable().optional(),
-  maxTotalDiscountPercentage: z.number().nullable().optional(),
-  name: z.string().nullable().optional(),
-  priority: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsCreateSupportTicketInput. Data model for Commerce Products Create Support Ticket Request. */
@@ -24995,30 +25116,6 @@ CommerceProductsEntitlementInfoDtoSchema = z.object({
   subscriptionStatus: z.string().nullable().optional(),
 });
 
-/** Zod schema for CommerceProductsGenerateBulkPromoCodesInput. Request to bulk-generate promo codes with a shared prefix and random suffixes */
-CommerceProductsGenerateBulkPromoCodesInputSchema = z.object({
-  applyToRenewal: z.boolean().optional(),
-  campaignId: z.string().nullable().optional(),
-  count: z.number().int().optional(),
-  currency: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  discountAmount: z.number().nullable().optional(),
-  discountPercentage: z.number().nullable().optional(),
-  durationMonths: z.number().int().nullable().optional(),
-  freeTrialExtensionDays: z.number().int().nullable().optional(),
-  maxDiscountAmount: z.number().nullable().optional(),
-  maxUses: z.number().int().nullable().optional(),
-  maxUsesPerUser: z.number().int().nullable().optional(),
-  minimumOrderAmount: z.number().nullable().optional(),
-  name: z.string().nullable().optional(),
-  prefix: z.string().nullable().optional(),
-  productId: z.string().uuid().nullable().optional(),
-  stackingPriority: z.number().int().optional(),
-  type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
-  validFrom: z.string().datetime().nullable().optional(),
-  validUntil: z.string().datetime().nullable().optional(),
-});
-
 /** Zod schema for CommerceProductsGrantEntitlementInput. Request to grant an entitlement */
 CommerceProductsGrantEntitlementInputSchema = z.object({
   acquisitionType: z.lazy(() => CommerceProductsProductAcquisitionTypeSchema).optional(),
@@ -25046,17 +25143,12 @@ CommerceProductsPatchProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsPatchPromoCodeInput. Request to partially update a promo code (PATCH) */
 CommerceProductsPatchPromoCodeInputSchema = z.object({
-  applyToRenewal: z.boolean().nullable().optional(),
-  campaignId: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
-  durationMonths: z.number().int().nullable().optional(),
-  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().nullable().optional(),
   isExclusive: z.boolean().nullable().optional(),
-  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25140,28 +25232,20 @@ CommerceProductsPromoCodeApplicationResultSchema = z.object({
     .array(z.lazy(() => CommerceProductsRejectedPromoCodeSchema))
     .nullable()
     .optional(),
-  stackingRuleName: z.string().nullable().optional(),
   totalDiscount: z.number().optional(),
-  usageRecorded: z.boolean().optional(),
 });
 
 /** Zod schema for CommerceProductsPromoCodeDto. Promo code data transfer object */
 CommerceProductsPromoCodeDtoSchema = z.object({
   id: z.string().uuid().optional(),
-  applyToRenewal: z.boolean().optional(),
-  campaignId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
   createdAt: z.string().datetime().optional(),
   currency: z.string().nullable().optional(),
-  currentUses: z.number().int().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
-  durationMonths: z.number().int().nullable().optional(),
-  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
   isExclusive: z.boolean().optional(),
-  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25176,16 +25260,7 @@ CommerceProductsPromoCodeDtoSchema = z.object({
 });
 
 /** Zod schema for CommerceProductsPromoCodeType. Represents the type of promo code discount */
-CommerceProductsPromoCodeTypeSchema = z.enum([
-  'PercentageOff',
-  'FixedAmountOff',
-  'FreeTrial',
-  'BuyOneGetOne',
-  'FreeShipping',
-  'FreeTrialExtension',
-  'FreeMonths',
-  'SetPrice',
-]);
+CommerceProductsPromoCodeTypeSchema = z.enum(['PercentageOff', 'FixedAmountOff', 'FreeTrial', 'BuyOneGetOne', 'FreeShipping']);
 
 /** Zod schema for CommerceProductsPromoCodeUsageDto. Promo code usage statistics DTO */
 CommerceProductsPromoCodeUsageDtoSchema = z.object({
@@ -25208,20 +25283,6 @@ CommerceProductsPromoCodeValidationResultSchema = z.object({
   discountPercentage: z.number().nullable().optional(),
   errorMessage: z.string().nullable().optional(),
   isValid: z.boolean().optional(),
-});
-
-/** Zod schema for CommerceProductsPromoStackingRuleDto. Promo stacking rule DTO */
-CommerceProductsPromoStackingRuleDtoSchema = z.object({
-  id: z.string().uuid().optional(),
-  allowExclusiveStacking: z.boolean().optional(),
-  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
-  description: z.string().nullable().optional(),
-  isActive: z.boolean().optional(),
-  maxStackableCount: z.number().int().optional(),
-  maxTotalDiscountAmount: z.number().nullable().optional(),
-  maxTotalDiscountPercentage: z.number().nullable().optional(),
-  name: z.string().nullable().optional(),
-  priority: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsRejectedPromoCode. Details of a rejected promo code */
@@ -25338,17 +25399,12 @@ CommerceProductsUpdateProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsUpdatePromoCodeInput. Request to update a promo code */
 CommerceProductsUpdatePromoCodeInputSchema = z.object({
-  applyToRenewal: z.boolean().nullable().optional(),
-  campaignId: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
-  durationMonths: z.number().int().nullable().optional(),
-  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().nullable().optional(),
   isExclusive: z.boolean().nullable().optional(),
-  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -25358,18 +25414,6 @@ CommerceProductsUpdatePromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
-});
-
-/** Zod schema for CommerceProductsUpdatePromoStackingRuleInput. Request to update a promo stacking rule */
-CommerceProductsUpdatePromoStackingRuleInputSchema = z.object({
-  allowExclusiveStacking: z.boolean().nullable().optional(),
-  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
-  description: z.string().nullable().optional(),
-  isActive: z.boolean().nullable().optional(),
-  maxStackableCount: z.number().int().nullable().optional(),
-  maxTotalDiscountAmount: z.number().nullable().optional(),
-  maxTotalDiscountPercentage: z.number().nullable().optional(),
-  priority: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsValidatePromoCodeInput. Request to validate a promo code */
@@ -25482,6 +25526,7 @@ CommerceSubscriptionsSubscriptionSchema = z.object({
   lockedPriceVersionId: z.string().uuid().nullable().optional(),
   metadata: z.string().max(2000).nullable().optional(),
   nextBillingDate: z.string().datetime().optional(),
+  paymentMethodId: z.string().uuid().nullable().optional(),
   plan: z.lazy(() => CommerceSubscriptionsSubscriptionPlanSchema).optional(),
   planId: z.string().uuid(),
   rowVersion: z.string().nullable().optional(),
@@ -29685,6 +29730,14 @@ IdentityAuthenticationCompleteMfaSetupInputSchema = z.object({
   secretKey: z.string().min(1),
 });
 
+/** Zod schema for IdentityAuthenticationCompleteMfaSignInInput. Completes the bound, expiring sign-in challenge. The server supplies identity and tenant. */
+IdentityAuthenticationCompleteMfaSignInInputSchema = z.object({
+  code: z.string().min(0).max(64),
+  deviceFingerprint: z.string().min(0).max(64).nullable().optional(),
+  method: z.lazy(() => IdentityAuthenticationMfaMethodSchema).optional(),
+  mfaToken: z.string().min(43).max(43),
+});
+
 /** Zod schema for IdentityAuthenticationCompletePasswordResetInput. Request to complete password reset */
 IdentityAuthenticationCompletePasswordResetInputSchema = z.object({
   confirmPassword: z.string().min(1),
@@ -29983,6 +30036,14 @@ IdentityAuthenticationMfaSetupOutputSchema = z.object({
   qrCodeData: z.string().nullable().optional(),
   qrCodeUri: z.string().nullable().optional(),
   secretKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationMfaSignInEnrollmentOutput. Provisioning data only; this response never grants an authenticated session. */
+IdentityAuthenticationMfaSignInEnrollmentOutputSchema = z.object({
+  expiresAt: z.string().datetime().optional(),
+  qrCodeUri: z.string().nullable().optional(),
+  secretKey: z.string().nullable().optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationMfaSuccessOutput. Success response for MFA operations */
@@ -30288,6 +30349,7 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   expiresAt: z.string().datetime().optional(),
   expiresIn: z.number().int().optional(),
   message: z.string().nullable().optional(),
+  mfaEnrollmentBackupCodes: z.array(z.string()).nullable().optional(),
   mfaSessionId: z.string().nullable().optional(),
   mfaToken: z.string().nullable().optional(),
   mfaVerifiedByProvider: z.boolean().optional(),
@@ -30317,6 +30379,11 @@ IdentityAuthenticationSmsMfaSetupOutputSchema = z.object({
   expiresInSeconds: z.number().int(),
   message: z.string().nullable(),
   phoneNumberMasked: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationStartMfaSignInEnrollmentInput. Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
+IdentityAuthenticationStartMfaSignInEnrollmentInputSchema = z.object({
+  mfaToken: z.string().min(43).max(43),
 });
 
 /** Zod schema for IdentityAuthenticationStepUpChallengeOutput. Data model for Identity Authentication Step Up Challenge Response. */
@@ -36713,7 +36780,15 @@ LearningWorkspacesLearnerSearchResultDtoSchema = z.object({
   title: z.string().nullable().optional(),
 });
 
-/** Zod schema for Money. Represents a money value with currency */
+/** Zod schema for Money. Represents a money value with currency.
+Amounts are stored as a decimal in major units (e.g. dollars) rounded to the
+currency's ISO 4217 minor-unit exponent (see GameGuild.Iso4217CurrencyCatalog):
+JPY keeps zero decimals, USD two, KWD three. Minor-unit (integer) access is available
+through GameGuild.Money.MinorUnits and M:GameGuild.Money.FromMinorUnits(System.Int64,System.String) for provider
+integrations that speak the smallest currency unit.
+The persisted/serialized shape stays exactly { Amount, Currency } — the minor-unit
+members are computed and excluded from JSON and EF mappings, so existing invoices,
+payments, and API contracts are unaffected. */
 MoneySchema = z.object({
   amount: z.number().optional(),
   currency: z.string().nullable().optional(),
@@ -41547,6 +41622,8 @@ export type CommerceBillingBillingWebhookSecuritySummary = CommerceBillingBillin
 export { CommerceBillingBillingWebhookSecuritySummaryDtoSchema as CommerceBillingBillingWebhookSecuritySummarySchema };
 export type CommerceBillingBillingWebhookSuspiciousActivityStatus = CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
 export { CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema as CommerceBillingBillingWebhookSuspiciousActivityStatusSchema };
+export type CommerceBillingExternalBillingProviderStatus = CommerceBillingExternalBillingProviderStatusDto;
+export { CommerceBillingExternalBillingProviderStatusDtoSchema as CommerceBillingExternalBillingProviderStatusSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -41561,12 +41638,8 @@ export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
-export type CommerceProductsCampaignExpiringCode = CommerceProductsCampaignExpiringCodeDto;
-export { CommerceProductsCampaignExpiringCodeDtoSchema as CommerceProductsCampaignExpiringCodeSchema };
-export type CommerceProductsCampaignPerformance = CommerceProductsCampaignPerformanceDto;
-export { CommerceProductsCampaignPerformanceDtoSchema as CommerceProductsCampaignPerformanceSchema };
-export type CommerceProductsCampaignTopCode = CommerceProductsCampaignTopCodeDto;
-export { CommerceProductsCampaignTopCodeDtoSchema as CommerceProductsCampaignTopCodeSchema };
+export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
+export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;
@@ -41577,8 +41650,6 @@ export type CommerceProductsPromoCode = CommerceProductsPromoCodeDto;
 export { CommerceProductsPromoCodeDtoSchema as CommerceProductsPromoCodeSchema };
 export type CommerceProductsPromoCodeUsage = CommerceProductsPromoCodeUsageDto;
 export { CommerceProductsPromoCodeUsageDtoSchema as CommerceProductsPromoCodeUsageSchema };
-export type CommerceProductsPromoStackingRule = CommerceProductsPromoStackingRuleDto;
-export { CommerceProductsPromoStackingRuleDtoSchema as CommerceProductsPromoStackingRuleSchema };
 export type CommerceProductsSupportAgent = CommerceProductsSupportAgentDto;
 export { CommerceProductsSupportAgentDtoSchema as CommerceProductsSupportAgentSchema };
 export type CommerceProductsSupportTicket = CommerceProductsSupportTicketDto;

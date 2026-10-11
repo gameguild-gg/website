@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { addDays, format } from "date-fns";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DateTimeRangePicker } from "./date-time-range-picker";
 
@@ -50,6 +50,14 @@ function RangeForm() {
 }
 
 describe("DateTimeRangePicker", () => {
+  beforeEach(() => {
+    // Keep fixture dates stable while event, delay, and timeout timers remain real.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-07T15:00:00Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
   it("shows both full endpoints even when a compact interval starts and ends on the same day", () => {
     render(<DateTimeRangePicker
       id="compact-session" label="Testing session" startLabel="Session starts" endLabel="Session ends"
@@ -140,6 +148,27 @@ describe("DateTimeRangePicker", () => {
     expect(screen.getByRole("button", { name: "Testing session" })).toHaveTextContent(
       `${summaryDay(startDay)} · 23:30 → ${summaryDay(endDay)} · 01:15`,
     );
+  });
+
+  it("preserves the full interval when the selected start date is today", async () => {
+    vi.setSystemTime(new Date("2026-10-08T15:00:00Z"));
+    const user = userEvent.setup();
+    render(<form aria-label="Compact session"><DateTimeRangePicker
+      id="compact-session" label="Testing session" startLabel="Session starts" endLabel="Session ends"
+      startName="startsAt" endName="endsAt" timeZoneId="America/Sao_Paulo" compact
+      defaultValue={{ start: "2026-10-02T18:00", end: "2026-10-03T21:00" }}
+    /></form>);
+    await user.click(screen.getByRole("button", { name: "Testing session" }));
+    await user.click(await screen.findByRole("button", { name: "Today, Thursday, October 8th, 2026", exact: true }));
+    expect(screen.getAllByText("08/10/2026")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "Friday, October 9th, 2026", exact: true }));
+    fireEvent.change(screen.getByLabelText("Session starts time"), { target: { value: "23:30" } });
+    fireEvent.change(screen.getByLabelText("Session ends time"), { target: { value: "01:15" } });
+    await user.click(screen.getByRole("button", { name: "Apply testing session" }));
+    const data = new FormData(screen.getByRole("form", { name: "Compact session" }) as HTMLFormElement);
+    expect(data.get("startsAt")).toBe("2026-10-08T23:30");
+    expect(data.get("endsAt")).toBe("2026-10-09T01:15");
+    expect(screen.getByRole("button", { name: "Testing session" })).toHaveTextContent("08/10/2026 · 23:30 → 09/10/2026 · 01:15");
   });
 
   it("does not apply invalid 24-hour times, reversed intervals, or nonexistent DST times", async () => {
