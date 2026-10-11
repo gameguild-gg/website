@@ -119,11 +119,11 @@ public sealed class TenantInviteRequestedHandlerTests
             Mock.Of<ITenantMemberRepository>(), Mock.Of<ITenantRepository>(),
             new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
 
+        var notification = new TenantInviteRequestedNotification(
+            Guid.NewGuid(), email, null, null, "Private tenant", "Member",
+            "https://app.example.test/sign-in", "https://app.example.test/forgot-password", resend: true);
         var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            handler.Handle(new TenantInviteRequestedNotification(
-                Guid.NewGuid(), email, null, null, "Private tenant", "Member",
-                "https://app.example.test/sign-in", "https://app.example.test/forgot-password",
-                resend: true), CancellationToken.None));
+            handler.Handle(notification, CancellationToken.None));
 
         result.Should().BeSameAs(failure, "the durable outbox must still retry queue failures");
         var entry = logger.Invocations.Should().ContainSingle(invocation =>
@@ -133,7 +133,9 @@ public sealed class TenantInviteRequestedHandlerTests
         var rendered = entry.Arguments[2].ToString()!;
         rendered.Should().NotContain(email).And.NotContain(privateDetail);
         var fields = entry.Arguments[2].Should().BeAssignableTo<IEnumerable<KeyValuePair<string, object?>>>().Subject;
-        fields.Should().Contain(pair => pair.Key == "Email" && Equals(pair.Value, LogRedaction.MaskEmail(email)));
+        fields.Should().NotContain(pair => pair.Key == "Email");
+        fields.Should().Contain(pair => pair.Key == "EventId" && Equals(pair.Value, notification.EventId));
+        fields.Should().Contain(pair => pair.Key == "TenantId" && Equals(pair.Value, notification.TenantId));
         fields.Should().Contain(pair => pair.Key == "ErrorType" && Equals(pair.Value, failure.GetType().FullName));
         foreach (var field in fields)
         {
