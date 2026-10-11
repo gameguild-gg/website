@@ -47,6 +47,16 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
       availableProjects.includes(testProjectMatch[1])
     ) {
       selected.add(testProjectMatch[1]);
+      // Full-host test changes retain the mandatory identity and host regressions.
+      if (testProjectMatch[1] === "GameGuild.API.IntegrationTests") {
+        requiresCoreFallback = true;
+        for (const identityTests of [
+          "GameGuild.Identity.Authentication.UnitTests",
+          "GameGuild.Identity.Authorization.UnitTests",
+        ]) {
+          if (availableProjects.includes(identityTests)) selected.add(identityTests);
+        }
+      }
       continue;
     }
 
