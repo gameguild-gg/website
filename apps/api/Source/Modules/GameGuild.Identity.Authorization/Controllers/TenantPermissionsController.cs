@@ -295,6 +295,7 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
         logger.LogInformation(
             "Setting expiration for {Count} permission grants in tenant {TenantId}",
             command.PermissionIds.Length,
+            // codeql[cs/log-forging] TenantId is a validated Guid wrapper; a structured logging placeholder cannot inject control characters
             command.TenantId);
 
         var updated = await sender.Send(command, cancellationToken).ConfigureAwait(false);
@@ -324,6 +325,7 @@ public sealed class TenantPermissionsController(ISender sender, ILogger<TenantPe
         logger.LogInformation(
             "Extending expiration for {Count} permission grants in tenant {TenantId}",
             command.PermissionIds.Length,
+            // codeql[cs/log-forging] TenantId is a validated Guid wrapper; a structured logging placeholder cannot inject control characters
             command.TenantId);
 
         var extended = await sender.Send(command, cancellationToken).ConfigureAwait(false);

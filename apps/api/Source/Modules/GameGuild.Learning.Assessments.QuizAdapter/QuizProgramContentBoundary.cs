@@ -42,6 +42,7 @@ public sealed class QuizProgramContentBoundary(QuizAssessmentTypeAdapter adapter
                 // cannot opt out of the atomic workflow by declaring a different
                 // content type in a generic request. Ambiguous or invalid quiz
                 // documents fail closed and are rejected.
+                // codeql[cs/user-controlled-bypass] Boundary derives from document shape, not the declared content type; ambiguous or invalid documents fail closed and are rejected — declaring a different type cannot bypass the atomic quiz workflow
                 if (content.Type == ProgramContentType.Questionnaire || LooksLikeQuizAuthoringDocument(document.RootElement))
                 {
                     if (adapter.ProjectAuthoring(document.RootElement).Grading is not null)
