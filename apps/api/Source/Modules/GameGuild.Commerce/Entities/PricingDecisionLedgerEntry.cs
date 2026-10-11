@@ -125,10 +125,6 @@ public class PricingDecisionLedgerEntry : EntityBase
     [MaxLength(500)]
     public string? DriftReason { get; private set; }
 
-    /// <summary>Immutable snapshot of the drift status for read paths.</summary>
-    [NotMapped]
-    public string DriftStatusValue => DriftStatus;
-
     /// <summary>
     /// Stamps the drift-validation outcome. Append-only ledger invariant: this is the
     /// single permitted post-insert mutation, reserved for the verification command.

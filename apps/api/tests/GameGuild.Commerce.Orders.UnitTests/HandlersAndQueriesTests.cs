@@ -198,6 +198,7 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor());
 
@@ -256,6 +257,7 @@ public sealed class OrderCommandHandlerTests
             pricingRepository.Object,
             promoCodeService.Object,
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             CreatePricingDbContext(pricingVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -291,6 +293,7 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -320,6 +323,7 @@ public sealed class OrderCommandHandlerTests
             Mock.Of<IProductPricingRepository>(),
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
@@ -370,6 +374,7 @@ public sealed class OrderCommandHandlerTests
             pricingRepository.Object,
             promoCodeService.Object,
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             CreatePricingDbContext(firstVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -426,6 +431,7 @@ public sealed class OrderCommandHandlerTests
             pricingRepository.Object,
             promoCodeService.Object,
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             CreatePricingDbContext(pricingVersion).Object,
             OrderTestFactory.CreateActor(order));
 
@@ -463,6 +469,7 @@ public sealed class OrderCommandHandlerTests
             pricingRepository.Object,
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
             Mock.Of<IApplicationDbContext>(),
             OrderTestFactory.CreateActor(order));
 
