@@ -181,7 +181,10 @@ public class AssessmentsController : BaseApiController
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
         if (assessment is null) return NotFound();
-        if (!await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Publish).ConfigureAwait(false)) return Forbid();
+        if (!await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Publish).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
         var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorId.HasValue)
         {
@@ -451,7 +454,10 @@ public class AssessmentsController : BaseApiController
         var capabilities = await _courseAccessEvaluator
             .GetCapabilitiesAsync(assessment.CourseId, HttpContext.RequestAborted)
             .ConfigureAwait(false);
-        if (!capabilities.CanReviewAsStaff && !capabilities.CanLearn) return Forbid();
+        if (!capabilities.CanReviewAsStaff && !capabilities.CanLearn)
+        {
+            return Forbid();
+        }
         var instructorView = capabilities.CanReviewAsStaff;
         return await ExecuteRuntimeAsync(() => RequireRuntime().GetSubmissionAsync(
             submissionId,
@@ -633,8 +639,14 @@ public class AssessmentsController : BaseApiController
     public async Task<ActionResult<IEnumerable<AssessmentGroupDto>>> GetCourseAssessmentGroups(Guid courseId)
     {
         var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanEditOrReviewCourseAsync(program.Id).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+        if (!await CanEditOrReviewCourseAsync(program.Id).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var groups = await _assessmentService.GetCourseAssessmentGroupsAsync(courseId).ConfigureAwait(false);
         return Ok(groups.Select(AssessmentGroupDto.FromEntity));
@@ -942,7 +954,10 @@ public class AssessmentsController : BaseApiController
         var enrollment = await _enrollmentService.GetAsync(enrollmentId).ConfigureAwait(false);
         if (enrollment == null || enrollment.CourseId != assessment.CourseId) return NotFound();
         if (enrollment.UserId != actorUserId.Value) return Forbid();
-        if (!await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Learn).ConfigureAwait(false)) return Forbid();
+        if (!await HasCourseCapabilityAsync(assessment.CourseId, CourseCapability.Learn).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var cues = await _assessmentService
             .GetInteractiveVideoCuesForContentAsync(assessmentId, contentId)

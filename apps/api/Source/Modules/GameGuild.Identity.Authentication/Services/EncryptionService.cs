@@ -35,8 +35,10 @@ public sealed class EncryptionService(ILogger<EncryptionService> logger, IConfig
             }
 
             if (string.IsNullOrWhiteSpace(configuredKey))
+            {
                 throw new InvalidOperationException(
                     "Encryption:EncryptionKey (or Encryption:Key) is not configured. Credential encryption fails closed; set a key of at least 32 bytes in configuration (deployment secret store, environment variables or appsettings) before encrypting or decrypting data.");
+            }
 
             var keyLengthBytes = Encoding.UTF8.GetByteCount(configuredKey);
             if (keyLengthBytes < MinimumKeyLengthBytes)

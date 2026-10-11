@@ -49,7 +49,9 @@ public sealed class SignedPolicyBundleStore(
         var bundle = await _repository.GetByIdAsync(bundleId, cancellationToken).ConfigureAwait(false);
 
         if (bundle is null)
+        {
             throw new PolicyBundleSignatureException($"Policy bundle {bundleId} does not exist.");
+        }
 
         var requiresSignature = !allowUnsignedDraft
                                 || bundle.Status is PolicyBundleStatus.Approved

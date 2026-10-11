@@ -117,8 +117,10 @@ public sealed class PolicyBundleSignatureService(
 
         var errors = ValidateBundleInputs(bundle);
         if (errors.Count > 0)
+        {
             throw new PolicyBundleSignatureException(
                 $"Policy bundle '{bundle.Name}' failed signing validation: {string.Join(" ", errors)}");
+        }
 
         var activeKey = _options.ActiveKey
             ?? throw new PolicyBundleSignatureException(
@@ -126,8 +128,10 @@ public sealed class PolicyBundleSignatureService(
 
         var trustedKey = FindTrustedKeyForPrivateKey(activeKey);
         if (trustedKey is null)
+        {
             throw new PolicyBundleSignatureException(
                 $"Active signing key '{activeKey.KeyId}' does not match any trusted public key; refusing to sign (fail closed).");
+        }
 
         var signedAt = DateTimeOffset.UtcNow;
 

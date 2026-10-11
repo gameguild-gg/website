@@ -19,7 +19,10 @@ internal static class TestDataProtectionEnvironment
 
         lock (Sync)
         {
-            if (HasAnyConfiguration()) return;
+            if (HasAnyConfiguration())
+            {
+                return;
+            }
 
             using var rsa = RSA.Create(2048);
             var request = new CertificateRequest(

@@ -62,9 +62,11 @@ public sealed class CapabilityAuthorizationHttpTests
     public static IEnumerable<object[]> Administrators()
     {
         foreach (var endpoint in Endpoints)
-        foreach (var role in new[] { "Owner", "TenantAdmin", "Admin", "SystemAdmin" })
         {
-            yield return [endpoint, role];
+            foreach (var role in new[] { "Owner", "TenantAdmin", "Admin", "SystemAdmin" })
+            {
+                yield return [endpoint, role];
+            }
         }
     }
 

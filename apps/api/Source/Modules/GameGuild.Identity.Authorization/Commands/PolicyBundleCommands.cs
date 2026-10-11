@@ -570,10 +570,14 @@ internal static class PolicyBundleRegistryGuards
         string operation)
     {
         if (!actor.IsAuthenticated)
+        {
             throw new UnauthorizedAccessException("User is not authenticated.");
+        }
 
         if (actor.IsSystemAdmin)
+        {
             return;
+        }
 
         if (tenantId is null)
         {

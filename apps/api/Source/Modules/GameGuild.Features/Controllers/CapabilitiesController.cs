@@ -103,7 +103,10 @@ public sealed class CapabilitiesController : BaseApiController
         [FromBody] SetCapabilityOverrideRequest request,
         CancellationToken ct)
     {
-        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
+        if (ValidateTenantAccess(tenantId, true) is { } failure)
+        {
+            return failure;
+        }
         var userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
 
         await _sender.Send(new SetCapabilityOverrideCommand(
