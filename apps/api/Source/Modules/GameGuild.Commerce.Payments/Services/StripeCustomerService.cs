@@ -290,6 +290,70 @@ public class StripeCustomerService(
     }
 
     /// <inheritdoc />
+    public async Task<GatewayPaymentMethodDetailsResult> GetPaymentMethodAsync(
+        string paymentMethodId,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Retrieving payment method {PaymentMethodId} (Simulation: {IsSimulation})",
+            LogRedaction.RedactId(paymentMethodId, "pm"), _options.UseSimulation);
+
+        if (_options.UseSimulation)
+        {
+            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+            return SimulatedPaymentResultFactory.PaymentMethodDetails(paymentMethodId, logger: logger);
+        }
+
+        try
+        {
+            var paymentMethod = await _paymentMethodService.GetAsync(
+                paymentMethodId,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            logger.LogInformation("Payment method {PaymentMethodId} retrieved",
+                LogRedaction.RedactId(paymentMethod.Id, "pm"));
+
+            return new GatewayPaymentMethodDetailsResult(
+                Success: true,
+                PaymentMethodId: paymentMethod.Id,
+                Details: new GatewayPaymentMethodDetails(
+                    Type: paymentMethod.Type ?? "card",
+                    CardBrand: paymentMethod.Card?.Brand,
+                    CardLast4: paymentMethod.Card?.Last4,
+                    CardExpMonth: (int?)paymentMethod.Card?.ExpMonth,
+                    CardExpYear: (int?)paymentMethod.Card?.ExpYear,
+                    CardFingerprint: paymentMethod.Card?.Fingerprint,
+                    BankName: paymentMethod.UsBankAccount?.BankName,
+                    BankLast4: paymentMethod.UsBankAccount?.Last4,
+                    WalletEmail: null),
+                ErrorCode: null,
+                ErrorMessage: null);
+        }
+        catch (StripeException ex)
+        {
+            logger.LogError("Stripe payment method retrieval failed for {PaymentMethodId}: {ErrorCode} ({ErrorType})",
+                LogRedaction.RedactId(paymentMethodId, "pm"), LogRedaction.Sanitize(ex.StripeError?.Code), ex.GetType().FullName);
+
+            return new GatewayPaymentMethodDetailsResult(
+                Success: false,
+                PaymentMethodId: null,
+                Details: null,
+                ErrorCode: ex.StripeError?.Code ?? "stripe_error",
+                ErrorMessage: ex.StripeError?.Message ?? ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Unexpected error during payment method retrieval for {PaymentMethodId}: {ErrorType}",
+                LogRedaction.RedactId(paymentMethodId, "pm"), ex.GetType().FullName);
+            return new GatewayPaymentMethodDetailsResult(
+                Success: false,
+                PaymentMethodId: null,
+                Details: null,
+                ErrorCode: "unexpected_error",
+                ErrorMessage: ex.Message);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<GatewayCancellationResult> CancelSubscriptionAsync(
         string externalSubscriptionId,
         CancellationToken cancellationToken = default)

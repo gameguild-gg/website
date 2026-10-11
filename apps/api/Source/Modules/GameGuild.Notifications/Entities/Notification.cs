@@ -440,6 +440,9 @@ public enum NotificationType
     /// <summary>One-time email sign-in code</summary>
     EmailCode = 24,
 
+    /// <summary>Stored payment method expires soon (issue #414)</summary>
+    PaymentMethodExpiring = 25,
+
     /// <summary>Custom/other notification type</summary>
     Custom = 99
 }

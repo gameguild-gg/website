@@ -45,7 +45,8 @@ public static class NotificationCategories
             or NotificationType.CertificateIssued => "Achievements",
 
         NotificationType.Billing
-            or NotificationType.MonthlyStatement => "Billing",
+            or NotificationType.MonthlyStatement
+            or NotificationType.PaymentMethodExpiring => "Billing",
 
         NotificationType.EmailVerification
             or NotificationType.PasswordReset
