@@ -21,6 +21,7 @@ import {
 } from "@game-guild/ui/components/field";
 import { Input } from "@game-guild/ui/components/input";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { SignInForm } from "./sign-in-form";
 
 export interface MagicLinkMessages {
   request: {
@@ -203,7 +204,7 @@ function MagicLinkConsumer({
   redirectTo: string;
   messages: MagicLinkMessages;
 }) {
-  const { signIn } = useAuth();
+  const { signIn, mfaChallenge, mfaEnrollmentBackupCodes } = useAuth();
   const attemptedToken = useRef<string | null>(null);
   const [status, setStatus] = useState<"pending" | "complete" | "failed">(
     "pending",
@@ -226,6 +227,10 @@ function MagicLinkConsumer({
       active = false;
     };
   }, [redirectTo, signIn, token]);
+
+  if (mfaChallenge || mfaEnrollmentBackupCodes?.length) {
+    return <SignInForm redirectTo={redirectTo} />;
+  }
 
   return (
     <Card className="border-white/10 bg-slate-900/85 text-white shadow-2xl shadow-sky-950/30 backdrop-blur">

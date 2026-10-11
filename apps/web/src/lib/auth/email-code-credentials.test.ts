@@ -3,6 +3,7 @@ import {
   AuthServiceUnavailableError,
   CredentialsProvider,
   CredentialsSignInError,
+  MfaRequiredError,
 } from "@game-guild/client";
 import { createEmailCodeCredentialsAuthorize } from "./email-code-credentials";
 
@@ -18,6 +19,37 @@ const signInResponse = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("createEmailCodeCredentialsAuthorize", () => {
+  it("keeps MFA completion on the existing authorizer even with stale email-code fields", async () => {
+    const fallback = vi.fn().mockResolvedValue({ user: { id: "completed" } });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const credentials = {
+      mfaToken: "x".repeat(43), method: "Totp", code: "654321",
+      emailCode: "123456", emailCodeEmail: "player@example.com",
+    };
+    const authorize = createEmailCodeCredentialsAuthorize(fallback, "https://api.gameguild.example");
+    await expect(authorize(credentials)).resolves.toEqual({ user: { id: "completed" } });
+    expect(fallback).toHaveBeenCalledWith(credentials, undefined);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a typed limited MFA challenge without creating an ordinary session", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      success: false, requiresMfa: true, mfaToken: "x".repeat(43),
+      availableMethods: ["Totp", "BackupCode"],
+      accessToken: "", refreshToken: "",
+    }), { status: 200 })));
+    const fallback = vi.fn();
+    const authorize = createEmailCodeCredentialsAuthorize(fallback, "https://api.gameguild.example");
+    const error = await authorize({ emailCode: "123456", emailCodeEmail: "player@example.com" })
+      .catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(MfaRequiredError);
+    expect(error).toMatchObject({
+      mfaToken: "x".repeat(43), availableMethods: ["Totp", "BackupCode"],
+    });
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
   it("keeps other credentials on the fallback authorizer", async () => {
     const fallbackAuthorize = vi
       .fn()

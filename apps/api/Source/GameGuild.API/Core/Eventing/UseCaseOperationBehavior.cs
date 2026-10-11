@@ -12,7 +12,8 @@ internal sealed class UseCaseOperationBehavior<TRequest, TResponse>(
     IActorContextAccessor actorContextAccessor,
     IUseCaseOperationContextAccessor operationContextAccessor,
     IUseCaseEventContractRegistry? eventContractRegistry = null,
-    IUseCaseEventVerifier? eventVerifier = null)
+    IUseCaseEventVerifier? eventVerifier = null,
+    ILogger<UseCaseOperationBehavior<TRequest, TResponse>>? logger = null)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequestBase
 {
@@ -72,8 +73,10 @@ internal sealed class UseCaseOperationBehavior<TRequest, TResponse>(
                 var response = await next().ConfigureAwait(false);
                 if (CommandOutcome.ShouldRollback(response))
                 {
-                    await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                    await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+                    context.DiscardPendingPermissionAuditChanges();
                     context.ChangeTracker.Clear();
+                    operationContext.ResetForRetry();
                     return response;
                 }
 
@@ -89,10 +92,23 @@ internal sealed class UseCaseOperationBehavior<TRequest, TResponse>(
             }
             catch
             {
-                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-                context.DiscardPendingPermissionAuditChanges();
-                context.ChangeTracker.Clear();
-                operationContext.ResetForRetry();
+                try
+                {
+                    // Request cancellation must not cancel cleanup of its uncommitted writes.
+                    await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception rollbackError)
+                {
+                    // Preserve the command's original failure, including its cancellation token.
+                    // Only the error type is logged; authentication command data is never logged.
+                    logger?.LogError("Command transaction rollback failed ({ErrorType})", rollbackError.GetType().Name);
+                }
+                finally
+                {
+                    context.DiscardPendingPermissionAuditChanges();
+                    context.ChangeTracker.Clear();
+                    operationContext.ResetForRetry();
+                }
                 throw;
             }
         }).ConfigureAwait(false);

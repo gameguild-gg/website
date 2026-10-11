@@ -45,6 +45,69 @@ public class InvoiceTests
             .WithMessage("*TenantId*required*");
     }
 
+    [Fact]
+    public void Constructor_WithIdempotencyKey_ShouldStoreIt()
+    {
+        var tenantId = Guid.NewGuid();
+        var subscriptionId = Guid.NewGuid();
+        var idempotencyKey = $"subscription:{subscriptionId}:cycle:1:invoice";
+
+        var invoice = new Invoice(tenantId, subscriptionId, 29.99m, "USD", idempotencyKey);
+
+        invoice.IdempotencyKey.Should().Be(idempotencyKey);
+    }
+
+    [Fact]
+    public void Constructor_WithOverlongIdempotencyKey_ShouldThrow()
+    {
+        var act = () => new Invoice(Guid.NewGuid(), Guid.NewGuid(), 29.99m, "USD", new string('k', 201));
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*Idempotency key*");
+    }
+
+    [Fact]
+    public void SetMetadata_Draft_ShouldStoreJson()
+    {
+        var invoice = CreateDraftInvoice();
+
+        invoice.SetMetadata("""{"billingCycleNumber":1}""");
+
+        invoice.Metadata.Should().Contain("billingCycleNumber");
+    }
+
+    [Fact]
+    public void SetMetadata_OnIssuedInvoice_ShouldThrow()
+    {
+        var invoice = CreateDraftInvoice();
+        invoice.Issue();
+
+        var act = () => invoice.SetMetadata("""{"billingCycleNumber":1}""");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void SetDescription_Draft_ShouldStoreLineLabel()
+    {
+        var invoice = CreateDraftInvoice();
+
+        invoice.SetDescription("Subscription billing cycle 1");
+
+        invoice.Description.Should().Be("Subscription billing cycle 1");
+    }
+
+    [Fact]
+    public void SetDescription_OnIssuedInvoice_ShouldThrow()
+    {
+        var invoice = CreateDraftInvoice();
+        invoice.Issue();
+
+        var act = () => invoice.SetDescription("Subscription billing cycle 1");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     #endregion
 
     #region Immutability Tests

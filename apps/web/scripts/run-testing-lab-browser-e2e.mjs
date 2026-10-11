@@ -31,8 +31,14 @@ export function resolveBashExecutable({
   }
 
   for (const entry of (env.Path ?? env.PATH ?? '').split(';').filter(Boolean)) {
+    const directoryName = win32.basename(entry).toLowerCase();
+    // Windows exposes WSL relay/app aliases on PATH even when no Linux Bash
+    // is installed. These cannot run this Windows checkout's Git Bash script.
+    if (['system32', 'syswow64', 'windowsapps'].includes(directoryName)) {
+      continue;
+    }
     candidates.push(win32.join(entry, 'bash.exe'));
-    if (win32.basename(entry).toLowerCase() === 'cmd') {
+    if (directoryName === 'cmd') {
       candidates.push(win32.join(win32.dirname(entry), 'bin', 'bash.exe'));
     }
   }

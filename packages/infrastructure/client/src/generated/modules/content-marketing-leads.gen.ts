@@ -49,7 +49,7 @@ export class ContentMarketingLeadsModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

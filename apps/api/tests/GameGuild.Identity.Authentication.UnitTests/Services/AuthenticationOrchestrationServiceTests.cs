@@ -53,7 +53,7 @@ public sealed class AuthenticationOrchestrationServiceTests : IDisposable
             .Returns(true);
         _passwordHasher
             .Setup(hasher => hasher.VerifyPasswordWithWorkClassification(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(new PasswordVerificationResult(IsValid: true, PerformedCryptographicWork: true));
+            .Returns(new PasswordVerificationResult(IsValid: true, WorkPerformed: true));
         _enumerationProtection
             .Setup(protection => protection.BeginAuthenticationTiming())
             .Returns(new AuthenticationTimingScope());
@@ -457,7 +457,7 @@ public sealed class AuthenticationOrchestrationServiceTests : IDisposable
     {
         _passwordHasher
             .Setup(hasher => hasher.VerifyPasswordWithWorkClassification(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(new PasswordVerificationResult(IsValid: false, PerformedCryptographicWork: true));
+            .Returns(new PasswordVerificationResult(IsValid: false, WorkPerformed: true));
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => _sut.InitiateAuthenticationAsync(CreateRequest(deviceFingerprint: TrustedFingerprint)));

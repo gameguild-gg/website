@@ -217,7 +217,7 @@ public sealed class PasswordHashPostgreSqlHttpTests(ApiPostgreSqlFixture fixture
             .ReturnsAsync(new BehavioralAnalysisResult { MatchesTypicalPattern = true, RiskLevel = RiskLevel.Low });
         var values = new Dictionary<string, string?> { ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10" };
         foreach (var pair in passwordPolicy ?? []) { values[$"PresentationLayer:Authentication:PasswordPolicy:{pair.Key}"] = pair.Value; }
-        return fixture.Factory.WithWebHostBuilder(builder =>
+        return fixture.CreateFactory(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(values));
             builder.ConfigureTestServices(services =>

@@ -1,4 +1,125 @@
+# Passwordless first-factor MFA policy integration — 2026-10-10
+
+Email-code and magic-link consumption apply `ISignInMfaService.BeginAsync` after
+verifying their single-use first factor and loading the current eligible account.
+They supply the verified subject and token version, requested tenant and device
+context. The real policy service resolves tenant eligibility and either issues
+credentials or persists an expiring, limited MFA challenge. A pending response
+retains its enrollment/completion message and contains no ordinary credentials.
+The legacy magic-link constructor fails closed if its MFA policy service is missing;
+an injected session issuer cannot provide a fallback around that policy.
+
+`EmailCode` joins the persisted first-factor enum. Its existing string conversion
+and column length support this value without a database shape change. The web
+authorizers preserve typed MFA challenges, prioritize challenge completion over
+stale first-factor fields, and reuse the existing enrollment/completion form.
+
+Focused mocked web checks passed 50 cases. Real HTTP/PostgreSQL policy and replay
+regressions for all three first factors are included for hosted CI; those new native
+checks have not yet run. This checkpoint does not close an issue or accept PR #704.
+
+# Web MFA consumer checkpoint — 2026-10-08
+
+## Required MFA audit and the security-event pipeline — 2026-10-08
+
+Required, denied, enrollment-started and verified sign-in MFA events use
+`ISecurityEventLogger.RecordInCommandAsync` with the same scoped
+`IApplicationDbContext` as the owning command. Classification, audit records and
+alert evaluation share that transaction. A relational context must already have
+the command's transaction. Capture failures propagate: these operations cannot
+use an independently committed context or spool fallback as success evidence.
+The existing retry/spool transport remains available for other security events.
+Native regressions verify the supplied context/token, propagated failures and
+atomic rollback of audit, proof, provider state, challenge and credentials.
+
+## Native operation cancellation correction — 2026-10-08
+
+The host transaction owner rolls back with an independent token when the request
+is canceled. Cleanup always discards pending permission audit snapshots, clears
+tracked writes and resets operation retry state, including when rollback fails.
+The original command failure is preserved; rollback diagnostics contain only
+the exception type. Both unchanged cancellation regressions failed before the
+fix and passed afterward, within the complete 147-case host selection using
+its supported real PostgreSQL connection. The earlier two Docker named-pipe
+failures remain recorded. Code attempt03 reached real limited MFA enrollment
+but timed out at completion before submission/grading acceptance. Complete
+Code and #145 acceptance remain pending; see the reconciliation document and
+source-bound receipts for exact scopes. No issue is closed by this correction.
+The full authentication (2,535) and authorization (1,667) projects also passed;
+the three current selections total 4,349 passes, zero failures/skips. Source
+hashes and all 55 primary-checkout changes were preserved, and the exact owned
+PostgreSQL container was independently verified absent.
+
+The native first-factor challenge now continues through CSRF-protected web enrollment/completion. The verified session is finalized only after completion; recovery codes are one-time response data excluded from JWT/session claims. The existing form and Code runner consume this flow. Combined native selections passed 4,379; client build/typecheck and 1,155 tests and all 21 form tests passed. Local Code attempts stopped at disposable PostgreSQL readiness before functional tests; fresh CI/scanner/license gates and complete #145 acceptance remain pending. Details and unchanged original criteria are in `docs/architecture/authentication-mfa-policy-reconciliation.md`.
+
 # Authorization Architecture Documentation
+
+## 2026-10-08 native limited MFA enrollment checkpoint — #145
+
+The limited enrollment route is bound solely to the persisted first-factor challenge.
+Provisioning returns no ordinary credential/session or recovery code. The challenge
+records configuration identity, canonical-secret fingerprint and initialization time.
+Subject transaction/row locks serialize setup and confirmation; only the same live
+challenge resumes its pending setup. Completion requires real TOTP, revalidates exact
+configuration/account/tenant/version/policy, consumes once and generates recovery
+codes after proof. Required MFA audit failures roll back the owning command. A unique
+user MFA index aborts on duplicate legacy factors without deleting or selecting rows.
+
+The unchanged native regression reproduced 404 before implementation and now passes.
+Native selections passed: authentication 2,528, authorization 1,667, required audit 6,
+host architecture/security 137, PostgreSQL HTTP/migration 34, OpenAPI documentation 8
+and actual document capture 1. The regenerated client passed build/typecheck and
+1,140 tests. Separate reconciliation retains unit17's Integration compile failure
+and native20's cleanup collection timeout; their passing selections are source-bound
+and exact owned-container absence was verified. Primary 55 files are preserved.
+
+This is a validated checkpoint, not complete #145 acceptance or a merged PR. Web MFA
+consumer integration, other schemes, original criteria and Release/scanner gates remain.
+See [MFA policy reconciliation](../../../../../docs/architecture/authentication-mfa-policy-reconciliation.md).
+
+## 2026-10-08 public MFA completion and session proof checkpoint — #145
+
+`POST /v1/auth/mfa/sign-in/complete` verifies an expiring, server-bound first-factor
+challenge with TOTP or a backup code. The request cannot select subject, tenant,
+token version or policy. Verification, atomic challenge consumption, credential
+and session issuance, proof metadata and required audit writes share the existing
+command transaction. A native HTTP failure after proof persistence rolls back
+the consumed code, challenge, session and refresh token; a retry then succeeds.
+
+The immutable server-created proof is persisted in `session_mfa_evidence` before
+MFA access-token signing. Refresh checks its current account/enrollment/tenant/
+version/policy binding and preserves the original `auth_time` and `mfa_time`.
+Ordinary tokens cannot acquire MFA claims through custom claims. The native
+migration adds only the proof table, constraints and session relation.
+
+Full authentication and authorization projects passed 2,518 and 1,667 tests.
+The focused host selection passed 137; the extended native PostgreSQL selection
+passed 19, including real TOTP replay across challenges, new/legacy backup codes,
+concurrent HTTP completion, rollback, refresh and migration checks. Eight native
+OpenAPI documentation tests passed; the actual document produced the regenerated
+client, whose build/typecheck and 1,135 tests passed. Primary changes and original
+failing regression assertions were preserved. Limited enrollment/recovery, other
+schemes and the remaining original #145 criteria are still pending; #145 is open.
+See [MFA policy reconciliation](../../../../../docs/architecture/authentication-mfa-policy-reconciliation.md).
+
+## 2026-10-08 password MFA preparation checkpoint — #145
+
+Local password sign-in captures the account version observed before first-factor
+verification and requires a current subject/tenant MFA preparation before ordinary
+credential issuance. Required, enrolled or high-risk cases persist a five-minute
+opaque challenge and return only its limited bearer; the database stores its hash.
+Server-owned pending outcomes retain the command's successful challenge/audit
+writes through mapping without representing an authenticated session. A pending
+response is not logged as a successful sign-in.
+
+TOTP acceptance persists an atomic time-step watermark bound to the enrollment
+and canonical secret fingerprint, with caller-transaction/savepoint rollback.
+The two added tables have a native migration and upgrade/rollback/model checks.
+The selected 4,295 native tests passed, including mandatory and optional anonymous
+password HTTP against migrated PostgreSQL. Public completion/enrollment, MFA
+credential/session evidence and enforcement across other schemes remain pending;
+this checkpoint does not close #145. Scope, results and limits are recorded in
+[MFA policy reconciliation](../../../../../docs/architecture/authentication-mfa-policy-reconciliation.md).
 
 ## 2026-10-05 Web3 backend identity and session boundary — #292 / #291
 
@@ -2212,6 +2333,40 @@ full-length hash. History conservatively rejects reuse of an ambiguous legacy
 prefix. Legacy suffixes cannot be reconstructed or certified from stored hashes.
 See [the requirement and compatibility map](../../../../../docs/architecture/password-hashing-reconciliation.md).
 
+### Authentication Timing Boundaries
+
+Local password authentication creates one server-owned monotonic timing origin
+before account lookup. Polymorphic authentication propagates the origin created
+before candidate resolution through an internal request property; clients cannot
+supply it in JSON. Local account/IP lockout admission and PostgreSQL advisory-lock
+contention start and reuse that origin through a private server-side HTTP context
+key. Denials retain the lockout policy, complete actual dummy credential work and
+return the same generic unauthorized detail as failed password verification.
+String context keys and request JSON cannot seed the origin. Completed BCrypt/PBKDF2
+verification is tracked independently
+of account existence or credential validity. Missing/passwordless accounts,
+unusable hashes and rejected oversized legacy inputs receive actual dummy BCrypt
+work using the current password-policy cost. The shared 400 ms floor subtracts
+total elapsed work and introduces no account-dependent random delay.
+Positive fractional waits round upward to whole timer milliseconds. After waking,
+the same monotonic origin is checked again until the floor is met; an early timer
+does not lower the configured minimum.
+
+Request cancellation is checked before and after credential work and interrupts
+the remaining delay. A lookup that returns after cancellation cannot start new
+verification work. A synchronous hash already running cannot be interrupted.
+Attempt/risk/audit handling precedes failed-credential compensation; a failed
+attempt store cannot bypass compensation after an unexpected lookup error. A
+timing failure is not retried as another hash or claimed as completed protection.
+The legacy simulation helper uses the same work and floor for either account
+class. Existing custom-provider signatures remain compatible; unknown completed
+work is treated conservatively.
+
+The floor is a minimum, not a universal constant-time guarantee. Supported legacy
+hash costs, PBKDF2, storage/network latency and host load can exceed it. Functional
+tests and in-process HTTP observations do not certify timing indistinguishability
+in production. See [the execution and remaining-acceptance map](../../../../../docs/architecture/authentication-timing-reconciliation.md).
+
 ### Authentication Response Projection
 
 Authentication response conversion preserves server-issued tokens, explicit
@@ -2221,6 +2376,13 @@ cannot override the persisted identity or verified-email assertion. Complete nam
 are projected without changing the entity. A stored phone is disclosed only when
 authentication succeeds with a nonempty access token and neither MFA nor step-up
 is still required. Phone possession is not inferred as phone verification.
+
+Server-owned MFA pending outcomes preserve the verified first-factor subject ID,
+resolved tenant and a detached profile projection under the same phone-redaction
+rule. They remain failed/pending authentication outcomes with no ordinary tokens
+or session. The projection uses the current subject already verified by the MFA
+gate and does not replace the internal transaction outcome marker or fetch a
+request-supplied identity. Committed denials remain anonymous and profile-free.
 
 The public legacy refresh converter preserves supplied expiry/duration/profile;
 it never extends a supplied expired timestamp. Only a genuinely missing expiry

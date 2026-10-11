@@ -33,7 +33,7 @@ export class AssetsSecureDeliveryModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -60,7 +60,7 @@ export class AssetsSecureDeliveryModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;

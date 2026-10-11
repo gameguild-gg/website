@@ -1,8 +1,5 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace GameGuild.Assets.Deduplication;
 
@@ -104,13 +101,9 @@ public class DeduplicationService : IDeduplicationService
                 content.Position = 0;
             }
 
-            // Load image and compute average hash (aHash)
-            using var image = await Image.LoadAsync<Rgba32>(content, ct);
-            
-            // Resize to 8x8 (HashSize x HashSize)
-            image.Mutate(x => x
-                .Resize(HashSize, HashSize)
-                .Grayscale());
+            // Decode raster data, resize with the Catmull-Rom bicubic filter and
+            // retain the 8x8 Rec.709 average-hash contract.
+            var grayscale = await RasterPerceptualImageReader.ReadAsync(content, ct).ConfigureAwait(false);
 
             // Calculate average pixel value
             double totalBrightness = 0;
@@ -118,9 +111,7 @@ public class DeduplicationService : IDeduplicationService
             {
                 for (int x = 0; x < HashSize; x++)
                 {
-                    var pixel = image[x, y];
-                    // Already grayscale, so R=G=B
-                    totalBrightness += pixel.R;
+                    totalBrightness += grayscale[(y * HashSize) + x];
                 }
             }
             var avgBrightness = totalBrightness / (HashSize * HashSize);
@@ -131,8 +122,7 @@ public class DeduplicationService : IDeduplicationService
             {
                 for (int x = 0; x < HashSize; x++)
                 {
-                    var pixel = image[x, y];
-                    if (pixel.R >= avgBrightness)
+                    if (grayscale[(y * HashSize) + x] >= avgBrightness)
                     {
                         var bitPosition = (y * HashSize) + x;
                         hash |= 1UL << bitPosition;
