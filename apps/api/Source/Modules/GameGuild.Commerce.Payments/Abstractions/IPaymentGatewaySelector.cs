@@ -42,8 +42,9 @@ public sealed record GatewayRouteContext(
 
     /// <summary>
     ///     Maps a provider payment method identifier onto a coarse routing type.
-    ///     Stripe-prefixed identifiers map to <c>card</c>, PayPal billing agreements to
-    ///     <c>paypal</c>; anything else is left untyped so it only matches unrestricted routes.
+    ///     Stripe-prefixed identifiers map to <c>card</c>, PayPal billing agreements
+    ///     (underscore or hyphen style) to <c>paypal</c>; anything else is left untyped
+    ///     so it only matches unrestricted routes.
     /// </summary>
     public static string? InferPaymentMethodType(string? paymentMethodId)
     {
@@ -52,7 +53,7 @@ public sealed record GatewayRouteContext(
             return null;
         }
 
-        var separatorIndex = paymentMethodId.IndexOf('_', StringComparison.Ordinal);
+        var separatorIndex = paymentMethodId.IndexOfAny(['_', '-']);
         return separatorIndex > 0
             ? paymentMethodId[..separatorIndex].ToLowerInvariant() switch
             {

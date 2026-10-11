@@ -427,7 +427,35 @@ public sealed class PayPalPaymentGateway(
         return GatewayFailureKind.TerminalDecline;
     }
 
-    private static string? ExtractCaptureId(string? body) => ExtractNestedString(body, "purchase_units", "payments", "captures", "id");
+    private static string? ExtractCaptureId(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+            return
+                root.TryGetProperty("purchase_units", out var purchaseUnits) &&
+                purchaseUnits.ValueKind == JsonValueKind.Array &&
+                purchaseUnits.GetArrayLength() > 0 &&
+                purchaseUnits[0].TryGetProperty("payments", out var payments) &&
+                payments.TryGetProperty("captures", out var captures) &&
+                captures.ValueKind == JsonValueKind.Array &&
+                captures.GetArrayLength() > 0 &&
+                captures[0].TryGetProperty("id", out var captureId) &&
+                captureId.ValueKind == JsonValueKind.String
+                    ? captureId.GetString()
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     private static string? ExtractOrderId(string? body) => ExtractStringProperty(body, "id");
 
@@ -449,36 +477,6 @@ public sealed class PayPalPaymentGateway(
                    value.ValueKind == JsonValueKind.String
                 ? value.GetString()
                 : null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static string? ExtractNestedString(string? body, params string[] path)
-    {
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return null;
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(body);
-            var current = document.RootElement;
-            foreach (var segment in path)
-            {
-                if (current.ValueKind != JsonValueKind.Object ||
-                    !current.TryGetProperty(segment, out var next))
-                {
-                    return null;
-                }
-
-                current = next;
-            }
-
-            return current.ValueKind == JsonValueKind.String ? current.GetString() : null;
         }
         catch (JsonException)
         {
