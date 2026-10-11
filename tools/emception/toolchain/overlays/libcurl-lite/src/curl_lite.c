@@ -29,8 +29,10 @@ typedef struct
     /* Request config */
     char *url;
     char *custom_method;
-    char *postfields;
-    long postfieldsize;
+    const char *postfields;
+    char *owned_postfields;
+    size_t owned_postfieldsize;
+    curl_off_t postfieldsize;
     char *useragent;
     char *accept_encoding;
     struct curl_slist *headers;
@@ -106,13 +108,49 @@ static char *strdup_safe(const char *s)
     return d;
 }
 
+
+static CURLcode copy_postfields(CurlHandle *h, const char *data)
+{
+    char *copy = NULL;
+    size_t length = 0;
+    if (data)
+    {
+        if (h->postfieldsize >= 0)
+        {
+            if ((uint64_t)h->postfieldsize >= SIZE_MAX)
+                return CURLE_OUT_OF_MEMORY;
+            length = (size_t)h->postfieldsize;
+        }
+        else
+        {
+            length = strlen(data);
+            if (length == SIZE_MAX)
+                return CURLE_OUT_OF_MEMORY;
+        }
+        copy = (char *)malloc(length + 1);
+        if (!copy)
+            return CURLE_OUT_OF_MEMORY;
+        if (length > 0)
+            memcpy(copy, data, length);
+        copy[length] = '\0';
+    }
+    free(h->owned_postfields);
+    h->owned_postfields = copy;
+    h->postfields = copy;
+    h->owned_postfieldsize = length;
+    h->post = 1;
+    return CURLE_OK;
+}
+
 static void handle_reset_fields(CurlHandle *h)
 {
     free(h->url);
     h->url = NULL;
     free(h->custom_method);
     h->custom_method = NULL;
-    free(h->postfields);
+    free(h->owned_postfields);
+    h->owned_postfields = NULL;
+    h->owned_postfieldsize = 0;
     h->postfields = NULL;
     free(h->useragent);
     h->useragent = NULL;
@@ -206,7 +244,22 @@ CURL *curl_easy_duphandle(CURL *handle)
         return NULL;
     dst->url = strdup_safe(src->url);
     dst->custom_method = strdup_safe(src->custom_method);
-    dst->postfields = strdup_safe(src->postfields);
+    if (src->owned_postfields)
+    {
+        dst->owned_postfields = (char *)malloc(src->owned_postfieldsize + 1);
+        if (!dst->owned_postfields)
+        {
+            curl_easy_cleanup((CURL *)dst);
+            return NULL;
+        }
+        memcpy(dst->owned_postfields, src->owned_postfields, src->owned_postfieldsize + 1);
+        dst->postfields = dst->owned_postfields;
+        dst->owned_postfieldsize = src->owned_postfieldsize;
+    }
+    else
+    {
+        dst->postfields = src->postfields;
+    }
     dst->useragent = strdup_safe(src->useragent);
     dst->accept_encoding = strdup_safe(src->accept_encoding);
     dst->postfieldsize = src->postfieldsize;
@@ -287,9 +340,21 @@ CURLcode curl_easy_setopt(CURL *handle, CURLoption option, ...)
         h->custom_method = strdup_safe(va_arg(ap, const char *));
         break;
     case CURLOPT_POSTFIELDS:
-        free(h->postfields);
-        h->postfields = strdup_safe(va_arg(ap, const char *));
+    {
+        const char *data = va_arg(ap, const char *);
+        free(h->owned_postfields);
+        h->owned_postfields = NULL;
+        h->owned_postfieldsize = 0;
+        h->postfields = data;
+        h->post = 1;
         break;
+    }
+    case CURLOPT_COPYPOSTFIELDS:
+    {
+        CURLcode result = copy_postfields(h, va_arg(ap, const char *));
+        va_end(ap);
+        return result;
+    }
     case CURLOPT_USERAGENT:
         free(h->useragent);
         h->useragent = strdup_safe(va_arg(ap, const char *));
@@ -333,8 +398,27 @@ CURLcode curl_easy_setopt(CURL *handle, CURLoption option, ...)
         h->verbose = va_arg(ap, long);
         break;
     case CURLOPT_POSTFIELDSIZE:
-        h->postfieldsize = va_arg(ap, long);
+    {
+        long size = va_arg(ap, long);
+        if (size < -1)
+        {
+            va_end(ap);
+            return CURLE_BAD_FUNCTION_ARGUMENT;
+        }
+        h->postfieldsize = (curl_off_t)size;
         break;
+    }
+    case CURLOPT_POSTFIELDSIZE_LARGE:
+    {
+        curl_off_t size = va_arg(ap, curl_off_t);
+        if (size < -1)
+        {
+            va_end(ap);
+            return CURLE_BAD_FUNCTION_ARGUMENT;
+        }
+        h->postfieldsize = size;
+        break;
+    }
 
     /* Function options */
     case CURLOPT_WRITEFUNCTION:
@@ -363,7 +447,6 @@ CURLcode curl_easy_setopt(CURL *handle, CURLoption option, ...)
     case CURLOPT_PROGRESSFUNCTION:
     case CURLOPT_PROGRESSDATA:
     case CURLOPT_XFERINFOFUNCTION:
-    case CURLOPT_POSTFIELDSIZE_LARGE:
     case CURLOPT_DEBUGFUNCTION:
     case CURLOPT_DEBUGDATA:
     case CURLOPT_HTTP_VERSION:
@@ -401,6 +484,23 @@ CURLcode curl_easy_perform(CURL *handle)
     if (!h->url)
         return CURLE_URL_MALFORMAT;
 
+    size_t body_length = 0;
+    if (h->postfields)
+    {
+        if (h->postfieldsize >= 0)
+        {
+            if ((uint64_t)h->postfieldsize > SIZE_MAX)
+                return CURLE_BAD_FUNCTION_ARGUMENT;
+            body_length = (size_t)h->postfieldsize;
+        }
+        else
+        {
+            body_length = strlen(h->postfields);
+        }
+        if (h->owned_postfields && body_length > h->owned_postfieldsize)
+            return CURLE_BAD_FUNCTION_ARGUMENT;
+    }
+
     /* Determine HTTP method */
     const char *method = "GET";
     if (h->custom_method)
@@ -435,13 +535,13 @@ CURLcode curl_easy_perform(CURL *handle)
     /* Write body if present */
     if (h->postfields)
     {
-        long blen = h->postfieldsize >= 0 ? h->postfieldsize : (long)strlen(h->postfields);
         FILE *bf = fopen("/tmp/.curl_request_body", "wb");
-        if (bf)
-        {
-            fwrite(h->postfields, 1, (size_t)blen, bf);
-            fclose(bf);
-        }
+        if (!bf)
+            return CURLE_WRITE_ERROR;
+        size_t written = fwrite(h->postfields, 1, body_length, bf);
+        int close_result = fclose(bf);
+        if (written != body_length || close_result != 0)
+            return CURLE_WRITE_ERROR;
     }
     else
     {
