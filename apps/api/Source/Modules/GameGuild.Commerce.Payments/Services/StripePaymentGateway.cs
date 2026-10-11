@@ -44,13 +44,15 @@ public class StripePaymentGateway(
     /// <inheritdoc />
     public Task<GatewayPaymentResult> GetPaymentAsync(
         string externalTransactionId,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default,
+        string? providerId = null) =>
         paymentService.GetPaymentAsync(externalTransactionId, cancellationToken);
 
     /// <inheritdoc />
     public Task<GatewayPaymentCancellationResult> CancelPaymentAsync(
         string externalTransactionId,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default,
+        string? providerId = null) =>
         paymentService.CancelPaymentAsync(externalTransactionId, cancellationToken);
 
     /// <inheritdoc />

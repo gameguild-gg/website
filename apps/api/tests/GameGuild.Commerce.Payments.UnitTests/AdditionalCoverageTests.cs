@@ -1130,6 +1130,16 @@ public class PaymentsModuleDiTests
         services.Should().Contain(sd => sd.ServiceType == typeof(IStripePaymentService));
         services.Should().Contain(sd => sd.ServiceType == typeof(IStripeCustomerService));
         services.Should().Contain(sd => sd.ServiceType == typeof(IPaymentGateway));
+
+        // Verify the multi-gateway failover wiring (issue #413)
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayRegistry));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IPaymentGatewaySelector));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayCircuitBreaker));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayAvailabilityAlerter));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayMetricsService));
+        services.Should().Contain(
+            sd => sd.ServiceType == typeof(IPaymentGateway) && sd.ImplementationType == typeof(FailoverPaymentGateway),
+            "the failover composite is the single IPaymentGateway resolved by the payment path");
     }
 
     [Fact]
