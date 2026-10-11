@@ -47,10 +47,10 @@ describe("social navigation", () => {
   it("gives For You, Following, Community, and Saved distinct locale-aware destinations", () => {
     render(<SocialFeedTabs active="community" />);
     const destinations = [
-      ["For you", "/"],
-      ["Following", "/?tab=following"],
-      ["Community", "/?tab=community"],
-      ["Saved", "/?tab=saved"],
+      ["For you", "/feed"],
+      ["Following", "/feed?tab=following"],
+      ["Community", "/feed?tab=community"],
+      ["Saved", "/feed?tab=saved"],
     ];
 
     for (const [name, href] of destinations) {
