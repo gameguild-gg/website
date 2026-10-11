@@ -80,7 +80,7 @@ public class JitElevationRequest
             || (Status == ElevationRequestStatus.Approved
                 && StartsAt.HasValue
                 && StartsAt.Value <= now);
-        if (!statusInForce) return false;
+        if (!statusInForce) { return false; }
 
         var startTime = StartsAt ?? CreatedAt;
         return now >= startTime && now < ExpiresAt;
@@ -106,7 +106,7 @@ public class JitElevationRequest
         }
 
         if (reviewerId == RequesterId)
-            throw new InvalidOperationException("Self-approval of elevation requests is not allowed");
+            { throw new InvalidOperationException("Self-approval of elevation requests is not allowed"); }
 
         Status = ElevationRequestStatus.Approved;
         ReviewerId = reviewerId;

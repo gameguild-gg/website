@@ -293,7 +293,7 @@ public class ContentInteractionService(
         }
 
     if (!await HasProgramReviewAccessAsync(program).ConfigureAwait(false))
-      throw new RequestValidationException("Program review permission is required.");
+      { throw new RequestValidationException("Program review permission is required."); }
 
         var interactions = await context.Set<ContentInteraction>()
       .Where(item => item.ContentId == contentId && item.SubmittedAt != null && item.DeletedAt == null)

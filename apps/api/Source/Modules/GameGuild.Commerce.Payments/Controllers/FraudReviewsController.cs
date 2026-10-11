@@ -44,15 +44,15 @@ public sealed class FraudReviewsController(
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+        if (page < 1) { page = 1; }
+        if (pageSize < 1 || pageSize > 100) { pageSize = 20; }
 
         var actorContext = actorContextAccessor.ActorContext;
         if (actorContext.IsAuthenticated && !actorContext.IsSystemAdmin)
         {
             var requestedTenantId = tenantId ?? actorContext.TenantId ?? Guid.Empty;
             var validationError = ValidateTenantAccess(requestedTenantId, "list fraud reviews");
-            if (validationError != null) return validationError;
+            if (validationError != null) { return validationError; }
 
             tenantId = actorContext.TenantId;
         }

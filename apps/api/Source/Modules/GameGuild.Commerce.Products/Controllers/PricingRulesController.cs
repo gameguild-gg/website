@@ -138,7 +138,7 @@ public class PricingRulesController(IMediator mediator, IActorContextAccessor ac
         [FromBody] UpdatePricingRuleRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!TryActor(out _, out _)) return Forbid();
+        if (!TryActor(out _, out _)) { return Forbid(); }
 
         var command = new UpdatePricingRuleCommand(
             ruleId,

@@ -321,10 +321,10 @@ public class WebAuthnController(
     {
         var result = await sender.Send(command, cancellationToken).ConfigureAwait(false);
         if (result.Success)
-            return NoContent();
+            { return NoContent(); }
 
         if (result.Error == "CredentialNotFound")
-            return NotFound(result);
+            { return NotFound(result); }
 
         return Conflict(result);
     }

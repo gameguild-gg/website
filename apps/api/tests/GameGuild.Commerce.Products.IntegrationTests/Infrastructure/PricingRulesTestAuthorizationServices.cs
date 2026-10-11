@@ -108,7 +108,7 @@ internal sealed class PricingRulesTestAuthorizationPermissionService(IHttpContex
     private IReadOnlyList<string> GetPermissions()
     {
         var headers = httpContextAccessor.HttpContext?.Request.Headers;
-        if (headers is null || !headers.TryGetValue("X-Test-Permissions", out var values)) return [];
+        if (headers is null || !headers.TryGetValue("X-Test-Permissions", out var values)) { return []; }
 
         return values
             .SelectMany(value => value?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [])
@@ -126,7 +126,7 @@ internal sealed class PricingRulesTestAuthorizationTenantResolver : IAuthorizati
 {
     public string? ResolveFromRequest(HttpContext context)
     {
-        if (context.Request.Headers.ContainsKey("X-Test-No-Tenant")) return null;
+        if (context.Request.Headers.ContainsKey("X-Test-No-Tenant")) { return null; }
         return context.Request.Headers.TryGetValue("X-Test-Tenant", out var values)
             ? values.ToString()
             : PricingRulesTestAuthHandler.DefaultTenantId.ToString();

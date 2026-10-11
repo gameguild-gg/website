@@ -355,10 +355,10 @@ public sealed class RotateApiKeyHandler : ICommandHandler<RotateApiKeyCommand, R
         var oldKey = await _apiKeyRepository.GetByIdForUserAsync(request.KeyId, actor.SubjectIdAsGuid.Value, cancellationToken).ConfigureAwait(false);
 
         if (oldKey == null)
-            return Result.Failure<RotateApiKeyResponse>(Error.NotFound("ApiKey.NotFound", "API key not found"));
+            { return Result.Failure<RotateApiKeyResponse>(Error.NotFound("ApiKey.NotFound", "API key not found")); }
 
         if (!oldKey.IsValid())
-            return Result.Failure<RotateApiKeyResponse>(Error.Failure("ApiKey.Invalid", "Only a valid API key can be rotated"));
+            { return Result.Failure<RotateApiKeyResponse>(Error.Failure("ApiKey.Invalid", "Only a valid API key can be rotated")); }
 
         var gracePeriod = ResolveGracePeriod(request.GracePeriod);
         var scopes = request.Scopes is { Length: > 0 } ? request.Scopes : oldKey.GetScopes();

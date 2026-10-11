@@ -34,13 +34,13 @@ public class PaymentMethod : EntityBase
         bool isDefault)
     {
         if (tenantId == Guid.Empty)
-            throw new ArgumentException("TenantId is required for financial entities (fail-closed)", nameof(tenantId));
+            { throw new ArgumentException("TenantId is required for financial entities (fail-closed)", nameof(tenantId)); }
         if (userId == Guid.Empty)
-            throw new ArgumentException("UserId is required for payment method ownership (fail-closed)", nameof(userId));
+            { throw new ArgumentException("UserId is required for payment method ownership (fail-closed)", nameof(userId)); }
         if (string.IsNullOrWhiteSpace(gatewayProvider))
-            throw new ArgumentException("Gateway provider is required (fail-closed)", nameof(gatewayProvider));
+            { throw new ArgumentException("Gateway provider is required (fail-closed)", nameof(gatewayProvider)); }
         if (string.IsNullOrWhiteSpace(gatewayPaymentMethodId))
-            throw new ArgumentException("Gateway payment method ID is required (fail-closed; raw card data is never accepted)", nameof(gatewayPaymentMethodId));
+            { throw new ArgumentException("Gateway payment method ID is required (fail-closed; raw card data is never accepted)", nameof(gatewayPaymentMethodId)); }
 
         TenantId = tenantId;
         UserId = userId;
@@ -198,9 +198,9 @@ public class PaymentMethod : EntityBase
     public void UpdateDisplay(string? nickname, string? billingAddress)
     {
         if (nickname is not null && nickname.Trim().Length > 100)
-            throw new ArgumentException("Nickname cannot exceed 100 characters", nameof(nickname));
+            { throw new ArgumentException("Nickname cannot exceed 100 characters", nameof(nickname)); }
         if (billingAddress is not null && billingAddress.Length > 1000)
-            throw new ArgumentException("Billing address JSON cannot exceed 1000 characters", nameof(billingAddress));
+            { throw new ArgumentException("Billing address JSON cannot exceed 1000 characters", nameof(billingAddress)); }
 
         Nickname = string.IsNullOrWhiteSpace(nickname) ? null : nickname.Trim();
         BillingAddress = string.IsNullOrWhiteSpace(billingAddress) ? null : billingAddress.Trim();

@@ -518,7 +518,7 @@ public class Subscription : StatefulEntity<SubscriptionStatus>, ISubscription
     public void SetPaymentMethod(Guid? paymentMethodId)
     {
         if (paymentMethodId == Guid.Empty)
-            throw new ArgumentException("PaymentMethodId must be a non-empty GUID or null to clear.", nameof(paymentMethodId));
+            { throw new ArgumentException("PaymentMethodId must be a non-empty GUID or null to clear.", nameof(paymentMethodId)); }
 
         if (PaymentMethodId == paymentMethodId)
         {

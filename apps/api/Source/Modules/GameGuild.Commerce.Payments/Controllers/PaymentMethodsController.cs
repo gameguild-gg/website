@@ -70,7 +70,7 @@ public sealed class PaymentMethodsController(
     public async Task<IActionResult> GetById(Guid paymentMethodId, CancellationToken ct = default)
     {
         var actor = PaymentMethodActors.Resolve(actorContextAccessor);
-        if (actor is null) return Forbid();
+        if (actor is null) { return Forbid(); }
 
         return FromResult(await paymentMethodService.GetByIdAsync(actor, paymentMethodId, ct).ConfigureAwait(false));
     }
@@ -102,7 +102,7 @@ public sealed class PaymentMethodsController(
         }
 
         var validationError = ValidateTenantAccess(body.TenantId, "register a payment method");
-        if (validationError != null) return validationError;
+        if (validationError != null) { return validationError; }
 
         var result = await sender.Send(
             new RegisterPaymentMethodCommand(

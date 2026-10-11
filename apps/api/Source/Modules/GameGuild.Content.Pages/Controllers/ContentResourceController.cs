@@ -109,7 +109,7 @@ public class ContentResourceController(
     [ProducesResponseType(403)]
     public async Task<ActionResult<ContentResourceDto>> Update(Guid id, [FromBody] UpdateContentResourceDto dto)
     {
-        if (!CanEditContent) return Forbid();
+        if (!CanEditContent) { return Forbid(); }
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var resource = await sender.Send(new UpdateContentResourceCommand(id, dto)).ConfigureAwait(false);
         if (resource is null) return NotFound();

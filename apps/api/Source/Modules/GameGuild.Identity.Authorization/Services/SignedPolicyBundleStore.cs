@@ -32,8 +32,8 @@ public sealed class SignedPolicyBundleStore(
             .ConfigureAwait(false);
 
         if (bundle is null)
-            throw new PolicyBundleSignatureException(
-                $"No published policy bundle named '{name}' exists for the requested scope.");
+            { throw new PolicyBundleSignatureException(
+                $"No published policy bundle named '{name}' exists for the requested scope."); }
 
         return VerifyOrThrow(bundle, publishedRead: true);
     }
@@ -53,8 +53,8 @@ public sealed class SignedPolicyBundleStore(
                                 || bundle.Status is PolicyBundleStatus.Approved
                                 or PolicyBundleStatus.Active;
         if (requiresSignature && string.IsNullOrWhiteSpace(bundle.DigitalSignature))
-            throw new PolicyBundleSignatureException(
-                $"Policy bundle {bundleId} in status {bundle.Status} carries no signature (fail closed).");
+            { throw new PolicyBundleSignatureException(
+                $"Policy bundle {bundleId} in status {bundle.Status} carries no signature (fail closed)."); }
 
         return requiresSignature ? VerifyOrThrow(bundle, publishedRead: false) : bundle;
     }
@@ -63,7 +63,7 @@ public sealed class SignedPolicyBundleStore(
     {
         var result = _signatureService.VerifyBundle(bundle);
         if (result.IsValid)
-            return bundle;
+            { return bundle; }
 
         _logger.LogError(
             "Policy bundle {BundleId} ('{BundleName}') failed signature verification ({Reason}); failing closed (publishedRead: {PublishedRead})",

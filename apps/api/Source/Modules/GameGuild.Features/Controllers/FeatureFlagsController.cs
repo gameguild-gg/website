@@ -28,7 +28,7 @@ public class FeatureFlagsController(
     {
         var actor = actorContextAccessor.ActorContext;
         var error = ValidateEvaluationContext(actor, request.Context.UserId, request.Context.TenantId);
-        if (error is not null) return error;
+        if (error is not null) { return error; }
         var context = CreateEvaluationContext(actor, request.Context);
 
         var result = await sender.Send(
