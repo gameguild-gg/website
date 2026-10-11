@@ -252,6 +252,68 @@ public sealed class FailoverPaymentGateway(
     }
 
     /// <inheritdoc />
+    public async Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // Dispute actions are pinned to the gateway that owns the disputed payment (issue #413
+        // routing rules): they are never rerouted to another gateway.
+        var gateway = ResolveOwnerGateway(request.ProviderId, "dispute");
+        try
+        {
+            var result = await gateway.AcceptDisputeAsync(request, cancellationToken).ConfigureAwait(false);
+            if (result.Success)
+            {
+                circuitBreaker.RecordSuccess(gateway.ProviderId);
+            }
+
+            return result;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or TimeoutException)
+        {
+            circuitBreaker.RecordFailure(gateway.ProviderId);
+            return SynthesizeDisputeTransportFailure(exception);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var gateway = ResolveOwnerGateway(request.ProviderId, "dispute");
+        try
+        {
+            var result = await gateway.ChallengeDisputeAsync(request, cancellationToken).ConfigureAwait(false);
+            if (result.Success)
+            {
+                circuitBreaker.RecordSuccess(gateway.ProviderId);
+            }
+
+            return result;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or TaskCanceledException or TimeoutException)
+        {
+            circuitBreaker.RecordFailure(gateway.ProviderId);
+            return SynthesizeDisputeTransportFailure(exception);
+        }
+    }
+
+    /// <inheritdoc />
     public Task<bool> ValidateWebhookSignatureAsync(
         string payload,
         string signature,
@@ -342,6 +404,12 @@ public sealed class FailoverPaymentGateway(
             ProcessedAt: SystemClock.UtcNow,
             ProviderId: providerId,
             FailureKind: GatewayFailureKind.RetriableGatewayFailure);
+
+    private static GatewayDisputeActionResult SynthesizeDisputeTransportFailure(Exception exception) =>
+        new(
+            Success: false,
+            ErrorCode: "gateway_transport_failure",
+            ErrorMessage: $"The gateway dispute request never produced a response: {exception.Message}");
 
     private static GatewayRefundResult SynthesizeRefundTransportFailure(Exception exception) =>
         new(

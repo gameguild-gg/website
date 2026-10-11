@@ -9,7 +9,10 @@ namespace GameGuild.Commerce.Orders;
 /// Handler for adding a product to an existing order. Promo redemptions on the line item
 /// are recorded atomically (idempotent per order line, fail-closed on usage limits) via
 /// <see cref="IPromoCodeUsageRecorder"/>; the usage row carries the order/line linkage and
-/// the actual discount applied.
+/// the actual discount applied. Every successful add also appends one durable
+/// pricing-decision ledger entry (issue #400) with the full calculation breakdown
+/// (base unit price, sale, quantity, promo applications, caps, final), so the committed
+/// price can be audited, analyzed and drift-verified after the fact.
 /// </summary>
 public sealed class AddProductToOrderCommandHandler(
     IOrderRepository orderRepository,
@@ -17,6 +20,7 @@ public sealed class AddProductToOrderCommandHandler(
     IProductPricingRepository pricingRepository,
     IPromoCodeService promoCodeService,
     IPromoCodeUsageRecorder promoUsageRecorder,
+    GameGuild.Commerce.IPricingDecisionLedgerWriter pricingLedgerWriter,
     IApplicationDbContext dbContext,
     IActorContextAccessor actorContextAccessor)
     : ICommandHandler<AddProductToOrderCommand, Result<Order>>
@@ -93,8 +97,9 @@ public sealed class AddProductToOrderCommandHandler(
                 Error.Conflict("Orders.StalePricing", "The requested pricing version is no longer current."));
         }
 
-        var price = pricing.IsSaleActive() && pricingVersion.SalePrice.HasValue
-            ? pricingVersion.SalePrice.Value
+        var isSaleUnitPrice = pricing.IsSaleActive() && pricingVersion.SalePrice.HasValue;
+        var price = isSaleUnitPrice
+            ? pricingVersion.SalePrice!.Value
             : pricingVersion.BasePrice;
         if (pricingVersion.BasePrice <= 0 || price <= 0)
         {
@@ -185,6 +190,58 @@ public sealed class AddProductToOrderCommandHandler(
                 return Result.Failure<Order>(
                     Error.Conflict("Orders.PromoLimitReached", "The promo code has reached its usage limit."));
             }
+        }
+
+        // Durable pricing-decision ledger entry (issue #400): recorded before the order
+        // save so a decision is only committed when its ledger row committed too. The
+        // key is stable per order line, so a retried add replays the original row.
+        var ledgerBreakdown = GameGuild.Commerce.PricingDecisionBreakdown.Empty(pricingVersion.Currency, request.Quantity)
+            with
+        {
+            BaseUnitPrice = pricingVersion.BasePrice,
+            SaleUnitPrice = pricingVersion.SalePrice,
+            SaleActive = isSaleUnitPrice,
+            BaseAmount = price * request.Quantity,
+            PromoApplications = appliedPromo is null
+                ? []
+                :
+                [
+                    new GameGuild.Commerce.PromoApplicationBreakdown(
+                        appliedPromo.Code,
+                        appliedPromo.Id,
+                        appliedPromo.Type.ToString(),
+                        appliedPromo.DiscountPercentage,
+                        discountAmount,
+                        1)
+                ],
+            PromoDiscountTotal = discountAmount,
+            FinalAmount = price * request.Quantity - discountAmount
+        };
+
+        var ledgerStatus = await pricingLedgerWriter
+            .RecordAsync(
+                new GameGuild.Commerce.PricingDecisionRecord(
+                    DecisionType: GameGuild.Commerce.PricingDecisionType.CheckoutLineItem,
+                    TenantId: tenantId,
+                    ActorUserId: order.UserId,
+                    ActorIpAddress: order.IpAddress,
+                    Order: order.Id,
+                    OrderLineItem: lineItem.Id,
+                    PaymentId: null,
+                    Subscription: null,
+                    BillingCycleNumber: null,
+                    Product: product.Id,
+                    Breakdown: ledgerBreakdown,
+                    AppliedPricingRuleId: null,
+                    AppliedStackingRuleName: null,
+                    IdempotencyKey: $"order:{order.Id}:line:{lineItem.Id}:pricing"),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (ledgerStatus.Status == GameGuild.Commerce.PricingDecisionRecordingStatus.Rejected)
+        {
+            return Result.Failure<Order>(
+                Error.Failure("Orders.PricingLedgerRejected", "The pricing decision could not be recorded."));
         }
 
         await orderRepository.UpdateAsync(order, cancellationToken).ConfigureAwait(false);

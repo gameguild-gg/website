@@ -739,9 +739,14 @@ public sealed class PaymentsPermission : Permission
     {
         /// <summary>Administer payment fraud reviews (list, approve, decline).</summary>
         public const string Admin = "payments:admin";
+
+        /// <summary>Approve or reject refund requests waiting in the approval queue (issue #419).</summary>
+        public const string RefundApprovals = "payments:refunds:approve";
     }
 
     public static readonly PaymentsPermission Admin = new(Keys.Admin, "Administer payment fraud reviews");
+
+    public static readonly PaymentsPermission RefundApprovals = new(Keys.RefundApprovals, "Approve pending refund requests");
 }
 
 /// <summary>Segregated permissions for Economy control-plane and operational duties.</summary>

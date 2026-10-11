@@ -117,6 +117,18 @@ public sealed class FakePaymentGateway(string providerId) : IPaymentGateway
     }
 
     /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(new GatewayDisputeActionResult(Success: true, ErrorCode: null, ErrorMessage: null));
+
+    /// <inheritdoc />
+    public Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(new GatewayDisputeActionResult(Success: true, ErrorCode: null, ErrorMessage: null));
+
+    /// <inheritdoc />
     public Task<bool> ValidateWebhookSignatureAsync(string payload, string signature, string secret) =>
         Task.FromResult(true);
 
