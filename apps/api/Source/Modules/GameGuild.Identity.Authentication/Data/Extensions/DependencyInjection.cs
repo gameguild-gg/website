@@ -87,6 +87,11 @@ public static class DataDependencyInjection
 
         services.AddSingleton(apiKeyLifecycleOptions);
 
+        services.AddOptions<LocalSignInPolicyOptions>()
+            .Bind(configuration.GetSection(LocalSignInPolicyOptions.SectionName))
+            .Validate(static options => options.IsValid(), "Email-verification tenant identifiers must be non-empty.")
+            .ValidateOnStart();
+
         // Configure JWT options from configuration
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
