@@ -44,7 +44,9 @@ public class SubscriptionBillingService(
 
         var idempotencyKey = $"payment:{subscriptionId}:{paymentDate:yyyyMMddHHmmss}:{amount}";
 
-        var result = subscription.RecordPayment(amount, currency, paymentDate, idempotencyKey);
+        // A provider-confirmed payment settles the subscription's next unprocessed cycle. The cycle must be
+        // explicit (the entity rejects cycle-less recordings), and re-confirming the same cycle is idempotent.
+        var result = subscription.RecordPayment(amount, currency, paymentDate, idempotencyKey, subscription.LastProcessedBillingCycle + 1);
 
         if (!result.IsSuccess && !result.IsAlreadyProcessed)
         {

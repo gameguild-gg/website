@@ -8,12 +8,14 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Services;
 public sealed class PaymentSubscriptionSyncServiceTests
 {
     private readonly Mock<ISubscriptionRepository> _repository = new();
+    private readonly Mock<ISubscriptionInvoiceMaterializer> _invoiceMaterializer = new();
     private readonly PaymentSubscriptionSyncService _service;
 
     public PaymentSubscriptionSyncServiceTests()
     {
         _service = new PaymentSubscriptionSyncService(
             _repository.Object,
+            _invoiceMaterializer.Object,
             Mock.Of<ILogger<PaymentSubscriptionSyncService>>());
     }
 
@@ -171,6 +173,135 @@ public sealed class PaymentSubscriptionSyncServiceTests
         subscription.BillingCycleCount.Should().Be(0);
         _repository.Verify(repository => repository.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         _repository.Verify(repository => repository.UpdateAsync(It.IsAny<Subscription>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncSuccessfulPaymentAsync_ShouldMaterializeInvoice_OnSuccess()
+    {
+        var paymentId = Guid.NewGuid();
+        var subscription = CreatePendingSubscription(Guid.NewGuid());
+        var processedAt = DateTime.UtcNow;
+
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _repository
+            .Setup(repository => repository.UpdateAsync(subscription, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.SyncSuccessfulPaymentAsync(
+            paymentId,
+            subscription.Id,
+            29.99m,
+            "USD",
+            billingCycleNumber: 1,
+            processedAt: processedAt);
+
+        _invoiceMaterializer.Verify(materializer => materializer.MaterializeForConfirmedCycleAsync(
+            subscription.Id,
+            1,
+            29.99m,
+            "USD",
+            processedAt,
+            paymentId,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SyncSuccessfulPaymentAsync_ShouldMaterializeInvoice_OnIdempotentReplay()
+    {
+        var paymentId = Guid.NewGuid();
+        var subscription = CreateActiveSubscription(Guid.NewGuid());
+        subscription.RecordPayment(29.99m, "USD", DateTime.UtcNow.AddMinutes(-5), $"payment:{paymentId}", forBillingCycle: 1);
+        var processedAt = DateTime.UtcNow;
+
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.SyncSuccessfulPaymentAsync(
+            paymentId,
+            subscription.Id,
+            29.99m,
+            "USD",
+            billingCycleNumber: 1,
+            processedAt: processedAt);
+
+        _repository.Verify(repository => repository.UpdateAsync(It.IsAny<Subscription>(), It.IsAny<CancellationToken>()), Times.Never);
+        _invoiceMaterializer.Verify(materializer => materializer.MaterializeForConfirmedCycleAsync(
+            subscription.Id,
+            1,
+            29.99m,
+            "USD",
+            processedAt,
+            paymentId,
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(29.98, "USD")]
+    [InlineData(29.99, "EUR")]
+    public async Task SyncSuccessfulPaymentAsync_ShouldNotMaterializeInvoice_WhenSyncIsRejected(decimal amount, string currency)
+    {
+        var subscription = CreatePendingSubscription(Guid.NewGuid());
+
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await _service.SyncSuccessfulPaymentAsync(
+            Guid.NewGuid(),
+            subscription.Id,
+            amount,
+            currency,
+            billingCycleNumber: 1,
+            processedAt: DateTime.UtcNow);
+
+        _invoiceMaterializer.Verify(materializer => materializer.MaterializeForConfirmedCycleAsync(
+            It.IsAny<Guid>(),
+            It.IsAny<int>(),
+            It.IsAny<decimal>(),
+            It.IsAny<string>(),
+            It.IsAny<DateTime>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncSuccessfulPaymentAsync_ShouldNotFail_WhenInvoiceMaterializationThrows()
+    {
+        var subscription = CreatePendingSubscription(Guid.NewGuid());
+
+        _repository
+            .Setup(repository => repository.GetByIdAsync(subscription.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _repository
+            .Setup(repository => repository.UpdateAsync(subscription, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _invoiceMaterializer
+            .Setup(materializer => materializer.MaterializeForConfirmedCycleAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<int>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("storage unavailable"));
+
+        var act = async () => await _service.SyncSuccessfulPaymentAsync(
+            Guid.NewGuid(),
+            subscription.Id,
+            29.99m,
+            "USD",
+            billingCycleNumber: 1,
+            processedAt: DateTime.UtcNow);
+
+        await act.Should().NotThrowAsync("payment success must not be rolled back by invoice materialization");
     }
 
     private static Subscription CreateActiveSubscription(Guid id)

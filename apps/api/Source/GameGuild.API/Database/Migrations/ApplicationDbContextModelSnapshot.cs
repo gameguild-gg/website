@@ -1061,6 +1061,48 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("transformed_assets", "assets");
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Billing.BillingProviderState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LastChangedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_billing_provider_states_provider_key");
+
+                    b.ToTable("billing_provider_states", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Commerce.Billing.BillingWebhookEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1236,6 +1278,10 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1297,6 +1343,9 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("DueDate");
 
                     b.HasIndex("ExternalId")
+                        .IsUnique();
+
+                    b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
                     b.HasIndex("InvoiceNumber")

@@ -14,6 +14,7 @@ namespace GameGuild.Commerce.Billing;
 [Index(nameof(SubscriptionId))]
 [Index(nameof(InvoiceNumber), IsUnique = true)]
 [Index(nameof(ExternalId), IsUnique = true)]
+[Index(nameof(IdempotencyKey), IsUnique = true)]
 [Index(nameof(DueDate))]
 [Index(nameof(IssuedAt))]
 [Index(nameof(PaymentId), IsUnique = true, Name = "IX_invoices_PaymentId_Unique")]
@@ -28,11 +29,16 @@ public class Invoice : EntityBase
     ///     Creates a new draft invoice with required TenantId (fail-closed)
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when tenantId is empty</exception>
-    public Invoice(Guid tenantId, Guid subscriptionId, decimal amount, string currency = "USD")
+    public Invoice(Guid tenantId, Guid subscriptionId, decimal amount, string currency = "USD", string? idempotencyKey = null)
     {
         if (tenantId == Guid.Empty)
         {
             throw new ArgumentException("TenantId is required for financial entities", nameof(tenantId));
+        }
+
+        if (idempotencyKey is { Length: > 200 })
+        {
+            throw new ArgumentException("Idempotency key cannot exceed 200 characters", nameof(idempotencyKey));
         }
 
         TenantId = tenantId;
@@ -42,6 +48,7 @@ public class Invoice : EntityBase
         Currency = currency;
         Status = InvoiceStatus.Draft;
         InvoiceNumber = GenerateInvoiceNumber();
+        IdempotencyKey = idempotencyKey;
     }
 
     /// <summary>
@@ -56,6 +63,14 @@ public class Invoice : EntityBase
     /// </summary>
     [MaxLength(255)]
     public string? ExternalId { get; private set; }
+
+    /// <summary>
+    ///     Idempotency key identifying the subscription billing cycle this invoice materializes
+    ///     (format: subscription:{{subscriptionId}}:cycle:{{n}}:invoice). Unique index backstops
+    ///     the check-then-create materialization so a confirmed cycle can never produce two invoices.
+    /// </summary>
+    [MaxLength(200)]
+    public string? IdempotencyKey { get; private set; }
 
     /// <summary>
     ///     Related subscription ID
@@ -178,6 +193,48 @@ public class Invoice : EntityBase
         EnsureMutable();
         PeriodStart = periodStart;
         PeriodEnd = periodEnd;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Sets the free-form metadata JSON for this invoice.
+    ///     Only allowed while invoice is in Draft status.
+    /// </summary>
+    public void SetMetadata(string metadata)
+    {
+        EnsureMutable();
+        if (string.IsNullOrWhiteSpace(metadata))
+        {
+            throw new ArgumentException("Metadata cannot be empty", nameof(metadata));
+        }
+
+        if (metadata.Length > 4000)
+        {
+            throw new ArgumentException("Metadata cannot exceed 4000 characters", nameof(metadata));
+        }
+
+        Metadata = metadata;
+        Touch();
+    }
+
+    /// <summary>
+    ///     Sets the description/memo (the minimal single line item label).
+    ///     Only allowed while invoice is in Draft status.
+    /// </summary>
+    public void SetDescription(string description)
+    {
+        EnsureMutable();
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description cannot be empty", nameof(description));
+        }
+
+        if (description.Length > 1000)
+        {
+            throw new ArgumentException("Description cannot exceed 1000 characters", nameof(description));
+        }
+
+        Description = description;
         Touch();
     }
 

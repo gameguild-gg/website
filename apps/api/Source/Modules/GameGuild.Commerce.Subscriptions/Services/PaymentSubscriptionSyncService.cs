@@ -8,6 +8,7 @@ namespace GameGuild.Commerce.Subscriptions;
 /// </summary>
 public sealed class PaymentSubscriptionSyncService(
     ISubscriptionRepository subscriptionRepository,
+    ISubscriptionInvoiceMaterializer invoiceMaterializer,
     ILogger<PaymentSubscriptionSyncService> logger) : IPaymentSubscriptionSyncService
 {
     public Task SyncSuccessfulPaymentAsync(
@@ -84,6 +85,15 @@ public sealed class PaymentSubscriptionSyncService(
                 "Payment {PaymentId} synced to subscription {SubscriptionId}",
                 paymentId,
                 subscriptionId.Value);
+
+            await MaterializeInvoiceAsync(
+                subscription.Id,
+                billingCycleNumber.Value,
+                amount,
+                currency,
+                processedAt,
+                paymentId,
+                cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -93,6 +103,17 @@ public sealed class PaymentSubscriptionSyncService(
                 "Payment {PaymentId} was already synced to subscription {SubscriptionId}",
                 paymentId,
                 subscriptionId.Value);
+
+            // Idempotent replays re-attempt materialization: a cycle can be payment-synced before its
+            // invoice write succeeds, and the materializer itself is keyed per cycle.
+            await MaterializeInvoiceAsync(
+                subscription.Id,
+                billingCycleNumber.Value,
+                amount,
+                currency,
+                processedAt,
+                paymentId,
+                cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -101,5 +122,47 @@ public sealed class PaymentSubscriptionSyncService(
             paymentId,
             subscriptionId.Value,
             result.Message);
+    }
+
+    /// <summary>
+    ///     Materializes the cycle invoice on top of an already-persisted subscription payment.
+    ///     Best effort by contract: the payment-success flow must never be rolled back by a
+    ///     materialization failure (the materializer is idempotent per cycle, so later replays
+    ///     re-attempt the write through the same key). Cancellation is the only propagation.
+    /// </summary>
+    private async Task MaterializeInvoiceAsync(
+        Guid subscriptionId,
+        int billingCycleNumber,
+        decimal amount,
+        string currency,
+        DateTime processedAt,
+        Guid paymentId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await invoiceMaterializer.MaterializeForConfirmedCycleAsync(
+                subscriptionId,
+                billingCycleNumber,
+                amount,
+                currency,
+                processedAt,
+                paymentId,
+                providerInvoiceId: null,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Invoice materialization failed for subscription {SubscriptionId} cycle {Cycle} after payment {PaymentId}; the payment sync itself stays applied",
+                subscriptionId,
+                billingCycleNumber,
+                paymentId);
+        }
     }
 }
