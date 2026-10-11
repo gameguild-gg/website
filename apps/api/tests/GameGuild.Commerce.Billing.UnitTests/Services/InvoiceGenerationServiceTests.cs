@@ -33,13 +33,11 @@ public sealed class InvoiceGenerationServiceTests
             });
         // The service persists through the synchronous DbSet.Add (EF's canonical path),
         // so the fake must capture that too or the in-memory invoice list stays empty.
+        // DbSet<T>.Add returns EntityEntry<T>; the service discards it, so a bare
+        // Callback (loose-mock default return) is enough.
         invoiceSet
             .Setup(set => set.Add(It.IsAny<Invoice>()))
-            .Returns((Invoice entity) =>
-            {
-                _invoices.Add(entity);
-                return entity;
-            });
+            .Callback((Invoice entity) => _invoices.Add(entity));
         invoiceSet
             .Setup(set => set.Remove(It.IsAny<Invoice>()))
             .Returns((Invoice entity) => null!);
