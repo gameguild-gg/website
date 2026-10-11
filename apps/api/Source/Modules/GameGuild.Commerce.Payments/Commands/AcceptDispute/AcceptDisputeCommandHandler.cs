@@ -57,7 +57,8 @@ public sealed class AcceptDisputeCommandHandler(
             var gatewayResult = await paymentGateway.AcceptDisputeAsync(
                     new GatewayDisputeActionRequest(
                         IdempotencyKey: $"dispute_accept_{dispute.Id}",
-                        ExternalDisputeId: dispute.GatewayDisputeId),
+                        ExternalDisputeId: dispute.GatewayDisputeId,
+                        ProviderId: payment.Provider),
                     cancellationToken)
                 .ConfigureAwait(false);
 

@@ -239,11 +239,15 @@ public sealed class RefundProcessingService(
         refund.MarkProcessing();
         await refundRepository.UpdateAsync(refund, cancellationToken).ConfigureAwait(false);
 
+        // Pinned to the gateway that owns the captured payment (issue #413): refunds
+        // never reroute to another gateway.
         var gatewayRequest = new GatewayRefundRequest(
             IdempotencyKey: refund.IdempotencyKey,
             OriginalTransactionId: payment.ExternalTransactionId ?? payment.ExternalPaymentId ?? payment.Id.ToString(),
             Amount: refund.Amount,
-            Reason: refund.Reason);
+            Reason: refund.Reason,
+            ProviderId: payment.Provider,
+            Currency: payment.Currency);
 
         var gatewayResult = await paymentGateway.ProcessRefundAsync(gatewayRequest, cancellationToken).ConfigureAwait(false);
 

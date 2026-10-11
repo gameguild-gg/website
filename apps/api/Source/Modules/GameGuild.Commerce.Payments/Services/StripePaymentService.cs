@@ -489,7 +489,8 @@ public class StripePaymentService(
                 exception.StripeError?.Code ?? "stripe_error",
                 exception.StripeError?.Message ?? exception.Message,
                 PaymentStatus.Failed,
-                SystemClock.UtcNow);
+                SystemClock.UtcNow,
+                FailureKind: GatewayFailureKind.TerminalDecline);
     }
 
     internal static bool IsOutcomeUnknown(StripeException exception) =>
@@ -505,7 +506,8 @@ public class StripePaymentService(
             "stripe_outcome_unknown",
             $"Payment outcome is pending provider reconciliation: {message}",
             PaymentStatus.Processing,
-            SystemClock.UtcNow);
+            SystemClock.UtcNow,
+            FailureKind: GatewayFailureKind.OutcomeUnknown);
 
     private async Task<GatewayPaymentResult> ProcessPaymentSimulatedAsync(
         CancellationToken cancellationToken)

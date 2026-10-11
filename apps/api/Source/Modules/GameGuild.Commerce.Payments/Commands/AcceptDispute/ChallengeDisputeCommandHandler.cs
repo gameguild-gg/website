@@ -58,7 +58,8 @@ public sealed class ChallengeDisputeCommandHandler(
                 new GatewayDisputeChallengeRequest(
                     IdempotencyKey: $"dispute_challenge_{dispute.Id}",
                     ExternalDisputeId: dispute.GatewayDisputeId,
-                    EvidenceSummary: request.EvidenceSummary),
+                    EvidenceSummary: request.EvidenceSummary,
+                    ProviderId: payment.Provider),
                 cancellationToken)
             .ConfigureAwait(false);
 

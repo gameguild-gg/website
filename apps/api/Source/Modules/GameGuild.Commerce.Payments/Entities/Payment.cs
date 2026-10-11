@@ -241,6 +241,33 @@ public class Payment : EntityBase
         };
     }
 
+    /// <summary>
+    ///     Re-attributes the payment to the gateway that actually processed it when
+    ///     failover routed the charge away from the primary gateway (issue #413). No-op
+    ///     when the provider mapping is already bound (the mapped provider stays
+    ///     authoritative) and when the payment is terminal.
+    /// </summary>
+    public void RecordProcessingProvider(string provider)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(provider);
+
+        var normalized = provider.ToLowerInvariant();
+        if (string.Equals(Provider, normalized, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (ProviderObjectId is not null || IsTerminal)
+        {
+            // A bound provider mapping is the authoritative identity of this payment's
+            // provider object; attribution must never drift away from it.
+            return;
+        }
+
+        Provider = normalized;
+        Touch();
+    }
+
     /// <summary>Binds this payment to one immutable provider object and monetary leg.</summary>
     public void BindProviderMapping(
         string provider,
