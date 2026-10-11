@@ -81,13 +81,16 @@ public sealed class ProcessRefundCommandHandler(
             };
         }
 
-        // 4. Process refund through payment gateway
+        // 4. Process refund through payment gateway — pinned to the gateway that owns the
+        //    captured payment (issue #413): refunds never reroute to another gateway.
         var refundIdempotencyKey = $"refund_{payment.Id}_{request.Amount}_{SystemClock.UtcNow:yyyyMMddHHmmss}";
         var gatewayRequest = new GatewayRefundRequest(
             IdempotencyKey: refundIdempotencyKey,
             OriginalTransactionId: payment.ExternalTransactionId ?? payment.ExternalPaymentId ?? payment.Id.ToString(),
             Amount: request.Amount,
-            Reason: request.Reason);
+            Reason: request.Reason,
+            ProviderId: payment.Provider,
+            Currency: payment.Currency);
 
         var gatewayResult = await paymentGateway.ProcessRefundAsync(gatewayRequest, cancellationToken)
             .ConfigureAwait(false);
