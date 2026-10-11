@@ -46,9 +46,14 @@ public class PaymentMethodSingleDefaultInvariantTests : IDisposable
 
         var act = () => context.SaveChanges();
 
+        // SQLite surfaces partial-unique violations as "UNIQUE constraint failed: <columns>"
+        // (Npgsql would name ix_payment_methods_single_default); assert the columns so the
+        // assertion holds on the in-memory SQLite provider either way.
         act.Should().Throw<DbUpdateException>()
             .WithInnerException<SqliteException>()
-            .Which.Message.Should().Contain("ix_payment_methods_single_default");
+            .Which.Message.Should().Contain("UNIQUE constraint failed")
+            .And.Contain("payment_methods.TenantId")
+            .And.Contain("payment_methods.UserId");
     }
 
     [Fact]
@@ -112,9 +117,12 @@ public class PaymentMethodSingleDefaultInvariantTests : IDisposable
 
         var act = () => context.SaveChanges();
 
+        // SQLite surfaces unique violations as "UNIQUE constraint failed: <columns>" without
+        // the index name; the discriminator column proves the tenant+gateway index fired.
         act.Should().Throw<DbUpdateException>()
             .WithInnerException<SqliteException>()
-            .Which.Message.Should().Contain("ix_payment_methods_tenant_gateway_unique");
+            .Which.Message.Should().Contain("UNIQUE constraint failed")
+            .And.Contain("payment_methods.GatewayPaymentMethodId");
     }
 
     [Fact]

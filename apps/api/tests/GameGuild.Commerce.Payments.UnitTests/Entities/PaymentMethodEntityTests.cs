@@ -68,7 +68,10 @@ public class PaymentMethodEntityTests
     {
         var expiresAt = PaymentMethod.ComputeExpiresAt(12, 2030);
 
-        expiresAt.Should().Be(new DateTime(2030, 12, 31, 23, 59, 59, 9999999, DateTimeKind.Utc));
+        // End of the expiry month, inclusive: the last tick before the next month starts.
+        var endOfMonth = new DateTime(2031, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddTicks(-1);
+        expiresAt.Should().Be(endOfMonth);
+        expiresAt.Should().BeOnOrAfter(new DateTime(2030, 12, 31, 23, 59, 59, DateTimeKind.Utc));
     }
 
     [Theory]
@@ -92,7 +95,7 @@ public class PaymentMethodEntityTests
         paymentMethod.CardBrand.Should().Be("mastercard");
         paymentMethod.CardLast4.Should().Be("5555");
         paymentMethod.CardFingerprint.Should().Be("fp_2");
-        paymentMethod.ExpiresAt.Should().Be(new DateTime(2027, 8, 31, 23, 59, 59, 9999999, DateTimeKind.Utc));
+        paymentMethod.ExpiresAt.Should().Be(new DateTime(2027, 9, 1, 0, 0, 0, DateTimeKind.Utc).AddTicks(-1));
     }
 
     [Fact]
