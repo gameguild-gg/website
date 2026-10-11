@@ -77,7 +77,7 @@ export class SocialProfilesModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -139,7 +139,7 @@ export class SocialProfilesModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.SocialProfilesSocialProfileDto[], ApiError>;

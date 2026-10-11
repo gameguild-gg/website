@@ -46,6 +46,7 @@ public static class NotificationCategories
 
         NotificationType.Billing
             or NotificationType.MonthlyStatement
+            or NotificationType.InvoiceIssued
             or NotificationType.PaymentMethodExpiring => "Billing",
 
         NotificationType.EmailVerification

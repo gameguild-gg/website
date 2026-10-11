@@ -25,6 +25,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  GAMEGUILD_TEST_POSTGRES_17_IMAGE: "public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+  GAMEGUILD_TEST_POSTGRES_16_IMAGE: "public.ecr.aws/docker/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
   NODE_VERSION: "22"
   PNPM_VERSION: "10.34.6"
 

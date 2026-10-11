@@ -75,7 +75,7 @@ export class LearningExperienceSocialLikesModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<number, ApiError>;

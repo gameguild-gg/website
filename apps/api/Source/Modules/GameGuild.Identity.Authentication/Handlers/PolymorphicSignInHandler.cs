@@ -4,6 +4,8 @@ using GameGuild.CQRS;
 using GameGuild.Identity.Users;
 using Microsoft.Extensions.Logging;
 
+using Microsoft.AspNetCore.Http;
+
 namespace GameGuild.Identity.Authentication;
 
 /// <summary>
@@ -12,13 +14,16 @@ namespace GameGuild.Identity.Authentication;
 public sealed class PolymorphicSignInHandler(
     IAuthService authService,
     IUserRepository userRepository,
-    IUserEnumerationProtectionService enumerationProtection,
     ILogger<PolymorphicSignInHandler> logger,
-    FluentValidation.IValidator<PolymorphicSignInCommand>? validator = null
+    IPasswordSignInAdmissionService admissionService,
+    FluentValidation.IValidator<PolymorphicSignInCommand>? validator = null,
+    TimeProvider? timeProvider = null,
+    IHttpContextAccessor? httpContextAccessor = null
 ) : ICommandHandler<PolymorphicSignInCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(PolymorphicSignInCommand command, CancellationToken cancellationToken)
     {
+        var timingOrigin = AuthenticationTimingOrigin.GetOrStartForRequest(httpContextAccessor?.HttpContext, timeProvider);
         ArgumentNullException.ThrowIfNull(command);
         cancellationToken.ThrowIfCancellationRequested();
         // Validate command if validator is available
@@ -36,12 +41,7 @@ public sealed class PolymorphicSignInHandler(
         var identifier = command.Credential?.Trim() ?? string.Empty;
         var credentialType = command.CredentialType ?? DetectCredentialType(identifier);
 
-        logger.LogInformation("Processing polymorphic sign-in for credential type: {CredentialType}", credentialType);
-
-        // Server-owned monotonic origin captured BEFORE public candidate resolution so the
-        // account lookup cannot leak existence through a window that excludes it. The scope is
-        // handed to the local sign-in service, which compensates from this earlier origin.
-        var timingWindow = enumerationProtection.BeginAuthenticationTiming();
+        logger.LogInformation("Processing polymorphic sign-in");
 
         User? account = null;
         var lookupType = ValidIdentifierType(identifier, credentialType);
@@ -65,9 +65,13 @@ public sealed class PolymorphicSignInHandler(
             RememberMe = command.RememberMe,
             CredentialResolutionFailed = account is null,
             ResolvedUserId = account?.Id,
-            TimingWindow = timingWindow
+            TimingOrigin = timingOrigin
         };
 
+        // Resolve username/phone to the same account key used by email sign-in.
+        // Missing/ambiguous identifiers still consume the source-IP admission budget.
+        await using var admission = await admissionService.AdmitAsync(
+            localSignInRequest.Email, httpContextAccessor?.HttpContext, timingOrigin, cancellationToken).ConfigureAwait(false);
         var domainResult = await authService.LocalSignInAsync(localSignInRequest, cancellationToken).ConfigureAwait(false);
 
         logger.LogInformation("Polymorphic password flow returned; success: {Success}", domainResult.Success);

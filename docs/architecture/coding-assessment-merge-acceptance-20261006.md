@@ -1,8 +1,30 @@
 # Code assessment prerequisite for PR #699
 
+## Final acceptance after merged PR #699 — 2026-10-07 UTC
+
+[PR #699](https://github.com/gameguild-gg/gameguild/pull/699) merged into `develop`
+at `d5f417328e9ff9d3fa0517796a623e310aeb1ef0`; accepted implementation head `bf2775e5dcfeab72e78afa7be69ec16e36034276`.
+[Issue #263 acceptance](https://github.com/gameguild-gg/gameguild/issues/263#issuecomment-6038587329) retains all 19 original criteria;
+the issue is now **CLOSED/COMPLETED**. No failing-check exception was used.
+
+Matching-head native validation passed 6,037 main API cases,
+15 repeated OpenAPI cases and 2,998 Web cases. The actual Code
+cycle passed 36 green assertions, zero red and
+2 console observations: learner submission, trusted private
+execution, frozen instructor rubric, score 100 and persisted feedback. C++ passed
+21 cases with 5 skipped and zero
+failed/flaky/interrupted; skipped cases are not executed passes. Complete Emception
+release, consumers, Pages and deployable validation plus all selected security
+checks passed. The original 55 dirty primary files remain unchanged.
+
+Earlier partial, pending, failed and superseded checkpoints below remain historical.
+The fixed 328-ID inventory currently has 73 closed and
+255 open; closure counts include administrative dispositions.
+#287/#288 remain independently open with executed failing baselines. Production
+email/provider receipt and production deployment are not claimed by this acceptance.
+
 The owner explicitly requires correction of the Code assessment flow before merging
-PR #699. The earlier merge exception for PR #697 does not apply. PR #699 remains
-unmerged until this complete flow is accepted.
+PR #699. The earlier merge exception for PR #697 does not apply. The final matching-head acceptance is recorded above; prior checkpoints remain below.
 
 ## Acceptance sequence
 
@@ -643,3 +665,14 @@ repair does not alter the native test outcome. All failed logs and contexts are
 retained. API production/test sources are unchanged. #699 and #263 remain OPEN
 until the new matching-head native Code, C++, consumer/release and security gates
 pass without a failing-check exception.
+
+
+### Correction to the preceding cache statement
+
+The application-addressed glue checkpoint incorrectly stated that native cache-key
+inputs were unchanged. Script changes under `scripts/lib` and `scripts/tests` are
+included by GitHub's implicit-descendant glob behavior in `scripts/*`; the native
+cache key changes. Compiler recipes and the lock remain unchanged. The strict
+cache-miss forced rebuild and normal receipt/hash/release validation remained
+enforced. The PR body recorded this correction before merge, and the preceding
+failed/cancelled runs remain retained separately from current-head acceptance.

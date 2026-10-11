@@ -133,7 +133,7 @@ public sealed class RefreshTokenReplayScopePostgreSqlHttpTests(ApiPostgreSqlFixt
         await AssertBearerAsync(factory, bearer, HttpStatusCode.Unauthorized);
     }
 
-    private WebApplicationFactory<Program> CreateFactory(string policy) => fixture.Factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> CreateFactory(string policy) => fixture.CreateFactory(builder =>
     {
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
             new Dictionary<string, string?> { ["Jwt:RefreshTokenReplayContainmentScope"] = policy }));

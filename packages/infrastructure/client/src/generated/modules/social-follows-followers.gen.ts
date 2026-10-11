@@ -28,7 +28,7 @@ export class SocialFollowsFollowersModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, number>, ApiError>;
@@ -104,7 +104,7 @@ export class SocialFollowsFollowersModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<number, ApiError>;
@@ -164,7 +164,7 @@ export class SocialFollowsFollowersModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Types.SocialFollowsControllersFollowDto[], ApiError>;

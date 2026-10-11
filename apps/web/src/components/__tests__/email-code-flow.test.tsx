@@ -61,6 +61,26 @@ describe("EmailCodeFlow", () => {
     mocks.requestEmailCode.mockReset().mockResolvedValue(true);
   });
 
+  it("continues the pending MFA challenge without resending the consumed email code", async () => {
+    const { user, rerender } = renderWithUser(
+      <EmailCodeFlow redirectTo="/workspace" apiUrl="https://api.example.test" messages={messages} />,
+    );
+    await user.type(screen.getByLabelText("Email address"), "player@example.com");
+    await user.click(screen.getByRole("button", { name: "Send sign-in code" }));
+    await user.type(await screen.findByLabelText("Sign-in code"), "123456");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    mockAuth.mfaChallenge = { mfaToken: "x".repeat(43), availableMethods: ["Totp", "BackupCode"] };
+    rerender(<EmailCodeFlow redirectTo="/workspace" apiUrl="https://api.example.test" messages={messages} />);
+    expect(screen.queryByLabelText("Sign-in code")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Authentication code"), "654321");
+    await user.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    expect(mockAuth.signIn).toHaveBeenLastCalledWith("credentials", {
+      mfaToken: "x".repeat(43), method: "Totp", code: "654321", redirectTo: "/workspace",
+    });
+    expect(mockAuth.signIn).toHaveBeenCalledTimes(2);
+  });
+
   it("requests a code and advances to the code-entry step", async () => {
     const { user } = renderWithUser(
       <EmailCodeFlow

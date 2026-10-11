@@ -34,6 +34,7 @@ public class LocalAuthServiceTests
     private readonly Mock<IPublisher> _publisherMock = new();
     private readonly Mock<ISender> _senderMock = new();
     private readonly Mock<ISessionManagementService> _sessionManagementServiceMock = new();
+    private readonly Mock<ISignInMfaService> _signInMfaMock = SignInMfaPreparationStub.CreateMock();
     private readonly IConfiguration _configuration;
     private readonly LocalAuthService _sut;
 
@@ -113,12 +114,88 @@ public class LocalAuthServiceTests
             NullLogger<LocalAuthService>.Instance,
             _senderMock.Object,
             _sessionManagementServiceMock.Object,
+            _signInMfaMock.Object,
             auditEventSink: _authenticationAuditEventSinkMock.Object,
             suspiciousLoginAlerts: _suspiciousLoginAlertsMock.Object
         );
     }
 
     // ── LocalSignInAsync ──────────────────────────────────────
+
+    [Fact]
+    public async Task LocalSignInAsync_RequiredMfaOutcomePrecedesOrdinaryCredentialsAndSession()
+    {
+        var user = User.CreateWithPassword("mfa@example.test", "mfa-user", BCrypt.Net.BCrypt.HashPassword("Password1!"));
+        _userRepoMock.Setup(port => port.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepoMock.Setup(port => port.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _anomalyDetectionMock.Setup(port => port.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult { RiskLevel = RiskLevel.Low });
+        var pending = new SignInMfaPendingResponse(SignInMfaChallengeToken.Create(), DateTimeOffset.UtcNow.AddMinutes(5),
+            SignInMfaPurpose.VerifyFactor, false, user, Guid.NewGuid());
+        _signInMfaMock.Setup(port => port.PrepareAsync(user.Id, user.TokenVersion, null, It.IsAny<DeviceInfo>(),
+            SignInFirstFactor.Password, false, It.IsAny<CancellationToken>())).ReturnsAsync(SignInMfaPreparation.WithOutcome(pending));
+
+        var result = await _sut.LocalSignInAsync(new LocalSignInRequest { Email = user.Email, Password = "Password1!" });
+        Assert.Same(pending, result);
+        Assert.False(result.Success);
+        Assert.True(result.RequiresMfa);
+        Assert.False(CommandOutcome.ShouldRollback(result));
+        Assert.Empty(result.AccessToken);
+        Assert.Empty(result.RefreshToken);
+        Assert.Equal(Guid.Empty, result.SessionId);
+        _jwtTokenServiceMock.VerifyNoOtherCalls();
+        _sessionManagementServiceMock.VerifyNoOtherCalls();
+        _authAttemptServiceMock.Verify(port => port.RecordSuccessfulAttemptAsync(It.IsAny<string>(), It.IsAny<Guid>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task LocalSignInAsync_UnavailableMfaPreparationCannotFallBackToOrdinaryIssuance()
+    {
+        var user = User.CreateWithPassword("mfa@example.test", "mfa-user", BCrypt.Net.BCrypt.HashPassword("Password1!"));
+        _userRepoMock.Setup(port => port.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepoMock.Setup(port => port.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _anomalyDetectionMock.Setup(port => port.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult { RiskLevel = RiskLevel.Low });
+        _signInMfaMock.Setup(port => port.PrepareAsync(user.Id, user.TokenVersion, null, It.IsAny<DeviceInfo>(),
+            SignInFirstFactor.Password, false, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("MFA preparation unavailable"));
+        var error = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.LocalSignInAsync(new LocalSignInRequest { Email = user.Email, Password = "Password1!" }));
+        Assert.Equal("Authentication failed", error.Message);
+        _jwtTokenServiceMock.VerifyNoOtherCalls();
+        _sessionManagementServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task LocalSignInAsync_AccountVersionChangedAfterFirstFactorCannotIssueForTheNewVersion()
+    {
+        var user = User.CreateWithPassword("mfa@example.test", "mfa-user", BCrypt.Net.BCrypt.HashPassword("Password1!"));
+        _userRepoMock.Setup(port => port.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepoMock.Setup(port => port.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => { user.IncrementTokenVersion(); return user; });
+        _anomalyDetectionMock.Setup(port => port.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult { RiskLevel = RiskLevel.Low });
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.LocalSignInAsync(new LocalSignInRequest { Email = user.Email, Password = "Password1!" }));
+        _signInMfaMock.VerifyNoOtherCalls();
+        _jwtTokenServiceMock.VerifyNoOtherCalls();
+        _sessionManagementServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task LocalSignInAsync_DisappearedAccountCannotUseTheLegacyVersionOneFallback()
+    {
+        var user = User.CreateWithPassword("mfa@example.test", "mfa-user", BCrypt.Net.BCrypt.HashPassword("Password1!"));
+        _userRepoMock.Setup(port => port.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepoMock.Setup(port => port.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _anomalyDetectionMock.Setup(port => port.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
+            .ReturnsAsync(new AuthenticationAnomalyResult { RiskLevel = RiskLevel.Low });
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _sut.LocalSignInAsync(new LocalSignInRequest { Email = user.Email, Password = "Password1!" }));
+        _signInMfaMock.VerifyNoOtherCalls();
+        _jwtTokenServiceMock.VerifyNoOtherCalls();
+        _sessionManagementServiceMock.VerifyNoOtherCalls();
+    }
 
     [Fact]
     public async Task LocalSignInAsync_UserNotFound_ThrowsUnauthorizedAccessException()
@@ -390,6 +467,7 @@ public class LocalAuthServiceTests
 
         _userRepoMock.Setup(x => x.GetByEmailAsync("user@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
+        _userRepoMock.Setup(x => x.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         _anomalyDetectionMock.Setup(x => x.AnalyzeLoginAttemptAsync(It.IsAny<AuthenticationAttemptContext>()))
             .ReturnsAsync(new AuthenticationAnomalyResult
@@ -609,7 +687,8 @@ public class LocalAuthServiceTests
             _httpContextAccessorMock.Object,
             NullLogger<LocalAuthService>.Instance,
             _senderMock.Object,
-            _sessionManagementServiceMock.Object
+            _sessionManagementServiceMock.Object,
+            SignInMfaPreparationStub.Create()
         );
 
         _userRepoMock.Setup(x => x.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
