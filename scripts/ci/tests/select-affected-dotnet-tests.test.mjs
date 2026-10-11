@@ -44,7 +44,7 @@ test("selects the test project matching a changed API module", () => {
       ["apps/api/Source/Modules/GameGuild.TestingLab/TestingEvent.cs"],
       availableProjects,
     ),
-    ["GameGuild.TestingLab.UnitTests"],
+    ["GameGuild.API.UnitTests", "GameGuild.SharedKernel.UnitTests", "GameGuild.TestingLab.UnitTests"],
   );
 });
 
@@ -58,7 +58,7 @@ test("selects multiple module tests without duplicates", () => {
       ],
       availableProjects,
     ),
-    ["GameGuild.Projects.UnitTests", "GameGuild.TestingLab.UnitTests"],
+    ["GameGuild.API.UnitTests", "GameGuild.Projects.UnitTests", "GameGuild.SharedKernel.UnitTests", "GameGuild.TestingLab.UnitTests"],
   );
 });
 
@@ -72,13 +72,13 @@ test("falls back to core tests for API infrastructure changes", () => {
   );
 });
 
-test("ignores API test-only changes for deployment test selection", () => {
+test("test-only API changes retain the matching project and core security coverage", () => {
   assert.deepEqual(
     selectAffectedDotnetTestNames(
       ["apps/api/tests/GameGuild.Projects.UnitTests/ProjectTests.cs"],
       availableProjects,
     ),
-    ["GameGuild.Projects.UnitTests"],
+    ["GameGuild.API.UnitTests", "GameGuild.Projects.UnitTests", "GameGuild.SharedKernel.UnitTests"],
   );
 });
 
@@ -93,7 +93,7 @@ test("selects the matching integration test project for a changed test", () => {
         "GameGuild.Identity.Authentication.IntegrationTests",
       ],
     ),
-    ["GameGuild.Identity.Authentication.IntegrationTests"],
+    ["GameGuild.API.UnitTests", "GameGuild.Identity.Authentication.IntegrationTests", "GameGuild.SharedKernel.UnitTests"],
   );
 });
 
@@ -157,4 +157,41 @@ test("mandatory identity security selection deduplicates multiple source changes
       "GameGuild.SharedKernel.UnitTests",
     ],
   );
+});
+
+for (const filePath of [
+  "apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Code/CodeAssessmentTypeAdapter.cs",
+  "apps/api/tests/GameGuild.Learning.Assessments.UnitTests/CodeGradingAdapterContractTests.cs",
+  "apps/api/Source/GameGuild.API/Program.cs",
+  "apps/api/Source/Modules/GameGuild.Future/Example.cs",
+]) {
+  test("API changes retain the mandatory security suites: " + filePath, () => {
+    const selected = selectAffectedDotnetTestNames([filePath], [
+      ...availableProjects,
+      "GameGuild.Identity.Authentication.UnitTests",
+      "GameGuild.Identity.Authorization.UnitTests",
+      "GameGuild.Learning.Assessments.UnitTests",
+    ]);
+    for (const required of [
+      "GameGuild.API.UnitTests",
+      "GameGuild.Identity.Authentication.UnitTests",
+      "GameGuild.Identity.Authorization.UnitTests",
+      "GameGuild.SharedKernel.UnitTests",
+    ]) assert.ok(selected.includes(required), required);
+    assert.equal(selected.includes("GameGuild.Learning.Assessments.UnitTests"), filePath.includes("GameGuild.Learning.Assessments"));
+  });
+}
+
+test("non-API changes do not select API security projects", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/web/src/page.tsx",
+    "tools/emception/grading/toolchain-binding.mjs",
+    "docs/architecture/example.md",
+  ], availableProjects), []);
+});
+
+test("core security selection only includes available projects", () => {
+  assert.deepEqual(selectAffectedDotnetTestNames([
+    "apps/api/Source/Modules/GameGuild.Learning.Assessments/Example.cs",
+  ], ["GameGuild.Learning.Assessments.UnitTests"]), ["GameGuild.Learning.Assessments.UnitTests"]);
 });

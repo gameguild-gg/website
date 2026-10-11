@@ -23,16 +23,7 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
     );
 
     if (moduleMatch?.[1]) {
-      // Identity changes must also validate the shared authorization and host security invariants.
-      if (moduleMatch[1].startsWith("GameGuild.Identity.")) {
-        requiresCoreFallback = true;
-        for (const identityTests of [
-          "GameGuild.Identity.Authentication.UnitTests",
-          "GameGuild.Identity.Authorization.UnitTests",
-        ]) {
-          if (availableProjects.includes(identityTests)) selected.add(identityTests);
-        }
-      }
+      requiresCoreFallback = true;
       const testName = `${moduleMatch[1]}.UnitTests`;
       if (availableProjects.includes(testName)) selected.add(testName);
       continue;
@@ -43,6 +34,7 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
       !testProjectMatch[1].endsWith("PerformanceTests") &&
       availableProjects.includes(testProjectMatch[1])
     ) {
+      requiresCoreFallback = true;
       selected.add(testProjectMatch[1]);
       continue;
     }
@@ -51,7 +43,12 @@ export function selectAffectedDotnetTestNames(filePaths, availableProjects) {
   }
 
   if (requiresCoreFallback) {
-    for (const fallback of ["GameGuild.API.UnitTests", "GameGuild.SharedKernel.UnitTests"]) {
+    for (const fallback of [
+      "GameGuild.API.UnitTests",
+      "GameGuild.Identity.Authentication.UnitTests",
+      "GameGuild.Identity.Authorization.UnitTests",
+      "GameGuild.SharedKernel.UnitTests",
+    ]) {
       if (availableProjects.includes(fallback)) selected.add(fallback);
     }
   }

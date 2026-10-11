@@ -44,7 +44,11 @@ public static class AssessmentsModule
         services.TryAddSingleton<ICodeAssessmentExecutor, UnconfiguredCodeAssessmentExecutor>();
         services.AddSingleton<CodeAssessmentTypeAdapter>();
         services.AddSingleton<IAssessmentTypeAdapter>(provider => provider.GetRequiredService<CodeAssessmentTypeAdapter>());
+        services.AddSingleton<IAssessmentTypeAdapter>(provider =>
+            CodeAssessmentTypeAdapter.ForVersion1(provider.GetRequiredService<ICodeAssessmentExecutor>()));
         services.AddSingleton<IReviewStageHandler, CodeAutomatedReviewStageHandler>();
+        services.AddSingleton<IReviewStageHandler>(provider => new CodeAutomatedReviewStageHandler(
+            CodeAssessmentTypeAdapter.ForVersion1(provider.GetRequiredService<ICodeAssessmentExecutor>())));
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IReviewCapabilityRegistration, CodeCapabilityRegistration>());
         services.AddScoped<IProgramContentPublicationParticipant, CodeProgramContentPublicationParticipant>();
         services.AddScoped<IProgramContentDeleteParticipant, CodeProgramContentDeleteParticipant>();
