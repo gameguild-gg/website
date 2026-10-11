@@ -251,12 +251,22 @@ public sealed class AuditReplayPostgreSqlHttpTests(ApiPostgreSqlFixture fixture)
         Assert.True(paths.GetProperty(Route).TryGetProperty("post", out _));
         Assert.True(paths.GetProperty(Alias).TryGetProperty("post", out _));
         var schemas = json.RootElement.GetProperty("components").GetProperty("schemas");
-        Assert.Equal(["end", "start"], schemas.GetProperty("CaptureAuditReplayRequest").GetProperty("required")
-            .EnumerateArray().Select(item => item.GetString()).Order().ToArray());
-        var responseSchema = schemas.GetProperty("AuditReplaySnapshotResponse").GetProperty("properties");
-        Assert.True(responseSchema.TryGetProperty("events", out _));
-        Assert.False(responseSchema.TryGetProperty("json", out _));
-        Assert.False(responseSchema.TryGetProperty("description", out _));
+        foreach (var route in new[] { Route, Alias })
+        {
+            var operation = paths.GetProperty(route).GetProperty("post");
+            var requestRef = operation.GetProperty("requestBody").GetProperty("content")
+                .GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;
+            var responseRef = operation.GetProperty("responses").GetProperty("200").GetProperty("content")
+                .GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString()!;
+            const string prefix = "#/components/schemas/";
+            Assert.StartsWith(prefix, requestRef);
+            Assert.StartsWith(prefix, responseRef);
+            Assert.Equal(["end", "start"], schemas.GetProperty(requestRef[prefix.Length..]).GetProperty("required")
+                .EnumerateArray().Select(item => item.GetString()).Order().ToArray());
+            var properties = schemas.GetProperty(responseRef[prefix.Length..]).GetProperty("properties");
+            Assert.Equal(["capturedAtUtc", "endUtc", "events", "schemaVersion", "startUtc", "tenantId", "totalCount"],
+                properties.EnumerateObject().Select(item => item.Name).Order().ToArray());
+        }
     }
 
 
