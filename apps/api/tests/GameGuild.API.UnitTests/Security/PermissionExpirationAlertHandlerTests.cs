@@ -239,6 +239,7 @@ public sealed class PermissionExpirationAlertHandlerTests
         _notifications.Verify(service => service.SendAsync(userId, NotificationType.Security, It.IsAny<string>(), It.IsAny<string>(),
             NotificationChannel.Email, notification.TenantId, null, priority, notification.PermissionId,
             nameof(PermissionExpirationNotification), null, email, CancellationToken.None), Times.Once);
+        logger.Scopes.Should().BeEmpty();
         logger.Entries.Should().ContainSingle();
         var log = logger.Entries[0];
         log.Level.Should().Be(Microsoft.Extensions.Logging.LogLevel.Warning);
@@ -277,15 +278,23 @@ public sealed class PermissionExpirationAlertHandlerTests
         _notifications.Verify(service => service.SendAsync(userId, NotificationType.Security, It.IsAny<string>(), It.IsAny<string>(),
             NotificationChannel.Email, notification.TenantId, null, NotificationPriority.Normal, notification.PermissionId,
             nameof(PermissionExpirationNotification), null, email, CancellationToken.None), Times.Once);
+        logger.Scopes.Should().BeEmpty();
         logger.Entries.Should().BeEmpty();
     }
     private sealed class CapturingLogger : Microsoft.Extensions.Logging.ILogger<PermissionExpirationAlertHandler>
     {
         public List<CapturedLog> Entries { get; } = [];
 
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public List<object> Scopes { get; } = [];
 
-        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            Scopes.Add(state);
+            return null;
+        }
+
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) =>
+            logLevel != Microsoft.Extensions.Logging.LogLevel.None;
 
         public void Log<TState>(
             Microsoft.Extensions.Logging.LogLevel logLevel,
