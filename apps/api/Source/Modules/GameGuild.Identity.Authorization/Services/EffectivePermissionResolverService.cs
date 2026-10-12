@@ -523,6 +523,7 @@ public sealed class EffectivePermissionResolverService(
         {
             logger.LogDebug(
                 "Owner override suppressed for user {UserId} on {ResourceType}/{ResourceId}: the ownership designation expired at {OwnerExpiry}.",
+                // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/resource Guid audit logging (non-sensitive Guids, established pattern)
                 context.UserId, context.ResourceType, context.ResourceId, ownerExpiry);
             return null;
         }
