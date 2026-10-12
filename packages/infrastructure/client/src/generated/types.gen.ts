@@ -4719,6 +4719,7 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscrip
   name?: string | null;
   slug?: string | null;
   sortOrder?: number | null;
+  trialPeriodDays?: number | null;
 }
 
 /** Request to create a subscription */
@@ -27556,6 +27557,7 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSche
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
   sortOrder: z.number().int().nullable().optional(),
+  trialPeriodDays: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput. Request to create a subscription */

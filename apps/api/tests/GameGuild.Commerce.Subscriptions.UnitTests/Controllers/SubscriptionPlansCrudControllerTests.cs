@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Security.Claims;
 using FluentAssertions;
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -41,6 +43,45 @@ public class SubscriptionPlansCrudControllerTests
     }
 
     [Fact]
+    public async Task GetSubscriptionPlans_ShouldReturnNotFound_ForInactiveSlug_WhenAuthenticatedWithoutViewAnalytics()
+    {
+        // Issue #416: "Admin endpoints require Billing.Plans.ViewAll permission" — the
+        // view-all surface (seeing inactive plans) is gated on monetization:view-analytics.
+        var sender = new Mock<ISender>();
+        var inactivePlan = new SubscriptionPlan("Legacy", "legacy", 999);
+        inactivePlan.Deactivate();
+
+        sender
+            .Setup(service => service.Send(It.Is<GetSubscriptionPlanBySlugQuery>(query => query.Slug == "legacy"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inactivePlan);
+
+        var controller = CreateController(sender.Object, authenticated: true, permissions: []);
+
+        var result = await controller.GetSubscriptionPlans(slug: "legacy");
+
+        result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task GetSubscriptionPlans_ShouldReturnInactiveSlug_WhenAuthenticatedWithViewAnalytics()
+    {
+        var sender = new Mock<ISender>();
+        var inactivePlan = new SubscriptionPlan("Legacy", "legacy", 999);
+        inactivePlan.Deactivate();
+
+        sender
+            .Setup(service => service.Send(It.Is<GetSubscriptionPlanBySlugQuery>(query => query.Slug == "legacy"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(inactivePlan);
+
+        var controller = CreateController(sender.Object, authenticated: true, permissions: [MonetizationPermission.Keys.ViewAnalytics]);
+
+        var result = await controller.GetSubscriptionPlans(slug: "legacy");
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().Be(inactivePlan);
+    }
+
+    [Fact]
     public async Task GetSubscriptionPlans_ShouldForceActiveFilter_ForAnonymousPagedRequests()
     {
         var sender = new Mock<ISender>();
@@ -60,6 +101,40 @@ public class SubscriptionPlansCrudControllerTests
         var result = await controller.GetSubscriptionPlans(page: 2, pageSize: 5, isActive: false, isFeatured: false);
 
         result.Should().BeOfType<OkObjectResult>();
+        sender.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetSubscriptionPlans_ShouldForceActiveFilter_ForAuthenticatedUsersWithoutViewAnalytics()
+    {
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(service => service.Send(
+                It.Is<GetPagedSubscriptionPlansQuery>(query => query.IsActive == true),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SubscriptionPlan>());
+
+        var controller = CreateController(sender.Object, authenticated: true, permissions: []);
+
+        await controller.GetSubscriptionPlans(isActive: false);
+
+        sender.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetSubscriptionPlans_ShouldHonourInactiveFilter_ForUsersWithViewAnalytics()
+    {
+        var sender = new Mock<ISender>();
+        sender
+            .Setup(service => service.Send(
+                It.Is<GetPagedSubscriptionPlansQuery>(query => query.IsActive == false),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SubscriptionPlan>());
+
+        var controller = CreateController(sender.Object, authenticated: true, permissions: [MonetizationPermission.Keys.ViewAnalytics]);
+
+        await controller.GetSubscriptionPlans(isActive: false);
+
         sender.VerifyAll();
     }
 
@@ -85,13 +160,30 @@ public class SubscriptionPlansCrudControllerTests
         plans.Should().OnlyContain(plan => plan.IsActive);
     }
 
-    private static SubscriptionPlansCrudController CreateController(ISender sender, bool authenticated)
+    private static SubscriptionPlansCrudController CreateController(
+        ISender sender,
+        bool authenticated,
+        IReadOnlyCollection<string>? permissions = null)
     {
         var identity = authenticated
             ? new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())], "Test")
             : new ClaimsIdentity();
 
-        return new SubscriptionPlansCrudController(sender)
+        var actorContext = authenticated
+            ? new ActorContext
+            {
+                ActorKind = ActorKind.User,
+                SubjectId = Guid.NewGuid().ToString(),
+                Roles = new HashSet<string>(),
+                Permissions = permissions?.ToHashSet() ?? new HashSet<string>(),
+                IsAuthenticated = true
+            }
+            : ActorContext.Anonymous;
+
+        var actorContextAccessor = new Mock<IActorContextAccessor>();
+        actorContextAccessor.SetupGet(accessor => accessor.ActorContext).Returns(actorContext);
+
+        return new SubscriptionPlansCrudController(sender, actorContextAccessor.Object)
         {
             ControllerContext = new ControllerContext
             {

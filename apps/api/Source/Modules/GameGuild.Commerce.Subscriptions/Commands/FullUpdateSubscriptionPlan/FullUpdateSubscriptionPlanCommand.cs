@@ -12,7 +12,7 @@ namespace GameGuild.Commerce.Subscriptions;
 public sealed record FullUpdateSubscriptionPlanCommand(
     Guid PlanId,
     string Name,
-    string Slug,
+    string? Slug,
     string? Description,
     long MonthlyPriceInCents,
     long? AnnualPriceInCents,
@@ -23,4 +23,5 @@ public sealed record FullUpdateSubscriptionPlanCommand(
     bool? HasAdvancedAnalytics,
     bool? HasCustomBranding,
     string? Features,
-    int? SortOrder) : ICommand;
+    int? SortOrder,
+    int? TrialPeriodDays = null) : ICommand;
