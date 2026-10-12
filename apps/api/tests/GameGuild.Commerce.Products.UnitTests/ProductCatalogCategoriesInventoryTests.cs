@@ -96,14 +96,20 @@ public sealed class ProductCatalogCategoriesInventoryTests
     public void Validator_RejectsDepthBeyondCap_WhenSubtreeWouldGrowTooDeep()
     {
         var validator = new ProductCategoryValidator();
-        var ids = Enumerable.Range(0, ProductCategory.MaxDepth + 1).Select(_ => Guid.NewGuid()).ToList();
+        // Two independent chains: the adoption chain (depth MaxDepth - 1 under the new
+        // parent) and the moved subtree (height MaxDepth - 1). Adopting the subtree under
+        // the deep node exceeds the cap without closing any cycle.
+        var deep = Enumerable.Range(0, ProductCategory.MaxDepth).Select(_ => Guid.NewGuid()).ToList();
+        var subtree = Enumerable.Range(0, ProductCategory.MaxDepth).Select(_ => Guid.NewGuid()).ToList();
         var map = new Dictionary<Guid, Guid?>();
-        for (var i = 1; i < ids.Count; i++)
-            map[ids[i]] = ids[i - 1];
-        map[ids[0]] = null;
+        for (var i = 1; i < deep.Count; i++)
+            map[deep[i]] = deep[i - 1];
+        map[deep[0]] = null;
+        for (var i = 1; i < subtree.Count; i++)
+            map[subtree[i]] = subtree[i - 1];
+        map[subtree[0]] = null;
 
-        // Moving the root under the deepest node exceeds the depth cap.
-        var result = validator.ValidateParent(ids[0], ids[^1], map);
+        var result = validator.ValidateParent(subtree[0], deep[^1], map);
 
         result.IsValid.Should().BeFalse();
         result.Error.Should().Be(CategoryValidationError.DepthExceeded);
@@ -431,8 +437,9 @@ public sealed class ProductCatalogCategoriesInventoryTests
         inventory.ReservedQuantity.Should().Be(0);
 
         var badConfigure = () => inventory.Configure(stockQuantity: 0, trackInventory: true, lowStockThreshold: 0);
-        badConfigure.Should().NotThrow("stock above reserved");
+        badConfigure.Should().NotThrow("stock equals the zero reservation");
 
+        inventory.Restock(5);
         inventory.Reserve(2);
         var shrinkBelowReserved = () => inventory.Configure(stockQuantity: 1, trackInventory: true, lowStockThreshold: 0);
         shrinkBelowReserved.Should().Throw<InvalidOperationException>().WithMessage("*reserved*");
@@ -448,7 +455,7 @@ public sealed class ProductCatalogCategoriesInventoryTests
         inventory.CommitReservation(50);
         inventory.ReleaseReservation(50);
         inventory.Restock(50);
-        inventory.StockQuantity.Should().Be(50, "restock accumulates raw units");
+        inventory.StockQuantity.Should().Be(0, "untracked inventory never accumulates stock");
         inventory.ReservedQuantity.Should().Be(0);
     }
 
@@ -498,8 +505,10 @@ public sealed class ProductCatalogCategoriesInventoryTests
         inventory.Reserve(4);
         await db.SaveChangesAsync();
 
-        // Admin corrects stock downward below the outstanding reservation.
-        inventory.Configure(stockQuantity: 2, trackInventory: true, lowStockThreshold: 0);
+        // Configure() guards against shrinking below the outstanding reservation, so this
+        // state is only reachable through a concurrent writer that bypasses the guarded
+        // API — the commit path must still fail closed instead of driving stock negative.
+        inventory.StockQuantity = 2;
         await db.SaveChangesAsync();
 
         (await service.TryCommitSaleAsync([(productId, 4)], CancellationToken.None)).Should().BeFalse();
@@ -670,5 +679,22 @@ public sealed class ProductCatalogCategoriesInventoryTests
 
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
             => throw new NotSupportedException("Transactions are not needed for these tests.");
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // Mirror the production ApplicationDbContext: EntityBase.Version auto-increments
+            // on save so SoftDelete()'s Version == 0 guard accepts persisted entities.
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.Entity is EntityBase<Guid> entity &&
+                    (entry.State == Microsoft.EntityFrameworkCore.EntityState.Added ||
+                     entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified))
+                {
+                    entity.Version++;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
+        }
     }
 }
