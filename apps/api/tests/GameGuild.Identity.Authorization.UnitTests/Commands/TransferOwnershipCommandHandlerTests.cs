@@ -206,6 +206,10 @@ public class TransferOwnershipCommandHandlerTests
     public async Task Handle_ValidTransfer_IsVersioned_AndAuditedWithRestorePoint()
     {
         ActAs(_ownerId, _tenantId);
+        var sut = CreateSut([_ownerRow]);
+
+        // Moq keeps the LAST matching setup: override CreateSut's default audit return
+        // afterwards so the restore-point id assertion observes a known id.
         var auditLogId = Guid.NewGuid();
         _auditService.Setup(a => a.LogPermissionChangeAsync(
                 It.IsAny<PermissionOperationType>(), It.IsAny<Guid?>(), It.IsAny<Guid>(), It.IsAny<Guid?>(),
@@ -213,7 +217,6 @@ public class TransferOwnershipCommandHandlerTests
                 It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PermissionAuditLog { Id = auditLogId });
-        var sut = CreateSut([_ownerRow]);
 
         var result = await sut.Handle(Command(), CancellationToken.None);
 
