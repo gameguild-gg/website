@@ -1,0 +1,67 @@
+using FluentValidation;
+
+namespace GameGuild.Commerce.Subscriptions;
+
+/// <summary>
+///     Validator for FullUpdateSubscriptionPlanCommand (issue #416: the full-update path
+///     previously had no validator at all).
+/// </summary>
+public sealed class FullUpdateSubscriptionPlanCommandValidator : AbstractValidator<FullUpdateSubscriptionPlanCommand>
+{
+    public FullUpdateSubscriptionPlanCommandValidator(ISubscriptionPlanSlugGenerator slugGenerator)
+    {
+        RuleFor(x => x.PlanId).NotEmpty().WithMessage("PlanId is required");
+
+        RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required")
+            .Length(3, 100).WithMessage("Name must be between 3 and 100 characters");
+
+        // Issue #416: slug is optional on full update — regenerated from the name when
+        // omitted; validated for URL-safety when provided.
+        RuleFor(x => x.Slug)
+            .MaximumLength(50)
+            .WithMessage("Slug cannot exceed 50 characters")
+            .Matches("^[a-z0-9-]+$")
+            .WithMessage("Slug can only contain lowercase letters, numbers, and hyphens")
+            .When(x => !string.IsNullOrEmpty(x.Slug));
+
+        RuleFor(x => x)
+            .Must(command => slugGenerator.Slugify(command.Name) is not null)
+            .When(x => string.IsNullOrEmpty(x.Slug))
+            .WithMessage("Name must contain at least one letter or digit so a slug can be generated (or provide an explicit slug)");
+
+        RuleFor(x => x.MonthlyPriceInCents)
+            .GreaterThanOrEqualTo(0).WithMessage("MonthlyPriceInCents must be greater than or equal to 0");
+
+        RuleFor(x => x.AnnualPriceInCents)
+            .GreaterThanOrEqualTo(0).WithMessage("AnnualPriceInCents must be greater than or equal to 0")
+            .When(x => x.AnnualPriceInCents.HasValue);
+
+        RuleFor(x => x.MaxUsers)
+            .GreaterThanOrEqualTo(0).WithMessage("MaxUsers must be greater than or equal to 0")
+            .When(x => x.MaxUsers.HasValue);
+
+        RuleFor(x => x.MaxStorageMb)
+            .GreaterThanOrEqualTo(0).WithMessage("MaxStorageMb must be greater than or equal to 0")
+            .When(x => x.MaxStorageMb.HasValue);
+
+        RuleFor(x => x.MaxApiCallsPerMonth)
+            .GreaterThanOrEqualTo(0).WithMessage("MaxApiCallsPerMonth must be greater than or equal to 0")
+            .When(x => x.MaxApiCallsPerMonth.HasValue);
+
+        // Issue #416: "Features and limits stored as JSON with schema validation".
+        RuleFor(x => x.Features)
+            .Must(features => SubscriptionPlanFeaturesJson.IsValid(features, out _))
+            .WithMessage((_, features) =>
+                SubscriptionPlanFeaturesJson.IsValid(features, out var error) ? "Features payload is invalid." : error!)
+            .When(x => !string.IsNullOrEmpty(x.Features));
+
+        // Issue #416: "Trial duration must be 0-90 days".
+        RuleFor(x => x.TrialPeriodDays)
+            .InclusiveBetween(0, 90).WithMessage("TrialPeriodDays must be between 0 and 90 days")
+            .When(x => x.TrialPeriodDays.HasValue);
+
+        RuleFor(x => x.Description)
+            .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters")
+            .When(x => !string.IsNullOrEmpty(x.Description));
+    }
+}

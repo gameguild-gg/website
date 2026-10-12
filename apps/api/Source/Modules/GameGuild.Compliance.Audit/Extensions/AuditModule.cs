@@ -92,6 +92,7 @@ public static class AuditModule
 
         // Register audit services
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IAuditReplayCaptureService, AuditReplayCaptureService>();
         services.TryAddSingleton(TimeProvider.System);
 
         // Durable security event pipeline: taxonomy-driven capture, alerting, and retention enforcement.

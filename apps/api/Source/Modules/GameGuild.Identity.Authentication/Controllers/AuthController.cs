@@ -820,38 +820,55 @@ public sealed class AuthController(ISender sender) : BaseApiController
     /// <summary>
     ///     Handle GitHub OAuth callback
     /// </summary>
-    /// <param name="code">OAuth authorization code</param>
-    /// <param name="state">State parameter for CSRF protection</param>
+    /// <param name="body">GitHub callback with authorization code, state, redirect URI, and optional tenant context</param>
     /// <param name="ct">Cancellation token</param>
     /// <returns>Authentication tokens on success</returns>
     [AllowAnonymous]
-    [HttpGet("v{version:apiVersion}/auth/github:callback")]
-    [EndpointSummary("GitHub OAuth callback")]
-    [EndpointDescription("Handles the GitHub OAuth callback, exchanging the authorization code for tokens.")]
+    [HttpPost("v{version:apiVersion}/auth/github:callback")]
+    [EndpointSummary("GitHub OAuth sign-in callback")]
+    [EndpointDescription("Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.")]
     [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GitHubCallback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GitHubCallback([FromBody] GitHubCallbackRequestDto body, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(code))
-        {
-            return BadRequest("Authorization code is required");
-        }
-
+        ArgumentNullException.ThrowIfNull(body);
         var command = new GitHubCallbackCommand
         {
-            Code = code,
-            State = state ?? string.Empty
+            Code = body.Code,
+            State = body.State,
+            RedirectUri = body.RedirectUri,
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
         };
 
-        var result = await sender.Send(command, ct).ConfigureAwait(false);
-
-        if (!result.Success)
+        try
         {
-            return Unauthorized(result);
+            SignInResponse result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return GitHubNotConfigured(ex);
+        }
+    }
 
-        return Ok(result);
+    private ObjectResult GitHubNotConfigured(InvalidOperationException ex)
+    {
+        return Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "GitHub OAuth is not configured",
+            detail: ex.Message);
     }
 
     #endregion

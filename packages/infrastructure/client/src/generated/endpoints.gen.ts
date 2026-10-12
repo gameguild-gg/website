@@ -392,6 +392,24 @@ export const postApiAuditExportJsonEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostApiAuditReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostApiAuditReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postApiAuditReplaySnapshotsEndpoint = {
+  operationId: 'postApiAuditReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInput {
   query?: {
     skip?: number;
@@ -4463,6 +4481,91 @@ export const postApiTestingLabSettingsResetEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Revokes the remaining balance of a credit grant with an auditable reason. SystemAdmin only.
+ *
+ * Revokes the remaining balance of an account credit grant; the reason is captured on the grant and in the credit ledger. Requires the SystemAdmin role.
+ */
+export interface PostAccountCreditsRevokeInput {
+  grantId: string;
+  body?: Types.CommercePaymentsAccountCreditsControllerRevokeCreditInput;
+}
+export type PostAccountCreditsRevokeOutput = void;
+export const postAccountCreditsRevokeEndpoint = {
+  operationId: 'postAccountCreditsRevoke' as const,
+  method: 'POST' as const,
+  path: '/api/v1/account-credits/{grantId}:revoke' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Per-currency spendable credit balances of the calling user.
+ *
+ * Returns the spendable account credit balance of the calling user per ISO 4217 currency (Active grants, expiry-aware). User and tenant are derived from the authenticated actor.
+ */
+export type GetAccountCreditsBalanceInput = void;
+export type GetAccountCreditsBalanceOutput = Types.CommercePaymentsAccountCreditBalance[];
+export const getAccountCreditsBalanceEndpoint = {
+  operationId: 'getAccountCreditsBalance' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/balance' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Manually issues account credit to a user of the calling tenant. SystemAdmin only.
+ *
+ * Manually grants account credit to a tenant user with an optional expiry. The credit type restricts what the credit may be applied to. Requires the SystemAdmin role; the tenant is derived from the authenticated actor.
+ */
+export interface PostAccountCreditsGrantsInput {
+  body?: Types.CommercePaymentsAccountCreditsControllerIssueCreditInput;
+}
+export type PostAccountCreditsGrantsOutput = Types.CommercePaymentsAccountCreditGrant;
+export const postAccountCreditsGrantsEndpoint = {
+  operationId: 'postAccountCreditsGrants' as const,
+  method: 'POST' as const,
+  path: '/api/v1/account-credits/grants' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Paged credit ledger history of the calling user (grants, consumption, revocation, expiry).
+ *
+ * Returns a paged list of the calling user's account credit ledger rows, newest first. User and tenant are derived from the authenticated actor.
+ */
+export interface GetAccountCreditsHistoryInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAccountCreditsHistoryOutput = Types.PagedResultAccountCreditTransaction;
+export const getAccountCreditsHistoryEndpoint = {
+  operationId: 'getAccountCreditsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/history' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Growth metrics: credit issuance/usage/expiry rates, referral funnel and top referrers. SystemAdmin only.
+ *
+ * Credit ledger aggregates per currency (issued, applied, expired-unused waste, revoked, active balance, usage and expiration-waste rates), the referral conversion funnel (clicks → signups → conversions → rewards) and the top-referrers leaderboard. Requires the SystemAdmin role.
+ */
+export type GetAccountCreditsMetricsInput = void;
+export type GetAccountCreditsMetricsOutput = Types.CommercePaymentsAccountCreditMetricsReport;
+export const getAccountCreditsMetricsEndpoint = {
+  operationId: 'getAccountCreditsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/metrics' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAdminEconomyAdRewardsPendingClaimsInput {
   query?: {
     confirmed?: boolean;
@@ -6474,6 +6577,26 @@ export const postBillingExternalProvidersMigrationDryRunEndpoint = {
 } as const;
 
 /**
+ * Applies the calling user's account credits to one of their invoices (issue #410
+ * multi-tender settlement). Requires an Idempotency-Key header; the optional body
+ * caps the credit tender amount. User and tenant are derived from the actor.
+ *
+ * Settles part or all of an open/past-due invoice with the calling user's account credits, consumed FIFO by expiry in one atomic settlement (credit ledger rows + settlement record + invoice update). Requires the Idempotency-Key header; replays return the recorded settlement. The invoice must belong to the calling user; credits must match the invoice currency. The remaining balance stays owed to provider tenders.
+ */
+export interface PostBillingInvoicesAccountCreditsInput {
+  invoiceId: string;
+  body?: Types.CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput;
+}
+export type PostBillingInvoicesAccountCreditsOutput = Types.CommerceBillingInvoiceAccountCreditSettlementResult;
+export const postBillingInvoicesAccountCreditsEndpoint = {
+  operationId: 'postBillingInvoicesAccountCredits' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/invoices/{invoiceId}/account-credits' as const,
+  tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
@@ -8006,6 +8129,97 @@ export const postFraudReviewsDenyEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Purchases a gift subscription for any plan and duration (1-36 months).
+ *
+ * Creates a purchased gift for the given recipient with a positive amount in an ISO 4217 currency, a duration of 1-36 months, an optional plan restriction, an optional personal message and an optional scheduled delivery date (redemption is blocked before it). The full redemption code is returned exactly once and only stored as a SHA-256 hash; unredeemed gifts expire one year after purchase.
+ */
+export interface PostGiftsInput {
+  body?: Types.CommercePaymentsGiftsControllerPurchaseGiftRequestBody;
+}
+export type PostGiftsOutput = Types.CommercePaymentsGiftPurchaseResult;
+export const postGiftsEndpoint = {
+  operationId: 'postGifts' as const,
+  method: 'POST' as const,
+  path: '/api/v1/gifts' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Non-secret preview of a gift by redemption code (no giver identity exposed).
+ *
+ * Returns the public view of a gift (status, amount, currency, duration, plan, recipient name, personal message, delivery/expiry) for a redemption code. The giver identity is never exposed.
+ */
+export interface GetGiftsInput {
+  code: string;
+}
+export type GetGiftsOutput = Types.CommercePaymentsGiftPublicView;
+export const getGiftsEndpoint = {
+  operationId: 'getGifts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/{code}' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Redeems a gift with its redemption code; grants account credit to the calling account.
+ *
+ * Redeems the gift for the authenticated user and grants an account credit of the gift value to their account (existing or newly created accounts alike — the credit lands on whichever account redeems). Blocked before the scheduled delivery date, after the one-year expiry, for already-redeemed gifts, and when the giver tries to redeem their own gift.
+ */
+export interface PostGiftsRedeemInput {
+  code: string;
+}
+export type PostGiftsRedeemOutput = Types.CommercePaymentsGiftPublicView;
+export const postGiftsRedeemEndpoint = {
+  operationId: 'postGiftsRedeem' as const,
+  method: 'POST' as const,
+  path: '/api/v1/gifts/{code}/redeem' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gifts the calling user has redeemed, newest first.
+ *
+ * Returns a paged list of gifts redeemed by the calling user, newest first.
+ */
+export interface GetGiftsReceivedInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetGiftsReceivedOutput = Types.PagedResultGiftPublicView;
+export const getGiftsReceivedEndpoint = {
+  operationId: 'getGiftsReceived' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/received' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gifts the calling user has sent, newest first.
+ *
+ * Returns a paged list of gifts purchased by the calling user, newest first, with their status machine state.
+ */
+export interface GetGiftsSentInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetGiftsSentOutput = Types.PagedResultGiftPublicView;
+export const getGiftsSentEndpoint = {
+  operationId: 'getGiftsSent' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/sent' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
 export type PostIntegrationsEconomyStripeConnectWebhookInput = void;
 export type PostIntegrationsEconomyStripeConnectWebhookOutput = Types.APIControllersEconomyPayoutExecutionOperationDto;
 export const postIntegrationsEconomyStripeConnectWebhookEndpoint = {
@@ -8886,6 +9100,90 @@ export const getPostsTrendingEndpoint = {
   path: '/api/v1/posts/trending' as const,
   tags: ['SocialPosts'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Gets the caller's referral code and trackable link, creating them on first use.
+ *
+ * Returns the calling user's opaque unique referral code and the trackable share link built from it (AccountCredits:ReferralLinkBaseUrl base). Idempotent: every call returns the same per-user code.
+ */
+export type GetReferralsCodeInput = void;
+export type GetReferralsCodeOutput = Types.CommercePaymentsReferralsControllerReferralCodeOutput;
+export const getReferralsCodeEndpoint = {
+  operationId: 'getReferralsCode' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/code' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Tracking rows of the caller's referrals, newest first.
+ *
+ * Returns a paged list of the calling user's referral tracking rows, newest first, with funnel timestamps and status.
+ */
+export interface GetReferralsHistoryInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetReferralsHistoryOutput = Types.PagedResultReferral;
+export const getReferralsHistoryEndpoint = {
+  operationId: 'getReferralsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/history' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Funnel stats of the caller's referrals.
+ *
+ * Returns the calling user's referral funnel counters: shared rows, clicks, signups, conversions (first paid invoice), rewards issued, fraudulent blocks and expiries.
+ */
+export type GetReferralsStatsInput = void;
+export type GetReferralsStatsOutput = Types.CommercePaymentsReferralStats;
+export const getReferralsStatsEndpoint = {
+  operationId: 'getReferralsStats' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/stats' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Records a referral link click for funnel tracking.
+ *
+ * Records a click against a referral code (first click time kept on idempotent replays). The caller IP is hashed (SHA-256) for the same-IP fraud block and never persisted in clear.
+ */
+export interface PostReferralsTrackClickInput {
+  body?: Types.CommercePaymentsReferralsControllerTrackReferralClickInput;
+}
+export type PostReferralsTrackClickOutput = Types.CommercePaymentsReferral;
+export const postReferralsTrackClickEndpoint = {
+  operationId: 'postReferralsTrackClick' as const,
+  method: 'POST' as const,
+  path: '/api/v1/referrals/track-click' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * The signed-up caller applies a referral code to their account.
+ *
+ * Attaches the calling user as the referee of the referral code. Fail-closed blocks: self-referral, referral cap (AccountCredits:MaxReferralsPerUser) and same-IP repeats under the same referrer are rejected or recorded as fraudulent without reward eligibility.
+ */
+export interface PostReferralsTrackSignupInput {
+  body?: Types.CommercePaymentsReferralsControllerTrackReferralSignupInput;
+}
+export type PostReferralsTrackSignupOutput = Types.CommercePaymentsReferralSignupResult;
+export const postReferralsTrackSignupEndpoint = {
+  operationId: 'postReferralsTrackSignup' as const,
+  method: 'POST' as const,
+  path: '/api/v1/referrals/track-signup' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -11500,6 +11798,24 @@ export const postAdminAuditLogsExportJsonEndpoint = {
 } as const;
 
 /**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostAdminAuditLogsReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostAdminAuditLogsReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postAdminAuditLogsReplaySnapshotsEndpoint = {
+  operationId: 'postAdminAuditLogsReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Downloads a completed scheduled export stored for its tenant.
  */
 export interface GetAdminAuditLogsScheduledExportHistoryDownloadInput {
@@ -14071,18 +14387,15 @@ export const getAuthGithubAuthorizeEndpoint = {
 /**
  * Handle GitHub OAuth callback
  *
- * Handles the GitHub OAuth callback, exchanging the authorization code for tokens.
+ * Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.
  */
-export interface GetAuthGithubCallbackInput {
-  query?: {
-    code?: string;
-    state?: string;
-  };
+export interface PostAuthGithubCallbackInput {
+  body?: Types.IdentityAuthenticationGitHubCallbackRequestDto;
 }
-export type GetAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
-export const getAuthGithubCallbackEndpoint = {
-  operationId: 'getAuthGithubCallback' as const,
-  method: 'GET' as const,
+export type PostAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthGithubCallbackEndpoint = {
+  operationId: 'postAuthGithubCallback' as const,
+  method: 'POST' as const,
   path: '/v1/auth/github:callback' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
@@ -14404,6 +14717,92 @@ export const postAuthOidcSignInCallbackEndpoint = {
   operationId: 'postAuthOidcSignInCallback' as const,
   method: 'POST' as const,
   path: '/v1/auth/oidc/{slug}:sign-in-callback' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Initiate an orchestrated authentication flow
+ *
+ * Validates the local primary credential (identifier + password), assesses sign-in risk and returns the persisted flow state with the required challenge ladder (MFA verification, device trust, risk challenge). Expired, inactive or unknown credentials fail closed.
+ */
+export interface PostAuthOrchestratedInitiateInput {
+  body?: Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+}
+export type PostAuthOrchestratedInitiateOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedInitiateEndpoint = {
+  operationId: 'postAuthOrchestratedInitiate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated:initiate' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Get the current state of an orchestrated authentication flow
+ *
+ * Returns the current state of the flow. Abandoned, expired and unknown flows are not observable and return 404.
+ */
+export interface GetAuthOrchestratedInput {
+  flowId: string;
+}
+export type GetAuthOrchestratedOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const getAuthOrchestratedEndpoint = {
+  operationId: 'getAuthOrchestrated' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/orchestrated/{flowId}' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Abandon an in-flight orchestrated authentication flow
+ *
+ * Terminates the flow; later step, completion and lookup calls fail closed.
+ */
+export interface PostAuthOrchestratedAbandonInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedAbandonOutput = void;
+export const postAuthOrchestratedAbandonEndpoint = {
+  operationId: 'postAuthOrchestratedAbandon' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:abandon' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Complete an orchestrated authentication flow and issue tokens
+ *
+ * Issues access and refresh tokens once every required step of the flow is satisfied. Pending steps, abandoned, expired or already-unknown flows fail closed.
+ */
+export interface PostAuthOrchestratedCompleteInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOrchestratedCompleteEndpoint = {
+  operationId: 'postAuthOrchestratedComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Satisfy one challenge step of an orchestrated authentication flow
+ *
+ * Verifies one challenge step (TOTP code, backup code or WebAuthn assertion) against the persisted flow and returns the updated state. Out-of-order, repeated, abandoned, expired or locked-out steps fail closed.
+ */
+export interface PostAuthOrchestratedProcessStepInput {
+  flowId: string;
+  body?: Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+}
+export type PostAuthOrchestratedProcessStepOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedProcessStepEndpoint = {
+  operationId: 'postAuthOrchestratedProcessStep' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:process-step' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
@@ -27519,6 +27918,7 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
   postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
@@ -27793,6 +28193,11 @@ export const endpoints = {
   patchApiTestingLabSettings: patchApiTestingLabSettingsEndpoint,
   getApiTestingLabSettingsExists: getApiTestingLabSettingsExistsEndpoint,
   postApiTestingLabSettingsReset: postApiTestingLabSettingsResetEndpoint,
+  postAccountCreditsRevoke: postAccountCreditsRevokeEndpoint,
+  getAccountCreditsBalance: getAccountCreditsBalanceEndpoint,
+  postAccountCreditsGrants: postAccountCreditsGrantsEndpoint,
+  getAccountCreditsHistory: getAccountCreditsHistoryEndpoint,
+  getAccountCreditsMetrics: getAccountCreditsMetricsEndpoint,
   getAdminEconomyAdRewardsPendingClaims: getAdminEconomyAdRewardsPendingClaimsEndpoint,
   getAdminEconomyAdRewardsReconciliations: getAdminEconomyAdRewardsReconciliationsEndpoint,
   getAdminEconomyAdRewardsReports: getAdminEconomyAdRewardsReportsEndpoint,
@@ -27946,6 +28351,7 @@ export const endpoints = {
   postBillingExternalProvidersDisable: postBillingExternalProvidersDisableEndpoint,
   postBillingExternalProvidersEnable: postBillingExternalProvidersEnableEndpoint,
   postBillingExternalProvidersMigrationDryRun: postBillingExternalProvidersMigrationDryRunEndpoint,
+  postBillingInvoicesAccountCredits: postBillingInvoicesAccountCreditsEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
   getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
   postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
@@ -28036,6 +28442,11 @@ export const endpoints = {
   getFraudReviews: getFraudReviewsEndpoint,
   postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
   postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
+  postGifts: postGiftsEndpoint,
+  getGifts: getGiftsEndpoint,
+  postGiftsRedeem: postGiftsRedeemEndpoint,
+  getGiftsReceived: getGiftsReceivedEndpoint,
+  getGiftsSent: getGiftsSentEndpoint,
   postIntegrationsEconomyStripeConnectWebhook: postIntegrationsEconomyStripeConnectWebhookEndpoint,
   postIntegrationsEconomySumsubWebhook: postIntegrationsEconomySumsubWebhookEndpoint,
   postNotificationsEmailEvents: postNotificationsEmailEventsEndpoint,
@@ -28082,6 +28493,11 @@ export const endpoints = {
   getPostsTagsPopular: getPostsTagsPopularEndpoint,
   getPostsTagsSearch: getPostsTagsSearchEndpoint,
   getPostsTrending: getPostsTrendingEndpoint,
+  getReferralsCode: getReferralsCodeEndpoint,
+  getReferralsHistory: getReferralsHistoryEndpoint,
+  getReferralsStats: getReferralsStatsEndpoint,
+  postReferralsTrackClick: postReferralsTrackClickEndpoint,
+  postReferralsTrackSignup: postReferralsTrackSignupEndpoint,
   getRefunds: getRefundsEndpoint,
   postRefunds: postRefundsEndpoint,
   getRefundById: getRefundByIdEndpoint,
@@ -28236,6 +28652,7 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
   getAdminAuditLogsScheduledExportHistoryDownload: getAdminAuditLogsScheduledExportHistoryDownloadEndpoint,
   getAdminAuditLogsScheduledExports: getAdminAuditLogsScheduledExportsEndpoint,
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
@@ -28402,7 +28819,7 @@ export const endpoints = {
   postAuthExternalLoginsDiscordLinkCallback: postAuthExternalLoginsDiscordLinkCallbackEndpoint,
   postAuthExternalLoginsGoogle: postAuthExternalLoginsGoogleEndpoint,
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
-  getAuthGithubCallback: getAuthGithubCallbackEndpoint,
+  postAuthGithubCallback: postAuthGithubCallbackEndpoint,
   postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
@@ -28422,6 +28839,11 @@ export const endpoints = {
   getAuthOidcEndSessionUrl: getAuthOidcEndSessionUrlEndpoint,
   postAuthOidcSignInAuthorize: postAuthOidcSignInAuthorizeEndpoint,
   postAuthOidcSignInCallback: postAuthOidcSignInCallbackEndpoint,
+  postAuthOrchestratedInitiate: postAuthOrchestratedInitiateEndpoint,
+  getAuthOrchestrated: getAuthOrchestratedEndpoint,
+  postAuthOrchestratedAbandon: postAuthOrchestratedAbandonEndpoint,
+  postAuthOrchestratedComplete: postAuthOrchestratedCompleteEndpoint,
+  postAuthOrchestratedProcessStep: postAuthOrchestratedProcessStepEndpoint,
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,
