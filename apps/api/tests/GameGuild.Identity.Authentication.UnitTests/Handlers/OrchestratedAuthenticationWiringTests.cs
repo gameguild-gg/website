@@ -31,7 +31,12 @@ public class OrchestratedAuthenticationWiringTests
         UserId = Guid.NewGuid(),
         CurrentStep = AuthenticationStep.MfaVerification,
         RequiredSteps = [AuthenticationStep.PrimaryCredential, AuthenticationStep.MfaVerification],
-        CompletedSteps = [AuthenticationStep.PrimaryCredential],
+        // A complete flow has every required step satisfied — the domain derives
+        // NextStep from RequiredSteps.Except(CompletedSteps), so an "isComplete"
+        // fixture with a pending step would contradict itself.
+        CompletedSteps = isComplete
+            ? [AuthenticationStep.PrimaryCredential, AuthenticationStep.MfaVerification]
+            : [AuthenticationStep.PrimaryCredential],
         IsComplete = isComplete,
         RiskScore = 0.6,
         InitiatedAt = new DateTime(2026, 10, 11, 0, 0, 0, DateTimeKind.Utc),
