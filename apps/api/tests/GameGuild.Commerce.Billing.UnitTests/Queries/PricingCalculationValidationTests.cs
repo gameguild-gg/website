@@ -2,6 +2,7 @@ using FluentAssertions;
 using GameGuild.Commerce;
 using GameGuild.Commerce.Billing;
 using Moq;
+using Xunit;
 
 namespace GameGuild.Commerce.Billing.UnitTests.Queries;
 

@@ -3,6 +3,7 @@ using FluentAssertions;
 using GameGuild.Commerce;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
+using Xunit;
 
 namespace GameGuild.Commerce.Payments.UnitTests.Services;
 
@@ -317,7 +318,7 @@ public sealed class PricingEngineTests
                 TotalAmount = 96m,
                 EffectiveTaxRate = 0.20m,
                 JurisdictionCode = "DE",
-                TaxBreakdowns = [new TaxBreakdown { TaxType = TaxType.Vat, Rate = 0.20m, TaxAmount = 16m, JurisdictionCode = "DE" }]
+                TaxBreakdowns = [new TaxBreakdown { TaxType = TaxType.VAT, Rate = 0.20m, TaxAmount = 16m, JurisdictionCode = "DE" }]
             });
 
         var result = await CreateEngine().CalculateAsync(new PricingCalculationRequest(

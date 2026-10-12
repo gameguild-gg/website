@@ -242,6 +242,9 @@ public sealed record PricingCalculationResult
     /// <summary>Discounts the promo engine applied, in application order.</summary>
     public List<AppliedDiscount> AppliedDiscounts { get; init; } = [];
 
+    /// <summary>Requested promo codes that did not apply, with the fail-closed reason.</summary>
+    public List<RejectedPromoDiscount> RejectedPromoCodes { get; init; } = [];
+
     /// <summary>Sum of applied discount amounts.</summary>
     public Money TotalDiscounts { get; init; } = Money.Zero();
 

@@ -120,6 +120,7 @@ public sealed class PricingEngine(
 
         // ---- Step 4: promo discounts through the Products promo engine (validation, stacking, caps) ----
         var appliedDiscounts = new List<AppliedDiscount>();
+        var rejectedPromoCodes = new List<RejectedPromoDiscount>();
         decimal totalDiscounts = 0;
         if (request.PromoCodes is { Count: > 0 })
         {
@@ -149,6 +150,7 @@ public sealed class PricingEngine(
             // The promo engine already caps at the order amount; the clamp below is the
             // fail-closed invariant (discounts can never exceed what they were applied to).
             totalDiscounts = Math.Min(promoResult.TotalDiscount, discountableAmount);
+            rejectedPromoCodes.AddRange(promoResult.Rejected);
         }
 
         var subtotalAfterDiscounts = Math.Max(0, subtotal - totalDiscounts);
@@ -323,6 +325,7 @@ public sealed class PricingEngine(
             UsageCharges = MoneyOf(usageTotal, currency),
             Subtotal = MoneyOf(subtotal, currency),
             AppliedDiscounts = appliedDiscounts,
+            RejectedPromoCodes = rejectedPromoCodes,
             TotalDiscounts = MoneyOf(totalDiscounts, currency),
             SubtotalAfterDiscounts = MoneyOf(subtotalAfterDiscounts, currency),
             Proration = proration,
