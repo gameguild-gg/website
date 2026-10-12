@@ -147,21 +147,26 @@ public sealed class GetAccountCreditMetricsQueryHandler(IApplicationDbContext co
             byStatus.GetValueOrDefault(ReferralStatus.RewardIssued),
             byStatus.GetValueOrDefault(ReferralStatus.Fraudulent));
 
-        var leaderboard = await context.Set<Referral>()
+        // The leaderboard groups in memory over a narrow projection: provider-safe
+        // (grouping aggregates with predicates do not translate on all providers) and
+        // bounded by the referral rows of the scoped tenant.
+        var leaderboardRows = await context.Set<Referral>()
             .AsNoTracking()
             .Where(referral => tenantId == null || referral.TenantId == tenantId)
-            .GroupBy(referral => referral.ReferrerUserId)
-            // Conditional sums translate (CASE WHEN) where Count(predicate) over a
-            // grouping does not on this provider.
+            .Select(referral => new { referral.ReferrerUserId, referral.Status })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var leaderboard = leaderboardRows
+            .GroupBy(row => row.ReferrerUserId)
             .Select(grouping => new ReferrerLeaderboardEntry(
                 grouping.Key,
-                grouping.Sum(referral => referral.Status == ReferralStatus.RewardIssued ? 1 : 0),
-                grouping.Sum(referral => referral.Status == ReferralStatus.Fraudulent ? 1 : 0)))
+                grouping.Count(row => row.Status == ReferralStatus.RewardIssued),
+                grouping.Count(row => row.Status == ReferralStatus.Fraudulent)))
             .OrderByDescending(entry => entry.RewardedReferrals)
             .ThenBy(entry => entry.ReferrerUserId)
             .Take(LeaderboardSize)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+            .ToList();
 
         return new AccountCreditMetricsReport(credit, funnel, leaderboard);
     }
