@@ -176,6 +176,9 @@ importers:
       '@game-guild/ui':
         specifier: workspace:^
         version: link:../../packages/ui
+      '@game-guild/web3':
+        specifier: workspace:*
+        version: link:../../packages/features/web3
       '@isomorphic-git/lightning-fs':
         specifier: ^4.10.3
         version: 4.10.3
