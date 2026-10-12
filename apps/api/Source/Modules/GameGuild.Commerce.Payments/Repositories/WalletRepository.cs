@@ -69,6 +69,21 @@ public class WalletRepository(
         Entities.Update(wallet);
     }
 
+    /// <summary>
+    ///     Registers a new wallet ledger transaction explicitly as <c>Added</c> (issue #406).
+    ///     EntityBase pre-generates the primary key in its constructor, so transactions
+    ///     discovered through change-tracking graph traversal on the wallet's
+    ///     <c>Transactions</c> collection would be inferred as updates to EXISTING rows
+    ///     (EF Core treats a store-generated key that already has a value as an existing
+    ///     entity) and fail on save with DbUpdateConcurrencyException. Call sites that
+    ///     append transactions must route them through this method before saving.
+    /// </summary>
+    public void AddTransaction(WalletTransaction transaction)
+    {
+        logger.LogDebug("Adding wallet transaction for wallet: {WalletId}", transaction.WalletId);
+        WalletTransactions.Add(transaction);
+    }
+
     public async Task<List<WalletTransaction>> GetTransactionsAsync(
         Guid walletId,
         int skip = 0,

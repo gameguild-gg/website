@@ -31,9 +31,17 @@ public interface IWalletRepository
     void Add(UserWallet wallet);
 
     /// <summary>
-    ///     Updates a wallet
+    /// Updates a wallet
     /// </summary>
     void Update(UserWallet wallet);
+
+    /// <summary>
+    ///     Registers a new wallet ledger transaction explicitly as <c>Added</c> (issue #406).
+    ///     Required because EntityBase pre-generates its primary key, so change-tracking
+    ///     graph discovery would otherwise infer new transactions as updates to existing
+    ///     rows and fail the save with a concurrency exception.
+    /// </summary>
+    void AddTransaction(WalletTransaction transaction);
 
     /// <summary>
     ///     Gets wallet transactions by wallet ID with filtering
