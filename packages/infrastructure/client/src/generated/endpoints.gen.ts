@@ -9103,6 +9103,77 @@ export const getPostsTrendingEndpoint = {
 } as const;
 
 /**
+ * Run a full pricing calculation through the unified engine: base plan or custom
+ * amount, add-ons, usage tiers, promo discounts, proration, tax, credits, currency —
+ * itemized, explained, self-validated, and recorded in the pricing-decision ledger.
+ *
+ * Calculates a full price (base, add-ons, usage tiers, discounts, proration, tax, credits) through the single centralized pricing engine and records the decision for audit.
+ */
+export interface PostPricingCalculateInput {
+  body?: Types.CommercePaymentsPricingCalculationInput;
+}
+export type PostPricingCalculateOutput = Types.CommercePaymentsPricingCalculationResult;
+export const postPricingCalculateEndpoint = {
+  operationId: 'postPricingCalculate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/:calculate' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview a plan change before finalizing: the immediate prorated charge and the
+ * next-renewal amount side by side. Read-only — no ledger decision, no credit spend.
+ *
+ * Previews what a plan change costs before it is applied: the immediate prorated charge and the next renewal amount, with discounts, tax, and an itemized breakdown.
+ */
+export interface PostPricingPreviewInput {
+  body?: Types.CommercePaymentsPricingPreviewInput;
+}
+export type PostPricingPreviewOutput = Types.CommercePaymentsPricingPreviewResult;
+export const postPricingPreviewEndpoint = {
+  operationId: 'postPricingPreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/:preview' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a stored price calculation by id
+ *
+ * Retrieves one recorded pricing calculation from the pricing-decision ledger, including the full itemized breakdown (base, add-ons, usage, discounts, proration, tax, credits) that produced the final amount.
+ */
+export interface GetPricingCalculationsInput {
+  calculationId: string;
+}
+export type GetPricingCalculationsOutput = Types.CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export const getPricingCalculationsEndpoint = {
+  operationId: 'getPricingCalculations' as const,
+  method: 'GET' as const,
+  path: '/api/v1/pricing/calculations/{calculationId}' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate the accuracy of a stored price calculation
+ *
+ * Re-validates one stored pricing calculation: recomputes the final amount from the recorded breakdown and checks the calculation invariants — totals match line items, discounts do not exceed the subtotal, tax rates are plausible, proration stays within the plan price, and no rounding drift accumulated.
+ */
+export interface PostPricingValidateInput {
+  calculationId: string;
+}
+export type PostPricingValidateOutput = Types.CommerceBillingPricingCalculationValidationResult;
+export const postPricingValidateEndpoint = {
+  operationId: 'postPricingValidate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/pricing/validate/{calculationId}' as const,
+  tags: ['CommercePricing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Gets the caller's referral code and trackable link, creating them on first use.
  *
  * Returns the calling user's opaque unique referral code and the trackable share link built from it (AccountCredits:ReferralLinkBaseUrl base). Idempotent: every call returns the same per-user code.
@@ -10162,6 +10233,26 @@ export const getSubscriptionsBillingHistoryEndpoint = {
 } as const;
 
 /**
+ * Get the current price breakdown of a subscription (issue #417)
+ *
+ * Returns the itemized price breakdown of a subscription's current plan through the unified pricing engine: base plan, discounts, totals and a calculation explanation.
+ */
+export interface GetSubscriptionsBreakdownInput {
+  subscriptionId: string;
+  query?: {
+    promoCode?: string;
+  };
+}
+export type GetSubscriptionsBreakdownOutput = Types.CommercePaymentsPricingCalculationResult;
+export const getSubscriptionsBreakdownEndpoint = {
+  operationId: 'getSubscriptionsBreakdown' as const,
+  method: 'GET' as const,
+  path: '/api/v1/subscriptions/{subscriptionId}/breakdown' as const,
+  tags: ['CommerceSubscriptions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get subscription invoices
  *
  * Retrieves the invoice history for a specific subscription.
@@ -10178,6 +10269,24 @@ export const getSubscriptionsInvoicesEndpoint = {
   operationId: 'getSubscriptionsInvoices' as const,
   method: 'GET' as const,
   path: '/api/v1/subscriptions/{subscriptionId}/invoices' as const,
+  tags: ['CommerceSubscriptions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview a plan change for a subscription before finalizing (issue #417)
+ *
+ * Previews what switching this subscription to a new plan costs before anything is applied: the immediate prorated charge and the next renewal amount, using the subscription's real billing period.
+ */
+export interface PostSubscriptionsPricingPreviewInput {
+  subscriptionId: string;
+  body?: Types.CommerceSubscriptionsPreviewSubscriptionPlanChangeInput;
+}
+export type PostSubscriptionsPricingPreviewOutput = Types.CommercePaymentsPricingPreviewResult;
+export const postSubscriptionsPricingPreviewEndpoint = {
+  operationId: 'postSubscriptionsPricingPreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/subscriptions/{subscriptionId}/pricing:preview' as const,
   tags: ['CommerceSubscriptions'] as const,
   requiresAuth: true,
 } as const;
@@ -28493,6 +28602,10 @@ export const endpoints = {
   getPostsTagsPopular: getPostsTagsPopularEndpoint,
   getPostsTagsSearch: getPostsTagsSearchEndpoint,
   getPostsTrending: getPostsTrendingEndpoint,
+  postPricingCalculate: postPricingCalculateEndpoint,
+  postPricingPreview: postPricingPreviewEndpoint,
+  getPricingCalculations: getPricingCalculationsEndpoint,
+  postPricingValidate: postPricingValidateEndpoint,
   getReferralsCode: getReferralsCodeEndpoint,
   getReferralsHistory: getReferralsHistoryEndpoint,
   getReferralsStats: getReferralsStatsEndpoint,
@@ -28552,7 +28665,9 @@ export const endpoints = {
   postSubscriptionsSuspend: postSubscriptionsSuspendEndpoint,
   postSubscriptionsUpgrade: postSubscriptionsUpgradeEndpoint,
   getSubscriptionsBillingHistory: getSubscriptionsBillingHistoryEndpoint,
+  getSubscriptionsBreakdown: getSubscriptionsBreakdownEndpoint,
   getSubscriptionsInvoices: getSubscriptionsInvoicesEndpoint,
+  postSubscriptionsPricingPreview: postSubscriptionsPricingPreviewEndpoint,
   getSubscriptionsUsage: getSubscriptionsUsageEndpoint,
   getTaxJurisdictionsForGetTaxJurisdictions: getTaxJurisdictionsForGetTaxJurisdictionsEndpoint,
   postTaxJurisdictions: postTaxJurisdictionsEndpoint,
