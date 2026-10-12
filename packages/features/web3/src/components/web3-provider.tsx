@@ -176,9 +176,9 @@ export const Web3Provider = ({
 
   const authenticate = useCallback(
     async (transport: SiweTransport): Promise<SiweAuthentication> => {
-      const { adapter, account, chainId } = requireActiveWallet();
-      dispatch({ type: Web3ActionType.AUTH_SIGNING });
       try {
+        const { adapter, account, chainId } = requireActiveWallet();
+        dispatch({ type: Web3ActionType.AUTH_SIGNING });
         const authentication = await authenticateWithSiwe(
           adapter,
           { address: account, chainId },
@@ -187,7 +187,12 @@ export const Web3Provider = ({
         dispatch({ type: Web3ActionType.AUTH_SUCCESS });
         return authentication;
       } catch (error) {
-        const web3Error = toWeb3Error(error, 'unknown');
+        // Not-connected attempts surface the unauthorized taxonomy; every later
+        // failure is a verification failure of the SIWE round trip.
+        const web3Error =
+          error !== null && typeof error === 'object' && (error as Web3Error).code === 'unauthorized'
+            ? (error as Web3Error)
+            : toWeb3Error(error, 'verification_failed');
         dispatch({ type: Web3ActionType.AUTH_FAILURE, error: web3Error });
         throw web3Error;
       }

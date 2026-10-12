@@ -24,6 +24,8 @@ export interface MockProviderOptions {
   readonly signatures?: readonly string[];
 }
 
+export { COMMON_CHAINS } from '../types';
+
 export const TEST_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0';
 export const TEST_CHAIN_ID_HEX = '0x1';
 export const TEST_SIGNATURE =
