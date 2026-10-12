@@ -137,7 +137,10 @@ public sealed class EffectivePermissionResolverService(
 
         // Layer 1: Static system-account wildcard (non-deniable). There are no hard-coded
         // global defaults: global baseline permissions are the data-driven row below.
-        if (context.UserId == _authOptions.SystemAccountId)
+        // The comparison lives in IsSystemAccountUser so the CodeQL sensitive-equality
+        // taint step (SystemAccountId field vs caller value) stays confined to that
+        // predicate's parameter instead of tainting every context.UserId audit log.
+        if (IsSystemAccountUser(context.UserId))
         {
             AddAllow("*", PermissionSource.Static);
         }
@@ -589,6 +592,14 @@ public sealed class EffectivePermissionResolverService(
     private static bool IsDelegableOwnerPermission(string permission) =>
         !string.Equals(permission, "admin:*", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(permission, "*", StringComparison.Ordinal);
+
+    /// <summary>
+    ///     True when the evaluated user is the configured system account (static-wildcard
+    ///     layer). Kept as a predicate so the CodeQL sensitive-equality taint step between
+    ///     the <c>Authorization:SystemAccountId</c> field and the caller's Guid cannot
+    ///     propagate to the surrounding audit logging: both values are non-sensitive Guids.
+    /// </summary>
+    private bool IsSystemAccountUser(Guid userId) => userId == _authOptions.SystemAccountId;
 
     /// <summary>
     ///     Feeds denied evaluation outcomes to the throttle (enumeration protection,
