@@ -2678,6 +2678,18 @@ export interface CommercePaymentsLockWalletInput {
   reason: string | null;
 }
 
+/** Administrative balance adjustment against a wallet (issue #406). */
+export interface CommercePaymentsModelsAdjustWalletInput {
+  /** Positive amount to adjust */
+  amount?: number;
+  /** Either "credit" (add funds) or "debit" (deduct funds) */
+  direction?: string | null;
+  /** Human-readable adjustment reason (audited) */
+  reason?: string | null;
+  /** Optional idempotency reference; replays return the original transaction */
+  referenceId?: string | null;
+}
+
 /** Request to freeze a wallet */
 export interface CommercePaymentsModelsFreezeWalletInput {
   reason?: string | null;
@@ -2688,6 +2700,26 @@ export interface CommercePaymentsModelsPatchWalletInput {
   currency?: string | null;
   dailyLimit?: number | null;
   monthlyLimit?: number | null;
+}
+
+/** Wallet-to-wallet transfer request (issue #406). Both wallets must share the same currency. */
+export interface CommercePaymentsModelsTransferWalletsInput {
+  /** Positive amount to transfer */
+  amount?: number;
+  /** Human-readable transfer description (audited) */
+  description?: string | null;
+  /** Source wallet identifier */
+  fromWalletId?: string;
+  /** Optional idempotency reference; replays return the original transactions */
+  referenceId?: string | null;
+  /** Destination wallet identifier */
+  toWalletId?: string;
+}
+
+/** Transfer result payload for the wallets:transfer endpoint (issue #406). */
+export interface CommercePaymentsModelsTransferWalletsOutput {
+  creditTransaction?: CommercePaymentsWalletTransaction;
+  debitTransaction?: CommercePaymentsWalletTransaction;
 }
 
 /** Request to partially update a tax jurisdiction */
@@ -3842,6 +3874,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   lastTransactionAt?: string | null;
   /** Reason for lock (if locked) */
   lockReason?: string | null;
+  /** Timestamp of the last low-balance threshold notification issued for this wallet
+(issue #406). Null when the wallet is above the configured threshold or was never
+alerted; cleared again once the balance returns to or above the threshold so a
+subsequent dip re-triggers the notice. */
+  lowBalanceAlertedAt?: string | null;
   /** Monthly spending limit (null = no limit) */
   monthlyLimit?: number | null;
   tenantId?: string | null;
@@ -3866,6 +3903,82 @@ export interface CommercePaymentsValidateTaxExemptionInput {
   exemptionType?: string | null;
   jurisdictionCode?: string | null;
   transactionDate?: string | null;
+}
+
+/** Total balance aggregated per currency. */
+export interface CommercePaymentsWalletCurrencyBalance {
+  /** ISO-4217 currency code */
+  currency?: string | null;
+  /** Sum of wallet balances in the currency */
+  totalBalance?: number;
+  /** Number of wallets in the currency */
+  walletCount?: number;
+}
+
+/** Completed transaction volume for one day. */
+export interface CommercePaymentsWalletDailyVolume {
+  /** Number of completed transactions */
+  count?: number;
+  /** Sum of Credit + TransferIn amounts */
+  creditTotal?: number;
+  /** UTC day */
+  date?: string;
+  /** Sum of Debit + TransferOut amounts */
+  debitTotal?: number;
+}
+
+/** Aggregated wallet metrics response (issue #406). */
+export interface CommercePaymentsWalletMetricsOutput {
+  /** Wallets with IsActive = true */
+  activeWallets?: number;
+  /** Total balances grouped by currency */
+  balancesByCurrency?: CommercePaymentsWalletCurrencyBalance[] | null;
+  /** Completed transaction volume grouped by day over the window */
+  dailyTransactionVolume?: CommercePaymentsWalletDailyVolume[] | null;
+  /** Wallets with IsLocked = true */
+  frozenWallets?: number;
+  /** Report generation timestamp */
+  generatedAtUtc?: string;
+  /** All non-deleted wallets */
+  totalWallets?: number;
+  /** Completed transaction volume grouped by type over the window */
+  transactionVolumeByType?: CommercePaymentsWalletTransactionTypeVolume[] | null;
+  /** Inclusive window start */
+  volumeFromUtc?: string;
+  /** Inclusive window end */
+  volumeToUtc?: string;
+}
+
+/** Reconciliation outcome for a single wallet. */
+export interface CommercePaymentsWalletReconciliationEntry {
+  /** Persisted wallet balance */
+  balance?: number;
+  /** Whether Balance equals LatestBalanceAfter (or the wallet has no transactions and a zero balance) */
+  balanceMatchesLatest?: boolean;
+  /** Whether Balance equals CompletedTransactionSum */
+  balanceMatchesTransactionSum?: boolean;
+  /** Σ(Credit + TransferIn − Debit − TransferOut) over Completed transactions */
+  completedTransactionSum?: number;
+  /** Wallet currency code */
+  currency?: string | null;
+  /** BalanceAfter of the newest transaction, null when the wallet has none */
+  latestBalanceAfter?: number | null;
+  /** Owning user identifier */
+  userId?: string;
+  /** Wallet identifier */
+  walletId?: string;
+}
+
+/** Aggregated wallet reconciliation report (report-only). */
+export interface CommercePaymentsWalletReconciliationReportOutput {
+  /** Number of wallets failing either invariant */
+  discrepanciesFound?: number;
+  /** Report generation timestamp */
+  generatedAtUtc?: string;
+  /** Per-wallet reconciliation results */
+  items?: CommercePaymentsWalletReconciliationEntry[] | null;
+  /** Number of wallets evaluated */
+  walletsChecked?: number;
 }
 
 /** Entity representing a wallet transaction */
@@ -3918,6 +4031,16 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 
 /** Wallet transaction types */
 export type CommercePaymentsWalletTransactionType = 'Credit' | 'Debit' | 'TransferIn' | 'TransferOut' | 'Refund' | 'Fee' | 'Adjustment';
+
+/** Completed transaction volume for one transaction type. */
+export interface CommercePaymentsWalletTransactionTypeVolume {
+  /** Number of completed transactions */
+  count?: number;
+  /** Sum of transaction amounts */
+  totalAmount?: number;
+  /** Transaction type name */
+  type?: string | null;
+}
 
 /** Types of pricing rules - consolidated from Products and Payments modules */
 export type CommercePricingRuleType =
@@ -5439,6 +5562,97 @@ export interface ComplianceAuditAuditOutcomeContext {
   success?: boolean;
 }
 
+/** Aggregated statistics computed over the full matched set (not just the returned page). */
+export interface ComplianceAuditAuditQueryDslAggregates {
+  byAction?: Record<string, number> | null;
+  bySeverity?: Record<string, number> | null;
+  bySource?: Record<string, number> | null;
+  failureCount?: number;
+  /** First matched timestamp (UTC) or null when nothing matched. */
+  firstMatchedAt?: string | null;
+  /** Last matched timestamp (UTC) or null when nothing matched. */
+  lastMatchedAt?: string | null;
+  matchedCount?: number;
+  successCount?: number;
+  /** UTC day buckets of matched events, oldest first, capped at 366 buckets. */
+  timeBuckets?: ComplianceAuditAuditQueryDslTimeBucket[] | null;
+}
+
+/** Outcome of an audit query DSL execution. */
+export interface ComplianceAuditAuditQueryDslExecutionResult {
+  aggregates?: ComplianceAuditAuditQueryDslAggregates;
+  /** Wall-clock execution duration in milliseconds. */
+  durationMs?: number;
+  /** The (data-masked) page of matching audit entries. */
+  rows?: Record<string, unknown>[] | null;
+  /** Number of audit rows scanned before the filter was applied. */
+  rowsScanned?: number;
+  /** True when the scan hit the configured row cap; totals then describe the scanned subset only. */
+  scanTruncated?: boolean;
+  skip?: number;
+  take?: number;
+  totalCount?: number;
+  /** Effective UTC window the stores were queried for. */
+  windowEndUtc?: string;
+  /** Effective UTC window the stores were queried for. */
+  windowStartUtc?: string;
+}
+
+/** One aggregated day bucket of matched events. */
+export interface ComplianceAuditAuditQueryDslTimeBucket {
+  count?: number;
+  dateUtc?: string;
+}
+
+/** API request for POST /audit-queries:execute. */
+export interface ComplianceAuditAuditQueryExecuteApiInput {
+  /** Structured query DSL JSON: {"filter":{"and":[{"field":"actor","op":"eq","value":"alice"}]}}. */
+  queryJson?: string | null;
+  /** Light text syntax: actor:alice AND action:granted AFTER 2026-01-01. */
+  queryText?: string | null;
+  skip?: number;
+  take?: number;
+  /** Requested execution timeout in seconds (1-30, default 10). */
+  timeoutSeconds?: number | null;
+}
+
+/** Paging-only payload for executing a saved view. */
+export interface ComplianceAuditAuditQueryPagingApiInput {
+  skip?: number;
+  take?: number;
+}
+
+/** A built-in, immutable audit query template aimed at a common investigation or compliance scenario. */
+export interface ComplianceAuditAuditQueryTemplate {
+  /** What the template finds and when to use it. */
+  description: string | null;
+  /** Role/persona the template is optimized for (advisory metadata for consumers). */
+  intendedRole: string | null;
+  /** Display name. */
+  name: string | null;
+  /** Structured DSL JSON, pre-validated at startup. */
+  queryJson: string | null;
+  /** Stable template identifier. */
+  templateId: string | null;
+}
+
+/** API request for POST /audit-queries:validate. */
+export interface ComplianceAuditAuditQueryValidateApiInput {
+  queryJson?: string | null;
+  queryText?: string | null;
+}
+
+/** Outcome of query validation. */
+export interface ComplianceAuditAuditQueryValidationOutput {
+  /** Canonical JSON form of the parsed query (what a saved view would store). */
+  canonicalJson?: string | null;
+  /** Validation failure description when GameGuild.Compliance.Audit.AuditQueryValidationResponse.IsValid is false. */
+  error?: string | null;
+  /** Field names referenced by the query. */
+  fields?: string[] | null;
+  isValid?: boolean;
+}
+
 /** Data model for Compliance Audit Audit Related Action. */
 export interface ComplianceAuditAuditRelatedAction {
   actionType?: string | null;
@@ -6045,6 +6259,51 @@ export interface ComplianceAuditRunAuditRetentionSimulationInput {
   growthModel?: ComplianceAuditAuditRetentionGrowthModel;
   historicalDays?: number;
   scenarios: ComplianceAuditAuditRetentionScenario[];
+}
+
+/** One revision snapshot of a saved view. */
+export interface ComplianceAuditSavedAuditQueryRevisionOutput {
+  id?: string;
+  changedAt?: string;
+  changedByUserId?: string;
+  description?: string | null;
+  isCreation?: boolean;
+  isShared?: boolean;
+  name?: string | null;
+  queryJson?: string | null;
+  revision?: number;
+}
+
+/** A saved audit query view as returned by the API. */
+export interface ComplianceAuditSavedAuditQueryViewOutput {
+  id?: string;
+  createdAt?: string;
+  createdByUserId?: string;
+  currentRevision?: number;
+  description?: string | null;
+  executionCount?: number;
+  /** True when the acting user owns the view (and may update or delete it). */
+  isOwner?: boolean;
+  isShared?: boolean;
+  lastExecutedAt?: string | null;
+  name?: string | null;
+  /** Canonical query DSL JSON — this is what execute-by-id runs. */
+  queryJson?: string | null;
+  updatedAt?: string;
+}
+
+/** API request for creating or updating a saved audit query view. */
+export interface ComplianceAuditSaveSavedAuditQueryApiInput {
+  /** Optional description (max 1000 characters). */
+  description?: string | null;
+  /** When true, every audit-reader in the tenant can see and execute the view. */
+  isShared?: boolean;
+  /** Display name (1-200 characters, unique within the tenant). */
+  name: string | null;
+  /** Structured query DSL JSON to persist. */
+  queryJson?: string | null;
+  /** Light text syntax to persist (stored canonically after validation). */
+  queryText?: string | null;
 }
 
 /** Data model for Compliance Audit Scheduled Audit Export Response. */
@@ -22303,8 +22562,11 @@ export let CommercePaymentsGiftPurchaseResultSchema: z.ZodType<CommercePaymentsG
 export let CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema: z.ZodType<CommercePaymentsGiftsControllerPurchaseGiftRequestBody>;
 export let CommercePaymentsGiftStatusSchema: z.ZodType<CommercePaymentsGiftStatus>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
+export let CommercePaymentsModelsAdjustWalletInputSchema: z.ZodType<CommercePaymentsModelsAdjustWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
+export let CommercePaymentsModelsTransferWalletsInputSchema: z.ZodType<CommercePaymentsModelsTransferWalletsInput>;
+export let CommercePaymentsModelsTransferWalletsOutputSchema: z.ZodType<CommercePaymentsModelsTransferWalletsOutput>;
 export let CommercePaymentsPatchTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsPatchTaxJurisdictionInput>;
 export let CommercePaymentsPatchTaxRuleInputSchema: z.ZodType<CommercePaymentsPatchTaxRuleInput>;
 export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymentsPaymentAttemptMetrics>;
@@ -22378,8 +22640,14 @@ export let CommercePaymentsTaxTypeSchema: z.ZodType<CommercePaymentsTaxType>;
 export let CommercePaymentsTransactionStatusSchema: z.ZodType<CommercePaymentsTransactionStatus>;
 export let CommercePaymentsUserWalletSchema: z.ZodType<CommercePaymentsUserWallet>;
 export let CommercePaymentsValidateTaxExemptionInputSchema: z.ZodType<CommercePaymentsValidateTaxExemptionInput>;
+export let CommercePaymentsWalletCurrencyBalanceSchema: z.ZodType<CommercePaymentsWalletCurrencyBalance>;
+export let CommercePaymentsWalletDailyVolumeSchema: z.ZodType<CommercePaymentsWalletDailyVolume>;
+export let CommercePaymentsWalletMetricsOutputSchema: z.ZodType<CommercePaymentsWalletMetricsOutput>;
+export let CommercePaymentsWalletReconciliationEntrySchema: z.ZodType<CommercePaymentsWalletReconciliationEntry>;
+export let CommercePaymentsWalletReconciliationReportOutputSchema: z.ZodType<CommercePaymentsWalletReconciliationReportOutput>;
 export let CommercePaymentsWalletTransactionSchema: z.ZodType<CommercePaymentsWalletTransaction>;
 export let CommercePaymentsWalletTransactionTypeSchema: z.ZodType<CommercePaymentsWalletTransactionType>;
+export let CommercePaymentsWalletTransactionTypeVolumeSchema: z.ZodType<CommercePaymentsWalletTransactionTypeVolume>;
 export let CommercePricingRuleTypeSchema: z.ZodType<CommercePricingRuleType>;
 export let CommerceProductsAddMySupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddMySupportTicketMessageInput>;
 export let CommerceProductsAddSupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddSupportTicketMessageInput>;
@@ -22503,6 +22771,14 @@ export let ComplianceAuditAuditLogDtoSchema: z.ZodType<ComplianceAuditAuditLogDt
 export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLogOutput>;
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
+export let ComplianceAuditAuditQueryDslAggregatesSchema: z.ZodType<ComplianceAuditAuditQueryDslAggregates>;
+export let ComplianceAuditAuditQueryDslExecutionResultSchema: z.ZodType<ComplianceAuditAuditQueryDslExecutionResult>;
+export let ComplianceAuditAuditQueryDslTimeBucketSchema: z.ZodType<ComplianceAuditAuditQueryDslTimeBucket>;
+export let ComplianceAuditAuditQueryExecuteApiInputSchema: z.ZodType<ComplianceAuditAuditQueryExecuteApiInput>;
+export let ComplianceAuditAuditQueryPagingApiInputSchema: z.ZodType<ComplianceAuditAuditQueryPagingApiInput>;
+export let ComplianceAuditAuditQueryTemplateSchema: z.ZodType<ComplianceAuditAuditQueryTemplate>;
+export let ComplianceAuditAuditQueryValidateApiInputSchema: z.ZodType<ComplianceAuditAuditQueryValidateApiInput>;
+export let ComplianceAuditAuditQueryValidationOutputSchema: z.ZodType<ComplianceAuditAuditQueryValidationOutput>;
 export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
 export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
 export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
@@ -22565,6 +22841,9 @@ export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAudit
 export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
+export let ComplianceAuditSavedAuditQueryRevisionOutputSchema: z.ZodType<ComplianceAuditSavedAuditQueryRevisionOutput>;
+export let ComplianceAuditSavedAuditQueryViewOutputSchema: z.ZodType<ComplianceAuditSavedAuditQueryViewOutput>;
+export let ComplianceAuditSaveSavedAuditQueryApiInputSchema: z.ZodType<ComplianceAuditSaveSavedAuditQueryApiInput>;
 export let ComplianceAuditScheduledAuditExportOutputSchema: z.ZodType<ComplianceAuditScheduledAuditExportOutput>;
 export let ComplianceAuditSecurityAlertOutputSchema: z.ZodType<ComplianceAuditSecurityAlertOutput>;
 export let ComplianceAuditSecurityAlertStatusSchema: z.ZodType<ComplianceAuditSecurityAlertStatus>;
@@ -26466,6 +26745,14 @@ CommercePaymentsLockWalletInputSchema = z.object({
   reason: z.string().nullable(),
 });
 
+/** Zod schema for CommercePaymentsModelsAdjustWalletInput. Administrative balance adjustment against a wallet (issue #406). */
+CommercePaymentsModelsAdjustWalletInputSchema = z.object({
+  amount: z.number().optional(),
+  direction: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  referenceId: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsModelsFreezeWalletInput. Request to freeze a wallet */
 CommercePaymentsModelsFreezeWalletInputSchema = z.object({
   reason: z.string().nullable().optional(),
@@ -26476,6 +26763,21 @@ CommercePaymentsModelsPatchWalletInputSchema = z.object({
   currency: z.string().nullable().optional(),
   dailyLimit: z.number().nullable().optional(),
   monthlyLimit: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsModelsTransferWalletsInput. Wallet-to-wallet transfer request (issue #406). Both wallets must share the same currency. */
+CommercePaymentsModelsTransferWalletsInputSchema = z.object({
+  amount: z.number().optional(),
+  description: z.string().nullable().optional(),
+  fromWalletId: z.string().uuid().optional(),
+  referenceId: z.string().nullable().optional(),
+  toWalletId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsModelsTransferWalletsOutput. Transfer result payload for the wallets:transfer endpoint (issue #406). */
+CommercePaymentsModelsTransferWalletsOutputSchema = z.object({
+  creditTransaction: z.lazy(() => CommercePaymentsWalletTransactionSchema).optional(),
+  debitTransaction: z.lazy(() => CommercePaymentsWalletTransactionSchema).optional(),
 });
 
 /** Zod schema for CommercePaymentsPatchTaxJurisdictionInput. Request to partially update a tax jurisdiction */
@@ -27378,6 +27680,7 @@ CommercePaymentsUserWalletSchema = z.object({
   isNew: z.boolean().optional(),
   lastTransactionAt: z.string().datetime().nullable().optional(),
   lockReason: z.string().max(500).nullable().optional(),
+  lowBalanceAlertedAt: z.string().datetime().nullable().optional(),
   monthlyLimit: z.number().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
   transactions: z
@@ -27397,6 +27700,66 @@ CommercePaymentsValidateTaxExemptionInputSchema = z.object({
   exemptionType: z.string().nullable().optional(),
   jurisdictionCode: z.string().nullable().optional(),
   transactionDate: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletCurrencyBalance. Total balance aggregated per currency. */
+CommercePaymentsWalletCurrencyBalanceSchema = z.object({
+  currency: z.string().nullable().optional(),
+  totalBalance: z.number().optional(),
+  walletCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletDailyVolume. Completed transaction volume for one day. */
+CommercePaymentsWalletDailyVolumeSchema = z.object({
+  count: z.number().int().optional(),
+  creditTotal: z.number().optional(),
+  date: z.string().date().optional(),
+  debitTotal: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletMetricsOutput. Aggregated wallet metrics response (issue #406). */
+CommercePaymentsWalletMetricsOutputSchema = z.object({
+  activeWallets: z.number().int().optional(),
+  balancesByCurrency: z
+    .array(z.lazy(() => CommercePaymentsWalletCurrencyBalanceSchema))
+    .nullable()
+    .optional(),
+  dailyTransactionVolume: z
+    .array(z.lazy(() => CommercePaymentsWalletDailyVolumeSchema))
+    .nullable()
+    .optional(),
+  frozenWallets: z.number().int().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  totalWallets: z.number().int().optional(),
+  transactionVolumeByType: z
+    .array(z.lazy(() => CommercePaymentsWalletTransactionTypeVolumeSchema))
+    .nullable()
+    .optional(),
+  volumeFromUtc: z.string().datetime().optional(),
+  volumeToUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletReconciliationEntry. Reconciliation outcome for a single wallet. */
+CommercePaymentsWalletReconciliationEntrySchema = z.object({
+  balance: z.number().optional(),
+  balanceMatchesLatest: z.boolean().optional(),
+  balanceMatchesTransactionSum: z.boolean().optional(),
+  completedTransactionSum: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  latestBalanceAfter: z.number().nullable().optional(),
+  userId: z.string().uuid().optional(),
+  walletId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletReconciliationReportOutput. Aggregated wallet reconciliation report (report-only). */
+CommercePaymentsWalletReconciliationReportOutputSchema = z.object({
+  discrepanciesFound: z.number().int().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsWalletReconciliationEntrySchema))
+    .nullable()
+    .optional(),
+  walletsChecked: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsWalletTransaction. Entity representing a wallet transaction */
@@ -27433,6 +27796,13 @@ CommercePaymentsWalletTransactionSchema = z.object({
 
 /** Zod schema for CommercePaymentsWalletTransactionType. Wallet transaction types */
 CommercePaymentsWalletTransactionTypeSchema = z.enum(['Credit', 'Debit', 'TransferIn', 'TransferOut', 'Refund', 'Fee', 'Adjustment']);
+
+/** Zod schema for CommercePaymentsWalletTransactionTypeVolume. Completed transaction volume for one transaction type. */
+CommercePaymentsWalletTransactionTypeVolumeSchema = z.object({
+  count: z.number().int().optional(),
+  totalAmount: z.number().optional(),
+  type: z.string().nullable().optional(),
+});
 
 /** Zod schema for CommercePricingRuleType. Types of pricing rules - consolidated from Products and Payments modules */
 CommercePricingRuleTypeSchema = z.enum([
@@ -28804,6 +29174,80 @@ ComplianceAuditAuditOutcomeContextSchema = z.object({
   success: z.boolean().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditQueryDslAggregates. Aggregated statistics computed over the full matched set (not just the returned page). */
+ComplianceAuditAuditQueryDslAggregatesSchema = z.object({
+  byAction: z.record(z.string(), z.number().int()).nullable().optional(),
+  bySeverity: z.record(z.string(), z.number().int()).nullable().optional(),
+  bySource: z.record(z.string(), z.number().int()).nullable().optional(),
+  failureCount: z.number().int().optional(),
+  firstMatchedAt: z.string().datetime().nullable().optional(),
+  lastMatchedAt: z.string().datetime().nullable().optional(),
+  matchedCount: z.number().int().optional(),
+  successCount: z.number().int().optional(),
+  timeBuckets: z
+    .array(z.lazy(() => ComplianceAuditAuditQueryDslTimeBucketSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryDslExecutionResult. Outcome of an audit query DSL execution. */
+ComplianceAuditAuditQueryDslExecutionResultSchema = z.object({
+  aggregates: z.lazy(() => ComplianceAuditAuditQueryDslAggregatesSchema).optional(),
+  durationMs: z.number().int().optional(),
+  rows: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
+  rowsScanned: z.number().int().optional(),
+  scanTruncated: z.boolean().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  windowEndUtc: z.string().datetime().optional(),
+  windowStartUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryDslTimeBucket. One aggregated day bucket of matched events. */
+ComplianceAuditAuditQueryDslTimeBucketSchema = z.object({
+  count: z.number().int().optional(),
+  dateUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryExecuteApiInput. API request for POST /audit-queries:execute. */
+ComplianceAuditAuditQueryExecuteApiInputSchema = z.object({
+  queryJson: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  timeoutSeconds: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryPagingApiInput. Paging-only payload for executing a saved view. */
+ComplianceAuditAuditQueryPagingApiInputSchema = z.object({
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryTemplate. A built-in, immutable audit query template aimed at a common investigation or compliance scenario. */
+ComplianceAuditAuditQueryTemplateSchema = z.object({
+  description: z.string().nullable(),
+  intendedRole: z.string().nullable(),
+  name: z.string().nullable(),
+  queryJson: z.string().nullable(),
+  templateId: z.string().nullable(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryValidateApiInput. API request for POST /audit-queries:validate. */
+ComplianceAuditAuditQueryValidateApiInputSchema = z.object({
+  queryJson: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryValidationOutput. Outcome of query validation. */
+ComplianceAuditAuditQueryValidationOutputSchema = z.object({
+  canonicalJson: z.string().nullable().optional(),
+  error: z.string().nullable().optional(),
+  fields: z.array(z.string()).nullable().optional(),
+  isValid: z.boolean().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditRelatedAction. Data model for Compliance Audit Audit Related Action. */
 ComplianceAuditAuditRelatedActionSchema = z.object({
   actionType: z.string().nullable().optional(),
@@ -29453,6 +29897,44 @@ ComplianceAuditRunAuditRetentionSimulationInputSchema = z.object({
     .array(z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema))
     .min(1)
     .max(10),
+});
+
+/** Zod schema for ComplianceAuditSavedAuditQueryRevisionOutput. One revision snapshot of a saved view. */
+ComplianceAuditSavedAuditQueryRevisionOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  changedAt: z.string().datetime().optional(),
+  changedByUserId: z.string().uuid().optional(),
+  description: z.string().nullable().optional(),
+  isCreation: z.boolean().optional(),
+  isShared: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  queryJson: z.string().nullable().optional(),
+  revision: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditSavedAuditQueryViewOutput. A saved audit query view as returned by the API. */
+ComplianceAuditSavedAuditQueryViewOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  currentRevision: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  executionCount: z.number().int().optional(),
+  isOwner: z.boolean().optional(),
+  isShared: z.boolean().optional(),
+  lastExecutedAt: z.string().datetime().nullable().optional(),
+  name: z.string().nullable().optional(),
+  queryJson: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditSaveSavedAuditQueryApiInput. API request for creating or updating a saved audit query view. */
+ComplianceAuditSaveSavedAuditQueryApiInputSchema = z.object({
+  description: z.string().nullable().optional(),
+  isShared: z.boolean().optional(),
+  name: z.string().nullable(),
+  queryJson: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditScheduledAuditExportOutput. Data model for Compliance Audit Scheduled Audit Export Response. */
