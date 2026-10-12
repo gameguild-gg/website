@@ -124,6 +124,7 @@ export * from './modules/learning-assessments-rubrics.gen.js';
 export * from './modules/assets-libraries.gen.js';
 export * from './modules/assets.gen.js';
 export * from './modules/social-assets-social-media-assets.gen.js';
+export * from './modules/compliance-audit-queries.gen.js';
 export * from './modules/auth-api-keys.gen.js';
 export * from './modules/auth.gen.js';
 export * from './modules/auth-multi-factor.gen.js';

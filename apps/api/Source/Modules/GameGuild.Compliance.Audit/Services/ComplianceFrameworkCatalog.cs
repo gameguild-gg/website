@@ -14,10 +14,11 @@ public sealed class ComplianceFrameworkCatalog : IComplianceFrameworkCatalog
     private static readonly ComplianceFrameworkTemplate Gdpr = BuildGdpr();
     private static readonly IReadOnlyList<ComplianceFrameworkTemplate> FedRamp = FedRampComplianceCatalog.Templates();
     private static readonly IReadOnlyList<ComplianceFrameworkTemplate> Soc2 = Soc2ComplianceCatalog.Templates();
-    public IReadOnlyList<ComplianceFrameworkTemplate> GetTemplates() => new[] { IsoIsms, Gdpr, Iso27001 }.Concat(FedRamp).Concat(Soc2).Select(Clone).ToArray();
+    private static readonly IReadOnlyList<ComplianceFrameworkTemplate> Industry = [.. HipaaComplianceCatalog.Templates(), .. PciDssComplianceCatalog.Templates()];
+    public IReadOnlyList<ComplianceFrameworkTemplate> GetTemplates() => new[] { IsoIsms, Gdpr, Iso27001 }.Concat(FedRamp).Concat(Soc2).Concat(Industry).Select(Clone).ToArray();
     public ComplianceFrameworkTemplate? Find(string id)
     {
-        var template = new[] { IsoIsms, Gdpr, Iso27001 }.Concat(FedRamp).Concat(Soc2).SingleOrDefault(item => item.Id == id);
+        var template = new[] { IsoIsms, Gdpr, Iso27001 }.Concat(FedRamp).Concat(Soc2).Concat(Industry).SingleOrDefault(item => item.Id == id);
         return template is null ? null : Clone(template);
     }
 

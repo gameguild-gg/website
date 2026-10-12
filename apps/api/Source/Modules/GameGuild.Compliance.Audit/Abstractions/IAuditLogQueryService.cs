@@ -26,4 +26,17 @@ public interface IAuditLogQueryService
     Task<PermissionAuditResponse> GetPermissionLogsAsync(
         PermissionAuditRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Collect unified audit entries from the underlying stores for a bounded time window,
+    ///     optionally restricted to a single source. Used by the audit query DSL executor, which
+    ///     applies its own filter tree in memory. Each source contributes at most
+    ///     <paramref name="rowLimit" /> rows.
+    /// </summary>
+    Task<IReadOnlyList<UnifiedSecurityAuditEntry>> CollectUnifiedEntriesAsync(
+        DateTime startDateUtc,
+        DateTime endDateUtc,
+        SecurityAuditSourceType? restrictToSource,
+        int rowLimit,
+        CancellationToken cancellationToken = default);
 }

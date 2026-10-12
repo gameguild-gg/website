@@ -12,9 +12,12 @@ using GameGuild.API.Database;
 using GameGuild.API.Core.Filters;
 using GameGuild.API.Core.Security;
 using GameGuild.Features;
+using GameGuild.API.Core.GraphQL;
 using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Authorization.GraphQL;
 using GameGuild.Projects;
-using HotChocolate.Authorization;
+using HotChocolate;
+using HotChocolate.Configuration;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Hosting;
@@ -409,9 +412,23 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddSingleton(options);
         services.TryAddScoped<IPermissionEvaluationLogSink, AuditPermissionEvaluationLogSink>();
+        services.TryAddScoped<GraphQLSchemaVisibilityEvaluator>();
+
+        // General @authorize directive (issue #335): deny-by-default field enforcement for
+        // permission, policy and role requirements, plus permission-aware introspection
+        // control. AllFields applies the middleware to the introspection roots (__schema /
+        // __type) as well; policy/role checks are enforced natively through the ASP.NET
+        // Core authorization services, which is why HotChocolate's own @authorize
+        // middleware registration is replaced by the general directive.
         services.AddGraphQLServer()
-            .AddAuthorization()
             .AddDirectiveType<ProjectAuthorizationDirectiveType>()
+            .AddDirectiveType<GraphQLAuthorizeDirectiveType>()
+            .ModifyOptions(schemaOptions =>
+                schemaOptions.FieldMiddleware = FieldMiddlewareApplication.AllFields)
+            // HotChocolate's coarse introspection firewall is disabled so the
+            // permission-aware schema gate can decide per caller (fail-closed).
+            .DisableIntrospection(false)
+            .UseField<GraphQLAuthorizeFieldMiddleware>()
             .AddQueryType(descriptor => descriptor.Name("Query"))
             .AddType<ProjectGraphQLType>()
             .AddTypeExtension<ProjectQueries>()

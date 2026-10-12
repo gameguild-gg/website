@@ -180,5 +180,15 @@ public class BlogCommandHandlerActorTests
         public GameGuild.Identity.Context.Actors.ActorContext ActorContext => context;
         public void SetActorContext(GameGuild.Identity.Context.Actors.ActorContext value) { }
         public void ClearActorContext() { }
+
+        // The blog tests never dispatch nested actors; the scope matches this stub's
+        // no-op SetActorContext semantics (install nothing, restore nothing).
+        public GameGuild.Identity.Context.Actors.IActorContextScope BeginActorContextScope(
+            GameGuild.Identity.Context.Actors.ActorContext value) => new NoopScope();
+
+        private sealed class NoopScope : GameGuild.Identity.Context.Actors.IActorContextScope
+        {
+            public void Dispose() { }
+        }
     }
 }

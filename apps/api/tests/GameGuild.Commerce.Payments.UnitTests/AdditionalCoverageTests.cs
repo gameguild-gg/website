@@ -1522,14 +1522,14 @@ public class WalletServiceHandlerConstructorTests
     [Fact]
     public void AddFundsCommandHandler_CanBeConstructed()
     {
-        var handler = new AddFundsCommandHandler(_walletService.Object);
+        var handler = new AddFundsCommandHandler(_walletService.Object, Mock.Of<IRevenueAuditService>(), Mock.Of<IActorContextAccessor>());
         handler.Should().NotBeNull();
     }
 
     [Fact]
     public void DeductFundsCommandHandler_CanBeConstructed()
     {
-        var handler = new DeductFundsCommandHandler(_walletService.Object);
+        var handler = new DeductFundsCommandHandler(_walletService.Object, Mock.Of<IRevenueAuditService>(), Mock.Of<IActorContextAccessor>());
         handler.Should().NotBeNull();
     }
 
@@ -1597,7 +1597,7 @@ public class WalletServiceHandlerConstructorTests
     [Fact]
     public void TransferFundsCommandHandler_CanBeConstructed()
     {
-        var handler = new TransferFundsCommandHandler(_walletService.Object);
+        var handler = new TransferFundsCommandHandler(_walletService.Object, Mock.Of<IRevenueAuditService>(), Mock.Of<IActorContextAccessor>());
         handler.Should().NotBeNull();
     }
 

@@ -198,8 +198,27 @@ public sealed class PostgreSqlLegacyEconomyShadowMigrationTests
         await migrator.MigrateAsync("20260825022708_AddTenantScopedTreasury");
         var tenantId = Guid.NewGuid();
         var legacyWalletId = Guid.NewGuid();
-        context.Set<UserWallet>().Add(Wallet(legacyWalletId, Guid.NewGuid(), tenantId, 45.67m));
-        await context.SaveChangesAsync();
+        // Seed through the legacy schema itself (raw SQL over the columns that existed at
+        // the 2026-08-25 migration point): the point of this test is that rows written by
+        // the legacy database survive the upgrade, and the current EF model already
+        // carries post-legacy columns (e.g. LowBalanceAlertedAt) that do not exist at
+        // the legacy point, so an EF-model insert would not be a legacy row.
+        await using (var seedConnection = new NpgsqlConnection(database.ConnectionString))
+        {
+            await seedConnection.OpenAsync();
+            await using var seedCommand = new NpgsqlCommand(
+                """
+                INSERT INTO user_wallets ("Id", "UserId", "TenantId", "Balance", "Currency", "IsActive", "IsLocked", "CreatedAt", "UpdatedAt", "Version")
+                VALUES (@id, @userId, @tenantId, 45.67, 'USD', true, false, @now, @now, 1);
+                """,
+                seedConnection);
+            seedCommand.Parameters.AddWithValue("id", legacyWalletId);
+            seedCommand.Parameters.AddWithValue("userId", Guid.NewGuid());
+            seedCommand.Parameters.AddWithValue("tenantId", tenantId);
+            seedCommand.Parameters.AddWithValue("now", DateTime.UtcNow);
+            await seedCommand.ExecuteNonQueryAsync();
+        }
+
         context.ChangeTracker.Clear();
 
         await migrator.MigrateAsync();
@@ -219,8 +238,16 @@ public sealed class PostgreSqlLegacyEconomyShadowMigrationTests
         Convert.ToInt64(await command.ExecuteScalarAsync()).Should().Be(1);
 
         await migrator.MigrateAsync("20260825022708_AddTenantScopedTreasury");
-        (await context.Set<UserWallet>().AsNoTracking().SingleAsync(row => row.Id == legacyWalletId))
-            .Balance.Should().Be(45.67m);
+        // The schema is back at the legacy point, so the surviving row must be read
+        // through the legacy schema as well: the current EF model selects post-legacy
+        // columns (e.g. LowBalanceAlertedAt) that do not exist after the downgrade.
+        await using var downgradedConnection = new NpgsqlConnection(database.ConnectionString);
+        await downgradedConnection.OpenAsync();
+        await using var downgradedCommand = new NpgsqlCommand(
+            """SELECT "Balance" FROM user_wallets WHERE "Id" = @id;""",
+            downgradedConnection);
+        downgradedCommand.Parameters.AddWithValue("id", legacyWalletId);
+        Convert.ToDecimal(await downgradedCommand.ExecuteScalarAsync()).Should().Be(45.67m);
     }
 
     [Fact]

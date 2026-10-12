@@ -30,8 +30,9 @@ public class UserWalletConfiguration : IEntityTypeConfiguration<UserWallet>
 
         builder.Property(x => x.IsActive).IsRequired();
 
-        // Configure indexes for performance
-        builder.HasIndex(x => x.UserId).IsUnique();
+        // Configure indexes for performance. Issue #406: uniqueness moved from UserId alone to
+        // (UserId, Currency) so a user can hold one wallet per currency concurrently.
+        builder.HasIndex(x => new { x.UserId, x.Currency }).IsUnique();
         builder.HasIndex(x => x.Currency);
         builder.HasIndex(x => x.IsActive);
     }
