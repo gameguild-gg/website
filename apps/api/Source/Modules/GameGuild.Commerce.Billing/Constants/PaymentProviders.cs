@@ -54,45 +54,7 @@ public static class PaymentProviders
         provider.ToLowerInvariant();
 }
 
-/// <summary>
-///     Constants for currency codes (ISO 4217).
-/// </summary>
-public static class CurrencyCodes
-{
-    /// <summary>US Dollar</summary>
-    public const string USD = "USD";
-
-    /// <summary>Euro</summary>
-    public const string EUR = "EUR";
-
-    /// <summary>British Pound</summary>
-    public const string GBP = "GBP";
-
-    /// <summary>Japanese Yen</summary>
-    public const string JPY = "JPY";
-
-    /// <summary>Canadian Dollar</summary>
-    public const string CAD = "CAD";
-
-    /// <summary>Australian Dollar</summary>
-    public const string AUD = "AUD";
-
-    /// <summary>Default currency code</summary>
-    public const string Default = USD;
-
-    /// <summary>
-    ///     All supported currency codes.
-    /// </summary>
-    public static readonly IReadOnlyList<string> Supported = new[]
-    {
-        USD, EUR, GBP, JPY, CAD, AUD
-    };
-
-    /// <summary>
-    ///     Validates if a currency code is supported.
-    /// </summary>
-    /// <param name="currencyCode">The currency code to validate</param>
-    /// <returns>True if the currency code is supported, false otherwise</returns>
-    public static bool IsSupported(string? currencyCode) =>
-        !string.IsNullOrEmpty(currencyCode) && Supported.Contains(currencyCode.ToUpperInvariant());
-}
+// CurrencyCodes (ISO 4217 allowlist) moved to the shared commerce contracts module
+// (GameGuild.Commerce/Constants/CurrencyCodes.cs, issue #416) so the Subscriptions module
+// can validate plan currencies against the same payment-supported allowlist. The namespace
+// (GameGuild.Commerce) is unchanged; Billing consumers keep compiling without changes.
