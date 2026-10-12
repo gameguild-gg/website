@@ -90,8 +90,9 @@ function WalletButtonGroup({
   labels: WalletSignInLabels;
 }) {
   const { signIn } = useAuth();
-  const { status, error, wallets, account, connect, disconnect, authenticate, clearError, isPending } =
-    useWallet();
+  // Accessed through the context object (not destructured): the linter's unbound-method
+  // rule fires on functions separated from their owning object.
+  const web3 = useWallet();
 
   const transport = useMemo<SiweTransport>(
     () => ({
@@ -131,35 +132,35 @@ function WalletButtonGroup({
   );
 
   async function handleConnect(walletId: string) {
-    clearError();
+    web3.clearError();
     try {
-      await connect(walletId);
-      await authenticate(transport);
+      await web3.connect(walletId);
+      await web3.authenticate(transport);
     } catch {
       // State machine already surfaced the error below the buttons.
     }
   }
 
-  const availableWallets = wallets.filter((wallet) => wallet.available);
+  const availableWallets = web3.wallets.filter((wallet) => wallet.available);
 
   if (availableWallets.length === 0) return null;
 
-  if (account) {
+  if (web3.account) {
     return (
       <div className="flex flex-col gap-2" data-testid="wallet-connected">
         <div className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 text-sm font-medium text-white">
           {walletIcon}
-          {labels.connected.replace("{address}", shortenAddress(account))}
+          {labels.connected.replace("{address}", shortenAddress(web3.account))}
         </div>
         <button
           type="button"
           data-testid="wallet-disconnect"
-          onClick={() => void disconnect().catch(() => undefined)}
+          onClick={() => void web3.disconnect().catch(() => undefined)}
           className="text-xs text-slate-400 underline-offset-4 hover:text-slate-200 hover:underline"
         >
           {labels.disconnect}
         </button>
-        {error ? <WalletError error={error} /> : null}
+        {web3.error ? <WalletError error={web3.error} /> : null}
       </div>
     );
   }
@@ -171,19 +172,19 @@ function WalletButtonGroup({
           key={wallet.id}
           type="button"
           data-testid={`${wallet.id}-sign-in-button`}
-          disabled={isPending}
+          disabled={web3.isPending}
           onClick={() => void handleConnect(wallet.id)}
           className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/10 text-sm font-medium text-white shadow-xs transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
           {walletIcon}
-          {status === "signing"
+          {web3.status === "signing"
             ? labels.signing
-            : status === "connecting" && isPending
+            : web3.status === "connecting" && web3.isPending
               ? labels.connecting
               : labels.continueWithWallet.replace("{wallet}", wallet.name)}
         </button>
       ))}
-      {error ? <WalletError error={error} /> : null}
+      {web3.error ? <WalletError error={web3.error} /> : null}
     </div>
   );
 }

@@ -69,9 +69,8 @@ export const Web3Provider = ({
     let cancelled = false;
     void (async () => {
       const descriptors = await Promise.all(
-        adaptersRef.current
-          .values()
-          .map(async (adapter): Promise<WalletDescriptor> => {
+        Array.from(adaptersRef.current.values()).map(
+          async (adapter): Promise<WalletDescriptor> => {
             let available = false;
             try {
               available = await adapter.isAvailable();

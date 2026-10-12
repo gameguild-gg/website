@@ -1,7 +1,5 @@
-import '@testing-library/jest-dom/vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import React from 'react';
 import { useChainId, useWallet, useWalletAddress, useWeb3 } from './use-web3';
 import { Web3Provider } from '../components/web3-provider';
 import { createMetaMaskAdapter } from '../adapters/metamask';
@@ -38,7 +36,7 @@ describe('web3 hooks', () => {
 
     await screen.findByText('connect').then((button) => button.click());
 
-    expect(await screen.findByText(TEST_ADDRESS)).toBeInTheDocument();
+    expect(await screen.findByText(TEST_ADDRESS)).not.toBeNull();
     expect(screen.getByTestId('chain').textContent).toBe('1');
     // No wallet action was ever in flight at rest.
     expect(screen.getByTestId('pending').textContent).toBe('false');

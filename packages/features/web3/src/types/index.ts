@@ -265,11 +265,12 @@ export function toProviderError(error: unknown): Eip1193ProviderError {
   }
   if (typeof error === 'object' && error !== null && 'message' in error) {
     const shaped = error as { message?: unknown; code?: unknown };
-    const wrapped = new Error(
-      typeof shaped.message === 'string' ? shaped.message : 'Unknown wallet error',
-    ) as Eip1193ProviderError;
-    if (typeof shaped.code === 'number') wrapped.code = shaped.code;
-    return wrapped;
+    const message =
+      typeof shaped.message === 'string' ? shaped.message : 'Unknown wallet error';
+    if (typeof shaped.code === 'number') {
+      return Object.assign(new Error(message), { code: shaped.code }) as Eip1193ProviderError;
+    }
+    return new Error(message) as Eip1193ProviderError;
   }
   return new Error(typeof error === 'string' ? error : 'Unknown wallet error');
 }
