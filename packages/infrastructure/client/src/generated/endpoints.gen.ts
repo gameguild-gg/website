@@ -10508,6 +10508,23 @@ export const getWalletsForGetWalletsEndpoint = {
 } as const;
 
 /**
+ * Wallet-to-wallet transfer (issue #406): moves funds between two same-currency wallets
+ * through the audited TransferFunds command. A duplicate ReferenceId replays
+ * idempotently.
+ */
+export interface PostWalletsTransferInput {
+  body?: Types.CommercePaymentsModelsTransferWalletsInput;
+}
+export type PostWalletsTransferOutput = Types.CommercePaymentsModelsTransferWalletsOutput;
+export const postWalletsTransferEndpoint = {
+  operationId: 'postWalletsTransfer' as const,
+  method: 'POST' as const,
+  path: '/api/v1/wallets:transfer' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get wallet by ID
  */
 export interface GetWalletsForGetWalletsByWalletIdInput {
@@ -10569,6 +10586,24 @@ export const headWalletsEndpoint = {
 } as const;
 
 /**
+ * Administrative balance adjustment (issue #406): credits or debits a wallet through
+ * the audited AddFunds/DeductFunds commands. A duplicate ReferenceId replays
+ * idempotently and returns the original transaction.
+ */
+export interface PostWalletsAdjustInput {
+  walletId: string;
+  body?: Types.CommercePaymentsModelsAdjustWalletInput;
+}
+export type PostWalletsAdjustOutput = Types.CommercePaymentsWalletTransaction;
+export const postWalletsAdjustEndpoint = {
+  operationId: 'postWalletsAdjust' as const,
+  method: 'POST' as const,
+  path: '/api/v1/wallets/{walletId}:adjust' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Freeze wallet
  */
 export interface PostWalletsFreezeInput {
@@ -10614,6 +10649,42 @@ export const getWalletsAuditLogEndpoint = {
   operationId: 'getWalletsAuditLog' as const,
   method: 'GET' as const,
   path: '/api/v1/wallets/{walletId}/audit-log' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Wallet balance analytics (issue #406): total balances by currency, active/frozen
+ * wallet counts and completed transaction volume by type and day.
+ */
+export interface GetWalletsMetricsInput {
+  query?: {
+    days?: number;
+  };
+}
+export type GetWalletsMetricsOutput = Types.CommercePaymentsWalletMetricsOutput;
+export const getWalletsMetricsEndpoint = {
+  operationId: 'getWalletsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/wallets/metrics' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Report-only balance reconciliation (issue #406): per wallet, verifies Balance against
+ * the latest BalanceAfter and the signed sum of completed transactions. Never mutates state.
+ */
+export interface GetWalletsReconciliationInput {
+  query?: {
+    walletId?: string;
+  };
+}
+export type GetWalletsReconciliationOutput = Types.CommercePaymentsWalletReconciliationReportOutput;
+export const getWalletsReconciliationEndpoint = {
+  operationId: 'getWalletsReconciliation' as const,
+  method: 'GET' as const,
+  path: '/api/v1/wallets/reconciliation' as const,
   tags: ['CommercePaymentsWallets'] as const,
   requiresAuth: true,
 } as const;
@@ -28573,13 +28644,17 @@ export const endpoints = {
   postWalletUnlock: postWalletUnlockEndpoint,
   getWalletBalance: getWalletBalanceEndpoint,
   getWalletsForGetWallets: getWalletsForGetWalletsEndpoint,
+  postWalletsTransfer: postWalletsTransferEndpoint,
   getWalletsForGetWalletsByWalletId: getWalletsForGetWalletsByWalletIdEndpoint,
   deleteWallets: deleteWalletsEndpoint,
   patchWallets: patchWalletsEndpoint,
   headWallets: headWalletsEndpoint,
+  postWalletsAdjust: postWalletsAdjustEndpoint,
   postWalletsFreeze: postWalletsFreezeEndpoint,
   postWalletsUnfreeze: postWalletsUnfreezeEndpoint,
   getWalletsAuditLog: getWalletsAuditLogEndpoint,
+  getWalletsMetrics: getWalletsMetricsEndpoint,
+  getWalletsReconciliation: getWalletsReconciliationEndpoint,
   getAssetsForGetAssetsByReferenceIdByToken: getAssetsForGetAssetsByReferenceIdByTokenEndpoint,
   getE: getEEndpoint,
   getHealth: getHealthEndpoint,

@@ -446,6 +446,9 @@ public enum NotificationType
     /// <summary>Stored payment method expires soon (issue #414)</summary>
     PaymentMethodExpiring = 26,
 
+    /// <summary>Billing wallet balance dropped below the configured threshold (issue #406)</summary>
+    WalletBalanceBelowThreshold = 27,
+
     /// <summary>Custom/other notification type</summary>
     Custom = 99
 }

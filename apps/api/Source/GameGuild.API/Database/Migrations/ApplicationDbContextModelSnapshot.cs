@@ -3433,6 +3433,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<DateTime?>("LowBalanceAlertedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal?>("MonthlyLimit")
                         .HasColumnType("decimal(18,2)");
 
@@ -3455,7 +3458,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("UserId", "Currency")
                         .IsUnique();
 
                     b.ToTable("user_wallets", t =>
