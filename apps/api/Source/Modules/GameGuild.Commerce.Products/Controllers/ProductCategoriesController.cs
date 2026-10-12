@@ -113,7 +113,8 @@ public class ProductCategoriesController(
             request.AttributesJson,
             request.DisplayOrder,
             request.ExpectedVersion,
-            actorContextAccessor.ActorContext.SubjectIdAsGuid);
+            actorContextAccessor.ActorContext.SubjectIdAsGuid,
+            actorContextAccessor.ActorContext.TenantId);
         var category = await mediator.Send(command, cancellationToken).ConfigureAwait(false);
         return Ok(category);
     }
@@ -132,7 +133,8 @@ public class ProductCategoriesController(
     {
         var command = new DeleteProductCategoryCommand(
             categoryId,
-            actorContextAccessor.ActorContext.SubjectIdAsGuid);
+            actorContextAccessor.ActorContext.SubjectIdAsGuid,
+            actorContextAccessor.ActorContext.TenantId);
         await mediator.Send(command, cancellationToken).ConfigureAwait(false);
         return NoContent();
     }

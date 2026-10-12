@@ -131,7 +131,8 @@ public sealed record UpdateProductCategoryCommand(
     string? AttributesJson = null,
     int? DisplayOrder = null,
     long? ExpectedVersion = null,
-    Guid? ActorUserId = null
+    Guid? ActorUserId = null,
+    Guid? ActorTenantId = null
 ) : ICommand<ProductCategoryDto>;
 
 /// <summary>Validator for <see cref="UpdateProductCategoryCommand"/>.</summary>
@@ -165,6 +166,11 @@ public sealed class UpdateProductCategoryCommandHandler(
 
         var category = await categoryRepository.GetByIdAsync(request.CategoryId, cancellationToken).ConfigureAwait(false)
             ?? throw new ProductCategoryNotFoundException(request.CategoryId);
+
+        // Fail closed: a category from another tenant is invisible to this actor.
+        if (request.ActorTenantId.HasValue && category.TenantId != request.ActorTenantId)
+            throw new ProductCategoryValidationException(
+                $"Product category '{request.CategoryId}' belongs to a different tenant", CategoryValidationError.None);
 
         if (request.ExpectedVersion.HasValue && category.Version != request.ExpectedVersion.Value)
         {
@@ -237,7 +243,8 @@ public sealed class UpdateProductCategoryCommandHandler(
 /// </summary>
 public sealed record DeleteProductCategoryCommand(
     Guid CategoryId,
-    Guid? ActorUserId = null
+    Guid? ActorUserId = null,
+    Guid? ActorTenantId = null
 ) : ICommand;
 
 /// <summary>Validator for <see cref="DeleteProductCategoryCommand"/>.</summary>
@@ -261,6 +268,11 @@ public sealed class DeleteProductCategoryCommandHandler(
 
         var category = await categoryRepository.GetByIdAsync(request.CategoryId, cancellationToken).ConfigureAwait(false)
             ?? throw new ProductCategoryNotFoundException(request.CategoryId);
+
+        // Fail closed: a category from another tenant is invisible to this actor.
+        if (request.ActorTenantId.HasValue && category.TenantId != request.ActorTenantId)
+            throw new ProductCategoryValidationException(
+                $"Product category '{request.CategoryId}' belongs to a different tenant", CategoryValidationError.None);
 
         if (await categoryRepository.HasChildrenAsync(request.CategoryId, cancellationToken).ConfigureAwait(false))
         {

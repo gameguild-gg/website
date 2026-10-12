@@ -13,8 +13,8 @@ public sealed class CompleteOrderCommandHandler(
     IApplicationDbContext dbContext,
     IOrderPaymentAuthority paymentAuthority,
     IActorContextAccessor actorContextAccessor,
-    IProductInventoryService? inventoryService = null,
-    IOrderMarketplaceSettlementAuthority? marketplaceSettlementAuthority = null)
+    IOrderMarketplaceSettlementAuthority? marketplaceSettlementAuthority = null,
+    IProductInventoryService? inventoryService = null)
     : ICommandHandler<CompleteOrderCommand, Result<OrderOperationResult>>
 {
     public async Task<Result<OrderOperationResult>> Handle(

@@ -26,8 +26,13 @@ public class ProductCategoryRepository(IApplicationDbContext context)
             return null;
 
         var normalized = ProductCategory.NormalizeSlug(slug);
-        return await Query
-            .Where(c => c.TenantId == tenantId && c.Slug == normalized)
+        // A null tenant means "no tenant filter" (anonymous public reads), mirroring
+        // the products list semantics.
+        var query = tenantId.HasValue
+            ? Query.Where(c => c.TenantId == tenantId)
+            : Query;
+        return await query
+            .Where(c => c.Slug == normalized)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
     }
@@ -38,7 +43,10 @@ public class ProductCategoryRepository(IApplicationDbContext context)
         bool rootsOnly = false,
         CancellationToken cancellationToken = default)
     {
-        var query = Query.Where(c => c.TenantId == tenantId);
+        // Null tenant = no filter (anonymous public reads), mirroring the products list.
+        var query = tenantId.HasValue
+            ? Query.Where(c => c.TenantId == tenantId)
+            : Query;
 
         if (parentCategoryId.HasValue)
             query = query.Where(c => c.ParentCategoryId == parentCategoryId.Value);
@@ -57,8 +65,10 @@ public class ProductCategoryRepository(IApplicationDbContext context)
         Guid? tenantId,
         CancellationToken cancellationToken = default)
     {
-        return await Query
-            .Where(c => c.TenantId == tenantId)
+        var query = tenantId.HasValue
+            ? Query.Where(c => c.TenantId == tenantId)
+            : Query;
+        return await query
             .ToDictionaryAsync(
                 c => c.Id,
                 c => c.ParentCategoryId,
