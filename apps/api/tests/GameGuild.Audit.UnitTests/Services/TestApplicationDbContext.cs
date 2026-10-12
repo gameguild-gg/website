@@ -18,3 +18,19 @@ public class TestApplicationDbContext(DbContextOptions<ApplicationDbContext> opt
         modelBuilder.Entity<AuditLog>();
     }
 }
+
+/// <summary>
+/// No-op redaction pipeline used by audit tests that exercise persistence paths
+/// without rule-driven redaction.
+/// </summary>
+public sealed class NoopPiiRedactionService : IPiiRedactionService
+{
+    public Task<PiiRedactionSummary> ApplyToAuditLogAsync(AuditLog entry, IApplicationDbContext context, CancellationToken cancellationToken) =>
+        Task.FromResult(new PiiRedactionSummary());
+
+    public Task<CreateAuditLogRequest> RedactRequestForDurableFallbackAsync(CreateAuditLogRequest request, CancellationToken cancellationToken) =>
+        Task.FromResult(request);
+
+    public Task<PiiRedactionTextResult> RedactTextAsync(string content, Guid? tenantId, PiiRedactionSource source, IApplicationDbContext? context, CancellationToken cancellationToken) =>
+        Task.FromResult(new PiiRedactionTextResult(content, new PiiRedactionSummary()));
+}

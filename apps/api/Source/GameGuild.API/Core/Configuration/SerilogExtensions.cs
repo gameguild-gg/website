@@ -1,3 +1,6 @@
+using GameGuild.Compliance.Audit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
@@ -52,16 +55,39 @@ public static class SerilogExtensions
                 .WriteTo.Console(
                     outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}      {Message:lj}{NewLine}{Exception}",
                     theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code)
-                .WriteTo.File(
-                    formatter: new JsonFormatter(renderMessage: true),
-                    path: structuredLogPath,
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 30,
-                    shared: true,
-                    flushToDiskInterval: TimeSpan.FromSeconds(1));
+
+                // NDJSON structured-log file sink, wrapped by the PII redaction pipeline
+                // (issue #192): string properties are redacted/tokenized with the platform-global
+                // rules before serialization; the wrapper fails closed when no rule snapshot
+                // has been loaded. The file sink runs as a dedicated sub-logger so the wrapper can
+                // own its lifecycle.
+                .WriteTo.Sink(CreatePiiRedactingFileSink(services, structuredLogPath));
         });
 
         return builder;
+    }
+
+    /// <summary>
+    ///     Builds the redaction-wrapped NDJSON file sink. Dependencies are resolved lazily from the
+    ///     host service provider at emit time; failures inside the sink fail closed (redact-all),
+    ///     never drop events, and never take logging down.
+    /// </summary>
+    private static Core.Logging.PiiRedactionLogSink CreatePiiRedactingFileSink(IServiceProvider services, string structuredLogPath)
+    {
+        var fileSink = new LoggerConfiguration()
+            .WriteTo.File(
+                formatter: new JsonFormatter(renderMessage: true),
+                path: structuredLogPath,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                shared: true,
+                flushToDiskInterval: TimeSpan.FromSeconds(1))
+            .CreateLogger();
+        return new Core.Logging.PiiRedactionLogSink(
+            fileSink,
+            services.GetRequiredService<Compliance.Audit.IPiiRedactionRuleProvider>(),
+            services.GetRequiredService<Compliance.Audit.IPiiTokenSource>(),
+            services.GetRequiredService<ILogger<Core.Logging.PiiRedactionLogSink>>());
     }
 
     /// <summary>

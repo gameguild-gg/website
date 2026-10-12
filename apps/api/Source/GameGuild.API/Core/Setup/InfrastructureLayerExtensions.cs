@@ -371,6 +371,9 @@ public static class InfrastructureLayerExtensions
         {
             options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());
             options.AddInterceptors(provider.GetRequiredService<RefreshTokenLifecycleMetricBuffer>());
+            // Central audit-sink integration for the PII redaction pipeline (issue #192): every
+            // AuditLog entity passes through the redaction rules before persistence.
+            options.AddInterceptors(provider.GetRequiredService<AuditLogPiiRedactionInterceptor>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

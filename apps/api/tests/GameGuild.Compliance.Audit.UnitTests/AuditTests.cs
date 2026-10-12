@@ -467,15 +467,23 @@ public class PiiRedactionRuleTests
         var rule = PiiRedactionRule.Create(
             Guid.NewGuid(),
             "Email Redaction",
+            PiiRulePatternType.Preset,
+            null,
+            PiiPresetPattern.Email,
+            PiiRuleAction.Redact,
+            PiiRuleScope.FieldName,
             new[] { "email", "contact_email" },
-            PiiDetectionMethod.Regex,
-            RedactionStrategy.PartialMasking);
+            100,
+            "[MASKED]",
+            null);
 
         rule.Id.Should().NotBeEmpty();
         rule.RuleName.Should().Be("Email Redaction");
         rule.TargetFields.Should().HaveCount(2);
-        rule.DetectionMethod.Should().Be(PiiDetectionMethod.Regex);
-        rule.RedactionStrategy.Should().Be(RedactionStrategy.PartialMasking);
+        rule.PatternType.Should().Be(PiiRulePatternType.Preset);
+        rule.Preset.Should().Be(PiiPresetPattern.Email);
+        rule.Action.Should().Be(PiiRuleAction.Redact);
+        rule.Replacement.Should().Be("[MASKED]");
         rule.IsEnabled.Should().BeTrue();
         rule.Priority.Should().Be(100);
     }
