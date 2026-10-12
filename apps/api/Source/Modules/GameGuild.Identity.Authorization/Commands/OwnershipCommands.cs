@@ -109,6 +109,11 @@ public sealed class TransferOwnershipCommandHandler(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        // Authorization runs BEFORE the existence check so an unauthorized actor always
+        // receives the authorization rejection — never an exception type that discloses
+        // whether the resource has a recorded owner designation.
+        EnsureAuthorized(request, ownerRows);
+
         // Fail closed: without a recorded owner designation there is nothing to transfer
         // through this command (ownership is recorded on creation; it is never guessed).
         if (ownerRows.Count == 0)
@@ -119,8 +124,6 @@ public sealed class TransferOwnershipCommandHandler(
             throw new InvalidOperationException(
                 $"Resource '{request.ResourceType}/{request.ResourceId}' has no recorded owner designation to transfer.");
         }
-
-        EnsureAuthorized(request, ownerRows);
 
         var performedBy = Actor.SubjectIdAsGuid ?? Guid.Empty;
         var outgoingOwner = ownerRows[0];
