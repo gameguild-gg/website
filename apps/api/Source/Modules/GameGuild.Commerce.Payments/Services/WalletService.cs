@@ -122,11 +122,14 @@ public class WalletService(IWalletRepository walletRepository, ILogger<WalletSer
         // Get both wallets (issue #406: currency-aware resolution keeps a multi-currency user's
         // funds in the intended wallet).
         var fromWallet = await ResolveExistingWalletAsync(fromUserId, currency, cancellationToken).ConfigureAwait(false);
-        var toWallet = currency is null
-            ? await GetWalletByUserIdAsync(toUserId, cancellationToken).ConfigureAwait(false)
-            : await walletRepository.GetByUserIdAndCurrencyAsync(toUserId, currency, cancellationToken).ConfigureAwait(false);
-
         if (fromWallet == null) throw new InvalidOperationException($"Source wallet not found for user {fromUserId}");
+
+        // Issue #406: when the recipient holds no wallet in the transfer currency, fall back to
+        // their primary wallet so a cross-currency transfer SURFACES as a mismatch error instead
+        // of silently minting a new wallet in the source currency; a wallet is created on demand
+        // only when the recipient has no wallet at all.
+        var toWallet = await walletRepository.GetByUserIdAndCurrencyAsync(toUserId, fromWallet.Currency, cancellationToken).ConfigureAwait(false)
+            ?? await GetWalletByUserIdAsync(toUserId, cancellationToken).ConfigureAwait(false);
 
         if (toWallet == null)
         {

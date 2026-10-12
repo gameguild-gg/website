@@ -22,6 +22,20 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
     private readonly HttpClient _client;
     private static readonly string DatabaseName = $"PaymentsWalletTestDb_{Guid.NewGuid()}";
 
+    /// <summary>
+    ///     Matches the API's JSON contract (camelCase, enums as strings — the API registers
+    ///     <c>JsonStringEnumConverter</c>), so typed reads of payloads carrying
+    ///     <see cref="WalletTransaction"/> enums deserialize like the shipped client does.
+    /// </summary>
+    private static readonly System.Text.Json.JsonSerializerOptions ApiJsonOptions = CreateApiJsonOptions();
+
+    private static System.Text.Json.JsonSerializerOptions CreateApiJsonOptions()
+    {
+        var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        return options;
+    }
+
     public WalletEndpointsIntegrationTests(WebApplicationFactory<GameGuild.API.Program> factory)
     {
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
@@ -127,7 +141,7 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var wallet = await response.Content.ReadFromJsonAsync<UserWallet>();
+        var wallet = await response.Content.ReadFromJsonAsync<UserWallet>(ApiJsonOptions);
         wallet!.UserId.Should().Be(subjectId);
     }
 
@@ -277,7 +291,7 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-        var transaction = await response.Content.ReadFromJsonAsync<WalletTransaction>();
+        var transaction = await response.Content.ReadFromJsonAsync<WalletTransaction>(ApiJsonOptions);
         transaction!.Amount.Should().Be(25m);
         transaction.BalanceAfter.Should().Be(25m);
 
@@ -288,7 +302,7 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
             permissions: "wallets:admin");
         var balanceResponse = await _client.SendAsync(balanceRequest);
         balanceResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updated = await balanceResponse.Content.ReadFromJsonAsync<UserWallet>();
+        var updated = await balanceResponse.Content.ReadFromJsonAsync<UserWallet>(ApiJsonOptions);
         updated!.Balance.Should().Be(25m);
 
         var auditService = _factory.Services.GetRequiredService<TestRevenueAuditService>();
@@ -337,7 +351,7 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
             Guid.NewGuid(),
             permissions: "wallets:admin");
         var balanceResponse = await _client.SendAsync(balanceRequest);
-        var updated = await balanceResponse.Content.ReadFromJsonAsync<UserWallet>();
+        var updated = await balanceResponse.Content.ReadFromJsonAsync<UserWallet>(ApiJsonOptions);
         updated!.Balance.Should().Be(15m, "a replayed reference must not double-credit the wallet");
     }
 
@@ -551,7 +565,7 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
             permissions: "wallets:admin");
         var response = await _client.SendAsync(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        return await response.Content.ReadFromJsonAsync<UserWallet>();
+        return await response.Content.ReadFromJsonAsync<UserWallet>(ApiJsonOptions);
     }
 
     public void Dispose()
