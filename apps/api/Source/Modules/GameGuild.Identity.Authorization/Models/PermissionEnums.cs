@@ -57,7 +57,15 @@ public enum PermissionOperationType
     ///     sensitive permission-gated operations (e.g. monetization) leave a durable
     ///     decision trail (issue #346).
     /// </summary>
-    Check = 12
+    Check = 12,
+
+    /// <summary>
+    ///     A resource-ownership designation was transferred from one user to another
+    ///     (issue #372). The audit entry's OldValue/NewValue carry the pre/post owner-row
+    ///     snapshots and double as the transfer's restore point (the previous owner row is
+    ///     soft-revoked, never hard-deleted).
+    /// </summary>
+    TransferOwnership = 13
 }
 
 /// <summary>
