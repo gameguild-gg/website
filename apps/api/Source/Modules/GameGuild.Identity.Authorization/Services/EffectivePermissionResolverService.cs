@@ -137,10 +137,7 @@ public sealed class EffectivePermissionResolverService(
 
         // Layer 1: Static system-account wildcard (non-deniable). There are no hard-coded
         // global defaults: global baseline permissions are the data-driven row below.
-        // The comparison lives in IsSystemAccountUser so the CodeQL sensitive-equality
-        // taint step (SystemAccountId field vs caller value) stays confined to that
-        // predicate's parameter instead of tainting every context.UserId audit log.
-        if (IsSystemAccountUser(context.UserId))
+        if (context.UserId == _authOptions.SystemAccountId)
         {
             AddAllow("*", PermissionSource.Static);
         }
@@ -324,9 +321,8 @@ public sealed class EffectivePermissionResolverService(
                 && ownerMintedPermissions.Contains(denied))
             {
                 logger.LogWarning(
-                    "Attempted to deny owner-minted permission {Permission} for user {UserId} - the AlwaysAllow owner-override mode makes owner grants non-deniable",
-                    // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
-                    denied, context.UserId);
+                    "Attempted to deny owner-minted permission {Permission} - the AlwaysAllow owner-override mode makes owner grants non-deniable",
+                    denied);
                 continue;
             }
 
@@ -503,9 +499,8 @@ public sealed class EffectivePermissionResolverService(
             if (!ownerOptions.IsKnownMode)
             {
                 logger.LogWarning(
-                    "Unknown Authorization:OwnerOverride:Mode '{Mode}' - the owner override fails closed to Off for user {UserId} in tenant {TenantId}.",
-                    // codeql[cs/cleartext-storage-of-sensitive-information] intentional config-value + Guid audit logging (non-sensitive, established pattern)
-                    ownerOptions.Mode, context.UserId, context.TenantId);
+                    "Unknown Authorization:OwnerOverride:Mode '{Mode}' - the owner override fails closed to Off in tenant {TenantId}.",
+                    ownerOptions.Mode, context.TenantId);
             }
 
             return null;
@@ -525,9 +520,8 @@ public sealed class EffectivePermissionResolverService(
         if (ownership.ExpiresAt is { } ownerExpiry && ownerExpiry <= now)
         {
             logger.LogDebug(
-                "Owner override suppressed for user {UserId} on {ResourceType}/{ResourceId}: the ownership designation expired at {OwnerExpiry}.",
-                // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/resource Guid audit logging (non-sensitive Guids, established pattern)
-                context.UserId, context.ResourceType, context.ResourceId, ownerExpiry);
+                "Owner override suppressed on {ResourceType}/{ResourceId}: the ownership designation expired at {OwnerExpiry}.",
+                context.ResourceType, context.ResourceId, ownerExpiry);
             return null;
         }
 
@@ -577,9 +571,8 @@ public sealed class EffectivePermissionResolverService(
         // high-frequency and a durable entry per evaluation would drown the audit log.
         // Durable audit coverage for ownership changes lives in TransferOwnershipCommand.
         logger.LogDebug(
-            "Owner override applied for user {UserId} on {ResourceType}/{ResourceId} in tenant {TenantId}: mode {Mode}, {PermissionCount} owner permissions, effective through {EffectiveThrough}.",
-            // codeql[cs/cleartext-storage-of-sensitive-information] intentional user/tenant Guid audit logging (non-sensitive Guids, established pattern)
-            context.UserId, context.ResourceType, context.ResourceId, context.TenantId, mode, minted.Count,
+            "Owner override applied on {ResourceType}/{ResourceId} in tenant {TenantId}: mode {Mode}, {PermissionCount} owner permissions, effective through {EffectiveThrough}.",
+            context.ResourceType, context.ResourceId, context.TenantId, mode, minted.Count,
             effectiveThrough is null ? "indefinitely" : effectiveThrough.Value.ToString("O"));
 
         return new OwnerOverrideEvaluation(mode, ownership.OwnerUserId, minted, effectiveThrough);
@@ -592,14 +585,6 @@ public sealed class EffectivePermissionResolverService(
     private static bool IsDelegableOwnerPermission(string permission) =>
         !string.Equals(permission, "admin:*", StringComparison.OrdinalIgnoreCase)
         && !string.Equals(permission, "*", StringComparison.Ordinal);
-
-    /// <summary>
-    ///     True when the evaluated user is the configured system account (static-wildcard
-    ///     layer). Kept as a predicate so the CodeQL sensitive-equality taint step between
-    ///     the <c>Authorization:SystemAccountId</c> field and the caller's Guid cannot
-    ///     propagate to the surrounding audit logging: both values are non-sensitive Guids.
-    /// </summary>
-    private bool IsSystemAccountUser(Guid userId) => userId == _authOptions.SystemAccountId;
 
     /// <summary>
     ///     Feeds denied evaluation outcomes to the throttle (enumeration protection,
