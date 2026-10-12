@@ -420,11 +420,19 @@ public sealed class PermissionHistoryReconstructionService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var assignmentAudit = await context.Set<PermissionAuditLog>()
+        var assignmentAuditQuery = context.Set<PermissionAuditLog>()
             .AsNoTracking()
             .Where(log => log.ResourceType == "RoleAssignment"
                 && log.UserId == userId
-                && log.Timestamp <= timestampUtc)
+                && log.Timestamp <= timestampUtc);
+
+        if (tenantId.HasValue)
+        {
+            assignmentAuditQuery = assignmentAuditQuery.Where(
+                log => log.TenantId == null || log.TenantId.Value.Value == tenantId.Value);
+        }
+
+        var assignmentAudit = await assignmentAuditQuery
             .OrderBy(log => log.Timestamp)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
