@@ -91,8 +91,20 @@ function WalletButtonGroup({
 }) {
   const { signIn } = useAuth();
   // Accessed through the context object (not destructured): the linter's unbound-method
-  // rule fires on functions separated from their owning object.
-  const web3 = useWallet();
+  // rule fires on functions separated from their owning object. The narrow local contract
+  // keeps the wallet buttons type-checked even where the host project cannot resolve the
+  // package's context generics.
+  const web3 = useWallet() as unknown as {
+    status: string;
+    error: { code: string; message: string } | null;
+    wallets: readonly { id: string; name: string; available: boolean }[];
+    account: string | null;
+    connect: (walletId: string) => Promise<void>;
+    disconnect: () => Promise<void>;
+    authenticate: (transport: SiweTransport) => Promise<unknown>;
+    clearError: () => void;
+    isPending: boolean;
+  };
 
   const transport = useMemo<SiweTransport>(
     () => ({
