@@ -13,6 +13,7 @@ public sealed class CompleteOrderCommandHandler(
     IApplicationDbContext dbContext,
     IOrderPaymentAuthority paymentAuthority,
     IActorContextAccessor actorContextAccessor,
+    IProductInventoryService? inventoryService = null,
     IOrderMarketplaceSettlementAuthority? marketplaceSettlementAuthority = null)
     : ICommandHandler<CompleteOrderCommand, Result<OrderOperationResult>>
 {
@@ -125,6 +126,24 @@ public sealed class CompleteOrderCommandHandler(
 
         try
         {
+            // Inventory decrement (issue #401): convert reservations into definitive stock
+            // decrements inside the same transaction as entitlement fulfillment. Untracked
+            // products (the digital-goods default) are skipped by the service.
+            if (inventoryService is not null)
+            {
+                var inventoryLines = order.LineItems
+                    .Select(lineItem => (lineItem.ProductId, lineItem.Quantity))
+                    .ToList();
+                if (!await inventoryService.TryCommitSaleAsync(inventoryLines, cancellationToken).ConfigureAwait(false))
+                {
+                    await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                    return Result.Failure<OrderOperationResult>(
+                        Error.Conflict(
+                            "Orders.OutOfStockAtFulfillment",
+                            "Tracked inventory can no longer satisfy one or more order lines."));
+                }
+            }
+
             foreach (var lineItem in order.LineItems)
             {
                 var acquisitionType = lineItem.IsSubscription

@@ -24,6 +24,8 @@ public interface IProductRepository
     /// <summary>
     /// Get a paginated list of products
     /// </summary>
+    /// <param name="categoryIds">Category filter including descendants (issue #401; null = no filter)</param>
+    /// <param name="inStockOnly">Availability filter (issue #401): true = in stock only, false = out of stock only, null = no filter</param>
     Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(
         ProductType? type = null,
         Guid? creatorId = null,
@@ -35,7 +37,9 @@ public interface IProductRepository
         string sortBy = "CreatedAt",
         string sortDirection = "DESC",
         Guid? tenantId = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<Guid>? categoryIds = null,
+        bool? inStockOnly = null);
 
     /// <summary>
     /// Add a new product

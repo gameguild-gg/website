@@ -6,7 +6,7 @@ namespace GameGuild.Commerce.Products;
 /// Command handler for updating an existing product
 /// </summary>
 #pragma warning disable CS0618 // Type or member is obsolete - Deprecated properties intentionally used during migration period
-public sealed class UpdateProductCommandHandler(IProductRepository productRepository)
+public sealed class UpdateProductCommandHandler(IProductRepository productRepository, IProductCategoryRepository categoryRepository)
     : ICommandHandler<UpdateProductCommand, ProductDto>
 {
     public async Task<ProductDto> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
@@ -53,6 +53,13 @@ public sealed class UpdateProductCommandHandler(IProductRepository productReposi
 
         if (request.AffiliateCommissionPercentage.HasValue)
             product.AffiliateCommissionPercentage = request.AffiliateCommissionPercentage.Value;
+
+        // Category assignment (issue #401): validated against the tenant's catalog first.
+        if (request.CategoryId.HasValue)
+        {
+            await ProductCategoryAssignment.ValidateAsync(categoryRepository, product, request.CategoryId.Value, cancellationToken).ConfigureAwait(false);
+            product.CategoryId = request.CategoryId.Value;
+        }
 
         // Touch for audit trail
         product.Touch();

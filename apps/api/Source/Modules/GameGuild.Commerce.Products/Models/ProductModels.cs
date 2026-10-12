@@ -39,7 +39,8 @@ public sealed record ProductDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     List<ProductPricingDto>? Pricing = null,
-    [property: JsonIgnore] Guid? TenantId = null
+    [property: JsonIgnore] Guid? TenantId = null,
+    Guid? CategoryId = null
 )
 {
     public ProductDto(
