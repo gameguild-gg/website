@@ -46,6 +46,14 @@ public sealed class AuthorizationOptions : BaseOptions
     /// </summary>
     public List<AuthorizationClaimTransformationOptions> ClaimTransformations { get; set; } = [];
 
+    /// <summary>
+    ///     Owner-override precedence for effective-permission resolution (issue #372).
+    ///     Configured under <c>Authorization:OwnerOverride</c>; defaults to
+    ///     <c>AllowUnlessDenied</c> (deny-wins over owner, fail-closed). Unknown mode
+    ///     values resolve to <c>Off</c> at evaluation time — see <see cref="OwnerOverrideOptions"/>.
+    /// </summary>
+    public OwnerOverrideOptions OwnerOverride { get; set; } = new();
+
     public override void Validate()
     {
         base.Validate();
