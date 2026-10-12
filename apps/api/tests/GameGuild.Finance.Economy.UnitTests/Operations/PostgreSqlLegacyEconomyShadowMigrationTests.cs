@@ -238,8 +238,16 @@ public sealed class PostgreSqlLegacyEconomyShadowMigrationTests
         Convert.ToInt64(await command.ExecuteScalarAsync()).Should().Be(1);
 
         await migrator.MigrateAsync("20260825022708_AddTenantScopedTreasury");
-        (await context.Set<UserWallet>().AsNoTracking().SingleAsync(row => row.Id == legacyWalletId))
-            .Balance.Should().Be(45.67m);
+        // The schema is back at the legacy point, so the surviving row must be read
+        // through the legacy schema as well: the current EF model selects post-legacy
+        // columns (e.g. LowBalanceAlertedAt) that do not exist after the downgrade.
+        await using var downgradedConnection = new NpgsqlConnection(database.ConnectionString);
+        await downgradedConnection.OpenAsync();
+        await using var downgradedCommand = new NpgsqlCommand(
+            """SELECT "Balance" FROM user_wallets WHERE "Id" = @id;""",
+            downgradedConnection);
+        downgradedCommand.Parameters.AddWithValue("id", legacyWalletId);
+        Convert.ToDecimal(await downgradedCommand.ExecuteScalarAsync()).Should().Be(45.67m);
     }
 
     [Fact]
