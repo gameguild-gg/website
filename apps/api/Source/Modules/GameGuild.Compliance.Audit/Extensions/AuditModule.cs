@@ -138,6 +138,48 @@ public static class AuditModule
         // Register security audit aggregator facade for backward compatibility
         services.AddScoped<ISecurityAuditAggregator, SecurityAuditAggregator>();
 
+        // Audit query DSL: typed filter model, fail-closed parser, bounded executor, saved views.
+        services.AddOptions<AuditQueryDslOptions>()
+            .Configure<IConfiguration>((dslOptions, configuration) =>
+            {
+                var section = configuration.GetSection(AuditQueryDslOptions.ConfigurationSection);
+                if (int.TryParse(section["MaxPageSize"], out var maxPageSize))
+                {
+                    dslOptions.MaxPageSize = maxPageSize;
+                }
+
+                if (int.TryParse(section["MaxRowsScanned"], out var maxRowsScanned))
+                {
+                    dslOptions.MaxRowsScanned = maxRowsScanned;
+                }
+
+                if (int.TryParse(section["DefaultLookbackDays"], out var defaultLookbackDays))
+                {
+                    dslOptions.DefaultLookbackDays = defaultLookbackDays;
+                }
+
+                if (int.TryParse(section["DefaultTimeoutSeconds"], out var defaultTimeoutSeconds))
+                {
+                    dslOptions.DefaultTimeoutSeconds = defaultTimeoutSeconds;
+                }
+
+                if (int.TryParse(section["MaxTimeoutSeconds"], out var maxTimeoutSeconds))
+                {
+                    dslOptions.MaxTimeoutSeconds = maxTimeoutSeconds;
+                }
+            })
+            .Validate(
+                dslOptions => dslOptions.MaxPageSize > 0
+                              && dslOptions.MaxRowsScanned > 0
+                              && dslOptions.DefaultLookbackDays > 0
+                              && dslOptions.DefaultTimeoutSeconds > 0
+                              && dslOptions.MaxTimeoutSeconds >= dslOptions.DefaultTimeoutSeconds,
+                $"{AuditQueryDslOptions.ConfigurationSection} bounds must be positive and MaxTimeoutSeconds must cover DefaultTimeoutSeconds.");
+        services.AddSingleton<IAuditQueryDslParser, AuditQueryDslParser>();
+        services.AddScoped<IAuditQueryDslExecutor, AuditQueryDslExecutor>();
+        services.AddScoped<ISavedAuditQueryRepository, SavedAuditQueryRepository>();
+        services.AddScoped<ISavedAuditQueryService, SavedAuditQueryService>();
+
         return services;
     }
 }
