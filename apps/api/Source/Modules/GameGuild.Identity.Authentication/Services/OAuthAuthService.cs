@@ -194,6 +194,46 @@ public class OAuthAuthService(
     }
 
     /// <summary>
+    ///     Completes a GitHub authorization-code sign-in: the provider-generic callback path
+    ///     exchanges the code for an access token and fetches the profile
+    ///     (HandleCallbackAsync → ExchangeGitHubCodeAsync + GetUserProfileAsync("github")),
+    ///     then the shared auto-link/JIT policy resolves the platform user and the granted
+    ///     scopes (issue #250) are recorded with a consent stamp.
+    /// </summary>
+    public async Task<SignInResponse> GitHubCallbackSignInAsync(GitHubCallbackSignInRequest request, CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        logger.LogInformation("Processing GitHub OAuth authorization-code sign-in");
+
+        // HandleCallbackAsync dispatches to ExchangeGitHubCodeAsync (code → access token)
+        // and then GetUserProfileAsync("github", token) → OAuthUserProfile.
+        var githubUser = await RunProviderAuthenticationAsync(
+            "GitHub",
+            stopwatch,
+            () => oauthService.HandleCallbackAsync("github", request.Code, request.State, request.RedirectUri))
+            .ConfigureAwait(false);
+
+        var email = githubUser.Email ?? throw new UnauthorizedAccessException("Email not available from GitHub profile");
+
+        var grantedScopes = oauthService.ResolveAuthorizationScopes("github");
+        var user = await ResolveExternalUserAsync("github", email, githubUser.ProviderId, githubUser.Name, githubUser.EmailVerified, grantedScopes, cancellationToken).ConfigureAwait(false);
+        var userId = user.Id;
+
+        await DefaultTenantMembershipProvisioner.EnsureAsync(sender, userId, cancellationToken).ConfigureAwait(false);
+
+        var tenantAccessContext = await ResolveTenantAccessContextAsync(userId, request.TenantId, cancellationToken).ConfigureAwait(false);
+
+        var httpContext = httpContextAccessor.HttpContext;
+        var ipAddress = authAttemptService.GetClientIpAddress(httpContext);
+        var userAgent = httpContext?.Request.Headers.UserAgent.ToString();
+        var deviceInfo = new DeviceInfo { Fingerprint = Guid.NewGuid().ToString(), IpAddress = ipAddress, UserAgent = userAgent, DeviceName = "OAuth Device", DeviceType = "Web" };
+
+        logger.LogInformation("GitHub OAuth authorization-code sign-in successful for {Email}", LogRedaction.MaskEmail(email));
+
+        return await CompleteSignInAsync(user, tenantAccessContext, deviceInfo, ipAddress, userAgent, "GitHub sign-in successful", "GitHub", stopwatch, request.RememberMe == true, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     Completes a generic OIDC federation sign-in: the federation service validates the
     ///     provider ID token (issuer/audience/lifetime/RS256 signature), then the shared
     ///     auto-link/JIT policy resolves the platform user (provider key <c>oidc-&lt;slug&gt;</c>).

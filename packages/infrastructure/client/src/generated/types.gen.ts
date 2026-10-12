@@ -1489,6 +1489,12 @@ export interface CommerceBillingBillingExternalProvidersControllerMigrationDryRu
   targetProvider?: string | null;
 }
 
+/** Request body capping the credit tender of an invoice settlement. */
+export interface CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput {
+  /** Optional positive cap on the credit amount to apply. */
+  maxAmount?: number | null;
+}
+
 /** Read model over a durable billing integration event published through the platform outbox. */
 export interface CommerceBillingBillingOutboxEventDto {
   /** Aggregate identifier the event refers to. */
@@ -1694,6 +1700,25 @@ validation issues) or "not-configured" (no credentials). */
 callback endpoint can authenticate provider events (signing secret / webhook
 id / shared secret / verification keys). */
   webhookEndpointConfigured: boolean;
+}
+
+/** Outcome of the credit tender application. */
+export interface CommerceBillingInvoiceAccountCreditSettlementResult {
+  /** Credit tender amount applied. */
+  amountApplied?: number;
+  /** Amount still owed to provider tenders. */
+  amountRemaining?: number;
+  /** Per-grant FIFO consumption breakdown. */
+  consumedGrants?: CommercePaymentsAccountCreditConsumption[] | null;
+  /** Shared currency of invoice and consumed grants. */
+  currency?: string | null;
+  /** True when the idempotency key matched an existing settlement. */
+  idempotentReplay?: boolean;
+  /** Settled invoice. */
+  invoiceId?: string;
+  /** Human-readable invoice number. */
+  invoiceNumber?: string | null;
+  invoiceStatus?: CommerceBillingInvoiceStatus;
 }
 
 /** Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -2073,6 +2098,178 @@ export interface CommerceOrdersSetMarketplaceCartItemQuantityInput {
   quantity?: number;
 }
 
+/** Per-currency spendable credit balance of a user. */
+export interface CommercePaymentsAccountCreditBalance {
+  /** Sum of remaining balances of Active grants. */
+  available?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Earliest expiry among the backing grants, when any expire. */
+  earliestExpiry?: string | null;
+  /** Number of Active grants backing the balance. */
+  grantCount?: number;
+}
+
+/** One grant's share of a consumption. */
+export interface CommercePaymentsAccountCreditConsumption {
+  /** Amount taken from the grant. */
+  amount?: number;
+  /** Consumed grant. */
+  grantId?: string;
+  /** Grant remaining balance after the consumption. */
+  remainingAfter?: number;
+}
+
+/** A grant of account credit issued to a user (issue #410 v1). Grants are separated by
+source, currency, credit type and expiry; consumption always drains grants FIFO by
+expiry (earliest GameGuild.Commerce.Payments.AccountCreditGrant.ExpiresAt first, non-expiring last). Creation is
+idempotent per GameGuild.Commerce.Payments.AccountCreditGrant.IdempotencyKey within a tenant. */
+export interface CommercePaymentsAccountCreditGrant {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Original granted amount. */
+  amount?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  creditType?: CommercePaymentsAccountCreditType;
+  /** ISO 4217 currency code (upper-case, three letters). */
+  currency: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Human-readable description captured at issuance. */
+  description: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Optional expiry; null means the grant does not expire. */
+  expiresAt?: string | null;
+  /** When the grant was fully consumed, if it was. */
+  fullyUsedAt?: string | null;
+  /** Idempotency key unique per tenant; replaying a grant with the same key returns the original. */
+  idempotencyKey?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Whether the grant currently holds spendable credit. */
+  isSpendable?: boolean;
+  /** Amount still available to consume. */
+  remainingAmount?: number;
+  /** Reason captured when the grant was revoked. */
+  revocationReason?: string | null;
+  source?: CommercePaymentsAccountCreditSource;
+  /** Optional reference to the originating entity (gift id, referral id, invoice id). */
+  sourceReferenceId?: string | null;
+  status?: CommercePaymentsAccountCreditGrantStatus;
+  /** Tenant ID for multi-tenant isolation. */
+  tenantId: string;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Owner of the credit. */
+  userId: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle status of an account credit grant. */
+export type CommercePaymentsAccountCreditGrantStatus = 'Active' | 'FullyUsed' | 'Expired' | 'Revoked';
+
+/** Growth metrics report (issue #410): credit issuance/usage/expiry plus referral funnel and top referrers. */
+export interface CommercePaymentsAccountCreditMetricsReport {
+  credit?: CommercePaymentsCreditMetrics;
+  referralFunnel?: CommercePaymentsReferralFunnelMetrics;
+  /** Top referrers by rewarded referrals (max 10). */
+  topReferrers?: CommercePaymentsReferrerLeaderboardEntry[] | null;
+}
+
+/** Request body for manual credit issuance. */
+export interface CommercePaymentsAccountCreditsControllerIssueCreditInput {
+  /** Positive amount to grant. */
+  amount?: number;
+  creditType?: CommercePaymentsAccountCreditType;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Reason/description captured on the ledger. */
+  description?: string | null;
+  /** Optional expiry (UTC). */
+  expiresAt?: string | null;
+  /** Optional idempotency key unique per tenant. */
+  idempotencyKey?: string | null;
+  /** Tenant user receiving the credit. */
+  userId?: string;
+}
+
+/** Request body for credit revocation. */
+export interface CommercePaymentsAccountCreditsControllerRevokeCreditInput {
+  /** Auditable revocation reason. */
+  reason?: string | null;
+}
+
+/** Where an account credit grant came from. */
+export type CommercePaymentsAccountCreditSource = 'Manual' | 'Gift' | 'Referral' | 'Refund';
+
+/** Immutable ledger row per account-credit lifecycle event (issue #410 v1): exactly one
+row is appended for every grant, consumption, revocation and expiry of an
+GameGuild.Commerce.Payments.AccountCreditGrant. */
+export interface CommercePaymentsAccountCreditTransaction {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Amount involved in the event (granted, consumed, revoked or expired). */
+  amount?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** ISO 4217 currency code of the grant. */
+  currency: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Description captured for the ledger row. */
+  description: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Grant the row was appended for. */
+  grantId: string;
+  /** Idempotency key of the operation that produced the row, when one was supplied. */
+  idempotencyKey?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Optional reference (invoice id for consumption, admin actor note, etc.). */
+  referenceId?: string | null;
+  /** Grant remaining balance right after the event. */
+  remainingAfter?: number;
+  /** Tenant ID for multi-tenant isolation. */
+  tenantId: string;
+  type?: CommercePaymentsAccountCreditTransactionType;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Owner of the credit the row belongs to. */
+  userId: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle event kinds recorded in the account credit ledger. */
+export type CommercePaymentsAccountCreditTransactionType = 'Grant' | 'Consume' | 'Revoke' | 'Expire';
+
+/** What an account credit grant may be applied to. */
+export type CommercePaymentsAccountCreditType = 'General' | 'Subscription' | 'Addon';
+
 /** Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 export interface CommercePaymentsBillingChargesControllerCancelBillingChargeInput {
   canceledBy?: string | null;
@@ -2130,6 +2327,34 @@ export interface CommercePaymentsCreateTaxRuleInput {
 /** Data model for Commerce Payments Create Wallet Request. */
 export interface CommercePaymentsCreateWalletInput {
   currency?: string | null;
+}
+
+/** Credit totals per currency for the metrics report. */
+export interface CommercePaymentsCreditCurrencyMetrics {
+  /** Sum of remaining balances of Active grants. */
+  activeBalance?: number;
+  /** Number of Active grants. */
+  activeGrantCount?: number;
+  /** Sum of Consume ledger amounts (usage). */
+  applied?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Sum of Expire ledger amounts (expiration waste). */
+  expiredUnused?: number;
+  /** Sum of Grant ledger amounts. */
+  issued?: number;
+  /** Sum of Revoke ledger amounts. */
+  revoked?: number;
+}
+
+/** Aggregate credit metrics across currencies (rates are global in v1). */
+export interface CommercePaymentsCreditMetrics {
+  /** ExpiredUnused / Issued across currencies, when Issued > 0. */
+  expirationWasteRate?: number | null;
+  /** Totals per currency. */
+  perCurrency?: CommercePaymentsCreditCurrencyMetrics[] | null;
+  /** Applied / Issued across currencies, when Issued > 0. */
+  usageRate?: number | null;
 }
 
 /** Customer types */
@@ -2390,6 +2615,63 @@ export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | '
 
 /** Risk band derived from the aggregate fraud score. */
 export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** Public (non-secret) view of a gift for the redemption preview endpoint. */
+export interface CommercePaymentsGiftPublicView {
+  /** Gift id. */
+  id?: string;
+  /** Monetary value. */
+  amount?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Optional scheduled delivery date. */
+  deliveryDate?: string | null;
+  /** Gift duration in months. */
+  durationMonths?: number;
+  /** Redemption deadline (purchase + 1 year). */
+  expiresAt?: string;
+  /** Masked giver identity (local part of the giver email is never exposed; v1 shows a display label). */
+  giverDisplayName?: string | null;
+  /** Optional personal message. */
+  personalMessage?: string | null;
+  /** Optional plan restriction. */
+  planId?: string | null;
+  /** Optional recipient display name. */
+  recipientName?: string | null;
+  /** Non-secret support prefix. */
+  redemptionCodePrefix?: string | null;
+  status?: CommercePaymentsGiftStatus;
+}
+
+/** Result of a gift purchase: the gift plus the full redemption code shown exactly once. */
+export interface CommercePaymentsGiftPurchaseResult {
+  gift?: CommercePaymentsGiftPublicView;
+  /** Full redemption code — only returned at purchase time. */
+  redemptionCode?: string | null;
+}
+
+/** Request body for gift purchase. */
+export interface CommercePaymentsGiftsControllerPurchaseGiftRequestBody {
+  /** Positive monetary value. */
+  amount?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Optional scheduled delivery date (UTC); redemption is blocked before it. */
+  deliveryDate?: string | null;
+  /** Gift duration 1-36 months. */
+  durationMonths?: number;
+  /** Optional personal message (max 500 characters). */
+  personalMessage?: string | null;
+  /** Optional plan restriction; null means any plan. */
+  planId?: string | null;
+  /** Recipient email address. */
+  recipientEmail?: string | null;
+  /** Optional recipient display name. */
+  recipientName?: string | null;
+}
+
+/** Gift subscription status machine (Purchased → Delivered → Redeemed / Expired, plus Refunded). */
+export type CommercePaymentsGiftStatus = 'Purchased' | 'Delivered' | 'Redeemed' | 'Expired' | 'Refunded';
 
 /** Data model for Commerce Payments Lock Wallet Request. */
 export interface CommercePaymentsLockWalletInput {
@@ -2724,6 +3006,159 @@ export interface CommercePaymentsProcessRefundResult {
   /** Unique identifier for the refund transaction */
   refundId: string;
   status: CommercePaymentsTransactionStatus;
+}
+
+/** Referral tracking record (issue #410 v1). One opaque referral code is generated per
+referrer (the first GameGuild.Commerce.Payments.ReferralStatus.Pending row anchors the code);
+every referee journey gets its own row carrying that shared code, so a referrer can
+accumulate referrals up to the configured cap. The fraud blocks (self-referral,
+same-IP repeat) reuse the velocity thinking of the payments fraud gate (issue #409). */
+export interface CommercePaymentsReferral {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** First tracked click. */
+  clickedAt?: string | null;
+  /** First paid invoice of the referee. */
+  conversionAt?: string | null;
+  /** Invoice that triggered the conversion. */
+  conversionInvoiceId?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Reason captured when the referral was flagged fraudulent. */
+  fraudReason?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Referee email when captured at click time. */
+  refereeEmail?: string | null;
+  /** SHA-256 hash of the referee IP captured at signup (fraud block). */
+  refereeIpHash?: string | null;
+  /** Credit grant issued to the referee. */
+  refereeRewardGrantId?: string | null;
+  /** Subscription whose first paid invoice converted the referral. */
+  refereeSubscriptionId?: string | null;
+  /** Referee user once they signed up. */
+  refereeUserId?: string | null;
+  /** Opaque unique referral code (URL-safe). */
+  referralCode: string;
+  /** Trackable share link built from the code. */
+  referralLink?: string | null;
+  /** SHA-256 hash of the referrer IP captured at click time (fraud block). */
+  referrerIpHash?: string | null;
+  /** Credit grant issued to the referrer. */
+  referrerRewardGrantId?: string | null;
+  /** Existing customer sharing the code. */
+  referrerUserId: string;
+  /** When rewards were issued. */
+  rewardIssuedAt?: string | null;
+  /** When the code/link was shared. */
+  sharedAt: string;
+  /** Referee signup. */
+  signupAt?: string | null;
+  status?: CommercePaymentsReferralStatus;
+  /** Tenant ID for multi-tenant isolation. */
+  tenantId: string;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Referral funnel counters (clicks → signups → conversions → rewards). */
+export interface CommercePaymentsReferralFunnelMetrics {
+  /** Rows with a tracked click. */
+  clicks?: number;
+  /** Tracking rows created. */
+  codesShared?: number;
+  /** Rows converted by a first paid invoice. */
+  conversions?: number;
+  /** Rows blocked by the fraud rules. */
+  fraudulent?: number;
+  /** Rows with rewards issued. */
+  rewardsIssued?: number;
+  /** Rows with a signed-up referee. */
+  signups?: number;
+}
+
+/** Response body carrying the referral code and share link. */
+export interface CommercePaymentsReferralsControllerReferralCodeOutput {
+  /** Opaque unique referral code of the caller. */
+  code?: string | null;
+  /** Trackable share link. */
+  link?: string | null;
+}
+
+/** Request body for click tracking. */
+export interface CommercePaymentsReferralsControllerTrackReferralClickInput {
+  /** Optional referee email captured at click time. */
+  refereeEmail?: string | null;
+  /** Referral code from the shared link. */
+  referralCode?: string | null;
+}
+
+/** Request body for signup tracking. */
+export interface CommercePaymentsReferralsControllerTrackReferralSignupInput {
+  /** Referral code being applied to the caller's signup. */
+  referralCode?: string | null;
+}
+
+/** Signup outcome for the referee applying a referral code. */
+export interface CommercePaymentsReferralSignupResult {
+  /** True when a fraud rule blocked the signup. */
+  blocked?: boolean;
+  /** Block reason when Blocked. */
+  reason?: string | null;
+  referral?: CommercePaymentsReferral;
+}
+
+/** Referral funnel counters of one referrer. */
+export interface CommercePaymentsReferralStats {
+  /** Rows with at least one tracked click. */
+  clicked?: number;
+  /** Referees with a first paid invoice. */
+  converted?: number;
+  /** Referrals expired before conversion. */
+  expired?: number;
+  /** Referrals blocked by the fraud rules. */
+  fraudulent?: number;
+  /** The referrer's opaque unique code. */
+  referralCode?: string | null;
+  /** Trackable share link built from the code. */
+  referralLink?: string | null;
+  /** Referrer the stats belong to. */
+  referrerUserId?: string;
+  /** Fully rewarded referrals. */
+  rewardIssued?: number;
+  /** Rows created (code shares tracked). */
+  shared?: number;
+  /** Referees that signed up. */
+  signedUp?: number;
+}
+
+/** Referral funnel status. */
+export type CommercePaymentsReferralStatus = 'Pending' | 'Clicked' | 'SignedUp' | 'Converted' | 'RewardIssued' | 'Expired' | 'Fraudulent';
+
+/** One leaderboard row: referrer by rewarded referrals. */
+export interface CommercePaymentsReferrerLeaderboardEntry {
+  /** Referrals blocked as fraudulent. */
+  fraudulentReferrals?: number;
+  /** Referrer. */
+  referrerUserId?: string;
+  /** Referrals in status RewardIssued. */
+  rewardedReferrals?: number;
 }
 
 /** Paged read model for the pending refund-approval queue. */
@@ -4719,6 +5154,7 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscrip
   name?: string | null;
   slug?: string | null;
   sortOrder?: number | null;
+  trialPeriodDays?: number | null;
 }
 
 /** Request to create a subscription */
@@ -5009,6 +5445,32 @@ export interface ComplianceAuditAuditRelatedAction {
   correlationCount?: number;
 }
 
+/** Safe event fields shared with the Web replay core. UserId may identify a subject;
+            it must not be presented as verified attribution without additional source evidence. */
+export interface ComplianceAuditAuditReplaySnapshotEvent {
+  id?: string | null;
+  actionType?: string | null;
+  correlationId?: string | null;
+  createdAt?: string | null;
+  resourceId?: string | null;
+  resourceType?: string | null;
+  sessionId?: string | null;
+  success?: boolean;
+  tenantId?: string | null;
+  userId?: string | null;
+}
+
+/** Documents the exact canonical JSON response; its digest is delivered in a response header. */
+export interface ComplianceAuditAuditReplaySnapshotOutput {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  schemaVersion?: number;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+}
+
 /** Data model for Compliance Audit Audit Resource Context. */
 export interface ComplianceAuditAuditResourceContext {
   resourceId?: string | null;
@@ -5290,6 +5752,12 @@ export interface ComplianceAuditAuthenticationAuditOutput {
   take?: number;
   totalCount?: number;
   uniqueIpAddresses?: number;
+}
+
+/** Data model for Compliance Audit Capture Audit Replay Request. */
+export interface ComplianceAuditCaptureAuditReplayInput {
+  end: string;
+  start: string;
 }
 
 /** Data model for Compliance Audit Compliance Artifact Entry. */
@@ -8406,6 +8874,9 @@ export interface IdentityAuthenticationAssignRoleToUserInput {
   userId?: string;
 }
 
+/** Multi-step authentication flow steps */
+export type IdentityAuthenticationAuthenticationStep = 'PrimaryCredential' | 'MfaVerification' | 'DeviceTrust' | 'RiskChallenge';
+
 /** Backup codes response */
 export interface IdentityAuthenticationBackupCodesOutput {
   codes?: string[] | null;
@@ -8726,6 +9197,20 @@ export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
   requestedScopes: string[] | null;
 }
 
+/** Request body for the GitHub OAuth callback endpoint */
+export interface IdentityAuthenticationGitHubCallbackRequestDto {
+  /** OAuth authorization code from the GitHub callback */
+  code: string;
+  /** The same redirect URI used in the authorization request */
+  redirectUri: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
+  /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
+  state: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
 /** Response for GitHub sign-in initiation */
 export interface IdentityAuthenticationGitHubSignInOutput {
   /** GitHub OAuth authorization URL */
@@ -8737,6 +9222,19 @@ export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   idToken: string;
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
+  tenantId?: string | null;
+}
+
+/** Request body to initiate an orchestrated authentication flow. */
+export interface IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto {
+  /** Optional device fingerprint used for trusted-device recognition.
+Missing or unrecognized fingerprints fail closed to a device-trust challenge. */
+  deviceFingerprint?: string | null;
+  /** Credential identifier (email) of the account signing in. */
+  identifier: string;
+  /** The account password; verified as the primary credential at initiation. */
+  password: string;
+  /** Optional tenant context for the resulting sign-in. */
   tenantId?: string | null;
 }
 
@@ -8957,6 +9455,28 @@ so the caller can stash it in its state cookie) */
   state: string | null;
 }
 
+/** Response describing the state of an orchestrated authentication flow. */
+export interface IdentityAuthenticationOrchestratedFlowStateOutput {
+  /** Steps already satisfied. */
+  completedSteps?: IdentityAuthenticationAuthenticationStep[] | null;
+  currentStep?: IdentityAuthenticationAuthenticationStep;
+  /** When the flow expires; expired flows fail closed. */
+  expiresAt?: string;
+  /** Unique identifier of the flow; carried by the client across step processing and completion. */
+  flowId?: string;
+  /** When the flow was initiated. */
+  initiatedAt?: string;
+  /** Whether every required step is satisfied and the flow can be completed. */
+  isComplete?: boolean;
+  nextStep?: IdentityAuthenticationAuthenticationStep;
+  /** Every step the flow requires before completion. */
+  requiredSteps?: IdentityAuthenticationAuthenticationStep[] | null;
+  /** Risk score (0–1) that drove the challenge ladder for this flow. */
+  riskScore?: number | null;
+  /** The authenticated user, identified after primary-credential validation. */
+  userId?: string | null;
+}
+
 /** Request to change password for authenticated user */
 export interface IdentityAuthenticationPasswordChangeInput {
   /** Password confirmation */
@@ -9018,6 +9538,18 @@ export interface IdentityAuthenticationPolymorphicSignInInput {
   /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
   rememberMe?: boolean | null;
   tenantId?: string | null;
+}
+
+/** Request body to satisfy one challenge step of an orchestrated authentication flow.
+Exactly one proof field (TOTP code, backup code or WebAuthn assertion) is required. */
+export interface IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto {
+  /** One-time backup code, when satisfying the step with a recovery code. */
+  backupCode?: string | null;
+  step: IdentityAuthenticationAuthenticationStep;
+  /** TOTP verification code, when satisfying the step with the authenticator app. */
+  totpCode?: string | null;
+  /** Serialized WebAuthn assertion, when satisfying the step with a passkey/security key. */
+  webAuthnAssertion?: string | null;
 }
 
 /** Request DTO for refreshing tokens */
@@ -16515,6 +17047,29 @@ export type ObjectsUserVerificationRequirement = 'Required' | 'Preferred' | 'Dis
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultAccountCreditTransaction {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsAccountCreditTransaction[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultBillingOutboxEventDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -16630,6 +17185,29 @@ export interface PagedResultEmailSuppressionDto {
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultGiftPublicView {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsGiftPublicView[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultPricingDecisionLedgerEntryDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
@@ -16706,6 +17284,29 @@ export interface PagedResultPromoCodeDto {
   hasPreviousPage?: boolean;
   /** The items in the current page. */
   items?: CommerceProductsPromoCodeDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultReferral {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsReferral[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -21607,6 +22208,7 @@ export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
 export let CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema: z.ZodType<CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput>;
+export let CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInputSchema: z.ZodType<CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput>;
 export let CommerceBillingBillingOutboxEventDtoSchema: z.ZodType<CommerceBillingBillingOutboxEventDto>;
 export let CommerceBillingBillingOutboxEventStatusSchema: z.ZodType<CommerceBillingBillingOutboxEventStatus>;
 export let CommerceBillingBillingProviderMigrationEntryClassificationSchema: z.ZodType<CommerceBillingBillingProviderMigrationEntryClassification>;
@@ -21621,6 +22223,7 @@ export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<Comm
 export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
 export let CommerceBillingDriftOutcomeRowSchema: z.ZodType<CommerceBillingDriftOutcomeRow>;
 export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<CommerceBillingExternalBillingProviderStatusDto>;
+export let CommerceBillingInvoiceAccountCreditSettlementResultSchema: z.ZodType<CommerceBillingInvoiceAccountCreditSettlementResult>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
 export let CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDetailDto>;
@@ -21653,6 +22256,17 @@ export let CommerceOrdersOrderLineItemDtoSchema: z.ZodType<CommerceOrdersOrderLi
 export let CommerceOrdersOrderMarketplaceCurrencyChoiceSchema: z.ZodType<CommerceOrdersOrderMarketplaceCurrencyChoice>;
 export let CommerceOrdersOrderStatusSchema: z.ZodType<CommerceOrdersOrderStatus>;
 export let CommerceOrdersSetMarketplaceCartItemQuantityInputSchema: z.ZodType<CommerceOrdersSetMarketplaceCartItemQuantityInput>;
+export let CommercePaymentsAccountCreditBalanceSchema: z.ZodType<CommercePaymentsAccountCreditBalance>;
+export let CommercePaymentsAccountCreditConsumptionSchema: z.ZodType<CommercePaymentsAccountCreditConsumption>;
+export let CommercePaymentsAccountCreditGrantSchema: z.ZodType<CommercePaymentsAccountCreditGrant>;
+export let CommercePaymentsAccountCreditGrantStatusSchema: z.ZodType<CommercePaymentsAccountCreditGrantStatus>;
+export let CommercePaymentsAccountCreditMetricsReportSchema: z.ZodType<CommercePaymentsAccountCreditMetricsReport>;
+export let CommercePaymentsAccountCreditsControllerIssueCreditInputSchema: z.ZodType<CommercePaymentsAccountCreditsControllerIssueCreditInput>;
+export let CommercePaymentsAccountCreditsControllerRevokeCreditInputSchema: z.ZodType<CommercePaymentsAccountCreditsControllerRevokeCreditInput>;
+export let CommercePaymentsAccountCreditSourceSchema: z.ZodType<CommercePaymentsAccountCreditSource>;
+export let CommercePaymentsAccountCreditTransactionSchema: z.ZodType<CommercePaymentsAccountCreditTransaction>;
+export let CommercePaymentsAccountCreditTransactionTypeSchema: z.ZodType<CommercePaymentsAccountCreditTransactionType>;
+export let CommercePaymentsAccountCreditTypeSchema: z.ZodType<CommercePaymentsAccountCreditType>;
 export let CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCancelBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerCreateBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCreateBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerRefundBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerRefundBillingChargeInput>;
@@ -21660,6 +22274,8 @@ export let CommercePaymentsCalculateTaxInputSchema: z.ZodType<CommercePaymentsCa
 export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsCreateTaxJurisdictionInput>;
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
+export let CommercePaymentsCreditCurrencyMetricsSchema: z.ZodType<CommercePaymentsCreditCurrencyMetrics>;
+export let CommercePaymentsCreditMetricsSchema: z.ZodType<CommercePaymentsCreditMetrics>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
 export let CommercePaymentsDisputeActionResultSchema: z.ZodType<CommercePaymentsDisputeActionResult>;
 export let CommercePaymentsDisputeEvidenceSchema: z.ZodType<CommercePaymentsDisputeEvidence>;
@@ -21682,6 +22298,10 @@ export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<Commerce
 export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
+export let CommercePaymentsGiftPublicViewSchema: z.ZodType<CommercePaymentsGiftPublicView>;
+export let CommercePaymentsGiftPurchaseResultSchema: z.ZodType<CommercePaymentsGiftPurchaseResult>;
+export let CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema: z.ZodType<CommercePaymentsGiftsControllerPurchaseGiftRequestBody>;
+export let CommercePaymentsGiftStatusSchema: z.ZodType<CommercePaymentsGiftStatus>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
@@ -21708,6 +22328,15 @@ export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodTyp
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
+export let CommercePaymentsReferralSchema: z.ZodType<CommercePaymentsReferral>;
+export let CommercePaymentsReferralFunnelMetricsSchema: z.ZodType<CommercePaymentsReferralFunnelMetrics>;
+export let CommercePaymentsReferralsControllerReferralCodeOutputSchema: z.ZodType<CommercePaymentsReferralsControllerReferralCodeOutput>;
+export let CommercePaymentsReferralsControllerTrackReferralClickInputSchema: z.ZodType<CommercePaymentsReferralsControllerTrackReferralClickInput>;
+export let CommercePaymentsReferralsControllerTrackReferralSignupInputSchema: z.ZodType<CommercePaymentsReferralsControllerTrackReferralSignupInput>;
+export let CommercePaymentsReferralSignupResultSchema: z.ZodType<CommercePaymentsReferralSignupResult>;
+export let CommercePaymentsReferralStatsSchema: z.ZodType<CommercePaymentsReferralStats>;
+export let CommercePaymentsReferralStatusSchema: z.ZodType<CommercePaymentsReferralStatus>;
+export let CommercePaymentsReferrerLeaderboardEntrySchema: z.ZodType<CommercePaymentsReferrerLeaderboardEntry>;
 export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
 export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
 export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
@@ -21875,6 +22504,8 @@ export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLo
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
 export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
+export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
+export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
 export let ComplianceAuditAuditResourceContextSchema: z.ZodType<ComplianceAuditAuditResourceContext>;
 export let ComplianceAuditAuditRetentionComplianceViolationSchema: z.ZodType<ComplianceAuditAuditRetentionComplianceViolation>;
 export let ComplianceAuditAuditRetentionConfigurationOutputSchema: z.ZodType<ComplianceAuditAuditRetentionConfigurationOutput>;
@@ -21901,6 +22532,7 @@ export let ComplianceAuditAuditStorageTierSchema: z.ZodType<ComplianceAuditAudit
 export let ComplianceAuditAuditStorageTierPriceSchema: z.ZodType<ComplianceAuditAuditStorageTierPrice>;
 export let ComplianceAuditAuthenticationAuditEntrySchema: z.ZodType<ComplianceAuditAuthenticationAuditEntry>;
 export let ComplianceAuditAuthenticationAuditOutputSchema: z.ZodType<ComplianceAuditAuthenticationAuditOutput>;
+export let ComplianceAuditCaptureAuditReplayInputSchema: z.ZodType<ComplianceAuditCaptureAuditReplayInput>;
 export let ComplianceAuditComplianceArtifactEntrySchema: z.ZodType<ComplianceAuditComplianceArtifactEntry>;
 export let ComplianceAuditComplianceArtifactManifestSchema: z.ZodType<ComplianceAuditComplianceArtifactManifest>;
 export let ComplianceAuditComplianceArtifactSealSchema: z.ZodType<ComplianceAuditComplianceArtifactSeal>;
@@ -22205,6 +22837,7 @@ export let GameJamsScoreJamSubmissionInputSchema: z.ZodType<GameJamsScoreJamSubm
 export let GameJamsSubmitJamEntryInputSchema: z.ZodType<GameJamsSubmitJamEntryInput>;
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
+export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
 export let IdentityAuthenticationBackupCodesOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesOutput>;
 export let IdentityAuthenticationBackupCodesStatusOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesStatusOutput>;
 export let IdentityAuthenticationBeginWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnAuthenticationInput>;
@@ -22241,8 +22874,10 @@ export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<Identit
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
 export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
+export let IdentityAuthenticationGitHubCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationGitHubCallbackRequestDto>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
+export let IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema: z.ZodType<IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
 export let IdentityAuthenticationLinkGoogleAccountInputSchema: z.ZodType<IdentityAuthenticationLinkGoogleAccountInput>;
 export let IdentityAuthenticationLocalSignInInputSchema: z.ZodType<IdentityAuthenticationLocalSignInInput>;
@@ -22266,12 +22901,14 @@ export let IdentityAuthenticationOidcDiscoveredProviderSchema: z.ZodType<Identit
 export let IdentityAuthenticationOidcDiscoverProviderOutputSchema: z.ZodType<IdentityAuthenticationOidcDiscoverProviderOutput>;
 export let IdentityAuthenticationOidcEndSessionUrlOutputSchema: z.ZodType<IdentityAuthenticationOidcEndSessionUrlOutput>;
 export let IdentityAuthenticationOidcSignInOutputSchema: z.ZodType<IdentityAuthenticationOidcSignInOutput>;
+export let IdentityAuthenticationOrchestratedFlowStateOutputSchema: z.ZodType<IdentityAuthenticationOrchestratedFlowStateOutput>;
 export let IdentityAuthenticationPasswordChangeInputSchema: z.ZodType<IdentityAuthenticationPasswordChangeInput>;
 export let IdentityAuthenticationPasswordChangeResultSchema: z.ZodType<IdentityAuthenticationPasswordChangeResult>;
 export let IdentityAuthenticationPasswordResetRequestResultSchema: z.ZodType<IdentityAuthenticationPasswordResetRequestResult>;
 export let IdentityAuthenticationPasswordResetResultSchema: z.ZodType<IdentityAuthenticationPasswordResetResult>;
 export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<IdentityAuthenticationPatchServiceAccountInput>;
 export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
+export let IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema: z.ZodType<IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
 export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
@@ -22935,15 +23572,18 @@ export let ObjectsPublicKeyCredentialHintSchema: z.ZodType<ObjectsPublicKeyCrede
 export let ObjectsPublicKeyCredentialTypeSchema: z.ZodType<ObjectsPublicKeyCredentialType>;
 export let ObjectsResidentKeyRequirementSchema: z.ZodType<ObjectsResidentKeyRequirement>;
 export let ObjectsUserVerificationRequirementSchema: z.ZodType<ObjectsUserVerificationRequirement>;
+export let PagedResultAccountCreditTransactionSchema: z.ZodType<PagedResultAccountCreditTransaction>;
 export let PagedResultBillingOutboxEventDtoSchema: z.ZodType<PagedResultBillingOutboxEventDto>;
 export let PagedResultBillingWebhookEventListItemDtoSchema: z.ZodType<PagedResultBillingWebhookEventListItemDto>;
 export let PagedResultDeadLetterDtoSchema: z.ZodType<PagedResultDeadLetterDto>;
 export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDeliveryEventDto>;
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
+export let PagedResultGiftPublicViewSchema: z.ZodType<PagedResultGiftPublicView>;
 export let PagedResultPricingDecisionLedgerEntryDtoSchema: z.ZodType<PagedResultPricingDecisionLedgerEntryDto>;
 export let PagedResultPricingRuleDtoSchema: z.ZodType<PagedResultPricingRuleDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
+export let PagedResultReferralSchema: z.ZodType<PagedResultReferral>;
 export let PagedResultRevenueAnomalyAlertSchema: z.ZodType<PagedResultRevenueAnomalyAlert>;
 export let PagedResultRevenueReconciliationDiscrepancySchema: z.ZodType<PagedResultRevenueReconciliationDiscrepancy>;
 export let PagedResultRevenueReconciliationRunSchema: z.ZodType<PagedResultRevenueReconciliationRun>;
@@ -24843,6 +25483,11 @@ CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema = z.
   targetProvider: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput. Request body capping the credit tender of an invoice settlement. */
+CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInputSchema = z.object({
+  maxAmount: z.number().nullable().optional(),
+});
+
 /** Zod schema for CommerceBillingBillingOutboxEventDto. Read model over a durable billing integration event published through the platform outbox. */
 CommerceBillingBillingOutboxEventDtoSchema = z.object({
   aggregateId: z.string().nullable().optional(),
@@ -24995,6 +25640,21 @@ CommerceBillingExternalBillingProviderStatusDtoSchema = z.object({
   health: z.string().nullable(),
   providerKey: z.string().nullable(),
   webhookEndpointConfigured: z.boolean(),
+});
+
+/** Zod schema for CommerceBillingInvoiceAccountCreditSettlementResult. Outcome of the credit tender application. */
+CommerceBillingInvoiceAccountCreditSettlementResultSchema = z.object({
+  amountApplied: z.number().optional(),
+  amountRemaining: z.number().optional(),
+  consumedGrants: z
+    .array(z.lazy(() => CommercePaymentsAccountCreditConsumptionSchema))
+    .nullable()
+    .optional(),
+  currency: z.string().nullable().optional(),
+  idempotentReplay: z.boolean().optional(),
+  invoiceId: z.string().uuid().optional(),
+  invoiceNumber: z.string().nullable().optional(),
+  invoiceStatus: z.lazy(() => CommerceBillingInvoiceStatusSchema).optional(),
 });
 
 /** Zod schema for CommerceBillingInvoicePaymentRetryResult. Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -25339,6 +25999,129 @@ CommerceOrdersSetMarketplaceCartItemQuantityInputSchema = z.object({
   quantity: z.number().int().optional(),
 });
 
+/** Zod schema for CommercePaymentsAccountCreditBalance. Per-currency spendable credit balance of a user. */
+CommercePaymentsAccountCreditBalanceSchema = z.object({
+  available: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  earliestExpiry: z.string().datetime().nullable().optional(),
+  grantCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditConsumption. One grant's share of a consumption. */
+CommercePaymentsAccountCreditConsumptionSchema = z.object({
+  amount: z.number().optional(),
+  grantId: z.string().uuid().optional(),
+  remainingAfter: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditGrant. A grant of account credit issued to a user (issue #410 v1). Grants are separated by
+source, currency, credit type and expiry; consumption always drains grants FIFO by
+expiry (earliest GameGuild.Commerce.Payments.AccountCreditGrant.ExpiresAt first, non-expiring last). Creation is
+idempotent per GameGuild.Commerce.Payments.AccountCreditGrant.IdempotencyKey within a tenant. */
+CommercePaymentsAccountCreditGrantSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  createdAt: z.string().datetime(),
+  creditType: z.lazy(() => CommercePaymentsAccountCreditTypeSchema).optional(),
+  currency: z.string().min(1).max(3),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().min(1).max(500),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  fullyUsedAt: z.string().datetime().nullable().optional(),
+  idempotencyKey: z.string().max(200).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  isSpendable: z.boolean().optional(),
+  remainingAmount: z.number().optional(),
+  revocationReason: z.string().max(500).nullable().optional(),
+  source: z.lazy(() => CommercePaymentsAccountCreditSourceSchema).optional(),
+  sourceReferenceId: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsAccountCreditGrantStatusSchema).optional(),
+  tenantId: z.string().uuid(),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditGrantStatus. Lifecycle status of an account credit grant. */
+CommercePaymentsAccountCreditGrantStatusSchema = z.enum(['Active', 'FullyUsed', 'Expired', 'Revoked']);
+
+/** Zod schema for CommercePaymentsAccountCreditMetricsReport. Growth metrics report (issue #410): credit issuance/usage/expiry plus referral funnel and top referrers. */
+CommercePaymentsAccountCreditMetricsReportSchema = z.object({
+  credit: z.lazy(() => CommercePaymentsCreditMetricsSchema).optional(),
+  referralFunnel: z.lazy(() => CommercePaymentsReferralFunnelMetricsSchema).optional(),
+  topReferrers: z
+    .array(z.lazy(() => CommercePaymentsReferrerLeaderboardEntrySchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditsControllerIssueCreditInput. Request body for manual credit issuance. */
+CommercePaymentsAccountCreditsControllerIssueCreditInputSchema = z.object({
+  amount: z.number().optional(),
+  creditType: z.lazy(() => CommercePaymentsAccountCreditTypeSchema).optional(),
+  currency: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditsControllerRevokeCreditInput. Request body for credit revocation. */
+CommercePaymentsAccountCreditsControllerRevokeCreditInputSchema = z.object({
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditSource. Where an account credit grant came from. */
+CommercePaymentsAccountCreditSourceSchema = z.enum(['Manual', 'Gift', 'Referral', 'Refund']);
+
+/** Zod schema for CommercePaymentsAccountCreditTransaction. Immutable ledger row per account-credit lifecycle event (issue #410 v1): exactly one
+row is appended for every grant, consumption, revocation and expiry of an
+GameGuild.Commerce.Payments.AccountCreditGrant. */
+CommercePaymentsAccountCreditTransactionSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  createdAt: z.string().datetime(),
+  currency: z.string().min(1).max(3),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().min(1).max(500),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  grantId: z.string().uuid(),
+  idempotencyKey: z.string().max(200).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  referenceId: z.string().uuid().nullable().optional(),
+  remainingAfter: z.number().optional(),
+  tenantId: z.string().uuid(),
+  type: z.lazy(() => CommercePaymentsAccountCreditTransactionTypeSchema).optional(),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditTransactionType. Lifecycle event kinds recorded in the account credit ledger. */
+CommercePaymentsAccountCreditTransactionTypeSchema = z.enum(['Grant', 'Consume', 'Revoke', 'Expire']);
+
+/** Zod schema for CommercePaymentsAccountCreditType. What an account credit grant may be applied to. */
+CommercePaymentsAccountCreditTypeSchema = z.enum(['General', 'Subscription', 'Addon']);
+
 /** Zod schema for CommercePaymentsBillingChargesControllerCancelBillingChargeInput. Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema = z.object({
   canceledBy: z.string().uuid().nullable().optional(),
@@ -25396,6 +26179,27 @@ CommercePaymentsCreateTaxRuleInputSchema = z.object({
 /** Zod schema for CommercePaymentsCreateWalletInput. Data model for Commerce Payments Create Wallet Request. */
 CommercePaymentsCreateWalletInputSchema = z.object({
   currency: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsCreditCurrencyMetrics. Credit totals per currency for the metrics report. */
+CommercePaymentsCreditCurrencyMetricsSchema = z.object({
+  activeBalance: z.number().optional(),
+  activeGrantCount: z.number().int().optional(),
+  applied: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  expiredUnused: z.number().optional(),
+  issued: z.number().optional(),
+  revoked: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsCreditMetrics. Aggregate credit metrics across currencies (rates are global in v1). */
+CommercePaymentsCreditMetricsSchema = z.object({
+  expirationWasteRate: z.number().nullable().optional(),
+  perCurrency: z
+    .array(z.lazy(() => CommercePaymentsCreditCurrencyMetricsSchema))
+    .nullable()
+    .optional(),
+  usageRate: z.number().nullable().optional(),
 });
 
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
@@ -25619,6 +26423,43 @@ CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', '
 
 /** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
 CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for CommercePaymentsGiftPublicView. Public (non-secret) view of a gift for the redemption preview endpoint. */
+CommercePaymentsGiftPublicViewSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  deliveryDate: z.string().datetime().nullable().optional(),
+  durationMonths: z.number().int().optional(),
+  expiresAt: z.string().datetime().optional(),
+  giverDisplayName: z.string().nullable().optional(),
+  personalMessage: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  recipientName: z.string().nullable().optional(),
+  redemptionCodePrefix: z.string().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsGiftStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsGiftPurchaseResult. Result of a gift purchase: the gift plus the full redemption code shown exactly once. */
+CommercePaymentsGiftPurchaseResultSchema = z.object({
+  gift: z.lazy(() => CommercePaymentsGiftPublicViewSchema).optional(),
+  redemptionCode: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsGiftsControllerPurchaseGiftRequestBody. Request body for gift purchase. */
+CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  deliveryDate: z.string().datetime().nullable().optional(),
+  durationMonths: z.number().int().optional(),
+  personalMessage: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  recipientEmail: z.string().nullable().optional(),
+  recipientName: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsGiftStatus. Gift subscription status machine (Purchased → Delivered → Redeemed / Expired, plus Refunded). */
+CommercePaymentsGiftStatusSchema = z.enum(['Purchased', 'Delivered', 'Redeemed', 'Expired', 'Refunded']);
 
 /** Zod schema for CommercePaymentsLockWalletInput. Data model for Commerce Payments Lock Wallet Request. */
 CommercePaymentsLockWalletInputSchema = z.object({
@@ -25899,6 +26740,107 @@ CommercePaymentsProcessRefundResultSchema = z.object({
   refundedAmount: z.number(),
   refundId: z.string().uuid(),
   status: z.lazy(() => CommercePaymentsTransactionStatusSchema),
+});
+
+/** Zod schema for CommercePaymentsReferral. Referral tracking record (issue #410 v1). One opaque referral code is generated per
+referrer (the first GameGuild.Commerce.Payments.ReferralStatus.Pending row anchors the code);
+every referee journey gets its own row carrying that shared code, so a referrer can
+accumulate referrals up to the configured cap. The fraud blocks (self-referral,
+same-IP repeat) reuse the velocity thinking of the payments fraud gate (issue #409). */
+CommercePaymentsReferralSchema = z.object({
+  id: z.string().uuid().optional(),
+  clickedAt: z.string().datetime().nullable().optional(),
+  conversionAt: z.string().datetime().nullable().optional(),
+  conversionInvoiceId: z.string().uuid().nullable().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  fraudReason: z.string().max(500).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  refereeEmail: z.string().max(255).nullable().optional(),
+  refereeIpHash: z.string().max(64).nullable().optional(),
+  refereeRewardGrantId: z.string().uuid().nullable().optional(),
+  refereeSubscriptionId: z.string().uuid().nullable().optional(),
+  refereeUserId: z.string().uuid().nullable().optional(),
+  referralCode: z.string().min(1).max(32),
+  referralLink: z.string().max(500).nullable().optional(),
+  referrerIpHash: z.string().max(64).nullable().optional(),
+  referrerRewardGrantId: z.string().uuid().nullable().optional(),
+  referrerUserId: z.string().uuid(),
+  rewardIssuedAt: z.string().datetime().nullable().optional(),
+  sharedAt: z.string().datetime(),
+  signupAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsReferralStatusSchema).optional(),
+  tenantId: z.string().uuid(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralFunnelMetrics. Referral funnel counters (clicks → signups → conversions → rewards). */
+CommercePaymentsReferralFunnelMetricsSchema = z.object({
+  clicks: z.number().int().optional(),
+  codesShared: z.number().int().optional(),
+  conversions: z.number().int().optional(),
+  fraudulent: z.number().int().optional(),
+  rewardsIssued: z.number().int().optional(),
+  signups: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralsControllerReferralCodeOutput. Response body carrying the referral code and share link. */
+CommercePaymentsReferralsControllerReferralCodeOutputSchema = z.object({
+  code: z.string().nullable().optional(),
+  link: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralsControllerTrackReferralClickInput. Request body for click tracking. */
+CommercePaymentsReferralsControllerTrackReferralClickInputSchema = z.object({
+  refereeEmail: z.string().nullable().optional(),
+  referralCode: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralsControllerTrackReferralSignupInput. Request body for signup tracking. */
+CommercePaymentsReferralsControllerTrackReferralSignupInputSchema = z.object({
+  referralCode: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralSignupResult. Signup outcome for the referee applying a referral code. */
+CommercePaymentsReferralSignupResultSchema = z.object({
+  blocked: z.boolean().optional(),
+  reason: z.string().nullable().optional(),
+  referral: z.lazy(() => CommercePaymentsReferralSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralStats. Referral funnel counters of one referrer. */
+CommercePaymentsReferralStatsSchema = z.object({
+  clicked: z.number().int().optional(),
+  converted: z.number().int().optional(),
+  expired: z.number().int().optional(),
+  fraudulent: z.number().int().optional(),
+  referralCode: z.string().nullable().optional(),
+  referralLink: z.string().nullable().optional(),
+  referrerUserId: z.string().uuid().optional(),
+  rewardIssued: z.number().int().optional(),
+  shared: z.number().int().optional(),
+  signedUp: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralStatus. Referral funnel status. */
+CommercePaymentsReferralStatusSchema = z.enum(['Pending', 'Clicked', 'SignedUp', 'Converted', 'RewardIssued', 'Expired', 'Fraudulent']);
+
+/** Zod schema for CommercePaymentsReferrerLeaderboardEntry. One leaderboard row: referrer by rewarded referrals. */
+CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
+  fraudulentReferrals: z.number().int().optional(),
+  referrerUserId: z.string().uuid().optional(),
+  rewardedReferrals: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsRefundApprovalQueuePage. Paged read model for the pending refund-approval queue. */
@@ -27556,6 +28498,7 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSche
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
   sortOrder: z.number().int().nullable().optional(),
+  trialPeriodDays: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput. Request to create a subscription */
@@ -27867,6 +28810,35 @@ ComplianceAuditAuditRelatedActionSchema = z.object({
   correlationCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditReplaySnapshotEvent. Safe event fields shared with the Web replay core. UserId may identify a subject;
+            it must not be presented as verified attribution without additional source evidence. */
+ComplianceAuditAuditReplaySnapshotEventSchema = z.object({
+  id: z.string().nullable().optional(),
+  actionType: z.string().nullable().optional(),
+  correlationId: z.string().nullable().optional(),
+  createdAt: z.string().nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  sessionId: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+  tenantId: z.string().nullable().optional(),
+  userId: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySnapshotOutput. Documents the exact canonical JSON response; its digest is delivered in a response header. */
+ComplianceAuditAuditReplaySnapshotOutputSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditResourceContext. Data model for Compliance Audit Audit Resource Context. */
 ComplianceAuditAuditResourceContextSchema = z.object({
   resourceId: z.string().nullable().optional(),
@@ -28165,6 +29137,12 @@ ComplianceAuditAuthenticationAuditOutputSchema = z.object({
   take: z.number().int().optional(),
   totalCount: z.number().int().optional(),
   uniqueIpAddresses: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditCaptureAuditReplayInput. Data model for Compliance Audit Capture Audit Replay Request. */
+ComplianceAuditCaptureAuditReplayInputSchema = z.object({
+  end: z.string().datetime(),
+  start: z.string().datetime(),
 });
 
 /** Zod schema for ComplianceAuditComplianceArtifactEntry. Data model for Compliance Audit Compliance Artifact Entry. */
@@ -31444,6 +32422,9 @@ IdentityAuthenticationAssignRoleToUserInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationAuthenticationStep. Multi-step authentication flow steps */
+IdentityAuthenticationAuthenticationStepSchema = z.enum(['PrimaryCredential', 'MfaVerification', 'DeviceTrust', 'RiskChallenge']);
+
 /** Zod schema for IdentityAuthenticationBackupCodesOutput. Backup codes response */
 IdentityAuthenticationBackupCodesOutputSchema = z.object({
   codes: z.array(z.string()).nullable().optional(),
@@ -31711,6 +32692,15 @@ IdentityAuthenticationExternalLoginLinkPreviewOutputSchema = z.object({
   requestedScopes: z.array(z.string()).nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationGitHubCallbackRequestDto. Request body for the GitHub OAuth callback endpoint */
+IdentityAuthenticationGitHubCallbackRequestDtoSchema = z.object({
+  code: z.string().min(1),
+  redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
+  state: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationGitHubSignInOutput. Response for GitHub sign-in initiation */
 IdentityAuthenticationGitHubSignInOutputSchema = z.object({
   authUrl: z.string().nullable(),
@@ -31720,6 +32710,14 @@ IdentityAuthenticationGitHubSignInOutputSchema = z.object({
 IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   idToken: z.string().min(1),
   rememberMe: z.boolean().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto. Request body to initiate an orchestrated authentication flow. */
+IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema = z.object({
+  deviceFingerprint: z.string().nullable().optional(),
+  identifier: z.string().min(1),
+  password: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -31898,6 +32896,26 @@ IdentityAuthenticationOidcSignInOutputSchema = z.object({
   state: z.string().nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationOrchestratedFlowStateOutput. Response describing the state of an orchestrated authentication flow. */
+IdentityAuthenticationOrchestratedFlowStateOutputSchema = z.object({
+  completedSteps: z
+    .array(z.lazy(() => IdentityAuthenticationAuthenticationStepSchema))
+    .nullable()
+    .optional(),
+  currentStep: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema).optional(),
+  expiresAt: z.string().datetime().optional(),
+  flowId: z.string().uuid().optional(),
+  initiatedAt: z.string().datetime().optional(),
+  isComplete: z.boolean().optional(),
+  nextStep: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema).optional(),
+  requiredSteps: z
+    .array(z.lazy(() => IdentityAuthenticationAuthenticationStepSchema))
+    .nullable()
+    .optional(),
+  riskScore: z.number().nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationPasswordChangeInput. Request to change password for authenticated user */
 IdentityAuthenticationPasswordChangeInputSchema = z.object({
   confirmPassword: z.string().min(1),
@@ -31943,6 +32961,15 @@ IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
   password: z.string().nullable().optional(),
   rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto. Request body to satisfy one challenge step of an orchestrated authentication flow.
+Exactly one proof field (TOTP code, backup code or WebAuthn assertion) is required. */
+IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema = z.object({
+  backupCode: z.string().nullable().optional(),
+  step: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema),
+  totpCode: z.string().nullable().optional(),
+  webAuthnAssertion: z.string().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationRefreshTokenInput. Request DTO for refreshing tokens */
@@ -38998,6 +40025,23 @@ ObjectsResidentKeyRequirementSchema = z.enum(['Required', 'Preferred', 'Discoura
 /** Zod schema for ObjectsUserVerificationRequirement. OpenAPI schema for Objects User Verification Requirement. */
 ObjectsUserVerificationRequirementSchema = z.enum(['Required', 'Preferred', 'Discouraged']);
 
+/** Zod schema for PagedResultAccountCreditTransaction. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultAccountCreditTransactionSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsAccountCreditTransactionSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultBillingOutboxEventDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultBillingOutboxEventDtoSchema = z.object({
@@ -39083,6 +40127,23 @@ PagedResultEmailSuppressionDtoSchema = z.object({
   totalPages: z.number().int().optional(),
 });
 
+/** Zod schema for PagedResultGiftPublicView. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultGiftPublicViewSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsGiftPublicViewSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultPricingDecisionLedgerEntryDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultPricingDecisionLedgerEntryDtoSchema = z.object({
@@ -39141,6 +40202,23 @@ PagedResultPromoCodeDtoSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
   items: z
     .array(z.lazy(() => CommerceProductsPromoCodeDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultReferral. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultReferralSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsReferralSchema))
     .nullable()
     .optional(),
   pageNumber: z.number().int().optional(),
@@ -43590,14 +44668,20 @@ export type IdentityAuthenticationApiKey = IdentityAuthenticationApiKeyDto;
 export { IdentityAuthenticationApiKeyDtoSchema as IdentityAuthenticationApiKeySchema };
 export type IdentityAuthenticationDiscordCallbackRequest = IdentityAuthenticationDiscordCallbackRequestDto;
 export { IdentityAuthenticationDiscordCallbackRequestDtoSchema as IdentityAuthenticationDiscordCallbackRequestSchema };
+export type IdentityAuthenticationGitHubCallbackRequest = IdentityAuthenticationGitHubCallbackRequestDto;
+export { IdentityAuthenticationGitHubCallbackRequestDtoSchema as IdentityAuthenticationGitHubCallbackRequestSchema };
 export type IdentityAuthenticationGoogleIdTokenRequest = IdentityAuthenticationGoogleIdTokenRequestDto;
 export { IdentityAuthenticationGoogleIdTokenRequestDtoSchema as IdentityAuthenticationGoogleIdTokenRequestSchema };
+export type IdentityAuthenticationInitiateOrchestratedAuthenticationRequest = IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+export { IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema as IdentityAuthenticationInitiateOrchestratedAuthenticationRequestSchema };
 export type IdentityAuthenticationJwtKeyInfo = IdentityAuthenticationJwtKeyInfoDto;
 export { IdentityAuthenticationJwtKeyInfoDtoSchema as IdentityAuthenticationJwtKeyInfoSchema };
 export type IdentityAuthenticationOidcAuthorizeRequest = IdentityAuthenticationOidcAuthorizeRequestDto;
 export { IdentityAuthenticationOidcAuthorizeRequestDtoSchema as IdentityAuthenticationOidcAuthorizeRequestSchema };
 export type IdentityAuthenticationOidcCallbackRequest = IdentityAuthenticationOidcCallbackRequestDto;
 export { IdentityAuthenticationOidcCallbackRequestDtoSchema as IdentityAuthenticationOidcCallbackRequestSchema };
+export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest = IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationEffectivePermission = IdentityAuthorizationEffectivePermissionDto;

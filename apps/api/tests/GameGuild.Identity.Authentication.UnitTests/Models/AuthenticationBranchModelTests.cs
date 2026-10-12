@@ -46,7 +46,11 @@ public sealed class AuthenticationBranchModelTests
             ExpiresAt = DateTime.UtcNow.AddMinutes(-5)
         };
 
-        completed.NextStep.Should().Be(AuthenticationStep.PrimaryCredential);
+        // Every required step is satisfied, so there is no next step: NextStep reports
+        // null (it must never fall back to the enum default, which would advertise the
+        // already-completed primary credential again).
+        completed.NextStep.Should().BeNull();
+        completed.IsComplete.Should().BeTrue();
         completed.IsExpired.Should().BeFalse();
         expired.IsExpired.Should().BeTrue();
     }

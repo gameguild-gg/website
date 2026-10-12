@@ -28,7 +28,7 @@ public sealed class PermissionServiceBulkCacheTests
         await context.SaveChangesAsync();
 
         var versionStore = new InMemoryTenantSecurityVersionStore();
-        var cachedValues = new ConcurrentDictionary<string, bool>(StringComparer.Ordinal);
+        var cachedValues = new ConcurrentDictionary<string, CachedPermissionDecision>(StringComparer.Ordinal);
         var cache = CreatePermissionCache(cachedValues);
         var service = new PermissionService(
             context,
@@ -39,9 +39,10 @@ public sealed class PermissionServiceBulkCacheTests
         firstResult[userId][PermissionType.Read].Should().BeTrue();
         cachedResult[userId][PermissionType.Read].Should().BeTrue();
         cache.Verify(
-            permissionCache => permissionCache.SetManyValuesAsync<bool>(
-                It.IsAny<IReadOnlyDictionary<string, bool>>(),
+            permissionCache => permissionCache.SetManyValuesAsync(
+                It.IsAny<IReadOnlyDictionary<string, CachedPermissionDecision>>(),
                 "permission",
+                It.IsAny<IReadOnlyDictionary<string, int>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
@@ -52,15 +53,16 @@ public sealed class PermissionServiceBulkCacheTests
         invalidatedResult[userId][PermissionType.Read].Should().BeFalse();
         cachedInvalidatedResult[userId][PermissionType.Read].Should().BeFalse();
         cache.Verify(
-            permissionCache => permissionCache.GetManyValuesAsync<bool>(
+            permissionCache => permissionCache.GetManyValuesAsync<CachedPermissionDecision>(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 "permission",
                 It.IsAny<CancellationToken>()),
             Times.Exactly(4));
         cache.Verify(
-            permissionCache => permissionCache.SetManyValuesAsync<bool>(
-                It.IsAny<IReadOnlyDictionary<string, bool>>(),
+            permissionCache => permissionCache.SetManyValuesAsync(
+                It.IsAny<IReadOnlyDictionary<string, CachedPermissionDecision>>(),
                 "permission",
+                It.IsAny<IReadOnlyDictionary<string, int>>(),
                 It.IsAny<CancellationToken>()),
             Times.Exactly(2));
     }
@@ -81,7 +83,7 @@ public sealed class PermissionServiceBulkCacheTests
         await context.SaveChangesAsync();
 
         var versionStore = new InMemoryTenantSecurityVersionStore();
-        var cache = CreatePermissionCache(new ConcurrentDictionary<string, bool>(StringComparer.Ordinal));
+        var cache = CreatePermissionCache(new ConcurrentDictionary<string, CachedPermissionDecision>(StringComparer.Ordinal));
         var service = new PermissionService(
             context,
             securityVersionStore: versionStore,
@@ -130,7 +132,7 @@ public sealed class PermissionServiceBulkCacheTests
             versionStore!.SetVersion(tenantId, 2);
         });
         versionStore.SetVersion(tenantId, 1);
-        var cache = CreatePermissionCache(new ConcurrentDictionary<string, bool>(StringComparer.Ordinal));
+        var cache = CreatePermissionCache(new ConcurrentDictionary<string, CachedPermissionDecision>(StringComparer.Ordinal));
         var service = new PermissionService(
             context,
             securityVersionStore: versionStore,
@@ -141,45 +143,47 @@ public sealed class PermissionServiceBulkCacheTests
 
         result.Single().IsGranted.Should().BeFalse();
         cache.Verify(
-            permissionCache => permissionCache.GetManyValuesAsync<bool>(
+            permissionCache => permissionCache.GetManyValuesAsync<CachedPermissionDecision>(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 "permission",
                 It.IsAny<CancellationToken>()),
             Times.Exactly(2));
         cache.Verify(
-            permissionCache => permissionCache.SetManyValuesAsync<bool>(
-                It.IsAny<IReadOnlyDictionary<string, bool>>(),
+            permissionCache => permissionCache.SetManyValuesAsync(
+                It.IsAny<IReadOnlyDictionary<string, CachedPermissionDecision>>(),
                 "permission",
+                It.IsAny<IReadOnlyDictionary<string, int>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
-    private static Mock<IHybridPermissionCache> CreatePermissionCache(ConcurrentDictionary<string, bool> values)
+    private static Mock<IHybridPermissionCache> CreatePermissionCache(ConcurrentDictionary<string, CachedPermissionDecision> values)
     {
         var cache = new Mock<IHybridPermissionCache>(MockBehavior.Strict);
         cache
-            .Setup(permissionCache => permissionCache.GetManyValuesAsync<bool>(
+            .Setup(permissionCache => permissionCache.GetManyValuesAsync<CachedPermissionDecision>(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .Returns((IReadOnlyCollection<string> keys, string _, CancellationToken _) =>
             {
-                IReadOnlyDictionary<string, CacheResult<bool>> results = keys
+                IReadOnlyDictionary<string, CacheResult<CachedPermissionDecision>> results = keys
                     .Distinct(StringComparer.Ordinal)
                     .ToDictionary(
                         key => key,
                         key => values.TryGetValue(key, out var value)
-                            ? CacheResult<bool>.Hit(value)
-                            : CacheResult<bool>.Miss(),
+                            ? CacheResult<CachedPermissionDecision>.Hit(value)
+                            : CacheResult<CachedPermissionDecision>.Miss(),
                         StringComparer.Ordinal);
                 return Task.FromResult(results);
             });
         cache
-            .Setup(permissionCache => permissionCache.SetManyValuesAsync<bool>(
-                It.IsAny<IReadOnlyDictionary<string, bool>>(),
+            .Setup(permissionCache => permissionCache.SetManyValuesAsync(
+                It.IsAny<IReadOnlyDictionary<string, CachedPermissionDecision>>(),
                 It.IsAny<string>(),
+                It.IsAny<IReadOnlyDictionary<string, int>?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns((IReadOnlyDictionary<string, bool> entries, string _, CancellationToken _) =>
+            .Returns((IReadOnlyDictionary<string, CachedPermissionDecision> entries, string _, IReadOnlyDictionary<string, int>? _, CancellationToken _) =>
             {
                 foreach (var entry in entries)
                 {

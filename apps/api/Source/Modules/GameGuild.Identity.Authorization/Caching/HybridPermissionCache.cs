@@ -36,6 +36,21 @@ public interface IHybridPermissionCache
         CancellationToken cancellationToken) where T : struct;
 
     /// <summary>
+    ///     Sets multiple value-type entries with bounded concurrency, clamping individual entries to explicit TTLs.
+    /// </summary>
+    /// <remarks>
+    ///     At most 500 entries are accepted. An entry present in <paramref name="ttlSecondsByKey"/> is stored
+    ///     with that TTL, which never extends the configured TTLs and only shortens them (the same contract as
+    ///     the single-entry <see cref="SetValueAsync{T}(string, T, string, int, CancellationToken)"/> overload);
+    ///     entries without an explicit TTL use the configured lifetime. Cache writes are not transactional.
+    /// </remarks>
+    Task SetManyValuesAsync<T>(
+        IReadOnlyDictionary<string, T> values,
+        string cacheType,
+        IReadOnlyDictionary<string, int>? ttlSecondsByKey,
+        CancellationToken cancellationToken) where T : struct;
+
+    /// <summary>
     ///     Gets a value from the cache.
     /// </summary>
     /// <typeparam name="T">The type of value to retrieve.</typeparam>
@@ -475,6 +490,14 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
     public async Task SetManyValuesAsync<T>(
         IReadOnlyDictionary<string, T> values,
         string cacheType,
+        CancellationToken cancellationToken) where T : struct =>
+        await SetManyValuesAsync(values, cacheType, ttlSecondsByKey: null, cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task SetManyValuesAsync<T>(
+        IReadOnlyDictionary<string, T> values,
+        string cacheType,
+        IReadOnlyDictionary<string, int>? ttlSecondsByKey,
         CancellationToken cancellationToken) where T : struct
     {
         ArgumentNullException.ThrowIfNull(values);
@@ -505,7 +528,14 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
             async (index, token) =>
             {
                 var entry = entries[index];
-                await SetValueAsync(entry.Key, entry.Value, cacheType, token).ConfigureAwait(false);
+                if (ttlSecondsByKey is not null && ttlSecondsByKey.TryGetValue(entry.Key, out var ttlSeconds))
+                {
+                    await SetValueAsync(entry.Key, entry.Value, cacheType, ttlSeconds, token).ConfigureAwait(false);
+                }
+                else
+                {
+                    await SetValueAsync(entry.Key, entry.Value, cacheType, token).ConfigureAwait(false);
+                }
             }).ConfigureAwait(false);
     }
 
@@ -528,11 +558,15 @@ public sealed class HybridPermissionCache : IHybridPermissionCache
 
     private async Task SetAsyncCore<T>(string key, T value, string cacheType, int? ttlSeconds, CancellationToken cancellationToken)
     {
-        var l1Ttl = TimeSpan.FromSeconds(ttlSeconds ?? GetL1TtlSeconds(cacheType));
+        // An explicit TTL only shortens the configured lifetimes; it never extends them (the contract
+        // documented on the TTL overloads). This lets callers clamp time-bound entries — for example
+        // permission or ACL decisions bounded by grant expiration — so neither cache level can outlive
+        // the data the entry was derived from.
+        var l1Ttl = TimeSpan.FromSeconds(
+            ttlSeconds is { } explicitL1Ttl
+                ? Math.Min(explicitL1Ttl, GetL1TtlSeconds(cacheType))
+                : GetL1TtlSeconds(cacheType));
 
-        // An explicit TTL only shortens the configured L2 lifetime; it never extends it. This lets
-        // callers clamp time-bound entries (for example ACL decisions bounded by grant expiration)
-        // so neither cache level can outlive the data the entry was derived from.
         var l2Ttl = TimeSpan.FromSeconds(
             ttlSeconds is { } explicitTtl
                 ? Math.Min(explicitTtl, _options.DistributedCacheTtlSeconds)
