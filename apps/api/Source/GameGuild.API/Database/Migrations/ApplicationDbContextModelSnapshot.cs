@@ -5168,6 +5168,51 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("SubscriptionPlans", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Commerce.Subscriptions.SubscriptionPlanIntervalPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Interval")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PriceInCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId")
+                        .HasDatabaseName("ix_subscription_plan_interval_prices_plan_id");
+
+                    b.HasIndex("PlanId", "Interval")
+                        .IsUnique()
+                        .HasDatabaseName("ix_subscription_plan_interval_prices_plan_interval");
+
+                    b.ToTable("SubscriptionPlanIntervalPrices", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Compliance.Audit.AuditDataAccessObservation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -32859,6 +32904,15 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("GameGuild.Commerce.Subscriptions.SubscriptionPlanIntervalPrice", b =>
+                {
+                    b.HasOne("GameGuild.Commerce.Subscriptions.SubscriptionPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Audit.AuditExportHistory", b =>
