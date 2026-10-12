@@ -120,7 +120,9 @@ public sealed class AuditReplayCaptureServiceTests : IDisposable
     [InlineData(0)] [InlineData(1)]
     public async Task RejectsInvalidRangesBeforeAuditOrDatabaseAccess(int scenario)
     {
-        var request = scenario == 0 ? new AuditReplayCaptureRequest(End, Start)
+        var start = End;
+        var end = Start;
+        var request = scenario == 0 ? new AuditReplayCaptureRequest(start, end)
             : new AuditReplayCaptureRequest(Start, Captured.AddTicks(1));
         var noRead = new Mock<IApplicationDbContext>(MockBehavior.Strict);
         await Assert.ThrowsAsync<ArgumentException>(() => Service(noRead.Object).CaptureAsync(request, CancellationToken.None));
