@@ -14,6 +14,30 @@ public sealed record PatchWalletRequest(
 public sealed record FreezeWalletRequest(string Reason);
 
 /// <summary>
+///     Administrative balance adjustment against a wallet (issue #406).
+/// </summary>
+/// <param name="Direction">Either "credit" (add funds) or "debit" (deduct funds)</param>
+/// <param name="Amount">Positive amount to adjust</param>
+/// <param name="Reason">Human-readable adjustment reason (audited)</param>
+/// <param name="ReferenceId">Optional idempotency reference; replays return the original transaction</param>
+public sealed record AdjustWalletRequest(string Direction, decimal Amount, string Reason, string? ReferenceId = null);
+
+/// <summary>
+///     Wallet-to-wallet transfer request (issue #406). Both wallets must share the same currency.
+/// </summary>
+/// <param name="FromWalletId">Source wallet identifier</param>
+/// <param name="ToWalletId">Destination wallet identifier</param>
+/// <param name="Amount">Positive amount to transfer</param>
+/// <param name="Description">Human-readable transfer description (audited)</param>
+/// <param name="ReferenceId">Optional idempotency reference; replays return the original transactions</param>
+public sealed record TransferWalletsRequest(Guid FromWalletId, Guid ToWalletId, decimal Amount, string Description, string? ReferenceId = null);
+
+/// <summary>
+///     Transfer result payload for the wallets:transfer endpoint (issue #406).
+/// </summary>
+public sealed record TransferWalletsResponse(WalletTransaction DebitTransaction, WalletTransaction CreditTransaction);
+
+/// <summary>
 ///     Wallet audit log entry
 /// </summary>
 public record WalletAuditEntry(

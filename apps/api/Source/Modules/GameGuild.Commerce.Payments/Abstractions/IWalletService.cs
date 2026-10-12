@@ -17,19 +17,37 @@ public interface IWalletService
     /// <summary>Get wallet balance</summary>
     Task<decimal> GetBalanceAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    /// <summary>Add funds to wallet</summary>
-    Task<WalletTransaction> AddFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    ///     Add funds to a wallet (issue #406). When <paramref name="currency" /> is supplied the
+    ///     user's wallet in that currency is used (created on demand); otherwise the user's
+    ///     primary (earliest-created) wallet is used. A non-empty <paramref name="referenceId" />
+    ///     that already exists as a completed transaction on the target wallet replays
+    ///     idempotently: the existing transaction is returned and no balance changes.
+    /// </summary>
+    Task<WalletTransaction> AddFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, string? currency = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Deduct funds from wallet</summary>
-    Task<WalletTransaction> DeductFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    ///     Deduct funds from a wallet (issue #406). When <paramref name="currency" /> is supplied
+    ///     the user's wallet in that currency is used; otherwise the user's primary
+    ///     (earliest-created) wallet is used. A non-empty <paramref name="referenceId" /> that
+    ///     already exists as a completed transaction on the target wallet replays idempotently.
+    /// </summary>
+    Task<WalletTransaction> DeductFundsAsync(Guid userId, decimal amount, string description, string? referenceId = null, string? currency = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Transfer funds between wallets</summary>
+    /// <summary>
+    ///     Transfer funds between two users' wallets (issue #406). When
+    ///     <paramref name="currency" /> is supplied both sides resolve to that currency; the
+    ///     destination wallet is created on demand in the source wallet's currency. A non-empty
+    ///     <paramref name="referenceId" /> that already exists as a completed transaction on the
+    ///     source wallet replays idempotently.
+    /// </summary>
     Task<(WalletTransaction debitTransaction, WalletTransaction creditTransaction)> TransferFundsAsync(
         Guid fromUserId,
         Guid toUserId,
         decimal amount,
         string description,
         string? referenceId = null,
+        string? currency = null,
         CancellationToken cancellationToken = default
     );
 

@@ -1,3 +1,5 @@
+using GameGuild.Configuration.PresentationLayer.Authorization;
+
 namespace GameGuild.Identity.Authorization;
 
 /// <summary>
@@ -183,6 +185,17 @@ public record EffectivePermissions
     public bool Throttled { get; init; }
 
     /// <summary>
+    ///     Owner-override evaluation metadata (issue #372). Null when no override was
+    ///     applied (mode <c>Off</c>, unknown mode — fail-closed, no recorded ownership,
+    ///     revoked or expired ownership, or a context without a resource). When present,
+    ///     <see cref="OwnerOverrideEvaluation.EffectiveThroughUtc"/> carries the temporal
+    ///     precedence outcome: the earliest expiry among the ownership designation and
+    ///     any other in-force time-bound grant contributing the same permission (the more
+    ///     restrictive expiry wins, issue #363).
+    /// </summary>
+    public OwnerOverrideEvaluation? OwnerOverride { get; init; }
+
+    /// <summary>
     ///     When the permissions were resolved.
     /// </summary>
     public DateTime ResolvedAt { get; init; } = SystemClock.UtcNow;
@@ -257,7 +270,15 @@ public enum PermissionSource
     ///     plugin (issue #358). Extension allows are subject to DENY-WINS like every
     ///     other layer.
     /// </summary>
-    Extension = 8
+    Extension = 8,
+
+    /// <summary>
+    ///     Owner override (issue #372): permissions minted because the user owns the exact
+    ///     resource in the resolution context. Subject to DENY-WINS unless the
+    ///     <c>Authorization:OwnerOverride</c> mode is <c>AlwaysAllow</c> (fail-closed
+    ///     default: <c>AllowUnlessDenied</c>).
+    /// </summary>
+    Owner = 9
 }
 
 /// <summary>
@@ -269,3 +290,25 @@ public record RoleContribution(
     IReadOnlyList<string> Permissions,
     bool IsInherited,
     Guid? InheritedFromRoleId);
+
+/// <summary>
+///     Owner-override evaluation outcome (issue #372): which precedence mode was in
+///     effect, who the resolved owner was, which permissions the override minted and the
+///     temporal precedence bound. Override <em>use</em> is additionally audited at DEBUG
+///     level by the resolver (deliberately not durable, to keep the decision path
+///     low-noise; ownership <em>changes</em> are durable-audited by
+///     <c>TransferOwnershipCommand</c>).
+/// </summary>
+/// <param name="Mode">The effective precedence mode (never <see cref="OwnerOverrideMode.Unknown"/>).</param>
+/// <param name="OwnerUserId">The resolved owner for the context resource.</param>
+/// <param name="GrantedPermissions">The permission names minted by the override (unqualified and resource-qualified).</param>
+/// <param name="EffectiveThroughUtc">
+///     The more restrictive of the ownership expiry and every other in-force time-bound
+///     grant contributing the same permission; null = indefinite. The override's grants
+///     are only valid while this instant is in the future (a lapsed bound fails closed).
+/// </param>
+public sealed record OwnerOverrideEvaluation(
+    OwnerOverrideMode Mode,
+    Guid OwnerUserId,
+    IReadOnlyList<string> GrantedPermissions,
+    DateTime? EffectiveThroughUtc);

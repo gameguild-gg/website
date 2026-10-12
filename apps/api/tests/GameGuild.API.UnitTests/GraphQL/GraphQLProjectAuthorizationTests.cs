@@ -480,6 +480,29 @@ public sealed class GraphQLProjectAuthorizationTests
         public void SetActorContext(ActorContext context) => _actorContext = context;
 
         public void ClearActorContext() => _actorContext = GameGuild.Identity.Context.Actors.ActorContext.Anonymous;
+
+        public IActorContextScope BeginActorContextScope(ActorContext context)
+        {
+            var previous = _actorContext;
+            SetActorContext(context);
+            return new RestoreScope(this, previous);
+        }
+
+        private sealed class RestoreScope(GraphQLTestActorContextAccessor accessor, ActorContext previous) : IActorContextScope
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                accessor._actorContext = previous;
+            }
+        }
     }
 
     /// <summary>
