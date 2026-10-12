@@ -12,13 +12,19 @@ internal static class ComplianceReviewerFormats
         ComplianceFrameworkCatalog.IsoIsmsId => ["review/iso27001/statement-of-applicability.csv", "review/iso27001/management-evidence.csv"],
         ComplianceFrameworkCatalog.GdprId => ["review/gdpr/dpia-index.csv", "review/gdpr/processing-records.csv"],
         _ => Soc2ComplianceCatalog.Find(templateId) is not null ? Soc2ReviewerFormats.Paths :
-            FedRampComplianceCatalog.Find(templateId) is not null ? FedRampPaths : []
+            FedRampComplianceCatalog.Find(templateId) is not null ? FedRampPaths :
+            HipaaComplianceCatalog.Find(templateId) is not null ? HipaaPaths :
+            PciDssComplianceCatalog.Find(templateId) is not null ? PciPaths : []
     };
 
     private static readonly string[] FedRampPaths = ["review/fedramp/overview.json", "review/fedramp/overview.txt",
         "review/fedramp/security-decision-record.json", "review/fedramp/security-decision-record.txt",
         "review/fedramp/ongoing-certification-report.json", "review/fedramp/ongoing-certification-report.txt",
         "review/fedramp/decisions.csv", "review/fedramp/profile.json", "review/fedramp/schema-provenance.json"];
+
+    private static readonly string[] HipaaPaths = ["review/hipaa/safeguards.csv", "review/hipaa/breach-notification.csv"];
+
+    private static readonly string[] PciPaths = ["review/pci/requirements.csv", "review/pci/saqa-posture.json"];
 
     internal static IReadOnlyDictionary<string, byte[]> Build(ComplianceFrameworkTemplate template,
         IReadOnlyList<ComplianceDocumentSnapshot> documents, CompliancePackageValidationReport report)
@@ -38,8 +44,61 @@ internal static class ComplianceReviewerFormats
             files.Add(paths[1], Encoding.UTF8.GetBytes(RecordsCsv(documents, roots)));
         }
         else if (Soc2ComplianceCatalog.Find(template.Id) is not null) { Soc2ReviewerFormats.Build(template, documents, roots, report, files); }
+        else if (HipaaComplianceCatalog.Find(template.Id) is not null) { BuildHipaa(template, documents, roots, report, files); }
+        else if (PciDssComplianceCatalog.Find(template.Id) is not null) { BuildPci(template, documents, roots, report, files); }
         else { BuildFedRamp(template, documents, roots, report, files); }
         return files;
+    }
+
+    private static void BuildHipaa(ComplianceFrameworkTemplate template, IReadOnlyList<ComplianceDocumentSnapshot> documents,
+        IReadOnlyDictionary<Guid, JsonElement> roots, CompliancePackageValidationReport report, Dictionary<string, byte[]> files)
+    {
+        var safeguards = new StringBuilder("safeguardFamily,controlId,status,evidencePaths,documentIds,gapCodes\r\n");
+        foreach (var control in report.Controls)
+        {
+            Row(safeguards, HipaaFamily(control.ControlId), control.ControlId, control.Status,
+                string.Join(';', control.EvidencePaths), string.Join(';', control.DocumentIds), Codes(report, control.ControlId));
+        }
+        files.Add(HipaaPaths[0], Encoding.UTF8.GetBytes(safeguards.ToString()));
+        var breaches = new StringBuilder("controlId,notificationWindowDays,registerReference,sourceMetadata,gapCodes\r\n");
+        var notification = documents.SingleOrDefault(item => item.Type == "hipaa-breach-notification");
+        foreach (var control in report.Controls.Where(item => item.ControlId.StartsWith("164.4", StringComparison.Ordinal)))
+        {
+            var root = notification is null ? default : roots[notification.Id];
+            Row(breaches, control.ControlId, Text(root, "notificationWindowDays"), Text(root, "breachRegisterMaintenance"),
+                notification is null ? "missing" : Metadata(notification), Codes(report, control.ControlId));
+        }
+        files.Add(HipaaPaths[1], Encoding.UTF8.GetBytes(breaches.ToString()));
+    }
+
+    private static string HipaaFamily(string controlId) => controlId switch
+    {
+        _ when controlId.StartsWith("164.308", StringComparison.Ordinal) => "administrative",
+        _ when controlId.StartsWith("164.310", StringComparison.Ordinal) => "physical",
+        _ when controlId.StartsWith("164.312", StringComparison.Ordinal) => "technical",
+        _ when controlId.StartsWith("164.31", StringComparison.Ordinal) => "organizational-documentation",
+        _ when controlId.StartsWith("164.4", StringComparison.Ordinal) => "breach-notification",
+        _ => "unknown"
+    };
+
+    private static void BuildPci(ComplianceFrameworkTemplate template, IReadOnlyList<ComplianceDocumentSnapshot> documents,
+        IReadOnlyDictionary<Guid, JsonElement> roots, CompliancePackageValidationReport report, Dictionary<string, byte[]> files)
+    {
+        var requirements = new StringBuilder("requirementId,applicability,status,evidencePaths,documentIds,gapCodes\r\n");
+        foreach (var control in report.Controls)
+        {
+            var templateControl = template.Controls.Single(item => item.Id == control.ControlId);
+            var applicability = templateControl.RequiredDocumentTypes.Contains("pci-saqa-eligibility", StringComparer.Ordinal)
+                ? "saqa-declaration" : "in-scope";
+            Row(requirements, control.ControlId, applicability, control.Status,
+                string.Join(';', control.EvidencePaths), string.Join(';', control.DocumentIds), Codes(report, control.ControlId));
+        }
+        files.Add(PciPaths[0], Encoding.UTF8.GetBytes(requirements.ToString()));
+        var formatting = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+        var eligibility = documents.SingleOrDefault(item => item.Type == "pci-saqa-eligibility");
+        files.Add(PciPaths[1], eligibility is null
+            ? Encoding.UTF8.GetBytes("{\"missingEvidence\":true}")
+            : JsonSerializer.SerializeToUtf8Bytes(roots[eligibility.Id], formatting));
     }
 
     private static void BuildFedRamp(ComplianceFrameworkTemplate template, IReadOnlyList<ComplianceDocumentSnapshot> documents,

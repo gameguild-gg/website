@@ -1,6 +1,6 @@
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
-using GraphQLAuthorize = HotChocolate.Authorization.AuthorizeAttribute;
+using GameGuild.Identity.Authorization.GraphQL;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -8,7 +8,6 @@ namespace GameGuild.Projects;
 
 /// <summary> GraphQL queries for Project module using CQRS pattern </summary>
 [ExtendObjectType("Query")]
-[GraphQLAuthorize]
 public class ProjectQueries
 {
     private static T UnwrapResult<T>(Result<T> result) =>
@@ -57,7 +56,10 @@ public class ProjectQueries
         return UnwrapResult(result);
     }
 
-    /// <summary> Gets deleted projects (admin only) </summary>
+    /// <summary>
+    ///     Gets deleted projects (admin only). The general @authorize policy requirement
+    ///     is enforced by the GraphQL authorization field middleware (issue #335).
+    /// </summary>
     [GraphQLAuthorize(Policy = "RequireAdminRole")]
     public async Task<IEnumerable<Project>> GetDeletedProjects([Service] IMediator mediator)
     {
