@@ -2396,6 +2396,18 @@ export interface CommercePaymentsLockWalletInput {
   reason: string | null;
 }
 
+/** Administrative balance adjustment against a wallet (issue #406). */
+export interface CommercePaymentsModelsAdjustWalletInput {
+  /** Positive amount to adjust */
+  amount?: number;
+  /** Either "credit" (add funds) or "debit" (deduct funds) */
+  direction?: string | null;
+  /** Human-readable adjustment reason (audited) */
+  reason?: string | null;
+  /** Optional idempotency reference; replays return the original transaction */
+  referenceId?: string | null;
+}
+
 /** Request to freeze a wallet */
 export interface CommercePaymentsModelsFreezeWalletInput {
   reason?: string | null;
@@ -2406,6 +2418,26 @@ export interface CommercePaymentsModelsPatchWalletInput {
   currency?: string | null;
   dailyLimit?: number | null;
   monthlyLimit?: number | null;
+}
+
+/** Wallet-to-wallet transfer request (issue #406). Both wallets must share the same currency. */
+export interface CommercePaymentsModelsTransferWalletsInput {
+  /** Positive amount to transfer */
+  amount?: number;
+  /** Human-readable transfer description (audited) */
+  description?: string | null;
+  /** Source wallet identifier */
+  fromWalletId?: string;
+  /** Optional idempotency reference; replays return the original transactions */
+  referenceId?: string | null;
+  /** Destination wallet identifier */
+  toWalletId?: string;
+}
+
+/** Transfer result payload for the wallets:transfer endpoint (issue #406). */
+export interface CommercePaymentsModelsTransferWalletsOutput {
+  creditTransaction?: CommercePaymentsWalletTransaction;
+  debitTransaction?: CommercePaymentsWalletTransaction;
 }
 
 /** Request to partially update a tax jurisdiction */
@@ -3407,6 +3439,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   lastTransactionAt?: string | null;
   /** Reason for lock (if locked) */
   lockReason?: string | null;
+  /** Timestamp of the last low-balance threshold notification issued for this wallet
+(issue #406). Null when the wallet is above the configured threshold or was never
+alerted; cleared again once the balance returns to or above the threshold so a
+subsequent dip re-triggers the notice. */
+  lowBalanceAlertedAt?: string | null;
   /** Monthly spending limit (null = no limit) */
   monthlyLimit?: number | null;
   tenantId?: string | null;
@@ -3431,6 +3468,82 @@ export interface CommercePaymentsValidateTaxExemptionInput {
   exemptionType?: string | null;
   jurisdictionCode?: string | null;
   transactionDate?: string | null;
+}
+
+/** Total balance aggregated per currency. */
+export interface CommercePaymentsWalletCurrencyBalance {
+  /** ISO-4217 currency code */
+  currency?: string | null;
+  /** Sum of wallet balances in the currency */
+  totalBalance?: number;
+  /** Number of wallets in the currency */
+  walletCount?: number;
+}
+
+/** Completed transaction volume for one day. */
+export interface CommercePaymentsWalletDailyVolume {
+  /** Number of completed transactions */
+  count?: number;
+  /** Sum of Credit + TransferIn amounts */
+  creditTotal?: number;
+  /** UTC day */
+  date?: string;
+  /** Sum of Debit + TransferOut amounts */
+  debitTotal?: number;
+}
+
+/** Aggregated wallet metrics response (issue #406). */
+export interface CommercePaymentsWalletMetricsOutput {
+  /** Wallets with IsActive = true */
+  activeWallets?: number;
+  /** Total balances grouped by currency */
+  balancesByCurrency?: CommercePaymentsWalletCurrencyBalance[] | null;
+  /** Completed transaction volume grouped by day over the window */
+  dailyTransactionVolume?: CommercePaymentsWalletDailyVolume[] | null;
+  /** Wallets with IsLocked = true */
+  frozenWallets?: number;
+  /** Report generation timestamp */
+  generatedAtUtc?: string;
+  /** All non-deleted wallets */
+  totalWallets?: number;
+  /** Completed transaction volume grouped by type over the window */
+  transactionVolumeByType?: CommercePaymentsWalletTransactionTypeVolume[] | null;
+  /** Inclusive window start */
+  volumeFromUtc?: string;
+  /** Inclusive window end */
+  volumeToUtc?: string;
+}
+
+/** Reconciliation outcome for a single wallet. */
+export interface CommercePaymentsWalletReconciliationEntry {
+  /** Persisted wallet balance */
+  balance?: number;
+  /** Whether Balance equals LatestBalanceAfter (or the wallet has no transactions and a zero balance) */
+  balanceMatchesLatest?: boolean;
+  /** Whether Balance equals CompletedTransactionSum */
+  balanceMatchesTransactionSum?: boolean;
+  /** Σ(Credit + TransferIn − Debit − TransferOut) over Completed transactions */
+  completedTransactionSum?: number;
+  /** Wallet currency code */
+  currency?: string | null;
+  /** BalanceAfter of the newest transaction, null when the wallet has none */
+  latestBalanceAfter?: number | null;
+  /** Owning user identifier */
+  userId?: string;
+  /** Wallet identifier */
+  walletId?: string;
+}
+
+/** Aggregated wallet reconciliation report (report-only). */
+export interface CommercePaymentsWalletReconciliationReportOutput {
+  /** Number of wallets failing either invariant */
+  discrepanciesFound?: number;
+  /** Report generation timestamp */
+  generatedAtUtc?: string;
+  /** Per-wallet reconciliation results */
+  items?: CommercePaymentsWalletReconciliationEntry[] | null;
+  /** Number of wallets evaluated */
+  walletsChecked?: number;
 }
 
 /** Entity representing a wallet transaction */
@@ -3483,6 +3596,16 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 
 /** Wallet transaction types */
 export type CommercePaymentsWalletTransactionType = 'Credit' | 'Debit' | 'TransferIn' | 'TransferOut' | 'Refund' | 'Fee' | 'Adjustment';
+
+/** Completed transaction volume for one transaction type. */
+export interface CommercePaymentsWalletTransactionTypeVolume {
+  /** Number of completed transactions */
+  count?: number;
+  /** Sum of transaction amounts */
+  totalAmount?: number;
+  /** Transaction type name */
+  type?: string | null;
+}
 
 /** Types of pricing rules - consolidated from Products and Payments modules */
 export type CommercePricingRuleType =
@@ -21683,8 +21806,11 @@ export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: 
 export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
 export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
+export let CommercePaymentsModelsAdjustWalletInputSchema: z.ZodType<CommercePaymentsModelsAdjustWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
+export let CommercePaymentsModelsTransferWalletsInputSchema: z.ZodType<CommercePaymentsModelsTransferWalletsInput>;
+export let CommercePaymentsModelsTransferWalletsOutputSchema: z.ZodType<CommercePaymentsModelsTransferWalletsOutput>;
 export let CommercePaymentsPatchTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsPatchTaxJurisdictionInput>;
 export let CommercePaymentsPatchTaxRuleInputSchema: z.ZodType<CommercePaymentsPatchTaxRuleInput>;
 export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymentsPaymentAttemptMetrics>;
@@ -21749,8 +21875,14 @@ export let CommercePaymentsTaxTypeSchema: z.ZodType<CommercePaymentsTaxType>;
 export let CommercePaymentsTransactionStatusSchema: z.ZodType<CommercePaymentsTransactionStatus>;
 export let CommercePaymentsUserWalletSchema: z.ZodType<CommercePaymentsUserWallet>;
 export let CommercePaymentsValidateTaxExemptionInputSchema: z.ZodType<CommercePaymentsValidateTaxExemptionInput>;
+export let CommercePaymentsWalletCurrencyBalanceSchema: z.ZodType<CommercePaymentsWalletCurrencyBalance>;
+export let CommercePaymentsWalletDailyVolumeSchema: z.ZodType<CommercePaymentsWalletDailyVolume>;
+export let CommercePaymentsWalletMetricsOutputSchema: z.ZodType<CommercePaymentsWalletMetricsOutput>;
+export let CommercePaymentsWalletReconciliationEntrySchema: z.ZodType<CommercePaymentsWalletReconciliationEntry>;
+export let CommercePaymentsWalletReconciliationReportOutputSchema: z.ZodType<CommercePaymentsWalletReconciliationReportOutput>;
 export let CommercePaymentsWalletTransactionSchema: z.ZodType<CommercePaymentsWalletTransaction>;
 export let CommercePaymentsWalletTransactionTypeSchema: z.ZodType<CommercePaymentsWalletTransactionType>;
+export let CommercePaymentsWalletTransactionTypeVolumeSchema: z.ZodType<CommercePaymentsWalletTransactionTypeVolume>;
 export let CommercePricingRuleTypeSchema: z.ZodType<CommercePricingRuleType>;
 export let CommerceProductsAddMySupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddMySupportTicketMessageInput>;
 export let CommerceProductsAddSupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddSupportTicketMessageInput>;
@@ -25625,6 +25757,14 @@ CommercePaymentsLockWalletInputSchema = z.object({
   reason: z.string().nullable(),
 });
 
+/** Zod schema for CommercePaymentsModelsAdjustWalletInput. Administrative balance adjustment against a wallet (issue #406). */
+CommercePaymentsModelsAdjustWalletInputSchema = z.object({
+  amount: z.number().optional(),
+  direction: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  referenceId: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsModelsFreezeWalletInput. Request to freeze a wallet */
 CommercePaymentsModelsFreezeWalletInputSchema = z.object({
   reason: z.string().nullable().optional(),
@@ -25635,6 +25775,21 @@ CommercePaymentsModelsPatchWalletInputSchema = z.object({
   currency: z.string().nullable().optional(),
   dailyLimit: z.number().nullable().optional(),
   monthlyLimit: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsModelsTransferWalletsInput. Wallet-to-wallet transfer request (issue #406). Both wallets must share the same currency. */
+CommercePaymentsModelsTransferWalletsInputSchema = z.object({
+  amount: z.number().optional(),
+  description: z.string().nullable().optional(),
+  fromWalletId: z.string().uuid().optional(),
+  referenceId: z.string().nullable().optional(),
+  toWalletId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsModelsTransferWalletsOutput. Transfer result payload for the wallets:transfer endpoint (issue #406). */
+CommercePaymentsModelsTransferWalletsOutputSchema = z.object({
+  creditTransaction: z.lazy(() => CommercePaymentsWalletTransactionSchema).optional(),
+  debitTransaction: z.lazy(() => CommercePaymentsWalletTransactionSchema).optional(),
 });
 
 /** Zod schema for CommercePaymentsPatchTaxJurisdictionInput. Request to partially update a tax jurisdiction */
@@ -26436,6 +26591,7 @@ CommercePaymentsUserWalletSchema = z.object({
   isNew: z.boolean().optional(),
   lastTransactionAt: z.string().datetime().nullable().optional(),
   lockReason: z.string().max(500).nullable().optional(),
+  lowBalanceAlertedAt: z.string().datetime().nullable().optional(),
   monthlyLimit: z.number().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
   transactions: z
@@ -26455,6 +26611,66 @@ CommercePaymentsValidateTaxExemptionInputSchema = z.object({
   exemptionType: z.string().nullable().optional(),
   jurisdictionCode: z.string().nullable().optional(),
   transactionDate: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletCurrencyBalance. Total balance aggregated per currency. */
+CommercePaymentsWalletCurrencyBalanceSchema = z.object({
+  currency: z.string().nullable().optional(),
+  totalBalance: z.number().optional(),
+  walletCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletDailyVolume. Completed transaction volume for one day. */
+CommercePaymentsWalletDailyVolumeSchema = z.object({
+  count: z.number().int().optional(),
+  creditTotal: z.number().optional(),
+  date: z.string().date().optional(),
+  debitTotal: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletMetricsOutput. Aggregated wallet metrics response (issue #406). */
+CommercePaymentsWalletMetricsOutputSchema = z.object({
+  activeWallets: z.number().int().optional(),
+  balancesByCurrency: z
+    .array(z.lazy(() => CommercePaymentsWalletCurrencyBalanceSchema))
+    .nullable()
+    .optional(),
+  dailyTransactionVolume: z
+    .array(z.lazy(() => CommercePaymentsWalletDailyVolumeSchema))
+    .nullable()
+    .optional(),
+  frozenWallets: z.number().int().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  totalWallets: z.number().int().optional(),
+  transactionVolumeByType: z
+    .array(z.lazy(() => CommercePaymentsWalletTransactionTypeVolumeSchema))
+    .nullable()
+    .optional(),
+  volumeFromUtc: z.string().datetime().optional(),
+  volumeToUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletReconciliationEntry. Reconciliation outcome for a single wallet. */
+CommercePaymentsWalletReconciliationEntrySchema = z.object({
+  balance: z.number().optional(),
+  balanceMatchesLatest: z.boolean().optional(),
+  balanceMatchesTransactionSum: z.boolean().optional(),
+  completedTransactionSum: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  latestBalanceAfter: z.number().nullable().optional(),
+  userId: z.string().uuid().optional(),
+  walletId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsWalletReconciliationReportOutput. Aggregated wallet reconciliation report (report-only). */
+CommercePaymentsWalletReconciliationReportOutputSchema = z.object({
+  discrepanciesFound: z.number().int().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsWalletReconciliationEntrySchema))
+    .nullable()
+    .optional(),
+  walletsChecked: z.number().int().optional(),
 });
 
 /** Zod schema for CommercePaymentsWalletTransaction. Entity representing a wallet transaction */
@@ -26491,6 +26707,13 @@ CommercePaymentsWalletTransactionSchema = z.object({
 
 /** Zod schema for CommercePaymentsWalletTransactionType. Wallet transaction types */
 CommercePaymentsWalletTransactionTypeSchema = z.enum(['Credit', 'Debit', 'TransferIn', 'TransferOut', 'Refund', 'Fee', 'Adjustment']);
+
+/** Zod schema for CommercePaymentsWalletTransactionTypeVolume. Completed transaction volume for one transaction type. */
+CommercePaymentsWalletTransactionTypeVolumeSchema = z.object({
+  count: z.number().int().optional(),
+  totalAmount: z.number().optional(),
+  type: z.string().nullable().optional(),
+});
 
 /** Zod schema for CommercePricingRuleType. Types of pricing rules - consolidated from Products and Payments modules */
 CommercePricingRuleTypeSchema = z.enum([
