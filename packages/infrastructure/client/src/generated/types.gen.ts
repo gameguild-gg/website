@@ -5439,6 +5439,97 @@ export interface ComplianceAuditAuditOutcomeContext {
   success?: boolean;
 }
 
+/** Aggregated statistics computed over the full matched set (not just the returned page). */
+export interface ComplianceAuditAuditQueryDslAggregates {
+  byAction?: Record<string, number> | null;
+  bySeverity?: Record<string, number> | null;
+  bySource?: Record<string, number> | null;
+  failureCount?: number;
+  /** First matched timestamp (UTC) or null when nothing matched. */
+  firstMatchedAt?: string | null;
+  /** Last matched timestamp (UTC) or null when nothing matched. */
+  lastMatchedAt?: string | null;
+  matchedCount?: number;
+  successCount?: number;
+  /** UTC day buckets of matched events, oldest first, capped at 366 buckets. */
+  timeBuckets?: ComplianceAuditAuditQueryDslTimeBucket[] | null;
+}
+
+/** Outcome of an audit query DSL execution. */
+export interface ComplianceAuditAuditQueryDslExecutionResult {
+  aggregates?: ComplianceAuditAuditQueryDslAggregates;
+  /** Wall-clock execution duration in milliseconds. */
+  durationMs?: number;
+  /** The (data-masked) page of matching audit entries. */
+  rows?: Record<string, unknown>[] | null;
+  /** Number of audit rows scanned before the filter was applied. */
+  rowsScanned?: number;
+  /** True when the scan hit the configured row cap; totals then describe the scanned subset only. */
+  scanTruncated?: boolean;
+  skip?: number;
+  take?: number;
+  totalCount?: number;
+  /** Effective UTC window the stores were queried for. */
+  windowEndUtc?: string;
+  /** Effective UTC window the stores were queried for. */
+  windowStartUtc?: string;
+}
+
+/** One aggregated day bucket of matched events. */
+export interface ComplianceAuditAuditQueryDslTimeBucket {
+  count?: number;
+  dateUtc?: string;
+}
+
+/** API request for POST /audit-queries:execute. */
+export interface ComplianceAuditAuditQueryExecuteApiInput {
+  /** Structured query DSL JSON: {"filter":{"and":[{"field":"actor","op":"eq","value":"alice"}]}}. */
+  queryJson?: string | null;
+  /** Light text syntax: actor:alice AND action:granted AFTER 2026-01-01. */
+  queryText?: string | null;
+  skip?: number;
+  take?: number;
+  /** Requested execution timeout in seconds (1-30, default 10). */
+  timeoutSeconds?: number | null;
+}
+
+/** Paging-only payload for executing a saved view. */
+export interface ComplianceAuditAuditQueryPagingApiInput {
+  skip?: number;
+  take?: number;
+}
+
+/** A built-in, immutable audit query template aimed at a common investigation or compliance scenario. */
+export interface ComplianceAuditAuditQueryTemplate {
+  /** What the template finds and when to use it. */
+  description: string | null;
+  /** Role/persona the template is optimized for (advisory metadata for consumers). */
+  intendedRole: string | null;
+  /** Display name. */
+  name: string | null;
+  /** Structured DSL JSON, pre-validated at startup. */
+  queryJson: string | null;
+  /** Stable template identifier. */
+  templateId: string | null;
+}
+
+/** API request for POST /audit-queries:validate. */
+export interface ComplianceAuditAuditQueryValidateApiInput {
+  queryJson?: string | null;
+  queryText?: string | null;
+}
+
+/** Outcome of query validation. */
+export interface ComplianceAuditAuditQueryValidationOutput {
+  /** Canonical JSON form of the parsed query (what a saved view would store). */
+  canonicalJson?: string | null;
+  /** Validation failure description when GameGuild.Compliance.Audit.AuditQueryValidationResponse.IsValid is false. */
+  error?: string | null;
+  /** Field names referenced by the query. */
+  fields?: string[] | null;
+  isValid?: boolean;
+}
+
 /** Data model for Compliance Audit Audit Related Action. */
 export interface ComplianceAuditAuditRelatedAction {
   actionType?: string | null;
@@ -6045,6 +6136,51 @@ export interface ComplianceAuditRunAuditRetentionSimulationInput {
   growthModel?: ComplianceAuditAuditRetentionGrowthModel;
   historicalDays?: number;
   scenarios: ComplianceAuditAuditRetentionScenario[];
+}
+
+/** One revision snapshot of a saved view. */
+export interface ComplianceAuditSavedAuditQueryRevisionOutput {
+  id?: string;
+  changedAt?: string;
+  changedByUserId?: string;
+  description?: string | null;
+  isCreation?: boolean;
+  isShared?: boolean;
+  name?: string | null;
+  queryJson?: string | null;
+  revision?: number;
+}
+
+/** A saved audit query view as returned by the API. */
+export interface ComplianceAuditSavedAuditQueryViewOutput {
+  id?: string;
+  createdAt?: string;
+  createdByUserId?: string;
+  currentRevision?: number;
+  description?: string | null;
+  executionCount?: number;
+  /** True when the acting user owns the view (and may update or delete it). */
+  isOwner?: boolean;
+  isShared?: boolean;
+  lastExecutedAt?: string | null;
+  name?: string | null;
+  /** Canonical query DSL JSON — this is what execute-by-id runs. */
+  queryJson?: string | null;
+  updatedAt?: string;
+}
+
+/** API request for creating or updating a saved audit query view. */
+export interface ComplianceAuditSaveSavedAuditQueryApiInput {
+  /** Optional description (max 1000 characters). */
+  description?: string | null;
+  /** When true, every audit-reader in the tenant can see and execute the view. */
+  isShared?: boolean;
+  /** Display name (1-200 characters, unique within the tenant). */
+  name: string | null;
+  /** Structured query DSL JSON to persist. */
+  queryJson?: string | null;
+  /** Light text syntax to persist (stored canonically after validation). */
+  queryText?: string | null;
 }
 
 /** Data model for Compliance Audit Scheduled Audit Export Response. */
@@ -22503,6 +22639,14 @@ export let ComplianceAuditAuditLogDtoSchema: z.ZodType<ComplianceAuditAuditLogDt
 export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLogOutput>;
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
+export let ComplianceAuditAuditQueryDslAggregatesSchema: z.ZodType<ComplianceAuditAuditQueryDslAggregates>;
+export let ComplianceAuditAuditQueryDslExecutionResultSchema: z.ZodType<ComplianceAuditAuditQueryDslExecutionResult>;
+export let ComplianceAuditAuditQueryDslTimeBucketSchema: z.ZodType<ComplianceAuditAuditQueryDslTimeBucket>;
+export let ComplianceAuditAuditQueryExecuteApiInputSchema: z.ZodType<ComplianceAuditAuditQueryExecuteApiInput>;
+export let ComplianceAuditAuditQueryPagingApiInputSchema: z.ZodType<ComplianceAuditAuditQueryPagingApiInput>;
+export let ComplianceAuditAuditQueryTemplateSchema: z.ZodType<ComplianceAuditAuditQueryTemplate>;
+export let ComplianceAuditAuditQueryValidateApiInputSchema: z.ZodType<ComplianceAuditAuditQueryValidateApiInput>;
+export let ComplianceAuditAuditQueryValidationOutputSchema: z.ZodType<ComplianceAuditAuditQueryValidationOutput>;
 export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
 export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
 export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
@@ -22565,6 +22709,9 @@ export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAudit
 export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
+export let ComplianceAuditSavedAuditQueryRevisionOutputSchema: z.ZodType<ComplianceAuditSavedAuditQueryRevisionOutput>;
+export let ComplianceAuditSavedAuditQueryViewOutputSchema: z.ZodType<ComplianceAuditSavedAuditQueryViewOutput>;
+export let ComplianceAuditSaveSavedAuditQueryApiInputSchema: z.ZodType<ComplianceAuditSaveSavedAuditQueryApiInput>;
 export let ComplianceAuditScheduledAuditExportOutputSchema: z.ZodType<ComplianceAuditScheduledAuditExportOutput>;
 export let ComplianceAuditSecurityAlertOutputSchema: z.ZodType<ComplianceAuditSecurityAlertOutput>;
 export let ComplianceAuditSecurityAlertStatusSchema: z.ZodType<ComplianceAuditSecurityAlertStatus>;
@@ -28804,6 +28951,80 @@ ComplianceAuditAuditOutcomeContextSchema = z.object({
   success: z.boolean().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditQueryDslAggregates. Aggregated statistics computed over the full matched set (not just the returned page). */
+ComplianceAuditAuditQueryDslAggregatesSchema = z.object({
+  byAction: z.record(z.string(), z.number().int()).nullable().optional(),
+  bySeverity: z.record(z.string(), z.number().int()).nullable().optional(),
+  bySource: z.record(z.string(), z.number().int()).nullable().optional(),
+  failureCount: z.number().int().optional(),
+  firstMatchedAt: z.string().datetime().nullable().optional(),
+  lastMatchedAt: z.string().datetime().nullable().optional(),
+  matchedCount: z.number().int().optional(),
+  successCount: z.number().int().optional(),
+  timeBuckets: z
+    .array(z.lazy(() => ComplianceAuditAuditQueryDslTimeBucketSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryDslExecutionResult. Outcome of an audit query DSL execution. */
+ComplianceAuditAuditQueryDslExecutionResultSchema = z.object({
+  aggregates: z.lazy(() => ComplianceAuditAuditQueryDslAggregatesSchema).optional(),
+  durationMs: z.number().int().optional(),
+  rows: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
+  rowsScanned: z.number().int().optional(),
+  scanTruncated: z.boolean().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  windowEndUtc: z.string().datetime().optional(),
+  windowStartUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryDslTimeBucket. One aggregated day bucket of matched events. */
+ComplianceAuditAuditQueryDslTimeBucketSchema = z.object({
+  count: z.number().int().optional(),
+  dateUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryExecuteApiInput. API request for POST /audit-queries:execute. */
+ComplianceAuditAuditQueryExecuteApiInputSchema = z.object({
+  queryJson: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  timeoutSeconds: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryPagingApiInput. Paging-only payload for executing a saved view. */
+ComplianceAuditAuditQueryPagingApiInputSchema = z.object({
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryTemplate. A built-in, immutable audit query template aimed at a common investigation or compliance scenario. */
+ComplianceAuditAuditQueryTemplateSchema = z.object({
+  description: z.string().nullable(),
+  intendedRole: z.string().nullable(),
+  name: z.string().nullable(),
+  queryJson: z.string().nullable(),
+  templateId: z.string().nullable(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryValidateApiInput. API request for POST /audit-queries:validate. */
+ComplianceAuditAuditQueryValidateApiInputSchema = z.object({
+  queryJson: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditQueryValidationOutput. Outcome of query validation. */
+ComplianceAuditAuditQueryValidationOutputSchema = z.object({
+  canonicalJson: z.string().nullable().optional(),
+  error: z.string().nullable().optional(),
+  fields: z.array(z.string()).nullable().optional(),
+  isValid: z.boolean().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditRelatedAction. Data model for Compliance Audit Audit Related Action. */
 ComplianceAuditAuditRelatedActionSchema = z.object({
   actionType: z.string().nullable().optional(),
@@ -29453,6 +29674,44 @@ ComplianceAuditRunAuditRetentionSimulationInputSchema = z.object({
     .array(z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema))
     .min(1)
     .max(10),
+});
+
+/** Zod schema for ComplianceAuditSavedAuditQueryRevisionOutput. One revision snapshot of a saved view. */
+ComplianceAuditSavedAuditQueryRevisionOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  changedAt: z.string().datetime().optional(),
+  changedByUserId: z.string().uuid().optional(),
+  description: z.string().nullable().optional(),
+  isCreation: z.boolean().optional(),
+  isShared: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  queryJson: z.string().nullable().optional(),
+  revision: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditSavedAuditQueryViewOutput. A saved audit query view as returned by the API. */
+ComplianceAuditSavedAuditQueryViewOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  currentRevision: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  executionCount: z.number().int().optional(),
+  isOwner: z.boolean().optional(),
+  isShared: z.boolean().optional(),
+  lastExecutedAt: z.string().datetime().nullable().optional(),
+  name: z.string().nullable().optional(),
+  queryJson: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditSaveSavedAuditQueryApiInput. API request for creating or updating a saved audit query view. */
+ComplianceAuditSaveSavedAuditQueryApiInputSchema = z.object({
+  description: z.string().nullable().optional(),
+  isShared: z.boolean().optional(),
+  name: z.string().nullable(),
+  queryJson: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditScheduledAuditExportOutput. Data model for Compliance Audit Scheduled Audit Export Response. */

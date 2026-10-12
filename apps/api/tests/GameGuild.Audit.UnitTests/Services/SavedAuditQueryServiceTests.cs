@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
-namespace GameGuild.Tests.Audit.Unit.QueryDsl;
+namespace GameGuild.Tests.Audit.Unit.Services;
 
 public sealed class SavedAuditQueryServiceTests
 {

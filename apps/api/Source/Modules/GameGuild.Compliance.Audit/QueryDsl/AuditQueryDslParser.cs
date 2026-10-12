@@ -569,9 +569,17 @@ public sealed class AuditQueryDslParser : IAuditQueryDslParser
             }
 
             var terms = new List<AuditQueryNode> { left! };
-            while (Position < Tokens.Count && Tokens[Position].Kind == AuditQueryTokenKind.And)
+            // A bare 'AFTER <date>' / 'BEFORE <date>' suffix binds as another AND term — the
+            // advertised light syntax is 'actor:alice AND action:granted AFTER 2026-01-01'
+            // (issue #160), so the keyword is an implicit AND without requiring the operator.
+            while (Position < Tokens.Count && Tokens[Position].Kind is AuditQueryTokenKind.And or AuditQueryTokenKind.After or AuditQueryTokenKind.Before)
             {
-                Position++;
+                var implicitAnd = Tokens[Position].Kind is not AuditQueryTokenKind.And;
+                if (!implicitAnd)
+                {
+                    Position++;
+                }
+
                 var nextError = ParseUnary(out var next);
                 if (nextError is not null)
                 {

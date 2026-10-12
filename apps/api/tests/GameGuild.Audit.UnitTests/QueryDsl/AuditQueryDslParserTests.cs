@@ -55,18 +55,20 @@ public sealed class AuditQueryDslParserTests
     }
 
     [Theory]
-    [InlineData("eq", AuditQueryComparison.Eq)]
-    [InlineData("ne", AuditQueryComparison.Ne)]
-    [InlineData("gt", AuditQueryComparison.Gt)]
-    [InlineData("gte", AuditQueryComparison.Gte)]
-    [InlineData("lt", AuditQueryComparison.Lt)]
-    [InlineData("lte", AuditQueryComparison.Lte)]
-    [InlineData("contains", AuditQueryComparison.Contains)]
-    [InlineData("startswith", AuditQueryComparison.StartsWith)]
-    [InlineData("matches", AuditQueryComparison.Wildcard)]
-    public void ParseJson_OperatorNames_Resolve(string operatorName, AuditQueryComparison expected)
+    [InlineData("action", "eq", AuditQueryComparison.Eq, "login")]
+    [InlineData("action", "ne", AuditQueryComparison.Ne, "login")]
+    [InlineData("action", "contains", AuditQueryComparison.Contains, "login")]
+    [InlineData("action", "startswith", AuditQueryComparison.StartsWith, "login")]
+    [InlineData("action", "matches", AuditQueryComparison.Wildcard, "login")]
+    [InlineData("timestamp", "gt", AuditQueryComparison.Gt, "2026-01-01T00:00:00Z")]
+    [InlineData("timestamp", "gte", AuditQueryComparison.Gte, "2026-01-01T00:00:00Z")]
+    [InlineData("timestamp", "lt", AuditQueryComparison.Lt, "2026-01-01T00:00:00Z")]
+    [InlineData("timestamp", "lte", AuditQueryComparison.Lte, "2026-01-01T00:00:00Z")]
+    public void ParseJson_OperatorNames_Resolve(string field, string operatorName, AuditQueryComparison expected, string value)
     {
-        var result = _parser.ParseJson("{\"filter\":{\"field\":\"action\",\"op\":\"" + operatorName + "\",\"value\":\"login\"}}");
+        // The parser gates operators per field (fail-closed), so ordered comparisons are
+        // exercised on the timestamp field and text comparisons on a text field.
+        var result = _parser.ParseJson("{\"filter\":{\"field\":\"" + field + "\",\"op\":\"" + operatorName + "\",\"value\":" + System.Text.Json.JsonSerializer.Serialize(value) + "}}");
 
         result.IsSuccess.Should().BeTrue();
         ((AuditQueryCondition)result.Value.Filter).Operator.Should().Be(expected);
