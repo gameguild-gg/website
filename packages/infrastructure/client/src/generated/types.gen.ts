@@ -1949,6 +1949,15 @@ export interface CommerceOrdersAddOrderItemInput {
   quantity?: number;
 }
 
+/** A bundle that contains the anchor product, with the price-optimization hint. */
+export interface CommerceOrdersBundleRecommendationDto {
+  /** Bundle product ID */
+  bundleId?: string;
+  /** Bundle name */
+  name?: string | null;
+  savings?: CommerceProductsBundleSavingsHint;
+}
+
 /** Request to capture payment for an order */
 export interface CommerceOrdersCaptureOrderInput {
   paymentMethodId?: string | null;
@@ -1975,6 +1984,16 @@ export interface CommerceOrdersCompleteOrderInput {
 export interface CommerceOrdersCompleteOrderMarketplaceSettlement {
   currencyChoice?: CommerceOrdersOrderMarketplaceCurrencyChoice;
   idempotencyKey?: string | null;
+}
+
+/** Recommendation item: a product co-purchased with the anchor product. */
+export interface CommerceOrdersCoPurchaseRecommendationDto {
+  /** How many completed orders contained both products */
+  coOrderCount?: number;
+  /** Product name */
+  name?: string | null;
+  /** Recommended product ID */
+  productId?: string;
 }
 
 /** Request to create a new order */
@@ -2015,6 +2034,14 @@ export interface CommerceOrdersMarketplaceCheckoutOrderDto {
   currency?: string | null;
   orderId?: string;
   total?: number;
+}
+
+/** Optional ("complete the bundle") item for a bundle anchor product. */
+export interface CommerceOrdersOptionalBundleItemDto {
+  /** Component product name */
+  name?: string | null;
+  /** Optional component product ID */
+  productId?: string;
 }
 
 /** Order capture result including any client-side payment action. */
@@ -2091,6 +2118,23 @@ export type CommerceOrdersOrderMarketplaceCurrencyChoice = 'Hard' | 'Soft' | 'Fi
 Follows monotonic FSM - no backward economic transitions allowed. */
 export type CommerceOrdersOrderStatus =
   'Pending' | 'Processing' | 'Completed' | 'Failed' | 'Cancelled' | 'Refunded' | 'PartiallyRefunded' | 'Disputed' | 'Paid' | 'Fulfilled' | 'OnHold';
+
+/** Rule-based product recommendations (issue #401, v1): deterministic
+"frequently bought together" from completed-order co-occurrence plus
+bundle-savings hints. Machine-learning personalization is explicitly deferred
+(see docs/billing/product-catalog-bundling.md). */
+export interface CommerceOrdersProductRecommendationsDto {
+  /** Published bundles containing the anchor, with savings hints */
+  bundleSuggestions?: CommerceOrdersBundleRecommendationDto[] | null;
+  /** Whether this response was served from the recommendation cache */
+  cached?: boolean;
+  /** Optional components of the anchor (when it is a bundle) */
+  completeTheBundle?: CommerceOrdersOptionalBundleItemDto[] | null;
+  /** Products co-purchased with the anchor, ranked by co-order count */
+  frequentlyBoughtTogether?: CommerceOrdersCoPurchaseRecommendationDto[] | null;
+  /** Anchor product ID */
+  productId?: string;
+}
 
 /** Data model for Commerce Orders Set Marketplace Cart Item Quantity Input. */
 export interface CommerceOrdersSetMarketplaceCartItemQuantityInput {
@@ -3993,6 +4037,24 @@ export interface CommerceProductsBatchProductCreateItem {
   type?: CommerceProductsProductType;
 }
 
+/** Bundle-price optimization hint (issue #401): bundle price vs sum-of-parts. */
+export interface CommerceProductsBundleSavingsHint {
+  /** Bundle product ID */
+  bundleId?: string;
+  /** Effective price of the bundle itself */
+  bundlePrice?: number;
+  /** Number of priced components included */
+  componentsPriced?: number;
+  /** Currency of the comparison */
+  currency?: string | null;
+  /** SumOfParts − BundlePrice (negative when the bundle costs more) */
+  savings?: number;
+  /** Savings as a percentage of SumOfParts */
+  savingsPercentage?: number;
+  /** Sum of component effective prices (after per-item bundle discounts) */
+  sumOfParts?: number;
+}
+
 /** Request to calculate a price through the pricing engine. */
 export interface CommerceProductsCalculatePricingInput {
   customerSegment?: string | null;
@@ -4103,10 +4165,27 @@ export interface CommerceProductsCreatePricingRuleInput {
   timeStart?: string | null;
 }
 
+/** Request model for creating a product category. */
+export interface CommerceProductsCreateProductCategoryInput {
+  /** Optional metadata as a JSON object of string values (≤ 20 keys). */
+  attributesJson?: string | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Sort order. */
+  displayOrder?: number;
+  /** Display name (tenant-unique). */
+  name?: string | null;
+  /** Parent category ID (null = root). */
+  parentCategoryId?: string | null;
+  /** URL-safe identifier (tenant-unique; letters, digits, hyphens, spaces). */
+  slug?: string | null;
+}
+
 /** Request model for creating a product */
 export interface CommerceProductsCreateProductInput {
   affiliateCommissionPercentage?: number;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
   isBundle?: boolean;
@@ -4222,6 +4301,7 @@ export interface CommerceProductsGrantEntitlementInput {
 export interface CommerceProductsPatchProductInput {
   affiliateCommissionPercentage?: number | null;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -4363,6 +4443,54 @@ export interface CommerceProductsPricingRuleTierInput {
 /** Represents how a user acquired access to a product */
 export type CommerceProductsProductAcquisitionType = 'Purchase' | 'Subscription' | 'Grant' | 'PromoCode' | 'Bundle' | 'Trial' | 'Referral' | 'Free' | 'Gift';
 
+/** DTO for a product's real-time availability (issue #401). */
+export interface CommerceProductsProductAvailabilityDto {
+  /** Units sellable now (when tracked) */
+  availableQuantity?: number | null;
+  /** Whether at least one unit is available (untracked = always true) */
+  isInStock?: boolean;
+  /** Whether available stock fell to the low-stock threshold */
+  isLowStock?: boolean;
+  /** Configured low-stock threshold */
+  lowStockThreshold?: number;
+  /** Product ID */
+  productId?: string;
+  /** Units reserved by pending orders (when tracked) */
+  reservedQuantity?: number | null;
+  /** Units on hand (when tracked) */
+  stockQuantity?: number | null;
+  /** Whether stock is tracked for this product */
+  trackInventory?: boolean;
+}
+
+/** DTO for a product catalog category (issue #401). */
+export interface CommerceProductsProductCategoryDto {
+  /** Category ID */
+  id?: string;
+  /** Metadata dictionary (≤ 20 keys) */
+  attributes?: Record<string, string> | null;
+  /** Creation timestamp */
+  createdAt?: string;
+  /** Depth in the tree (root = 0) */
+  depth?: number;
+  /** Optional description */
+  description?: string | null;
+  /** Sort order */
+  displayOrder?: number;
+  /** Display name */
+  name?: string | null;
+  /** Parent category (null = root) */
+  parentCategoryId?: string | null;
+  /** Slugs from root to this category */
+  path?: string[] | null;
+  /** Non-deleted products assigned to this category (when requested) */
+  productCount?: number | null;
+  /** URL-safe identifier (tenant-unique) */
+  slug?: string | null;
+  /** Last update timestamp */
+  updatedAt?: string;
+}
+
 /** Product Data Transfer Object for API responses */
 export interface CommerceProductsProductDto {
   /** Product ID */
@@ -4371,6 +4499,8 @@ export interface CommerceProductsProductDto {
   affiliateCommissionPercentage?: number;
   /** Bundle item IDs */
   bundleItems?: string[] | null;
+  /** Catalog category ID (single category, v1) */
+  categoryId?: string | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Creator user ID */
@@ -4396,6 +4526,22 @@ export interface CommerceProductsProductDto {
   type?: CommerceProductsProductType;
   /** Last update timestamp */
   updatedAt?: string;
+}
+
+/** DTO for a product's inventory configuration (issue #401). */
+export interface CommerceProductsProductInventoryDto {
+  /** Units sellable now */
+  availableQuantity?: number;
+  /** Low-stock threshold */
+  lowStockThreshold?: number;
+  /** Product ID */
+  productId?: string;
+  /** Units reserved by pending orders */
+  reservedQuantity?: number;
+  /** Units on hand */
+  stockQuantity?: number;
+  /** Whether stock is tracked */
+  trackInventory?: boolean;
 }
 
 /** Product Pricing Data Transfer Object */
@@ -4601,6 +4747,16 @@ export interface CommerceProductsRevokeEntitlementInput {
   userId?: string;
 }
 
+/** Request model for configuring a product's inventory (issue #401) */
+export interface CommerceProductsSetProductInventoryInput {
+  /** Low-stock threshold. */
+  lowStockThreshold?: number;
+  /** Units on hand. */
+  stockQuantity?: number;
+  /** Whether stock should be tracked for this product. */
+  trackInventory?: boolean;
+}
+
 /** Data model for Commerce Products Set Product Pricing Request. */
 export interface CommerceProductsSetProductPricingInput {
   basePrice?: number;
@@ -4702,10 +4858,31 @@ export interface CommerceProductsUpdatePricingRuleInput {
   timeStart?: string | null;
 }
 
+/** Request model for updating a product category. */
+export interface CommerceProductsUpdateProductCategoryInput {
+  /** Replacement metadata JSON object (null = leave unchanged, "{}" clears). */
+  attributesJson?: string | null;
+  /** New description. */
+  description?: string | null;
+  /** New sort order. */
+  displayOrder?: number | null;
+  /** Expected version for optimistic concurrency. */
+  expectedVersion?: number | null;
+  /** New display name. */
+  name?: string | null;
+  /** New parent category ID (applied only when GameGuild.Commerce.Products.UpdateProductCategoryRequest.Reparent is true). */
+  parentCategoryId?: string | null;
+  /** Whether to apply GameGuild.Commerce.Products.UpdateProductCategoryRequest.ParentCategoryId as a reparenting. */
+  reparent?: boolean;
+  /** New slug (tenant-unique). */
+  slug?: string | null;
+}
+
 /** Request model for updating a product */
 export interface CommerceProductsUpdateProductInput {
   affiliateCommissionPercentage?: number | null;
   bundleItems?: string[] | null;
+  categoryId?: string | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -22240,21 +22417,25 @@ export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
 export let CommerceOrdersAddOrderItemInputSchema: z.ZodType<CommerceOrdersAddOrderItemInput>;
+export let CommerceOrdersBundleRecommendationDtoSchema: z.ZodType<CommerceOrdersBundleRecommendationDto>;
 export let CommerceOrdersCaptureOrderInputSchema: z.ZodType<CommerceOrdersCaptureOrderInput>;
 export let CommerceOrdersCheckoutMarketplaceCartInputSchema: z.ZodType<CommerceOrdersCheckoutMarketplaceCartInput>;
 export let CommerceOrdersCompleteOrderInputSchema: z.ZodType<CommerceOrdersCompleteOrderInput>;
 export let CommerceOrdersCompleteOrderMarketplaceSettlementSchema: z.ZodType<CommerceOrdersCompleteOrderMarketplaceSettlement>;
+export let CommerceOrdersCoPurchaseRecommendationDtoSchema: z.ZodType<CommerceOrdersCoPurchaseRecommendationDto>;
 export let CommerceOrdersCreateOrderInputSchema: z.ZodType<CommerceOrdersCreateOrderInput>;
 export let CommerceOrdersMarketplaceCartDtoSchema: z.ZodType<CommerceOrdersMarketplaceCartDto>;
 export let CommerceOrdersMarketplaceCartItemDtoSchema: z.ZodType<CommerceOrdersMarketplaceCartItemDto>;
 export let CommerceOrdersMarketplaceCartStateSchema: z.ZodType<CommerceOrdersMarketplaceCartState>;
 export let CommerceOrdersMarketplaceCheckoutDtoSchema: z.ZodType<CommerceOrdersMarketplaceCheckoutDto>;
 export let CommerceOrdersMarketplaceCheckoutOrderDtoSchema: z.ZodType<CommerceOrdersMarketplaceCheckoutOrderDto>;
+export let CommerceOrdersOptionalBundleItemDtoSchema: z.ZodType<CommerceOrdersOptionalBundleItemDto>;
 export let CommerceOrdersOrderCaptureDtoSchema: z.ZodType<CommerceOrdersOrderCaptureDto>;
 export let CommerceOrdersOrderDtoSchema: z.ZodType<CommerceOrdersOrderDto>;
 export let CommerceOrdersOrderLineItemDtoSchema: z.ZodType<CommerceOrdersOrderLineItemDto>;
 export let CommerceOrdersOrderMarketplaceCurrencyChoiceSchema: z.ZodType<CommerceOrdersOrderMarketplaceCurrencyChoice>;
 export let CommerceOrdersOrderStatusSchema: z.ZodType<CommerceOrdersOrderStatus>;
+export let CommerceOrdersProductRecommendationsDtoSchema: z.ZodType<CommerceOrdersProductRecommendationsDto>;
 export let CommerceOrdersSetMarketplaceCartItemQuantityInputSchema: z.ZodType<CommerceOrdersSetMarketplaceCartItemQuantityInput>;
 export let CommercePaymentsAccountCreditBalanceSchema: z.ZodType<CommercePaymentsAccountCreditBalance>;
 export let CommercePaymentsAccountCreditConsumptionSchema: z.ZodType<CommercePaymentsAccountCreditConsumption>;
@@ -22388,6 +22569,7 @@ export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProduct
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
+export let CommerceProductsBundleSavingsHintSchema: z.ZodType<CommerceProductsBundleSavingsHint>;
 export let CommerceProductsCalculatePricingInputSchema: z.ZodType<CommerceProductsCalculatePricingInput>;
 export let CommerceProductsCampaignExpiringCodeDtoSchema: z.ZodType<CommerceProductsCampaignExpiringCodeDto>;
 export let CommerceProductsCampaignPerformanceDtoSchema: z.ZodType<CommerceProductsCampaignPerformanceDto>;
@@ -22398,6 +22580,7 @@ export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProd
 export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
 export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
+export let CommerceProductsCreateProductCategoryInputSchema: z.ZodType<CommerceProductsCreateProductCategoryInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
 export let CommerceProductsCreatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsCreatePromoStackingRuleInput>;
@@ -22413,7 +22596,10 @@ export let CommerceProductsPricingRuleDtoSchema: z.ZodType<CommerceProductsPrici
 export let CommerceProductsPricingRuleTierDtoSchema: z.ZodType<CommerceProductsPricingRuleTierDto>;
 export let CommerceProductsPricingRuleTierInputSchema: z.ZodType<CommerceProductsPricingRuleTierInput>;
 export let CommerceProductsProductAcquisitionTypeSchema: z.ZodType<CommerceProductsProductAcquisitionType>;
+export let CommerceProductsProductAvailabilityDtoSchema: z.ZodType<CommerceProductsProductAvailabilityDto>;
+export let CommerceProductsProductCategoryDtoSchema: z.ZodType<CommerceProductsProductCategoryDto>;
 export let CommerceProductsProductDtoSchema: z.ZodType<CommerceProductsProductDto>;
+export let CommerceProductsProductInventoryDtoSchema: z.ZodType<CommerceProductsProductInventoryDto>;
 export let CommerceProductsProductPricingDtoSchema: z.ZodType<CommerceProductsProductPricingDto>;
 export let CommerceProductsProductTypeSchema: z.ZodType<CommerceProductsProductType>;
 export let CommerceProductsPromoCodeApplicationResultSchema: z.ZodType<CommerceProductsPromoCodeApplicationResult>;
@@ -22425,6 +22611,7 @@ export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProduct
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
+export let CommerceProductsSetProductInventoryInputSchema: z.ZodType<CommerceProductsSetProductInventoryInput>;
 export let CommerceProductsSetProductPricingInputSchema: z.ZodType<CommerceProductsSetProductPricingInput>;
 export let CommerceProductsSupportAgentDtoSchema: z.ZodType<CommerceProductsSupportAgentDto>;
 export let CommerceProductsSupportTicketDtoSchema: z.ZodType<CommerceProductsSupportTicketDto>;
@@ -22434,6 +22621,7 @@ export let CommerceProductsSupportTicketPrioritySchema: z.ZodType<CommerceProduc
 export let CommerceProductsSupportTicketStatusSchema: z.ZodType<CommerceProductsSupportTicketStatus>;
 export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProductsSupportTicketSummaryDto>;
 export let CommerceProductsUpdatePricingRuleInputSchema: z.ZodType<CommerceProductsUpdatePricingRuleInput>;
+export let CommerceProductsUpdateProductCategoryInputSchema: z.ZodType<CommerceProductsUpdateProductCategoryInput>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
 export let CommerceProductsUpdatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsUpdatePromoStackingRuleInput>;
@@ -25830,6 +26018,13 @@ CommerceOrdersAddOrderItemInputSchema = z.object({
   quantity: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceOrdersBundleRecommendationDto. A bundle that contains the anchor product, with the price-optimization hint. */
+CommerceOrdersBundleRecommendationDtoSchema = z.object({
+  bundleId: z.string().uuid().optional(),
+  name: z.string().nullable().optional(),
+  savings: z.lazy(() => CommerceProductsBundleSavingsHintSchema).optional(),
+});
+
 /** Zod schema for CommerceOrdersCaptureOrderInput. Request to capture payment for an order */
 CommerceOrdersCaptureOrderInputSchema = z.object({
   paymentMethodId: z.string().nullable().optional(),
@@ -25853,6 +26048,13 @@ CommerceOrdersCompleteOrderInputSchema = z.object({
 CommerceOrdersCompleteOrderMarketplaceSettlementSchema = z.object({
   currencyChoice: z.lazy(() => CommerceOrdersOrderMarketplaceCurrencyChoiceSchema).optional(),
   idempotencyKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceOrdersCoPurchaseRecommendationDto. Recommendation item: a product co-purchased with the anchor product. */
+CommerceOrdersCoPurchaseRecommendationDtoSchema = z.object({
+  coOrderCount: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrdersCreateOrderInput. Request to create a new order */
@@ -25899,6 +26101,12 @@ CommerceOrdersMarketplaceCheckoutOrderDtoSchema = z.object({
   currency: z.string().nullable().optional(),
   orderId: z.string().uuid().optional(),
   total: z.number().optional(),
+});
+
+/** Zod schema for CommerceOrdersOptionalBundleItemDto. Optional ("complete the bundle") item for a bundle anchor product. */
+CommerceOrdersOptionalBundleItemDtoSchema = z.object({
+  name: z.string().nullable().optional(),
+  productId: z.string().uuid().optional(),
 });
 
 /** Zod schema for CommerceOrdersOrderCaptureDto. Order capture result including any client-side payment action. */
@@ -25992,6 +26200,27 @@ CommerceOrdersOrderStatusSchema = z.enum([
   'Fulfilled',
   'OnHold',
 ]);
+
+/** Zod schema for CommerceOrdersProductRecommendationsDto. Rule-based product recommendations (issue #401, v1): deterministic
+"frequently bought together" from completed-order co-occurrence plus
+bundle-savings hints. Machine-learning personalization is explicitly deferred
+(see docs/billing/product-catalog-bundling.md). */
+CommerceOrdersProductRecommendationsDtoSchema = z.object({
+  bundleSuggestions: z
+    .array(z.lazy(() => CommerceOrdersBundleRecommendationDtoSchema))
+    .nullable()
+    .optional(),
+  cached: z.boolean().optional(),
+  completeTheBundle: z
+    .array(z.lazy(() => CommerceOrdersOptionalBundleItemDtoSchema))
+    .nullable()
+    .optional(),
+  frequentlyBoughtTogether: z
+    .array(z.lazy(() => CommerceOrdersCoPurchaseRecommendationDtoSchema))
+    .nullable()
+    .optional(),
+  productId: z.string().uuid().optional(),
+});
 
 /** Zod schema for CommerceOrdersSetMarketplaceCartItemQuantityInput. Data model for Commerce Orders Set Marketplace Cart Item Quantity Input. */
 CommerceOrdersSetMarketplaceCartItemQuantityInputSchema = z.object({
@@ -27507,6 +27736,17 @@ CommerceProductsBatchProductCreateItemSchema = z.object({
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
 });
 
+/** Zod schema for CommerceProductsBundleSavingsHint. Bundle-price optimization hint (issue #401): bundle price vs sum-of-parts. */
+CommerceProductsBundleSavingsHintSchema = z.object({
+  bundleId: z.string().uuid().optional(),
+  bundlePrice: z.number().optional(),
+  componentsPriced: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  savings: z.number().optional(),
+  savingsPercentage: z.number().optional(),
+  sumOfParts: z.number().optional(),
+});
+
 /** Zod schema for CommerceProductsCalculatePricingInput. Request to calculate a price through the pricing engine. */
 CommerceProductsCalculatePricingInputSchema = z.object({
   customerSegment: z.string().nullable().optional(),
@@ -27607,10 +27847,21 @@ CommerceProductsCreatePricingRuleInputSchema = z.object({
   timeStart: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsCreateProductCategoryInput. Request model for creating a product category. */
+CommerceProductsCreateProductCategoryInputSchema = z.object({
+  attributesJson: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  slug: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsCreateProductInput. Request model for creating a product */
 CommerceProductsCreateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
   isBundle: z.boolean().optional(),
@@ -27726,6 +27977,7 @@ CommerceProductsGrantEntitlementInputSchema = z.object({
 CommerceProductsPatchProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   expectedVersion: z.number().int().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -27827,11 +28079,40 @@ CommerceProductsPricingRuleTierInputSchema = z.object({
 /** Zod schema for CommerceProductsProductAcquisitionType. Represents how a user acquired access to a product */
 CommerceProductsProductAcquisitionTypeSchema = z.enum(['Purchase', 'Subscription', 'Grant', 'PromoCode', 'Bundle', 'Trial', 'Referral', 'Free', 'Gift']);
 
+/** Zod schema for CommerceProductsProductAvailabilityDto. DTO for a product's real-time availability (issue #401). */
+CommerceProductsProductAvailabilityDtoSchema = z.object({
+  availableQuantity: z.number().int().nullable().optional(),
+  isInStock: z.boolean().optional(),
+  isLowStock: z.boolean().optional(),
+  lowStockThreshold: z.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  reservedQuantity: z.number().int().nullable().optional(),
+  stockQuantity: z.number().int().nullable().optional(),
+  trackInventory: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceProductsProductCategoryDto. DTO for a product catalog category (issue #401). */
+CommerceProductsProductCategoryDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  attributes: z.record(z.string(), z.string()).nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  depth: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  path: z.array(z.string()).nullable().optional(),
+  productCount: z.number().int().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
 /** Zod schema for CommerceProductsProductDto. Product Data Transfer Object for API responses */
 CommerceProductsProductDtoSchema = z.object({
   id: z.string().uuid().optional(),
   affiliateCommissionPercentage: z.number().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   createdAt: z.string().datetime().optional(),
   creatorId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
@@ -27848,6 +28129,16 @@ CommerceProductsProductDtoSchema = z.object({
   shortDescription: z.string().nullable().optional(),
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
   updatedAt: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommerceProductsProductInventoryDto. DTO for a product's inventory configuration (issue #401). */
+CommerceProductsProductInventoryDtoSchema = z.object({
+  availableQuantity: z.number().int().optional(),
+  lowStockThreshold: z.number().int().optional(),
+  productId: z.string().uuid().optional(),
+  reservedQuantity: z.number().int().optional(),
+  stockQuantity: z.number().int().optional(),
+  trackInventory: z.boolean().optional(),
 });
 
 /** Zod schema for CommerceProductsProductPricingDto. Product Pricing Data Transfer Object */
@@ -27998,6 +28289,13 @@ CommerceProductsRevokeEntitlementInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for CommerceProductsSetProductInventoryInput. Request model for configuring a product's inventory (issue #401) */
+CommerceProductsSetProductInventoryInputSchema = z.object({
+  lowStockThreshold: z.number().int().optional(),
+  stockQuantity: z.number().int().optional(),
+  trackInventory: z.boolean().optional(),
+});
+
 /** Zod schema for CommerceProductsSetProductPricingInput. Data model for Commerce Products Set Product Pricing Request. */
 CommerceProductsSetProductPricingInputSchema = z.object({
   basePrice: z.number().optional(),
@@ -28105,10 +28403,23 @@ CommerceProductsUpdatePricingRuleInputSchema = z.object({
   timeStart: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsUpdateProductCategoryInput. Request model for updating a product category. */
+CommerceProductsUpdateProductCategoryInputSchema = z.object({
+  attributesJson: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayOrder: z.number().int().nullable().optional(),
+  expectedVersion: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  parentCategoryId: z.string().uuid().nullable().optional(),
+  reparent: z.boolean().optional(),
+  slug: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsUpdateProductInput. Request model for updating a product */
 CommerceProductsUpdateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
   bundleItems: z.array(z.string().uuid()).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   expectedVersion: z.number().int().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -44538,6 +44849,10 @@ export type CommerceBillingPricingDecisionLedgerEntryDetail = CommerceBillingPri
 export { CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema as CommerceBillingPricingDecisionLedgerEntryDetailSchema };
 export type CommerceBillingPricingDecisionLedgerEntry = CommerceBillingPricingDecisionLedgerEntryDto;
 export { CommerceBillingPricingDecisionLedgerEntryDtoSchema as CommerceBillingPricingDecisionLedgerEntrySchema };
+export type CommerceOrdersBundleRecommendation = CommerceOrdersBundleRecommendationDto;
+export { CommerceOrdersBundleRecommendationDtoSchema as CommerceOrdersBundleRecommendationSchema };
+export type CommerceOrdersCoPurchaseRecommendation = CommerceOrdersCoPurchaseRecommendationDto;
+export { CommerceOrdersCoPurchaseRecommendationDtoSchema as CommerceOrdersCoPurchaseRecommendationSchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -44546,12 +44861,16 @@ export type CommerceOrdersMarketplaceCheckout = CommerceOrdersMarketplaceCheckou
 export { CommerceOrdersMarketplaceCheckoutDtoSchema as CommerceOrdersMarketplaceCheckoutSchema };
 export type CommerceOrdersMarketplaceCheckoutOrder = CommerceOrdersMarketplaceCheckoutOrderDto;
 export { CommerceOrdersMarketplaceCheckoutOrderDtoSchema as CommerceOrdersMarketplaceCheckoutOrderSchema };
+export type CommerceOrdersOptionalBundleItem = CommerceOrdersOptionalBundleItemDto;
+export { CommerceOrdersOptionalBundleItemDtoSchema as CommerceOrdersOptionalBundleItemSchema };
 export type CommerceOrdersOrderCapture = CommerceOrdersOrderCaptureDto;
 export { CommerceOrdersOrderCaptureDtoSchema as CommerceOrdersOrderCaptureSchema };
 export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommerceOrdersProductRecommendations = CommerceOrdersProductRecommendationsDto;
+export { CommerceOrdersProductRecommendationsDtoSchema as CommerceOrdersProductRecommendationsSchema };
 export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
 export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
 export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAttemptDto;
@@ -44568,8 +44887,14 @@ export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
 export { CommerceProductsPricingRuleDtoSchema as CommerceProductsPricingRuleSchema };
 export type CommerceProductsPricingRuleTier = CommerceProductsPricingRuleTierDto;
 export { CommerceProductsPricingRuleTierDtoSchema as CommerceProductsPricingRuleTierSchema };
+export type CommerceProductsProductAvailability = CommerceProductsProductAvailabilityDto;
+export { CommerceProductsProductAvailabilityDtoSchema as CommerceProductsProductAvailabilitySchema };
+export type CommerceProductsProductCategory = CommerceProductsProductCategoryDto;
+export { CommerceProductsProductCategoryDtoSchema as CommerceProductsProductCategorySchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;
 export { CommerceProductsProductDtoSchema as CommerceProductsProductSchema };
+export type CommerceProductsProductInventory = CommerceProductsProductInventoryDto;
+export { CommerceProductsProductInventoryDtoSchema as CommerceProductsProductInventorySchema };
 export type CommerceProductsProductPricing = CommerceProductsProductPricingDto;
 export { CommerceProductsProductPricingDtoSchema as CommerceProductsProductPricingSchema };
 export type CommerceProductsPromoCode = CommerceProductsPromoCodeDto;

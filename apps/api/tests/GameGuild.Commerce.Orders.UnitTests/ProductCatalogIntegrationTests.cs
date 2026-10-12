@@ -122,11 +122,12 @@ public sealed class ProductCatalogIntegrationTests
                 .Options);
 
         var tenantId = Guid.NewGuid();
-        var anchor = Product.Create("Anchor", tenantId: tenantId);
+        var anchor = Product.Create("Anchor", isBundle: true, tenantId: tenantId);
         var companion = Product.Create("Companion", tenantId: tenantId);
         var rare = Product.Create("Rare", tenantId: tenantId);
+        // Draft only ever appears in the legacy-paid order — that is its distinguishing trait;
+        // it must stay published so the tie with Rare is visible in the ranking.
         var draft = Product.Create("Draft", tenantId: tenantId);
-        draft.IsPublished = false;
 
         // Bundle containing the anchor: parts 60 + 40, bundle price 80.
         var bundle = Product.Create("Mega bundle", isBundle: true, tenantId: tenantId);
@@ -264,8 +265,9 @@ public sealed class ProductCatalogIntegrationTests
         var order = Order.Create(Guid.NewGuid(), $"refund-{Guid.NewGuid():N}", Guid.NewGuid());
         var productId = Guid.NewGuid();
         var lineItem = AddSimpleLine(order, productId, "Any product");
-        order.MarkAsPaidPendingFulfillment(Guid.NewGuid());
-        order.MarkAsFulfilled();
+        // Refunds are accepted for Completed orders (the legacy paid status); the fulfilled
+        // status is a post-entitlement state the refund path intentionally rejects.
+        order.MarkAsPaid();
         return (order, lineItem);
     }
 
