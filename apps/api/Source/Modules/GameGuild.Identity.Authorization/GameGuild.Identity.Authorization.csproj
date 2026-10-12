@@ -11,6 +11,7 @@
         <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis"/>
         <PackageReference Include="StackExchange.Redis"/>
         <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
+        <PackageReference Include="HotChocolate.Types"/>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj"/>
         <ProjectReference Include="..\GameGuild.Identity.Context\GameGuild.Identity.Context.csproj"/>
     </ItemGroup>

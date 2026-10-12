@@ -3434,6 +3434,9 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<DateTime?>("LowBalanceAlertedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal?>("MonthlyLimit")
                         .HasColumnType("decimal(18,2)");
 
@@ -3456,7 +3459,7 @@ namespace GameGuild.API.Database.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("UserId", "Currency")
                         .IsUnique();
 
                     b.ToTable("user_wallets", t =>
@@ -5645,22 +5648,35 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("ComplianceSealedPackages", (string)null);
                 });
 
+<<<<<<< HEAD
             modelBuilder.Entity("GameGuild.Compliance.Audit.PiiRedactionOperation", b =>
+=======
+            modelBuilder.Entity("GameGuild.Compliance.Audit.SavedAuditQuery", b =>
+>>>>>>> origin/develop
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+<<<<<<< HEAD
                     b.Property<DateTime>("AppliedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.PrimitiveCollection<Guid[]>("AppliedRuleIds")
+=======
+                    b.PrimitiveCollection<string[]>("AllowedRoles")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.PrimitiveCollection<Guid[]>("AllowedUserIds")
+>>>>>>> origin/develop
                         .IsRequired()
                         .HasColumnType("uuid[]");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+<<<<<<< HEAD
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -5714,6 +5730,14 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
 
+=======
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CurrentRevision")
+                        .HasColumnType("integer");
+
+>>>>>>> origin/develop
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -5721,6 +5745,7 @@ namespace GameGuild.API.Database.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+<<<<<<< HEAD
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
 
@@ -5747,10 +5772,30 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("RuleName")
+=======
+                    b.Property<int>("ExecutionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastExecutedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastExecutedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("QueryDsl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("QueryName")
+>>>>>>> origin/develop
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+<<<<<<< HEAD
                     b.Property<int>("Scope")
                         .HasColumnType("integer");
 
@@ -5758,38 +5803,63 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+=======
+>>>>>>> origin/develop
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+<<<<<<< HEAD
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uuid");
 
+=======
+>>>>>>> origin/develop
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
+<<<<<<< HEAD
                     b.HasIndex("TenantId", "IsEnabled");
 
                     b.ToTable("PiiRedactionRules", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Audit.PiiTokenVaultEntry", b =>
+=======
+                    b.HasIndex("IsPublic");
+
+                    b.HasIndex("TenantId", "CreatedByUserId");
+
+                    b.HasIndex("TenantId", "QueryName");
+
+                    b.ToTable("SavedAuditQueries", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Compliance.Audit.SavedAuditQueryRevision", b =>
+>>>>>>> origin/develop
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+<<<<<<< HEAD
+=======
+                    b.Property<Guid>("ChangedByUserId")
+                        .HasColumnType("uuid");
+
+>>>>>>> origin/develop
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+<<<<<<< HEAD
                     b.Property<string>("EncryptedValue")
                         .IsRequired()
                         .HasColumnType("text");
@@ -5806,11 +5876,37 @@ namespace GameGuild.API.Database.Migrations
                         .HasColumnType("character varying(40)");
 
                     b.Property<Guid?>("SourceRuleId")
+=======
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsCreation")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("QueryDsl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("QueryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SavedAuditQueryId")
+>>>>>>> origin/develop
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid");
 
+<<<<<<< HEAD
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -5822,18 +5918,32 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<long>("UseCount")
                         .HasColumnType("bigint");
 
+=======
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+>>>>>>> origin/develop
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
+<<<<<<< HEAD
                     b.HasIndex("TenantId");
 
                     b.HasIndex("ScopeKey", "Token")
                         .IsUnique();
 
                     b.ToTable("PiiTokenVaultEntries", (string)null);
+=======
+                    b.HasIndex("SavedAuditQueryId");
+
+                    b.HasIndex("SavedAuditQueryId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("SavedAuditQueryRevisions", (string)null);
+>>>>>>> origin/develop
                 });
 
             modelBuilder.Entity("GameGuild.Compliance.Audit.ScheduledAuditExport", b =>

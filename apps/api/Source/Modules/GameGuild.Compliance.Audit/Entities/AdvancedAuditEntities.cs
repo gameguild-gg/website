@@ -129,9 +129,13 @@ public sealed class SavedAuditQuery : EntityBase
     public string[] AllowedRoles { get; private set; } = Array.Empty<string>();
     public Guid[] AllowedUserIds { get; private set; } = Array.Empty<Guid>();
 
+    // Change tracking: bumped on every update, mirrored into SavedAuditQueryRevision rows.
+    public int CurrentRevision { get; private set; } = 1;
+
     // Usage tracking
     public int ExecutionCount { get; private set; }
     public DateTime? LastExecutedAt { get; private set; }
+    public Guid? LastExecutedByUserId { get; private set; }
 
     private SavedAuditQuery() { }
 
@@ -140,23 +144,42 @@ public sealed class SavedAuditQuery : EntityBase
         string queryName,
         string queryDsl,
         Guid createdByUserId,
-        bool isPublic = false)
+        bool isPublic = false,
+        string? description = null)
     {
         return new SavedAuditQuery
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
             QueryName = queryName,
+            Description = description,
             QueryDsl = queryDsl,
             CreatedByUserId = createdByUserId,
-            IsPublic = isPublic
+            IsPublic = isPublic,
+            CurrentRevision = 1
         };
     }
 
-    public void RecordExecution()
+    /// <summary>
+    /// Apply an update and advance the revision counter. Returns the new revision number so the
+    /// caller can persist the matching <see cref="SavedAuditQueryRevision"/> snapshot.
+    /// </summary>
+    public int UpdateDetails(string queryName, string? description, string queryDsl, bool isPublic)
+    {
+        QueryName = queryName;
+        Description = description;
+        QueryDsl = queryDsl;
+        IsPublic = isPublic;
+        CurrentRevision++;
+        UpdatedAt = SystemClock.UtcNow;
+        return CurrentRevision;
+    }
+
+    public void RecordExecution(Guid executedByUserId)
     {
         ExecutionCount++;
         LastExecutedAt = SystemClock.UtcNow;
+        LastExecutedByUserId = executedByUserId;
         UpdatedAt = SystemClock.UtcNow;
     }
 }

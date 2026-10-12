@@ -10638,6 +10638,23 @@ export const getWalletsForGetWalletsEndpoint = {
 } as const;
 
 /**
+ * Wallet-to-wallet transfer (issue #406): moves funds between two same-currency wallets
+ * through the audited TransferFunds command. A duplicate ReferenceId replays
+ * idempotently.
+ */
+export interface PostWalletsTransferInput {
+  body?: Types.CommercePaymentsModelsTransferWalletsInput;
+}
+export type PostWalletsTransferOutput = Types.CommercePaymentsModelsTransferWalletsOutput;
+export const postWalletsTransferEndpoint = {
+  operationId: 'postWalletsTransfer' as const,
+  method: 'POST' as const,
+  path: '/api/v1/wallets:transfer' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get wallet by ID
  */
 export interface GetWalletsForGetWalletsByWalletIdInput {
@@ -10699,6 +10716,24 @@ export const headWalletsEndpoint = {
 } as const;
 
 /**
+ * Administrative balance adjustment (issue #406): credits or debits a wallet through
+ * the audited AddFunds/DeductFunds commands. A duplicate ReferenceId replays
+ * idempotently and returns the original transaction.
+ */
+export interface PostWalletsAdjustInput {
+  walletId: string;
+  body?: Types.CommercePaymentsModelsAdjustWalletInput;
+}
+export type PostWalletsAdjustOutput = Types.CommercePaymentsWalletTransaction;
+export const postWalletsAdjustEndpoint = {
+  operationId: 'postWalletsAdjust' as const,
+  method: 'POST' as const,
+  path: '/api/v1/wallets/{walletId}:adjust' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Freeze wallet
  */
 export interface PostWalletsFreezeInput {
@@ -10744,6 +10779,42 @@ export const getWalletsAuditLogEndpoint = {
   operationId: 'getWalletsAuditLog' as const,
   method: 'GET' as const,
   path: '/api/v1/wallets/{walletId}/audit-log' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Wallet balance analytics (issue #406): total balances by currency, active/frozen
+ * wallet counts and completed transaction volume by type and day.
+ */
+export interface GetWalletsMetricsInput {
+  query?: {
+    days?: number;
+  };
+}
+export type GetWalletsMetricsOutput = Types.CommercePaymentsWalletMetricsOutput;
+export const getWalletsMetricsEndpoint = {
+  operationId: 'getWalletsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/wallets/metrics' as const,
+  tags: ['CommercePaymentsWallets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Report-only balance reconciliation (issue #406): per wallet, verifies Balance against
+ * the latest BalanceAfter and the signed sum of completed transactions. Never mutates state.
+ */
+export interface GetWalletsReconciliationInput {
+  query?: {
+    walletId?: string;
+  };
+}
+export type GetWalletsReconciliationOutput = Types.CommercePaymentsWalletReconciliationReportOutput;
+export const getWalletsReconciliationEndpoint = {
+  operationId: 'getWalletsReconciliation' as const,
+  method: 'GET' as const,
+  path: '/api/v1/wallets/reconciliation' as const,
   tags: ['CommercePaymentsWallets'] as const,
   requiresAuth: true,
 } as const;
@@ -13775,6 +13846,181 @@ export const getAssetsSocialMediaEndpoint = {
   method: 'GET' as const,
   path: '/v1/assets/social-media/{assetReferenceId}' as const,
   tags: ['SocialAssetsSocialMediaAssets'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Execute an audit query DSL expression (JSON or light text syntax) and return a
+ * data-masked, paginated page of matching audit entries plus aggregates over the full
+ * matched set. Execution is bounded by a row-scan cap and a wall-clock timeout.
+ */
+export interface PostAuditQueriesExecuteInput {
+  body?: Types.ComplianceAuditAuditQueryExecuteApiInput;
+}
+export type PostAuditQueriesExecuteOutput = Types.ComplianceAuditAuditQueryDslExecutionResult;
+export const postAuditQueriesExecuteEndpoint = {
+  operationId: 'postAuditQueriesExecute' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/:execute' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Paged-results GET variant of the DSL executor for the light text syntax
+ * (e.g. GET /v1/audit-queries:results?query=actor:alice AND severity:Critical).
+ */
+export interface GetAuditQueriesResultsInput {
+  query?: {
+    query?: string;
+    Skip?: number;
+    Take?: number;
+  };
+}
+export type GetAuditQueriesResultsOutput = Types.ComplianceAuditAuditQueryDslExecutionResult;
+export const getAuditQueriesResultsEndpoint = {
+  operationId: 'getAuditQueriesResults' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/:results' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate a DSL query without executing it and return its canonical JSON form.
+ * Saved-view editors use this to fail closed before persisting a query.
+ */
+export interface PostAuditQueriesValidateInput {
+  body?: Types.ComplianceAuditAuditQueryValidateApiInput;
+}
+export type PostAuditQueriesValidateOutput = Types.ComplianceAuditAuditQueryValidationOutput;
+export const postAuditQueriesValidateEndpoint = {
+  operationId: 'postAuditQueriesValidate' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/:validate' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List saved audit query views visible to the acting user: their own private views
+ * plus every shared view within the caller's tenant.
+ */
+export type GetAuditQueriesSavedForGetAuditQueriesSavedInput = void;
+export type GetAuditQueriesSavedForGetAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput[];
+export const getAuditQueriesSavedForGetAuditQueriesSavedEndpoint = {
+  operationId: 'getAuditQueriesSavedForGetAuditQueriesSaved' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/saved' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a saved audit query view. The query is validated (and tenant-scope checked)
+ * before persistence; a creation revision snapshot is recorded.
+ */
+export interface PostAuditQueriesSavedInput {
+  body?: Types.ComplianceAuditSaveSavedAuditQueryApiInput;
+}
+export type PostAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput;
+export const postAuditQueriesSavedEndpoint = {
+  operationId: 'postAuditQueriesSaved' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/saved' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one saved view. Private views are only visible to their owner.
+ */
+export interface GetAuditQueriesSavedForGetAuditQueriesSavedByIdInput {
+  id: string;
+}
+export type GetAuditQueriesSavedForGetAuditQueriesSavedByIdOutput = Types.ComplianceAuditSavedAuditQueryViewOutput;
+export const getAuditQueriesSavedForGetAuditQueriesSavedByIdEndpoint = {
+  operationId: 'getAuditQueriesSavedForGetAuditQueriesSavedById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/saved/{id}' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a saved view (owner only). A new revision snapshot is recorded.
+ */
+export interface PutAuditQueriesSavedInput {
+  id: string;
+  body?: Types.ComplianceAuditSaveSavedAuditQueryApiInput;
+}
+export type PutAuditQueriesSavedOutput = Types.ComplianceAuditSavedAuditQueryViewOutput;
+export const putAuditQueriesSavedEndpoint = {
+  operationId: 'putAuditQueriesSaved' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit-queries/saved/{id}' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a saved view (owner only). Its revision history is retained for audit.
+ */
+export interface DeleteAuditQueriesSavedInput {
+  id: string;
+}
+export type DeleteAuditQueriesSavedOutput = void;
+export const deleteAuditQueriesSavedEndpoint = {
+  operationId: 'deleteAuditQueriesSaved' as const,
+  method: 'DELETE' as const,
+  path: '/v1/audit-queries/saved/{id}' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Execute a saved view by identifier (owner or shared), paging over its canonical query.
+ * Execution usage and attribution are recorded on the view and in the audit log.
+ */
+export interface PostAuditQueriesSavedExecuteInput {
+  id: string;
+  body?: Types.ComplianceAuditAuditQueryPagingApiInput;
+}
+export type PostAuditQueriesSavedExecuteOutput = Types.ComplianceAuditAuditQueryDslExecutionResult;
+export const postAuditQueriesSavedExecuteEndpoint = {
+  operationId: 'postAuditQueriesSavedExecute' as const,
+  method: 'POST' as const,
+  path: '/v1/audit-queries/saved/{id}:execute' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Full revision history of a saved view: who changed what, when, and the exact query
+ * payload of every revision. Revisions survive deletion of the view itself.
+ */
+export interface GetAuditQueriesSavedRevisionsInput {
+  id: string;
+}
+export type GetAuditQueriesSavedRevisionsOutput = Types.ComplianceAuditSavedAuditQueryRevisionOutput[];
+export const getAuditQueriesSavedRevisionsEndpoint = {
+  operationId: 'getAuditQueriesSavedRevisions' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/saved/{id}/revisions' as const,
+  tags: ['ComplianceAuditQueries'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Built-in role-based query templates for common investigation and compliance scenarios.
+ */
+export type GetAuditQueriesTemplatesInput = void;
+export type GetAuditQueriesTemplatesOutput = Types.ComplianceAuditAuditQueryTemplate[];
+export const getAuditQueriesTemplatesEndpoint = {
+  operationId: 'getAuditQueriesTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit-queries/templates' as const,
+  tags: ['ComplianceAuditQueries'] as const,
   requiresAuth: true,
 } as const;
 
@@ -28842,13 +29088,17 @@ export const endpoints = {
   postWalletUnlock: postWalletUnlockEndpoint,
   getWalletBalance: getWalletBalanceEndpoint,
   getWalletsForGetWallets: getWalletsForGetWalletsEndpoint,
+  postWalletsTransfer: postWalletsTransferEndpoint,
   getWalletsForGetWalletsByWalletId: getWalletsForGetWalletsByWalletIdEndpoint,
   deleteWallets: deleteWalletsEndpoint,
   patchWallets: patchWalletsEndpoint,
   headWallets: headWalletsEndpoint,
+  postWalletsAdjust: postWalletsAdjustEndpoint,
   postWalletsFreeze: postWalletsFreezeEndpoint,
   postWalletsUnfreeze: postWalletsUnfreezeEndpoint,
   getWalletsAuditLog: getWalletsAuditLogEndpoint,
+  getWalletsMetrics: getWalletsMetricsEndpoint,
+  getWalletsReconciliation: getWalletsReconciliationEndpoint,
   getAssetsForGetAssetsByReferenceIdByToken: getAssetsForGetAssetsByReferenceIdByTokenEndpoint,
   getE: getEEndpoint,
   getHealth: getHealthEndpoint,
@@ -29037,6 +29287,17 @@ export const endpoints = {
   getAssetsSearch: getAssetsSearchEndpoint,
   postAssetsSocialMedia: postAssetsSocialMediaEndpoint,
   getAssetsSocialMedia: getAssetsSocialMediaEndpoint,
+  postAuditQueriesExecute: postAuditQueriesExecuteEndpoint,
+  getAuditQueriesResults: getAuditQueriesResultsEndpoint,
+  postAuditQueriesValidate: postAuditQueriesValidateEndpoint,
+  getAuditQueriesSavedForGetAuditQueriesSaved: getAuditQueriesSavedForGetAuditQueriesSavedEndpoint,
+  postAuditQueriesSaved: postAuditQueriesSavedEndpoint,
+  getAuditQueriesSavedForGetAuditQueriesSavedById: getAuditQueriesSavedForGetAuditQueriesSavedByIdEndpoint,
+  putAuditQueriesSaved: putAuditQueriesSavedEndpoint,
+  deleteAuditQueriesSaved: deleteAuditQueriesSavedEndpoint,
+  postAuditQueriesSavedExecute: postAuditQueriesSavedExecuteEndpoint,
+  getAuditQueriesSavedRevisions: getAuditQueriesSavedRevisionsEndpoint,
+  getAuditQueriesTemplates: getAuditQueriesTemplatesEndpoint,
   getAuditCompliancePackagingForGetAuditCompliancePackaging: getAuditCompliancePackagingForGetAuditCompliancePackagingEndpoint,
   postAuditCompliancePackaging: postAuditCompliancePackagingEndpoint,
   getAuditCompliancePackagingForGetAuditCompliancePackagingById: getAuditCompliancePackagingForGetAuditCompliancePackagingByIdEndpoint,

@@ -514,8 +514,9 @@ public class SavedAuditQueryTests
     {
         var query = SavedAuditQuery.Create(Guid.NewGuid(), "Test", "dsl", Guid.NewGuid());
 
-        query.RecordExecution();
-        query.RecordExecution();
+        var executorId = Guid.NewGuid();
+        query.RecordExecution(executorId);
+        query.RecordExecution(executorId);
 
         query.ExecutionCount.Should().Be(2);
         query.LastExecutedAt.Should().NotBeNull();

@@ -255,7 +255,7 @@ public class AuditDomainCoverageCompletionTests
             null,
             null);
         var savedQuery = SavedAuditQuery.Create(tenantId, "failed logins", "status = failed", createdBy, true);
-        savedQuery.RecordExecution();
+        savedQuery.RecordExecution(createdBy);
         var replay = AuditReplaySession.Create(
             tenantId,
             "incident",

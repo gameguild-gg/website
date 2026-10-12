@@ -210,6 +210,7 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.HasIndex(execution => new { execution.TenantId, execution.ExecutedAtUtc });
         });
 
+<<<<<<< HEAD
         modelBuilder.Entity<PiiRedactionRule>(entity =>
         {
             entity.ToTable("PiiRedactionRules");
@@ -250,6 +251,36 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.Property(operation => operation.FailureReason).HasMaxLength(1000);
             entity.HasIndex(operation => new { operation.TenantId, operation.AppliedAt });
             entity.HasIndex(operation => new { operation.TenantId, operation.FailClosed });
+=======
+        modelBuilder.Entity<SavedAuditQuery>(entity =>
+        {
+            entity.ToTable("SavedAuditQueries");
+            entity.HasKey(query => query.Id);
+            entity.Property(query => query.TenantId);
+            entity.Property(query => query.QueryName).HasMaxLength(200).IsRequired();
+            entity.Property(query => query.Description).HasMaxLength(1000);
+            entity.Property(query => query.QueryDsl).HasColumnType("text").IsRequired();
+            entity.Property(query => query.AllowedRoles).HasColumnType("text[]");
+            entity.Property(query => query.AllowedUserIds).HasColumnType("uuid[]");
+            entity.Property(query => query.Version).IsConcurrencyToken();
+            entity.HasIndex(query => new { query.TenantId, query.QueryName });
+            entity.HasIndex(query => new { query.TenantId, query.CreatedByUserId });
+            entity.HasIndex(query => query.IsPublic);
+        });
+
+        // Deliberately no foreign key to SavedAuditQueries: revision history is retained as an
+        // audit record even after the saved view itself is deleted.
+        modelBuilder.Entity<SavedAuditQueryRevision>(entity =>
+        {
+            entity.ToTable("SavedAuditQueryRevisions");
+            entity.HasKey(revision => revision.Id);
+            entity.Property(revision => revision.TenantId);
+            entity.Property(revision => revision.QueryName).HasMaxLength(200).IsRequired();
+            entity.Property(revision => revision.Description).HasMaxLength(1000);
+            entity.Property(revision => revision.QueryDsl).HasColumnType("text").IsRequired();
+            entity.HasIndex(revision => revision.SavedAuditQueryId);
+            entity.HasIndex(revision => new { revision.SavedAuditQueryId, revision.Revision }).IsUnique();
+>>>>>>> origin/develop
         });
     }
 }
