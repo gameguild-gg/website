@@ -126,6 +126,13 @@ public class NotificationsControllerPreferencesTests
         paymentMethodExpiring.Suppressible.Should().BeTrue();
         paymentMethodExpiring.DisplayName.Should().Be("Payment Method Expiring");
 
+        // Issue #406: low wallet-balance alerts are a Billing notification (suppressible like
+        // card-expiry reminders; the LowBalanceAlertedAt marker persists across passes).
+        var walletBalanceBelowThreshold = catalog.Single(e => e.Type == "WalletBalanceBelowThreshold");
+        walletBalanceBelowThreshold.Category.Should().Be("Billing");
+        walletBalanceBelowThreshold.Suppressible.Should().BeTrue();
+        walletBalanceBelowThreshold.DisplayName.Should().Be("Wallet Balance Below Threshold");
+
         var courseEnrollment = catalog.Single(e => e.Type == "CourseEnrollment");
         courseEnrollment.Category.Should().Be("Learning");
     }

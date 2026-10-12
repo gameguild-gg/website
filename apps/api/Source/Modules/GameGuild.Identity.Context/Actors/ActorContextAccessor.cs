@@ -50,6 +50,55 @@ public sealed class ActorContextAccessor : IActorContextAccessor
         }
     }
 
+    /// <inheritdoc />
+    public IActorContextScope BeginActorContextScope(ActorContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var previousHolder = ActorContextCurrent.Value;
+        var previousContext = previousHolder?.Context;
+        SetActorContext(context);
+        return new RestoreHolderScope(this, previousHolder, previousContext);
+    }
+
+    /// <summary>
+    ///     Restores the ambient actor context by repairing the holder object that was
+    ///     active before the scope started. <see cref="SetActorContext"/> deliberately
+    ///     clears the previous holder (leak protection), which makes a plain
+    ///     set-previous-restore invisible to execution contexts upstack that still
+    ///     reference the original holder — a nested swap in an event or pipeline handler
+    ///     would leave the caller observing an anonymous context. Repairing the original
+    ///     holder keeps every observer consistent.
+    /// </summary>
+    private sealed class RestoreHolderScope(
+        ActorContextAccessor accessor,
+        ActorContextHolder? previousHolder,
+        ActorContext? previousContext) : IActorContextScope
+    {
+        private bool disposed;
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            disposed = true;
+            if (previousHolder is not null)
+            {
+                // Repair the original holder so upstack observers see the previous
+                // context again, and re-install it in the current flow.
+                previousHolder.Context = previousContext;
+                ActorContextCurrent.Value = previousHolder;
+            }
+            else
+            {
+                accessor.ClearActorContext();
+            }
+        }
+    }
+
     /// <summary>
     ///     Holder class to ensure proper AsyncLocal behavior with reference semantics.
     /// </summary>
