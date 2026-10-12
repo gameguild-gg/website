@@ -67,9 +67,9 @@ public abstract class AuthenticationFlowState
 
     /// <summary>
     ///     Gets the next step to complete, or <see langword="null"/> when every required
-    ///     step is already satisfied. (<see cref="Enumerable.FirstOrDefault{TSource}"/>
-    ///     over a non-nullable enum would return the default value <c>0</c> instead of
-    ///     null, so an empty remainder must be handled explicitly.)
+    ///     step is already satisfied. (A plain FirstOrDefault over the non-nullable step
+    ///     enum would return the default value <c>0</c> instead of null, so an empty
+    ///     remainder must be handled explicitly.)
     /// </summary>
     public AuthenticationStep? NextStep
     {
