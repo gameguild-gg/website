@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using GameGuild.Commerce;
+using GameGuild.Commerce.Payments;
 
 namespace GameGuild.Commerce.Products;
 
@@ -24,6 +25,7 @@ public static class ProductsModule
 
         // Register services
         services.AddScoped<IPricingEngineService, PricingEngineService>();
+        services.AddScoped<IPromoDiscountCalculator, PromoDiscountCalculatorAdapter>();
         services.AddScoped<IProductPricingService, ProductPricingService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IPromoCodeUsageRecorder, PromoCodeUsageRecorder>();

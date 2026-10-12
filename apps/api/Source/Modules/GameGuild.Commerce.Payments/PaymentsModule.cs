@@ -101,6 +101,13 @@ public static class PaymentsModule
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IRevenueAuditService, RevenueAuditService>();
         services.AddScoped<ITaxCalculationService, TaxCalculationService>();
+
+        // Unified pricing engine (issue #417): the single calculation path for base plan,
+        // add-ons, usage tiers, discounts, proration, tax, credits and currency. Its
+        // cross-module seams (proration, promo resolution) are Payments-owned abstractions
+        // implemented by the Subscriptions and Products modules respectively.
+        services.AddScoped<IPricingEngine, PricingEngine>();
+        services.AddCurrencyConversion();
         services.AddScoped<IWalletService, WalletService>();
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentProcessor, OrderPaymentService>());
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentAuthority, OrderPaymentService>());

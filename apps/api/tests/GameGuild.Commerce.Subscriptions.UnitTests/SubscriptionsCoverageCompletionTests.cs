@@ -152,11 +152,19 @@ public sealed class SubscriptionsCoverageCompletionTests
         PaymentRetryResult.FailedWithRetry(1, 3, DateTime.UtcNow.AddDays(1), "retry").RetriesExhausted.Should().BeFalse();
         PaymentRetryResult.FailedExhausted(3, 3, "done").RetriesExhausted.Should().BeTrue();
 
-        PricingCalculationResult.Simple(money, BillingCycle.Monthly).Currency.Should().Be("USD");
-        PricingCalculationResult.WithDiscount(money, new Money(20m, "USD"), BillingCycle.Annually, [new ConcreteAppliedDiscount { Code = "promo", Description = "Promo", Amount = new Money(20m, "USD"), Type = DiscountType.FixedAmount }])
-            .TotalAmount.Amount.Should().Be(100m);
-        PricingCalculationResult.WithDiscount(money, new Money(20m, "USD"), BillingCycle.Annually)
-            .AppliedDiscounts.Should().BeEmpty();
+        // Issue #417: the unified Payments PricingCalculationResult replaced the Subscriptions duplicate.
+        new PricingCalculationResult { BasePlanPrice = money, BillingCycle = BillingCycle.Monthly, Currency = "USD" }.Currency.Should().Be("USD");
+        new PricingCalculationResult
+        {
+            BasePlanPrice = money,
+            Subtotal = money,
+            TotalDiscounts = new Money(20m, "USD"),
+            SubtotalAfterDiscounts = new Money(100m, "USD"),
+            Total = new Money(100m, "USD"),
+            BillingCycle = BillingCycle.Annually,
+            AppliedDiscounts = [new AppliedDiscount { Code = "promo", Description = "Promo", Amount = new Money(20m, "USD"), Type = DiscountType.FixedAmount }]
+        }.Total.Amount.Should().Be(100m);
+        new PricingCalculationResult { AppliedDiscounts = [] }.AppliedDiscounts.Should().BeEmpty();
 
         new ConcreteBulkRenewalResult { TotalProcessed = 4, SuccessfulRenewals = 3 }.SuccessRate.Should().Be(75m);
         new ConcreteBulkRenewalResult { TotalProcessed = 0, SuccessfulRenewals = 0 }.SuccessRate.Should().Be(0m);
@@ -729,7 +737,6 @@ public sealed class SubscriptionsCoverageCompletionTests
     private sealed class ConcreteSubscriptionAnalytics : SubscriptionAnalytics;
     private sealed class ConcreteLimitCheckResult : LimitCheckResult;
     private sealed class ConcretePricingAddOn : PricingAddOn;
-    private sealed class ConcreteAppliedDiscount : AppliedDiscount;
     private sealed class NullStringValue
     {
         public override string ToString() => null!;

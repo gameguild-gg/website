@@ -77,4 +77,19 @@ public class PaymentPerformanceBenchmarks
         // TODO: Implement tokenization benchmark
         await Task.Delay(1);
     }
+
+    /// <summary>
+    /// Benchmark: Unified pricing engine end-to-end calculation latency.
+    /// Target: complete a full calculation (base + add-ons + usage tiers + discounts +
+    /// tax + credits + ledger record) within 100ms P99 (issue #417). The CI-enforced
+    /// evidence lives in Payments.UnitTests (PricingEngineTests p99 test); this entry
+    /// provides the BenchmarkDotNet harness for deeper local profiling.
+    /// </summary>
+    [Benchmark]
+    public async Task PricingEngine_Calculation_Latency()
+    {
+        // TODO: Wire the full unified pricing engine benchmark (see PricingEngineTests
+        // .CalculateAsync_CompletesWithin100MsAt99thPercentile for the CI-enforced p99 gate).
+        await Task.Delay(1);
+    }
 }

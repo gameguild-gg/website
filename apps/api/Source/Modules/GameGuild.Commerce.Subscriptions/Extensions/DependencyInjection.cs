@@ -45,6 +45,10 @@ public static class DependencyInjection
 
         // Register Plan Pricing Resolver for cross-module pricing lookups (Payments module integration)
         services.AddScoped<IPlanPricingResolver, SubscriptionPlanPricingResolver>();
+
+        // Unified pricing engine seam (issue #417): expose the existing BillingCalculator
+        // proration math to the Payments-owned engine abstraction.
+        services.AddScoped<IPlanProrationCalculator, PlanProrationCalculator>();
         services.AddScoped<IPaymentSubscriptionSyncService, PaymentSubscriptionSyncService>();
 
         // Payment recovery lifecycle (issue #415): dunning suspension after retry exhaustion
