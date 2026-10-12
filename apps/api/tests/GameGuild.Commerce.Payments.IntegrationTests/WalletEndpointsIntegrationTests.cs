@@ -49,6 +49,13 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
                     options.UseInMemoryDatabase(DatabaseName);
                 });
                 services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+                // The certificate-protected EF key repository cannot run on the in-memory
+                // provider (it opens an explicit transaction, which in-memory rejects, and
+                // its key-creation retry then double-inserts on the request-scoped
+                // context). Wallet flows do not assert key persistence — keep keys
+                // ephemeral so the DataProtection pipeline never touches the test database.
+                services.RemoveAll<Microsoft.AspNetCore.DataProtection.Repositories.IXmlRepository>();
+                services.AddSingleton<Microsoft.AspNetCore.DataProtection.Repositories.IXmlRepository, EphemeralKeyXmlRepository>();
                 services.AddDefaultTenantMembership();
 
                 // Authorization matrix tests intentionally exercise permission claims from
@@ -551,5 +558,19 @@ public class WalletEndpointsIntegrationTests : IClassFixture<WebApplicationFacto
     {
         _client?.Dispose();
         _factory?.Dispose();
+    }
+
+    /// <summary>
+    ///     Non-persisting DataProtection key store: keeps the certificate-protected EF key
+    ///     repository away from the in-memory database (explicit transactions and its
+    ///     key-creation retry both break there).
+    /// </summary>
+    private sealed class EphemeralKeyXmlRepository : Microsoft.AspNetCore.DataProtection.Repositories.IXmlRepository
+    {
+        private readonly System.Collections.Concurrent.ConcurrentQueue<System.Xml.Linq.XElement> _elements = new();
+
+        public IReadOnlyCollection<System.Xml.Linq.XElement> GetAllElements() => _elements.ToArray();
+
+        public void StoreElement(System.Xml.Linq.XElement element, string? friendlyName) => _elements.Enqueue(element);
     }
 }
