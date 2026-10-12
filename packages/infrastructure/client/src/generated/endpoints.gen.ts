@@ -5792,6 +5792,53 @@ export const getAuthorizationComplianceReportEndpoint = {
 } as const;
 
 /**
+ * Creates a pending multi-stage approval workflow for a tenant permission grant.
+ */
+export interface PostAuthorizationPermissionApprovalsInput {
+  body?: Types.IdentityAuthorizationCreatePermissionApprovalCommand;
+}
+export type PostAuthorizationPermissionApprovalsOutput = string;
+export const postAuthorizationPermissionApprovalsEndpoint = {
+  operationId: 'postAuthorizationPermissionApprovals' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-approvals' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Loads a workflow with its stages and decisions.
+ */
+export interface GetAuthorizationPermissionApprovalsInput {
+  id: string;
+}
+export type GetAuthorizationPermissionApprovalsOutput = Types.IdentityAuthorizationPermissionApprovalWorkflow;
+export const getAuthorizationPermissionApprovalsEndpoint = {
+  operationId: 'getAuthorizationPermissionApprovals' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-approvals/{id}' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decides the workflow's current stage. On the final approval the guarded grant
+ * executes; a rejection terminates the workflow without granting.
+ */
+export interface PostAuthorizationPermissionApprovalsDecisionsInput {
+  id: string;
+  body?: Types.IdentityAuthorizationControllersDecidePermissionApprovalInput;
+}
+export type PostAuthorizationPermissionApprovalsDecisionsOutput = Types.IdentityAuthorizationPermissionApprovalDecisionResult;
+export const postAuthorizationPermissionApprovalsDecisionsEndpoint = {
+  operationId: 'postAuthorizationPermissionApprovalsDecisions' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-approvals/{id}/decisions' as const,
+  tags: ['AccessControlPermissionApprovals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Builds the permission graph of the caller's tenant: users, dynamic roles, and
  * permission keys connected by assignment, inheritance, grant, and deny edges,
  * with a data-quality summary (cycles, unregistered keys, orphaned roles).
@@ -5840,6 +5887,63 @@ export const getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint
   method: 'GET' as const,
   path: '/api/v1/authorization/permission-graph/roles/{roleId}/permission-removal-impact/{permissionKey}' as const,
   tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the append-only version history of one permission policy (issue #188).
+ */
+export interface GetAuthorizationPermissionPoliciesVersionsInput {
+  policyId: string;
+  query?: {
+    kind?: Types.IdentityAuthorizationPolicyVersionKind;
+  };
+}
+export type GetAuthorizationPermissionPoliciesVersionsOutput = Types.IdentityAuthorizationPolicyVersionHistory[];
+export const getAuthorizationPermissionPoliciesVersionsEndpoint = {
+  operationId: 'getAuthorizationPermissionPoliciesVersions' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-policies/{policyId}/versions' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reconstructs a subject's effective permission state at a past instant
+ * (issue #189: access rights at any point in time).
+ */
+export interface GetAuthorizationPermissionsHistoryAtInput {
+  query?: {
+    timestamp?: string;
+    userId?: string;
+  };
+}
+export type GetAuthorizationPermissionsHistoryAtOutput = Types.IdentityAuthorizationPermissionHistoryAtSnapshot;
+export const getAuthorizationPermissionsHistoryAtEndpoint = {
+  operationId: 'getAuthorizationPermissionsHistoryAt' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/history/at' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists role-inheritance change events in a window (issue #189: parent-child
+ * relationship changes over time), each with the pre/post hierarchy state and
+ * the cascading effects recorded at mutation time.
+ */
+export interface GetAuthorizationPermissionsHistoryInheritanceInput {
+  query?: {
+    fromTimestamp?: string;
+    toTimestamp?: string;
+  };
+}
+export type GetAuthorizationPermissionsHistoryInheritanceOutput = Types.IdentityAuthorizationInheritanceHistoryEvent[];
+export const getAuthorizationPermissionsHistoryInheritanceEndpoint = {
+  operationId: 'getAuthorizationPermissionsHistoryInheritance' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permissions/history/inheritance' as const,
+  tags: ['AccessControlPermissionHistory'] as const,
   requiresAuth: true,
 } as const;
 
@@ -28551,9 +28655,15 @@ export const endpoints = {
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
   getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  postAuthorizationPermissionApprovals: postAuthorizationPermissionApprovalsEndpoint,
+  getAuthorizationPermissionApprovals: getAuthorizationPermissionApprovalsEndpoint,
+  postAuthorizationPermissionApprovalsDecisions: postAuthorizationPermissionApprovalsDecisionsEndpoint,
   getAuthorizationPermissionGraph: getAuthorizationPermissionGraphEndpoint,
   getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
   getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
+  getAuthorizationPermissionPoliciesVersions: getAuthorizationPermissionPoliciesVersionsEndpoint,
+  getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
+  getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
