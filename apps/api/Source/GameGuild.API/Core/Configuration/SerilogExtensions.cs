@@ -85,9 +85,12 @@ public static class SerilogExtensions
             .CreateLogger();
         return new Core.Logging.PiiRedactionLogSink(
             fileSink,
+            // The sink's dependency graph must stay ILogger-free: it is resolved while the
+            // logging pipeline itself is being constructed, and any ILogger in the graph
+            // re-enters the Serilog factory configuration and recurses (DI StackGuard hop).
+            // Sink-internal diagnostics go to Serilog's SelfLog instead.
             services.GetRequiredService<Compliance.Audit.IPiiRedactionRuleProvider>(),
-            services.GetRequiredService<Compliance.Audit.IPiiTokenSource>(),
-            services.GetRequiredService<ILogger<Core.Logging.PiiRedactionLogSink>>());
+            services.GetRequiredService<Compliance.Audit.IPiiTokenSource>());
     }
 
     /// <summary>

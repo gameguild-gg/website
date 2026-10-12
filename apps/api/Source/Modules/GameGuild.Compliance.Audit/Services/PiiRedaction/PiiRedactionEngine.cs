@@ -251,7 +251,7 @@ public sealed record PiiValueOutcome(
 /// the tokenizer fails closed exactly like the platform encryption service: no configured key means
 /// no tokens.
 /// </summary>
-public sealed class PiiHmacTokenizer(IConfiguration configuration, ILogger<PiiHmacTokenizer> logger) : IPiiTokenSource
+public sealed class PiiHmacTokenizer(IConfiguration configuration) : IPiiTokenSource
 {
     public const string TokenPrefix = "pii_tok_v1_";
 
@@ -313,7 +313,7 @@ public sealed class PiiHmacTokenizer(IConfiguration configuration, ILogger<PiiHm
             _cachedKey = derived;
             _cachedKeyFingerprint = Convert.ToHexString(SHA256.HashData(derived))[..16].ToLowerInvariant();
             _keyLoadedAt = SystemClock.UtcNow;
-            logger.LogDebug("PII tokenization key material refreshed (fingerprint {Fingerprint})", _cachedKeyFingerprint);
+            System.Diagnostics.Trace.TraceInformation("PII tokenization key material refreshed (fingerprint " + _cachedKeyFingerprint + ")");
             return derived;
         }
     }

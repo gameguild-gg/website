@@ -171,8 +171,7 @@ public class PiiHmacTokenizerTests
             new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!"
-            }).Build(),
-            NullLogger<PiiHmacTokenizer>.Instance);
+            }).Build());
 
     [Fact]
     public void Tokenize_IsDeterministicForIdenticalValues()
@@ -207,8 +206,7 @@ public class PiiHmacTokenizerTests
     public void Tokenize_FailsClosedWithoutConfiguredKey()
     {
         var tokenizer = new PiiHmacTokenizer(
-            new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build(),
-            NullLogger<PiiHmacTokenizer>.Instance);
+            new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build());
 
         var act = () => tokenizer.Tokenize("john@example.com");
 
@@ -257,8 +255,7 @@ public class PiiRedactionServiceTests : IDisposable
             new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!"
-            }).Build(),
-            NullLogger<PiiHmacTokenizer>.Instance);
+            }).Build());
 
     private static EncryptionService CreateEncryption() =>
         new(
@@ -457,8 +454,7 @@ public class AuditLogPiiRedactionInterceptorTests : IDisposable
         var service = new PiiRedactionService(
             provider,
             new PiiHmacTokenizer(
-                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build(),
-                NullLogger<PiiHmacTokenizer>.Instance),
+                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build()),
             new EncryptionService(
                 NullLogger<EncryptionService>.Instance,
                 new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build()),
@@ -534,8 +530,7 @@ public class PiiRedactionAdminServiceTests : IDisposable
             _context,
             new SnapshotProvider(),
             new PiiHmacTokenizer(
-                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build(),
-                NullLogger<PiiHmacTokenizer>.Instance),
+                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build()),
             new EncryptionService(
                 NullLogger<EncryptionService>.Instance,
                 new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build()),
@@ -778,9 +773,7 @@ public class PiiRedactionLogSinkTests
             capture,
             provider,
             new PiiHmacTokenizer(
-                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build(),
-                NullLogger<PiiHmacTokenizer>.Instance),
-            NullLogger<PiiRedactionLogSink>.Instance);
+                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Encryption:EncryptionKey"] = "test-key-material-for-pii-tokenization-v1!!" }).Build()));
 
     [Fact]
     public void Emit_WithGlobalRules_RewritesStringPropertiesAndForwards()

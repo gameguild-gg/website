@@ -1,6 +1,6 @@
 using GameGuild.Compliance.Audit;
-using Microsoft.Extensions.Logging;
 using Serilog.Core;
+using Serilog.Debugging;
 using Serilog.Events;
 
 namespace GameGuild.API.Core.Logging;
@@ -15,8 +15,7 @@ namespace GameGuild.API.Core.Logging;
 public sealed class PiiRedactionLogSink(
     ILogEventSink innerSink,
     IPiiRedactionRuleProvider ruleProvider,
-    IPiiTokenSource tokenizer,
-    ILogger<PiiRedactionLogSink> logger) : ILogEventSink, IDisposable
+    IPiiTokenSource tokenizer) : ILogEventSink, IDisposable
 {
     /// <summary>
     /// Structural properties that carry no user-supplied payload; redacting them would break log
@@ -71,8 +70,10 @@ public sealed class PiiRedactionLogSink(
         }
         catch (Exception exception)
         {
-            // Never let the redaction sink kill logging; fail closed and forward.
-            logger.LogError(exception, "PII redaction sink failed while processing a log event; failing closed");
+            // Never let the redaction sink kill logging; fail closed and forward. Diagnostics go
+            // to Serilog's SelfLog — resolving an ILogger from inside the logging pipeline would
+            // deadlock the factory during construction.
+            SelfLog.WriteLine("PII redaction sink failed while processing a log event; failing closed: {0}", exception);
             forwarded = FailClosedClone(logEvent);
         }
 
@@ -123,8 +124,7 @@ public sealed class PiiRedactionLogSink(
     {
         if (Interlocked.Exchange(ref failClosedLogged, 1) == 0)
         {
-            logger.LogError(
-                "PII redaction global rule snapshot is unavailable; structured-log sink is failing closed (non-structural string properties are redacted wholesale)");
+            SelfLog.WriteLine("PII redaction global rule snapshot is unavailable; structured-log sink is failing closed (non-structural string properties are redacted wholesale)");
         }
 
         var updatedProperties = new Dictionary<string, LogEventPropertyValue>(logEvent.Properties.Count, StringComparer.Ordinal);

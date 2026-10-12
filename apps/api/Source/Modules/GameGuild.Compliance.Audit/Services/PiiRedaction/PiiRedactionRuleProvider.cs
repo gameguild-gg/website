@@ -66,8 +66,7 @@ public sealed record PiiRedactionCacheStatus(
 
 /// <summary>Default provider backed by the audit DbContext through a scope factory.</summary>
 public sealed class PiiRedactionRuleProvider(
-    IServiceScopeFactory scopeFactory,
-    ILogger<PiiRedactionRuleProvider> logger) : IPiiRedactionRuleProvider
+    IServiceScopeFactory scopeFactory) : IPiiRedactionRuleProvider
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
 
@@ -196,11 +195,8 @@ public sealed class PiiRedactionRuleProvider(
             // Stale-if-error: keep serving the previous snapshot; only fail closed when none exists.
             if (_cache.TryGetValue(ScopeKey(tenantId), out var stale))
             {
-                logger.LogWarning(
-                    exception,
-                    "PII redaction rule refresh failed for scope {Scope}; serving stale snapshot loaded at {LoadedAt}",
-                    ScopeKey(tenantId),
-                    stale.RuleSet.LoadedAt);
+                System.Diagnostics.Trace.TraceWarning(
+                    $"PII redaction rule refresh failed for scope {ScopeKey(tenantId)}; serving stale snapshot loaded at {stale.RuleSet.LoadedAt}: {exception}");
                 return stale.RuleSet;
             }
 
@@ -238,8 +234,7 @@ public sealed class PiiRedactionRuleProvider(
 /// A refresh failure only logs — the provider serves stale snapshots until one succeeds.
 /// </summary>
 public sealed class PiiRedactionRuleRefreshService(
-    IPiiRedactionRuleProvider provider,
-    ILogger<PiiRedactionRuleRefreshService> logger) : BackgroundService
+    IPiiRedactionRuleProvider provider) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
 
@@ -253,7 +248,7 @@ public sealed class PiiRedactionRuleRefreshService(
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                logger.LogWarning(exception, "Periodic PII redaction rule refresh failed; will retry next cycle");
+                System.Diagnostics.Trace.TraceWarning($"Periodic PII redaction rule refresh failed; will retry next cycle: {exception}");
             }
 
             try
