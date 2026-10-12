@@ -84,6 +84,39 @@ public class CompareSubscriptionPlansQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_CompletesWellUnder200Ms_ForTwentyPlans()
+    {
+        // Issue #416: "Plan comparison query completes in <200ms" — warmup first (JIT),
+        // then measure a single comparison over a representative 20-plan set. The
+        // repository lookups are primary-key indexed; the matrix is in-memory.
+        var plans = Enumerable.Range(0, 20).Select(index =>
+        {
+            var plan = new SubscriptionPlan($"Plan {index}", $"plan-{index}", index * 1000) { MaxUsers = 10 * (index + 1) };
+            plan.UpdateFeatures(features: """{"basicFeatures":true,"apiAccess":true,"maxProjects":100}""");
+            return plan;
+        }).ToArray();
+
+        var repository = new Mock<ISubscriptionPlanRepository>();
+        repository
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, CancellationToken _) => plans.FirstOrDefault(plan => plan.Id == id));
+
+        var handler = new CompareSubscriptionPlansQueryHandler(repository.Object);
+        var query = new CompareSubscriptionPlansQuery(plans[0].Id, plans.Skip(1).Select(plan => plan.Id).ToList());
+
+        // Warmup.
+        await handler.Handle(query, CancellationToken.None);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var result = await handler.Handle(query, CancellationToken.None);
+        stopwatch.Stop();
+
+        result.Should().BeOfType<SubscriptionPlanComparisonResponse>()
+            .Which.Plans.Should().HaveCount(20);
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(200);
+    }
+
+    [Fact]
     public async Task Handle_IsLenientWithLegacyFeaturePayloads()
     {
         var legacy = new SubscriptionPlan("Legacy", "legacy", 999);
