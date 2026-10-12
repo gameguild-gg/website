@@ -378,6 +378,11 @@ public sealed class ComplianceEvidenceValidationEngine
             "Exclusions", "FedRAMP applicability is resolved in reviewed SDR decisions; generic exclusions cannot bypass baseline evidence.");
         Require(Soc2ComplianceCatalog.Find(template.Id) is null || request.Exclusions.Count == 0,
             "Exclusions", "Select a SOC2 category scope template and resolve applicability in reviewed mappings; selected criteria cannot be excluded.");
+        Require(HipaaComplianceCatalog.Find(template.Id) is null ||
+            request.Exclusions.All(item => !HipaaComplianceCatalog.CoreRequiredIds.Contains(item.ControlId)),
+            "Exclusions", "HIPAA required safeguards cannot be excluded; addressable safeguards require a reviewed applicability document.");
+        Require(PciDssComplianceCatalog.Find(template.Id) is null || request.Exclusions.Count == 0,
+            "Exclusions", "PCI DSS SAQ A applicability is resolved in the reviewed eligibility declaration; generic exclusions cannot bypass requirement evidence.");
         Require(datasets.Count <= 6 && datasets.Select(item => item.Kind).Distinct().Count() == datasets.Count && datasets.All(item =>
             Enum.IsDefined(item.Kind) && !string.IsNullOrWhiteSpace(item.Source) && item.Source.Length <= 200 &&
             item.Content.Length > 0 && item.Content.Length <= MaximumDatasetBytes && item.RecordCount is >= 0 and <= 50000 &&
