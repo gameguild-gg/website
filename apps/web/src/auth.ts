@@ -4,6 +4,7 @@ import {
   CredentialsProvider,
   GoogleProvider,
   DiscordProvider,
+  GitHubProvider,
   processSession,
   encodeSession,
   SessionStore,
@@ -42,6 +43,14 @@ const result = GameGuildAuth({
           DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [
+          GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
           }),
         ]
       : []),
