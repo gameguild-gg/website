@@ -37,7 +37,6 @@ public class OrchestratedAuthenticationWiringTests
         CompletedSteps = isComplete
             ? [AuthenticationStep.PrimaryCredential, AuthenticationStep.MfaVerification]
             : [AuthenticationStep.PrimaryCredential],
-        IsComplete = isComplete,
         RiskScore = 0.6,
         InitiatedAt = new DateTime(2026, 10, 11, 0, 0, 0, DateTimeKind.Utc),
         ExpiresAt = new DateTime(2026, 10, 11, 0, 15, 0, DateTimeKind.Utc)

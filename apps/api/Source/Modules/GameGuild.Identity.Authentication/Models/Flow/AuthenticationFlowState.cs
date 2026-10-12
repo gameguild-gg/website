@@ -31,9 +31,10 @@ public abstract class AuthenticationFlowState
     public List<AuthenticationStep> CompletedSteps { get; set; } = new List<AuthenticationStep>();
 
     /// <summary>
-    ///     Whether the flow is complete.
+    ///     Whether the flow is complete: derived, like <see cref="NextStep"/>, so a state
+    ///     whose required steps are all satisfied reads complete even before persistence.
     /// </summary>
-    public bool IsComplete { get; set; }
+    public bool IsComplete => RequiredSteps.Count > 0 && RequiredSteps.All(CompletedSteps.Contains);
 
     /// <summary>
     ///     Risk score that triggered additional steps.
