@@ -9,7 +9,7 @@ namespace GameGuild.Commerce.Subscriptions;
 /// <param name="Currency">Plan currency (ISO 4217).</param>
 /// <param name="IsConfiguredPricePoint">
 ///     True when an explicit <see cref="SubscriptionPlanIntervalPrice" /> row backs this
-///     interval; false when the price is derived (monthly &times; months, or the plan's
+///     interval; false when the price is derived (monthly x months, or the plan's
 ///     annual price for the annual interval).
 /// </param>
 /// <param name="MonthlyEquivalentInCents">Price of the interval divided by its month count.</param>
@@ -28,7 +28,7 @@ public sealed record PlanIntervalPricing(
 /// <summary>
 ///     Resolves interval-aware pricing for subscription plans (issue #392). Explicit
 ///     interval price points win over derived prices; the derived fallback keeps the
-///     historical <c>monthly &times; months</c> (and plan annual price) behavior so
+///     historical <c>monthly x months</c> (and plan annual price) behavior so
 ///     existing plans keep their prices until an override is configured.
 /// </summary>
 public interface ISubscriptionIntervalPricingService

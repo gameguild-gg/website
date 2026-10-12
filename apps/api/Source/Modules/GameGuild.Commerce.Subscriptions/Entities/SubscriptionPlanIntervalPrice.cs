@@ -7,7 +7,7 @@ namespace GameGuild.Commerce.Subscriptions;
 ///     Interval-specific price point for a subscription plan (issue #392): the price a
 ///     tenant pays when billed on a given cycle (monthly, quarterly, annually, ...).
 ///     One row per (plan, interval). Plans without a row for an interval fall back to
-///     the derived price (monthly &times; months, or the plan's annual price for the
+///     the derived price (monthly x months, or the plan's annual price for the
 ///     annual interval), so an interval price point is always an explicit override that
 ///     usually encodes a discount for longer commitment. Rows are replaceable only
 ///     through the pricing command; consumers read them as points-in-time configuration.
