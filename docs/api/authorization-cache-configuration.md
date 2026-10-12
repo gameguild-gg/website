@@ -82,6 +82,26 @@ boundary before serving, which also covers entries promoted from L2 to L1.
 A decision whose grants already lapsed is returned once from the authoritative
 evaluation but never cached.
 
+Bulk permission-check decisions (the `IPermissionService` bulk and streaming
+paths, cached under the `permission` cache type with `bulk:v2` keys) carry the
+same expiry envelope. Each cached value is a decision record with
+`EffectiveUntilUtc` — the earliest `ExpiresAt` among the grants that conveyed or
+denied the requested permission for that decision; entries backed by multiple
+participating grants use the minimum remaining lifetime. Writes pass that
+remaining lifetime as the entry TTL, and the cache layers clamp it to the
+configured TTLs, so an explicit TTL only ever shortens them. Reads treat an
+entry whose envelope boundary has passed as a miss (fail closed) and re-evaluate
+from the authoritative grants, so a stable-version cached allow can never
+outlive an expiring grant even when TTL eviction lags (for example after an L2
+promotion or a clock skew). A decision whose floored remaining lifetime is
+already zero is returned once but never cached. The `bulk` segment of the cache
+key was bumped from `v1` to `v2` together with this envelope, so pre-envelope
+boolean entries are never read again. Sustained-throughput and load evidence
+for the bulk path is deliberately not part of the CI suite: it is measured by
+the dedicated `GameGuild.Identity.Authorization.PerformanceTests` BenchmarkDotNet
+projects against a real database, which require a benchmark environment; see
+that project's README.
+
 Bulk invalidation accepts 1–500 typed targets (user, resource, policy, or role/group
 dependency), advances the tenant version once, evicts matching local L1 entries,
 and publishes one versioned Redis event. ACL grant and revoke operations publish
