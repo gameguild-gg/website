@@ -273,6 +273,9 @@ public static class InfrastructureLayerExtensions
         // registration for the promo apply/checkout flows to resolve.
         services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeUsageRecorder, global::GameGuild.Commerce.Products.PromoCodeUsageRecorder>();
         services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeAuditLogger, global::GameGuild.Commerce.Products.PromoCodeAuditLogger>();
+        // Unified pricing engine seam (issue #417): the Products promo engine backs the
+        // Payments-owned promo-discount abstraction; same explicit-registration reason as above.
+        services.AddScoped<global::GameGuild.Commerce.Payments.IPromoDiscountCalculator, global::GameGuild.Commerce.Products.PromoDiscountCalculatorAdapter>();
         logger.LogInformation("Commerce Orders Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)

@@ -107,6 +107,11 @@ public static class PaymentsModule
         // cross-module seams (proration, promo resolution) are Payments-owned abstractions
         // implemented by the Subscriptions and Products modules respectively.
         services.AddScoped<IPricingEngine, PricingEngine>();
+
+        // Fail-closed FX default (issue #417): no quotations configured, so cross-currency
+        // conversions throw instead of guessing — same-currency requests stay exact identity.
+        // Host configuration can Replace this with operator-entered or pinned rates.
+        services.AddManualExchangeRates([]);
         services.AddCurrencyConversion();
         services.AddScoped<IWalletService, WalletService>();
         services.Replace(ServiceDescriptor.Scoped<IOrderPaymentProcessor, OrderPaymentService>());

@@ -49,6 +49,7 @@ public static class DependencyInjection
         // Unified pricing engine seam (issue #417): expose the existing BillingCalculator
         // proration math to the Payments-owned engine abstraction.
         services.AddScoped<IPlanProrationCalculator, PlanProrationCalculator>();
+        services.AddScoped<IBillingCalculator, BillingCalculator>();
         services.AddScoped<IPaymentSubscriptionSyncService, PaymentSubscriptionSyncService>();
 
         // Payment recovery lifecycle (issue #415): dunning suspension after retry exhaustion
