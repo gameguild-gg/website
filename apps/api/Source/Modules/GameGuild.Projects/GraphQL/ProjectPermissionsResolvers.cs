@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using GameGuild.Identity.Authorization;
-using GraphQLAuthorize = HotChocolate.Authorization.AuthorizeAttribute;
 using HotChocolate;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
@@ -8,7 +7,6 @@ using HotChocolate.Types;
 namespace GameGuild.Projects;
 
 [ExtendObjectType(typeof(Project))]
-[GraphQLAuthorize]
 public sealed class ProjectPermissionsResolvers {
   public async Task<bool> CanEdit([Service] IProjectAuthorizationService authorizationService, ClaimsPrincipal user, [Parent] Project project, IResolverContext resolverContext) {
     ArgumentNullException.ThrowIfNull(authorizationService);
