@@ -16,7 +16,7 @@ import type {
   WalletEventHandlers,
 } from '../types';
 import { parseChainId, utf8ToHex } from '../lib/utils';
-import { isUnrecognizedChainError, requestChainSwitch } from './chain-switch';
+import { requestChainSwitch } from './chain-switch';
 
 /** EIP-6963 provider info announced by injected wallets. */
 export interface Eip6963ProviderInfo {
