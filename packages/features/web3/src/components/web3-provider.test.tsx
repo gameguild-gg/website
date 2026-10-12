@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import React from 'react';
 import { Web3Provider } from './web3-provider';
 import { createMetaMaskAdapter } from '../adapters/metamask';
 import { useWeb3, useWallet, useWalletAddress, useChainId } from '../hooks/use-web3';
