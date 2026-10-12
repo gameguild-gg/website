@@ -18,6 +18,8 @@ public sealed class CalculatePricingQueryHandler(IPricingEngine pricingEngine) :
 
     public async Task<PricingCalculationResult> Handle(CalculatePricingQuery request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         IReadOnlyList<string>? discountCodes = string.IsNullOrWhiteSpace(request.DiscountCode)
             ? null
             : new[] { request.DiscountCode.Trim() };

@@ -6,6 +6,11 @@ namespace GameGuild.Commerce.Payments;
 ///     merged into this single definition covering every discount type the promo engine
 ///     can apply plus wallet credits.
 /// </summary>
+/// <remarks>
+///     Numeric values 0–2 are the persisted Payments-module contract (Percentage=0,
+///     FixedAmount=1, FreeMonths=2) and must not be reassigned — existing discount rows
+///     carry them. Consolidation appends the new members from 3 onward.
+/// </remarks>
 public enum DiscountType
 {
     /// <summary>Percentage discount (e.g., 20% off)</summary>
@@ -14,11 +19,11 @@ public enum DiscountType
     /// <summary>Fixed amount discount (e.g., $20 off)</summary>
     FixedAmount = 1,
 
-    /// <summary>Wallet/account credit applied against the total</summary>
-    Credits = 2,
-
     /// <summary>Free billing periods granted (charge waived)</summary>
-    FreeMonths = 3,
+    FreeMonths = 2,
+
+    /// <summary>Wallet/account credit applied against the total</summary>
+    Credits = 3,
 
     /// <summary>Trial extension days granted (charge waived)</summary>
     TrialExtension = 4,
