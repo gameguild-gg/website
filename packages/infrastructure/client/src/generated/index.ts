@@ -24,6 +24,7 @@ export * from './modules/analytics.gen.js';
 export * from './modules/assets-secure-delivery.gen.js';
 export * from './modules/compliance-audit-compliance-packaging.gen.js';
 export * from './modules/compliance-audit.gen.js';
+export * from './modules/compliance-audit-replay.gen.js';
 export * from './modules/compliance-audit-retention-simulation.gen.js';
 export * from './modules/compliance-audit-security-events.gen.js';
 export * from './modules/learning-certificates.gen.js';

@@ -5010,6 +5010,32 @@ export interface ComplianceAuditAuditRelatedAction {
   correlationCount?: number;
 }
 
+/** Safe event fields shared with the Web replay core. UserId may identify a subject;
+            it must not be presented as verified attribution without additional source evidence. */
+export interface ComplianceAuditAuditReplaySnapshotEvent {
+  id?: string | null;
+  actionType?: string | null;
+  correlationId?: string | null;
+  createdAt?: string | null;
+  resourceId?: string | null;
+  resourceType?: string | null;
+  sessionId?: string | null;
+  success?: boolean;
+  tenantId?: string | null;
+  userId?: string | null;
+}
+
+/** Documents the exact canonical JSON response; its digest is delivered in a response header. */
+export interface ComplianceAuditAuditReplaySnapshotOutput {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  schemaVersion?: number;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+}
+
 /** Data model for Compliance Audit Audit Resource Context. */
 export interface ComplianceAuditAuditResourceContext {
   resourceId?: string | null;
@@ -5291,6 +5317,12 @@ export interface ComplianceAuditAuthenticationAuditOutput {
   take?: number;
   totalCount?: number;
   uniqueIpAddresses?: number;
+}
+
+/** Data model for Compliance Audit Capture Audit Replay Request. */
+export interface ComplianceAuditCaptureAuditReplayInput {
+  end: string;
+  start: string;
 }
 
 /** Data model for Compliance Audit Compliance Artifact Entry. */
@@ -21876,6 +21908,8 @@ export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLo
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
 export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
+export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
+export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
 export let ComplianceAuditAuditResourceContextSchema: z.ZodType<ComplianceAuditAuditResourceContext>;
 export let ComplianceAuditAuditRetentionComplianceViolationSchema: z.ZodType<ComplianceAuditAuditRetentionComplianceViolation>;
 export let ComplianceAuditAuditRetentionConfigurationOutputSchema: z.ZodType<ComplianceAuditAuditRetentionConfigurationOutput>;
@@ -21902,6 +21936,7 @@ export let ComplianceAuditAuditStorageTierSchema: z.ZodType<ComplianceAuditAudit
 export let ComplianceAuditAuditStorageTierPriceSchema: z.ZodType<ComplianceAuditAuditStorageTierPrice>;
 export let ComplianceAuditAuthenticationAuditEntrySchema: z.ZodType<ComplianceAuditAuthenticationAuditEntry>;
 export let ComplianceAuditAuthenticationAuditOutputSchema: z.ZodType<ComplianceAuditAuthenticationAuditOutput>;
+export let ComplianceAuditCaptureAuditReplayInputSchema: z.ZodType<ComplianceAuditCaptureAuditReplayInput>;
 export let ComplianceAuditComplianceArtifactEntrySchema: z.ZodType<ComplianceAuditComplianceArtifactEntry>;
 export let ComplianceAuditComplianceArtifactManifestSchema: z.ZodType<ComplianceAuditComplianceArtifactManifest>;
 export let ComplianceAuditComplianceArtifactSealSchema: z.ZodType<ComplianceAuditComplianceArtifactSeal>;
@@ -27869,6 +27904,35 @@ ComplianceAuditAuditRelatedActionSchema = z.object({
   correlationCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditReplaySnapshotEvent. Safe event fields shared with the Web replay core. UserId may identify a subject;
+            it must not be presented as verified attribution without additional source evidence. */
+ComplianceAuditAuditReplaySnapshotEventSchema = z.object({
+  id: z.string().nullable().optional(),
+  actionType: z.string().nullable().optional(),
+  correlationId: z.string().nullable().optional(),
+  createdAt: z.string().nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  sessionId: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+  tenantId: z.string().nullable().optional(),
+  userId: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySnapshotOutput. Documents the exact canonical JSON response; its digest is delivered in a response header. */
+ComplianceAuditAuditReplaySnapshotOutputSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditResourceContext. Data model for Compliance Audit Audit Resource Context. */
 ComplianceAuditAuditResourceContextSchema = z.object({
   resourceId: z.string().nullable().optional(),
@@ -28167,6 +28231,12 @@ ComplianceAuditAuthenticationAuditOutputSchema = z.object({
   take: z.number().int().optional(),
   totalCount: z.number().int().optional(),
   uniqueIpAddresses: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditCaptureAuditReplayInput. Data model for Compliance Audit Capture Audit Replay Request. */
+ComplianceAuditCaptureAuditReplayInputSchema = z.object({
+  end: z.string().datetime(),
+  start: z.string().datetime(),
 });
 
 /** Zod schema for ComplianceAuditComplianceArtifactEntry. Data model for Compliance Audit Compliance Artifact Entry. */

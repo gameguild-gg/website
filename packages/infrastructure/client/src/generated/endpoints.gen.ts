@@ -392,6 +392,24 @@ export const postApiAuditExportJsonEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostApiAuditReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostApiAuditReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postApiAuditReplaySnapshotsEndpoint = {
+  operationId: 'postApiAuditReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInput {
   query?: {
     skip?: number;
@@ -11496,6 +11514,24 @@ export const postAdminAuditLogsExportJsonEndpoint = {
   method: 'POST' as const,
   path: '/v1/admin/audit-logs/export/json' as const,
   tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostAdminAuditLogsReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostAdminAuditLogsReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postAdminAuditLogsReplaySnapshotsEndpoint = {
+  operationId: 'postAdminAuditLogsReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
   requiresAuth: true,
 } as const;
 
@@ -27519,6 +27555,7 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
   postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
@@ -28236,6 +28273,7 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
   getAdminAuditLogsScheduledExportHistoryDownload: getAdminAuditLogsScheduledExportHistoryDownloadEndpoint,
   getAdminAuditLogsScheduledExports: getAdminAuditLogsScheduledExportsEndpoint,
   postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
