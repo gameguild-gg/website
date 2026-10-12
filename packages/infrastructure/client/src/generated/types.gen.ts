@@ -2404,7 +2404,7 @@ export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
 Consolidated (issue #417): the Payments and Subscriptions module duplicates are
 merged into this single definition covering every discount type the promo engine
 can apply plus wallet credits. */
-export type CommercePaymentsDiscountType = 'Percentage' | 'FixedAmount' | 'Credits' | 'FreeMonths' | 'TrialExtension' | 'SetPrice';
+export type CommercePaymentsDiscountType = 'Percentage' | 'FixedAmount' | 'FreeMonths' | 'Credits' | 'TrialExtension' | 'SetPrice';
 
 /** Result of an accept or challenge action on a dispute. */
 export interface CommercePaymentsDisputeActionResult {
@@ -26531,7 +26531,7 @@ CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
 Consolidated (issue #417): the Payments and Subscriptions module duplicates are
 merged into this single definition covering every discount type the promo engine
 can apply plus wallet credits. */
-CommercePaymentsDiscountTypeSchema = z.enum(['Percentage', 'FixedAmount', 'Credits', 'FreeMonths', 'TrialExtension', 'SetPrice']);
+CommercePaymentsDiscountTypeSchema = z.enum(['Percentage', 'FixedAmount', 'FreeMonths', 'Credits', 'TrialExtension', 'SetPrice']);
 
 /** Zod schema for CommercePaymentsDisputeActionResult. Result of an accept or challenge action on a dispute. */
 CommercePaymentsDisputeActionResultSchema = z.object({
