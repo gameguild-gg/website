@@ -402,6 +402,29 @@ public sealed class GraphQLSchemaAuthorizationTests
         public void SetActorContext(ActorContext context) => _actorContext = context;
 
         public void ClearActorContext() => _actorContext = ActorContext.Anonymous;
+
+        public IActorContextScope BeginActorContextScope(ActorContext context)
+        {
+            var previous = _actorContext;
+            SetActorContext(context);
+            return new RestoreScope(this, previous);
+        }
+
+        private sealed class RestoreScope(GraphQLSchemaTestActorContextAccessor accessor, ActorContext previous) : IActorContextScope
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                accessor.SetActorContext(previous);
+            }
+        }
     }
 
     private sealed class GraphQLSchemaFakePermissionResolver : IEffectivePermissionResolver
