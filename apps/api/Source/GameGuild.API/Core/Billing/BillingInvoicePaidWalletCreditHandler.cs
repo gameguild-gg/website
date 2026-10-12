@@ -56,23 +56,19 @@ internal sealed class BillingInvoicePaidWalletCreditHandler(
         }
 
         var referenceId = BuildReferenceId(@event.Provider, @event.ExternalEventId);
-        var previousContext = actorContextAccessor.ActorContext;
-        actorContextAccessor.SetActorContext(ActorContextBuilder.ForSystem("BillingWalletCredit").Build());
-        try
-        {
-            await sender.Send(
-                new AddFundsCommand(
-                    subscription.CreatedByUserId,
-                    @event.Amount,
-                    $"Billing credit: {(@event.Provider)} invoice payment",
-                    referenceId,
-                    @event.Currency),
-                cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            actorContextAccessor.SetActorContext(previousContext);
-        }
+        // The system-actor swap must be visible only inside this dispatch: the ambient
+        // context of the caller (the webhook pipeline) has to survive it intact, so the
+        // swap runs through a scope that repairs the original holder on dispose.
+        using var _ = actorContextAccessor.BeginActorContextScope(
+            ActorContextBuilder.ForSystem("BillingWalletCredit").Build());
+        await sender.Send(
+            new AddFundsCommand(
+                subscription.CreatedByUserId,
+                @event.Amount,
+                $"Billing credit: {(@event.Provider)} invoice payment",
+                referenceId,
+                @event.Currency),
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static string BuildReferenceId(string provider, string externalEventId)
