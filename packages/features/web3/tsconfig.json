@@ -3,13 +3,17 @@
   "extends": "../../tooling/typescript/react.library.tsconfig.json",
   "display": "Web3",
   "compilerOptions": {
-    "composite": true,
-    "paths": {
-      "@game-guild/web3/*": ["./src/*"]
-    }
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noImplicitOverride": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noUncheckedIndexedAccess": false,
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*"],
-  "files": [],
-  "references": [],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }
