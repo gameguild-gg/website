@@ -44,10 +44,13 @@ public sealed record OptionalBundleItemDto(
 ///     Rule-based product recommendations (issue #401, v1): deterministic
 ///     "frequently bought together" from completed-order co-occurrence plus
 ///     bundle-savings hints. Machine-learning personalization is explicitly deferred
-///     (see docs/commerce/product-catalog.md).
+///     (see docs/billing/product-catalog-bundling.md).
 /// </summary>
 /// <param name="ProductId">Anchor product ID</param>
-/// <param name="Take">Maximum frequently-bought-together items to return</param>
+/// <param name="FrequentlyBoughtTogether">Products co-purchased with the anchor, ranked by co-order count</param>
+/// <param name="BundleSuggestions">Published bundles containing the anchor, with savings hints</param>
+/// <param name="CompleteTheBundle">Optional components of the anchor (when it is a bundle)</param>
+/// <param name="Cached">Whether this response was served from the recommendation cache</param>
 public sealed record ProductRecommendationsDto(
     Guid ProductId,
     List<CoPurchaseRecommendationDto> FrequentlyBoughtTogether,
@@ -59,6 +62,8 @@ public sealed record ProductRecommendationsDto(
 /// <summary>
 ///     Query for rule-based product recommendations (issue #401).
 /// </summary>
+/// <param name="ProductId">Anchor product ID</param>
+/// <param name="Take">Maximum frequently-bought-together items to return (1–20)</param>
 public sealed record GetProductRecommendationsQuery(Guid ProductId, int Take = 5)
     : IQuery<ProductRecommendationsDto?>;
 

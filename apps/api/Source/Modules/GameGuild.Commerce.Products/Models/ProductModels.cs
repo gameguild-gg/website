@@ -22,6 +22,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="UpdatedAt">Last update timestamp</param>
 /// <param name="Pricing">Pricing information (optional)</param>
 /// <param name="TenantId">Internal tenant scope; omitted from JSON responses</param>
+/// <param name="CategoryId">Catalog category ID (single category, v1)</param>
 public sealed record ProductDto(
     Guid Id,
     string Name,

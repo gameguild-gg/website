@@ -1,3 +1,4 @@
+using GameGuild.Commerce.Products;
 using GameGuild.CQRS;
 
 namespace GameGuild.Commerce.Orders;

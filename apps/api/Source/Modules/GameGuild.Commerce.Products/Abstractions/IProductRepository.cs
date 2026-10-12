@@ -22,10 +22,10 @@ public interface IProductRepository
         bool? isPublished = null);
 
     /// <summary>
-    /// Get a paginated list of products
+    /// Get a paginated list of products. <paramref name="categoryIds"/> filters by a
+    /// category subtree (issue #401); <paramref name="inStockOnly"/> filters by tracked
+    /// availability (true = in stock only, false = out of stock only).
     /// </summary>
-    /// <param name="categoryIds">Category filter including descendants (issue #401; null = no filter)</param>
-    /// <param name="inStockOnly">Availability filter (issue #401): true = in stock only, false = out of stock only, null = no filter</param>
     Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(
         ProductType? type = null,
         Guid? creatorId = null,

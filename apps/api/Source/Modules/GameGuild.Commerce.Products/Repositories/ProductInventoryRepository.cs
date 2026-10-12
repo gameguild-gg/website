@@ -28,11 +28,12 @@ public interface IProductInventoryRepository
 /// <summary>
 ///     Repository implementation for <see cref="ProductInventory"/> (issue #401).
 /// </summary>
-public class ProductInventoryRepository(IApplicationDbContext context) : IProductInventoryRepository
+public class ProductInventoryRepository(IApplicationDbContext context)
+    : CommerceRepositoryBase<ProductInventory>(context), IProductInventoryRepository
 {
     public Task<ProductInventory?> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        return Context.Set<ProductInventory>()
+        return Entities
             .Where(i => i.ProductId == productId && i.DeletedAt == null)
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -43,19 +44,19 @@ public class ProductInventoryRepository(IApplicationDbContext context) : IProduc
     {
         ArgumentNullException.ThrowIfNull(productIds);
 
-        return Context.Set<ProductInventory>()
+        return Entities
             .Where(i => i.DeletedAt == null && productIds.Contains(i.ProductId))
             .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(ProductInventory inventory, CancellationToken cancellationToken = default)
     {
-        await Context.Set<ProductInventory>().AddAsync(inventory, cancellationToken).ConfigureAwait(false);
+        await Entities.AddAsync(inventory, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(ProductInventory inventory, CancellationToken cancellationToken = default)
+    public new Task UpdateAsync(ProductInventory inventory, CancellationToken cancellationToken = default)
     {
-        Context.Set<ProductInventory>().Update(inventory);
+        Entities.Update(inventory);
         return Task.CompletedTask;
     }
 

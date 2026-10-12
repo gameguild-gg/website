@@ -10,7 +10,7 @@ namespace GameGuild.Commerce.Products;
 public class ProductCategoryRepository(IApplicationDbContext context)
     : CommerceRepositoryBase<ProductCategory>(context), IProductCategoryRepository
 {
-    public async Task<ProductCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public override async Task<ProductCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await Query
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
@@ -119,8 +119,10 @@ public class ProductCategoryRepository(IApplicationDbContext context)
         await Entities.AddAsync(category, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    public new Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default)
     {
+        // Deliberately shadows the base (which saves immediately): handlers persist
+        // explicitly so audit + validation + save stay one unit of work.
         Entities.Update(category);
         return Task.CompletedTask;
     }

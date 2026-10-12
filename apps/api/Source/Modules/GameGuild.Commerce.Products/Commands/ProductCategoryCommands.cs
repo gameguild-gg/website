@@ -255,7 +255,7 @@ public sealed class DeleteProductCategoryCommandHandler(
     IProductCatalogAuditLogger auditLogger)
     : ICommandHandler<DeleteProductCategoryCommand>
 {
-    public async Task Handle(DeleteProductCategoryCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteProductCategoryCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -288,5 +288,7 @@ public sealed class DeleteProductCategoryCommandHandler(
             category.Id,
             new { category.Name, category.Slug },
             cancellationToken).ConfigureAwait(false);
+
+        return Unit.Value;
     }
 }
