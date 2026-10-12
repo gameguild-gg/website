@@ -998,25 +998,34 @@ public class ValidatorValidationTests5
 
 public class SimpleServiceHandlerTests5
 {
-    // JIT Elevation handlers - all take IJitElevationService
+    // JIT Elevation handlers - take IJitElevationService (+ actor/repo deps on the guarded ones)
     [Fact]
     public void JitElevationHandlers_CanBeCreated()
     {
         var service = new Mock<IJitElevationService>();
-        new RequestJitElevationHandler(service.Object).Should().NotBeNull();
-        new ApproveJitElevationHandler(service.Object).Should().NotBeNull();
-        new DenyJitElevationHandler(service.Object).Should().NotBeNull();
-        new RevokeJitElevationHandler(service.Object).Should().NotBeNull();
+        var accessor = new Mock<IActorContextAccessor>();
+        var repository = new Mock<IJitElevationRequestRepository>();
+        var loggerRequest = NullLogger<RequestJitElevationHandler>.Instance;
+        var loggerApprove = NullLogger<ApproveJitElevationHandler>.Instance;
+        var loggerDeny = NullLogger<DenyJitElevationHandler>.Instance;
+        var loggerRevoke = NullLogger<RevokeJitElevationHandler>.Instance;
+        new RequestJitElevationHandler(service.Object, accessor.Object, loggerRequest).Should().NotBeNull();
+        new ApproveJitElevationHandler(service.Object, repository.Object, accessor.Object, loggerApprove).Should().NotBeNull();
+        new DenyJitElevationHandler(service.Object, accessor.Object, loggerDeny).Should().NotBeNull();
+        new RevokeJitElevationHandler(service.Object, accessor.Object, loggerRevoke).Should().NotBeNull();
         new CleanupExpiredElevationsHandler(service.Object).Should().NotBeNull();
     }
 
-    // Delegated Admin handlers - all take IDelegatedAdminService
+    // Delegated Admin handlers - take IDelegatedAdminService + guard/version/audit dependencies
     [Fact]
     public void DelegatedAdminHandlers_CanBeCreated()
     {
         var service = new Mock<IDelegatedAdminService>();
-        new GrantDelegatedAdminHandler(service.Object).Should().NotBeNull();
-        new RevokeDelegatedAdminHandler(service.Object).Should().NotBeNull();
+        var accessor = new Mock<IActorContextAccessor>();
+        var versionStore = new Mock<ITenantSecurityVersionStore>();
+        var audit = new Mock<IPermissionAuditService>();
+        new GrantDelegatedAdminHandler(service.Object, accessor.Object, versionStore.Object, audit.Object).Should().NotBeNull();
+        new RevokeDelegatedAdminHandler(service.Object, accessor.Object, versionStore.Object, audit.Object).Should().NotBeNull();
     }
 
     // SoD handlers - all take ISoDService
@@ -1367,8 +1376,9 @@ public class ServiceConstructorTests5
     {
         var repo = new Mock<IJitElevationRequestRepository>();
         var auditSvc = new Mock<IPermissionAuditService>();
+        var versionStore = new Mock<ITenantSecurityVersionStore>();
         var logger = NullLogger<JitElevationService>.Instance;
-        var svc = new JitElevationService(repo.Object, auditSvc.Object, logger);
+        var svc = new JitElevationService(repo.Object, auditSvc.Object, versionStore.Object, logger);
         svc.Should().NotBeNull();
     }
 
@@ -1410,7 +1420,7 @@ public class ServiceConstructorTests5
         var repo = new Mock<ITenantPermissionRepository>();
         var membershipChecker = new Mock<ITenantMembershipChecker>();
         var logger = NullLogger<PermissionQueryService>.Instance;
-        var svc = new PermissionQueryService(repo.Object, membershipChecker.Object, logger);
+        var svc = new PermissionQueryService(repo.Object, membershipChecker.Object, Mock.Of<IEffectivePermissionResolver>(), logger);
         svc.Should().NotBeNull();
     }
 

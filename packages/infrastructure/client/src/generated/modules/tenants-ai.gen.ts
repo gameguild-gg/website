@@ -20,7 +20,7 @@ export class TenantsAiModule {
    *
    * Retrieves recent AI conversation history for a specific tenant.
    */
-  async getTenantsAiHistory(tenantId: string, query?: { take?: number }): Promise<Result<Array<Types.AIAiConversationHistoryEntryDto>, ApiError>> {
+  async getTenantsAiHistory(tenantId: string, query?: { take?: number }): Promise<Result<Types.AIAiConversationHistoryEntryDto[], ApiError>> {
     const url = `/v1/tenants/${tenantId}/ai/history`;
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class TenantsAiModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AIAiConversationHistoryEntryDto>, ApiError>;
+    return result as Result<Types.AIAiConversationHistoryEntryDto[], ApiError>;
   }
 
   /**

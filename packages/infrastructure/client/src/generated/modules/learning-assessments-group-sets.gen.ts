@@ -18,7 +18,7 @@ export class LearningAssessmentsGroupSetsModule {
   /**
    * List a course's group sets with per-group summaries. Open to any active course member.
    */
-  async getCoursesGroupSets(courseId: string): Promise<Result<Array<Types.LearningAssessmentsGroupSetSummaryDto>, ApiError>> {
+  async getCoursesGroupSets(courseId: string): Promise<Result<Types.LearningAssessmentsGroupSetSummaryDto[], ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets`;
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class LearningAssessmentsGroupSetsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsGroupSetSummaryDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsGroupSetSummaryDto[], ApiError>;
   }
 
   /**
@@ -61,7 +61,7 @@ export class LearningAssessmentsGroupSetsModule {
   /**
    * List the groups of one group set with member display names. Open to any active course member.
    */
-  async getCoursesGroupSetsGroups(courseId: string, setId: string): Promise<Result<Array<Types.LearningAssessmentsGroupDetailDto>, ApiError>> {
+  async getCoursesGroupSetsGroups(courseId: string, setId: string): Promise<Result<Types.LearningAssessmentsGroupDetailDto[], ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets/${setId}/groups`;
 
     const result = await this.client.request({
@@ -70,7 +70,7 @@ export class LearningAssessmentsGroupSetsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsGroupDetailDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsGroupDetailDto[], ApiError>;
   }
 
   /**

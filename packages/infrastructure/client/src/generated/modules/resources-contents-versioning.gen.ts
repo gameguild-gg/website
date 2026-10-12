@@ -298,7 +298,7 @@ export class ResourcesContentsVersioningModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -313,10 +313,7 @@ export class ResourcesContentsVersioningModule {
   /**
    * Get version history for an entity
    */
-  async getApiContentsVersioningEntityHistory(
-    entityType: string,
-    entityId: string,
-  ): Promise<Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>> {
+  async getApiContentsVersioningEntityHistory(entityType: string, entityId: string): Promise<Result<Types.ResourcesContentsContentVersionDto[], ApiError>> {
     const url = `/api/contents/versioning/entity/${entityType}/${entityId}/history`;
 
     const result = await this.client.request({
@@ -325,7 +322,7 @@ export class ResourcesContentsVersioningModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>;
+    return result as Result<Types.ResourcesContentsContentVersionDto[], ApiError>;
   }
 
   /**
@@ -389,7 +386,7 @@ export class ResourcesContentsVersioningModule {
     entityType?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>> {
+  }): Promise<Result<Types.ResourcesContentsContentVersionDto[], ApiError>> {
     const url = '/api/contents/versioning/pending-review';
 
     const result = await this.client.request({
@@ -399,7 +396,7 @@ export class ResourcesContentsVersioningModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>;
+    return result as Result<Types.ResourcesContentsContentVersionDto[], ApiError>;
   }
 }
 

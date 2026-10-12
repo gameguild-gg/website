@@ -25,7 +25,9 @@ public class SubscriptionPlanRepository(IApplicationDbContext context)
 
     public async Task<IEnumerable<SubscriptionPlan>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
-        return await Query.Where(p => p.DeletedAt == null).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
+        // Issue #416: "Public API only returns active, public plans" — plans archived via
+        // :archive (IsActive = false) must not leak into the public active list.
+        return await Query.Where(p => p.DeletedAt == null && p.IsActive).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<SubscriptionPlan>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -35,7 +37,9 @@ public class SubscriptionPlanRepository(IApplicationDbContext context)
 
     public async Task<IEnumerable<SubscriptionPlan>> GetFeaturedAsync(CancellationToken cancellationToken = default)
     {
-        return await Query.Where(p => p.IsFeatured && p.DeletedAt == null).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
+        // Same IsActive guard as GetActiveAsync: the featured list feeds the public pricing
+        // surface (issue #416).
+        return await Query.Where(p => p.IsFeatured && p.DeletedAt == null && p.IsActive).OrderBy(p => p.SortOrder).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<SubscriptionPlan>> SearchByNameAsync(string searchTerm, CancellationToken cancellationToken = default)

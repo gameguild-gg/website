@@ -90,14 +90,20 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         if (replay is not null)
         {
             if (replay.TenantId != request.TenantId || replay.SubjectHash != request.SubjectHash)
+            {
                 throw new InvalidOperationException("KYC onboarding idempotency is bound to another subject.");
+            }
+
             return Map(replay);
         }
 
         var existing = await _db.Set<SumSubApplicantBindingRow>().AsNoTracking()
             .SingleOrDefaultAsync(row => row.TenantId == request.TenantId &&
                                          row.SubjectHash == request.SubjectHash, cancellationToken);
-        if (existing is not null) return Map(existing);
+        if (existing is not null)
+        {
+            return Map(existing);
+        }
 
         var externalUserId = Hash($"{request.TenantId:N}:{request.SubjectHash}");
         var applicant = await _provider.CreateApplicantAsync(
@@ -137,7 +143,11 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         DateTimeOffset receivedAt,
         CancellationToken cancellationToken)
     {
-        if (rawPayload.IsEmpty) throw new ArgumentException("SumSub webhook payload cannot be empty.", nameof(rawPayload));
+        if (rawPayload.IsEmpty)
+        {
+            throw new ArgumentException("SumSub webhook payload cannot be empty.", nameof(rawPayload));
+        }
+
         EnsurePolicyConfigured();
         using var document = JsonDocument.Parse(rawPayload);
         var root = document.RootElement;
@@ -153,8 +163,11 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         if (replay is not null)
         {
             if (replay.PayloadHash != stored.PayloadHash)
+            {
                 throw new KycEvidenceConflictException(
-                    "The SumSub event was replayed with a different payload hash.");
+                "The SumSub event was replayed with a different payload hash.");
+            }
+
             var replayBinding = await _db.Set<SumSubApplicantBindingRow>().AsNoTracking()
                 .SingleOrDefaultAsync(row => row.ApplicantId == applicantId, cancellationToken);
             return new SumSubWebhookIngestionResult(
@@ -267,7 +280,10 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
             ? _policy.ApprovedEvidenceLifetime
             : _policy.ReviewEvidenceLifetime;
         if (lifetime <= TimeSpan.Zero)
+        {
             throw new SumSubNotConfiguredException("KYC evidence lifetimes must be explicitly configured.");
+        }
+
         var envelope = new KycEvidenceSubmission(
             ProviderName, _policy.Environment.Trim(), providerEventId, binding.TenantId,
             binding.SubjectHash, binding.EvidenceVersion + 1, MapResult(state), issuedAt,
@@ -282,18 +298,25 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         CancellationToken cancellationToken)
     {
         if (state != KycAmlState.Approved)
+        {
             return null;
+        }
 
         var status = await _provider.GetStatusAsync(applicantId, cancellationToken);
         if (!string.Equals(status.ApplicantId, applicantId, StringComparison.Ordinal))
+        {
             throw new SumSubProtocolException("SumSub status was returned for another applicant.");
+        }
+
         return RequireApprovedJurisdiction(status);
     }
 
     private static string? RequireApprovedJurisdiction(KycAmlStatus status)
     {
         if (status.State != KycAmlState.Approved)
+        {
             return null;
+        }
 
         return SumSubApplicantJurisdiction.Normalize(status.JurisdictionCode)
             ?? throw new SumSubProtocolException(
@@ -312,13 +335,19 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
     {
         if (_policy.PolicyVersion <= 0 || string.IsNullOrWhiteSpace(_policy.Environment) ||
             string.IsNullOrWhiteSpace(_policy.LevelName))
+        {
             throw new SumSubNotConfiguredException(
-                "SumSub KYC/AML remains disabled until a signed policy version, environment and level are configured.");
+            "SumSub KYC/AML remains disabled until a signed policy version, environment and level are configured.");
+        }
     }
 
     private static void ValidateIdentity(Guid tenantId, string subjectHash)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID cannot be empty.", nameof(tenantId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(subjectHash);
     }
 
@@ -332,7 +361,10 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
     {
         if (root.TryGetProperty("inspectionId", out var inspection) &&
             inspection.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(inspection.GetString()))
+        {
             return inspection.GetString()!;
+        }
+
         var type = root.TryGetProperty("type", out var eventType) ? eventType.GetString() : "unknown";
         return Hash($"{applicantId}:{type}:{issuedAt.UtcTicks}");
     }
@@ -344,8 +376,16 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
                      result.TryGetProperty("reviewAnswer", out var reviewAnswer)
             ? reviewAnswer.GetString()
             : null;
-        if (string.Equals(answer, "GREEN", StringComparison.Ordinal)) return KycAmlState.Approved;
-        if (string.Equals(answer, "RED", StringComparison.Ordinal)) return KycAmlState.Rejected;
+        if (string.Equals(answer, "GREEN", StringComparison.Ordinal))
+        {
+            return KycAmlState.Approved;
+        }
+
+        if (string.Equals(answer, "RED", StringComparison.Ordinal))
+        {
+            return KycAmlState.Rejected;
+        }
+
         return string.Equals(reviewStatus, "pending", StringComparison.Ordinal)
             ? KycAmlState.ApplicantPending
             : string.Equals(reviewStatus, "completed", StringComparison.Ordinal)

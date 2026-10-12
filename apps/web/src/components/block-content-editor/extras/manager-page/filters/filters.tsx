@@ -94,7 +94,7 @@ export function ManagerFilters({
           <>
             <FilterMimeTypes
               selectedTypes={filters.mimeTypes || []}
-              onChange={(types) => onFilterChange({ mimeTypes: types })}
+              onChange={(types) => { onFilterChange({ mimeTypes: types }); }}
             />
 
             <FilterSelect

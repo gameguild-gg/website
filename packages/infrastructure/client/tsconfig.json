@@ -19,6 +19,6 @@
     "types": ["node"],
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*", "scripts/**/*"],
+  "include": ["src/**/*", "scripts/**/*", "examples/**/*", "tsup.config.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist", "tests"]
 }

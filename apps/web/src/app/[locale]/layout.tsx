@@ -13,8 +13,8 @@ export async function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: {
-      template: '%s | Game Guild',
-      default: 'Game Guild',
+      template: '%s | GameGuild',
+      default: 'GameGuild',
     },
   };
 }

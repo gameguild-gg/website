@@ -31,7 +31,7 @@ export class TestingLabTestingParticipantsModule {
 
   /**
    */
-  async getTestingRequestsParticipants(requestId: string): Promise<Result<Array<Types.TestingLabTestingParticipant>, ApiError>> {
+  async getTestingRequestsParticipants(requestId: string): Promise<Result<Types.TestingLabTestingParticipant[], ApiError>> {
     const url = `/v1/testing/requests/${requestId}/participants`;
 
     const result = await this.client.request({
@@ -40,7 +40,7 @@ export class TestingLabTestingParticipantsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingParticipant>, ApiError>;
+    return result as Result<Types.TestingLabTestingParticipant[], ApiError>;
   }
 
   /**
@@ -134,7 +134,7 @@ export class TestingLabTestingParticipantsModule {
 
   /**
    */
-  async getTestingSessionsRegistrations(sessionId: string): Promise<Result<Array<Types.TestingLabSessionRegistration>, ApiError>> {
+  async getTestingSessionsRegistrations(sessionId: string): Promise<Result<Types.TestingLabSessionRegistration[], ApiError>> {
     const url = `/v1/testing/sessions/${sessionId}/registrations`;
 
     const result = await this.client.request({
@@ -143,12 +143,12 @@ export class TestingLabTestingParticipantsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabSessionRegistration>, ApiError>;
+    return result as Result<Types.TestingLabSessionRegistration[], ApiError>;
   }
 
   /**
    */
-  async getTestingSessionsWaitlist(sessionId: string): Promise<Result<Array<Types.TestingLabSessionWaitlist>, ApiError>> {
+  async getTestingSessionsWaitlist(sessionId: string): Promise<Result<Types.TestingLabSessionWaitlist[], ApiError>> {
     const url = `/v1/testing/sessions/${sessionId}/waitlist`;
 
     const result = await this.client.request({
@@ -157,7 +157,7 @@ export class TestingLabTestingParticipantsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabSessionWaitlist>, ApiError>;
+    return result as Result<Types.TestingLabSessionWaitlist[], ApiError>;
   }
 
   /**

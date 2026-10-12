@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
+using GameGuild.Identity.Authentication.UnitTests.Infrastructure;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,8 @@ public class DiscordSignInTests
     private readonly Mock<IRefreshTokenHasher> _refreshTokenHasherMock = new();
     private readonly Mock<IOAuthService> _oauthServiceMock = new();
     private readonly Mock<IGoogleIdTokenVerifier> _googleVerifierMock = new();
+    private readonly Mock<IOidcFederationService> _oidcFederationServiceMock = new();
+    private readonly Mock<IMfaService> _mfaServiceMock = new();
     private readonly Mock<IExternalLoginRepository> _externalLoginRepoMock = new();
     private readonly Mock<IAuthAttemptService> _authAttemptServiceMock = new();
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock = new();
@@ -36,6 +39,7 @@ public class DiscordSignInTests
 
     public DiscordSignInTests()
     {
+        PersistedAuthenticationSessions.Configure(_sessionManagementServiceMock);
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -81,6 +85,10 @@ public class DiscordSignInTests
                 return dto;
             });
 
+        _mfaServiceMock
+            .Setup(x => x.IsMfaRequiredAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
         _senderMock
             .Setup(x => x.Send(It.IsAny<GetUserMembershipsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GetUserMembershipsResponse());
@@ -92,7 +100,7 @@ public class DiscordSignInTests
             .Setup(x => x.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("access-token");
         _jwtTokenServiceMock
-            .Setup(x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("refresh-token");
     }
 
@@ -102,6 +110,8 @@ public class DiscordSignInTests
         _refreshTokenHasherMock.Object,
         _oauthServiceMock.Object,
         _googleVerifierMock.Object,
+        _oidcFederationServiceMock.Object,
+        _mfaServiceMock.Object,
         _externalLoginRepoMock.Object,
         _configuration,
         _authAttemptServiceMock.Object,
@@ -142,7 +152,7 @@ public class DiscordSignInTests
             x => x.UpsertAsync(It.Is<ExternalLogin>(e => e.Provider == "discord" && e.ProviderKey == "discord-snowflake-1"), It.IsAny<CancellationToken>()),
             Times.Once);
         _jwtTokenServiceMock.Verify(
-            x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<CancellationToken>()),
+            x => x.GenerateRefreshTokenAsync(It.IsAny<Guid>(), It.IsAny<DeviceInfo>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _sessionManagementServiceMock.Verify(
             x => x.CreateSessionAsync(

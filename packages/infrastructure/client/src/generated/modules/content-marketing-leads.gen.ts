@@ -24,7 +24,7 @@ export class ContentMarketingLeadsModule {
     search?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.ContentPagesMarketingLeadDto>, ApiError>> {
+  }): Promise<Result<Types.ContentPagesMarketingLeadDto[], ApiError>> {
     const url = '/v1/marketing/leads';
 
     const result = await this.client.request({
@@ -34,7 +34,7 @@ export class ContentMarketingLeadsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ContentPagesMarketingLeadDto>, ApiError>;
+    return result as Result<Types.ContentPagesMarketingLeadDto[], ApiError>;
   }
 
   /**
@@ -49,7 +49,7 @@ export class ContentMarketingLeadsModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

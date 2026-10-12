@@ -32,7 +32,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -61,12 +61,68 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Consume a one-time email sign-in code.
+   *
+   * Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.
+   */
+  async postAuthEmailCodeConsume(body: Types.IdentityAuthenticationConsumeEmailCodeInput): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = '/v1/auth/email-code:consume';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationConsumeEmailCodeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Request a one-time email sign-in code.
+   *
+   * Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.
+   */
+  async postAuthEmailCodeRequest(
+    body: Types.IdentityAuthenticationRequestEmailCodeInput,
+  ): Promise<Result<Types.IdentityAuthenticationEmailCodeRequestResult, ApiError>> {
+    const url = '/v1/auth/email-code:request';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRequestEmailCodeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationEmailCodeRequestResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -90,7 +146,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -119,7 +175,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -134,7 +190,7 @@ export class AuthModule {
   /**
    * List the external logins linked to the current user, newest first.
    *
-   * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.
+   * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked. Granted OAuth scopes (issue #250) are conveyed in the X-Granted-Scopes header as comma-separated 'provider=iso8601-consent-timestamp|consent-version|url-encoded-space-separated-scopes' triples, one entry per link with a recorded consent (consent-version 0 marks a legacy row); the header is omitted when no consents are recorded.
    */
   async headAuthExternalLogins(): Promise<Result<void, ApiError>> {
     const url = '/v1/auth/external-logins';
@@ -151,7 +207,7 @@ export class AuthModule {
   /**
    * Unlink an external provider from the current user.
    *
-   * Removes the external login link for the given provider. Refused with 400 when it is the user's last sign-in method and no password is set.
+   * Removes the external login link for the given provider — this is the whole-provider full revocation of every granted scope and the recorded consent. Refused with 400 when it is the user's last sign-in method and no password is set.
    */
   async deleteAuthExternalLogins(provider: string): Promise<Result<void, ApiError>> {
     const url = `/v1/auth/external-logins/${provider}`;
@@ -163,6 +219,59 @@ export class AuthModule {
     });
 
     return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Preview the scopes a provider link flow will request (authorization-time consent screen data).
+   *
+   * Returns the exact OAuth scopes the provider link flow will request, resolved the same way the authorize step embeds them in the authorization URL. Powers the authorization-time consent surface shown before linking (issue #250).
+   */
+  async getAuthExternalLoginsLinkPreview(provider: string): Promise<Result<Types.IdentityAuthenticationExternalLoginLinkPreviewOutput, ApiError>> {
+    const url = `/v1/auth/external-logins/${provider}/link-preview`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationExternalLoginLinkPreviewOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Revoke individual OAuth scope grants on a linked provider.
+   *
+   * Revokes individual scope grants on a linked provider without unlinking it; the remaining grant state is returned. Idempotent for scopes that are not currently granted. Revoking every remaining scope leaves the link in place with an empty grant list — whole-provider revocation remains the unlink endpoint (DELETE /external-logins/{provider}), which removes the link entirely.
+   */
+  async postAuthExternalLoginsScopesRevoke(
+    provider: string,
+    body: Types.IdentityAuthenticationRevokeExternalLoginScopesInput,
+  ): Promise<Result<Types.IdentityAuthenticationRevokeExternalLoginScopesOutput, ApiError>> {
+    const url = `/v1/auth/external-logins/${provider}/scopes:revoke`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRevokeExternalLoginScopesInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationRevokeExternalLoginScopesOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 
   /**
@@ -248,7 +357,7 @@ export class AuthModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -263,16 +372,21 @@ export class AuthModule {
   /**
    * Handle GitHub OAuth callback
    *
-   * Handles the GitHub OAuth callback, exchanging the authorization code for tokens.
+   * Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.
    */
-  async getAuthGithubCallback(query?: { code?: string; state?: string }): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+  async postAuthGithubCallback(
+    body: Types.IdentityAuthenticationGitHubCallbackRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
     const url = '/v1/auth/github:callback';
 
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationGitHubCallbackRequestDtoSchema, body, 'request');
+
     const result = await this.client.request({
-      method: 'GET',
+      method: 'POST',
       path: url,
-      params: query,
-      requiresAuth: true,
+      body: validatedBody,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -299,7 +413,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -326,7 +440,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -355,12 +469,303 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationMagicLinkRequestResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
+   *
+   * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
+   */
+  async postAuthMfaSignInComplete(
+    body: Types.IdentityAuthenticationCompleteMfaSignInInput,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sign-in/complete';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationCompleteMfaSignInInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Provision the first TOTP factor using only the limited first-factor challenge.
+   *
+   * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
+   */
+  async postAuthMfaSignInEnrollment(
+    body: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput,
+  ): Promise<Result<Types.IdentityAuthenticationMfaSignInEnrollmentOutput, ApiError>> {
+    const url = '/v1/auth/mfa/sign-in/enrollment';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationStartMfaSignInEnrollmentInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationMfaSignInEnrollmentOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Discover federation providers for an email domain
+   *
+   * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+   */
+  async getAuthOidcDiscoverProvider(query?: { email?: string }): Promise<Result<Types.IdentityAuthenticationOidcDiscoverProviderOutput, ApiError>> {
+    const url = '/v1/auth/oidc:discover-provider';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOidcDiscoverProviderOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolve the provider's front-channel logout URL
+   *
+   * Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+   */
+  async getAuthOidcEndSessionUrl(
+    slug: string,
+    query?: { postLogoutRedirectUri?: string },
+  ): Promise<Result<Types.IdentityAuthenticationOidcEndSessionUrlOutput, ApiError>> {
+    const url = `/v1/auth/oidc/${slug}:end-session-url`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOidcEndSessionUrlOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Initiate OIDC federation provider sign-in
+   *
+   * Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.
+   */
+  async postAuthOidcSignInAuthorize(
+    slug: string,
+    body: Types.IdentityAuthenticationOidcAuthorizeRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationOidcSignInOutput, ApiError>> {
+    const url = `/v1/auth/oidc/${slug}:sign-in-authorize`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationOidcAuthorizeRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOidcSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle OIDC federation provider callback
+   *
+   * Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).
+   */
+  async postAuthOidcSignInCallback(
+    slug: string,
+    body: Types.IdentityAuthenticationOidcCallbackRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = `/v1/auth/oidc/${slug}:sign-in-callback`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationOidcCallbackRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Initiate an orchestrated authentication flow
+   *
+   * Validates the local primary credential (identifier + password), assesses sign-in risk and returns the persisted flow state with the required challenge ladder (MFA verification, device trust, risk challenge). Expired, inactive or unknown credentials fail closed.
+   */
+  async postAuthOrchestratedInitiate(
+    body: Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationOrchestratedFlowStateOutput, ApiError>> {
+    const url = '/v1/auth/orchestrated:initiate';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOrchestratedFlowStateOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Get the current state of an orchestrated authentication flow
+   *
+   * Returns the current state of the flow. Abandoned, expired and unknown flows are not observable and return 404.
+   */
+  async getAuthOrchestrated(flowId: string): Promise<Result<Types.IdentityAuthenticationOrchestratedFlowStateOutput, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOrchestratedFlowStateOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Abandon an in-flight orchestrated authentication flow
+   *
+   * Terminates the flow; later step, completion and lookup calls fail closed.
+   */
+  async postAuthOrchestratedAbandon(flowId: string): Promise<Result<void, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}:abandon`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: false,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Complete an orchestrated authentication flow and issue tokens
+   *
+   * Issues access and refresh tokens once every required step of the flow is satisfied. Pending steps, abandoned, expired or already-unknown flows fail closed.
+   */
+  async postAuthOrchestratedComplete(flowId: string): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}:complete`;
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Satisfy one challenge step of an orchestrated authentication flow
+   *
+   * Verifies one challenge step (TOTP code, backup code or WebAuthn assertion) against the persisted flow and returns the updated state. Out-of-order, repeated, abandoned, expired or locked-out steps fail closed.
+   */
+  async postAuthOrchestratedProcessStep(
+    flowId: string,
+    body: Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto,
+  ): Promise<Result<Types.IdentityAuthenticationOrchestratedFlowStateOutput, ApiError>> {
+    const url = `/v1/auth/orchestrated/${flowId}:process-step`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationOrchestratedFlowStateOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -413,7 +818,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -442,12 +847,39 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.IdentityAuthenticationPasswordResetRequestResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   * Authenticate using email, username or international phone and a password.
+   *
+   * Resolves one unique account and applies the existing password, risk, tenant and session flow. Phone identifiers use a leading plus and up to 15 digits. Missing, ambiguous or invalid identifiers receive the generic authentication failure.
+   */
+  async postAuthPolymorphic(body: Types.IdentityAuthenticationPolymorphicSignInInput): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+    const url = '/v1/auth/polymorphic';
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationPolymorphicSignInInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: false,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationSignInOutputSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -469,7 +901,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -496,7 +928,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -523,7 +955,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -571,7 +1003,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -600,7 +1032,7 @@ export class AuthModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

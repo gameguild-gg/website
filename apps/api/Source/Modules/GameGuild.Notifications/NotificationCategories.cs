@@ -16,6 +16,7 @@ public static class NotificationCategories
         NotificationType.EmailVerification,
         NotificationType.PasswordReset,
         NotificationType.MagicLink,
+        NotificationType.EmailCode,
         NotificationType.TenantInvite
     ];
 
@@ -44,11 +45,14 @@ public static class NotificationCategories
             or NotificationType.CertificateIssued => "Achievements",
 
         NotificationType.Billing
-            or NotificationType.MonthlyStatement => "Billing",
+            or NotificationType.MonthlyStatement
+            or NotificationType.InvoiceIssued
+            or NotificationType.PaymentMethodExpiring => "Billing",
 
         NotificationType.EmailVerification
             or NotificationType.PasswordReset
             or NotificationType.MagicLink
+            or NotificationType.EmailCode
             or NotificationType.TenantInvite => "Transactional",
 
         _ => "System"

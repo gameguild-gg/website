@@ -61,7 +61,12 @@ describe('SignInForm', () => {
   });
 
   it('renders navigation links', () => {
-    renderWithUser(<SignInForm magicLinkLabel="Sign in with an email link" />);
+    renderWithUser(
+      <SignInForm
+        magicLinkLabel="Sign in with an email link"
+        emailCodeLabel="Sign in with an email code"
+      />,
+    );
 
     expect(screen.getByText('Sign up')).toHaveAttribute('href', '/sign-up?redirectTo=%2F');
     expect(screen.getByText('Forgot your password?')).toHaveAttribute(
@@ -71,6 +76,10 @@ describe('SignInForm', () => {
     expect(screen.getByText('Sign in with an email link')).toHaveAttribute(
       'href',
       '/magic-link'
+    );
+    expect(screen.getByText('Sign in with an email code')).toHaveAttribute(
+      'href',
+      '/email-code'
     );
     // Terms of Service / Privacy Policy moved to the shared (auth) layout footer.
   });
@@ -121,6 +130,23 @@ describe('SignInForm', () => {
     expect(mockAuth.signIn).toHaveBeenCalledWith('credentials', {
       email: 'test@example.com',
       password: 'password123',
+      rememberMe: false,
+      redirectTo: '/',
+    });
+  });
+
+  it('forwards remember-me opt-in to signIn', async () => {
+    const { user } = renderWithUser(<SignInForm />);
+
+    await user.type(screen.getByLabelText('Email'), 'test@example.com');
+    await user.type(screen.getByLabelText('Password'), 'password123');
+    await user.click(screen.getByLabelText('Remember me on this device'));
+    await user.click(screen.getByRole('button', { name: /sign in$/i }));
+
+    expect(mockAuth.signIn).toHaveBeenCalledWith('credentials', {
+      email: 'test@example.com',
+      password: 'password123',
+      rememberMe: true,
       redirectTo: '/',
     });
   });
@@ -247,6 +273,62 @@ describe('SignInForm', () => {
 /* ------------------------------------------------------------------ */
 /*  Providers slot composition (real GoogleSignInButton)               */
 /* ------------------------------------------------------------------ */
+
+describe("SignInForm MFA", () => {
+  beforeEach(() => {
+    mockAuth = createMockUseAuth();
+  });
+
+  it("completes the limited challenge without resending a password or tenant", async () => {
+    mockAuth.mfaChallenge = {
+      mfaToken: "x".repeat(43),
+      availableMethods: ["TOTP", "BackupCode"],
+    };
+    const { user } = renderWithUser(<SignInForm redirectTo="/dashboard" />);
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Authentication code"), "123456");
+    await user.click(
+      screen.getByRole("button", { name: "Verify and sign in" }),
+    );
+    expect(mockAuth.signIn).toHaveBeenCalledWith("credentials", {
+      mfaToken: "x".repeat(43),
+      method: "Totp",
+      code: "123456",
+      redirectTo: "/dashboard",
+    });
+  });
+
+  it("shows the server setup key inside the existing form after starting enrollment", async () => {
+    mockAuth.mfaChallenge = {
+      mfaToken: "x".repeat(43),
+      availableMethods: ["TOTP"],
+    };
+    mockAuth.startMfaEnrollment.mockResolvedValue({
+      success: true,
+      secretKey: "LOCAL-AUTHENTICATOR-KEY",
+      expiresAt: new Date(Date.now() + 300000).toISOString(),
+      qrCodeUri: "otpauth://totp/Example",
+    });
+    const { user } = renderWithUser(<SignInForm />);
+    await user.click(
+      screen.getByRole("button", { name: "Set up authenticator" }),
+    );
+    expect(
+      await screen.findByText("LOCAL-AUTHENTICATOR-KEY"),
+    ).toBeInTheDocument();
+    expect(mockAuth.signIn).not.toHaveBeenCalled();
+  });
+
+  it("displays recovery codes once and offers acknowledgment", () => {
+    mockAuth.mfaEnrollmentBackupCodes = ["ONE-TIME-RECOVERY"];
+    renderWithUser(<SignInForm />);
+    expect(screen.getByText("ONE-TIME-RECOVERY")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "I saved my codes — continue" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+  });
+});
 
 describe('SignInForm providers slot composition', () => {
   let initializeMock: ReturnType<typeof vi.fn>;

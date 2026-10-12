@@ -1,5 +1,6 @@
 using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Commerce.Payments;
 
@@ -9,6 +10,7 @@ namespace GameGuild.Commerce.Payments;
 public sealed class OrderPaymentService(
     IPaymentRepository paymentRepository,
     IPaymentGateway paymentGateway,
+    IOptions<PaymentRetryOptions> retryOptions,
     ILogger<OrderPaymentService> logger) : IOrderPaymentProcessor, IOrderPaymentAuthority
 {
     internal static readonly TimeSpan SafeProviderReplayWindow = TimeSpan.FromHours(23);
@@ -41,7 +43,8 @@ public sealed class OrderPaymentService(
             paymentGateway.ProviderId,
             orderId: charge.OrderId,
             paymentMethodId: charge.PaymentMethodId,
-            description: $"Payment for order {charge.OrderId}");
+            description: $"Payment for order {charge.OrderId}",
+            maxRetries: retryOptions.Value.MaxRetries);
         var payment = await paymentRepository.AddAsync(proposedPayment, cancellationToken).ConfigureAwait(false);
         if (payment.Id != proposedPayment.Id)
             return await ProcessExistingAsync(payment, charge, cancellationToken).ConfigureAwait(false);
@@ -84,7 +87,7 @@ public sealed class OrderPaymentService(
             }
 
             var providerResult = await paymentGateway
-                .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken)
+                .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken, providerId: payment.Provider)
                 .ConfigureAwait(false);
             return await ApplyGatewayResultAsync(payment, providerResult, cancellationToken).ConfigureAwait(false);
         }
@@ -94,7 +97,7 @@ public sealed class OrderPaymentService(
             if (!string.IsNullOrWhiteSpace(payment.ExternalTransactionId))
             {
                 var providerResult = await paymentGateway
-                    .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken)
+                    .GetPaymentAsync(payment.ExternalTransactionId, cancellationToken, providerId: payment.Provider)
                     .ConfigureAwait(false);
                 return await ApplyGatewayResultAsync(payment, providerResult, cancellationToken).ConfigureAwait(false);
             }
@@ -183,7 +186,12 @@ public sealed class OrderPaymentService(
         GatewayPaymentResult gatewayResult,
         CancellationToken cancellationToken)
     {
-        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, paymentGateway.ProviderId, gatewayResult);
+        // Failover may route the attempt away from the primary gateway (issue #413):
+        // attribute the payment to the gateway that actually answered before binding the
+        // verified provider mapping. When a provider mapping is already bound the mapped
+        // provider stays authoritative (RecordProcessingProvider is a no-op).
+        payment.RecordProcessingProvider(gatewayResult.ProviderId ?? paymentGateway.ProviderId);
+        GatewayPaymentResultBinder.BindVerifiedProviderMapping(payment, payment.Provider, gatewayResult);
         var stateChanged = gatewayResult.ProviderMapping is not null;
 
         if (gatewayResult.Success || gatewayResult.Status == PaymentStatus.Succeeded)
@@ -221,7 +229,10 @@ public sealed class OrderPaymentService(
         {
             payment.MarkAsFailed(
                 gatewayResult.ErrorMessage ?? "Order payment failed.",
-                gatewayResult.ErrorCode);
+                gatewayResult.ErrorCode,
+                maxRetries: retryOptions.Value.MaxRetries,
+                backoffBaseMinutes: retryOptions.Value.BackoffBaseMinutes,
+                backoffMultiplier: retryOptions.Value.BackoffMultiplier);
             stateChanged = true;
         }
 
@@ -274,7 +285,8 @@ public sealed class OrderPaymentService(
             paymentGateway.ProviderId,
             orderId: charge.OrderId,
             paymentMethodId: charge.PaymentMethodId,
-            description: $"Replacement payment for order {charge.OrderId}");
+            description: $"Replacement payment for order {charge.OrderId}",
+            maxRetries: retryOptions.Value.MaxRetries);
         var payment = await paymentRepository.AddAsync(proposedPayment, cancellationToken).ConfigureAwait(false);
         if (payment.Id != proposedPayment.Id)
             return await ProcessExistingAsync(payment, charge, cancellationToken).ConfigureAwait(false);
@@ -290,7 +302,7 @@ public sealed class OrderPaymentService(
             return null;
 
         var cancellation = await paymentGateway
-            .CancelPaymentAsync(payment.ExternalTransactionId, cancellationToken)
+            .CancelPaymentAsync(payment.ExternalTransactionId, cancellationToken, providerId: payment.Provider)
             .ConfigureAwait(false);
         if (cancellation.Success)
             return null;

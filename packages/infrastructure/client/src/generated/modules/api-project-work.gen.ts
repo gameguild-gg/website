@@ -106,7 +106,7 @@ export class ApiProjectWorkModule {
 
   /**
    */
-  async getProjectsWorkHistory(projectId: string, query?: { take?: number }): Promise<Result<Array<Types.APIProjectWorkProjectWorkHistoryDto>, ApiError>> {
+  async getProjectsWorkHistory(projectId: string, query?: { take?: number }): Promise<Result<Types.APIProjectWorkProjectWorkHistoryDto[], ApiError>> {
     const url = `/v1/projects/${projectId}/work/history`;
 
     const result = await this.client.request({
@@ -116,12 +116,12 @@ export class ApiProjectWorkModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIProjectWorkProjectWorkHistoryDto>, ApiError>;
+    return result as Result<Types.APIProjectWorkProjectWorkHistoryDto[], ApiError>;
   }
 
   /**
    */
-  async getProjectsWorkLabels(projectId: string): Promise<Result<Array<Types.APIProjectWorkProjectTaskLabelDto>, ApiError>> {
+  async getProjectsWorkLabels(projectId: string): Promise<Result<Types.APIProjectWorkProjectTaskLabelDto[], ApiError>> {
     const url = `/v1/projects/${projectId}/work/labels`;
 
     const result = await this.client.request({
@@ -130,7 +130,7 @@ export class ApiProjectWorkModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIProjectWorkProjectTaskLabelDto>, ApiError>;
+    return result as Result<Types.APIProjectWorkProjectTaskLabelDto[], ApiError>;
   }
 
   /**
@@ -176,7 +176,7 @@ export class ApiProjectWorkModule {
 
   /**
    */
-  async getProjectsWorkMilestones(projectId: string): Promise<Result<Array<Types.APIProjectWorkProjectMilestoneDto>, ApiError>> {
+  async getProjectsWorkMilestones(projectId: string): Promise<Result<Types.APIProjectWorkProjectMilestoneDto[], ApiError>> {
     const url = `/v1/projects/${projectId}/work/milestones`;
 
     const result = await this.client.request({
@@ -185,7 +185,7 @@ export class ApiProjectWorkModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIProjectWorkProjectMilestoneDto>, ApiError>;
+    return result as Result<Types.APIProjectWorkProjectMilestoneDto[], ApiError>;
   }
 
   /**

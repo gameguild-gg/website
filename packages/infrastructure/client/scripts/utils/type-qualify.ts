@@ -19,6 +19,15 @@ const BOOLEAN_LITERAL_TYPES = new Set(['true', 'false']);
  * Primitives and built-in types are left as-is.
  */
 export function qualifyType(type: string, namespace = 'Types'): string {
+  // Qualify the element, not the complete bracket-array expression.
+  if (type.endsWith('[]')) {
+    const item = type.slice(0, -2);
+    if (item.startsWith('(') && item.endsWith(')')) {
+      return `(${qualifyType(item.slice(1, -1), namespace)})[]`;
+    }
+    return `${qualifyType(item, namespace)}[]`;
+  }
+
   // Handle inline object types
   if (type.startsWith('{') || type.startsWith('(')) {
     return type;
@@ -33,6 +42,10 @@ export function qualifyType(type: string, namespace = 'Types'): string {
   // Handle union types (e.g. "string | null")
   if (type.includes(' | ')) {
     return type.split(' | ').map(t => qualifyType(t.trim(), namespace)).join(' | ');
+  }
+
+  if (type.includes(' & ')) {
+    return type.split(' & ').map(t => qualifyType(t.trim(), namespace)).join(' & ');
   }
 
   // Handle Record<K,V>

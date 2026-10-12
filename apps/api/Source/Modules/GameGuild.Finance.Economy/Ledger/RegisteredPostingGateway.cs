@@ -12,10 +12,26 @@ public sealed record RegisteredPostingAuthority
         string riskOperationFingerprint,
         long expectedCounterVersion)
     {
-        if (capabilityId == Guid.Empty) throw new ArgumentException("Capability ID is required.", nameof(capabilityId));
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
-        if (riskDecisionId == Guid.Empty) throw new ArgumentException("Risk decision ID is required.", nameof(riskDecisionId));
+        if (capabilityId == Guid.Empty)
+        {
+            throw new ArgumentException("Capability ID is required.", nameof(capabilityId));
+        }
+
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
+        if (riskDecisionId == Guid.Empty)
+        {
+            throw new ArgumentException("Risk decision ID is required.", nameof(riskDecisionId));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(riskOperationFingerprint);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(expectedCounterVersion);
 
@@ -47,7 +63,9 @@ public sealed record RegisteredPostingAllocation
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amountUnits);
         ArgumentNullException.ThrowIfNull(rootRanges);
         if (rootRanges.Count == 0)
+        {
             throw new ArgumentException("Every allocation must carry its root trace ranges.", nameof(rootRanges));
+        }
 
         LineSequence = lineSequence;
         ParentLotId = parentLotId;
@@ -72,13 +90,24 @@ public sealed record RegisteredPostingRequest
         ArgumentNullException.ThrowIfNull(authority);
         ArgumentNullException.ThrowIfNull(posting);
         if (posting.Lines.Count == 0)
+        {
             throw new ArgumentException("A registered posting requires journal lines.", nameof(posting));
+        }
+
         if (posting.Lines.Select(line => line.Sequence).Distinct().Count() != posting.Lines.Count)
+        {
             throw new ArgumentException("Journal line sequences must be unique.", nameof(posting));
+        }
+
         if (allocations?.GroupBy(allocation => allocation.LineSequence).Any(group => !posting.Lines.Any(line => line.Sequence == group.Key)) == true)
+        {
             throw new ArgumentException("Every allocation must target a posting line.", nameof(allocations));
+        }
+
         if (dispatchSnapshotHash is { Length: > 128 })
+        {
             throw new ArgumentException("Dispatch snapshot hashes cannot exceed 128 characters.", nameof(dispatchSnapshotHash));
+        }
 
         Authority = authority;
         Posting = posting;

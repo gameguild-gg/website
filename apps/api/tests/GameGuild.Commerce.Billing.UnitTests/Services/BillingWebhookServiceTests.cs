@@ -149,5 +149,6 @@ public class BillingWebhookServiceTests
             billingService,
             externalIdService)
     {
+        protected override string ProviderName => PaymentProviders.Stripe;
     }
 }

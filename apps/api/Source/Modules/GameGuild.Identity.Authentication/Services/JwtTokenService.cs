@@ -1,8 +1,10 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using GameGuild;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.Configuration.PresentationLayer.Authorization;
 using GameGuild.Identity.Authorization;
@@ -15,7 +17,7 @@ namespace GameGuild.Identity.Authentication;
 
 /// <summary>
 ///     JWT token service for generating and validating access tokens and refresh tokens.
-///     Supports RS256 (asymmetric) and HS256 (symmetric) algorithms.
+///     Issues and accepts HS256 tokens using the configured symmetric key.
 /// </summary>
 public sealed class JwtTokenService(
     ILogger<JwtTokenService> logger,
@@ -24,10 +26,26 @@ public sealed class JwtTokenService(
     IHttpContextAccessor httpContextAccessor,
     IOptions<JwtOptions> jwtOptions,
     IAuthorizationGroupMembershipProvider? groupMembershipProvider = null,
-    IOptions<AuthorizationTokenOptions>? authorizationTokenOptions = null) : IJwtTokenService
+    IOptions<AuthorizationTokenOptions>? authorizationTokenOptions = null,
+    IRefreshTokenLifecycleRecorder? lifecycleRecorder = null) : IJwtTokenService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly AuthorizationTokenOptions _authorizationTokenOptions = authorizationTokenOptions?.Value ?? new AuthorizationTokenOptions();
+
+    private static readonly FrozenSet<string> ReservedAdditionalClaimTypes = new[]
+    {
+        JwtRegisteredClaimNames.Sub, JwtRegisteredClaimNames.Iss, JwtRegisteredClaimNames.Aud,
+        JwtRegisteredClaimNames.Exp, JwtRegisteredClaimNames.Nbf, JwtRegisteredClaimNames.Iat,
+        JwtRegisteredClaimNames.Jti, JwtRegisteredClaimNames.Email,
+        ClaimTypes.NameIdentifier, ClaimTypes.Role, ClaimTypes.Email,
+        "role", "roles", "token_version", "auth_time", "tid", "sid",
+        "perm", "role_id", "group_id", "udt", "amr", "acr",
+        "actor_kind", "actor_type", "client_id", "grant_type", "scope",
+        ClaimNames.UserId, ClaimNames.TenantId, ClaimNames.Group,
+        ClaimNames.MfaVerified, ClaimNames.MfaTime, ClaimNames.MfaTimestamp, ClaimNames.EmailVerified,
+        JwtClaimTypes.TenantId, JwtClaimTypes.SessionId, JwtClaimTypes.MfaEnabled,
+        JwtClaimTypes.TenantPermissionFlags1, JwtClaimTypes.TenantPermissionFlags2
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     ///     Generates a JWT access token with user claims.
@@ -42,7 +60,8 @@ public sealed class JwtTokenService(
             tokenVersion,
             new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
             null,
-            cancellationToken);
+            cancellationToken,
+            null);
     }
 
     public Task<string> GenerateAccessTokenAsync(
@@ -62,7 +81,8 @@ public sealed class JwtTokenService(
             tokenVersion,
             new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
             sessionId,
-            cancellationToken);
+            cancellationToken,
+            null);
     }
 
     public Task<string> GenerateAccessTokenAsync(
@@ -74,7 +94,7 @@ public sealed class JwtTokenService(
         DateTimeOffset authenticatedAt,
         CancellationToken cancellationToken = default)
     {
-        return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt, null, cancellationToken);
+        return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt, null, cancellationToken, null);
     }
 
     public Task<string> GenerateAccessTokenAsync(
@@ -87,7 +107,19 @@ public sealed class JwtTokenService(
         Guid sessionId,
         CancellationToken cancellationToken = default)
     {
-        return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt, sessionId, cancellationToken);
+        return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt, sessionId, cancellationToken, null);
+    }
+
+    public Task<string> GenerateMfaAccessTokenAsync(Guid userId, string email, string[] roles, Guid? tenantId,
+        int tokenVersion, DateTimeOffset authenticatedAt, Guid sessionId, SignInMfaProof proof,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(proof);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (sessionId == Guid.Empty) { throw new AuthenticationRequiredException("An authenticated session is required."); }
+        proof.RequireBinding(userId, tenantId, tokenVersion, authenticatedAt, DateTimeOffset.UtcNow);
+        return GenerateAccessTokenCoreAsync(userId, email, roles, tenantId, tokenVersion, authenticatedAt,
+            sessionId, cancellationToken, null, proof);
     }
 
     private async Task<string> GenerateAccessTokenCoreAsync(
@@ -98,7 +130,9 @@ public sealed class JwtTokenService(
         int tokenVersion,
         DateTimeOffset authenticatedAt,
         Guid? sessionId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IEnumerable<Claim>? additionalClaims,
+        SignInMfaProof? mfaProof = null)
     {
         if (roles == null) throw new ArgumentNullException(nameof(roles));
 
@@ -126,6 +160,21 @@ public sealed class JwtTokenService(
 
             // Add tenant claim if multi-tenant
             if (tenantId.HasValue) { claims.Add(new Claim("tenant_id", tenantId.Value.ToString())); }
+
+            if (additionalClaims is not null)
+            {
+                AppendAdditionalClaims(claims, additionalClaims);
+            }
+
+            if (mfaProof is not null)
+            {
+                mfaProof.RequireBinding(userId, tenantId, tokenVersion, authenticatedAt, DateTimeOffset.UtcNow);
+                claims.Add(new Claim("amr", "mfa"));
+                if (mfaProof.FirstFactor == SignInFirstFactor.Password) { claims.Add(new Claim("amr", "pwd")); }
+                if (mfaProof.Method == MfaMethod.Totp) { claims.Add(new Claim("amr", "otp")); }
+                claims.Add(new Claim(ClaimNames.MfaVerified, "true"));
+                claims.Add(new Claim(ClaimNames.MfaTime, mfaProof.VerifiedAt.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64));
+            }
 
             if (groupMembershipProvider is not null)
             {
@@ -172,15 +221,27 @@ public sealed class JwtTokenService(
             cancellationToken);
     }
 
-    public async Task<string> GenerateRefreshTokenAsync(
+    public Task<string> GenerateRefreshTokenAsync(
         Guid userId,
         DeviceInfo deviceInfo,
         DateTimeOffset authenticatedAt,
         CancellationToken cancellationToken = default)
     {
-        if (deviceInfo == null) throw new ArgumentNullException(nameof(deviceInfo));
+        return GenerateRefreshTokenAsync(userId, deviceInfo, authenticatedAt, expiresAt: null, cancellationToken);
+    }
 
-        logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, deviceInfo.DeviceId);
+    public async Task<string> GenerateRefreshTokenAsync(
+        Guid userId,
+        DeviceInfo deviceInfo,
+        DateTimeOffset authenticatedAt,
+        DateTime? expiresAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (deviceInfo == null) throw new ArgumentNullException(nameof(deviceInfo));
+        cancellationToken.ThrowIfCancellationRequested();
+        RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.Issued);
+
+        logger.LogInformation("Generating refresh token for user: {UserId}, Device: {DeviceId}", userId, LogRedaction.Sanitize(deviceInfo.DeviceId));
 
         try
         {
@@ -215,13 +276,20 @@ public sealed class JwtTokenService(
                     Token = hashedToken, // Store hash, not plaintext
                     CreatedByIp = httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0",
                     CreatedAt = authenticatedAt.UtcDateTime,
-                    ExpiresAt = SystemClock.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
+                    // The caller-resolved deadline is authoritative so the persisted token row matches
+                    // the session policy (persistent "remember me" vs standard lifetime).
+                    ExpiresAt = expiresAt ?? SystemClock.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
                     IsRevoked = false
                 };
 
                 try
                 {
                     await refreshTokenRepository.CreateAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+                    if (lifecycleRecorder is not null)
+                    {
+                        await lifecycleRecorder.RecordMutationAsync(new RefreshTokenLifecycleEvent(RefreshTokenLifecycleOperation.Issued,
+                            userId, refreshToken.Id), cancellationToken).ConfigureAwait(false);
+                    }
 
                     logger.LogInformation("Refresh token generated and stored: {TokenId}, Expires: {ExpiresAt}", refreshToken.Id, refreshToken.ExpiresAt);
 
@@ -339,6 +407,8 @@ public sealed class JwtTokenService(
     /// </summary>
     public async Task<bool> RevokeRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        RefreshTokenLifecycleMetrics.RecordAttempt(RefreshTokenLifecycleOperation.Revoked);
         logger.LogInformation("Revoking refresh token");
 
         try
@@ -365,6 +435,11 @@ public sealed class JwtTokenService(
             refreshToken.RevokedAt = SystemClock.UtcNow;
 
             await refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+            if (lifecycleRecorder is not null)
+            {
+                await lifecycleRecorder.RecordMutationAsync(new RefreshTokenLifecycleEvent(RefreshTokenLifecycleOperation.Revoked,
+                    refreshToken.UserId, refreshToken.Id, refreshToken.SessionId), cancellationToken).ConfigureAwait(false);
+            }
 
             logger.LogInformation("Refresh token revoked: {TokenId}", refreshToken.Id);
 
@@ -473,10 +548,10 @@ public sealed class JwtTokenService(
     /// </summary>
     public string GenerateAccessToken(Guid userId, string email, string[ ] roles, IEnumerable<Claim> additionalClaims)
     {
-        // NOTE: Additional claims are not yet forwarded to GenerateAccessTokenAsync because
-        // the async overload does not accept an additionalClaims parameter. When the async
-        // method is extended, wire the claims through here.
-        return GenerateAccessTokenAsync(userId, email, roles, null, tokenVersion: 1, CancellationToken.None).GetAwaiter().GetResult();
+        ArgumentNullException.ThrowIfNull(additionalClaims);
+        return GenerateAccessTokenCoreAsync(userId, email, roles, null, 1,
+            new DateTimeOffset(DateTime.SpecifyKind(SystemClock.UtcNow, DateTimeKind.Utc)),
+            null, CancellationToken.None, additionalClaims).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -522,9 +597,32 @@ public sealed class JwtTokenService(
             ValidateIssuerSigningKey = _jwtOptions.ValidateIssuerSigningKey,
             ValidIssuer = _jwtOptions.Issuer,
             ValidAudience = _jwtOptions.Audience,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey)),
             ClockSkew = TimeSpan.FromSeconds(_jwtOptions.ClockSkewSeconds)
         };
+
+    private void AppendAdditionalClaims(List<Claim> destination, IEnumerable<Claim> additionalClaims)
+    {
+        foreach (var claim in additionalClaims)
+        {
+            if (claim is null || string.IsNullOrWhiteSpace(claim.Type) || IsReservedAdditionalClaim(claim.Type))
+            {
+                throw new ArgumentException(
+                    "Additional claims must have a non-reserved claim type.", nameof(additionalClaims));
+            }
+
+            destination.Add(claim.Clone());
+        }
+    }
+
+    private bool IsReservedAdditionalClaim(string claimType) =>
+        ReservedAdditionalClaimTypes.Contains(claimType)
+        || string.Equals(claimType, _authorizationTokenOptions.TenantClaimType, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(claimType, _authorizationTokenOptions.UserDefaultTenantClaimType, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(claimType, _authorizationTokenOptions.PermissionClaimType, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(claimType, _authorizationTokenOptions.RoleIdClaimType, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(claimType, _authorizationTokenOptions.GroupIdClaimType, StringComparison.OrdinalIgnoreCase);
 
     private static void EnsureExpectedSigningAlgorithm(SecurityToken securityToken)
     {

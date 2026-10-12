@@ -164,6 +164,7 @@ public sealed class CacheMetricsService : ICacheMetricsService
     private readonly Counter<long> _missesCounter;
     private readonly Counter<long> _evictionsCounter;
     private readonly Histogram<double> _lookupDurationHistogram;
+    private readonly bool _enabled;
 
     private long _l1Hits;
     private long _l2Hits;
@@ -177,8 +178,9 @@ public sealed class CacheMetricsService : ICacheMetricsService
     /// <summary>
     ///     Initializes a new instance of <see cref="CacheMetricsService"/>.
     /// </summary>
-    public CacheMetricsService()
+    public CacheMetricsService(bool enabled = true)
     {
+        _enabled = enabled;
         _hitsCounter = Meter.CreateCounter<long>(
             "authorization_cache_hits",
             "hits",
@@ -203,6 +205,11 @@ public sealed class CacheMetricsService : ICacheMetricsService
     /// <inheritdoc />
     public void RecordHit(CacheLevel cacheLevel, string cacheType)
     {
+        if (!_enabled)
+        {
+            return;
+        }
+
         var tags = new TagList(
         [
             new KeyValuePair<string, object?>("cache_level", cacheLevel.ToString()),
@@ -211,9 +218,13 @@ public sealed class CacheMetricsService : ICacheMetricsService
         _hitsCounter.Add(1, tags);
 
         if (cacheLevel == CacheLevel.L1)
+        {
             Interlocked.Increment(ref _l1Hits);
+        }
         else
+        {
             Interlocked.Increment(ref _l2Hits);
+        }
 
         UpdateTypeStats(cacheType, cacheLevel, isHit: true);
     }
@@ -221,6 +232,11 @@ public sealed class CacheMetricsService : ICacheMetricsService
     /// <inheritdoc />
     public void RecordMiss(string cacheType)
     {
+        if (!_enabled)
+        {
+            return;
+        }
+
         var tags = new TagList(
         [
             new KeyValuePair<string, object?>("cache_type", cacheType)
@@ -239,6 +255,11 @@ public sealed class CacheMetricsService : ICacheMetricsService
             throw new ArgumentOutOfRangeException(nameof(duration), "Cache lookup duration cannot be negative.");
         }
 
+        if (!_enabled)
+        {
+            return;
+        }
+
         var tags = new TagList(
         [
             new KeyValuePair<string, object?>("cache_type", cacheType)
@@ -251,6 +272,11 @@ public sealed class CacheMetricsService : ICacheMetricsService
     /// <inheritdoc />
     public void RecordEviction(CacheLevel cacheLevel, string cacheType, string reason = "explicit")
     {
+        if (!_enabled)
+        {
+            return;
+        }
+
         var tags = new TagList(
         [
             new KeyValuePair<string, object?>("cache_level", cacheLevel.ToString()),
@@ -327,9 +353,13 @@ public sealed class CacheMetricsService : ICacheMetricsService
             if (isHit)
             {
                 if (cacheLevel == CacheLevel.L1)
+                {
                     stats.L1Hits++;
+                }
                 else
+                {
                     stats.L2Hits++;
+                }
             }
             else
             {

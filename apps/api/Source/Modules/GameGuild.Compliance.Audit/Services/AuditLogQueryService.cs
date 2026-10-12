@@ -12,7 +12,8 @@ namespace GameGuild.Compliance.Audit;
 public class AuditLogQueryService(
     IApplicationDbContext context,
     IPermissionAuditLogRepository permissionAuditRepository,
-    ILogger<AuditLogQueryService> _logger) : IAuditLogQueryService
+    ILogger<AuditLogQueryService> _logger,
+    IAuditDataAccessRecorder? accessRecorder = null) : IAuditLogQueryService
 {
     public async Task<UnifiedSecurityAuditResponse> GetUnifiedAuditLogsAsync(
         UnifiedSecurityAuditRequest request,
@@ -73,6 +74,11 @@ public class AuditLogQueryService(
             .Take(request.Take)
             .ToList();
 
+        if (accessRecorder is not null)
+        {
+            await accessRecorder.RecordAsync(pagedEntries.Where(entry => entry.SourceType == SecurityAuditSourceType.General)
+                .Select(entry => new AuditAccessedRecord(entry.TenantId, entry.Timestamp)), cancellationToken).ConfigureAwait(false);
+        }
         return new UnifiedSecurityAuditResponse
         {
             Entries = pagedEntries,

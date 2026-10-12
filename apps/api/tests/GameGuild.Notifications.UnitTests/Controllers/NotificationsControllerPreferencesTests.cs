@@ -112,12 +112,19 @@ public class NotificationsControllerPreferencesTests
         catalog.Should().OnlyContain(e => knownCategories.Contains(e.Category));
 
         var transactional = catalog.Where(e => !e.Suppressible).Select(e => e.Type).ToList();
-        transactional.Should().BeEquivalentTo(["EmailVerification", "PasswordReset", "MagicLink", "TenantInvite"]);
+        transactional.Should().BeEquivalentTo(["EmailVerification", "PasswordReset", "MagicLink", "EmailCode", "TenantInvite"]);
 
         var monthlyStatement = catalog.Single(e => e.Type == "MonthlyStatement");
         monthlyStatement.Category.Should().Be("Billing");
         monthlyStatement.Suppressible.Should().BeTrue();
         monthlyStatement.DisplayName.Should().Be("Monthly Statement");
+
+        // Issue #414: card-expiry reminders are a Billing notification (suppressible like
+        // monthly statements; delivery is re-attempted never — horizon markers persist).
+        var paymentMethodExpiring = catalog.Single(e => e.Type == "PaymentMethodExpiring");
+        paymentMethodExpiring.Category.Should().Be("Billing");
+        paymentMethodExpiring.Suppressible.Should().BeTrue();
+        paymentMethodExpiring.DisplayName.Should().Be("Payment Method Expiring");
 
         var courseEnrollment = catalog.Single(e => e.Type == "CourseEnrollment");
         courseEnrollment.Category.Should().Be("Learning");

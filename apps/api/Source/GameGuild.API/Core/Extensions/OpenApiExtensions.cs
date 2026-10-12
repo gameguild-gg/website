@@ -91,7 +91,10 @@ public static class OpenApiExtensions
 
                 if (provider is not null)
                 {
-                    foreach (var description in provider.ApiVersionDescriptions)
+                    var groupFormat = providerScope.GetService<ApiVersioningOptions>()?.GroupNameFormat
+                        ?? VersionedOpenApiDocumentCatalog.DefaultGroupNameFormat;
+                    var documentSelector = new VersionedOpenApiDocumentSelector(provider.ApiVersionDescriptions, groupFormat);
+                    foreach (var description in documentSelector.Descriptions)
                     {
                         c.SwaggerDoc(
                             description.GroupName,
@@ -106,20 +109,10 @@ public static class OpenApiExtensions
                         }
                     }
 
-                    // Ensure only endpoints from the corresponding API version are included in each document
-                    // Check API version instead of GroupName to allow custom ApiExplorerSettings GroupName
+                    // Select the explorer's resolved version while retaining custom endpoint groups.
                     c.DocInclusionPredicate((docName, apiDesc) =>
-                        {
-                            var baseDocumentName = OpenApiLocalizationOptions.GetBaseDocumentName(docName, locales);
-                            if (apiDesc.ActionDescriptor is not ControllerActionDescriptor cad)
-                                return string.Equals(apiDesc.GroupName, baseDocumentName, StringComparison.OrdinalIgnoreCase);
-
-                            if (cad.ControllerTypeInfo.GetCustomAttributes(typeof(ApiVersionAttribute), false)
-                                    .FirstOrDefault() is not ApiVersionAttribute apiVersionAttr)
-                                return string.Equals(apiDesc.GroupName, baseDocumentName, StringComparison.OrdinalIgnoreCase);
-                            return apiVersionAttr.Versions.Any(version =>
-                                baseDocumentName.Equals($"v{version.MajorVersion}", StringComparison.OrdinalIgnoreCase));
-                        }
+                        documentSelector.Includes(
+                            OpenApiLocalizationOptions.GetBaseDocumentName(docName, locales), apiDesc)
                     );
                 }
                 else
@@ -208,6 +201,7 @@ public static class OpenApiExtensions
                 c.OperationFilter<ModuleControllerTagOperationFilter>();
                 c.OperationFilter<ConfiguredSecurityOperationFilter>(options);
                 c.OperationFilter<AllowAnonymousOperationFilter>();
+                c.OperationFilter<DeclaredResponseContentTypesOperationFilter>();
                 var xmlPaths = Directory.EnumerateFiles(AppContext.BaseDirectory, "GameGuild.*.xml")
                     .OrderBy(path => path, StringComparer.Ordinal)
                     .ToArray();

@@ -65,7 +65,10 @@ public sealed class TestAuthHandler(
 
         IEnumerable<string> ReadHeaderValues(string headerName)
         {
-            if (!Request.Headers.TryGetValue(headerName, out var values)) return [];
+            if (!Request.Headers.TryGetValue(headerName, out var values))
+            {
+                return [];
+            }
 
             return values
                 .SelectMany(value => value?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [])
@@ -106,7 +109,10 @@ internal static class TestTenantMembershipServices
     {
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        if (context.Set<Tenant>().Any(tenant => tenant.Id == TestAuthHandler.DefaultTenantId)) return;
+        if (context.Set<Tenant>().Any(tenant => tenant.Id == TestAuthHandler.DefaultTenantId))
+        {
+            return;
+        }
 
         context.Set<Tenant>().Add(new Tenant
         {

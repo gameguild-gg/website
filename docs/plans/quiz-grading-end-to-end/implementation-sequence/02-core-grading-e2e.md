@@ -8,6 +8,22 @@ e coletivo. Esta parte contém `SEQ-07` a `SEQ-11`.
 
 Regras globais: [`08-implementation-sequence.md`](../08-implementation-sequence.md).
 
+## Estado após a primeira execução
+
+`SEQ-07` a `SEQ-11` já receberam sua primeira implementação. A auditoria
+pós-merge confirmou o núcleo entregue, mas encontrou pendências de autoridade
+peer paralela, E2E HTTP + PostgreSQL e upgrade pela cadeia real de migrations.
+
+O fechamento corretivo foi implementado em 30 de setembro de 2026. Os gates de
+grading estão aprovados e a Parte 3 de acesso contextual está liberada. Erros
+preexistentes do typecheck web em módulos mantidos por outros desenvolvedores
+estão registrados como diagnósticos não bloqueantes no plano de fechamento. A
+solução completa da API compila sem erros.
+
+Não reexecutar esta Parte 2 nem seu
+[`plano de fechamento`](./02a-core-grading-e2e-closeout.md). Ambos estão
+concluídos; preservar suas evidências ao iniciar a Parte 3.
+
 ## Pré-requisitos
 
 - Parte 1 concluída, testada e aprovada em seu gate de saída;
@@ -351,7 +367,7 @@ preservando a cadeia, os dados e os artefatos SQL fora do `IModel`.
   atividade sem contribuição e peso positivo aplica a contribuição canônica;
 - manter nesta parte a fila docente oficial mínima e o deep link necessários
   ao `InstructorReview`; filtros e operação entre assessments permanecem na
-  Parte 3;
+  Parte 4;
 - bloquear temporariamente start e submit de assessment coletivo no novo
   runtime até `SEQ-11` substituir o fan-out atual; não permitir que o caminho
   coletivo anterior continue produzindo resultado oficial.
@@ -561,6 +577,15 @@ coletivo, reprocessamento idempotente, autorização negativa e reconstrução d
 projeção mínima de gradebook e progresso, além da reprodução da entrega
 concreta pelo `DeliveryHash`.
 
+Após a primeira implementação, as evidências remanescentes e o corte da
+autoridade paralela passam a ser executados exclusivamente em
+[`02a-core-grading-e2e-closeout.md`](./02a-core-grading-e2e-closeout.md). Concluir
+esse documento é parte obrigatória deste gate, não uma reexecução de `SEQ-07` a
+`SEQ-11`.
+
+Este gate libera `ACCESS-01`, não `SEQ-12`. A expansão dos métodos de review
+permanece bloqueada até a Parte 3 comprovar sessões e capacidades contextuais.
+
 ## Acompanhamento
 
 | Marco | Status | Evidência |
@@ -568,5 +593,6 @@ concreta pelo `DeliveryHash`.
 | `SEQ-07` | concluído | runtime comum, entrega imutável e `AuthorTest` isolado dos efeitos acadêmicos |
 | `SEQ-08` | concluído | `InstructorReview` executado pelo runtime, com override, regrade e trilha de auditoria |
 | `SEQ-09` | concluído | `AutomatedReview` autoritativo no servidor e paridade C#/TypeScript pelas fixtures compartilhadas |
-| `SEQ-10` | concluído | submissão individual, release durável, projeções learner-safe, gradebook e progresso idempotentes |
-| `SEQ-11` | concluído | submissão coletiva única, draft versionado, participantes congelados e projeção por participante |
+| `SEQ-10` | concluído | E2E individual de `InstructorReview` e `AutomatedReview` aprovado via HTTP + PostgreSQL, incluindo release e reconstrução persistida |
+| `SEQ-11` | concluído | E2E coletivo aprovado com uma submission e execução; dependências de `CanonicalRow` e submissions irmãs removidas |
+| fechamento da Parte 2 | concluído | `CLOSE-01` a `CLOSE-04` concluídos; suítes de grading e build da API aprovados, com falhas externas registradas como não bloqueantes em [`02a`](./02a-core-grading-e2e-closeout.md) |

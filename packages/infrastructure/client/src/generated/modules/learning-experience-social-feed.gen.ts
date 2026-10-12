@@ -64,7 +64,7 @@ export class LearningExperienceSocialFeedModule {
     skip?: number;
     take?: number;
     filterByType?: Types.LearningExperienceSocialFeedItemType;
-  }): Promise<Result<Array<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto[], ApiError>> {
     const url = '/api/social/feed/me';
 
     const result = await this.client.request({
@@ -74,7 +74,7 @@ export class LearningExperienceSocialFeedModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto>, ApiError>;
+    return result as Result<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto[], ApiError>;
   }
 
   /**

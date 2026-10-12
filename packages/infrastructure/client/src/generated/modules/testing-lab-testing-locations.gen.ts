@@ -21,7 +21,7 @@ export class TestingLabTestingLocationsModule {
     skip?: number;
     take?: number;
     includeArchived?: boolean;
-  }): Promise<Result<Array<Types.TestingLabTestingLocation>, ApiError>> {
+  }): Promise<Result<Types.TestingLabTestingLocation[], ApiError>> {
     const url = '/v1/testing/locations';
 
     const result = await this.client.request({
@@ -31,7 +31,7 @@ export class TestingLabTestingLocationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingLocation>, ApiError>;
+    return result as Result<Types.TestingLabTestingLocation[], ApiError>;
   }
 
   /**

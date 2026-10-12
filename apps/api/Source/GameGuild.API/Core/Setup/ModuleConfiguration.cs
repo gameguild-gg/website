@@ -27,6 +27,7 @@ public sealed class ModuleConfiguration
         "Identity.Authentication",
         "Identity.Authorization",
         "Identity.Context",
+        "Identity.Provisioning",
         "Identity.Tenants",
         "Identity.Users",
         "Localization",

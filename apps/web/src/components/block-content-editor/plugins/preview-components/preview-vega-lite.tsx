@@ -11,8 +11,8 @@ interface PreviewVegaLiteProps {
       spec: string;
       title?: string;
       caption?: string;
-      theme?: string;
-      themeMode?: string;
+      theme?: Parameters<typeof getThemePair>[0];
+      themeMode?: Parameters<typeof getThemePair>[1];
       layout?: "square" | "rectangular";
       size?: number;
     };
@@ -22,8 +22,8 @@ interface PreviewVegaLiteProps {
 export function PreviewVegaLite({ node }: PreviewVegaLiteProps) {
   const { spec, title, caption, theme, themeMode, layout, size } = node.data;
   const themePair = getThemePair(
-    (theme as any) || "default",
-    (themeMode as any) || "system",
+    theme || "default",
+    themeMode || "system",
   );
 
   return (

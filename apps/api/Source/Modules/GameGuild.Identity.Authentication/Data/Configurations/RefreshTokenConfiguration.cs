@@ -21,6 +21,12 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 
         // Property configurations
         builder.Property(x => x.UserId).IsRequired();
+        builder.Property(x => x.ParentTokenId);
+        builder.Property(x => x.SessionId);
+        builder.HasOne<RefreshToken>().WithMany().HasForeignKey(x => x.ParentTokenId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<UserSession>().WithMany().HasForeignKey(x => x.SessionId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Property(x => x.Token).HasMaxLength(500).IsRequired();
         builder.Property(x => x.ExpiresAt).IsRequired();
         builder.Property(x => x.IsRevoked).IsRequired();
@@ -34,6 +40,8 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 
         // Indexes
         builder.HasIndex(x => x.UserId).HasDatabaseName("ix_refreshtoken_user_id");
+        builder.HasIndex(x => x.ParentTokenId).HasDatabaseName("ix_refreshtoken_parent_token_id");
+        builder.HasIndex(x => x.SessionId).HasDatabaseName("ix_refreshtoken_session_id");
         builder.HasIndex(x => x.Token).IsUnique().HasDatabaseName("ix_refreshtoken_token");
         builder.HasIndex(x => x.ExpiresAt).HasDatabaseName("ix_refreshtoken_expires_at");
     }

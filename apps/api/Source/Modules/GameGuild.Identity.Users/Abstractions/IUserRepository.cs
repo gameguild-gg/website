@@ -170,6 +170,16 @@ public interface IUserRepository
     Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Finds at most two undeleted accounts with the exact sign-in identifier.
+    ///     The caller must reject zero or multiple matches; it must never select the first ambiguous account.
+    ///     Email and username matching ignore case; phone matching uses the stored international number verbatim.
+    /// </summary>
+    Task<IReadOnlyList<User>> FindSignInCandidatesAsync(string identifier, SignInIdentifierType type);
+
+    /// <summary>Finds bounded sign-in candidates with explicit cancellation support.</summary>
+    Task<IReadOnlyList<User>> FindSignInCandidatesAsync(string identifier, SignInIdentifierType type, CancellationToken cancellationToken);
+
+    /// <summary>
     ///     Checks if a user with the given email exists (for registration validation)
     /// </summary>
     /// <param name="email">Email address</param>

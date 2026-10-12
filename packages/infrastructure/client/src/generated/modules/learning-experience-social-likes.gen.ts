@@ -75,7 +75,7 @@ export class LearningExperienceSocialLikesModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<number, ApiError>;
@@ -84,7 +84,7 @@ export class LearningExperienceSocialLikesModule {
   /**
    * Gets the current user's liked courses
    */
-  async getApiSocialLikesMe(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseLikeDto>, ApiError>> {
+  async getApiSocialLikesMe(query?: { skip?: number; take?: number }): Promise<Result<Types.LearningExperienceSocialServicesCourseLikeDto[], ApiError>> {
     const url = '/api/social/likes/me';
 
     const result = await this.client.request({
@@ -94,7 +94,7 @@ export class LearningExperienceSocialLikesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseLikeDto>, ApiError>;
+    return result as Result<Types.LearningExperienceSocialServicesCourseLikeDto[], ApiError>;
   }
 }
 

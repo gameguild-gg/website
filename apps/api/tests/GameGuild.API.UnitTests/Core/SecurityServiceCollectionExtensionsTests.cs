@@ -3,6 +3,7 @@ using System.Text;
 using FluentAssertions;
 using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.API;
+using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,8 +13,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 using AuthenticationOptions = GameGuild.Configuration.PresentationLayer.Authentication.AuthenticationOptions;
 using AuthorizationOptions = GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions;
+using AuthorizationClaimTransformationOptions = GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationClaimTransformationOptions;
 using Xunit;
 
 namespace GameGuild.API.UnitTests.Core;
@@ -197,6 +200,109 @@ public sealed class SecurityServiceCollectionExtensionsTests
         await action.Should().NotThrowAsync();
     }
 
+    [Fact]
+    public async Task SetupAuthentication_TokenValidatedCallback_ShouldAuditEachJwtOnlyOnce()
+    {
+        var auditEventSink = new Mock<IAuthenticationAuditEventSink>();
+        auditEventSink
+            .Setup(x => x.RecordAsync(It.IsAny<AuthenticationAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(auditEventSink.Object);
+        services.SetupAuthentication(CreateConfiguration("Testing"), CreateAuthenticationOptions());
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme);
+        var scheme = new AuthenticationScheme(
+            JwtBearerDefaults.AuthenticationScheme,
+            JwtBearerDefaults.AuthenticationScheme,
+            typeof(JwtBearerHandler));
+        var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+
+        TokenValidatedContext CreateContext() => new(
+            new DefaultHttpContext { RequestServices = provider },
+            scheme,
+            options)
+        {
+            Principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim("sub", userId.ToString()),
+                new Claim("jti", Guid.NewGuid().ToString()),
+                new Claim(JwtClaimTypes.TenantId, tenantId.ToString()),
+                new Claim(JwtClaimTypes.SessionId, sessionId.ToString())
+            ],
+            "test"))
+        };
+
+        var firstContext = CreateContext();
+        var tokenId = firstContext.Principal!.FindFirst("jti")!.Value;
+        var secondContext = new TokenValidatedContext(
+            new DefaultHttpContext { RequestServices = provider },
+            scheme,
+            options)
+        {
+            Principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim("sub", userId.ToString()),
+                new Claim("jti", tokenId),
+                new Claim(JwtClaimTypes.TenantId, tenantId.ToString()),
+                new Claim(JwtClaimTypes.SessionId, sessionId.ToString())
+            ],
+            "test"))
+        };
+
+        await options.Events.OnTokenValidated(firstContext);
+        await options.Events.OnTokenValidated(secondContext);
+
+        auditEventSink.Verify(x => x.RecordAsync(
+            It.Is<AuthenticationAuditEvent>(auditEvent =>
+                auditEvent.ActionType == "Authentication.JwtTokenValidated" &&
+                auditEvent.Success &&
+                auditEvent.Method == "JWT" &&
+                auditEvent.UserId == userId &&
+                auditEvent.TenantId == tenantId &&
+                auditEvent.SessionId == sessionId),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetupAuthentication_AuthenticationFailedCallback_ShouldAuditSafeFailureDetails()
+    {
+        var auditEventSink = new Mock<IAuthenticationAuditEventSink>();
+        auditEventSink
+            .Setup(x => x.RecordAsync(It.IsAny<AuthenticationAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(auditEventSink.Object);
+        services.SetupAuthentication(CreateConfiguration("Testing"), CreateAuthenticationOptions());
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme);
+        var context = new AuthenticationFailedContext(
+            new DefaultHttpContext { RequestServices = provider },
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            options)
+        {
+            Exception = new SecurityTokenException("sensitive token content")
+        };
+
+        await options.Events.OnAuthenticationFailed(context);
+
+        auditEventSink.Verify(x => x.RecordAsync(
+            It.Is<AuthenticationAuditEvent>(auditEvent =>
+                auditEvent.ActionType == "Authentication.JwtValidationFailed" &&
+                !auditEvent.Success &&
+                auditEvent.Method == "JWT" &&
+                auditEvent.ErrorMessage == nameof(SecurityTokenException)),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Theory]
     [InlineData("Admin")]
     [InlineData("SystemAdmin")]
@@ -244,6 +350,54 @@ public sealed class SecurityServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<Microsoft.AspNetCore.Authorization.AuthorizationOptions>>().Value;
         options.GetPolicy(Policies.SecureAdmin).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SetupAuthorization_AppliesConfiguredAllowlistedClaimTransformationsOnce()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Authorization:ClaimTransformations:0:SourceClaimType"] = "groups",
+            ["Authorization:ClaimTransformations:0:TargetClaimType"] = "role",
+            ["Authorization:ClaimTransformations:0:ValueMappings:gameguild-admins"] = "Admin"
+        }).Build();
+        services.SetupAuthorization(configuration, options: null);
+
+        using var provider = services.BuildServiceProvider();
+        var transformation = provider.GetRequiredService<IClaimsTransformation>();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim("groups", "gameguild-admins"), new Claim("groups", "unmapped")],
+            "test",
+            "sub",
+            "role"));
+
+        var transformed = await transformation.TransformAsync(principal);
+        await transformation.TransformAsync(transformed);
+
+        transformed.FindAll("role").Select(claim => claim.Value).Should().ContainSingle().Which.Should().Be("Admin");
+        (await EvaluatePolicyAsync(provider, transformed, "RequireAdminRole")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void AuthorizationOptions_RejectsClaimTransformationsWithoutExplicitMappings()
+    {
+        var options = new AuthorizationOptions
+        {
+            ClaimTransformations =
+            [
+                new AuthorizationClaimTransformationOptions
+                {
+                    SourceClaimType = "groups",
+                    TargetClaimType = ClaimTypes.Role
+                }
+            ]
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*at least one non-empty value mapping*");
     }
 
     private static async Task<bool> EvaluatePolicyAsync(

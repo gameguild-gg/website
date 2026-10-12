@@ -1,11 +1,26 @@
 using FluentAssertions;
+using GameGuild.API.Database;
+using GameGuild.Identity.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace GameGuild.Resources.IntegrationTests.Infrastructure;
 
 [Collection("PostgreSql")]
-public sealed class PostgreSqlFixtureLifecycleTests
+public sealed class PostgreSqlFixtureLifecycleTests(PostgreSqlTestFixture sharedFixture)
 {
+    [Fact]
+    public void HostPreservesTheScopedAbstractContextForRealAuthorizationRepositories()
+    {
+        using var factory = new PostgreSqlWebApplicationFactory(sharedFixture.ConnectionString);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        Assert.Same(context, scope.ServiceProvider.GetRequiredService<DbContext>());
+        Assert.IsType<DataMaskingRuleRepository>(scope.ServiceProvider.GetRequiredService<IDataMaskingRuleRepository>());
+    }
+
     [Fact]
     public async Task Initialize_PreparesTheApiSchemaBeforeAnyHostAndIsolatesQuotaDatabases()
     {

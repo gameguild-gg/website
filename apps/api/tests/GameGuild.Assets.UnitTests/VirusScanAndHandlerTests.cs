@@ -19,6 +19,39 @@ public class VirusScanAndHandlerTests
     // ═══════════════════════════════════════════════════════════════════
 
     [Fact]
+    public async Task VirusScanService_ScanAsync_PropagatesCancellation()
+    {
+        var service = new VirusScanService(
+            Options.Create(new VirusScanOptions { UseClamAvDaemon = false }),
+            Mock.Of<ILogger<VirusScanService>>());
+        using var source = new CancellationTokenSource();
+        source.Cancel();
+        using var content = new MemoryStream(new byte[] { 1, 2, 3 });
+        content.Position = 1;
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.ScanAsync(content, "test.txt", source.Token));
+
+        Assert.Equal(source.Token, exception.CancellationToken);
+        Assert.Equal(1, content.Position);
+    }
+
+    [Fact]
+    public async Task VirusScanService_ScanAsync_ReportsNonCancellationFailures()
+    {
+        var service = new VirusScanService(
+            Options.Create(new VirusScanOptions { UseClamAvDaemon = false }),
+            Mock.Of<ILogger<VirusScanService>>());
+        using var content = new MemoryStream();
+        content.Close();
+
+        var result = await service.ScanAsync(content, "test.txt");
+
+        Assert.False(result.IsClean);
+        Assert.Equal("Scan failed", result.Status);
+    }
+
+    [Fact]
     public async Task VirusScanService_ScanAsync_ReturnsResult()
     {
         var opts = Options.Create(new VirusScanOptions());

@@ -92,7 +92,7 @@ function openPreferencesDatabase(): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onerror = () => resolve(null);
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => { resolve(request.result); };
     request.onupgradeneeded = () => {
       const database = request.result;
       if (!database.objectStoreNames.contains(STORE_NAME)) {

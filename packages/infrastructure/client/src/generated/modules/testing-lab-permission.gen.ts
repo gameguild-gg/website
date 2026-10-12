@@ -18,7 +18,7 @@ export class TestingLabPermissionModule {
   /**
    * Get all TestingLab role templates
    */
-  async getApiTestingLabPermissionsRoleTemplates(): Promise<Result<Array<Types.TestingLabTestingLabRoleTemplate>, ApiError>> {
+  async getApiTestingLabPermissionsRoleTemplates(): Promise<Result<Types.TestingLabTestingLabRoleTemplate[], ApiError>> {
     const url = '/api/testing-lab/permissions/role-templates';
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class TestingLabPermissionModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingLabRoleTemplate>, ApiError>;
+    return result as Result<Types.TestingLabTestingLabRoleTemplate[], ApiError>;
   }
 
   /**

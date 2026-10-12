@@ -57,11 +57,14 @@ public sealed class TestingEventsController(IMediator mediator) : BaseApiControl
         CancellationToken cancellationToken = default)
     {
         if (request.TemplateRevisionId != null && request.Configuration != null)
+        {
             return UnprocessableEntity(new
             {
                 code = "TestingLab.EventConfigurationSourceConflict",
                 message = "Choose either a template or a custom event configuration."
             });
+        }
+
         var result = await mediator.Send(new CreateTestingEventCommand(
             request.Name,
             request.Description,
@@ -450,7 +453,10 @@ public sealed class TestingEventsController(IMediator mediator) : BaseApiControl
         CancellationToken cancellationToken = default)
     {
         if (!request.SlotId.HasValue)
+        {
             return BadRequest(Error.Validation("TestingLab.SlotRequired", "A slot is required to approve an application."));
+        }
+
         return ToActionResult(await mediator.Send(new ApproveTestingProjectApplicationCommand(
             applicationId,
             request.SlotId.Value,

@@ -110,7 +110,7 @@ Custom header values are validated before the middleware is configured and must 
 ### Authentication Password Policy
 
 Local account registration uses the typed password policy under `PresentationLayer:Authentication:PasswordPolicy`.
-Minimum and maximum lengths are validated at startup. For compatibility, `Authentication:PasswordPolicy` and the
+Minimum and maximum lengths and BCrypt generation cost (10–16, default 12) are validated at startup. For compatibility, `Authentication:PasswordPolicy` and the
 older top-level `PasswordPolicy` keys remain supported as fallbacks by the password hasher.
 
 ```json
@@ -120,6 +120,7 @@ older top-level `PasswordPolicy` keys remain supported as fallbacks by the passw
       "PasswordPolicy": {
         "MinPasswordLength": 8,
         "MaxPasswordLength": 128,
+        "BCryptWorkFactor": 12,
         "RequireUppercase": true,
         "RequireLowercase": true,
         "RequireDigit": true,

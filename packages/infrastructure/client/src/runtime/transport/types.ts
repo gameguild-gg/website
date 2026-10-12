@@ -28,6 +28,8 @@ export interface RequestConfig {
   body?: unknown;
   /** Additional headers */
   headers?: Record<string, string>;
+  /** Parse a binary success response without decoding its bytes as text. */
+  responseType?: 'blob';
   /** Request timeout in milliseconds */
   timeout?: number;
   /** Fetch cache policy for this request */

@@ -74,6 +74,16 @@ describe('generator utility helpers', () => {
     expect(qualifyType('Custom')).toBe('Types.Custom');
   });
 
+  it('qualifies bracket arrays without treating primitive items as schemas', () => {
+    expect(qualifyType('string[]')).toBe('string[]');
+    expect(qualifyType('number[][]')).toBe('number[][]');
+    expect(qualifyType('User[]')).toBe('Types.User[]');
+    expect(qualifyType('User[] | null')).toBe('Types.User[] | null');
+    expect(qualifyType('(User | null)[]')).toBe('(Types.User | null)[]');
+    expect(qualifyType('(User & Profile)[]', 'Models')).toBe('(Models.User & Models.Profile)[]');
+    expect(qualifyType("('draft' | 'published')[]")).toBe("('draft' | 'published')[]");
+  });
+
   it('formats generated TypeScript with Prettier config', async () => {
     prettier.resolveConfig.mockResolvedValue({ semi: false });
     prettier.format.mockResolvedValue('const value = 1\n');

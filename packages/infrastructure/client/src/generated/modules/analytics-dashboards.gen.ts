@@ -17,7 +17,7 @@ export class AnalyticsDashboardsModule {
 
   /**
    */
-  async getApiAnalyticsDashboards(query?: { tenantId?: string }): Promise<Result<Array<Types.AnalyticsDashboardDto>, ApiError>> {
+  async getApiAnalyticsDashboards(query?: { tenantId?: string }): Promise<Result<Types.AnalyticsDashboardDto[], ApiError>> {
     const url = '/api/analytics/dashboards';
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class AnalyticsDashboardsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AnalyticsDashboardDto>, ApiError>;
+    return result as Result<Types.AnalyticsDashboardDto[], ApiError>;
   }
 
   /**

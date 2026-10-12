@@ -116,7 +116,7 @@ export class EconomyRiskReviewAdministrationModule {
 
   /**
    */
-  async getAdminEconomyRiskReviewsAudit(reviewId: string): Promise<Result<Array<Types.FinanceEconomyRiskRiskReviewEvent>, ApiError>> {
+  async getAdminEconomyRiskReviewsAudit(reviewId: string): Promise<Result<Types.FinanceEconomyRiskRiskReviewEvent[], ApiError>> {
     const url = `/api/v1/admin/economy/risk-reviews/${reviewId}/audit`;
 
     const result = await this.client.request({
@@ -125,7 +125,7 @@ export class EconomyRiskReviewAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyRiskRiskReviewEvent>, ApiError>;
+    return result as Result<Types.FinanceEconomyRiskRiskReviewEvent[], ApiError>;
   }
 }
 

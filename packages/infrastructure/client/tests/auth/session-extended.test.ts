@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { processSession, encodeSession, refreshAccessToken, createJWTPayload, toSession, shouldRefreshToken } from '../../src/runtime/auth/session.js';
 import type { JWTPayload, ResolvedAuthConfig, ProviderResult } from '../../src/runtime/auth/types.js';
 import { TokenRefreshError } from '../../src/runtime/auth/errors.js';
+import { decodeJWT } from '../../src/runtime/auth/jwt.js';
 
 // Mock JWT module
 vi.mock('../../src/runtime/auth/jwt.js', () => ({
@@ -77,6 +78,42 @@ function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig
 }
 
 describe('processSession', () => {
+  it.each([401, 403])('clears a near-expiry session when refresh is denied with %s', async (status) => {
+    vi.mocked(decodeJWT).mockResolvedValueOnce({
+      user: { id: 'synthetic-owner' }, accessToken: 'synthetic-access', refreshToken: 'synthetic-refresh',
+      accessTokenExpires: Date.now() + 15_000, exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValueOnce(new Response(null, { status }));
+    const config = makeConfig();
+    const jwtCallback = vi.spyOn(config.callbacks, 'jwt');
+    try {
+      const result = await processSession('synthetic-near-expiry', config);
+      expect(result).toEqual({ session: null, token: null, updated: false });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(jwtCallback).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+      jwtCallback.mockRestore();
+    }
+  });
+
+  it('preserves a still-valid session when refresh returns temporary 503', async () => {
+    vi.mocked(decodeJWT).mockResolvedValueOnce({
+      user: { id: 'synthetic-owner' }, accessToken: 'synthetic-access', refreshToken: 'synthetic-refresh',
+      accessTokenExpires: Date.now() + 15_000, exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValueOnce(new Response(null, { status: 503 }));
+    try {
+      const result = await processSession('synthetic-near-expiry', makeConfig());
+      expect(result.session?.user.id).toBe('synthetic-owner');
+      expect(result.token?.accessToken).toBe('synthetic-access');
+      expect(result.updated).toBe(false);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
   it('should return session for valid token', async () => {
     const result = await processSession('valid-encrypted', makeConfig());
 
@@ -123,13 +160,13 @@ describe('processSession', () => {
     mockFetch.mockRestore();
   });
 
-  it('should still return session if refresh fails (outer JWT valid)', async () => {
+  it('clears an expired access session if refresh fails despite a valid outer JWT', async () => {
     const mockFetch = vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network error'));
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await processSession('needs-refresh', makeConfig({ debug: true }));
 
-    expect(result.session).toBeDefined();
+    expect(result.session).toBeNull();
     expect(result.updated).toBe(false);
 
     mockFetch.mockRestore();

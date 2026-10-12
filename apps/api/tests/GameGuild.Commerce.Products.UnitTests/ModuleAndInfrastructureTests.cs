@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -106,7 +107,10 @@ public class ModuleAndInfrastructureTests
     {
         var svc = new PricingEngineService(
             Mock.Of<IProductRepository>(),
-            Mock.Of<IPromoCodeRepository>());
+            Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPromoStackingRuleRepository>(),
+            Mock.Of<IPricingRuleRepository>(),
+            new MemoryCache(new MemoryCacheOptions()));
         svc.Should().NotBeNull();
     }
 
@@ -123,7 +127,7 @@ public class ModuleAndInfrastructureTests
     [Fact]
     public void PromoCodeService_CanBeInstantiated()
     {
-        var svc = new PromoCodeService(Mock.Of<IPromoCodeRepository>());
+        var svc = new PromoCodeService(Mock.Of<IPromoCodeRepository>(), Mock.Of<IPromoCodeUsageRecorder>());
         svc.Should().NotBeNull();
     }
 
@@ -213,7 +217,13 @@ public class ModuleAndInfrastructureTests
     [Fact]
     public void ApplyPromoCodesCommandHandler_Ctor()
     {
-        var h = new ApplyPromoCodesCommandHandler(Mock.Of<IPricingEngineService>());
+        var h = new ApplyPromoCodesCommandHandler(
+            Mock.Of<IPricingEngineService>(),
+            Mock.Of<IPromoCodeRepository>(),
+            Mock.Of<IPromoCodeUsageRecorder>(),
+            Mock.Of<IPromoCodeAuditLogger>(),
+            Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>(),
+            NullLogger<ApplyPromoCodesCommandHandler>.Instance);
         h.Should().NotBeNull();
     }
 
@@ -375,9 +385,10 @@ public class ModuleAndInfrastructureTests
     {
         var dto = new PromoCodeDto(
             Guid.NewGuid(), "CODE1", "Test Code", "Desc",
-            PromoCodeType.PercentageOff, 10m, null, "USD", 5m,
-            100, 1, DateTime.UtcNow, DateTime.UtcNow.AddDays(30),
-            true, false, 0, null, 0, DateTime.UtcNow, DateTime.UtcNow);
+            PromoCodeType.PercentageOff, 10m, null, null, "USD", 5m,
+            100, 1, 0, null, null, false,
+            DateTime.UtcNow, DateTime.UtcNow.AddDays(30),
+            true, false, 0, "summer-2026", null, 0, DateTime.UtcNow, DateTime.UtcNow);
         dto.Code.Should().Be("CODE1");
     }
 

@@ -30,12 +30,13 @@ public interface ICapabilityService
     /// <summary>
     /// Sets or overrides a capability for a tenant.
     /// Creates an audit log entry for the change.
+    /// Requires a resolved tenant or system administrator; audit identity comes from that actor.
     /// </summary>
     /// <param name="tenantId">The tenant to modify.</param>
     /// <param name="capability">The capability key.</param>
     /// <param name="isEnabled">Whether to enable or disable the capability.</param>
     /// <param name="source">The source of this change (e.g., "override:admin").</param>
-    /// <param name="userId">The user making the change (null for system changes).</param>
+    /// <param name="userId">Legacy caller identity; ignored in favor of the resolved actor (null for non-user actors).</param>
     /// <param name="reason">The reason for the change.</param>
     /// <param name="expiresAt">Optional expiration for time-limited capabilities.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -51,10 +52,11 @@ public interface ICapabilityService
 
     /// <summary>
     /// Removes a capability override, reverting to subscription plan default.
+    /// Requires a resolved tenant or system administrator.
     /// </summary>
     /// <param name="tenantId">The tenant to modify.</param>
     /// <param name="capability">The capability key.</param>
-    /// <param name="userId">The user making the change.</param>
+    /// <param name="userId">Legacy caller identity; ignored in favor of the resolved actor.</param>
     /// <param name="reason">The reason for removing the override.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task RemoveCapabilityOverrideAsync(
@@ -67,6 +69,8 @@ public interface ICapabilityService
     /// <summary>
     /// Syncs capabilities from the tenant's subscription plan.
     /// Called after subscription changes to update entitlements.
+    /// Background callers must establish an authenticated privileged system actor.
+    /// Preserves explicit overrides and audits each new or changed plan row with the resolved actor.
     /// </summary>
     /// <param name="tenantId">The tenant to sync.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -74,6 +78,7 @@ public interface ICapabilityService
 
     /// <summary>
     /// Gets the audit log for a tenant's capability changes.
+    /// Requires a resolved tenant or system administrator.
     /// </summary>
     /// <param name="tenantId">The tenant to query.</param>
     /// <param name="capability">Optional capability filter.</param>

@@ -124,13 +124,14 @@ public sealed class RateLimitingOptions : BaseOptions
     public string[] ExemptPaths { get; set; } = Array.Empty<string>();
 
     /// <summary>
-    ///     Exact proxy IP addresses permitted to supply X-Forwarded-For values.
-    ///     Forwarded client addresses are ignored unless they arrive from one of these proxies.
+    ///     Exact proxy IP addresses permitted to supply X-Forwarded-For and X-Forwarded-Proto values.
+    ///     Forwarded client addresses and external request schemes are ignored unless they arrive from
+    ///     one of these proxies.
     /// </summary>
     public string[] TrustedProxyAddresses { get; set; } = Array.Empty<string>();
 
     /// <summary>
-    ///     Maximum number of trusted proxy hops to read from the forwarded-for chain.
+    ///     Maximum number of trusted proxy hops to read from forwarded client-address and scheme chains.
     /// </summary>
     public int TrustedProxyForwardLimit { get; set; } = 1;
 
@@ -169,6 +170,16 @@ public sealed class RateLimitingOptions : BaseOptions
     public int IpRequestsPerMinute { get; set; } = 30;
 
     public TimeSpan IpWindow { get; set; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>
+    ///     Provider callback endpoint rate limit (requests per minute), applied by the
+    ///     <see cref="RateLimitPolicies.Webhook"/> policy on anonymous webhook endpoints.
+    ///     Default: 120 req/min to absorb provider retry bursts while throttling spoofed floods.
+    ///     Partitioned by: IP address.
+    /// </summary>
+    public int WebhookRequestsPerMinute { get; set; } = 120;
+
+    public TimeSpan WebhookWindow { get; set; } = TimeSpan.FromMinutes(1);
 
     public int SlidingWindowSegments { get; set; } = 4;
 
@@ -291,6 +302,7 @@ public sealed class RateLimitingOptions : BaseOptions
         ValidatePositive(AuthorizationRequestsPerMinute, nameof(AuthorizationRequestsPerMinute));
         ValidatePositive(ApiRequestsPerMinute, nameof(ApiRequestsPerMinute));
         ValidatePositive(IpRequestsPerMinute, nameof(IpRequestsPerMinute));
+        ValidatePositive(WebhookRequestsPerMinute, nameof(WebhookRequestsPerMinute));
         ValidatePositive(TenantRequestsPerMinute, nameof(TenantRequestsPerMinute));
         ValidatePositive(UserRequestsPerMinute, nameof(UserRequestsPerMinute));
         ValidatePositive(StandardApiKeyRequestsPerMinute, nameof(StandardApiKeyRequestsPerMinute));
@@ -303,6 +315,7 @@ public sealed class RateLimitingOptions : BaseOptions
         ValidatePositive(AuthorizationWindow, nameof(AuthorizationWindow));
         ValidatePositive(ApiWindow, nameof(ApiWindow));
         ValidatePositive(IpWindow, nameof(IpWindow));
+        ValidatePositive(WebhookWindow, nameof(WebhookWindow));
         ValidatePositive(TenantWindow, nameof(TenantWindow));
         ValidatePositive(UserWindow, nameof(UserWindow));
         ValidatePositive(ApiKeyWindow, nameof(ApiKeyWindow));
@@ -365,7 +378,8 @@ public sealed class RateLimitingOptions : BaseOptions
             RateLimitPolicies.Bursty,
             RateLimitPolicies.ApiKey,
             RateLimitPolicies.ExpensiveOperations,
-            RateLimitPolicies.PerIp
+            RateLimitPolicies.PerIp,
+            RateLimitPolicies.Webhook
         };
         var configuredNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (name, policy) in Policies)

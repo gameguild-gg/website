@@ -1,10 +1,7 @@
 using GameGuild.Identity.Users;
-using GameGuild.Learning.Courses;
-using GameGuild.Notifications;
-using GameGuild.Notifications.Services;
+using GameGuild.Learning.Assessments.Grading.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using NotificationPriority = GameGuild.Notifications.NotificationPriority;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Grading.Contracts;
 
@@ -19,16 +16,13 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
 
     private readonly IApplicationDbContext _context;
     private readonly ILogger<PeerReviewAssignmentService> _logger;
-    private readonly INotificationService? _notifications;
 
     public PeerReviewAssignmentService(
         IApplicationDbContext context,
-        ILogger<PeerReviewAssignmentService> logger,
-        INotificationService? notifications = null)
+        ILogger<PeerReviewAssignmentService> logger)
     {
         _context = context;
         _logger = logger;
-        _notifications = notifications;
     }
 
     public async Task<Result<PeerReviewClaimResult>> ClaimAsync(Guid assessmentId, Guid actorUserId)
@@ -69,12 +63,25 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
                     "Peer review is not enabled for this assessment"));
             }
 
-            var hasOwnSubmission = await _context.Set<AssessmentSubmission>()
+            var hasOwnIndividualSubmission = await _context.Set<AssessmentSubmission>()
                 .AnyAsync(s => s.AssessmentId == assessmentId &&
                                s.UserId == actorUserId &&
                                s.DeletedAt == null &&
                                (s.Status == SubmissionStatus.Submitted || s.Status == SubmissionStatus.Late))
                 .ConfigureAwait(false);
+            var hasOwnCollectiveSubmission = await _context.Set<AssessmentSubmissionParticipant>()
+                .Join(
+                    _context.Set<AssessmentSubmission>(),
+                    participant => participant.SubmissionId,
+                    submission => submission.Id,
+                    (participant, submission) => new { participant, submission })
+                .AnyAsync(value => value.participant.UserId == actorUserId &&
+                                   value.submission.AssessmentId == assessmentId &&
+                                   value.submission.DeletedAt == null &&
+                                   (value.submission.Status == SubmissionStatus.Submitted ||
+                                    value.submission.Status == SubmissionStatus.Late))
+                .ConfigureAwait(false);
+            var hasOwnSubmission = hasOwnIndividualSubmission || hasOwnCollectiveSubmission;
             if (!hasOwnSubmission)
             {
                 return Result.Failure<PeerReviewClaimResult>(Error.Validation(
@@ -127,75 +134,15 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
             .ConfigureAwait(false);
     }
 
-    public async Task<Result<AssessmentPeerReview>> SubmitReviewAsync(
+    public Task<Result<AssessmentPeerReview>> SubmitReviewAsync(
         AssessmentPeerReview review, ScoreValue score, string feedback, string? rubricScores)
     {
-        try
-        {
-            review.SubmitReview(score, feedback, rubricScores);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-
-            if (_notifications is not null)
-            {
-                try
-                {
-                    await NotifyReviewTargetOwnersAsync(review).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Peer feedback notification failed for review {ReviewId}", review.Id);
-                }
-            }
-
-            return Result.Success(review);
-        }
-        catch (InvalidOperationException)
-        {
-            return Result.Failure<AssessmentPeerReview>(Error.Conflict(
-                "PeerReview.AlreadySubmitted", "Peer review already submitted"));
-        }
-    }
-
-    /// <summary>
-    ///     Every owner of a row sharing the reviewed (CourseGroupId, AttemptNumber) sees the review
-    ///     through the todo-8 union read — so they all get notified. Content is anonymous by
-    ///     construction: the reviewer's identity is never part of the payload.
-    /// </summary>
-    private async Task NotifyReviewTargetOwnersAsync(AssessmentPeerReview review)
-    {
-        var submission = await _context.Set<AssessmentSubmission>()
-            .FirstOrDefaultAsync(s => s.Id == review.SubmissionId && s.DeletedAt == null)
-            .ConfigureAwait(false);
-        if (submission == null)
-        {
-            return;
-        }
-
-        var ownerIds = submission.CourseGroupId is { } groupId
-            ? await _context.Set<AssessmentSubmission>()
-                .Where(s => s.CourseGroupId == groupId &&
-                            s.AttemptNumber == submission.AttemptNumber &&
-                            s.DeletedAt == null)
-                .Select(s => s.UserId)
-                .ToListAsync().ConfigureAwait(false)
-            : [submission.UserId];
-
-        var title = await _context.Set<Assessment>()
-            .Where(a => a.Id == review.AssessmentId && a.DeletedAt == null)
-            .Select(a => a.Title)
-            .FirstOrDefaultAsync().ConfigureAwait(false) ?? "your assessment";
-
-        foreach (var owner in ownerIds.Distinct())
-        {
-            await _notifications!.SendAsync(
-                    owner,
-                    NotificationType.System,
-                    "Peer feedback received",
-                    $"You received peer feedback on {title}",
-                    NotificationChannel.InApp,
-                    actionUrl: "/dashboard/tasks")
-                .ConfigureAwait(false);
-        }
+        _logger.LogWarning(
+            "Rejected legacy peer review submit {PeerReviewId}; peer review must run through GradingExecution",
+            review.Id);
+        return Task.FromResult(Result.Failure<AssessmentPeerReview>(Error.Conflict(
+            "PeerReview.CanonicalRuntimeRequired",
+            "Peer review submission is unavailable until the canonical grading runtime is enabled")));
     }
 
     public async Task<IReadOnlyList<AssessmentPeerReview>> GetReviewsForSubmissionAsync(Guid submissionId)
@@ -208,24 +155,21 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
             return [];
         }
 
-        // Group members see the union of reviews across the group's rows for that attempt;
-        // individual submissions only ever see their own row.
-        var submissionIds = submission.CourseGroupId is { } groupId
-            ? await _context.Set<AssessmentSubmission>()
-                .Where(s => s.CourseGroupId == groupId &&
-                            s.AttemptNumber == submission.AttemptNumber &&
-                            s.DeletedAt == null)
-                .Select(s => s.Id)
-                .ToListAsync().ConfigureAwait(false)
-            : [submissionId];
-
         return await _context.Set<AssessmentPeerReview>()
-            .Where(r => submissionIds.Contains(r.SubmissionId) &&
+            .Where(r => r.SubmissionId == submissionId &&
                         r.Status == PeerReviewStatus.Submitted &&
                         r.DeletedAt == null)
             .OrderBy(r => r.SubmittedAt)
             .ToListAsync().ConfigureAwait(false);
     }
+
+    public Task<bool> IsSubmissionOwnerOrParticipantAsync(Guid submissionId, Guid userId) =>
+        _context.Set<AssessmentSubmission>()
+            .Where(submission => submission.Id == submissionId && submission.DeletedAt == null)
+            .AnyAsync(submission =>
+                submission.UserId == userId ||
+                _context.Set<AssessmentSubmissionParticipant>()
+                    .Any(participant => participant.SubmissionId == submission.Id && participant.UserId == userId));
 
     public async Task<IReadOnlyDictionary<Guid, string>> GetReviewerDisplayNamesAsync(
         IReadOnlyCollection<Guid> userIds)
@@ -244,9 +188,9 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
             .Where(s => s.AssessmentId == assessmentId && s.DeletedAt == null)
             .ToListAsync().ConfigureAwait(false);
 
-        var actorGroupIds = await _context.Set<CourseGroupMember>()
-            .Where(m => m.UserId == actorUserId && m.DeletedAt == null)
-            .Select(m => m.GroupId)
+        var actorCollectiveSubmissionIds = await _context.Set<AssessmentSubmissionParticipant>()
+            .Where(participant => participant.UserId == actorUserId)
+            .Select(participant => participant.SubmissionId)
             .ToListAsync().ConfigureAwait(false);
 
         var reviewedSubmissionIds = await _context.Set<AssessmentPeerReview>()
@@ -254,15 +198,15 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
             .Select(r => r.SubmissionId)
             .ToListAsync().ConfigureAwait(false);
 
-        // Eligibility = latest attempt per target only. Individual: max attempt row per user;
-        // group: max attempt among the group's rows, one canonical row per group-attempt.
-        var targets = new List<(AssessmentSubmission Canonical, HashSet<Guid> AttemptRowIds)>();
+        // Eligibility = latest attempt per target only. A collective attempt is represented by
+        // its single persisted submission and frozen participant snapshot.
+        var targets = new List<AssessmentSubmission>();
         foreach (var userRows in submissions.Where(s => s.CourseGroupId == null).GroupBy(s => s.UserId))
         {
             var latest = userRows.OrderByDescending(r => r.AttemptNumber).First();
             if (latest.Status is SubmissionStatus.Submitted or SubmissionStatus.Late)
             {
-                targets.Add((latest, [latest.Id]));
+                targets.Add(latest);
             }
         }
 
@@ -273,17 +217,21 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
                 .Where(r => r.AttemptNumber == latestAttempt &&
                             (r.Status == SubmissionStatus.Submitted || r.Status == SubmissionStatus.Late))
                 .ToList();
-            if (attemptRows.Count > 0)
+            if (attemptRows.Count == 1)
             {
-                targets.Add((CanonicalRow(attemptRows), attemptRows.Select(r => r.Id).ToHashSet()));
+                targets.Add(attemptRows[0]);
+            }
+            else if (attemptRows.Count > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Collective target {groupRows.Key} has multiple submissions for attempt {latestAttempt}.");
             }
         }
 
         var eligible = targets
-            .Where(t => t.Canonical.UserId != actorUserId)
-            .Where(t => t.Canonical.CourseGroupId == null ||
-                        !actorGroupIds.Contains(t.Canonical.CourseGroupId.Value))
-            .Where(t => !t.AttemptRowIds.Overlaps(reviewedSubmissionIds))
+            .Where(target => target.UserId != actorUserId)
+            .Where(target => !actorCollectiveSubmissionIds.Contains(target.Id))
+            .Where(target => !reviewedSubmissionIds.Contains(target.Id))
             .ToList();
         if (eligible.Count == 0)
         {
@@ -297,19 +245,12 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
             .ToDictionaryAsync(x => x.Key, x => x.Count)
             .ConfigureAwait(false);
 
-        var leastReviewedCount = eligible.Min(t => reviewCounts.GetValueOrDefault(t.Canonical.Id));
+        var leastReviewedCount = eligible.Min(target => reviewCounts.GetValueOrDefault(target.Id));
         var leastReviewed = eligible
-            .Where(t => reviewCounts.GetValueOrDefault(t.Canonical.Id) == leastReviewedCount)
+            .Where(target => reviewCounts.GetValueOrDefault(target.Id) == leastReviewedCount)
             .ToList();
-        return leastReviewed[Random.Shared.Next(leastReviewed.Count)].Canonical;
+        return leastReviewed[Random.Shared.Next(leastReviewed.Count)];
     }
-
-    /// <summary>
-    /// Canonical row rule shared with the grading queue (todo 9): among rows sharing a group+attempt,
-    /// Min(Id) is the deterministic representative (clones share timestamps, so Id is the only tiebreak).
-    /// </summary>
-    internal static AssessmentSubmission CanonicalRow(IEnumerable<AssessmentSubmission> rows) =>
-        rows.OrderBy(r => r.Id).First();
 
     /// <summary>
     /// Seam for the race-retry tests: EF InMemory never throws unique-index violations, tests

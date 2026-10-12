@@ -19,7 +19,9 @@ public sealed class ProjectPermissionResolver(IProjectAuthorizationService autho
         foreach (var permission in ProjectPermissionSet.All)
         {
             if (await authorizationService.HasPermissionAsync(resourceId, permission).ConfigureAwait(false))
+            {
                 granted.Add(permission);
+            }
         }
 
         return granted.Count == 0
@@ -40,13 +42,17 @@ public sealed class ProjectPermissionResolver(IProjectAuthorizationService autho
         Guid? resourceId = null)
     {
         if (!resourceId.HasValue || permissions.Length == 0)
+        {
             return false;
+        }
 
         foreach (var permission in permissions.Distinct())
         {
             if (!ProjectPermissionSet.All.Contains(permission) ||
                 !await authorizationService.HasPermissionAsync(resourceId.Value, permission).ConfigureAwait(false))
+            {
                 return false;
+            }
         }
 
         return await authorizationService
@@ -67,7 +73,9 @@ public sealed class ProjectResourcePermissionService(
     {
         var project = await GetAuthorizedProjectAsync(resourceId, PermissionType.Read).ConfigureAwait(false);
         if (project == null)
+        {
             return [];
+        }
 
         var collaborators = await context.Set<ProjectCollaborator>()
             .AsNoTracking()
@@ -167,9 +175,14 @@ public sealed class ProjectResourcePermissionService(
     {
         var project = await GetAuthorizedProjectAsync(resourceId, PermissionType.Edit).ConfigureAwait(false);
         if (project == null)
+        {
             return new InvitationResult { ErrorMessage = "Project not found." };
+        }
+
         if (request.Permissions.Length == 0 || request.Permissions.Any(permission => !ProjectPermissionSet.All.Contains(permission)))
+        {
             return new InvitationResult { ErrorMessage = "At least one valid project permission is required." };
+        }
 
         var email = request.Email.Trim();
         var user = await context.Set<User>()
@@ -207,9 +220,14 @@ public sealed class ProjectResourcePermissionService(
     {
         var project = await GetAuthorizedProjectAsync(resourceId, PermissionType.Edit).ConfigureAwait(false);
         if (project == null)
+        {
             return new PermissionUpdateResult { ErrorMessage = "Project not found." };
+        }
+
         if (userId == project.CreatedById)
+        {
             return new PermissionUpdateResult { ErrorMessage = "Project owner access cannot be reduced." };
+        }
 
         var collaborator = await context.Set<ProjectCollaborator>()
             .FirstOrDefaultAsync(candidate =>
@@ -228,7 +246,10 @@ public sealed class ProjectResourcePermissionService(
 
         var grant = await FindDirectGrantAsync(project, userId).ConfigureAwait(false);
         if (grant == null)
+        {
             return new PermissionUpdateResult { ErrorMessage = "Permission record not found." };
+        }
+
         grant.Permissions = ProjectPermissionSet.Names(permissions);
         grant.ExpiresAt = expiresAt;
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -243,9 +264,14 @@ public sealed class ProjectResourcePermissionService(
     {
         var project = await GetAuthorizedProjectAsync(resourceId, PermissionType.Edit).ConfigureAwait(false);
         if (project == null)
+        {
             return new PermissionUpdateResult { ErrorMessage = "Project not found." };
+        }
+
         if (userId == project.CreatedById)
+        {
             return new PermissionUpdateResult { ErrorMessage = "Project owner access cannot be removed." };
+        }
 
         var changed = false;
         var collaborators = await context.Set<ProjectCollaborator>()
@@ -270,10 +296,15 @@ public sealed class ProjectResourcePermissionService(
             .ToListAsync()
             .ConfigureAwait(false);
         foreach (var grant in grants)
+        {
             changed |= grant.Revoke(removingUserId, "Project access removed");
+        }
 
         if (changed)
+        {
             await context.SaveChangesAsync().ConfigureAwait(false);
+        }
+
         return new PermissionUpdateResult
         {
             Success = changed,
@@ -309,8 +340,14 @@ public sealed class ProjectResourcePermissionService(
                 Message = request.Message,
                 RequireAcceptance = request.RequireAcceptance,
             }, sharingUserId).ConfigureAwait(false);
-            if (result.Success) successCount++;
-            else failureCount++;
+            if (result.Success)
+            {
+                successCount++;
+            }
+            else
+            {
+                failureCount++;
+            }
         }
 
         return new ShareResult
@@ -325,7 +362,10 @@ public sealed class ProjectResourcePermissionService(
     private async Task<Project?> GetAuthorizedProjectAsync(Guid projectId, PermissionType permission)
     {
         if (!await authorizationService.HasPermissionAsync(projectId, permission).ConfigureAwait(false))
+        {
             return null;
+        }
+
         return await context.Set<Project>()
             .FirstOrDefaultAsync(project => project.Id == projectId && project.DeletedAt == null)
             .ConfigureAwait(false);

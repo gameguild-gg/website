@@ -1,7 +1,7 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export const PATCH_SET_VERSION = 'emception-glue-v3';
+export const PATCH_SET_VERSION = 'emception-glue-v5';
 
 const ENV_NEEDLE = 'var ENV={};';
 const ENV_MARKER = 'moduleArg["ENV"]';
@@ -43,6 +43,12 @@ const CANVAS_COMMON_PATCHES = [
     replacement: 'var handleException=e=>{if(e instanceof ExitStatus||e=="unwind"){return EXITSTATUS}if(e instanceof WebAssembly.RuntimeError){ABORT=1;try{Module.pauseMainLoop?.();}catch(_){}return EXITSTATUS}quit_(1,e)}',
     marker: 'return EXITSTATUS}if(e instanceof WebAssembly.RuntimeError)',
   },
+  {
+    label: 'C exit import',
+    needle: 'var wasmImports={',
+    replacement: 'var wasmImports={exit:_exit,',
+    marker: 'exit:_exit,',
+  },
 ];
 
 function replaceRequired(content, patch, filename, applied) {
@@ -60,17 +66,43 @@ export function applyCanvasRuntimePatches(source, filename) {
   for (const patch of CANVAS_COMMON_PATCHES) {
     content = replaceRequired(content, patch, filename, applied);
   }
+
+  const legacyEmAsmFallback = (name) =>
+    `if(!ASM_CONSTS[${name}]){var _s=UTF8ToString(${name});ASM_CONSTS[${name}]=eval("(function($0,$1,$2,$3,$4,$5,$6,$7,$8,$9){"+_s+"})");}`;
+  const applicationEmAsm = (name) =>
+    `if(!ASM_CONSTS[${name}]||!ASM_CONSTS[${name}].emceptionApplicationAsm){var _s=UTF8ToString(${name});ASM_CONSTS[${name}]=eval("(function($0,$1,$2,$3,$4,$5,$6,$7,$8,$9){"+_s+"})");ASM_CONSTS[${name}].emceptionApplicationAsm=true;}`;
+  const dispatchers = [
+    { label: 'EM_ASM', declaration: 'var runEmAsmFunction=(code,sigPtr,argbuf)=>{var args=readEmAsmArgs(sigPtr,argbuf);', address: 'code' },
+    ...(filename !== 'raylib-runtime.mjs' ? [{
+      label: 'main-thread EM_ASM',
+      declaration: 'var runMainThreadEmAsm=(emAsmAddr,sigPtr,argbuf,sync)=>{var args=readEmAsmArgs(sigPtr,argbuf);',
+      address: 'emAsmAddr',
+    }] : []),
+  ];
+  for (const { label, declaration, address } of dispatchers) {
+    // The factory's baked-in addresses belong to its stub WASM, not the
+    // separately linked application. Decode that application's memory even
+    // when its address collides with an entry in the stub's ASM_CONSTS table.
+    const tail = `return ASM_CONSTS[${address}](...args)}`;
+    const original = declaration + tail;
+    const legacy = declaration + legacyEmAsmFallback(address) + tail;
+    content = replaceRequired(content, {
+      label,
+      needle: content.includes(legacy) ? legacy : original,
+      replacement: declaration + applicationEmAsm(address) + tail,
+      marker: `ASM_CONSTS[${address}].emceptionApplicationAsm=true`,
+    }, filename, applied);
+  }
   if (filename !== 'sdl3-runtime.mjs') return { content, applied };
 
-  const emAsmFallback = (name) =>
-    `if(!ASM_CONSTS[${name}]){var _s=UTF8ToString(${name});ASM_CONSTS[${name}]=eval("(function($0,$1,$2,$3,$4,$5,$6,$7,$8,$9){"+_s+"})");}`;
   const sdlPatches = [
+    // The separately linked application can import C abort even when the stub did not.
+    // Match the pinned Emscripten 5.0.7 libcore implementation; retain its fatal runtime abort.
+    { label: 'C abort import', needle: 'var wasmImports={', replacement: 'var wasmImports={_abort_js:()=>abort(""),', marker: '_abort_js:' },
     { label: 'free declaration', needle: 'var _main,_SDL_free,', replacement: 'var _free,_main,_SDL_free,', marker: 'var _free,_main,_SDL_free,' },
     { label: 'malloc fallback', needle: '_malloc=wasmExports["malloc"]', replacement: '_malloc=wasmExports["malloc"]||wasmExports["SDL_malloc"]', marker: '_malloc=wasmExports["malloc"]||' },
     { label: 'free fallback', needle: '_SDL_free=Module["_SDL_free"]=wasmExports["SDL_free"]', replacement: '_SDL_free=Module["_SDL_free"]=wasmExports["SDL_free"];_free=wasmExports["free"]||_SDL_free', marker: '_free=wasmExports["free"]||_SDL_free' },
     { label: 'string allocation', needle: 'var stringToNewUTF8=str=>{var size=lengthBytesUTF8(str)+1;var ret=_malloc(size)', replacement: 'var stringToNewUTF8=str=>{var size=lengthBytesUTF8(str)+1;var allocFn=_malloc||_SDL_malloc;var ret=allocFn(size)', marker: 'var allocFn=_malloc||_SDL_malloc' },
-    { label: 'EM_ASM', needle: 'var runEmAsmFunction=(code,sigPtr,argbuf)=>{var args=readEmAsmArgs(sigPtr,argbuf);return ASM_CONSTS[code](...args)}', replacement: `var runEmAsmFunction=(code,sigPtr,argbuf)=>{var args=readEmAsmArgs(sigPtr,argbuf);${emAsmFallback('code')}return ASM_CONSTS[code](...args)}`, marker: 'ASM_CONSTS[code]=eval' },
-    { label: 'main-thread EM_ASM', needle: 'var runMainThreadEmAsm=(emAsmAddr,sigPtr,argbuf,sync)=>{var args=readEmAsmArgs(sigPtr,argbuf);return ASM_CONSTS[emAsmAddr](...args)}', replacement: `var runMainThreadEmAsm=(emAsmAddr,sigPtr,argbuf,sync)=>{var args=readEmAsmArgs(sigPtr,argbuf);${emAsmFallback('emAsmAddr')}return ASM_CONSTS[emAsmAddr](...args)}`, marker: 'ASM_CONSTS[emAsmAddr]=eval' },
     { label: 'canvas keyboard scope', needle: 'var keyEventHandlerFunc=e=>{var keyEventData=JSEvents.keyEvent', replacement: 'var keyEventHandlerFunc=e=>{if(Module["canvas"]&&e.target!==Module["canvas"])return;var keyEventData=JSEvents.keyEvent', marker: 'e.target!==Module["canvas"]' },
   ];
   for (const patch of sdlPatches) {

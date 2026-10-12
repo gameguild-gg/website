@@ -37,28 +37,43 @@ public sealed class HttpAuthorizationTenantContext : IAuthorizationTenantContext
         get
         {
             var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext is null) return null;
-            
+            if (httpContext is null)
+            {
+                return null;
+            }
+
             // Try primary key first (explicitly set for authorization)
             if (httpContext.Items.TryGetValue(PrimaryTenantIdKey, out var primaryValue))
             {
-                if (primaryValue is Guid guidValue) return guidValue;
+                if (primaryValue is Guid guidValue)
+                {
+                    return guidValue;
+                }
+
                 if (primaryValue is string strValue)
                 {
                     // SECURITY: Don't accept Guid.Empty as valid tenant
                     if (TryParseTenantId(strValue, out var parsedPrimaryTenantId))
+                    {
                         return parsedPrimaryTenantId;
+                    }
                 }
             }
             
             // Fallback to TenantMiddleware key
             if (httpContext.Items.TryGetValue(FallbackTenantIdKey, out var fallbackValue))
             {
-                if (fallbackValue is Guid fallbackGuid) return fallbackGuid != Guid.Empty ? fallbackGuid : null;
+                if (fallbackValue is Guid fallbackGuid)
+                {
+                    return fallbackGuid != Guid.Empty ? fallbackGuid : null;
+                }
+
                 if (fallbackValue is string fallbackStr)
                 {
                     if (TryParseTenantId(fallbackStr, out var parsedFallbackTenantId))
+                    {
                         return parsedFallbackTenantId;
+                    }
                 }
             }
             

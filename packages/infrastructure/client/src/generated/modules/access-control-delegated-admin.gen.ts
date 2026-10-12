@@ -113,7 +113,7 @@ export class AccessControlDelegatedAdminModule {
   /**
    * Get managed resource types for an admin
    */
-  async getDelegatedAdminUserManagedResources(adminUserId: string, query?: { tenantId?: string }): Promise<Result<Array<string>, ApiError>> {
+  async getDelegatedAdminUserManagedResources(adminUserId: string, query?: { tenantId?: string }): Promise<Result<string[], ApiError>> {
     const url = `/v1/delegated-admin/user/${adminUserId}/managed-resources`;
 
     const result = await this.client.request({
@@ -123,13 +123,13 @@ export class AccessControlDelegatedAdminModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<string>, ApiError>;
+    return result as Result<string[], ApiError>;
   }
 
   /**
    * Get managed users for an admin
    */
-  async getDelegatedAdminUserManagedUsers(adminUserId: string, query?: { tenantId?: string }): Promise<Result<Array<string>, ApiError>> {
+  async getDelegatedAdminUserManagedUsers(adminUserId: string, query?: { tenantId?: string }): Promise<Result<string[], ApiError>> {
     const url = `/v1/delegated-admin/user/${adminUserId}/managed-users`;
 
     const result = await this.client.request({
@@ -139,7 +139,7 @@ export class AccessControlDelegatedAdminModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<string>, ApiError>;
+    return result as Result<string[], ApiError>;
   }
 
   /**
@@ -148,7 +148,7 @@ export class AccessControlDelegatedAdminModule {
   async getDelegatedAdminUserScopes(
     adminUserId: string,
     query?: { tenantId?: string },
-  ): Promise<Result<Array<Types.IdentityAuthorizationDelegatedAdminScope>, ApiError>> {
+  ): Promise<Result<Types.IdentityAuthorizationDelegatedAdminScope[], ApiError>> {
     const url = `/v1/delegated-admin/user/${adminUserId}/scopes`;
 
     const result = await this.client.request({
@@ -158,7 +158,7 @@ export class AccessControlDelegatedAdminModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationDelegatedAdminScope>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationDelegatedAdminScope[], ApiError>;
   }
 }
 

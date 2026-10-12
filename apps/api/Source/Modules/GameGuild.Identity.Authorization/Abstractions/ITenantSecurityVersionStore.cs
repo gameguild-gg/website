@@ -29,6 +29,26 @@ public interface ITenantSecurityVersionStore
         return (await tenantVersionTask.ConfigureAwait(false), await globalVersionTask.ConfigureAwait(false));
     }
 
+    /// <summary>Reads tenant versions for a set of scopes together with the shared global version.</summary>
+    Task<IReadOnlyDictionary<Guid, (long TenantVersion, long GlobalVersion)>> GetTenantAndGlobalVersionsAsync(
+        IReadOnlyCollection<Guid> tenantIds) =>
+        GetTenantAndGlobalVersionsAsync(tenantIds, CancellationToken.None);
+
+    async Task<IReadOnlyDictionary<Guid, (long TenantVersion, long GlobalVersion)>> GetTenantAndGlobalVersionsAsync(
+        IReadOnlyCollection<Guid> tenantIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(tenantIds);
+
+        var versions = new Dictionary<Guid, (long TenantVersion, long GlobalVersion)>();
+        foreach (var tenantId in tenantIds.Distinct())
+        {
+            versions[tenantId] = await GetTenantAndGlobalVersionsAsync(tenantId, cancellationToken).ConfigureAwait(false);
+        }
+
+        return versions;
+    }
+
     /// <summary>
     ///     Increments the security version for a tenant (triggers cache invalidation).
     /// </summary>

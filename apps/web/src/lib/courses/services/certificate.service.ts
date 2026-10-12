@@ -1,3 +1,5 @@
+import { assertSafeRemoteUrl } from '@/lib/security/safe-remote-url';
+
 export interface CertificateStatus {
   eligible: boolean;
   generated: boolean;
@@ -150,7 +152,8 @@ export async function downloadCertificate(certificateId: string) {
 }
 
 export async function getCertificateStatus(courseId: string): Promise<CertificateStatus> {
-  const response = await fetch(`/api/courses/certificates?mode=status&courseId=${encodeURIComponent(courseId)}`, {
+  const response = await fetch(assertSafeRemoteUrl(`/api/courses/certificates?mode=status&courseId=${encodeURIComponent(courseId)}`), {
+    redirect: 'error',
     method: 'GET',
   });
 

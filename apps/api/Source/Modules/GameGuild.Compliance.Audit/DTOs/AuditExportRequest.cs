@@ -35,6 +35,14 @@ public sealed class AuditExportRequest : IValidatableObject
     /// <summary>Ordered CSV columns. Omit to include every supported audit field.</summary>
     public string[]? Columns { get; set; }
 
+    /// <summary>
+    /// Optional HTTPS endpoint to notify when this export completes, fails, or is cancelled.
+    /// Its exact host must be listed in <c>Audit:ExportWebhooks:AllowedHosts</c>; notifications are signed with
+    /// <c>Audit:ExportWebhooks:SigningSecret</c> and include an idempotency key.
+    /// </summary>
+    [MaxLength(2048)]
+    public string? WebhookUrl { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (PageNumber.HasValue != PageSize.HasValue)

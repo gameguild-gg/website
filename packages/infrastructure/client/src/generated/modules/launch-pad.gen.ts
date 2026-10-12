@@ -17,7 +17,7 @@ export class LaunchPadModule {
 
   /**
    */
-  async getLaunchPadForGetLaunchPad(query?: { status?: Types.LaunchPadLaunchPlanStatus }): Promise<Result<Array<Types.LaunchPadLaunchPlan>, ApiError>> {
+  async getLaunchPadForGetLaunchPad(query?: { status?: Types.LaunchPadLaunchPlanStatus }): Promise<Result<Types.LaunchPadLaunchPlan[], ApiError>> {
     const url = '/v1/launch-pad';
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class LaunchPadModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPlan>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPlan[], ApiError>;
   }
 
   /**

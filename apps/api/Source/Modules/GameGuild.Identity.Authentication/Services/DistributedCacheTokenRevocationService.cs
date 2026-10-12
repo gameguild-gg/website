@@ -7,7 +7,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Distributed token revocation store backed by <see cref="IDistributedCache"/>.
 /// </summary>
-public sealed class DistributedCacheTokenRevocationService : ITokenRevocationService
+public sealed class DistributedCacheTokenRevocationService : ITokenRevocationService, IVersionedUserTokenRevocationService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private const string TokenKeyPrefix = "auth:revoked-token:";
@@ -50,13 +50,23 @@ public sealed class DistributedCacheTokenRevocationService : ITokenRevocationSer
         _logger.LogInformation("Token revoked in distributed cache: JTI={Jti}, ExpiresAt={ExpiresAt}", revokedToken.Jti, revokedToken.ExpiresAt);
     }
 
-    public async Task RevokeAllUserTokensAsync(
+    public Task RevokeAllUserTokensAsync(
         Guid userId,
         string? reason = null,
         CancellationToken cancellationToken = default)
+        => RevokeAllUserTokensCoreAsync(userId, null, reason, cancellationToken);
+
+    public Task RevokeAllUserTokensAsync(Guid userId, int minimumTokenVersion, string? reason, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimumTokenVersion);
+        return RevokeAllUserTokensCoreAsync(userId, minimumTokenVersion, reason, cancellationToken);
+    }
+
+    private async Task RevokeAllUserTokensCoreAsync(Guid userId, int? minimumTokenVersion, string? reason, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         var revokedAt = SystemClock.UtcNow;
-        var payload = new UserTokenRevocation(userId, revokedAt, reason);
+        var payload = new UserTokenRevocation(userId, revokedAt, reason, minimumTokenVersion);
 
         await _cache.SetStringAsync(
             UserKeyPrefix + userId.ToString("N"),
@@ -78,10 +88,13 @@ public sealed class DistributedCacheTokenRevocationService : ITokenRevocationSer
         return !string.IsNullOrWhiteSpace(payload);
     }
 
-    public async Task<bool> IsUserTokenRevokedAsync(
+    public Task<bool> IsUserTokenRevokedAsync(
         Guid userId,
         DateTime tokenIssuedAt,
         CancellationToken cancellationToken = default)
+        => IsUserTokenRevokedAsync(userId, tokenIssuedAt, null, cancellationToken);
+
+    public async Task<bool> IsUserTokenRevokedAsync(Guid userId, DateTime tokenIssuedAt, int? tokenVersion, CancellationToken cancellationToken)
     {
         var payload = await _cache.GetStringAsync(UserKeyPrefix + userId.ToString("N"), cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(payload))
@@ -90,7 +103,8 @@ public sealed class DistributedCacheTokenRevocationService : ITokenRevocationSer
         }
 
         var revocation = JsonSerializer.Deserialize<UserTokenRevocation>(payload, JsonOptions);
-        return revocation is not null && tokenIssuedAt.ToUniversalTime() < revocation.RevokedAt;
+        return revocation is not null && new UserTokenRevocationBoundary(revocation.RevokedAt, revocation.MinimumTokenVersion)
+            .IsRevoked(tokenIssuedAt, tokenVersion);
     }
 
     public Task<int> CleanupExpiredAsync(CancellationToken cancellationToken = default)
@@ -99,5 +113,7 @@ public sealed class DistributedCacheTokenRevocationService : ITokenRevocationSer
     }
 
     private sealed record RevokedToken(string Jti, DateTime ExpiresAt, DateTime RevokedAt, string? Reason);
-    private sealed record UserTokenRevocation(Guid UserId, DateTime RevokedAt, string? Reason);
+    private sealed record UserTokenRevocation(Guid UserId, DateTime RevokedAt, string? Reason,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        int? MinimumTokenVersion = null);
 }

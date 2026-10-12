@@ -108,7 +108,7 @@ public sealed class TamperEvidentAuditLog : EntityBase {
             Country = country,
             Region = region,
             City = city,
-            Timestamp = SystemClock.UtcNow,
+            Timestamp = NormalizeStorageTimestamp(SystemClock.UtcNow),
             PreviousHash = previousHash,
             SequenceNumber = sequenceNumber,
             IsVerified = false,
@@ -116,6 +116,8 @@ public sealed class TamperEvidentAuditLog : EntityBase {
             IsPartOfEvidence = false
         };
     }
+
+    private static DateTime NormalizeStorageTimestamp(DateTime value) => new(value.Ticks - value.Ticks % 10, DateTimeKind.Utc);
 
     public void SetCryptographicHashes(string contentHash, string chainHash) {
         ContentHash = contentHash;

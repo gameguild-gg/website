@@ -57,7 +57,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
 
   /**
    */
-  async getLearningMeSearch(query?: { q?: string; take?: number }): Promise<Result<Array<Types.LearningWorkspacesLearnerSearchResultDto>, ApiError>> {
+  async getLearningMeSearch(query?: { q?: string; take?: number }): Promise<Result<Types.LearningWorkspacesLearnerSearchResultDto[], ApiError>> {
     const url = '/v1/learning/me/search';
 
     const result = await this.client.request({
@@ -67,7 +67,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningWorkspacesLearnerSearchResultDto>, ApiError>;
+    return result as Result<Types.LearningWorkspacesLearnerSearchResultDto[], ApiError>;
   }
 }
 

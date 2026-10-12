@@ -1,0 +1,46 @@
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"],
+  "failOnErrors": 1,
+  "Operations": [
+    {
+      "method": "POST",
+      "path": "/Users",
+      "bulkId": "bulk-user-1",
+      "data": {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+        "externalId": "00u_bulk_operator_1",
+        "userName": "scim.bulk.operator1",
+        "displayName": "Bulk Operator One",
+        "emails": [{ "value": "scim.bulk.operator1@example.com", "primary": true }],
+        "active": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/Users",
+      "bulkId": "bulk-user-2",
+      "data": {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+        "externalId": "00u_bulk_operator_2",
+        "userName": "scim.bulk.operator2",
+        "displayName": "Bulk Operator Two",
+        "emails": [{ "value": "scim.bulk.operator2@example.com", "primary": true }],
+        "active": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/Groups",
+      "bulkId": "bulk-group-1",
+      "data": {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+        "externalId": "00g_bulk_crew",
+        "displayName": "SCIM Bulk Crew",
+        "members": [
+          { "value": "bulkId:bulk-user-1" },
+          { "value": "bulkId:bulk-user-2" }
+        ]
+      }
+    }
+  ]
+}

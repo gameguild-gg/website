@@ -94,6 +94,22 @@ public class AuthControllerTests
     }
 
     [Fact]
+    public async Task RefreshToken_ShouldReturnGenericUnauthorized_ForCompletedContainmentDenial()
+    {
+        var sender = new Mock<ISender>(MockBehavior.Strict);
+        sender.Setup(service => service.Send(It.IsAny<RefreshTokenCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SignInResponse { Success = false, Message = "internal denial context" });
+        var controller = new AuthController(sender.Object);
+        var result = Assert.IsType<UnauthorizedObjectResult>(await controller.RefreshToken(
+            new RefreshTokenRequest { RefreshToken = Guid.NewGuid().ToString("N") }, CancellationToken.None));
+        var problem = Assert.IsType<ProblemDetails>(result.Value);
+        Assert.Equal(401, problem.Status);
+        Assert.Equal("Invalid refresh token", problem.Detail);
+        Assert.DoesNotContain("internal denial context", problem.Detail, StringComparison.Ordinal);
+        sender.VerifyAll();
+    }
+
+    [Fact]
     public async Task VerifyWeb3Signature_ShouldForwardSiweMessageNonceAndChainId()
     {
         var sender = new Mock<ISender>();

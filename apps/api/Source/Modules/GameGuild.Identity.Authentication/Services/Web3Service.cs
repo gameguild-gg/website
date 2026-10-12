@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -22,14 +23,21 @@ public class Web3Service : IWeb3Service
 
     private readonly ILogger<Web3Service> _logger;
     private readonly IMemoryCache _memoryCache;
+    private readonly TimeProvider _timeProvider;
     private readonly Uri _origin;
     private readonly string _statement;
     private readonly HashSet<string> _allowedChainIds;
 
     public Web3Service(ILogger<Web3Service> logger, IMemoryCache memoryCache, IConfiguration configuration)
+        : this(logger, memoryCache, configuration, TimeProvider.System)
+    {
+    }
+
+    public Web3Service(ILogger<Web3Service> logger, IMemoryCache memoryCache, IConfiguration configuration, TimeProvider timeProvider)
     {
         _logger = logger;
         _memoryCache = memoryCache;
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         var origin = configuration[$"{SiweConfigurationPrefix}:Origin"];
         if (string.IsNullOrWhiteSpace(origin))
         {
@@ -62,7 +70,7 @@ public class Web3Service : IWeb3Service
         var normalizedChainId = GetAllowedChainId(chainId);
         var checksummedAddress = AddressUtil.Current.ConvertToChecksumAddress(walletAddress);
         var nonce = GenerateNonce();
-        var issuedAt = SystemClock.UtcNow;
+        var issuedAt = _timeProvider.GetUtcNow().UtcDateTime;
         var expiresAt = issuedAt.Add(s_challengeLifetime);
         var siweMessage = new SiweMessage
         {
@@ -91,9 +99,27 @@ public class Web3Service : IWeb3Service
             TenantId = tenantId
         };
 
-        var cacheOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = expiresAt };
-        _memoryCache.Set(ChallengeKeyPrefix + nonce, challenge, cacheOptions);
-        _memoryCache.Set(GetWalletKey(walletAddress), nonce, cacheOptions);
+        // The host cache is size-bounded. Account for the message and binding entries
+        // explicitly; an unknown or evicted challenge always fails verification.
+        _memoryCache.Set(ChallengeKeyPrefix + nonce, challenge, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpiration = expiresAt, Size = Encoding.UTF8.GetByteCount(challenge.Message) + 512L
+        });
+        _memoryCache.Set(GetWalletKey(walletAddress), nonce, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpiration = expiresAt, Size = nonce.Length * 2L + walletAddress.Length * 2L + 128L
+        });
+
+        // MemoryCache may silently decline an entry at capacity. Never return a
+        // challenge whose nonce and wallet binding were not actually retained.
+        if (!_memoryCache.TryGetValue(ChallengeKeyPrefix + nonce, out Web3Challenge? storedChallenge)
+            || !ReferenceEquals(storedChallenge, challenge)
+            || !_memoryCache.TryGetValue(GetWalletKey(walletAddress), out string? storedNonce)
+            || !string.Equals(storedNonce, nonce, StringComparison.Ordinal))
+        {
+            _memoryCache.Remove(ChallengeKeyPrefix + nonce);
+            throw new InvalidOperationException("SIWE challenge storage is unavailable.");
+        }
 
         _logger.LogInformation("Generated SIWE challenge for wallet {WalletAddress} on chain {ChainId}", checksummedAddress, normalizedChainId);
         return Task.FromResult(challenge);
@@ -137,11 +163,11 @@ public class Web3Service : IWeb3Service
         }
 
         if (!string.Equals(challenge.Message, originalMessage, StringComparison.Ordinal)
-            || !challenge.IsValid
+            || !challenge.IsValidAt(_timeProvider.GetUtcNow().UtcDateTime)
             || !TryParseSiweMessage(originalMessage, out var siweMessage)
             || !HasExpectedSiweFields(siweMessage, challenge, walletAddress, expectedChainId, expectedNonce))
         {
-            if (!challenge.IsValid)
+            if (!challenge.IsValidAt(_timeProvider.GetUtcNow().UtcDateTime))
             {
                 _memoryCache.Remove(cacheKey);
                 _memoryCache.Remove(walletKey);
@@ -173,10 +199,20 @@ public class Web3Service : IWeb3Service
 
     public bool IsValidWalletAddress(string walletAddress)
     {
-        return !string.IsNullOrEmpty(walletAddress)
-               && walletAddress.StartsWith("0x", StringComparison.Ordinal)
-               && walletAddress.Length == 42
-               && walletAddress.AsSpan(2).ToString().All(IsAsciiHexCharacter);
+        if (string.IsNullOrEmpty(walletAddress)
+            || !walletAddress.StartsWith("0x", StringComparison.Ordinal)
+            || walletAddress.Length != 42
+            || !walletAddress.AsSpan(2).ToString().All(IsAsciiHexCharacter))
+        {
+            return false;
+        }
+
+        // Uniform-case hexadecimal inputs remain compatible; mixed-case inputs must
+        // carry a valid EIP-55 checksum before canonical SIWE formatting.
+        var value = walletAddress[2..];
+        var mixedCase = value.Any(character => character is >= 'a' and <= 'f')
+                        && value.Any(character => character is >= 'A' and <= 'F');
+        return !mixedCase || AddressUtil.Current.IsChecksumAddress(walletAddress);
     }
 
     private bool HasExpectedSiweFields(
@@ -217,7 +253,7 @@ public class Web3Service : IWeb3Service
 
         var expectedIssuedAt = new DateTimeOffset(challenge.IssuedAt.ToUniversalTime());
         var expectedExpiresAt = new DateTimeOffset(challenge.ExpiresAt.ToUniversalTime());
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         if (issuedAt != expectedIssuedAt
             || expiresAt != expectedExpiresAt
             || issuedAt > now.AddMinutes(1)

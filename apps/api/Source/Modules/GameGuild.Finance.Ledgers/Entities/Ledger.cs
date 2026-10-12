@@ -208,10 +208,14 @@ public class Ledger
         string? currencyCode = null)
     {
         if (parent.Type == LedgerType.Virtual)
+        {
             throw new InvalidOperationException("Cannot create children under virtual ledgers.");
+        }
 
         if (type == LedgerType.Root)
+        {
             throw new InvalidOperationException("Cannot create root ledger as child.");
+        }
 
         var ledger = new Ledger
         {
@@ -307,7 +311,9 @@ public class Ledger
         };
 
         if (!isValidTransition)
+        {
             throw new InvalidOperationException($"Cannot transition from {Status} to {newStatus}.");
+        }
 
         Status = newStatus;
         UpdatedByUserId = updatedByUserId;
@@ -330,12 +336,16 @@ public class Ledger
     public void SetProjectDates(DateOnly? startDate, DateOnly? endDate, Guid updatedByUserId)
     {
         if (Type != LedgerType.Project)
+        {
             throw new InvalidOperationException("Project dates can only be set on project ledgers.");
+        }
 
         if (startDate.HasValue && endDate.HasValue)
         {
             if (startDate.Value > endDate.Value)
+            {
                 throw new ArgumentException("Start date must be before end date.");
+            }
         }
 
         ProjectStartDate = startDate;
@@ -362,7 +372,9 @@ public class Ledger
     public void SoftDelete(Guid deletedByUserId)
     {
         if (Children.Any(c => c.DeletedAt == null))
+        {
             throw new InvalidOperationException("Cannot delete ledger with active children.");
+        }
 
         DeletedAt = DateTime.UtcNow;
         UpdatedByUserId = deletedByUserId;

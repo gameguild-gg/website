@@ -144,7 +144,7 @@ export function PageSettingsDropDown({ disabled }: { disabled?: boolean }) {
                 key={o}
                 active={pageSettings.orientation === o}
                 onClick={() =>
-                  setPageSettings({ ...pageSettings, orientation: o })
+                  { setPageSettings({ ...pageSettings, orientation: o }); }
                 }
               >
                 {PAGE_ORIENTATION_LABELS[o]}

@@ -9,6 +9,9 @@ public sealed class AuthenticationPasswordPolicySettings
 
     public int MaxPasswordLength { get; set; } = 128;
 
+    /// <summary>Cost used for new BCrypt passwords within the 72-byte input limit.</summary>
+    public int BCryptWorkFactor { get; set; } = 12;
+
     public bool RequireUppercase { get; set; } = true;
 
     public bool RequireLowercase { get; set; } = true;
@@ -19,6 +22,11 @@ public sealed class AuthenticationPasswordPolicySettings
 
     public void Validate()
     {
+        if (BCryptWorkFactor is < 10 or > 16)
+        {
+            throw new InvalidOperationException("BCrypt work factor must be between 10 and 16.");
+        }
+
         if (MinPasswordLength < 8)
         {
             throw new InvalidOperationException("Minimum password length must be at least 8 characters.");

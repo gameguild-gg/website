@@ -137,7 +137,7 @@ export class AnalyticsModule {
     tenantId?: string;
     factName?: string;
     take?: number;
-  }): Promise<Result<Array<Types.AnalyticsAnalyticsWarehouseFactDto>, ApiError>> {
+  }): Promise<Result<Types.AnalyticsAnalyticsWarehouseFactDto[], ApiError>> {
     const url = '/api/analytics/warehouse/facts';
 
     const result = await this.client.request({
@@ -147,7 +147,7 @@ export class AnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AnalyticsAnalyticsWarehouseFactDto>, ApiError>;
+    return result as Result<Types.AnalyticsAnalyticsWarehouseFactDto[], ApiError>;
   }
 
   /**

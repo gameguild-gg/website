@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using FluentAssertions;
 using GameGuild.API.Database;
+using GameGuild.API.IntegrationTests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -11,13 +12,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GameGuild.API.IntegrationTests;
 
-public sealed class CommonOpenApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class CommonOpenApiIntegrationTests : IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    public CommonOpenApiIntegrationTests(WebApplicationFactory<Program> factory)
+    public CommonOpenApiIntegrationTests()
     {
-        _factory = factory.WithWebHostBuilder(builder =>
+        _factory = new ConfiguredApiWebApplicationFactory(builder =>
         {
             builder.UseEnvironment("Development");
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
@@ -41,6 +42,23 @@ public sealed class CommonOpenApiIntegrationTests : IClassFixture<WebApplication
                 services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
             });
         });
+    }
+
+    public void Dispose() => _factory.Dispose();
+
+    [Fact]
+    public async Task Swagger_ShouldDocumentRefreshTokenRevocationOwnershipDenial()
+    {
+        using var client = _factory.CreateClient();
+        using var response = await client.GetAsync("/swagger/v1/swagger.json");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var document = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
+        var responses = document["paths"]!["/v1/auth/tokens:revoke"]!["post"]!["responses"]!.AsObject();
+
+        responses.Should().ContainKey("204");
+        responses.Should().ContainKey("400");
+        responses.Should().ContainKey("401");
+        responses.Should().ContainKey("403");
     }
 
     [Fact]

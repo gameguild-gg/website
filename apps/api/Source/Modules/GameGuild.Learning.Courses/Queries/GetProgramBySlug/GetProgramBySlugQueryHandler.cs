@@ -18,19 +18,32 @@ public sealed class GetProgramBySlugQueryHandler(IApplicationDbContext context, 
       .AsNoTracking() // Read-only query optimization
       .Where(p => p.Slug == request.Slug && p.DeletedAt == null);
 
-    if (request.IncludeContent) query = query.Include(p => p.ProgramContents.Where(pc => pc.DeletedAt == null));
+    if (request.IncludeContent)
+        {
+            query = query.Include(p => p.ProgramContents.Where(pc => pc.DeletedAt == null));
+        }
 
-    if (request.IncludeEnrollments) query = query.Include(p => p.ProgramUsers.Where(pu => pu.DeletedAt == null));
+        if (request.IncludeEnrollments)
+        {
+            query = query.Include(p => p.ProgramUsers.Where(pu => pu.DeletedAt == null));
+        }
 
-    if (request.IncludeRatings) query = query.Include(p => p.ProgramRatings);
+        if (request.IncludeRatings)
+        {
+            query = query.Include(p => p.ProgramRatings);
+        }
 
-    var program = await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+        var program = await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
     if (program != null)
-      logger.LogInformation("Found program by slug: {Slug}", request.Slug);
-    else
-      logger.LogWarning("Program not found by slug: {Slug}", request.Slug);
+        {
+            logger.LogInformation("Found program by slug: {Slug}", request.Slug);
+        }
+        else
+        {
+            logger.LogWarning("Program not found by slug: {Slug}", request.Slug);
+        }
 
-    return program;
+        return program;
   }
 }

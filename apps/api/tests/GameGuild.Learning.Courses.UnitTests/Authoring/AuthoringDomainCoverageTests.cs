@@ -20,10 +20,14 @@ public sealed class AuthoringDomainCoverageTests
         var act = () => AiAuthoringConversation.Create(ids[0], ids[1], ids[2], ids[3], Now);
 
         if (emptyIndex is 0 or 3)
+        {
             act.Should().Throw<UnauthorizedAccessException>();
+        }
         else
+        {
             act.Should().Throw<ArgumentException>()
-                .WithMessage("*Program and content IDs*");
+            .WithMessage("*Program and content IDs*");
+        }
     }
 
     [Fact]

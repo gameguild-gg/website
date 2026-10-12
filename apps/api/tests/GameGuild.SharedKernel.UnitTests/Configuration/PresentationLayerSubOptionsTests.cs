@@ -239,6 +239,197 @@ public class ExternalProviderOptionsTests
     }
 }
 
+public class OidcProviderOptionsTests
+{
+    private static OidcProviderOptions ValidProvider() => new()
+    {
+        Enabled = true,
+        Authority = "https://login.corp.example.test",
+        ClientId = "gameguild-web",
+        ClientSecret = "secret",
+        Scopes = ["openid", "profile", "email"],
+        ClaimMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["sub"] = "sub",
+            ["email"] = "email",
+            ["name"] = "name",
+            ["email_verified"] = "email_verified"
+        },
+        EmailDomains = ["corp.example.test"]
+    };
+
+    [Fact]
+    public void Validate_WithFullyConfiguredProvider_DoesNotThrow()
+    {
+        var act = () => ValidProvider().Validate("corp-idp");
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Validate_WithDisabledProvider_RequiresNothing()
+    {
+        // Fail-closed default: an empty, disabled entry is valid configuration.
+        var act = () => new OidcProviderOptions().Validate("corp-idp");
+        act.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData("http://login.corp.example.test")]
+    [InlineData("https://user:pass@login.corp.example.test")]
+    [InlineData("https://login.corp.example.test/?tenant=x")]
+    [InlineData("https://login.corp.example.test/#fragment")]
+    [InlineData("not-a-uri")]
+    [InlineData("")]
+    public void Validate_WithNonHttpsOrMalformedAuthority_Throws(string authority)
+    {
+        var provider = ValidProvider();
+        provider.Authority = authority;
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*authority*");
+    }
+
+    [Fact]
+    public void Validate_EnabledWithoutClientId_Throws()
+    {
+        var provider = ValidProvider();
+        provider.ClientId = " ";
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*client ID*");
+    }
+
+    [Fact]
+    public void Validate_EnabledWithoutClientSecret_Throws()
+    {
+        var provider = ValidProvider();
+        provider.ClientSecret = null;
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*client secret*");
+    }
+
+    [Fact]
+    public void Validate_ScopesMissingOpenId_Throws()
+    {
+        var provider = ValidProvider();
+        provider.Scopes = ["profile", "email"];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*include 'openid'*");
+    }
+
+    [Fact]
+    public void Validate_DuplicateScopes_Throws()
+    {
+        var provider = ValidProvider();
+        provider.Scopes = ["openid", "openid"];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*duplicates*");
+    }
+
+    [Theory]
+    [InlineData("Corp-Idp")]
+    [InlineData("corp_idp")]
+    [InlineData("-corp")]
+    [InlineData("corp-")]
+    [InlineData("")]
+    public void Validate_WithInvalidSlug_Throws(string slug)
+    {
+        var act = () => ValidProvider().Validate(slug);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*slug*");
+    }
+
+    [Fact]
+    public void Validate_UnknownClaimMappingKey_Throws()
+    {
+        var provider = ValidProvider();
+        provider.ClaimMapping["roles"] = "groups";
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*not a supported logical claim*");
+    }
+
+    [Fact]
+    public void Validate_ClaimMappingToEmptyClaimName_Throws()
+    {
+        var provider = ValidProvider();
+        provider.ClaimMapping["email"] = " ";
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*non-empty claim name*");
+    }
+
+    [Theory]
+    [InlineData("@corp.example.test")]
+    [InlineData("localhost")]
+    [InlineData("corp example.test")]
+    public void Validate_InvalidEmailDomain_Throws(string domain)
+    {
+        var provider = ValidProvider();
+        provider.EmailDomains = [domain];
+
+        var act = () => provider.Validate("corp-idp");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*email domains*");
+    }
+
+    [Fact]
+    public void Validate_NullOidcMap_OnExternalProviders_Throws()
+    {
+        var options = new ExternalProviderOptions { Oidc = null! };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*OIDC federation provider settings*");
+    }
+
+    [Fact]
+    public void Validate_OidcEntry_ValidatedThroughExternalProviders()
+    {
+        var options = new ExternalProviderOptions
+        {
+            Oidc = new Dictionary<string, OidcProviderOptions>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["corp-idp"] = ValidProvider()
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void AuthenticationOptions_Validate_OidcEnabledWithAuthenticationDisabled_Throws()
+    {
+        var options = new AuthenticationOptions
+        {
+            EnableAuthentication = false,
+            ExternalProviders = new ExternalProviderOptions
+            {
+                Oidc = new Dictionary<string, OidcProviderOptions>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["corp-idp"] = ValidProvider()
+                }
+            }
+        };
+
+        var act = () => options.Validate();
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*cannot be enabled when authentication is disabled*");
+    }
+}
+
 public class AuthorizationOptionsTests
 {
     [Fact]

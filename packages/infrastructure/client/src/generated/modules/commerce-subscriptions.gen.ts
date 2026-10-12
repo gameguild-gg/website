@@ -479,7 +479,7 @@ export class CommerceSubscriptionsModule {
    *
    * Retrieves billing history for a specific subscription.
    */
-  async getSubscriptionsBillingHistory(subscriptionId: string): Promise<Result<Array<Types.CommerceSubscriptionsBillingHistoryDto>, ApiError>> {
+  async getSubscriptionsBillingHistory(subscriptionId: string): Promise<Result<Types.CommerceSubscriptionsBillingHistoryDto[], ApiError>> {
     const url = `/api/v1/subscriptions/${subscriptionId}/billing-history`;
 
     const result = await this.client.request({
@@ -488,7 +488,7 @@ export class CommerceSubscriptionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceSubscriptionsBillingHistoryDto>, ApiError>;
+    return result as Result<Types.CommerceSubscriptionsBillingHistoryDto[], ApiError>;
   }
 
   /**

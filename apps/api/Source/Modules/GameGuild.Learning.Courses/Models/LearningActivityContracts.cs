@@ -61,7 +61,10 @@ public static class LearningActivityContract
         Guid contentId,
         ActivityResponse response)
     {
-        if (response is not DiscussionActivityResponse { ThreadRootId: { } rootId }) return;
+        if (response is not DiscussionActivityResponse { ThreadRootId: { } rootId })
+        {
+            return;
+        }
 
         var rootPayload = await context.Set<ContentInteraction>()
             .AsNoTracking()
@@ -89,7 +92,10 @@ public static class LearningActivityContract
 
     public static ActivitySettings? GetSettings(ProgramContentType type, string? serializedSettings)
     {
-        if (!IsActivityType(type)) return null;
+        if (!IsActivityType(type))
+        {
+            return null;
+        }
 
         var settings = string.IsNullOrWhiteSpace(serializedSettings)
             ? CreateDefaultSettings(type)
@@ -131,13 +137,21 @@ public static class LearningActivityContract
 
     public static bool AllowsMultipleResponses(ProgramContent content)
     {
-        if (content.Type != ProgramContentType.Survey) return false;
+        if (content.Type != ProgramContentType.Survey)
+        {
+            return false;
+        }
+
         return ((SurveyActivitySettings)content.GetActivitySettings()!).AllowMultipleResponses;
     }
 
     public static bool IsAnonymousSurvey(ProgramContent content)
     {
-        if (content.Type != ProgramContentType.Survey) return false;
+        if (content.Type != ProgramContentType.Survey)
+        {
+            return false;
+        }
+
         return ((SurveyActivitySettings)content.GetActivitySettings()!).IsAnonymous;
     }
 

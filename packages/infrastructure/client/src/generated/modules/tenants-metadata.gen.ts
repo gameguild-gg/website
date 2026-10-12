@@ -120,7 +120,7 @@ export class TenantsMetadataModule {
    *
    * Retrieves all tags configured for the tenant for categorization and filtering purposes.
    */
-  async getTenantsMetadataTags(tenantId: string): Promise<Result<Array<string>, ApiError>> {
+  async getTenantsMetadataTags(tenantId: string): Promise<Result<string[], ApiError>> {
     const url = `/v1/tenants/${tenantId}/metadata/tags`;
 
     const result = await this.client.request({
@@ -129,7 +129,7 @@ export class TenantsMetadataModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<string>, ApiError>;
+    return result as Result<string[], ApiError>;
   }
 
   /**
@@ -137,7 +137,7 @@ export class TenantsMetadataModule {
    *
    * Replaces all existing tags with the provided list of tags.
    */
-  async putTenantsMetadataTags(tenantId: string, body: Array<string>): Promise<Result<void, ApiError>> {
+  async putTenantsMetadataTags(tenantId: string, body: string[]): Promise<Result<void, ApiError>> {
     const url = `/v1/tenants/${tenantId}/metadata/tags`;
 
     const result = await this.client.request({

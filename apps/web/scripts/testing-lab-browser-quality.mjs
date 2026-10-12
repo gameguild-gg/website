@@ -6,6 +6,24 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+export function buildTestingLabFixtureUsername(kind, tag) {
+  const username = `tl_browser_${kind}_${String(tag).replace(/[^a-z0-9]/gi, '_')}`;
+  if (!/^[a-z0-9_]{3,50}$/i.test(username)) {
+    throw new RangeError('Testing Lab fixture usernames must contain 3 to 50 letters, numbers, or underscores.');
+  }
+  return username;
+}
+
+export async function createTestingLabFixtureIdentities(createIdentity) {
+  const identities = [];
+  // Local sign-in serializes the shared source-IP budget. Bootstrap these users
+  // in order so the fixture respects the same advisory lock as real clients.
+  for (const kind of ['owner', 'reviewer', 'tester']) {
+    identities.push(await createIdentity(kind));
+  }
+  return identities;
+}
+
 export function requireDisposableDatabaseMode(mode) {
   if (String(mode).toLowerCase() !== 'disposable') {
     throw new Error(
@@ -135,3 +153,6 @@ export async function collectViewportFailures(page, label) {
     ? [`${label}: ${dimensions.scrollWidth}px content in a ${dimensions.clientWidth}px viewport`]
     : [];
 }
+
+// Compatibility for existing callers; retain the complete bounded unique tag.
+export const createTestingLabFixtureUsername = buildTestingLabFixtureUsername;

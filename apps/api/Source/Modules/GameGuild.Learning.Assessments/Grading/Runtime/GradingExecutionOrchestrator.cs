@@ -57,7 +57,10 @@ public sealed class GradingExecutionOrchestrator(
         AssessmentDefinitionRevision revision)
     {
         if (execution.DefinitionRevisionId != revision.Id)
+        {
             throw new InvalidOperationException("Execution and revision do not match.");
+        }
+
         if (execution.DeliveryCanonicalJson is not null)
         {
             return Deserialize<AssessmentExecutionDeliveryV1>(execution.DeliveryCanonicalJson, "execution delivery");
@@ -107,7 +110,10 @@ public sealed class GradingExecutionOrchestrator(
         {
             var incomingHash = CanonicalPayload.Hash(Serialize(response));
             if (!string.Equals(execution.ResponseHash, incomingHash, StringComparison.Ordinal))
+            {
                 throw new InvalidOperationException("The execution was already submitted with a different response.");
+            }
+
             return await ResumeAsync(execution, revision, snapshot, delivery, cancellationToken).ConfigureAwait(false);
         }
 
@@ -129,7 +135,10 @@ public sealed class GradingExecutionOrchestrator(
         AssessmentResponseEnvelopeV1 response)
     {
         if (execution.DefinitionRevisionId != revision.Id)
+        {
             throw new InvalidOperationException("Execution and revision do not match.");
+        }
+
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         var delivery = MaterializeDelivery(execution, revision);
         GradingContractValidator.ValidateBindings(revision.ExecutionSnapshotHash, snapshot, delivery, response);
@@ -138,7 +147,10 @@ public sealed class GradingExecutionOrchestrator(
             .Distinct()
             .ToArray();
         if (bindings.Length != 1)
+        {
             throw new InvalidOperationException("An assessment response must be owned by exactly one assessment-type adapter.");
+        }
+
         var adapter = assessmentTypeAdapters.Resolve(
             snapshot.AuthoringSource.ContentType,
             bindings[0].AdapterKey,
@@ -155,14 +167,24 @@ public sealed class GradingExecutionOrchestrator(
         InstructorReviewResolutionV1 resolution,
         CancellationToken cancellationToken = default)
     {
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
-        if (resolution.SchemaVersion != 1) throw new ArgumentException("Instructor review schemaVersion must be 1.", nameof(resolution));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
+        if (resolution.SchemaVersion != 1)
+        {
+            throw new ArgumentException("Instructor review schemaVersion must be 1.", nameof(resolution));
+        }
+
         var execution = await RequireExecutionAsync(executionId, cancellationToken).ConfigureAwait(false);
         var revision = await RequireRevisionAsync(execution.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
         var round = await RequireActiveRoundAsync(execution, cancellationToken).ConfigureAwait(false);
         if (round.Status == PersistedGradeRoundStatus.Finalized)
+        {
             return await OutcomeAsync(execution, round, cancellationToken).ConfigureAwait(false);
+        }
 
         var stage = await context.Set<ReviewStage>()
             .Where(value => value.GradeRoundId == round.Id && value.ReviewMethod == ReviewMethod.InstructorReview)
@@ -171,7 +193,9 @@ public sealed class GradingExecutionOrchestrator(
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("The active round does not contain an InstructorReview stage.");
         if (stage.Status != PersistedReviewStageStatus.AwaitingInstructorResolution)
+        {
             throw new InvalidOperationException("The instructor stage is not awaiting resolution.");
+        }
 
         var projections = snapshot.Manifest.Items.ToDictionary(
             item => item.ItemId,
@@ -179,14 +203,30 @@ public sealed class GradingExecutionOrchestrator(
             StringComparer.Ordinal);
         var resolutions = resolution.Items.ToDictionary(item => RequireItemId(item.ItemId), StringComparer.Ordinal);
         if (!projections.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(resolutions.Keys))
+        {
             throw new ArgumentException("Instructor resolution must contain every item exactly once.", nameof(resolution));
+        }
+
         foreach (var (itemId, item) in resolutions)
         {
             if (item.Score.CompareTo(ScoreValue.Zero) < 0 || item.Score.CompareTo(projections[itemId]) > 0)
+            {
                 throw new ArgumentOutOfRangeException(nameof(resolution), $"Instructor score for {itemId} is outside its maximum.");
+            }
         }
 
+        Code.CodeRubricSnapshot.ValidateResolution(snapshot, resolution);
         var previous = await PreviousStageResultAsync(round.Id, stage.Sequence, cancellationToken).ConfigureAwait(false);
+        // Code's trusted worker emits redacted feedback on its single persisted item.
+        // An omitted optional instructor comment must not erase that feedback.
+        var previousCodeFeedback = snapshot.AuthoringSource.ContentType == Code.CodeAssessmentContracts.ContentType
+            ? previous?.Items.SingleOrDefault(item => item.ItemId == Code.CodeAssessmentContracts.ItemId &&
+                item.ReviewMethod == ReviewMethod.AutomatedReview &&
+                item.HandlerKey == Code.CodeAssessmentContracts.HandlerKey &&
+                item.HandlerVersion == Code.CodeAssessmentContracts.Version)?.Feedback
+            : null;
+        string? ResolveFeedback(string? supplied) => previousCodeFeedback is not null && string.IsNullOrWhiteSpace(supplied)
+            ? previousCodeFeedback : supplied;
         var changedAutomatedScore = previous is not null && previous.Items.Any(previousItem =>
             previousItem.Score.HasValue && resolutions[previousItem.ItemId].Score != previousItem.Score.Value);
         if (changedAutomatedScore &&
@@ -206,6 +246,7 @@ public sealed class GradingExecutionOrchestrator(
             resolution.Items,
             resolution.Feedback,
             resolution.OverrideReason,
+            resolution.RubricScores,
             previousResult = previous,
         };
         var evidenceCanonical = Serialize(evidencePayload);
@@ -227,7 +268,7 @@ public sealed class GradingExecutionOrchestrator(
             ReviewMethod.InstructorReview,
             stage.HandlerKey,
             stage.HandlerVersion,
-            resolutions[item.ItemId].Feedback)).ToArray();
+            ResolveFeedback(resolutions[item.ItemId].Feedback))).ToArray();
         var result = new GradeResultV1(
             GradingContractVersions.GradeResult,
             "final",
@@ -235,7 +276,7 @@ public sealed class GradingExecutionOrchestrator(
             ScoreValue.Sum(itemResults.Select(item => item.MaxScore)),
             itemResults,
             [evidenceKey],
-            resolution.Feedback);
+            ResolveFeedback(resolution.Feedback));
         GradingContractValidator.Validate(result);
         PersistStageResult(execution, stage, result);
         stage.Complete(SystemClock.UtcNow);
@@ -250,11 +291,22 @@ public sealed class GradingExecutionOrchestrator(
         string reason,
         CancellationToken cancellationToken = default)
     {
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
-        if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("Regrade reason is required.", nameof(reason));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("Regrade reason is required.", nameof(reason));
+        }
+
         var execution = await RequireExecutionAsync(executionId, cancellationToken).ConfigureAwait(false);
         if (execution.Status != PersistedGradingExecutionStatus.Completed || !execution.ActiveGradeRoundId.HasValue)
+        {
             throw new InvalidOperationException("Only a completed execution can be regraded.");
+        }
+
         var previous = await RequireActiveRoundAsync(execution, cancellationToken).ConfigureAwait(false);
         var revision = await RequireRevisionAsync(execution.DefinitionRevisionId, cancellationToken).ConfigureAwait(false);
         var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
@@ -288,7 +340,10 @@ public sealed class GradingExecutionOrchestrator(
     {
         var round = await RequireActiveRoundAsync(execution, cancellationToken).ConfigureAwait(false);
         if (round.Status == PersistedGradeRoundStatus.Finalized)
+        {
             return await OutcomeAsync(execution, round, cancellationToken).ConfigureAwait(false);
+        }
+
         return await RunAvailableStagesAsync(execution, revision, snapshot, delivery, round, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -362,7 +417,10 @@ public sealed class GradingExecutionOrchestrator(
         }
 
         if (previousResult is null)
+        {
             throw new InvalidOperationException("The grading workflow did not produce a result.");
+        }
+
         if (!string.Equals(previousResult.State, "final", StringComparison.Ordinal))
         {
             round.AwaitEvidence();
@@ -457,7 +515,10 @@ public sealed class GradingExecutionOrchestrator(
             StringComparer.Ordinal);
         if (!expected.Keys.ToHashSet(StringComparer.Ordinal)
                 .SetEquals(result.Items.Select(item => item.ItemId)))
+        {
             throw new InvalidOperationException("Review result items do not match the immutable manifest.");
+        }
+
         foreach (var item in result.Items)
         {
             if (item.MaxScore != expected[item.ItemId] ||
@@ -494,7 +555,11 @@ public sealed class GradingExecutionOrchestrator(
             .OrderBy(value => value.ItemId)
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (items.Length == 0) throw new InvalidOperationException("Completed review stage has no item results.");
+        if (items.Length == 0)
+        {
+            throw new InvalidOperationException("Completed review stage has no item results.");
+        }
+
         var results = items.Select(item => new GradeItemResultV1(
             item.ItemId,
             item.State switch
@@ -556,7 +621,10 @@ public sealed class GradingExecutionOrchestrator(
         CancellationToken cancellationToken)
     {
         if (!execution.ActiveGradeRoundId.HasValue)
+        {
             throw new InvalidOperationException("Grading execution does not have an active round.");
+        }
+
         return await context.Set<GradeRound>()
             .SingleAsync(value => value.Id == execution.ActiveGradeRoundId && value.GradingExecutionId == execution.Id, cancellationToken)
             .ConfigureAwait(false);

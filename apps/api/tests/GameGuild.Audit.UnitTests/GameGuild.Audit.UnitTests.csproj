@@ -50,4 +50,8 @@
         <ProjectReference Include="..\..\Source\Modules\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Fixtures\ComplianceEvidence.LegacyV1.json" />
+    </ItemGroup>
+
 </Project>

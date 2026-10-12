@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using FluentAssertions;
 using GameGuild.Resources.IntegrationTests.Infrastructure;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace GameGuild.Resources.IntegrationTests.Security;
 
@@ -19,6 +20,7 @@ namespace GameGuild.Resources.IntegrationTests.Security;
 public class ResourcesSecurityTests : IAsyncLifetime, IDisposable
 {
     private readonly PostgreSqlTestFixture _fixture;
+    private readonly ITestOutputHelper _output;
     private PostgreSqlWebApplicationFactory? _factory;
     private HttpClient? _anonymousClient;
 
@@ -26,9 +28,10 @@ public class ResourcesSecurityTests : IAsyncLifetime, IDisposable
     private static readonly Guid TenantB = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid UserA = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
-    public ResourcesSecurityTests(PostgreSqlTestFixture fixture)
+    public ResourcesSecurityTests(PostgreSqlTestFixture fixture, ITestOutputHelper output)
     {
         _fixture = fixture;
+        _output = output;
     }
 
     public Task InitializeAsync()
@@ -188,43 +191,49 @@ public class ResourcesSecurityTests : IAsyncLifetime, IDisposable
     [Fact]
     public async Task TenantAccess_DifferentResponses_SimilarTiming()
     {
-        // Arrange
         using var client = CreateAuthenticatedClient(UserA, TenantA);
         var existingTenant = TenantB;
         var nonExistentTenant = Guid.NewGuid();
-        
-        var timings = new List<long>();
+        var existingTimings = new List<double>();
+        var nonExistentTimings = new List<double>();
 
-        // Exclude one-time host, authorization, and database initialization from the comparison.
-        using var existingWarmupResponse = await client.GetAsync($"/v1/tenants/{existingTenant}/quotas");
-        using var nonExistentWarmupResponse = await client.GetAsync($"/v1/tenants/{nonExistentTenant}/quotas");
+        // Exclude one-time host, authorization, and database initialization.
+        await MeasureDeniedTenantAsync(existingTenant, "warmup existing");
+        await MeasureDeniedTenantAsync(nonExistentTenant, "warmup nonexistent");
 
-        // Act - Measure response times for different tenant IDs
-        for (int i = 0; i < 5; i++)
+        // Both groups occupy each request position equally to avoid ordering bias.
+        for (var pair = 0; pair < 10; pair++)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            await client.GetAsync($"/v1/tenants/{existingTenant}/quotas");
-            sw.Stop();
-            timings.Add(sw.ElapsedMilliseconds);
+            if (pair % 2 == 0)
+            {
+                existingTimings.Add(await MeasureDeniedTenantAsync(existingTenant, "existing"));
+                nonExistentTimings.Add(await MeasureDeniedTenantAsync(nonExistentTenant, "nonexistent"));
+            }
+            else
+            {
+                nonExistentTimings.Add(await MeasureDeniedTenantAsync(nonExistentTenant, "nonexistent"));
+                existingTimings.Add(await MeasureDeniedTenantAsync(existingTenant, "existing"));
+            }
         }
 
-        var avgExisting = timings.Average();
-        timings.Clear();
+        var avgExisting = existingTimings.Average();
+        var avgNonExistent = nonExistentTimings.Average();
+        _output.WriteLine("Mean response times: existing {0} ms, nonexistent {1} ms", avgExisting, avgNonExistent);
 
-        for (int i = 0; i < 5; i++)
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            await client.GetAsync($"/v1/tenants/{nonExistentTenant}/quotas");
-            sw.Stop();
-            timings.Add(sw.ElapsedMilliseconds);
-        }
-
-        var avgNonExistent = timings.Average();
-
-        // Assert - Timing difference should be small (no obvious timing oracle)
-        // Allow up to 100ms variance for test stability
         Math.Abs(avgExisting - avgNonExistent).Should().BeLessThan(100,
             "Response times should be similar to prevent timing enumeration attacks");
+
+        async Task<double> MeasureDeniedTenantAsync(Guid tenantId, string label)
+        {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            using var response = await client.GetAsync($"/v1/tenants/{tenantId}/quotas");
+            stopwatch.Stop();
+
+            _output.WriteLine("{0}: {1} ms, HTTP {2}", label, stopwatch.Elapsed.TotalMilliseconds, (int)response.StatusCode);
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+                "each timing sample must exercise the tenant access denial");
+            return stopwatch.Elapsed.TotalMilliseconds;
+        }
     }
 
     #endregion

@@ -7,13 +7,19 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="JsonSchema.Net" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="System.ComponentModel.Annotations" />
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource Include="Resources\FedRamp2026\*.json" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
         <ProjectReference Include="..\GameGuild.Identity.Authentication\GameGuild.Identity.Authentication.csproj" />
+        <ProjectReference Include="..\GameGuild.Identity.Provisioning\GameGuild.Identity.Provisioning.csproj" />
         <ProjectReference Include="..\GameGuild.Identity.Authorization\GameGuild.Identity.Authorization.csproj" />
     </ItemGroup>
 

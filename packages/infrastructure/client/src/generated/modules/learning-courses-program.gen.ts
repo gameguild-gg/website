@@ -27,7 +27,7 @@ export class LearningCoursesProgramModule {
     sort?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningCoursesProgramDto>, ApiError>> {
+  }): Promise<Result<Types.LearningCoursesProgramDto[], ApiError>> {
     const url = '/v1/courses';
 
     const result = await this.client.request({
@@ -37,7 +37,7 @@ export class LearningCoursesProgramModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramDto[], ApiError>;
   }
 
   /**
@@ -461,22 +461,22 @@ export class LearningCoursesProgramModule {
   /**
    * Get all products linked to a program (resource-level read permission)
    */
-  async getCoursesProducts(id: string): Promise<Result<Array<string>, ApiError>> {
+  async getCoursesProducts(id: string): Promise<Result<string[], ApiError>> {
     const url = `/v1/courses/${id}/products`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<string>, ApiError>;
+    return result as Result<string[], ApiError>;
   }
 
   /**
    * Get all users in a program (resource-level read permission)
    */
-  async getCoursesUsers(id: string, query?: { skip?: number; take?: number }): Promise<Result<Array<Types.LearningCoursesUserProgressDto>, ApiError>> {
+  async getCoursesUsers(id: string, query?: { skip?: number; take?: number }): Promise<Result<Types.LearningCoursesUserProgressDto[], ApiError>> {
     const url = `/v1/courses/${id}/users`;
 
     const result = await this.client.request({
@@ -486,7 +486,7 @@ export class LearningCoursesProgramModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesUserProgressDto>, ApiError>;
+    return result as Result<Types.LearningCoursesUserProgressDto[], ApiError>;
   }
 
   /**
@@ -656,7 +656,7 @@ export class LearningCoursesProgramModule {
   /**
    * Get every course in which the current user has an active enrollment.
    */
-  async getCoursesMe(): Promise<Result<Array<Types.LearningCoursesProgramDto>, ApiError>> {
+  async getCoursesMe(): Promise<Result<Types.LearningCoursesProgramDto[], ApiError>> {
     const url = '/v1/courses/me';
 
     const result = await this.client.request({
@@ -665,23 +665,23 @@ export class LearningCoursesProgramModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramDto[], ApiError>;
   }
 
   /**
    * Get published public courses for the public catalog.
    */
-  async getCoursesPublic(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.LearningCoursesProgramDto>, ApiError>> {
+  async getCoursesPublic(query?: { skip?: number; take?: number }): Promise<Result<Types.LearningCoursesProgramDto[], ApiError>> {
     const url = '/v1/courses/public';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramDto[], ApiError>;
   }
 
   /**
@@ -693,7 +693,7 @@ export class LearningCoursesProgramModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

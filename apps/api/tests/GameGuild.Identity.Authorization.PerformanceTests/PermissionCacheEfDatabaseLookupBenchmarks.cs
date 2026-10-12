@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace GameGuild.Identity.Authorization.PerformanceTests;
 
@@ -39,8 +40,16 @@ public class PermissionCacheEfDatabaseLookupBenchmarks
     {
         _database = await EconomyPostgreSqlTestDatabase.CreateAsync("authorization_ef_benchmarks").ConfigureAwait(false);
 
+        // The shared Testcontainers helper disables pooling to isolate ordinary tests. A
+        // performance fixture must model the API's pooled Npgsql connections; otherwise
+        // repeated short-lived DbContexts churn TCP sockets and can exhaust local ports.
+        var benchmarkConnectionString = new NpgsqlConnectionStringBuilder(_database.ConnectionString)
+        {
+            Pooling = true,
+            MaxPoolSize = 128
+        }.ConnectionString;
         var dbOptions = new DbContextOptionsBuilder<PermissionCacheBenchmarkDbContext>()
-            .UseNpgsql(_database.ConnectionString)
+            .UseNpgsql(benchmarkConnectionString)
             .Options;
         _contextFactory = new BenchmarkDbContextFactory(dbOptions);
         await SeedDatabaseAsync().ConfigureAwait(false);

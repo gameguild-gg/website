@@ -243,6 +243,9 @@ public class DiExtensionsAndCachingTests
         opts.DistributedCacheTtlSeconds.Should().Be(600);
         opts.EnableMetrics.Should().BeTrue();
         opts.MetricsLoggingIntervalSeconds.Should().Be(60);
+        opts.MinimumHitRateWarningThreshold.Should().Be(0.70);
+        opts.MinimumRequestsForPerformanceWarning.Should().Be(100);
+        opts.LookupLatencyWarningThresholdMilliseconds.Should().Be(100);
         opts.UsePubSubInvalidation.Should().BeTrue();
         opts.InvalidationChannelName.Should().Be("gg:auth:invalidate");
     }
@@ -299,6 +302,9 @@ public class DiExtensionsAndCachingTests
             DistributedCacheTtlSeconds = 300,
             EnableMetrics = false,
             MetricsLoggingIntervalSeconds = 120,
+            MinimumHitRateWarningThreshold = 0.8,
+            MinimumRequestsForPerformanceWarning = 50,
+            LookupLatencyWarningThresholdMilliseconds = 80,
             UsePubSubInvalidation = false,
             InvalidationChannelName = "test:invalidate"
         };
@@ -307,6 +313,9 @@ public class DiExtensionsAndCachingTests
         opts.UseDistributedCache.Should().BeTrue();
         opts.RedisConnectionString.Should().Be("localhost:6379");
         opts.EnableMetrics.Should().BeFalse();
+        opts.MinimumHitRateWarningThreshold.Should().Be(0.8);
+        opts.MinimumRequestsForPerformanceWarning.Should().Be(50);
+        opts.LookupLatencyWarningThresholdMilliseconds.Should().Be(80);
     }
 
     [Fact]

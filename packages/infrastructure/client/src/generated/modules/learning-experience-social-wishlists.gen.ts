@@ -101,10 +101,7 @@ export class LearningExperienceSocialWishlistsModule {
   /**
    * Gets the current user's wishlist
    */
-  async getApiSocialWishlistMe(query?: {
-    skip?: number;
-    take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseWishlistDto>, ApiError>> {
+  async getApiSocialWishlistMe(query?: { skip?: number; take?: number }): Promise<Result<Types.LearningExperienceSocialServicesCourseWishlistDto[], ApiError>> {
     const url = '/api/social/wishlist/me';
 
     const result = await this.client.request({
@@ -114,7 +111,7 @@ export class LearningExperienceSocialWishlistsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseWishlistDto>, ApiError>;
+    return result as Result<Types.LearningExperienceSocialServicesCourseWishlistDto[], ApiError>;
   }
 }
 

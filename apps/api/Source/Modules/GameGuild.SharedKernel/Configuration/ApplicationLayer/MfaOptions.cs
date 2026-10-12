@@ -31,7 +31,7 @@ public sealed class MfaOptions : BaseOptions
     ///     Length of each backup code
     /// </summary>
     [Range(6, 16)]
-    public int BackupCodeLength { get; set; } = 8;
+    public int BackupCodeLength { get; set; } = 12;
 
     /// <summary>
     ///     TOTP time step in seconds (RFC 6238 standard is 30)

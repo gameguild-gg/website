@@ -86,28 +86,44 @@ public sealed class AuthenticationSecurityOptions : BaseOptions
         var errors = new List<string>();
 
         if (MaxFailedAttemptsPerHour < 1 || MaxFailedAttemptsPerHour > 100)
+        {
             errors.Add("MaxFailedAttemptsPerHour must be between 1 and 100");
+        }
 
         if (MaxFailedAttemptsPerDay < 1 || MaxFailedAttemptsPerDay > 500)
+        {
             errors.Add("MaxFailedAttemptsPerDay must be between 1 and 500");
+        }
 
         if (MaxAttemptsPerIpPerHour < 1 || MaxAttemptsPerIpPerHour > 1000)
+        {
             errors.Add("MaxAttemptsPerIpPerHour must be between 1 and 1000");
+        }
 
         if (AccountLockoutDurationMinutes < 1 || AccountLockoutDurationMinutes > 1440)
+        {
             errors.Add("AccountLockoutDurationMinutes must be between 1 and 1440 (24 hours)");
+        }
 
         if (EmailVerificationTokenValidityHours < 1 || EmailVerificationTokenValidityHours > 168)
+        {
             errors.Add("EmailVerificationTokenValidityHours must be between 1 and 168 (7 days)");
+        }
 
         if (PasswordResetTokenValidityHours < 1 || PasswordResetTokenValidityHours > 24)
+        {
             errors.Add("PasswordResetTokenValidityHours must be between 1 and 24");
+        }
 
         if (SuspiciousThreshold < 1 || SuspiciousThreshold > 10)
+        {
             errors.Add("SuspiciousThreshold must be between 1 and 10");
+        }
 
         if (MaxFailedAttemptsPerHour > MaxFailedAttemptsPerDay)
+        {
             errors.Add("MaxFailedAttemptsPerHour cannot exceed MaxFailedAttemptsPerDay");
+        }
 
         return (errors.Count == 0, errors.ToArray());
     }

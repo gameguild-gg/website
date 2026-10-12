@@ -27,7 +27,7 @@ export class CommercePaymentsBillingChargesModule {
     endDate?: string;
     page?: number;
     pageSize?: number;
-  }): Promise<Result<Array<Types.CommercePaymentsPaymentResult>, ApiError>> {
+  }): Promise<Result<Types.CommercePaymentsPaymentResult[], ApiError>> {
     const url = '/api/v1/billing/charges';
 
     const result = await this.client.request({
@@ -37,7 +37,7 @@ export class CommercePaymentsBillingChargesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommercePaymentsPaymentResult>, ApiError>;
+    return result as Result<Types.CommercePaymentsPaymentResult[], ApiError>;
   }
 
   /**

@@ -65,7 +65,7 @@ export class EconomyComplianceHoldAdministrationModule {
 
   /**
    */
-  async getAdminEconomyComplianceHoldsAudit(holdId: string): Promise<Result<Array<Types.FinanceEconomyRiskComplianceHoldEvent>, ApiError>> {
+  async getAdminEconomyComplianceHoldsAudit(holdId: string): Promise<Result<Types.FinanceEconomyRiskComplianceHoldEvent[], ApiError>> {
     const url = `/api/v1/admin/economy/compliance/holds/${holdId}/audit`;
 
     const result = await this.client.request({
@@ -74,7 +74,7 @@ export class EconomyComplianceHoldAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyRiskComplianceHoldEvent>, ApiError>;
+    return result as Result<Types.FinanceEconomyRiskComplianceHoldEvent[], ApiError>;
   }
 
   /**

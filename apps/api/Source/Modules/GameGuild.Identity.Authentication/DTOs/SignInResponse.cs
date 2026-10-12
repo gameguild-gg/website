@@ -70,6 +70,10 @@ public class SignInResponse
     /// </summary>
     public string? MfaToken { get; set; }
 
+    /// <summary>Recovery codes returned once, only when a limited enrollment finishes with verified TOTP.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string[]? MfaEnrollmentBackupCodes { get; set; }
+
     /// <summary>
     ///     User information
     /// </summary>
@@ -124,4 +128,22 @@ public class SignInResponse
     ///     Available step-up authentication methods
     /// </summary>
     public List<string>? AvailableMethods { get; set; }
+
+    /// <summary>
+    ///     Authentication method references (OIDC <c>amr</c>) attested by the federated
+    /// identity provider for this sign-in. Null for non-federated flows.
+    /// </summary>
+    public IReadOnlyList<string>? AuthenticationMethodReferences { get; set; }
+
+    /// <summary>
+    ///     Authentication context class reference (OIDC <c>acr</c>) attested by the federated
+    /// identity provider for this sign-in. Null for non-federated flows.
+    /// </summary>
+    public string? AuthenticationContextClassReference { get; set; }
+
+    /// <summary>
+    ///     Whether the federated identity provider attested multi-factor authentication
+    /// (<c>amr</c> containing "mfa") for this sign-in.
+    /// </summary>
+    public bool MfaVerifiedByProvider { get; set; }
 }

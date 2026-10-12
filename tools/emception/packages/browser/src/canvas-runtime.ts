@@ -61,52 +61,63 @@ function startEntrypoint(
         }
     }
 
-    const callMain = callable(module, 'callMain');
-    if (callMain) Reflect.apply(callMain, module, [[]]);
-    else {
-        const main = callable(module, '_main') ?? callable(module, 'main');
-        if (main) Reflect.apply(main, module, [0, 0]);
+    try {
+        const callMain = callable(module, 'callMain');
+        if (callMain) Reflect.apply(callMain, module, [[]]);
+        else {
+            const main = callable(module, '_main') ?? callable(module, 'main');
+            if (main) Reflect.apply(main, module, [0, 0]);
+        }
+    } catch (error) {
+        // Emscripten transfers a simulateInfiniteLoop main to its browser loop
+        // with this exact sentinel. WASM traps and other errors still fail startup.
+        if (error !== 'unwind') throw error;
     }
     return () => undefined;
 }
 
-function sdlInstantiation(
+function canvasInstantiation(
     artifact: CanvasArtifact,
     onOutput: (text: string) => void,
     capture: { exports?: WebAssembly.Exports; memory: WebAssembly.Memory | null },
+    fail: (error: unknown) => void,
 ): (imports: WebAssembly.Imports, receive: (instance: WebAssembly.Instance) => void) => WebAssembly.Exports {
     return (imports, receive) => {
-        const environment = new Proxy(imports.env ?? {}, {
-            get(target, property, receiver) {
-                const value = Reflect.get(target, property, receiver);
-                if (value !== undefined) return value;
-                return () => 0;
-            },
-        });
+        const environment = { ...imports.env };
+        // Direct wasm-ld applications retain C GL names; generated Emscripten
+        // factories expose the same bindings with an emscripten_ prefix.
+        for (const [name, value] of Object.entries(environment)) {
+            if (name.startsWith('emscripten_gl') && typeof value === 'function') {
+                const cName = name.slice('emscripten_'.length);
+                if (environment[cName] === undefined) environment[cName] = value;
+            }
+        }
         const resolvedImports = {
             ...imports,
             env: environment,
-            wasi_snapshot_preview1: createCanvasWasiImports(() => capture.memory, onOutput),
+            ...(artifact.runtimeProfile === 'sdl3-runtime' ? {
+                wasi_snapshot_preview1: createCanvasWasiImports(() => capture.memory, onOutput),
+            } : {}),
         };
         WebAssembly.compile(ownedBuffer(artifact.wasm)).then((module) => WebAssembly.instantiate(module, resolvedImports)).then((instance) => {
             capture.exports = instance.exports;
             const memory = instance.exports.memory;
             if (memory instanceof WebAssembly.Memory) capture.memory = memory;
-            const exports = new Proxy(instance.exports, {
+            const exports = artifact.runtimeProfile === 'sdl3-runtime' ? new Proxy(instance.exports, {
                 get(target, property, receiver) {
                     if ((property === '__wasm_call_ctors' || property === 'main' || property === '_main') && !(property in target)) {
                         return () => 0;
                     }
                     return Reflect.get(target, property, receiver);
                 },
-            });
+            }) : instance.exports;
             const patchedInstance = new Proxy(instance, {
                 get(target, property, receiver) {
                     return property === 'exports' ? exports : Reflect.get(target, property, receiver);
                 },
             });
             receive(patchedInstance);
-        });
+        }).catch(fail);
         return {};
     };
 }
@@ -135,10 +146,13 @@ export async function startCanvasArtifact(
             print,
             printErr: printError,
         };
-        if (artifact.runtimeProfile === 'sdl3-runtime') {
-            config.instantiateWasm = sdlInstantiation(artifact, printError, capture);
-        }
-        const value: unknown = await Reflect.apply(factory, namespace, [config]);
+        let failInstantiation: (error: unknown) => void = () => undefined;
+        const instantiationFailed = new Promise<never>((_, reject) => { failInstantiation = reject; });
+        config.instantiateWasm = canvasInstantiation(artifact, printError, capture, failInstantiation);
+        const value: unknown = await Promise.race([
+            Promise.resolve().then(() => Reflect.apply(factory, namespace, [config])),
+            instantiationFailed,
+        ]);
         if (!isRecord(value)) throw new Error(`Canvas runtime '${artifact.runtimeProfile}' returned an invalid module`);
         const stopEntrypoint = startEntrypoint(artifact.runtimeProfile, value, capture.exports);
         return {

@@ -143,6 +143,12 @@ export interface JWTPayload {
   exp?: number;
   /** JWT jti (unique identifier) */
   jti?: string;
+  /**
+   * Whether the session opted into persistent ("remember me") storage.
+   * When explicitly false, the session cookie is written without a Max-Age
+   * so the browser drops it when the session ends.
+   */
+  rememberMe?: boolean;
 }
 
 // ─── Provider Types ──────────────────────────────────────────────
@@ -168,6 +174,8 @@ export interface ProviderConfig {
  * Result of a provider's authorize/authenticate call
  */
 export interface ProviderResult {
+  /** One-time enrollment recovery codes. Never copy these into JWT or session storage. */
+  mfaEnrollmentBackupCodes?: string[];
   /** The tokens from the .NET backend */
   tokens: TokenPair;
   /** User info extracted from the response */
@@ -177,6 +185,12 @@ export interface ProviderResult {
   /** Tenant information */
   tenantId?: string | null;
   availableTenants?: Array<{ id: string; name: string }> | null;
+  /**
+   * Whether the sign-in requested a persistent ("remember me") session.
+   * Drives the cookie storage policy: true keeps the durable Max-Age cookie,
+   * false writes a browser-session cookie, undefined preserves the configured default.
+   */
+  rememberMe?: boolean;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -25,28 +25,46 @@ function acquireLock() {
   try {
     mkdirSync(lockDir, { recursive: false });
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (error.code === 'EEXIST') return false;
+    throw error;
   }
 }
 
-if (missing().length > 0) {
-  const deadline = Date.now() + 10 * 60 * 1000;
-  while (!acquireLock()) {
-    if (Date.now() > deadline) break;
-    if (missing().length === 0) process.exit(0);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  try {
-    for (const target of missing()) {
-      console.log(`[ensure-emception-libs] building ${target.name}`);
-      const result = spawnSync(target.cmd, { cwd: target.cwd, stdio: 'inherit', shell: true });
-      if (result.status !== 0) process.exit(result.status ?? 1);
+async function main() {
+  if (missing().length > 0) {
+    mkdirSync(dirname(lockDir), { recursive: true });
+    const deadline = Date.now() + 10 * 60 * 1000;
+    let waitingLogged = false;
+    while (!acquireLock()) {
+      if (!waitingLogged) {
+        console.log(`[ensure-emception-libs] waiting for builder lock: ${lockDir}`);
+        waitingLogged = true;
+      }
+      if (Date.now() > deadline) throw new Error(`Timed out waiting for library builder lock: ${lockDir}`);
+      if (missing().length === 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
-  } finally {
-    const { rmSync } = await import('node:fs');
-    rmSync(lockDir, { recursive: true, force: true });
+    try {
+      for (const target of missing()) {
+        console.log(`[ensure-emception-libs] building ${target.name}`);
+        const result = spawnSync(target.cmd, { cwd: target.cwd, stdio: 'inherit', shell: true });
+        if (result.status !== 0) {
+          const error = new Error(`Failed to build ${target.name}`, { cause: result.error });
+          error.exitCode = result.status ?? 1;
+          throw error;
+        }
+      }
+    } finally {
+      // This process reached the build block only after acquiring the directory.
+      rmSync(lockDir, { recursive: true, force: true });
+    }
+  } else {
+    console.log('[ensure-emception-libs] all dists present, skipping rebuild');
   }
-} else {
-  console.log('[ensure-emception-libs] all dists present, skipping rebuild');
 }
+
+main().catch((error) => {
+  console.error('[ensure-emception-libs] failed:', error);
+  process.exitCode = error.exitCode ?? 1;
+});

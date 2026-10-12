@@ -19,7 +19,7 @@ export class EconomyTreasuryAdministrationModule {
    */
   async getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawals(query?: {
     limit?: number;
-  }): Promise<Result<Array<Types.FinanceEconomyTreasuryAdminWithdrawalRun>, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun[], ApiError>> {
     const url = '/api/v1/admin/economy/treasury/withdrawals';
 
     const result = await this.client.request({
@@ -29,7 +29,7 @@ export class EconomyTreasuryAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyTreasuryAdminWithdrawalRun>, ApiError>;
+    return result as Result<Types.FinanceEconomyTreasuryAdminWithdrawalRun[], ApiError>;
   }
 
   /**

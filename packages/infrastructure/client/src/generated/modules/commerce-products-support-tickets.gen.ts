@@ -266,7 +266,7 @@ export class CommerceProductsSupportTicketsModule {
 
   /**
    */
-  async getSupportTicketsAgents(): Promise<Result<Array<Types.CommerceProductsSupportAgentDto>, ApiError>> {
+  async getSupportTicketsAgents(): Promise<Result<Types.CommerceProductsSupportAgentDto[], ApiError>> {
     const url = '/v1/support/tickets/agents';
 
     const result = await this.client.request({
@@ -275,7 +275,7 @@ export class CommerceProductsSupportTicketsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsSupportAgentDto>, ApiError>;
+    return result as Result<Types.CommerceProductsSupportAgentDto[], ApiError>;
   }
 
   /**

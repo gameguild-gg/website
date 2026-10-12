@@ -12,6 +12,7 @@ import { HTTP_METHODS, SUCCESS_STATUS_PREFIX, CONTENT_TYPES, PARAMETER_LOCATIONS
 import { toPascalCase } from '../utils/naming.js';
 import { qualifyType } from '../utils/type-qualify.js';
 import { formatJsDocLines } from '../utils/jsdoc.js';
+import { binaryResponseMediaType } from './binary-response.js';
 
 interface EndpointInfo {
   operationId: string;
@@ -122,10 +123,7 @@ class EndpointsGenerator extends BaseGenerator {
   /**
    * Extract parameters from operation
    */
-  private extractParameters(
-    operation: OpenAPIV3.OperationObject,
-    pathItem: OpenAPIV3.PathItemObject
-  ): ParameterInfo[] {
+  private extractParameters(operation: OpenAPIV3.OperationObject, pathItem: OpenAPIV3.PathItemObject): ParameterInfo[] {
     const params: ParameterInfo[] = [];
 
     // Combine path-level and operation-level parameters
@@ -195,6 +193,8 @@ class EndpointsGenerator extends BaseGenerator {
       let type = 'void';
       if (content?.[CONTENT_TYPES.JSON]?.schema) {
         type = this.typeMapper.map(content[CONTENT_TYPES.JSON].schema as OpenAPIV3.SchemaObject);
+      } else if (binaryResponseMediaType(content)) {
+        type = 'Blob';
       }
 
       responses.push({
@@ -221,12 +221,8 @@ class EndpointsGenerator extends BaseGenerator {
    * security requirement.
    */
   private extractAllowAnonymous(operation: OpenAPIV3.OperationObject): boolean {
-    return (operation as { [key: string]: unknown })[
-      ALLOW_ANONYMOUS_EXTENSION
-    ] === true;
+    return (operation as { [key: string]: unknown })[ALLOW_ANONYMOUS_EXTENSION] === true;
   }
-
-
 
   /**
    * Generate TypeScript definition for an endpoint

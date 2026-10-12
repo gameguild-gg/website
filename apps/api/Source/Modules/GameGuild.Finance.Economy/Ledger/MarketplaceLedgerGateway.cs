@@ -102,11 +102,17 @@ public sealed class PostgreSqlMarketplaceLedgerGateway :
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.OperationId == Guid.Empty)
+        {
             throw new ArgumentException("Operation ID is required.", nameof(request));
+        }
+
         ArgumentNullException.ThrowIfNull(request.Legs);
         if (request.Legs.Count == 0 || request.Legs.Any(leg => leg.Units <= 0) ||
             request.Legs.Select(leg => leg.Currency).Distinct().Count() != request.Legs.Count)
+        {
             throw new ArgumentException("Marketplace reservation legs must be unique and positive.", nameof(request));
+        }
+
         var legs = JsonSerializer.Serialize(request.Legs.Select(leg => new
         {
             currency = (int)leg.Currency,
@@ -230,7 +236,10 @@ public sealed class PostgreSqlMarketplaceLedgerGateway :
             request.Quantity <= 0 || request.CumulativeRefundedQuantity < request.Quantity ||
             request.Legs.Count == 0 || request.Legs.Any(leg => leg.Units <= 0) ||
             request.Legs.Select(leg => leg.Currency).Distinct().Count() != request.Legs.Count)
+        {
             throw new ArgumentException("Marketplace refund inputs are invalid.", nameof(request));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReasonCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ReasonHash);
         var legs = JsonSerializer.Serialize(request.Legs.Select(leg => new
@@ -293,7 +302,10 @@ public sealed class PostgreSqlMarketplaceLedgerGateway :
         ArgumentNullException.ThrowIfNull(request.ReservationIds);
         if (request.SettlementId == Guid.Empty || request.BuyerId == Guid.Empty ||
             request.SellerId == Guid.Empty || request.EntitlementId == Guid.Empty)
+        {
             throw new ArgumentException("Settlement identities are required.", nameof(request));
+        }
+
         if (request.BuyerId == request.SellerId || request.Legs.Count == 0 ||
             request.Legs.Any(leg => leg.Units <= 0 || leg.SellerUnits < 0 ||
                                     leg.PlatformFeeUnits < 0 ||
@@ -301,7 +313,9 @@ public sealed class PostgreSqlMarketplaceLedgerGateway :
             request.ReservationIds.Count == 0 || request.ReservationIds.Any(id => id == Guid.Empty) ||
             request.ReservationIds.Distinct().Count() != request.ReservationIds.Count ||
             request.RefundHoldUntil <= request.SettledAt)
+        {
             throw new ArgumentException("Marketplace settlement inputs are invalid.", nameof(request));
+        }
     }
 
     private static bool IsDatabaseFailure(Exception exception) =>

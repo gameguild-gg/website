@@ -47,7 +47,7 @@ export function VegaLitePlugin() {
       node.setCaption(data.caption || "");
       node.setSize(data.size ?? 100);
       node.setTheme(data.theme || "default");
-      node.setThemeMode(data.themeMode || "system");
+      node.setThemeMode(data.themeMode ?? "system");
       node.setLayout(data.layout || "rectangular");
       node.setAttachments(data.attachments || {});
 

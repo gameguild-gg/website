@@ -19,8 +19,7 @@ import {
 
 export type CollapsibleBorderStyle = "solid";
 
-type CollapsibleStyleOptions = {
-  borderAlwaysVisible: boolean;
+interface CollapsibleStyleOptions {  borderAlwaysVisible: boolean;
   borderStyle: CollapsibleBorderStyle;
   borderColor: string | null;
 };

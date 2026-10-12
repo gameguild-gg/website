@@ -185,7 +185,7 @@ export class ComplianceFerpaModule {
 
   /**
    */
-  async getApiComplianceFerpaInspectionRequestsPending(): Promise<Result<Array<Types.ComplianceFERPAFerpaInspectionRequestDto>, ApiError>> {
+  async getApiComplianceFerpaInspectionRequestsPending(): Promise<Result<Types.ComplianceFERPAFerpaInspectionRequestDto[], ApiError>> {
     const url = '/api/compliance/ferpa/inspection-requests/pending';
 
     const result = await this.client.request({
@@ -194,7 +194,7 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaInspectionRequestDto>, ApiError>;
+    return result as Result<Types.ComplianceFERPAFerpaInspectionRequestDto[], ApiError>;
   }
 
   /**
@@ -225,7 +225,7 @@ export class ComplianceFerpaModule {
 
   /**
    */
-  async getApiComplianceFerpaStudentsConsents(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaDisclosureConsentDto>, ApiError>> {
+  async getApiComplianceFerpaStudentsConsents(studentUserId: string): Promise<Result<Types.ComplianceFERPAFerpaDisclosureConsentDto[], ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/consents`;
 
     const result = await this.client.request({
@@ -234,14 +234,12 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaDisclosureConsentDto>, ApiError>;
+    return result as Result<Types.ComplianceFERPAFerpaDisclosureConsentDto[], ApiError>;
   }
 
   /**
    */
-  async getApiComplianceFerpaStudentsDirectoryInformation(
-    studentUserId: string,
-  ): Promise<Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>> {
+  async getApiComplianceFerpaStudentsDirectoryInformation(studentUserId: string): Promise<Result<Types.ComplianceFERPAFerpaEducationRecordDto[], ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/directory-information`;
 
     const result = await this.client.request({
@@ -250,12 +248,12 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>;
+    return result as Result<Types.ComplianceFERPAFerpaEducationRecordDto[], ApiError>;
   }
 
   /**
    */
-  async getApiComplianceFerpaStudentsDisclosures(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaDisclosureLogDto>, ApiError>> {
+  async getApiComplianceFerpaStudentsDisclosures(studentUserId: string): Promise<Result<Types.ComplianceFERPAFerpaDisclosureLogDto[], ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/disclosures`;
 
     const result = await this.client.request({
@@ -264,12 +262,12 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaDisclosureLogDto>, ApiError>;
+    return result as Result<Types.ComplianceFERPAFerpaDisclosureLogDto[], ApiError>;
   }
 
   /**
    */
-  async getApiComplianceFerpaStudentsRecords(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>> {
+  async getApiComplianceFerpaStudentsRecords(studentUserId: string): Promise<Result<Types.ComplianceFERPAFerpaEducationRecordDto[], ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/records`;
 
     const result = await this.client.request({
@@ -278,7 +276,7 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>;
+    return result as Result<Types.ComplianceFERPAFerpaEducationRecordDto[], ApiError>;
   }
 }
 

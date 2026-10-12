@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AssessmentEditor } from "./assessment-editor";
-import { deleteAssessment, updateAssessment } from "@/lib/learning/actions";
+import { deleteAssessment, updateAssessment, prepareAssessmentRevision, publishAssessmentRevision } from "@/lib/learning/actions";
 import type {
   Assessment,
   AssessmentGroup,
@@ -55,6 +55,8 @@ vi.mock("@/i18n/navigation", () => ({
 vi.mock("@/lib/learning/actions", () => ({
   updateAssessment: vi.fn(),
   deleteAssessment: vi.fn(),
+  prepareAssessmentRevision: vi.fn(),
+  publishAssessmentRevision: vi.fn(),
 }));
 
 const assessment = {
@@ -152,6 +154,30 @@ describe("AssessmentEditor", () => {
       "confirm",
       vi.fn(() => true),
     );
+  });
+
+  it("prepares and publishes linked Code through the existing revision controls", async () => {
+    const user = userEvent.setup();
+    vi.mocked(prepareAssessmentRevision).mockResolvedValue({ success: true, data: {
+      revisionId: "code-revision", revisionNumber: 1, authoringSourceHash: "a".repeat(64), executionSnapshotHash: "b".repeat(64),
+    } });
+    vi.mocked(publishAssessmentRevision).mockResolvedValue({ success: true, data: {
+      revisionId: "code-revision", revisionNumber: 1, authoringSourceHash: "a".repeat(64), executionSnapshotHash: "b".repeat(64),
+    } });
+    render(<AssessmentEditor courseId="course-1" assessment={{ ...assessment, type: "Assignment", contentId: "code-content" }}
+      courseContent={[{ ...courseContent[0]!, id: "code-content", type: "Code" }]}
+      authoringState={{ assessmentId: assessment.id, assessmentVersion: 1, lifecycle: "candidate",
+        currentAuthoringSourceHash: "a".repeat(64), candidate: { revisionId: "code-revision", revisionNumber: 1,
+          authoringSourceHash: "a".repeat(64), executionSnapshotHash: "b".repeat(64), createdAt: "2026-10-06T00:00:00Z" },
+        published: null, candidateMatchesDraft: true, publishedMatchesDraft: false,
+        prepare: { available: true, code: null, message: null }, publish: { available: true, code: null, message: null },
+      }} canManage />);
+    expect(screen.getByTestId("assessment-publication-state")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Prepare" }));
+    await waitFor(() => expect(prepareAssessmentRevision).toHaveBeenCalledWith("course-1", "assessment-1", 1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Publish" })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: "Publish" }));
+    await waitFor(() => expect(publishAssessmentRevision).toHaveBeenCalledWith("course-1", "assessment-1", "code-revision", 1));
   });
 
   it("validates the title before updating assessment settings", async () => {

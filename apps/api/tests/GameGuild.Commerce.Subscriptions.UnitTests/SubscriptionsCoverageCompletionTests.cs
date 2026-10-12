@@ -202,13 +202,14 @@ public sealed class SubscriptionsCoverageCompletionTests
         var planService = Mock.Of<ISubscriptionPlanService>();
         var notificationService = Mock.Of<ISubscriptionNotificationService>();
         var billingLogger = Mock.Of<ILogger<SubscriptionBillingService>>();
+        var pricingLedgerWriter = Mock.Of<GameGuild.Commerce.IPricingDecisionLedgerWriter>();
         var lifecycleLogger = Mock.Of<ILogger<SubscriptionLifecycleService>>();
         var notificationLogger = Mock.Of<ILogger<SubscriptionNotificationService>>();
 
-        FluentActions.Invoking(() => new SubscriptionBillingService(null!, planService, notificationService, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionBillingService(repository, null!, notificationService, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, null!, billingLogger)).Should().Throw<ArgumentNullException>();
-        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, notificationService, null!)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(null!, planService, notificationService, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(repository, null!, notificationService, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, null!, pricingLedgerWriter, billingLogger)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => new SubscriptionBillingService(repository, planService, notificationService, null!, billingLogger)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionLifecycleService(null!, planService, lifecycleLogger)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, null!, lifecycleLogger)).Should().Throw<ArgumentNullException>();
         FluentActions.Invoking(() => new SubscriptionLifecycleService(repository, planService, null!)).Should().Throw<ArgumentNullException>();
@@ -229,7 +230,7 @@ public sealed class SubscriptionsCoverageCompletionTests
         var planRepository = new Mock<ISubscriptionPlanRepository>();
         planRepository.Setup(repo => repo.GetByIdAsync(planWithAnnual.Id, It.IsAny<CancellationToken>())).ReturnsAsync(planWithAnnual);
         planRepository.Setup(repo => repo.UpdateAsync(planWithAnnual, It.IsAny<CancellationToken>())).ReturnsAsync(planWithAnnual);
-        await new TestPlanCommandHandler(planRepository.Object)
+        await new TestPlanCommandHandler(planRepository.Object, new Mock<ISubscriptionPlanListCache>().Object)
             .Handle(new ActivateSubscriptionPlanCommand(planWithAnnual.Id), CancellationToken.None);
     }
 
@@ -397,7 +398,9 @@ public sealed class SubscriptionsCoverageCompletionTests
                          .OrderBy(constructor => constructor.GetParameters().Length))
             {
                 if (!TryBuildArguments(constructor.GetParameters(), out var arguments))
+                {
                     continue;
+                }
 
                 try
                 {
@@ -557,7 +560,9 @@ public sealed class SubscriptionsCoverageCompletionTests
         for (var index = 0; index < parameters.Length; index++)
         {
             if (!TryCreateValue(parameters[index].ParameterType, 0, out arguments[index]))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -567,11 +572,15 @@ public sealed class SubscriptionsCoverageCompletionTests
     {
         value = null;
         if (depth > 3)
+        {
             return !type.IsValueType;
+        }
 
         var nullable = Nullable.GetUnderlyingType(type);
         if (nullable is not null)
+        {
             return TryCreateValue(nullable, depth + 1, out value);
+        }
 
         if (type == typeof(string)) { value = "value"; return true; }
         if (type == typeof(Guid)) { value = Guid.NewGuid(); return true; }
@@ -607,7 +616,10 @@ public sealed class SubscriptionsCoverageCompletionTests
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IOptions<>))
         {
             if (!TryCreateValue(type.GetGenericArguments()[0], depth + 1, out var optionValue))
+            {
                 return false;
+            }
+
             value = typeof(Options)
                 .GetMethods()
                 .Single(method => method.Name == nameof(Options.Create) && method.IsGenericMethod)
@@ -621,7 +633,10 @@ public sealed class SubscriptionsCoverageCompletionTests
             var elementType = type.GetGenericArguments()[0];
             var array = Array.CreateInstance(elementType, 1);
             if (TryCreateValue(elementType, depth + 1, out var element))
+            {
                 array.SetValue(element, 0);
+            }
+
             value = array;
             return true;
         }
@@ -661,7 +676,9 @@ public sealed class SubscriptionsCoverageCompletionTests
         foreach (var constructor in constructors)
         {
             if (!TryBuildNestedArguments(constructor.GetParameters(), depth + 1, out var arguments))
+            {
                 continue;
+            }
 
             try
             {
@@ -683,7 +700,9 @@ public sealed class SubscriptionsCoverageCompletionTests
         for (var index = 0; index < parameters.Length; index++)
         {
             if (!TryCreateValue(parameters[index].ParameterType, depth, out arguments[index]))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -716,8 +735,8 @@ public sealed class SubscriptionsCoverageCompletionTests
         public override string ToString() => null!;
     }
 
-    private sealed class TestPlanCommandHandler(ISubscriptionPlanRepository repository)
-        : SubscriptionPlanCommandHandlerBase<ActivateSubscriptionPlanCommand>(repository)
+    private sealed class TestPlanCommandHandler(ISubscriptionPlanRepository repository, ISubscriptionPlanListCache planListCache)
+        : SubscriptionPlanCommandHandlerBase<ActivateSubscriptionPlanCommand>(repository, planListCache)
     {
         protected override Guid GetPlanId(ActivateSubscriptionPlanCommand request) => request.Id;
 

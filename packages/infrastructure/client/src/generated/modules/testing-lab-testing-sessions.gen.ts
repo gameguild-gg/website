@@ -32,22 +32,22 @@ export class TestingLabTestingSessionsModule {
   /**
    * Public endpoint returning "published" testing sessions (Scheduled or Active). No authentication required.
    */
-  async getTestingPublicSessions(query?: { take?: number }): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingPublicSessions(query?: { take?: number }): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = '/v1/testing/public/sessions';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 
   /**
    */
-  async getTestingSessionsForGetTestingSessions(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingSessionsForGetTestingSessions(query?: { skip?: number; take?: number }): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = '/v1/testing/sessions';
 
     const result = await this.client.request({
@@ -57,7 +57,7 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 
   /**
@@ -199,7 +199,7 @@ export class TestingLabTestingSessionsModule {
   async getTestingSessionsProjects(
     sessionId: string,
     query?: { includeInactive?: boolean },
-  ): Promise<Result<Array<Types.TestingLabSessionProjectProjection>, ApiError>> {
+  ): Promise<Result<Types.TestingLabSessionProjectProjection[], ApiError>> {
     const url = `/v1/testing/sessions/${sessionId}/projects`;
 
     const result = await this.client.request({
@@ -209,7 +209,7 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabSessionProjectProjection>, ApiError>;
+    return result as Result<Types.TestingLabSessionProjectProjection[], ApiError>;
   }
 
   /**
@@ -269,7 +269,7 @@ export class TestingLabTestingSessionsModule {
 
   /**
    */
-  async getTestingSessionsByLocation(locationId: string): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingSessionsByLocation(locationId: string): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = `/v1/testing/sessions/by-location/${locationId}`;
 
     const result = await this.client.request({
@@ -278,12 +278,12 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 
   /**
    */
-  async getTestingSessionsByManager(managerId: string): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingSessionsByManager(managerId: string): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = `/v1/testing/sessions/by-manager/${managerId}`;
 
     const result = await this.client.request({
@@ -292,12 +292,12 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 
   /**
    */
-  async getTestingSessionsByRequest(testingRequestId: string): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingSessionsByRequest(testingRequestId: string): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = `/v1/testing/sessions/by-request/${testingRequestId}`;
 
     const result = await this.client.request({
@@ -306,12 +306,12 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 
   /**
    */
-  async getTestingSessionsByStatus(status: Types.TestingLabSessionStatus): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingSessionsByStatus(status: Types.TestingLabSessionStatus): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = `/v1/testing/sessions/by-status/${status}`;
 
     const result = await this.client.request({
@@ -320,12 +320,12 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 
   /**
    */
-  async getTestingSessionsSearch(query?: { searchTerm?: string }): Promise<Result<Array<Types.TestingLabTestingSession>, ApiError>> {
+  async getTestingSessionsSearch(query?: { searchTerm?: string }): Promise<Result<Types.TestingLabTestingSession[], ApiError>> {
     const url = '/v1/testing/sessions/search';
 
     const result = await this.client.request({
@@ -335,7 +335,7 @@ export class TestingLabTestingSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingSession>, ApiError>;
+    return result as Result<Types.TestingLabTestingSession[], ApiError>;
   }
 }
 

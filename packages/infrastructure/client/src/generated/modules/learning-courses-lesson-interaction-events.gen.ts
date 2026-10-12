@@ -17,10 +17,7 @@ export class LearningCoursesLessonInteractionEventsModule {
 
   /**
    */
-  async getCoursesInteractionsEvents(
-    programId: string,
-    interactionId: string,
-  ): Promise<Result<Array<Types.LearningCoursesContentInteractionEventDto>, ApiError>> {
+  async getCoursesInteractionsEvents(programId: string, interactionId: string): Promise<Result<Types.LearningCoursesContentInteractionEventDto[], ApiError>> {
     const url = `/v1/courses/${programId}/interactions/${interactionId}/events`;
 
     const result = await this.client.request({
@@ -29,7 +26,7 @@ export class LearningCoursesLessonInteractionEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesContentInteractionEventDto>, ApiError>;
+    return result as Result<Types.LearningCoursesContentInteractionEventDto[], ApiError>;
   }
 
   /**

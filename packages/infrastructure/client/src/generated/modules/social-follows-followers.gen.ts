@@ -28,7 +28,7 @@ export class SocialFollowsFollowersModule {
       method: 'POST',
       path: url,
       body: validatedBody,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, number>, ApiError>;
@@ -81,7 +81,7 @@ export class SocialFollowsFollowersModule {
   /**
    * Get current user's blocked users list
    */
-  async getApiFollowersBlockedUsers(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.SocialFollowsControllersBlockDto>, ApiError>> {
+  async getApiFollowersBlockedUsers(query?: { skip?: number; take?: number }): Promise<Result<Types.SocialFollowsControllersBlockDto[], ApiError>> {
     const url = '/api/followers/blocked-users';
 
     const result = await this.client.request({
@@ -91,7 +91,7 @@ export class SocialFollowsFollowersModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialFollowsControllersBlockDto>, ApiError>;
+    return result as Result<Types.SocialFollowsControllersBlockDto[], ApiError>;
   }
 
   /**
@@ -104,7 +104,7 @@ export class SocialFollowsFollowersModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<number, ApiError>;
@@ -157,17 +157,17 @@ export class SocialFollowsFollowersModule {
   async getApiFollowersFollowers(
     entityId: string,
     query?: { entityType?: string; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.SocialFollowsControllersFollowDto>, ApiError>> {
+  ): Promise<Result<Types.SocialFollowsControllersFollowDto[], ApiError>> {
     const url = `/api/followers/followers/${entityId}`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.SocialFollowsControllersFollowDto>, ApiError>;
+    return result as Result<Types.SocialFollowsControllersFollowDto[], ApiError>;
   }
 
   /**
@@ -177,7 +177,7 @@ export class SocialFollowsFollowersModule {
     entityType?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.SocialFollowsControllersFollowDto>, ApiError>> {
+  }): Promise<Result<Types.SocialFollowsControllersFollowDto[], ApiError>> {
     const url = '/api/followers/following';
 
     const result = await this.client.request({
@@ -187,7 +187,7 @@ export class SocialFollowsFollowersModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialFollowsControllersFollowDto>, ApiError>;
+    return result as Result<Types.SocialFollowsControllersFollowDto[], ApiError>;
   }
 
   /**
@@ -264,7 +264,7 @@ export class SocialFollowsFollowersModule {
   /**
    * Get current user's muted users list
    */
-  async getApiFollowersMutedUsers(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.SocialFollowsControllersMuteDto>, ApiError>> {
+  async getApiFollowersMutedUsers(query?: { skip?: number; take?: number }): Promise<Result<Types.SocialFollowsControllersMuteDto[], ApiError>> {
     const url = '/api/followers/muted-users';
 
     const result = await this.client.request({
@@ -274,7 +274,7 @@ export class SocialFollowsFollowersModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialFollowsControllersMuteDto>, ApiError>;
+    return result as Result<Types.SocialFollowsControllersMuteDto[], ApiError>;
   }
 
   /**

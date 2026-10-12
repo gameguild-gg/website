@@ -188,7 +188,7 @@ export class AiModule {
   /**
    * Retrieve recent AI conversation history for the active tenant.
    */
-  async getAiHistory(query?: { take?: number }): Promise<Result<Array<Types.AIAiConversationHistoryEntryDto>, ApiError>> {
+  async getAiHistory(query?: { take?: number }): Promise<Result<Types.AIAiConversationHistoryEntryDto[], ApiError>> {
     const url = '/v1/ai/history';
 
     const result = await this.client.request({
@@ -198,7 +198,7 @@ export class AiModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AIAiConversationHistoryEntryDto>, ApiError>;
+    return result as Result<Types.AIAiConversationHistoryEntryDto[], ApiError>;
   }
 
   /**

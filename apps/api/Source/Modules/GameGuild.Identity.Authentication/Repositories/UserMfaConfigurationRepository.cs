@@ -35,7 +35,19 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
         configuration.UpdatedAt = SystemClock.UtcNow;
 
         UserMfaConfigurations.Update(configuration);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            // Discard stale mutations before a caller retries; never write consumed codes back.
+            foreach (var entry in exception.Entries)
+            {
+                await entry.ReloadAsync(cancellationToken).ConfigureAwait(false);
+            }
+            throw;
+        }
 
         return configuration;
     }
@@ -106,7 +118,10 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
     {
         var configuration = await GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        if (configuration == null) return false;
+        if (configuration == null)
+        {
+            return false;
+        }
 
         configuration.IsEnabled = true;
         configuration.EnabledAt = SystemClock.UtcNow;
@@ -121,7 +136,10 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
     {
         var configuration = await GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        if (configuration == null) return false;
+        if (configuration == null)
+        {
+            return false;
+        }
 
         configuration.IsEnabled = false;
         configuration.UpdatedAt = SystemClock.UtcNow;
@@ -135,7 +153,10 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
     {
         var configuration = await GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        if (configuration == null) return 0;
+        if (configuration == null)
+        {
+            return 0;
+        }
 
         if (increment) { configuration.FailedAttempts++; }
         else
@@ -154,7 +175,10 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
     {
         var configuration = await GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        if (configuration == null) return false;
+        if (configuration == null)
+        {
+            return false;
+        }
 
         configuration.LockedOutUntil = lockoutUntil;
         configuration.UpdatedAt = SystemClock.UtcNow;
@@ -168,7 +192,10 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
     {
         var configuration = await GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-        if (configuration == null) return false;
+        if (configuration == null)
+        {
+            return false;
+        }
 
         configuration.LockedOutUntil = null;
         configuration.FailedAttempts = 0;
@@ -183,7 +210,10 @@ public class UserMfaConfigurationRepository(IApplicationDbContext context) : IUs
     {
         var configuration = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (configuration == null) return false;
+        if (configuration == null)
+        {
+            return false;
+        }
 
         UserMfaConfigurations.Remove(configuration);
         var changes = await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

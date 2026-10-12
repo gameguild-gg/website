@@ -155,10 +155,8 @@ public sealed class SessionController(ISessionManagementService sessionService, 
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> TerminateAllSessions(CancellationToken ct)
     {
-        var userId = GetCurrentUserId();
-
         var terminatedCount = await sender.Send(
-            new TerminateUserSessionsCommand(userId, SessionTerminationReason.UserLogout), ct).ConfigureAwait(false);
+            new RevokeAllUserTokensCommand(HttpContext.Connection.RemoteIpAddress?.ToString()), ct).ConfigureAwait(false);
 
         return Ok(new SessionTerminationResponse
         {

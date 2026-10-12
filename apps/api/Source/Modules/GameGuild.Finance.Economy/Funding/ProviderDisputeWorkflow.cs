@@ -51,25 +51,43 @@ public sealed record DisputeFragmentFreeze
         DateTimeOffset placedAt,
         DateTimeOffset? terminalAt)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Freeze ID is required.", nameof(id));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Freeze ID is required.", nameof(id));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(providerDisputeReference);
         ArgumentNullException.ThrowIfNull(amount);
         ArgumentNullException.ThrowIfNull(ranges);
         if (ranges.Count == 0 || ranges.Any(range => range.Root != rootSourceId))
+        {
             throw new ArgumentException("A dispute freeze requires ranges from its root source.", nameof(ranges));
-        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
         if ((status == HoldStatus.Active) != (terminalAt is null))
+        {
             throw new ArgumentException("Only active dispute freezes may omit a terminal timestamp.", nameof(terminalAt));
+        }
+
         if (amount.Currency == CurrencyCode.SoftCoin && amount.Units % FixedParity.SoftCoinsPerHardCoin != 0)
+        {
             throw new LineageConservationException(
                 "A provider dispute freeze must resolve to whole HardCoin-equivalent units.");
+        }
 
         var traceUnits = ranges.Aggregate(0L, static (total, range) => checked(total + range.Length));
         var expectedTraceUnits = checked(amount.Units * (amount.Currency == CurrencyCode.HardCoin
             ? CurrencyTraceScale.HardCoinTraceUnitsPerCoin
             : CurrencyTraceScale.SoftCoinTraceUnitsPerCoin));
         if (traceUnits != expectedTraceUnits)
+        {
             throw new LineageConservationException("Dispute freeze amount must equal its exact root ranges.");
+        }
 
         Id = id;
         ProviderDisputeReference = providerDisputeReference.Trim();
@@ -100,11 +118,20 @@ public sealed record DisputeFragmentFreeze
     public DisputeFragmentFreeze Transition(HoldStatus status, DateTimeOffset occurredAt)
     {
         if (Status != HoldStatus.Active)
+        {
             throw new InvalidOperationException("Only an active dispute freeze can enter a terminal state.");
+        }
+
         if (status is not (HoldStatus.Released or HoldStatus.Consumed))
+        {
             throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
         if (occurredAt < PlacedAt)
+        {
             throw new ArgumentException("A dispute freeze transition cannot precede placement.", nameof(occurredAt));
+        }
+
         return new DisputeFragmentFreeze(
             Id, ProviderDisputeReference, RootSourceId, LotId, WalletId, Amount, Ranges,
             status, PlacedAt, occurredAt);
@@ -164,7 +191,10 @@ public sealed class ProviderDisputeWorkflow
         if (duplicate is not null)
         {
             if (!StringComparer.Ordinal.Equals(duplicate.RequestHash, requestHash))
+            {
                 throw new ProviderDisputeEventConflictException(notification.ProviderEventId);
+            }
+
             return _store.GetProviderDisputeCase(notification.ProviderDisputeReference);
         }
 
@@ -183,23 +213,35 @@ public sealed class ProviderDisputeWorkflow
             var current = transaction.FindProviderDisputeCase(notification.ProviderDisputeReference);
             EnsureIdentityAndOrder(current, notification);
             if (current?.Status is ProviderDisputeStatus.Won or ProviderDisputeStatus.Lost)
+            {
                 throw new ProviderDisputeTerminalStateException(current.Status, ProviderDisputeStatus.Open);
+            }
+
             if (current is not null &&
                 notification.CumulativeDisputedHardUnits < current.CumulativeDisputedHardUnits)
+            {
                 throw new ProviderMonetaryTotalExceededException("Cumulative provider dispute cannot regress.");
+            }
 
             var claim = transaction.CurrentFundingClaim(notification.SourceId);
             if (claim.State is not (SourceConfirmationState.Confirmed or SourceConfirmationState.Disputed))
+            {
                 throw new InvalidFundingStateTransitionException(claim.State, SourceConfirmationState.Disputed);
+            }
+
             if (notification.CumulativeDisputedHardUnits > claim.Amount.Units)
+            {
                 throw new ProviderMonetaryTotalExceededException(
                     "Cumulative provider dispute cannot exceed confirmed HardCoin units.");
+            }
 
             var reversal = transaction.CurrentProviderReversalState(notification.SourceId);
             var baseline = current?.BaselineReversedHardUnits ?? reversal?.CumulativeProviderHardUnits ?? 0;
             if (notification.CumulativeDisputedHardUnits < baseline)
+            {
                 throw new ProviderMonetaryTotalExceededException(
                     "Cumulative provider dispute cannot precede already committed reversals.");
+            }
 
             if (claim.State == SourceConfirmationState.Confirmed)
             {
@@ -270,7 +312,9 @@ public sealed class ProviderDisputeWorkflow
             var current = RequiredOpenCase(transaction, notification);
             var reversal = transaction.CurrentProviderReversalState(notification.SourceId);
             if ((reversal?.CumulativeProviderHardUnits ?? 0) != current.BaselineReversedHardUnits)
+            {
                 throw new InvalidOperationException("A dispute with committed reversal value cannot be marked won.");
+            }
 
             transaction.TransitionDisputeFreezes(current.FreezeIds, HoldStatus.Released, notification.OccurredAt);
             if (current.BaselineReversedHardUnits == 0)
@@ -332,10 +376,16 @@ public sealed class ProviderDisputeWorkflow
                 $"Provider dispute '{notification.ProviderDisputeReference}' was not found.");
         EnsureIdentityAndOrder(current, notification);
         if (current.Status != ProviderDisputeStatus.Open)
+        {
             throw new ProviderDisputeTerminalStateException(current.Status, notification.Status);
+        }
+
         if (notification.CumulativeDisputedHardUnits != current.CumulativeDisputedHardUnits)
+        {
             throw new ProviderMonetaryTotalExceededException(
                 "A terminal dispute event must preserve the open cumulative disputed amount.");
+        }
+
         return current;
     }
 
@@ -343,12 +393,21 @@ public sealed class ProviderDisputeWorkflow
         ProviderDisputeCase? current,
         ProviderDisputeNotification notification)
     {
-        if (current is null) return;
+        if (current is null)
+        {
+            return;
+        }
+
         if (current.SourceId != notification.SourceId)
+        {
             throw new ProviderDisputeEventConflictException(notification.ProviderEventId);
+        }
+
         if (notification.ProviderSequence <= current.LatestProviderSequence)
+        {
             throw new StaleProviderDisputeEventException(
                 notification.ProviderSequence, current.LatestProviderSequence);
+        }
     }
 
     private T WithRootFence<T>(SourceStampId root, Func<T> operation)
@@ -373,7 +432,9 @@ public sealed class ProviderDisputeWorkflow
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(notification.ProviderSequence);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(notification.CumulativeDisputedHardUnits);
         if (!Enum.IsDefined(notification.IrrecoverableDisposition))
+        {
             throw new ArgumentOutOfRangeException(nameof(notification));
+        }
     }
 
     private static ProviderDisputeEventRecord Event(

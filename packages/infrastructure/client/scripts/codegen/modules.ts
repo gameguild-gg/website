@@ -10,7 +10,8 @@ import { toPascalCase, toCamelCase } from '../utils/naming.js';
 import { qualifyType } from '../utils/type-qualify.js';
 import { formatJsDocLines } from '../utils/jsdoc.js';
 import { TypeMapperChain } from './strategies/SchemaTypeMapper.js';
-import { HTTP_METHODS } from './constants.js';
+import { ALLOW_ANONYMOUS_EXTENSION, HTTP_METHODS } from './constants.js';
+import { binaryResponseMediaType } from './binary-response.js';
 
 interface ModuleEndpoint {
   operationId: string;
@@ -28,6 +29,7 @@ interface ModuleEndpoint {
   requestBodySchema?: string;
   responseType: string;
   responseSchema?: string;
+  binaryMediaType?: string;
   requiresAuth: boolean;
 }
 
@@ -78,7 +80,7 @@ function extractModuleEndpoint(
   path: string,
   pathItem: OpenAPIV3.PathItemObject,
   spec: OpenApiSpec,
-  typeMapper: TypeMapperChain
+  typeMapper: TypeMapperChain,
 ): ModuleEndpoint {
   const parameters: ModuleEndpoint['parameters'] = [];
 
@@ -114,6 +116,7 @@ function extractModuleEndpoint(
   // Extract response type
   let responseType = 'void';
   let responseSchema: string | undefined;
+  let binaryMediaType: string | undefined;
   const successResponse = Object.entries(operation.responses || {}).find(([code]) => code.startsWith('2'));
   if (successResponse) {
     const [, response] = successResponse;
@@ -126,13 +129,17 @@ function extractModuleEndpoint(
         if ('$ref' in jsonContent.schema) {
           responseSchema = jsonContent.schema.$ref.replace('#/components/schemas/', '') + 'Schema';
         }
+      } else {
+        binaryMediaType = binaryResponseMediaType(responseObj.content);
+        if (binaryMediaType) responseType = 'Blob';
       }
     }
   }
 
   // Check if auth is required
   const security = operation.security || spec.security || [];
-  const requiresAuth = security.length > 0;
+  const allowAnonymous = (operation as { [key: string]: unknown })[ALLOW_ANONYMOUS_EXTENSION] === true;
+  const requiresAuth = security.length > 0 && !allowAnonymous;
 
   return {
     operationId: operation.operationId || `${method}${path.replace(/\//g, '_')}`,
@@ -145,6 +152,7 @@ function extractModuleEndpoint(
     requestBodySchema,
     responseType,
     responseSchema,
+    binaryMediaType,
     requiresAuth,
   };
 }
@@ -213,7 +221,7 @@ function generateEndpointMethod(endpoint: ModuleEndpoint): string {
 
   // Method signature
   const params = buildMethodParams(endpoint);
-  const returnType = `Promise<Result<${qualifyType(endpoint.responseType)}, ApiError>>`;
+  const returnType = `Promise<Result<${qualifyResponseType(endpoint.responseType)}, ApiError>>`;
 
   lines.push(`  async ${methodName}(${params}): ${returnType} {`);
 
@@ -245,6 +253,10 @@ function generateEndpointMethod(endpoint: ModuleEndpoint): string {
   lines.push(`    const result = await this.client.request({`);
   lines.push(`      method: '${endpoint.method}',`);
   lines.push(`      path: url,`);
+  if (endpoint.binaryMediaType) {
+    lines.push(`      responseType: 'blob',`);
+    lines.push(`      headers: { Accept: ${JSON.stringify(endpoint.binaryMediaType)} },`);
+  }
   if (hasQuery) {
     lines.push(`      params: query,`);
   }
@@ -266,14 +278,19 @@ function generateEndpointMethod(endpoint: ModuleEndpoint): string {
     lines.push('');
     lines.push(`    return result;`);
   } else {
-    const qualifiedReturn = qualifyType(endpoint.responseType);
     lines.push('');
-    lines.push(`    return result as Result<${qualifiedReturn}, ApiError>;`);
+    lines.push(`    return result as Result<${qualifyResponseType(endpoint.responseType)}, ApiError>;`);
   }
 
   lines.push('  }');
 
   return lines.join('\n');
+}
+
+function qualifyResponseType(type: string): string {
+  const qualifiedType = qualifyType(type);
+  const simpleArray = qualifiedType.match(/^Array<([\w.]+|Record<string, [\w.]+>)>$/);
+  return simpleArray ? `${simpleArray[1]}[]` : qualifiedType;
 }
 
 /**

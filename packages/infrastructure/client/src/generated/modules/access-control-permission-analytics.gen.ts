@@ -21,7 +21,7 @@ export class AccessControlPermissionAnalyticsModule {
   async getPermissionAnalyticsAnomalies(query?: {
     tenantId?: string;
     fromDate?: string;
-  }): Promise<Result<Array<Types.IdentityAuthorizationPermissionAnomaly>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthorizationPermissionAnomaly[], ApiError>> {
     const url = '/v1/permission-analytics/anomalies';
 
     const result = await this.client.request({
@@ -31,7 +31,7 @@ export class AccessControlPermissionAnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationPermissionAnomaly>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationPermissionAnomaly[], ApiError>;
   }
 
   /**
@@ -68,7 +68,7 @@ export class AccessControlPermissionAnalyticsModule {
     top?: number;
     fromDate?: string;
     toDate?: string;
-  }): Promise<Result<Array<Types.IdentityAuthorizationResourceAccessPattern>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthorizationResourceAccessPattern[], ApiError>> {
     const url = '/v1/permission-analytics/resource-patterns';
 
     const result = await this.client.request({
@@ -78,7 +78,7 @@ export class AccessControlPermissionAnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationResourceAccessPattern>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationResourceAccessPattern[], ApiError>;
   }
 
   /**
@@ -88,7 +88,7 @@ export class AccessControlPermissionAnalyticsModule {
     tenantId?: string;
     fromDate?: string;
     toDate?: string;
-  }): Promise<Result<Array<Types.IdentityAuthorizationPermissionTrend>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthorizationPermissionTrend[], ApiError>> {
     const url = '/v1/permission-analytics/trends';
 
     const result = await this.client.request({
@@ -98,7 +98,7 @@ export class AccessControlPermissionAnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationPermissionTrend>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationPermissionTrend[], ApiError>;
   }
 
   /**
@@ -108,7 +108,7 @@ export class AccessControlPermissionAnalyticsModule {
     tenantId?: string;
     fromDate?: string;
     toDate?: string;
-  }): Promise<Result<Array<Types.IdentityAuthorizationPermissionUsageMetrics>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthorizationPermissionUsageMetrics[], ApiError>> {
     const url = '/v1/permission-analytics/usage';
 
     const result = await this.client.request({
@@ -118,7 +118,7 @@ export class AccessControlPermissionAnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationPermissionUsageMetrics>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationPermissionUsageMetrics[], ApiError>;
   }
 
   /**
@@ -129,7 +129,7 @@ export class AccessControlPermissionAnalyticsModule {
     top?: number;
     fromDate?: string;
     toDate?: string;
-  }): Promise<Result<Array<Types.IdentityAuthorizationUserActivitySummary>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthorizationUserActivitySummary[], ApiError>> {
     const url = '/v1/permission-analytics/user-activity';
 
     const result = await this.client.request({
@@ -139,7 +139,7 @@ export class AccessControlPermissionAnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationUserActivitySummary>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationUserActivitySummary[], ApiError>;
   }
 }
 

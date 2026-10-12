@@ -34,6 +34,8 @@ namespace GameGuild.Identity.Users;
 [Index(nameof(Username), IsUnique = true)]
 public class User : EntityBase, IUser
 {
+    private string? _username;
+    private bool _usernameWasGenerated;
     /// <summary>
     ///     Default constructor
     /// </summary>
@@ -58,10 +60,26 @@ public class User : EntityBase, IUser
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Optional username for display (unique if set)
+    ///     Unique handle. Factories assign a canonical handle to new users; legacy null handles remain readable.
     /// </summary>
     [MaxLength(256)]
-    public string? Username { get; set; }
+    public string? Username
+    {
+        get => _username;
+        set
+        {
+            _username = value;
+            _usernameWasGenerated = false;
+        }
+    }
+
+    internal bool HasGeneratedUsername => _usernameWasGenerated;
+
+    internal void AssignGeneratedUsername(string username)
+    {
+        _username = username;
+        _usernameWasGenerated = true;
+    }
 
     /// <summary>
     ///     Full name of the user
@@ -370,10 +388,14 @@ public class User : EntityBase, IUser
     public void ValidatePurge()
     {
         if (!IsDeleted)
+        {
             throw new InvalidOperationException("User must be soft-deleted before purging.");
+        }
 
         if (TenantMemberships.Any(m => m.IsActive))
+        {
             throw new InvalidOperationException("User has active tenant memberships. Remove memberships before purging.");
+        }
     }
 
     /// <summary>
@@ -399,13 +421,19 @@ public class User : EntityBase, IUser
     public UserAuthenticationResult ValidateForAuthentication(int tokenVersion)
     {
         if (!IsActive)
+        {
             return UserAuthenticationResult.Fail(UserAuthenticationFailure.Inactive);
+        }
 
         if (IsSuspended)
+        {
             return UserAuthenticationResult.Fail(UserAuthenticationFailure.Suspended);
+        }
 
         if (TokenVersion != tokenVersion)
+        {
             return UserAuthenticationResult.Fail(UserAuthenticationFailure.TokenRevoked);
+        }
 
         return UserAuthenticationResult.Success();
     }
@@ -420,19 +448,29 @@ public class User : EntityBase, IUser
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(Email))
+        {
             errors.Add("Email is required.");
+        }
 
         if (!Email.Contains('@'))
+        {
             errors.Add("Email format is invalid.");
+        }
 
         if (string.IsNullOrWhiteSpace(Name))
+        {
             errors.Add("Name is required.");
+        }
 
         if (Name.Length < 2)
+        {
             errors.Add("Name must be at least 2 characters.");
+        }
 
         if (errors.Count > 0)
+        {
             return UserRegistrationResult.Failure(errors);
+        }
 
         return UserRegistrationResult.Success();
     }
@@ -445,13 +483,19 @@ public class User : EntityBase, IUser
     public UserTenantJoinResult ValidateForTenantJoin(Guid tenantId)
     {
         if (!IsActive)
+        {
             return UserTenantJoinResult.Failure("User account is inactive.");
+        }
 
         if (IsSuspended)
+        {
             return UserTenantJoinResult.Failure("User account is suspended.");
+        }
 
         if (IsMemberOfTenant(tenantId))
+        {
             return UserTenantJoinResult.Failure("User is already a member of this tenant.");
+        }
 
         return UserTenantJoinResult.Success();
     }
@@ -520,14 +564,23 @@ public class User : EntityBase, IUser
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
 
-        return new User
+        var user = new User
         {
             Email = email.ToLowerInvariant(),
             Name = name,
-            Username = username,
             PasswordHash = passwordHash,
             IsActive = true
         };
+        if (username is null)
+        {
+            user.AssignGeneratedUsername(UsernameSlug.Generate(name));
+        }
+        else
+        {
+            user.Username = UsernameSlug.FromExplicit(username);
+        }
+
+        return user;
     }
 
     /// <summary>
@@ -550,7 +603,7 @@ public class User : EntityBase, IUser
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        return new User
+        var user = new User
         {
             Email = email.ToLowerInvariant(),
             Name = name,
@@ -558,6 +611,8 @@ public class User : EntityBase, IUser
             IsActive = true,
             IsEmailVerified = emailVerified
         };
+        user.AssignGeneratedUsername(UsernameSlug.Generate(name));
+        return user;
     }
 
     /// <summary>
@@ -572,6 +627,8 @@ public class User : EntityBase, IUser
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        return new User { Email = email.ToLowerInvariant(), Name = name, PhoneNumber = phoneNumber, IsActive = true };
+        var user = new User { Email = email.ToLowerInvariant(), Name = name, PhoneNumber = phoneNumber, IsActive = true };
+        user.AssignGeneratedUsername(UsernameSlug.Generate(name));
+        return user;
     }
 }

@@ -366,6 +366,14 @@ export interface AssessmentExecutionRuntimeViewV1<TLearnerPayload = unknown> {
   requiresInstructorReview: boolean;
   released: boolean;
   history: GradeRoundRuntimeViewV1[];
+  /** Frozen private Code definition; supplied only after server instructor authorization. */
+  instructorVisibleContent?: unknown | null;
+  instructorVisibleRubric?: {
+    id: string;
+    title: string;
+    criteria: Array<{ id: string; description: string; points: ScoreValue; order: number }>;
+  } | null;
+  instructorVisibleRubricScores?: Record<string, ScoreValue> | null;
 }
 
 export interface AssessmentTestRunRuntimeViewV1<TLearnerPayload = unknown> {
@@ -409,6 +417,7 @@ export interface InstructorReviewResolutionV1 {
   items: InstructorItemResolutionV1[];
   feedback?: string | null;
   overrideReason?: string | null;
+  rubricScores?: Record<string, ScoreValue> | null;
 }
 
 export class GradingContractValidationError extends Error {

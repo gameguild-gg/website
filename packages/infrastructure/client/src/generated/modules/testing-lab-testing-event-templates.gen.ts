@@ -20,7 +20,7 @@ export class TestingLabTestingEventTemplatesModule {
   async getVTestingTemplates(
     version: string,
     query?: { includeArchived?: boolean },
-  ): Promise<Result<Array<Types.TestingLabTestingEventTemplateProjection>, ApiError>> {
+  ): Promise<Result<Types.TestingLabTestingEventTemplateProjection[], ApiError>> {
     const url = `/v${version}/testing/templates`;
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class TestingLabTestingEventTemplatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingEventTemplateProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingEventTemplateProjection[], ApiError>;
   }
 
   /**

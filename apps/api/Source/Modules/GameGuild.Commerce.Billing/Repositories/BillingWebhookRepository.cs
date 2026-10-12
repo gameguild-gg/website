@@ -75,6 +75,76 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<BillingWebhookEvent>> GetRetryCandidatesAsync(
+        int maxAttempts,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug(
+            "Getting retry candidates with max attempts {MaxAttempts}, take {Take}",
+            maxAttempts,
+            take);
+        return await Entities
+            .Where(e => e.IsFailed && !e.IsProcessed && e.ProcessingAttempts < maxAttempts)
+            .OrderBy(e => e.UpdatedAt)
+            .Take(take)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<(IReadOnlyList<BillingWebhookEvent> Items, int TotalCount)> SearchEventsAsync(
+        BillingWebhookEventSearchCriteria criteria,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(criteria);
+
+        var query = Entities.AsQueryable();
+
+        query = criteria.Status switch
+        {
+            BillingEventStatusFilter.Processed => query.Where(e => e.IsProcessed && !e.IsFailed),
+            BillingEventStatusFilter.Failed => query.Where(e => e.IsFailed),
+            BillingEventStatusFilter.Pending => query.Where(e => !e.IsProcessed && !e.IsFailed),
+            _ => query
+        };
+
+        if (criteria.Provider is not null)
+        {
+            query = query.Where(e => e.Provider == criteria.Provider);
+        }
+
+        if (criteria.EventType is not null)
+        {
+            query = query.Where(e => e.EventType == criteria.EventType);
+        }
+
+        if (criteria.FromUtc.HasValue)
+        {
+            var fromUtc = criteria.FromUtc.Value;
+            query = query.Where(e => e.CreatedAt >= fromUtc);
+        }
+
+        if (criteria.ToUtc.HasValue)
+        {
+            var toUtc = criteria.ToUtc.Value;
+            query = query.Where(e => e.CreatedAt <= toUtc);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        var items = await query
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return (items, totalCount);
+    }
+
+    /// <inheritdoc />
     public new async Task<BillingWebhookEvent> CreateAsync(BillingWebhookEvent webhookEvent, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(webhookEvent);
@@ -148,7 +218,9 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
         ArgumentNullException.ThrowIfNull(webhookEvent);
 
         if (!webhookEvent.TryBeginProcessing(staleBefore))
+        {
             return false;
+        }
 
         Entities.Update(webhookEvent);
         try
@@ -204,7 +276,9 @@ public class BillingWebhookRepository(IApplicationDbContext context, ILogger<Bil
         for (var current = exception.InnerException; current is not null; current = current.InnerException)
         {
             if (current is not DbException { SqlState: "23505" } databaseException)
+            {
                 continue;
+            }
 
             var constraintName = databaseException.GetType()
                 .GetProperty("ConstraintName")

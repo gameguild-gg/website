@@ -107,10 +107,26 @@ public class UserProfile : EntityBase
     /// </summary>
     public void UpdateBasicInfo(string? displayName = null, string? bio = null, string? location = null, string? website = null)
     {
-        if (displayName != null) DisplayName = displayName;
-        if (bio != null) Bio = bio;
-        if (location != null) Location = location;
-        if (website != null) Website = website;
+        if (displayName != null)
+        {
+            DisplayName = displayName;
+        }
+
+        if (bio != null)
+        {
+            Bio = bio;
+        }
+
+        if (location != null)
+        {
+            Location = location;
+        }
+
+        if (website != null)
+        {
+            Website = website;
+        }
+
         Touch();
     }
 
@@ -119,8 +135,16 @@ public class UserProfile : EntityBase
     /// </summary>
     public void UpdateProfessionalInfo(string? jobTitle = null, string? company = null)
     {
-        if (jobTitle != null) JobTitle = jobTitle;
-        if (company != null) Company = company;
+        if (jobTitle != null)
+        {
+            JobTitle = jobTitle;
+        }
+
+        if (company != null)
+        {
+            Company = company;
+        }
+
         Touch();
     }
 

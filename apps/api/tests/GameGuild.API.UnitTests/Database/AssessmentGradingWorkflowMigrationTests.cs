@@ -4,6 +4,8 @@ using GameGuild.API.Database.Migrations;
 using GameGuild.Learning.Assessments;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Npgsql;
@@ -91,85 +93,163 @@ public sealed class AssessmentGradingWorkflowMigrationTests
     }
 
     [DockerFact]
-    public async Task Up_ConvertsCanonicalScoresAndBackfillsExistingRowsWithoutDataLoss()
+    public async Task MigrationChain_CreatesTheCurrentSchemaFromAnEmptyDatabase()
     {
-        await using var database = await EconomyPostgreSqlTestDatabase.CreateAsync("assessment_grading_workflow");
+        await using var database = await EconomyPostgreSqlTestDatabase.CreateAsync("assessment_grading_clean");
+        await using var context = CreateContext(database.ConnectionString);
+
+        await context.Database.MigrateAsync();
+
+        var definedMigrations = context.Database.GetMigrations().ToArray();
+        var appliedMigrations = (await context.Database.GetAppliedMigrationsAsync()).ToArray();
+        var pendingMigrations = (await context.Database.GetPendingMigrationsAsync()).ToArray();
+        appliedMigrations.Should().Equal(definedMigrations);
+        pendingMigrations.Should().BeEmpty();
+        context.Database.HasPendingModelChanges().Should().BeFalse();
+
+        await using var connection = new NpgsqlConnection(database.ConnectionString);
+        await connection.OpenAsync();
+        (await ScalarAsync<string>(connection, "SELECT to_regclass('\"Assessments\"')::text;"))
+            .Should().Be("\"Assessments\"");
+        (await ScalarAsync<string>(connection, "SELECT to_regclass('\"GradingExecutions\"')::text;"))
+            .Should().Be("\"GradingExecutions\"");
+        (await ScalarAsync<string>(connection, "SELECT to_regclass('\"GradeResultReleases\"')::text;"))
+            .Should().Be("\"GradeResultReleases\"");
+    }
+
+    [DockerFact]
+    public async Task MigrationChain_UpgradesThePopulatedPredecessorAndPreservesGradingData()
+    {
+        const string predecessorMigration = "20260911012842_AddAiAssistedLessonAuthoring";
+        await using var database = await EconomyPostgreSqlTestDatabase.CreateAsync("assessment_grading_upgrade");
+        await using var context = CreateContext(database.ConnectionString);
+        var migrator = context.GetService<IMigrator>();
+
+        await migrator.MigrateAsync(predecessorMigration);
+        await context.Database.ExecuteSqlRawAsync(PredecessorSeedSql);
+        await migrator.MigrateAsync();
+
+        var definedMigrations = context.Database.GetMigrations().ToArray();
+        var appliedMigrations = (await context.Database.GetAppliedMigrationsAsync()).ToArray();
+        appliedMigrations.Should().Equal(definedMigrations);
+        context.Database.HasPendingModelChanges().Should().BeFalse();
+
         await using var connection = new NpgsqlConnection(database.ConnectionString);
         await connection.OpenAsync();
 
-        await ExecuteAsync(connection, """
-            CREATE TABLE "programs" ("PassingScore" numeric(5,2) NOT NULL DEFAULT 60);
-            CREATE TABLE "program_users" ("FinalGrade" numeric(5,2), "CompletionPercentage" numeric(5,2) NOT NULL);
-            CREATE TABLE "program_enrollments" ("ProgressPercentage" numeric(5,2) NOT NULL, "FinalGrade" numeric(5,2));
-            CREATE TABLE "content_progress" ("Score" numeric(5,2), "ProgressPercentage" numeric(5,2) NOT NULL, "MaxScore" numeric(5,2));
-            CREATE TABLE "content_interactions" ("ProgressPercentage" numeric(5,2), "BestScore" numeric(5,2));
-            CREATE TABLE "content_interaction_events" ("ProgressPercentage" numeric(5,2));
-            CREATE TABLE "AssessmentGroups" ("WeightPercent" numeric(5,2) NOT NULL);
-            CREATE TABLE "activity_grades" ("Points" numeric(5,2), "MaxPoints" numeric(5,2));
+        (await ScalarAsync<int>(connection,
+            "SELECT \"PassingScore\" FROM \"programs\" WHERE \"Id\" = '10000000-0000-0000-0000-000000000001';"))
+            .Should().Be(6050);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"WeightPercent\" FROM \"AssessmentGroups\" WHERE \"Id\" = '20000000-0000-0000-0000-000000000001';"))
+            .Should().Be(2525);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"MaxScore\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be(200);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"PassingScore\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be(125);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"Score\" FROM \"AssessmentSubmissions\" WHERE \"Id\" = '40000000-0000-0000-0000-000000000001';"))
+            .Should().Be(175);
 
-            INSERT INTO "programs" VALUES (60.50);
-            INSERT INTO "program_users" VALUES (88.75, 50.50);
-            INSERT INTO "program_enrollments" VALUES (33.33, 91.25);
-            INSERT INTO "content_progress" VALUES (9.99, 42.42, 10.00);
-            INSERT INTO "content_interactions" VALUES (12.34, 98.76);
-            INSERT INTO "content_interaction_events" VALUES (77.77);
-            INSERT INTO "AssessmentGroups" VALUES (25.25);
-            INSERT INTO "activity_grades" VALUES (7.50, 10.00);
-
-            CREATE TABLE "AssessmentSubmissions" (
-                "Id" uuid PRIMARY KEY,
-                "UserId" uuid,
-                "StartedByUserId" uuid,
-                "SubmittedByUserId" uuid,
-                "SubmittedAt" timestamp with time zone);
-            CREATE TABLE "Assessments" (
-                "Id" uuid PRIMARY KEY,
-                "MaxAttempts" integer,
-                "GradingMethods" integer NOT NULL,
-                "ReviewMethods" integer);
-
-            INSERT INTO "AssessmentSubmissions" VALUES (
-                '10000000-0000-0000-0000-000000000001',
-                '20000000-0000-0000-0000-000000000001',
-                NULL,
-                NULL,
-                now());
-            INSERT INTO "Assessments" VALUES (
-                '30000000-0000-0000-0000-000000000001', NULL, 9, NULL),
-                ('30000000-0000-0000-0000-000000000002', 3, 15, NULL);
-            """);
-
-        var builder = BuildUp();
-        foreach (var marker in new[]
-                 {
-                     "canonical-score-conversion",
-                     "submission-actor-backfill",
-                     "assessment-policy-backfill",
-                     "review-method-backfill"
-                 })
-        {
-            var sql = builder.Operations.OfType<SqlOperation>()
-                .Single(operation => operation.Sql.Contains(marker, StringComparison.Ordinal)).Sql;
-            await ExecuteAsync(connection, sql);
-        }
-
-        (await ScalarAsync<int>(connection, "SELECT \"PassingScore\" FROM \"programs\";")).Should().Be(6050);
-        (await ScalarAsync<int>(connection, "SELECT \"FinalGrade\" FROM \"program_users\";")).Should().Be(8875);
-        (await ScalarAsync<int>(connection, "SELECT \"CompletionPercentage\" FROM \"program_users\";")).Should().Be(5050);
-        (await ScalarAsync<int>(connection, "SELECT \"ProgressPercentage\" FROM \"program_enrollments\";")).Should().Be(3333);
-        (await ScalarAsync<int>(connection, "SELECT \"WeightPercent\" FROM \"AssessmentGroups\";")).Should().Be(2525);
-        (await ScalarAsync<int>(connection, "SELECT \"Points\" FROM \"activity_grades\";")).Should().Be(750);
-        (await ScalarAsync<int>(connection, "SELECT \"MaxPoints\" FROM \"activity_grades\";")).Should().Be(1000);
-
-        var actor = await ScalarAsync<Guid>(connection,
-            "SELECT \"StartedByUserId\" FROM \"AssessmentSubmissions\";");
-        actor.Should().Be(Guid.Parse("20000000-0000-0000-0000-000000000001"));
+        var actor = Guid.Parse("50000000-0000-0000-0000-000000000001");
         (await ScalarAsync<Guid>(connection,
-            "SELECT \"SubmittedByUserId\" FROM \"AssessmentSubmissions\";")).Should().Be(actor);
-        (await ScalarAsync<int>(connection, "SELECT \"MaxAttempts\" FROM \"Assessments\" WHERE \"GradingMethods\" = 9;")).Should().Be(1);
-        (await ScalarAsync<int>(connection, "SELECT \"MaxAttempts\" FROM \"Assessments\" WHERE \"GradingMethods\" = 15;")).Should().Be(3);
-        (await ScalarAsync<int>(connection, "SELECT \"ReviewMethods\" FROM \"Assessments\" WHERE \"GradingMethods\" = 9;")).Should().Be(9);
-        (await ScalarAsync<int>(connection, "SELECT \"ReviewMethods\" FROM \"Assessments\" WHERE \"GradingMethods\" = 15;")).Should().Be(8);
+            "SELECT \"StartedByUserId\" FROM \"AssessmentSubmissions\" WHERE \"Id\" = '40000000-0000-0000-0000-000000000001';"))
+            .Should().Be(actor);
+        (await ScalarAsync<Guid>(connection,
+            "SELECT \"SubmittedByUserId\" FROM \"AssessmentSubmissions\" WHERE \"Id\" = '40000000-0000-0000-0000-000000000001';"))
+            .Should().Be(actor);
+
+        (await ScalarAsync<int>(connection,
+            "SELECT \"MaxAttempts\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be(1);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"MaxAttempts\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000002';"))
+            .Should().Be(3);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"ReviewMethods\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be(9);
+        (await ScalarAsync<int>(connection,
+            "SELECT \"ReviewMethods\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000002';"))
+            .Should().Be((int)ReviewMethods.InstructorReview);
+        (await ScalarAsync<string>(connection,
+            "SELECT \"ContentCompletionMode\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be("on-release-and-pass");
+        (await ScalarAsync<string>(connection,
+            "SELECT \"ResultReleaseMode\" FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be("manual");
+
+        (await ScalarAsync<string>(connection,
+            "SELECT \"DefinitionPayload\"::text FROM \"Assessments\" WHERE \"Id\" = '30000000-0000-0000-0000-000000000001';"))
+            .Should().Be("{\"legacy\": true}");
+        (await ScalarAsync<string>(connection,
+            "SELECT \"StructuredAnswerPayload\"::text FROM \"AssessmentSubmissions\" WHERE \"Id\" = '40000000-0000-0000-0000-000000000001';"))
+            .Should().Be("{\"answer\": true}");
+
+        (await ScalarAsync<string>(connection, """
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'programs' AND column_name = 'PassingScore';
+            """)).Should().Be("integer");
+        (await ScalarAsync<string>(connection, """
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'AssessmentGroups' AND column_name = 'WeightPercent';
+            """)).Should().Be("integer");
+    }
+
+    private const string PredecessorSeedSql = """
+        INSERT INTO "programs" (
+            "Id", "CreatedAt", "UpdatedAt", "Version", "Title", "Slug", "Status", "Visibility",
+            "EnrollmentStatus", "Category", "Difficulty", "PassingScore")
+        VALUES (
+            '10000000-0000-0000-0000-000000000001', now(), now(), 0, 'Migration course',
+            'migration-course', 0, 0, 0, 0, 0, 60.50);
+
+        INSERT INTO "AssessmentGroups" (
+            "Id", "CourseId", "CreatedAt", "UpdatedAt", "Version", "Name", "Order", "WeightPercent")
+        VALUES (
+            '20000000-0000-0000-0000-000000000001',
+            '10000000-0000-0000-0000-000000000001', now(), now(), 0, 'Exams', 0, 25.25);
+
+        INSERT INTO "Assessments" (
+            "Id", "CourseId", "AssessmentGroupId", "CreatedAt", "UpdatedAt", "Version", "Title", "Slug",
+            "Type", "MaxScore", "PassingScore", "IsRequired", "Order", "SubmissionModalities",
+            "PresentationMode", "GradingMethods", "PeerReviewsRequiredCount", "AllowLateSubmissions",
+            "MaxAttempts", "DefinitionPayload")
+        VALUES (
+            '30000000-0000-0000-0000-000000000001',
+            '10000000-0000-0000-0000-000000000001',
+            '20000000-0000-0000-0000-000000000001', now(), now(), 0, 'Quiz one', 'quiz-one',
+            2, 200, 125, true, 0, 64, 0, 9, 0, false, NULL, '{{"legacy":true}}'::jsonb),
+            (
+            '30000000-0000-0000-0000-000000000002',
+            '10000000-0000-0000-0000-000000000001', NULL, now(), now(), 0, 'Quiz two', 'quiz-two',
+            2, 300, 150, false, 1, 64, 0, 15, 0, false, 3, '{{"legacy":true}}'::jsonb);
+
+        INSERT INTO "AssessmentSubmissions" (
+            "Id", "AssessmentId", "EnrollmentId", "UserId", "AttemptNumber", "CreatedAt", "UpdatedAt",
+            "Version", "StartedAt", "Status", "IsLate", "SubmittedModalities", "StructuredAnswerPayload",
+            "SubmittedAt", "Score")
+        VALUES (
+            '40000000-0000-0000-0000-000000000001',
+            '30000000-0000-0000-0000-000000000001',
+            '60000000-0000-0000-0000-000000000001',
+            '50000000-0000-0000-0000-000000000001', 1, now(), now(), 0, now(), 2, false, 64,
+            '{{"answer":true}}'::jsonb, now(), 175);
+        """;
+
+    private static ApplicationDbContext CreateContext(string connectionString)
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseNpgsql(connectionString, npgsql =>
+                npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName))
+            .ConfigureWarnings(warnings =>
+                warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
+            .Options;
+
+        return new ApplicationDbContext(options);
     }
 
     private static MigrationBuilder BuildUp()
@@ -187,12 +267,6 @@ public sealed class AssessmentGradingWorkflowMigrationTests
             .Where(item => item.operation is TOperation typed && predicate(typed))
             .Select(item => item.index)
             .Single();
-
-    private static async Task ExecuteAsync(NpgsqlConnection connection, string sql)
-    {
-        await using var command = new NpgsqlCommand(sql, connection);
-        await command.ExecuteNonQueryAsync();
-    }
 
     private static async Task<T> ScalarAsync<T>(NpgsqlConnection connection, string sql)
     {

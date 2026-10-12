@@ -359,7 +359,7 @@ export function AdmonitionEditor({ initialData, onSave, onCancel }: AdmonitionEd
                   <Textarea
                     id="content"
                     value={data.content}
-                    onChange={(e) => setData((prev) => ({ ...prev, content: e.target.value }))}
+                    onChange={(e) => { setData((prev) => ({ ...prev, content: e.target.value })); }}
                     placeholder="Enter your admonition content here..."
                     rows={12}
                     className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 font-mono text-sm"

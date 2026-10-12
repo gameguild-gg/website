@@ -68,7 +68,7 @@ export class LearningCohortsSchedulesModule {
   async getCoursesCohortsScheduleAvailableContent(
     courseId: string,
     cohortId: string,
-  ): Promise<Result<Array<Types.LearningCohortsAvailableCohortContentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningCohortsAvailableCohortContentDto[], ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule/available-content`;
 
     const result = await this.client.request({
@@ -77,7 +77,7 @@ export class LearningCohortsSchedulesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCohortsAvailableCohortContentDto>, ApiError>;
+    return result as Result<Types.LearningCohortsAvailableCohortContentDto[], ApiError>;
   }
 
   /**

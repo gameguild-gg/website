@@ -196,15 +196,7 @@ public sealed class TamperEvidentAuditService(
                     return Result.Success(false);
                 }
 
-                var contentHash = signingService.ComputeContentHash(SerializeContent(entry));
-                if (!string.Equals(contentHash, entry.ContentHash, StringComparison.Ordinal))
-                {
-                    return Result.Success(false);
-                }
-
-                var chainHash = signingService.ComputeChainHash(contentHash, previousHash, expectedSequence);
-                if (!string.Equals(chainHash, entry.ChainHash, StringComparison.Ordinal)
-                    || !signingService.VerifySignature(chainHash, entry.DigitalSignature, entry.SigningKeyId))
+                if (!new AuditChainEvidenceVerifier(signingService).VerifyEntry(entry))
                 {
                     return Result.Success(false);
                 }
@@ -234,6 +226,10 @@ public sealed class TamperEvidentAuditService(
             .FirstOrDefaultAsync(item => item.Id == id, cancellationToken)
             .ConfigureAwait(false);
 
+        if (entry is not null && scope.ServiceProvider.GetService<IAuditDataAccessRecorder>() is { } recorder)
+        {
+            await recorder.RecordAsync([new AuditAccessedRecord(entry.TenantId, entry.Timestamp)], cancellationToken).ConfigureAwait(false);
+        }
         return entry is null
             ? Result.Failure<TamperEvidentAuditLog>(Error.NotFound("Audit.NotFound", "The audit entry was not found."))
             : Result.Success(entry);
@@ -273,6 +269,10 @@ public sealed class TamperEvidentAuditService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        if (scope.ServiceProvider.GetService<IAuditDataAccessRecorder>() is { } recorder)
+        {
+            await recorder.RecordAsync(entries.Select(entry => new AuditAccessedRecord(entry.TenantId, entry.Timestamp)), cancellationToken).ConfigureAwait(false);
+        }
         return Result.Success<IEnumerable<TamperEvidentAuditLog>>(entries);
     }
 
@@ -299,6 +299,10 @@ public sealed class TamperEvidentAuditService(
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        if (scope.ServiceProvider.GetService<IAuditDataAccessRecorder>() is { } recorder)
+        {
+            await recorder.RecordAsync(entries.Select(entry => new AuditAccessedRecord(entry.TenantId, entry.Timestamp)), cancellationToken).ConfigureAwait(false);
+        }
         return Result.Success<IEnumerable<TamperEvidentAuditLog>>(entries);
     }
 
@@ -346,7 +350,7 @@ public sealed class TamperEvidentAuditService(
         return Result.Success();
     }
 
-    private static string SerializeContent(TamperEvidentAuditLog entry)
+    internal static string SerializeContent(TamperEvidentAuditLog entry, DateTime? timestampOverride = null)
     {
         return JsonSerializer.Serialize(new AuditContent(
             entry.Id,
@@ -366,7 +370,7 @@ public sealed class TamperEvidentAuditService(
             entry.Country,
             entry.Region,
             entry.City,
-            entry.Timestamp));
+            timestampOverride ?? entry.Timestamp));
     }
 
     private static Result<TValue> Failure<TValue>(string code, string description)

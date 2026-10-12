@@ -18,7 +18,9 @@ public static class AuthoringStructuredPatch
     public static string Apply(string sourceJson, string patchJson, AiProposalKind kind)
     {
         if (kind is not (AiProposalKind.LexicalPatch or AiProposalKind.QuizPatch))
+        {
             throw new ArgumentOutOfRangeException(nameof(kind), "Structured patches are only valid for Lexical lessons and quizzes.");
+        }
 
         var document = JsonNode.Parse(sourceJson) ?? throw new ArgumentException("The source document is invalid JSON.", nameof(sourceJson));
         var patch = JsonNode.Parse(patchJson) as JsonObject
@@ -26,7 +28,9 @@ public static class AuthoringStructuredPatch
         var operations = patch["operations"] as JsonArray
                          ?? throw new ArgumentException("The AI patch must contain an operations array.", nameof(patchJson));
         if (operations.Count is 0 or > 100)
+        {
             throw new ArgumentException("The AI patch must contain between 1 and 100 operations.", nameof(patchJson));
+        }
 
         foreach (var node in operations)
         {
@@ -47,9 +51,14 @@ public static class AuthoringStructuredPatch
                       ?? throw new ArgumentException("Every AI patch operation requires a path value.", nameof(operation));
         var segments = ParsePointer(pointer);
         if (segments.Count == 0)
+        {
             throw new ArgumentException("Replacing the structured document root is not allowed.", nameof(operation));
+        }
+
         if (kind == AiProposalKind.LexicalPatch && segments.Any(IsProtectedLexicalProperty))
+        {
             throw new ArgumentException("Lexical node identity and type metadata cannot be changed by AI.", nameof(operation));
+        }
 
         var (parent, leaf) = ResolveParent(document, segments);
         switch (op)
@@ -143,18 +152,29 @@ public static class AuthoringStructuredPatch
     private static void EnsureRemovalAllowed(JsonNode? target, AiProposalKind kind)
     {
         if (kind != AiProposalKind.LexicalPatch || target is not JsonObject obj)
+        {
             return;
+        }
+
         var type = obj["type"]?.GetValue<string>();
         if (!string.IsNullOrWhiteSpace(type) && type is not ("text" or "paragraph" or "heading" or "quote" or "listitem"))
+        {
             throw new ArgumentException($"AI cannot remove the interactive or unknown Lexical node type '{type}'.");
+        }
     }
 
     private static IReadOnlyList<string> ParsePointer(string pointer)
     {
         if (pointer.Length == 0)
+        {
             return [];
+        }
+
         if (!pointer.StartsWith("/", StringComparison.Ordinal))
+        {
             throw new ArgumentException("AI patch paths must use JSON Pointer syntax.", nameof(pointer));
+        }
+
         return pointer.Split('/').Skip(1)
             .Select(static segment => segment.Replace("~1", "/", StringComparison.Ordinal).Replace("~0", "~", StringComparison.Ordinal))
             .ToArray();
@@ -163,7 +183,10 @@ public static class AuthoringStructuredPatch
     private static int ParseArrayIndex(string value, int count, bool allowAppend)
     {
         if (!int.TryParse(value, out var index) || index < 0 || index > count || (!allowAppend && index == count))
+        {
             throw new ArgumentException($"'{value}' is not a valid array index.");
+        }
+
         return index;
     }
 

@@ -62,8 +62,10 @@ public sealed class InMemoryIntegrationEventBus : IIntegrationEventBus
     {
         ArgumentNullException.ThrowIfNull(@event);
         if (@event is IDurableIntegrationEvent)
+        {
             throw new InvalidOperationException(
                 "Durable integration events must be recorded in the transactional outbox and dispatched through the inbox-aware outbox dispatcher.");
+        }
 
         var eventType = typeof(TEvent);
         var eventName = eventType.Name;
@@ -127,12 +129,16 @@ public sealed class InMemoryIntegrationEventBus : IIntegrationEventBus
                 foreach (var m in methods)
                 {
                     if (m.Name != nameof(PublishAsync) || !m.IsGenericMethodDefinition)
+                    {
                         continue;
+                    }
 
                     var parameters = m.GetParameters();
                     if (parameters.Length == 2 &&
                         parameters[1].ParameterType == typeof(CancellationToken))
+                    {
                         return m.MakeGenericMethod(et);
+                    }
                 }
 
                 return null;
@@ -236,7 +242,9 @@ public sealed class InMemoryIntegrationEventBus : IIntegrationEventBus
             }
 
             if (_options.ThrowOnHandlerException)
+            {
                 throw;
+            }
         }
     }
 
@@ -258,7 +266,9 @@ public static class IntegrationEventServiceCollectionExtensions
         Action<IntegrationEventOptions>? configure = null)
     {
         if (configure != null)
+        {
             services.Configure(configure);
+        }
 
         services.AddSingleton<IIntegrationEventBus, InMemoryIntegrationEventBus>();
 

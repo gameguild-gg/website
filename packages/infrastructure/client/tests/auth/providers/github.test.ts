@@ -47,7 +47,7 @@ describe('GitHubProvider', () => {
       const provider = GitHubProvider({ clientId: 'id', clientSecret: 'secret' });
       const url = await provider.getAuthorizeUrl('http://localhost:8080', 'http://localhost:3000/callback');
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/^http:\/\/localhost:8080\/v1\/auth\/github:authorize\?redirectUri=/), { method: 'GET' });
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/^http:\/\/localhost:8080\/v1\/auth\/github:authorize\?redirectUri=/), { method: 'GET', redirect: 'error' });
       expect(url).toBe('https://github.com/login?state=abc');
     });
 
@@ -67,7 +67,7 @@ describe('GitHubProvider', () => {
 
       await provider.getAuthorizeUrl('http://ignored-api:8080');
 
-      expect(mockFetch).toHaveBeenCalledWith('http://configured-api:8080/custom/github/auth?', { method: 'GET' });
+      expect(mockFetch).toHaveBeenCalledWith('http://configured-api:8080/custom/github/auth?', { method: 'GET', redirect: 'error' });
     });
 
     it('preserves structured backend error details', async () => {
@@ -135,6 +135,41 @@ describe('GitHubProvider', () => {
         tenantId: 'tenant-1',
         availableTenants: [{ id: 'tenant-1', name: 'Primary' }],
       });
+    });
+
+    it('sends redirectUri and tenantId in the callback body when provided', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          accessToken: 'token',
+          userId: 'user-1',
+          email: 'test@example.com',
+        }),
+      });
+      globalThis.fetch = mockFetch;
+
+      const provider = GitHubProvider({ clientId: 'id', clientSecret: 'secret' });
+      await provider.handleCallback(
+        'http://localhost:8080',
+        'auth-code-123',
+        'state-value',
+        'https://web.example.com/api/auth/callback/github',
+        'tenant-9',
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8080/v1/auth/github:callback',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: 'auth-code-123',
+            state: 'state-value',
+            redirectUri: 'https://web.example.com/api/auth/callback/github',
+            tenantId: 'tenant-9',
+          }),
+        }),
+      );
     });
 
     it('uses backend user values when top-level identity is absent', async () => {

@@ -12,4 +12,7 @@ public class MfaConfigurationResponse
     public DateTime? EnabledAt { get; set; }
 
     public int BackupCodesRemaining { get; set; }
+
+    /// <summary>Original issued count; null for legacy sets whose issuance metadata is unavailable.</summary>
+    public int? BackupCodesIssued { get; set; }
 }

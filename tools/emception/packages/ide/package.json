@@ -51,13 +51,13 @@
     "emception": "4.4.0"
   },
   "peerDependencies": {
-    "@gameguild/emception-xterm": "^4.3.0",
+    "@gameguild/emception-xterm": "^4.4.0",
     "@monaco-editor/react": "^4.7.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "react": "^19",
     "react-dom": "^19",
-    "react-resizable-panels": "^4.12.4"
+    "react-resizable-panels": "^4.14.2"
   },
   "peerDependenciesMeta": {
     "@gameguild/emception-xterm": {
@@ -78,7 +78,7 @@
     "@xterm/xterm": "^6.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-resizable-panels": "^4.12.4",
+    "react-resizable-panels": "^4.14.2",
     "typescript": "^6.0.3"
   }
 }

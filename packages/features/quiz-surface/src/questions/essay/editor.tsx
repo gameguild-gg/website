@@ -14,6 +14,12 @@ import { Switch } from "@game-guild/ui/components/switch"
 import type { EssayEntry } from "@game-guild/quiz"
 import { EssayLexicalEditor } from "./lexical-adapter"
 
+function optionalNumberInput(value: unknown): number | undefined {
+  return value === "" || value === null || value === undefined
+    ? undefined
+    : Number(value)
+}
+
 export function EssayEditor() {
   const { register, watch, setValue } = useFormContext<EssayEntry>()
   const showWordCount = watch("showWordCount")
@@ -54,8 +60,10 @@ export function EssayEditor() {
           <Label className="text-sm font-medium">Minimum Words</Label>
           <Input
             type="number"
+            min={0}
+            step={1}
             placeholder="Optional"
-            {...register("minWordCount", { valueAsNumber: true })}
+            {...register("minWordCount", { setValueAs: optionalNumberInput })}
             autoComplete="off"
             className="bg-white dark:bg-gray-800"
           />
@@ -64,8 +72,10 @@ export function EssayEditor() {
           <Label className="text-sm font-medium">Maximum Words</Label>
           <Input
             type="number"
+            min={0}
+            step={1}
             placeholder="Optional"
-            {...register("maxWordCount", { valueAsNumber: true })}
+            {...register("maxWordCount", { setValueAs: optionalNumberInput })}
             autoComplete="off"
             className="bg-white dark:bg-gray-800"
           />

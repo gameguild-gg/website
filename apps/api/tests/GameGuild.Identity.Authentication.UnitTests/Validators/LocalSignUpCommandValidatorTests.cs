@@ -193,7 +193,7 @@ public class LocalSignUpCommandValidatorTests
     [Fact]
     public void Should_HaveError_When_UsernameHasInvalidChars()
     {
-        var command = new LocalSignUpCommand { Email = "test@example.com", Password = "Password1!", Username = "user name!" };
+        var command = new LocalSignUpCommand { Email = "test@example.com", Password = "Password1!", Username = "---" };
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.Username);
     }
@@ -203,6 +203,9 @@ public class LocalSignUpCommandValidatorTests
     [InlineData("user.name")]
     [InlineData("user-name")]
     [InlineData("user123")]
+    [InlineData("Matheus Martins")]
+    [InlineData("MátHeus Martíns")]
+    [InlineData("  User Name  ")]
     public void Should_NotHaveError_When_UsernameIsValid(string username)
     {
         var command = new LocalSignUpCommand { Email = "test@example.com", Password = "Password1!", Username = username };
@@ -211,6 +214,18 @@ public class LocalSignUpCommandValidatorTests
     }
 
     // ── TenantId ──────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("...")]
+    [InlineData("東京")]
+    [InlineData("  ab  ")]
+    [InlineData("a\u0000b")]
+    [InlineData("\ud800")]
+    public void Should_RejectUsernameWithoutUsableCanonicalHandle(string username)
+    {
+        var command = new LocalSignUpCommand { Email = "test@example.com", Password = "Password1!", Username = username };
+        _validator.TestValidate(command).ShouldHaveValidationErrorFor(x => x.Username);
+    }
 
     [Fact]
     public void Should_HaveError_When_TenantIdIsEmptyGuid()

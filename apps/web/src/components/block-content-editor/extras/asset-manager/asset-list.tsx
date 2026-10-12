@@ -194,7 +194,7 @@ export function AssetList({ assets, viewMode, gridColumns = 5, listColumns = 1, 
                       Download
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => onDelete(asset.id, asset.name)}
+                      onClick={() => { onDelete(asset.id, asset.name); }}
                       className="text-red-600 dark:text-red-400"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />

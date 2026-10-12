@@ -120,7 +120,7 @@ export function FeatureEditorShell({
           "flex min-h-0 min-w-0 flex-col overflow-hidden border border-gray-200 bg-white shadow-2xl outline-none dark:border-gray-700 dark:bg-gray-900",
           settings.modalSize === "compact" && "rounded-md",
         )}
-        onMouseDown={(event) => event.stopPropagation()}
+        onMouseDown={(event) => { event.stopPropagation(); }}
       >
         <header className="flex min-h-14 items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
           <div className="flex min-w-0 items-center gap-2">

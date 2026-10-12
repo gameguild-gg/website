@@ -37,7 +37,7 @@
     "emception": "4.4.0"
   },
   "peerDependencies": {
-    "@gameguild/emception-xterm": "^4.3.0",
+    "@gameguild/emception-xterm": "^4.4.0",
     "react": "^19",
     "react-dom": "^19"
   },

@@ -227,7 +227,7 @@ export class GoogleDriveSecurity {
   /**
    * Log security events (for monitoring)
    */
-  static logSecurityEvent(event: string, details?: any): void {
+  static logSecurityEvent(event: string, details?: unknown): void {
     const securityLog = {
       timestamp: new Date().toISOString(),
       event,

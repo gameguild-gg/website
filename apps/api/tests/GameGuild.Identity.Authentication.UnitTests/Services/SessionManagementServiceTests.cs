@@ -12,6 +12,8 @@ public class SessionManagementServiceTests
     private readonly Mock<ILogger<SessionManagementService>> _loggerMock;
     private readonly Mock<IUserSessionRepository> _sessionRepositoryMock;
     private readonly Mock<ITrustedDeviceRepository> _trustedDeviceRepositoryMock;
+    private readonly Mock<IRefreshTokenLineageRepository> _tokenLineageRepositoryMock = new();
+    private readonly Mock<IAuthenticationAuditEventSink> _auditEventSinkMock;
     private readonly SessionManagementService _service;
 
     public SessionManagementServiceTests()
@@ -19,10 +21,15 @@ public class SessionManagementServiceTests
         _loggerMock = new Mock<ILogger<SessionManagementService>>();
         _sessionRepositoryMock = new Mock<IUserSessionRepository>();
         _trustedDeviceRepositoryMock = new Mock<ITrustedDeviceRepository>();
+        _auditEventSinkMock = new Mock<IAuthenticationAuditEventSink>();
+        _tokenLineageRepositoryMock.Setup(repository => repository.BindSessionAsync(
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _service = new SessionManagementService(
             _loggerMock.Object,
             _sessionRepositoryMock.Object,
-            _trustedDeviceRepositoryMock.Object
+            _trustedDeviceRepositoryMock.Object,
+            _tokenLineageRepositoryMock.Object,
+            auditEventSink: _auditEventSinkMock.Object
         );
     }
 
@@ -51,6 +58,13 @@ public class SessionManagementServiceTests
         result.DeviceFingerprint.Should().NotBeNullOrEmpty();
         result.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddDays(1), TimeSpan.FromSeconds(5));
         _sessionRepositoryMock.Verify(x => x.CreateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()), Times.Once);
+        _auditEventSinkMock.Verify(x => x.RecordAsync(
+            It.Is<AuthenticationAuditEvent>(auditEvent =>
+                auditEvent.ActionType == "Authentication.SessionCreated" &&
+                auditEvent.UserId == userId &&
+                auditEvent.IpAddress == ipAddress &&
+                auditEvent.UserAgent == userAgent),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -80,6 +94,8 @@ public class SessionManagementServiceTests
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            IpAddress = "192.0.2.25",
+            UserAgent = "retired-session-agent",
             IsActive = true,
             CreatedAt = SystemClock.UtcNow.AddHours(-1),
             LastUsedAt = SystemClock.UtcNow.AddMinutes(-10)
@@ -98,13 +114,95 @@ public class SessionManagementServiceTests
             _loggerMock.Object,
             _sessionRepositoryMock.Object,
             _trustedDeviceRepositoryMock.Object,
-            new SessionOptions { MaxConcurrentSessions = 1 });
+            _tokenLineageRepositoryMock.Object,
+            new SessionOptions { MaxConcurrentSessions = 1 },
+            _auditEventSinkMock.Object);
 
         await service.CreateSessionAsync(userId, "192.0.2.1", "test-agent");
 
         existingSession.IsActive.Should().BeFalse();
         existingSession.TerminationReason.Should().Be(SessionTerminationReason.MaxSessionsExceeded.ToString());
+        existingSession.TerminatedAt.Should().NotBeNull();
+        _auditEventSinkMock.Verify(sink => sink.RecordAsync(
+            It.Is<AuthenticationAuditEvent>(auditEvent =>
+                auditEvent.ActionType == "Authentication.SessionTerminated" &&
+                auditEvent.Success && auditEvent.Method == "Session" &&
+                auditEvent.UserId == userId && auditEvent.SessionId == existingSession.Id &&
+                auditEvent.IpAddress == existingSession.IpAddress &&
+                auditEvent.UserAgent == existingSession.UserAgent),
+            It.IsAny<CancellationToken>()), Times.Once);
         _sessionRepositoryMock.Verify(repository => repository.UpdateAsync(existingSession, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_AuditsEverySessionEvictedByTheLimit()
+    {
+        var userId = Guid.NewGuid();
+        var now = SystemClock.UtcNow;
+        var existing = Enumerable.Range(0, 3).Select(index => new UserSession
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            IsActive = true,
+            IpAddress = $"192.0.2.{index + 1}",
+            UserAgent = $"existing-session-{index}",
+            CreatedAt = now.AddHours(-3 + index),
+            LastUsedAt = now.AddMinutes(-30 + index)
+        }).ToList();
+        var events = new List<AuthenticationAuditEvent>();
+        _sessionRepositoryMock.Setup(repository => repository.GetActiveByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([existing[2], existing[0], existing[1]]);
+        _sessionRepositoryMock.Setup(repository => repository.UpdateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSession session, CancellationToken _) => session);
+        _sessionRepositoryMock.Setup(repository => repository.CreateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSession session, CancellationToken _) => session);
+        _auditEventSinkMock.Setup(sink => sink.RecordAsync(It.IsAny<AuthenticationAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AuthenticationAuditEvent, CancellationToken>((auditEvent, _) => events.Add(auditEvent))
+            .Returns(Task.CompletedTask);
+        var service = new SessionManagementService(_loggerMock.Object, _sessionRepositoryMock.Object,
+            _trustedDeviceRepositoryMock.Object, _tokenLineageRepositoryMock.Object,
+            new SessionOptions { MaxConcurrentSessions = 2 }, _auditEventSinkMock.Object);
+
+        await service.CreateSessionAsync(userId, "192.0.2.200", "new-session-agent");
+
+        var terminated = events.Where(auditEvent => auditEvent.ActionType == "Authentication.SessionTerminated").ToList();
+        terminated.Select(auditEvent => auditEvent.SessionId).Should().Equal(existing[0].Id, existing[1].Id);
+        foreach (var auditEvent in terminated)
+        {
+            auditEvent.Success.Should().BeTrue();
+            auditEvent.Method.Should().Be("Session");
+            auditEvent.UserId.Should().Be(userId);
+            var session = existing.Single(value => value.Id == auditEvent.SessionId);
+            auditEvent.IpAddress.Should().Be(session.IpAddress);
+            auditEvent.UserAgent.Should().Be(session.UserAgent);
+            session.IsActive.Should().BeFalse();
+            var metadata = System.Text.Json.JsonSerializer.Serialize(auditEvent.Metadata);
+            metadata.Should().Contain(SessionTerminationReason.MaxSessionsExceeded.ToString());
+            metadata.Should().NotContain(nameof(UserSession.RefreshToken));
+        }
+        existing[2].IsActive.Should().BeTrue();
+        _sessionRepositoryMock.Verify(repository => repository.UpdateAsync(existing[2], It.IsAny<CancellationToken>()), Times.Never);
+        events.Count(auditEvent => auditEvent.ActionType == "Authentication.SessionCreated").Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_DoesNotAuditEvictionWhenPersistenceFails()
+    {
+        var userId = Guid.NewGuid();
+        var existing = new UserSession { Id = Guid.NewGuid(), UserId = userId, IsActive = true };
+        _sessionRepositoryMock.Setup(repository => repository.GetActiveByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([existing]);
+        _sessionRepositoryMock.Setup(repository => repository.UpdateAsync(existing, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Synthetic session update failure."));
+        var service = new SessionManagementService(_loggerMock.Object, _sessionRepositoryMock.Object,
+            _trustedDeviceRepositoryMock.Object, _tokenLineageRepositoryMock.Object,
+            new SessionOptions { MaxConcurrentSessions = 1 }, _auditEventSinkMock.Object);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateSessionAsync(userId, "192.0.2.200", "new-session-agent"));
+
+        _auditEventSinkMock.VerifyNoOtherCalls();
+        _sessionRepositoryMock.Verify(repository => repository.CreateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -115,6 +213,7 @@ public class SessionManagementServiceTests
             _loggerMock.Object,
             _sessionRepositoryMock.Object,
             _trustedDeviceRepositoryMock.Object,
+            _tokenLineageRepositoryMock.Object,
             new SessionOptions { EnableDeviceFingerprinting = false, EnableLocationTracking = false });
         _sessionRepositoryMock
             .Setup(repository => repository.CreateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))
@@ -153,6 +252,8 @@ public class SessionManagementServiceTests
         result.RefreshToken.Should().Be("refresh-token-hash");
         result.ExpiresAt.Should().BeCloseTo(createdAt.AddDays(1), TimeSpan.FromMilliseconds(100));
         result.CreatedAt.Should().NotBe(default);
+        _tokenLineageRepositoryMock.Verify(repository => repository.BindSessionAsync(
+            userId, "refresh-token-hash", sessionId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -166,6 +267,7 @@ public class SessionManagementServiceTests
             Id = sessionId,
             IsActive = true,
             RefreshToken = "old-hash",
+            UserId = Guid.NewGuid(),
             CreatedAt = now.AddMinutes(-10),
             LastUsedAt = now.AddMinutes(-5),
             ExpiresAt = expiresAt
@@ -183,6 +285,54 @@ public class SessionManagementServiceTests
         result.Should().BeTrue();
         session.RefreshToken.Should().Be("new-hash");
         session.ExpiresAt.Should().Be(session.CreatedAt.AddDays(1));
+        _tokenLineageRepositoryMock.Verify(repository => repository.BindSessionAsync(
+            session.UserId, "new-hash", sessionId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_ManualSessionDoesNotBindAnAbsentRefreshToken()
+    {
+        _sessionRepositoryMock.Setup(repository => repository.CreateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSession session, CancellationToken _) => session);
+
+        await _service.CreateSessionAsync(Guid.NewGuid(), "192.0.2.1", "test-agent");
+
+        _tokenLineageRepositoryMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_MissingIssuedTokenFailsBeforeSuccessAudit()
+    {
+        _sessionRepositoryMock.Setup(repository => repository.CreateAsync(It.IsAny<UserSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSession session, CancellationToken _) => session);
+        _tokenLineageRepositoryMock.Setup(repository => repository.BindSessionAsync(
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateSessionAsync(Guid.NewGuid(),
+            Guid.NewGuid(), "192.0.2.1", "test-agent", "missing-hash", SystemClock.UtcNow.AddHours(1)));
+
+        _auditEventSinkMock.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CreateSessionAsync_BindingFailureOrCancellationPropagatesBeforeSuccessAudit(bool cancelled)
+    {
+        var userId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        using var cancellation = new CancellationTokenSource();
+        _sessionRepositoryMock.Setup(repository => repository.CreateAsync(It.IsAny<UserSession>(), cancellation.Token))
+            .ReturnsAsync((UserSession session, CancellationToken _) => session);
+        Exception failure = cancelled ? new OperationCanceledException(cancellation.Token) : new InvalidOperationException("Synthetic lineage failure");
+        _tokenLineageRepositoryMock.Setup(repository => repository.BindSessionAsync(userId, "hash", sessionId, cancellation.Token))
+            .ThrowsAsync(failure);
+
+        var actual = await Record.ExceptionAsync(() => _service.CreateSessionAsync(
+            sessionId, userId, "192.0.2.1", "test-agent", "hash", SystemClock.UtcNow.AddHours(1), cancellationToken: cancellation.Token));
+
+        actual.Should().BeSameAs(failure);
+        _auditEventSinkMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -222,17 +372,18 @@ public class SessionManagementServiceTests
     [Fact]
     public async Task GetUserSessionsAsync_WithActiveOnly_ShouldReturnOnlyActiveSessions()
     {
-        // Arrange
+        // Arrange - the expiry-aware active query already excludes inactive and expired rows;
+        // the repository returns rows ordered by LastUsedAt descending, so the mocked list
+        // is arranged in that order (ordering is the repository's contract, not the service's).
         var userId = Guid.NewGuid();
-        var sessions = new List<UserSession>
+        var activeSessions = new List<UserSession>
         {
-            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, LastUsedAt = DateTime.UtcNow.AddHours(-1) },
-            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = false, LastUsedAt = DateTime.UtcNow.AddHours(-2) },
-            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, LastUsedAt = DateTime.UtcNow }
+            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, ExpiresAt = DateTime.UtcNow.AddHours(1), LastUsedAt = DateTime.UtcNow },
+            new() { Id = Guid.NewGuid(), UserId = userId, IsActive = true, ExpiresAt = DateTime.UtcNow.AddHours(1), LastUsedAt = DateTime.UtcNow.AddHours(-1) }
         };
 
-        _sessionRepositoryMock.Setup(x => x.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(sessions);
+        _sessionRepositoryMock.Setup(x => x.GetActiveByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(activeSessions);
 
         // Act
         var result = await _service.GetUserSessionsAsync(userId, activeOnly: true);
@@ -241,6 +392,8 @@ public class SessionManagementServiceTests
         result.Should().HaveCount(2);
         result.Should().AllSatisfy(s => s.IsActive.Should().BeTrue());
         result[0].LastUsedAt.Should().BeAfter(result[1].LastUsedAt); // Ordered by LastUsedAt descending
+        _sessionRepositoryMock.Verify(x => x.GetActiveByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+        _sessionRepositoryMock.Verify(x => x.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -361,6 +514,7 @@ public class SessionManagementServiceTests
             _loggerMock.Object,
             _sessionRepositoryMock.Object,
             _trustedDeviceRepositoryMock.Object,
+            _tokenLineageRepositoryMock.Object,
             new SessionOptions { IdleTimeoutMinutes = 10 });
 
         (await service.ValidateSessionAsync(sessionId)).Should().BeFalse();
@@ -543,6 +697,7 @@ public class SessionManagementServiceTests
             _loggerMock.Object,
             _sessionRepositoryMock.Object,
             _trustedDeviceRepositoryMock.Object,
+            _tokenLineageRepositoryMock.Object,
             new SessionOptions { TrustedDeviceDurationDays = 7, MaxTrustedDevices = 1 });
 
         await service.TrustDeviceAsync(userId, "new-device", "new trusted device");

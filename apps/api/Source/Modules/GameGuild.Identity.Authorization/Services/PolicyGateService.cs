@@ -301,12 +301,22 @@ public class PolicyGateService(
 
     private static IReadOnlyList<string> GetRolesFromAttributes(IReadOnlyDictionary<string, object>? attributes)
     {
-        if (attributes == null) return [];
-        
+        if (attributes == null)
+        {
+            return [];
+        }
+
         if (attributes.TryGetValue("roles", out var roles))
         {
-            if (roles is IReadOnlyList<string> roleList) return roleList;
-            if (roles is IEnumerable<string> roleEnum) return roleEnum.ToList();
+            if (roles is IReadOnlyList<string> roleList)
+            {
+                return roleList;
+            }
+
+            if (roles is IEnumerable<string> roleEnum)
+            {
+                return roleEnum.ToList();
+            }
         }
         return [];
     }
@@ -314,28 +324,40 @@ public class PolicyGateService(
     private static DateTime? GetDateTimeFromAttributes(IReadOnlyDictionary<string, object>? attributes, string key)
     {
         if (attributes?.TryGetValue(key, out var value) == true && value is DateTime dt)
+        {
             return dt;
+        }
+
         return null;
     }
 
     private static bool? GetBoolFromAttributes(IReadOnlyDictionary<string, object>? attributes, string key)
     {
         if (attributes?.TryGetValue(key, out var value) == true && value is bool b)
+        {
             return b;
+        }
+
         return null;
     }
 
     private static int? GetIntFromAttributes(IReadOnlyDictionary<string, object>? attributes, string key)
     {
         if (attributes?.TryGetValue(key, out var value) == true && value is int i)
+        {
             return i;
+        }
+
         return null;
     }
 
     private static Dictionary<string, string> GetStringAttributesFromDict(IReadOnlyDictionary<string, object>? attributes)
     {
-        if (attributes == null) return [];
-        
+        if (attributes == null)
+        {
+            return [];
+        }
+
         return attributes
             .Where(kv => kv.Value is string)
             .ToDictionary(kv => kv.Key, kv => (string)kv.Value);

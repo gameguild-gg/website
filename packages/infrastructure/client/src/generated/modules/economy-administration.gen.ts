@@ -74,7 +74,7 @@ export class EconomyAdministrationModule {
   async getAdminEconomyAdRewardsReports(query?: {
     network?: string;
     limit?: number;
-  }): Promise<Result<Array<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus>, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus[], ApiError>> {
     const url = '/api/v1/admin/economy/ad-rewards/reports';
 
     const result = await this.client.request({
@@ -84,7 +84,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus>, ApiError>;
+    return result as Result<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus[], ApiError>;
   }
 
   /**
@@ -163,7 +163,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async getAdminEconomyBountiesExpired(): Promise<Result<Array<Types.FinanceEconomyBountiesDurableBountyView>, ApiError>> {
+  async getAdminEconomyBountiesExpired(): Promise<Result<Types.FinanceEconomyBountiesDurableBountyView[], ApiError>> {
     const url = '/api/v1/admin/economy/bounties/expired';
 
     const result = await this.client.request({
@@ -172,7 +172,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyBountiesDurableBountyView>, ApiError>;
+    return result as Result<Types.FinanceEconomyBountiesDurableBountyView[], ApiError>;
   }
 
   /**
@@ -477,7 +477,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerAnchorsVerifications(
     anchorId: string,
-  ): Promise<Result<Array<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus>, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus[], ApiError>> {
     const url = `/api/v1/admin/economy/ledger/anchors/${anchorId}/verifications`;
 
     const result = await this.client.request({
@@ -486,7 +486,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus>, ApiError>;
+    return result as Result<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus[], ApiError>;
   }
 
   /**
@@ -630,7 +630,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyLedgerProjectionGenerationsAudit(
     generation: number,
-  ): Promise<Result<Array<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry>, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry[], ApiError>> {
     const url = `/api/v1/admin/economy/ledger/projection-generations/${generation}/audit`;
 
     const result = await this.client.request({
@@ -639,7 +639,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry>, ApiError>;
+    return result as Result<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry[], ApiError>;
   }
 
   /**
@@ -892,7 +892,7 @@ export class EconomyAdministrationModule {
    */
   async getAdminEconomyPayoutRequestsOperationsForGetAdminEconomyPayoutRequestsOperations(query?: {
     take?: number;
-  }): Promise<Result<Array<Types.APIControllersEconomyPayoutExecutionOperationDto>, ApiError>> {
+  }): Promise<Result<Types.APIControllersEconomyPayoutExecutionOperationDto[], ApiError>> {
     const url = '/api/v1/admin/economy/payout-requests/operations';
 
     const result = await this.client.request({
@@ -902,7 +902,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIControllersEconomyPayoutExecutionOperationDto>, ApiError>;
+    return result as Result<Types.APIControllersEconomyPayoutExecutionOperationDto[], ApiError>;
   }
 
   /**
@@ -1085,7 +1085,7 @@ export class EconomyAdministrationModule {
 
   /**
    */
-  async getAdminEconomyPoliciesAudit(policyId: string): Promise<Result<Array<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry>, ApiError>> {
+  async getAdminEconomyPoliciesAudit(policyId: string): Promise<Result<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry[], ApiError>> {
     const url = `/api/v1/admin/economy/policies/${policyId}/audit`;
 
     const result = await this.client.request({
@@ -1094,7 +1094,7 @@ export class EconomyAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry>, ApiError>;
+    return result as Result<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry[], ApiError>;
   }
 
   /**

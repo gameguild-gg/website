@@ -461,7 +461,7 @@ export function FontSizeStepper({
       </div>
       <button
         type="button"
-        disabled={disabled || currentNumber >= MAX_FONT_SIZE}
+        disabled={disabled ?? currentNumber >= MAX_FONT_SIZE}
         onClick={() => apply(currentNumber + 1)}
         title="Increase font size"
         aria-label="Increase font size"

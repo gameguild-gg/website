@@ -86,7 +86,9 @@ public sealed class EconomyPostgreSqlTestDatabase : IAsyncDisposable
             await GateDatabaseLifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                await ResetGateDatabaseSchemaAsync(cancellationToken).ConfigureAwait(false);
+                // Recreate only this fixture's generated database. Dropping every schema
+                // in one transaction accumulates catalog locks across the complete API.
+                await ResetDatabaseAsync(cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -141,8 +143,8 @@ public sealed class EconomyPostgreSqlTestDatabase : IAsyncDisposable
             : ValidateDatabaseName(configuredTemplateDatabase, "ECONOMY_POSTGRES_TEMPLATE_DATABASE");
         var adminBuilder = new NpgsqlConnectionStringBuilder(gateConnectionString) { Pooling = false };
         // The disposable gate shares one PostgreSQL server across isolated test
-        // databases. Schema reset can briefly wait behind concurrent migrations;
-        // use an explicit administrative timeout instead of turning the complete
+        // databases. Database recreation can briefly wait behind concurrent migrations.
+        // Use an explicit administrative timeout instead of turning the complete
         // test assembly into a serial queue.
         adminBuilder.Timeout = 30;
         adminBuilder.CommandTimeout = 120;
@@ -197,6 +199,12 @@ public sealed class EconomyPostgreSqlTestDatabase : IAsyncDisposable
 
     private async Task ResetDatabaseAsync(CancellationToken cancellationToken)
     {
+        var adminDatabase = new NpgsqlConnectionStringBuilder(_adminConnectionString!).Database;
+        if (_databaseName is null || !_databaseName.StartsWith("economy_", StringComparison.Ordinal) ||
+            string.Equals(_databaseName, adminDatabase, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Only the fixture's generated database can be reset; the gate template must be retained.");
+        }
         NpgsqlConnection.ClearAllPools();
         await using var connection = new NpgsqlConnection(_adminConnectionString!);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -204,33 +212,6 @@ public sealed class EconomyPostgreSqlTestDatabase : IAsyncDisposable
         await using var createDatabase = connection.CreateCommand();
         createDatabase.CommandText = $"CREATE DATABASE \"{_databaseName}\";";
         await createDatabase.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task ResetGateDatabaseSchemaAsync(CancellationToken cancellationToken)
-    {
-        NpgsqlConnection.ClearAllPools();
-        await using var connection = new NpgsqlConnection(ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var command = connection.CreateCommand();
-        command.CommandText =
-            """
-            DO $schemas$
-            DECLARE schema_name text;
-            BEGIN
-                FOR schema_name IN
-                    SELECT nspname
-                    FROM pg_namespace
-                    WHERE nspname NOT IN ('pg_catalog', 'information_schema', 'public')
-                      AND nspname NOT LIKE 'pg_%'
-                LOOP
-                    EXECUTE format('DROP SCHEMA IF EXISTS %I CASCADE', schema_name);
-                END LOOP;
-            END
-            $schemas$;
-            DROP SCHEMA public CASCADE;
-            CREATE SCHEMA public;
-            """;
-        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task DropDatabaseAsync()

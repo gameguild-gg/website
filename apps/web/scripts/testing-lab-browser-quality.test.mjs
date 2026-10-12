@@ -2,12 +2,63 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  buildTestingLabFixtureUsername,
   collectAccessibilityFailures,
   cleanupTestingLabFixture,
+  createTestingLabFixtureUsername,
+  createTestingLabFixtureIdentities,
   requireDisposableDatabaseMode,
   responseFailure,
   throwForBrowserQualityFailures,
 } from './testing-lab-browser-quality.mjs';
+
+for (const kind of ['owner', 'reviewer', 'tester']) {
+  test(`builds a valid bounded ${kind} fixture username with the complete unique tag`, () => {
+    const tag = '1791223200000-ab12cd34';
+    const username = buildTestingLabFixtureUsername(kind, tag);
+    assert.match(username, /^[a-z0-9_]{3,50}$/i);
+    assert.equal(username, `tl_browser_${kind}_1791223200000_ab12cd34`);
+  });
+}
+
+test('keeps fixture usernames distinct across roles and runs', () => {
+  const usernames = ['owner', 'reviewer', 'tester'].flatMap((kind) =>
+    ['1791223200000-ab12cd34', '1791223200000-cd34ef56'].map((tag) =>
+      buildTestingLabFixtureUsername(kind, tag),
+    ),
+  );
+  assert.equal(new Set(usernames).size, 6);
+});
+
+test('rejects overlong fixture usernames before sending a sign-up request', () => {
+  assert.throws(() => buildTestingLabFixtureUsername('reviewer', 'a'.repeat(51)), RangeError);
+});
+
+test('creates all fixture identities in order without concurrent source-IP sign-ins', async () => {
+  const calls = [];
+  let active = false;
+  const identities = await createTestingLabFixtureIdentities(async (kind) => {
+    assert.equal(active, false, 'the previous identity must finish before the next sign-in');
+    active = true;
+    calls.push(kind);
+    await new Promise((resolve) => setImmediate(resolve));
+    active = false;
+    return { kind, authenticated: true };
+  });
+  assert.deepEqual(calls, ['owner', 'reviewer', 'tester']);
+  assert.deepEqual(identities, calls.map((kind) => ({ kind, authenticated: true })));
+});
+
+test('stops fixture bootstrap on authentication failure without creating later identities', async () => {
+  const calls = [];
+  const denial = new Error('fixture sign-in denied');
+  await assert.rejects(createTestingLabFixtureIdentities(async (kind) => {
+    calls.push(kind);
+    if (kind === 'reviewer') throw denial;
+    return { kind };
+  }), (error) => error === denial);
+  assert.deepEqual(calls, ['owner', 'reviewer']);
+});
 
 test('ignores controls hidden from the accessibility tree', async () => {
   const heading = {
@@ -181,4 +232,16 @@ test('returns every cleanup failure instead of masking teardown errors', async (
 
   assert.equal(failures.length, 1);
   assert.match(failures[0], /cannot clean \/v1\/testing\/events/);
+});
+
+test('all browser fixture usernames satisfy the API handle length and keep their unique suffix', () => {
+  const tag = '1791252567123-abcdef12';
+  const usernames = ['owner', 'reviewer', 'tester'].map((kind) => createTestingLabFixtureUsername(kind, tag));
+  assert.equal(new Set(usernames).size, 3);
+  for (const username of usernames) {
+    assert.match(username, /^[a-z0-9_]{3,50}$/);
+    assert.ok(username.endsWith('1791252567123_abcdef12'));
+  }
+  assert.notEqual(createTestingLabFixtureUsername('reviewer', tag),
+    createTestingLabFixtureUsername('reviewer', '1791252567123-abcdef13'));
 });

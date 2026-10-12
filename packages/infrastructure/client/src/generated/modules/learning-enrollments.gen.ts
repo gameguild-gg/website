@@ -90,7 +90,7 @@ export class LearningEnrollmentsModule {
   async getApiLearningEnrollmentsCourses(
     courseId: string,
     query?: { status?: Types.LearningEnrollmentsEnrollmentStatus },
-  ): Promise<Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningEnrollmentsEnrollmentDto[], ApiError>> {
     const url = `/api/learning/enrollments/courses/${courseId}`;
 
     const result = await this.client.request({
@@ -100,7 +100,7 @@ export class LearningEnrollmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>;
+    return result as Result<Types.LearningEnrollmentsEnrollmentDto[], ApiError>;
   }
 
   /**
@@ -108,7 +108,7 @@ export class LearningEnrollmentsModule {
   async getApiLearningEnrollmentsUsers(
     userId: string,
     query?: { status?: Types.LearningEnrollmentsEnrollmentStatus },
-  ): Promise<Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningEnrollmentsEnrollmentDto[], ApiError>> {
     const url = `/api/learning/enrollments/users/${userId}`;
 
     const result = await this.client.request({
@@ -118,7 +118,7 @@ export class LearningEnrollmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>;
+    return result as Result<Types.LearningEnrollmentsEnrollmentDto[], ApiError>;
   }
 }
 

@@ -20,6 +20,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="Moq" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
@@ -33,6 +34,9 @@
 
     <ItemGroup>
         <Using Include="Xunit"/>
+        <Compile Include="..\GameGuild.Audit.UnitTests\Fixtures\FedRampEvidenceScenario.cs" Link="Fixtures\FedRampEvidenceScenario.cs" />
+        <Compile Include="..\GameGuild.Audit.UnitTests\Fixtures\Soc2EvidenceScenario.cs" Link="Fixtures\Soc2EvidenceScenario.cs" />
+        <None Include="Fixtures\Scim\*.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

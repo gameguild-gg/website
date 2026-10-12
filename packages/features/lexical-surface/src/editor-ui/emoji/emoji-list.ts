@@ -8,7 +8,7 @@ export type EmojiCategory =
   | "Symbols"
   | "Flags";
 
-export type Emoji = {
+export interface Emoji {
   emoji: string;
   aliases: string[];
   tags: string[];

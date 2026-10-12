@@ -7,7 +7,7 @@ namespace GameGuild.Commerce.Subscriptions;
 ///     Handler for CloneSubscriptionPlanCommand.
 ///     Creates a new plan based on source plan's settings.
 /// </summary>
-public sealed class CloneSubscriptionPlanHandler(IApplicationDbContext context)
+public sealed class CloneSubscriptionPlanHandler(IApplicationDbContext context, ISubscriptionPlanListCache planListCache)
     : ICommandHandler<CloneSubscriptionPlanCommand, Guid>
 {
     public async Task<Guid> Handle(CloneSubscriptionPlanCommand request, CancellationToken cancellationToken)
@@ -36,6 +36,10 @@ public sealed class CloneSubscriptionPlanHandler(IApplicationDbContext context)
 
         context.Set<SubscriptionPlan>().Add(newPlan);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Clones start deactivated, so the public lists do not change — but invalidating
+        // keeps the cache coherent with the plan table (issue #416).
+        planListCache.Invalidate();
 
         return newPlan.Id;
     }

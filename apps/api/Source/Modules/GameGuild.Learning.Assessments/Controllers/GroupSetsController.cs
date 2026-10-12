@@ -20,7 +20,7 @@ public class GroupSetsController : BaseApiController
     private readonly IGroupSetService _groupSetService;
     private readonly IActorContextAccessor _actorContextAccessor;
     private readonly IProgramCrudService _programService;
-    private readonly IPermissionQueryService _permissionQueryService;
+    private readonly ICourseAccessEvaluator _courseAccessEvaluator;
     private readonly ILogger<GroupSetsController> _logger;
     private readonly ISender _sender;
 
@@ -28,14 +28,14 @@ public class GroupSetsController : BaseApiController
         IGroupSetService groupSetService,
         IActorContextAccessor actorContextAccessor,
         IProgramCrudService programService,
-        IPermissionQueryService permissionQueryService,
+        ICourseAccessEvaluator courseAccessEvaluator,
         ILogger<GroupSetsController> logger,
         ISender sender)
     {
         _groupSetService = groupSetService;
         _actorContextAccessor = actorContextAccessor;
         _programService = programService;
-        _permissionQueryService = permissionQueryService;
+        _courseAccessEvaluator = courseAccessEvaluator;
         _logger = logger;
         _sender = sender;
     }
@@ -46,7 +46,10 @@ public class GroupSetsController : BaseApiController
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<GroupSetSummaryDto>>> GetGroupSets(Guid courseId)
     {
-        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var sets = await _groupSetService.GetCourseGroupSetsAsync(courseId).ConfigureAwait(false);
         return Ok(sets);
@@ -61,8 +64,15 @@ public class GroupSetsController : BaseApiController
         [FromBody] CreateGroupSetRequest request)
     {
         var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateCourseGroupSetEndpointCommand(courseId, request.Name)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -86,8 +96,15 @@ public class GroupSetsController : BaseApiController
         [FromBody] CreateGroupRequest request)
     {
         var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null) return NotFound();
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (program == null)
+        {
+            return NotFound();
+        }
+
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new CreateCourseGroupEndpointCommand(courseId, setId, request.Name, request.Capacity))
             .ConfigureAwait(false);
@@ -110,7 +127,10 @@ public class GroupSetsController : BaseApiController
     [HttpGet("{setId:guid}/groups")]
     public async Task<ActionResult<IReadOnlyList<GroupDetailDto>>> GetGroupSetGroups(Guid courseId, Guid setId)
     {
-        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanAccessCourseMembershipAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _groupSetService.GetGroupSetGroupsAsync(courseId, setId).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -131,6 +151,9 @@ public class GroupSetsController : BaseApiController
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorUserId.HasValue) return Unauthorized();
+        if (!await _courseAccessEvaluator
+                .HasCapabilityAsync(courseId, CourseCapability.Learn, HttpContext.RequestAborted)
+                .ConfigureAwait(false)) return Forbid();
 
         var result = await _sender.Send(new JoinCourseGroupEndpointCommand(courseId, groupId, actorUserId.Value)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -149,6 +172,9 @@ public class GroupSetsController : BaseApiController
     {
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorUserId.HasValue) return Unauthorized();
+        if (!await _courseAccessEvaluator
+                .HasCapabilityAsync(courseId, CourseCapability.Learn, HttpContext.RequestAborted)
+                .ConfigureAwait(false)) return Forbid();
 
         var result = await _sender.Send(new LeaveCourseGroupEndpointCommand(courseId, groupId, actorUserId.Value)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -167,7 +193,10 @@ public class GroupSetsController : BaseApiController
     [HttpPost("groups/{groupId:guid}/members/{userId:guid}")]
     public async Task<ActionResult<GroupMembershipDto>> AddMember(Guid courseId, Guid groupId, Guid userId)
     {
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new AddCourseGroupMemberEndpointCommand(courseId, groupId, userId)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -186,7 +215,10 @@ public class GroupSetsController : BaseApiController
     [HttpDelete("groups/{groupId:guid}/members/{userId:guid}")]
     public async Task<ActionResult> RemoveMember(Guid courseId, Guid groupId, Guid userId)
     {
-        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false))
+        {
+            return Forbid();
+        }
 
         var result = await _sender.Send(new RemoveCourseGroupMemberEndpointCommand(courseId, groupId, userId)).ConfigureAwait(false);
         if (!result.IsSuccess)
@@ -209,43 +241,17 @@ public class GroupSetsController : BaseApiController
         });
     }
 
-    private async Task<bool> CanAccessCourseMembershipAsync(Guid courseId)
-    {
-        if (await CanManageCourseAsync(courseId).ConfigureAwait(false)) return true;
-
-        var actor = _actorContextAccessor.ActorContext;
-        if (!actor.SubjectIdAsGuid.HasValue) return false;
-
-        return await _groupSetService.HasActiveEnrollmentAsync(courseId, actor.SubjectIdAsGuid.Value)
+    private async Task<bool> CanAccessCourseMembershipAsync(Guid courseId) =>
+        await CanManageCourseAsync(courseId).ConfigureAwait(false) ||
+        await _courseAccessEvaluator
+            .HasCapabilityAsync(courseId, CourseCapability.Learn, HttpContext.RequestAborted)
             .ConfigureAwait(false);
-    }
 
-    private async Task<bool> CanManageCourseAsync(Guid courseId)
-    {
-        var actor = _actorContextAccessor.ActorContext;
-        if (actor.IsSystemAdmin) return true;
-        if (!actor.SubjectIdAsGuid.HasValue) return false;
-
-        var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
-        if (program == null) return false;
-        if (!actor.TenantId.HasValue) return false;
-        if (program.TenantId.HasValue && program.TenantId != actor.TenantId) return false;
-        if (program.CreatorId == actor.SubjectIdAsGuid.Value) return true;
-
-        foreach (var permission in new[] { PermissionType.Edit, PermissionType.Create, PermissionType.Delete })
-        {
-            var permissionName = $"{nameof(Program)}.{courseId}.{permission}";
-            if (await _permissionQueryService.HasTenantPermissionAsync(
-                    actor.SubjectIdAsGuid.Value,
-                    actor.TenantId,
-                    permissionName).ConfigureAwait(false))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private Task<bool> CanManageCourseAsync(Guid courseId) =>
+        _courseAccessEvaluator.HasCapabilityAsync(
+            courseId,
+            CourseCapability.Edit,
+            HttpContext.RequestAborted);
 
 }
 

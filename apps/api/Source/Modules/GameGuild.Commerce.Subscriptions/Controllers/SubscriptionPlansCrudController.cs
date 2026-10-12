@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Commerce.Payments;
+using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +16,7 @@ namespace GameGuild.Commerce.Subscriptions;
 [ApiVersion("1.0")]
 [Microsoft.AspNetCore.Http.Tags("commerce/subscriptions/plans")]
 [Authorize]
-public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiController
+public sealed class SubscriptionPlansCrudController(ISender sender, IActorContextAccessor actorContextAccessor) : BaseApiController
 {
     #region Collection Operations - /v1/subscription-plans
 
@@ -25,6 +27,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>Created subscription plan</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Create a new subscription plan")]
     [EndpointDescription("Creates a new subscription plan with the provided information.")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -69,7 +72,8 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
         CancellationToken ct = default
     )
     {
-        var restrictToActive = User.Identity?.IsAuthenticated != true;
+        var restrictToActive = User.Identity?.IsAuthenticated != true
+            || !actorContextAccessor.ActorContext.HasPermission(MonetizationPermission.Keys.ViewAnalytics);
         if (restrictToActive)
         {
             activeOnly = true;
@@ -203,6 +207,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpDelete("v{version:apiVersion}/subscription-plans/{planId:guid}")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Delete subscription plan")]
     [EndpointDescription("Deletes a subscription plan by ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -221,6 +226,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>No content on success</returns>
     [HttpPut("v{version:apiVersion}/subscription-plans/{planId:guid}")]
+    [RequirePermission(MonetizationPermission.Keys.Configure)]
     [EndpointSummary("Full update subscription plan")]
     [EndpointDescription("Performs a full replacement of subscription plan data. All fields will be updated.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -243,7 +249,8 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
             body.HasAdvancedAnalytics,
             body.HasCustomBranding,
             body.Features,
-            body.SortOrder), ct).ConfigureAwait(false);
+            body.SortOrder,
+            body.TrialPeriodDays), ct).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -251,16 +258,17 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
 
     #region Request Records
 
-    // POST /subscription-plans
-    public sealed record CreatePlanRequest(string Name, string Slug, long MonthlyPriceInCents, string Currency = "USD", string? Description = null);
+    // POST /subscription-plans — slug optional: generated from the name when omitted (issue #416)
+    public sealed record CreatePlanRequest(string Name, string? Slug = null, long MonthlyPriceInCents = 0, string Currency = "USD", string? Description = null);
 
     // POST /subscription-plans:compare
     public sealed record ComparePlansRequest(Guid BasePlanId, List<Guid> ComparePlanIds);
 
-    // PUT /subscription-plans/{planId}
+    // PUT /subscription-plans/{planId} — slug optional (regenerated from the name when
+    // omitted); trial period validated to 0-90 days (issue #416)
     public sealed record PutSubscriptionPlanRequest(
         string Name,
-        string Slug,
+        string? Slug,
         string? Description,
         long MonthlyPriceInCents,
         long? AnnualPriceInCents,
@@ -271,7 +279,8 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
         bool? HasAdvancedAnalytics,
         bool? HasCustomBranding,
         string? Features,
-        int? SortOrder);
+        int? SortOrder,
+        int? TrialPeriodDays = null);
 
     #endregion
 }

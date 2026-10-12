@@ -144,7 +144,10 @@ public class BulkPurgeUsersCommandHandlerAdditionalTests
             {
                 callCount++;
                 if (callCount == 1)
+                {
                     throw new Exception("DB error");
+                }
+
                 return Task.CompletedTask;
             });
         var publisher = new Mock<IPublisher>();
@@ -282,7 +285,10 @@ public class BulkUpdateUsersCommandHandlerAdditionalTests
             {
                 count++;
                 if (count == 1)
+                {
                     throw new Exception("fail");
+                }
+
                 return Task.CompletedTask;
             });
 

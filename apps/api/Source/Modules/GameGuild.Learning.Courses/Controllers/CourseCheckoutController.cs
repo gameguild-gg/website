@@ -21,7 +21,10 @@ public sealed class CourseCheckoutController(
         CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue) return Unauthorized();
+        if (!userId.HasValue)
+        {
+            return Unauthorized();
+        }
 
         var outcome = await sender.Send(new CompleteCourseCheckoutCommand(
             courseId,
@@ -29,7 +32,11 @@ public sealed class CourseCheckoutController(
             request.ProductId,
             request.PaymentProviderReference), cancellationToken).ConfigureAwait(false);
 
-        if (outcome.Response is not null) return Ok(outcome.Response);
+        if (outcome.Response is not null)
+        {
+            return Ok(outcome.Response);
+        }
+
         return outcome.StatusCode switch
         {
             StatusCodes.Status404NotFound => NotFound(outcome.Problem),

@@ -59,11 +59,16 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(owner);
-        if (batchSize <= 0) throw new ArgumentOutOfRangeException(nameof(batchSize));
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(batchSize));
+        }
 
         var fencingToken = await TryAcquireLeaseAsync(owner.Trim(), now, cancellationToken);
         if (fencingToken is null)
+        {
             return new JournalIntegrityRunResult(JournalIntegrityRunStatus.LeaseUnavailable, null, 0);
+        }
 
         var latest = await _db.Set<EconomyJournalVerificationCheckpointRow>()
             .AsNoTracking()
@@ -94,7 +99,9 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         var result = _verifier.Verify(entries, expectedSequence, expectedHash);
         await PersistCheckpointAsync(result, expectedHash, fencingToken.Value, now, cancellationToken);
         if (result.IsValid)
+        {
             return new JournalIntegrityRunResult(JournalIntegrityRunStatus.Verified, result, fencingToken.Value);
+        }
 
         await ActivateIntegrityKillSwitchAsync(result, now, cancellationToken);
         return new JournalIntegrityRunResult(JournalIntegrityRunStatus.Failed, result, fencingToken.Value);
@@ -111,9 +118,11 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         var lease = await _db.Set<EconomyWorkerLeaseRow>()
             .SingleOrDefaultAsync(row => row.Name == LeaseName, cancellationToken);
         if (lease is not null && lease.Owner != owner && lease.ExpiresAt > now)
-            return null;
+            {
+                return null;
+            }
 
-        if (lease is null)
+            if (lease is null)
         {
             lease = new EconomyWorkerLeaseRow
             {
@@ -128,8 +137,11 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         else
         {
             if (lease.Owner != owner || lease.ExpiresAt <= now)
-                lease.FencingToken = checked(lease.FencingToken + 1);
-            lease.Owner = owner;
+                {
+                    lease.FencingToken = checked(lease.FencingToken + 1);
+                }
+
+                lease.Owner = owner;
             lease.AcquiredAt = now;
             lease.ExpiresAt = now.Add(LeaseDuration);
         }
@@ -211,9 +223,21 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         PostingTemplateRegistration? registration,
         IReadOnlyDictionary<Guid, EconomySourceStampRow> sources)
     {
-        if (registration is null) return false;
-        if (!group.SourceStampId.HasValue) return registration.RequiredSourceState is null;
-        if (!sources.TryGetValue(group.SourceStampId.Value, out var source)) return false;
+        if (registration is null)
+        {
+            return false;
+        }
+
+        if (!group.SourceStampId.HasValue)
+        {
+            return registration.RequiredSourceState is null;
+        }
+
+        if (!sources.TryGetValue(group.SourceStampId.Value, out var source))
+        {
+            return false;
+        }
+
         return source.TenantId == group.TenantId &&
                (!registration.RequiredSourceState.HasValue || source.State == registration.RequiredSourceState.Value);
     }
@@ -228,9 +252,14 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
             var lineAllocations = allocations.Where(row => row.JournalLineId == line.Id).ToArray();
             if (lineAllocations.Any(row => row.AmountUnits <= 0) ||
                 lineAllocations.Sum(row => row.AmountUnits) > line.AmountUnits)
+            {
                 return false;
+            }
+
             if (lineAllocations.Any(row => !lots.TryGetValue(row.ParentLotId, out var lot) || lot.Currency != line.Currency))
+            {
                 return false;
+            }
         }
         return true;
     }
@@ -238,16 +267,26 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
     private async ValueTask<bool> ValidateLineageAsync(CancellationToken cancellationToken)
     {
         var edges = await _db.Set<EconomyLotLineageEdgeRow>().AsNoTracking().ToArrayAsync(cancellationToken);
-        if (edges.Length == 0) return true;
+        if (edges.Length == 0)
+        {
+            return true;
+        }
+
         var ids = edges.SelectMany(row => new[] { row.ParentLotId, row.ChildLotId }).Distinct().ToArray();
         var lots = await _db.Set<EconomyCreditLotRow>().AsNoTracking()
             .Where(row => ids.Contains(row.Id)).ToDictionaryAsync(row => row.Id, cancellationToken);
         if (edges.Any(edge => edge.AmountUnits <= 0 || !lots.TryGetValue(edge.ParentLotId, out var parent) ||
                               !lots.TryGetValue(edge.ChildLotId, out var child) || parent.Currency != edge.Currency ||
                               child.Currency != edge.Currency))
+        {
             return false;
+        }
+
         if (edges.GroupBy(edge => edge.ParentLotId).Any(group => group.Sum(edge => edge.AmountUnits) > lots[group.Key].AmountUnits))
+        {
             return false;
+        }
+
         return edges.GroupBy(edge => edge.ChildLotId)
             .All(group => group.Sum(edge => edge.AmountUnits) == lots[group.Key].AmountUnits);
     }
@@ -255,7 +294,11 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
     private async ValueTask<bool> ValidateRootRangesAsync(CancellationToken cancellationToken)
     {
         var ranges = await _db.Set<EconomyFragmentRootRangeRow>().AsNoTracking().ToArrayAsync(cancellationToken);
-        if (ranges.Length == 0) return true;
+        if (ranges.Length == 0)
+        {
+            return true;
+        }
+
         var lotIds = ranges.Where(row => row.CreditLotId.HasValue).Select(row => row.CreditLotId!.Value).Distinct().ToArray();
         var allocationIds = ranges.Where(row => row.EntryAllocationId.HasValue).Select(row => row.EntryAllocationId!.Value).Distinct().ToArray();
         var lots = await _db.Set<EconomyCreditLotRow>().AsNoTracking()
@@ -266,11 +309,17 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         {
             if (range.CreditLotId.HasValue == range.EntryAllocationId.HasValue || range.StartInclusive < 0 ||
                 range.EndExclusive <= range.StartInclusive)
+            {
                 return false;
+            }
+
             var ownerAmount = range.CreditLotId.HasValue
                 ? lots.GetValueOrDefault(range.CreditLotId.Value)?.AmountUnits
                 : allocations.GetValueOrDefault(range.EntryAllocationId!.Value)?.AmountUnits;
-            if (!ownerAmount.HasValue || range.EndExclusive > ownerAmount.Value) return false;
+            if (!ownerAmount.HasValue || range.EndExclusive > ownerAmount.Value)
+            {
+                return false;
+            }
         }
         return ranges.GroupBy(row => new { row.RootSourceStampId, row.CreditLotId, row.EntryAllocationId, row.ReversalEpoch })
             .All(group =>
@@ -285,7 +334,11 @@ public sealed class PostgreSqlJournalIntegrityService : IJournalIntegrityService
         var reversalsValid = await _db.Set<EconomyRootReversalStateRow>().AsNoTracking()
             .AllAsync(row => row.CumulativeProviderUnits >= 0 && row.ReversedUnits >= 0 &&
                              row.ReversedUnits <= row.CumulativeProviderUnits, cancellationToken);
-        if (!reversalsValid) return false;
+        if (!reversalsValid)
+        {
+            return false;
+        }
+
         return await _db.Set<EconomyProviderFactAllocationRow>().AsNoTracking()
             .AllAsync(row => row.AllocatedUnits > 0 && row.CumulativeCreditedUnits >= row.AllocatedUnits &&
                              row.CumulativeCreditedUnits <= row.AuthoritativeUnits, cancellationToken);

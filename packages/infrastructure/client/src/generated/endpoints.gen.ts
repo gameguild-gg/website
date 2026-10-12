@@ -26,7 +26,7 @@ export interface GetApiAnalyticsDashboardsInput {
     tenantId?: string;
   };
 }
-export type GetApiAnalyticsDashboardsOutput = Array<Types.AnalyticsDashboardDto>;
+export type GetApiAnalyticsDashboardsOutput = Types.AnalyticsDashboardDto[];
 export const getApiAnalyticsDashboardsEndpoint = {
   operationId: 'getApiAnalyticsDashboards' as const,
   method: 'GET' as const,
@@ -171,7 +171,7 @@ export interface GetApiAnalyticsWarehouseFactsInput {
     take?: number;
   };
 }
-export type GetApiAnalyticsWarehouseFactsOutput = Array<Types.AnalyticsAnalyticsWarehouseFactDto>;
+export type GetApiAnalyticsWarehouseFactsOutput = Types.AnalyticsAnalyticsWarehouseFactDto[];
 export const getApiAnalyticsWarehouseFactsEndpoint = {
   operationId: 'getApiAnalyticsWarehouseFacts' as const,
   method: 'GET' as const,
@@ -237,6 +237,490 @@ export const getApiAssetsContentEndpoint = {
   requiresAuth: false,
 } as const;
 
+export interface GetApiAuditCompliancePackagingForGetApiAuditCompliancePackagingInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditCompliancePackagingForGetApiAuditCompliancePackagingOutput = Types.ComplianceAuditCompliancePackageSummary[];
+export const getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingForGetApiAuditCompliancePackaging' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditCompliancePackagingInput {
+  body?: Types.ComplianceAuditCreateCompliancePackageInput;
+}
+export type PostApiAuditCompliancePackagingOutput = Types.ComplianceAuditCompliancePackageOutput;
+export const postApiAuditCompliancePackagingEndpoint = {
+  operationId: 'postApiAuditCompliancePackaging' as const,
+  method: 'POST' as const,
+  path: '/api/audit/compliance-packaging' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditCompliancePackagingForGetApiAuditCompliancePackagingByIdInput {
+  id: string;
+}
+export type GetApiAuditCompliancePackagingForGetApiAuditCompliancePackagingByIdOutput = Types.ComplianceAuditCompliancePackageOutput;
+export const getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingByIdEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging/{id}' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditCompliancePackagingDownloadInput {
+  id: string;
+}
+export type GetApiAuditCompliancePackagingDownloadOutput = Blob;
+export const getApiAuditCompliancePackagingDownloadEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingDownload' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging/{id}/download' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditCompliancePackagingVerificationInput {
+  id: string;
+}
+export type GetApiAuditCompliancePackagingVerificationOutput = Types.ComplianceAuditComplianceArtifactVerification;
+export const getApiAuditCompliancePackagingVerificationEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingVerification' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging/{id}/verification' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsOutput = Types.ComplianceAuditComplianceDocumentOutput[];
+export const getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocuments' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging/documents' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditCompliancePackagingDocumentsInput {
+  body?: Types.ComplianceAuditUploadComplianceDocumentInput;
+}
+export type PostApiAuditCompliancePackagingDocumentsOutput = Types.ComplianceAuditComplianceDocumentOutput;
+export const postApiAuditCompliancePackagingDocumentsEndpoint = {
+  operationId: 'postApiAuditCompliancePackagingDocuments' as const,
+  method: 'POST' as const,
+  path: '/api/audit/compliance-packaging/documents' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsByIdInput {
+  id: string;
+}
+export type GetApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsByIdOutput = Types.ComplianceAuditComplianceDocumentOutput;
+export const getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsByIdEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging/documents/{id}' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditCompliancePackagingDocumentsReviewInput {
+  id: string;
+  body?: Types.ComplianceAuditReviewComplianceDocumentInput;
+}
+export type PostApiAuditCompliancePackagingDocumentsReviewOutput = Types.ComplianceAuditComplianceDocumentOutput;
+export const postApiAuditCompliancePackagingDocumentsReviewEndpoint = {
+  operationId: 'postApiAuditCompliancePackagingDocumentsReview' as const,
+  method: 'POST' as const,
+  path: '/api/audit/compliance-packaging/documents/{id}/review' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetApiAuditCompliancePackagingTemplatesInput = void;
+export type GetApiAuditCompliancePackagingTemplatesOutput = Types.ComplianceAuditComplianceFrameworkTemplate[];
+export const getApiAuditCompliancePackagingTemplatesEndpoint = {
+  operationId: 'getApiAuditCompliancePackagingTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/compliance-packaging/templates' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Export audit logs (admin only)
+ */
+export interface PostApiAuditExportCsvInput {
+  body?: Types.ComplianceAuditAuditExportInput;
+}
+export type PostApiAuditExportCsvOutput = Blob;
+export const postApiAuditExportCsvEndpoint = {
+  operationId: 'postApiAuditExportCsv' as const,
+  method: 'POST' as const,
+  path: '/api/audit/export/csv' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Streams a versioned JSON audit export with pagination metadata.
+ */
+export interface PostApiAuditExportJsonInput {
+  body?: Types.ComplianceAuditAuditExportInput;
+}
+export type PostApiAuditExportJsonOutput = Types.ComplianceAuditAuditJsonExportDocument;
+export const postApiAuditExportJsonEndpoint = {
+  operationId: 'postApiAuditExportJson' as const,
+  method: 'POST' as const,
+  path: '/api/audit/export/json' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostApiAuditReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostApiAuditReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postApiAuditReplaySnapshotsEndpoint = {
+  operationId: 'postApiAuditReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/api/audit/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
+export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditRetentionPoliciesInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostApiAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postApiAuditRetentionPoliciesEndpoint = {
+  operationId: 'postApiAuditRetentionPolicies' as const,
+  method: 'POST' as const,
+  path: '/api/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdInput {
+  id: string;
+}
+export type GetApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetApiAuditRetentionPoliciesConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetApiAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getApiAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesConfiguration' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiAuditRetentionPoliciesConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutApiAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putApiAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'putApiAuditRetentionPoliciesConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetApiAuditRetentionPoliciesTemplatesInput = void;
+export type GetApiAuditRetentionPoliciesTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
+export const getApiAuditRetentionPoliciesTemplatesEndpoint = {
+  operationId: 'getApiAuditRetentionPoliciesTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-policies/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditRetentionSimulationForGetApiAuditRetentionSimulationInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditRetentionSimulationForGetApiAuditRetentionSimulationOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
+export const getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationEndpoint = {
+  operationId: 'getApiAuditRetentionSimulationForGetApiAuditRetentionSimulation' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-simulation' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostApiAuditRetentionSimulationInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostApiAuditRetentionSimulationOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postApiAuditRetentionSimulationEndpoint = {
+  operationId: 'postApiAuditRetentionSimulation' as const,
+  method: 'POST' as const,
+  path: '/api/audit/retention-simulation' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdInput {
+  id: string;
+}
+export type GetApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdEndpoint = {
+  operationId: 'getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-simulation/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetApiAuditRetentionSimulationConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetApiAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getApiAuditRetentionSimulationConfigurationEndpoint = {
+  operationId: 'getApiAuditRetentionSimulationConfiguration' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutApiAuditRetentionSimulationConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutApiAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putApiAuditRetentionSimulationConfigurationEndpoint = {
+  operationId: 'putApiAuditRetentionSimulationConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetApiAuditRetentionSimulationTemplatesInput = void;
+export type GetApiAuditRetentionSimulationTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
+export const getApiAuditRetentionSimulationTemplatesEndpoint = {
+  operationId: 'getApiAuditRetentionSimulationTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/audit/retention-simulation/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security alert queue for the current tenant.
+ */
+export interface GetApiAuditSecurityEventsAlertsInput {
+  query?: {
+    status?: Types.ComplianceAuditSecurityAlertStatus;
+    severity?: Types.ComplianceAuditAuditRiskLevel;
+    kind?: Types.ComplianceAuditSecurityEventKind;
+    ruleId?: string;
+    subjectUserId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditSecurityEventsAlertsOutput = Types.ComplianceAuditSecurityAlertOutput[];
+export const getApiAuditSecurityEventsAlertsEndpoint = {
+  operationId: 'getApiAuditSecurityEventsAlerts' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/alerts' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostApiAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostApiAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postApiAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postApiAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/alerts/{alertId}:resolve' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledges an open security alert. The acting administrator is derived from the request context.
+ */
+export interface PostApiAuditSecurityEventsAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.ComplianceAuditAcknowledgeSecurityAlertInput;
+}
+export type PostApiAuditSecurityEventsAlertsAcknowledgeOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postApiAuditSecurityEventsAlertsAcknowledgeEndpoint = {
+  operationId: 'postApiAuditSecurityEventsAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/alerts/{alertId}/acknowledge' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the durable delivery status of the security event pipeline for this instance.
+ */
+export type GetApiAuditSecurityEventsDeliveryStatusInput = void;
+export type GetApiAuditSecurityEventsDeliveryStatusOutput = Types.ComplianceAuditSecurityEventDeliveryStatusOutput;
+export const getApiAuditSecurityEventsDeliveryStatusEndpoint = {
+  operationId: 'getApiAuditSecurityEventsDeliveryStatus' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/delivery-status' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
+ * and are recorded in the execution history; use `DryRun` to preview deletions.
+ */
+export interface PostApiAuditSecurityEventsRetentionEnforceInput {
+  body?: Types.ComplianceAuditEnforceSecurityLogRetentionInput;
+}
+export type PostApiAuditSecurityEventsRetentionEnforceOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput;
+export const postApiAuditSecurityEventsRetentionEnforceEndpoint = {
+  operationId: 'postApiAuditSecurityEventsRetentionEnforce' as const,
+  method: 'POST' as const,
+  path: '/api/audit/security-events/retention/enforce' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the retention execution history for the current tenant.
+ */
+export interface GetApiAuditSecurityEventsRetentionExecutionsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetApiAuditSecurityEventsRetentionExecutionsOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput[];
+export const getApiAuditSecurityEventsRetentionExecutionsEndpoint = {
+  operationId: 'getApiAuditSecurityEventsRetentionExecutions' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/retention/executions' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security log retention policy for the current tenant, when configured.
+ */
+export type GetApiAuditSecurityEventsRetentionPolicyInput = void;
+export type GetApiAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const getApiAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'getApiAuditSecurityEventsRetentionPolicy' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates or updates the security log retention policy for the current tenant.
+ */
+export interface PutApiAuditSecurityEventsRetentionPolicyInput {
+  body?: Types.ComplianceAuditConfigureSecurityLogRetentionInput;
+}
+export type PutApiAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const putApiAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'putApiAuditSecurityEventsRetentionPolicy' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the complete security event taxonomy used by the security event pipeline.
+ */
+export type GetApiAuditSecurityEventsTaxonomyInput = void;
+export type GetApiAuditSecurityEventsTaxonomyOutput = Types.ComplianceAuditSecurityEventTaxonomyOutput;
+export const getApiAuditSecurityEventsTaxonomyEndpoint = {
+  operationId: 'getApiAuditSecurityEventsTaxonomy' as const,
+  method: 'GET' as const,
+  path: '/api/audit/security-events/taxonomy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
 /**
  * Get a certificate by ID
  */
@@ -274,7 +758,7 @@ export const postApiCertificatesRevokeEndpoint = {
 export interface GetApiCertificatesCourseInput {
   courseId: string;
 }
-export type GetApiCertificatesCourseOutput = Array<Types.LearningCertificatesCertificateDto>;
+export type GetApiCertificatesCourseOutput = Types.LearningCertificatesCertificateDto[];
 export const getApiCertificatesCourseEndpoint = {
   operationId: 'getApiCertificatesCourse' as const,
   method: 'GET' as const,
@@ -291,7 +775,7 @@ export interface GetApiCertificatesExpiringInput {
     days?: number;
   };
 }
-export type GetApiCertificatesExpiringOutput = Array<Types.LearningCertificatesCertificateDto>;
+export type GetApiCertificatesExpiringOutput = Types.LearningCertificatesCertificateDto[];
 export const getApiCertificatesExpiringEndpoint = {
   operationId: 'getApiCertificatesExpiring' as const,
   method: 'GET' as const,
@@ -319,7 +803,7 @@ export const postApiCertificatesIssueEndpoint = {
  * Get certificates for the current user
  */
 export type GetApiCertificatesMyInput = void;
-export type GetApiCertificatesMyOutput = Array<Types.LearningCertificatesCertificateDto>;
+export type GetApiCertificatesMyOutput = Types.LearningCertificatesCertificateDto[];
 export const getApiCertificatesMyEndpoint = {
   operationId: 'getApiCertificatesMy' as const,
   method: 'GET' as const,
@@ -395,7 +879,7 @@ export const deleteApiCertificatesTemplatesEndpoint = {
 export interface GetApiCertificatesTemplatesCourseInput {
   courseId: string;
 }
-export type GetApiCertificatesTemplatesCourseOutput = Array<Types.LearningCertificatesCertificateTemplateDto>;
+export type GetApiCertificatesTemplatesCourseOutput = Types.LearningCertificatesCertificateTemplateDto[];
 export const getApiCertificatesTemplatesCourseEndpoint = {
   operationId: 'getApiCertificatesTemplatesCourse' as const,
   method: 'GET' as const,
@@ -546,7 +1030,7 @@ export const postApiCohortsOpenEndpoint = {
 export interface GetApiCohortsCourseInput {
   courseId: string;
 }
-export type GetApiCohortsCourseOutput = Array<Types.LearningCohortsCohortDto>;
+export type GetApiCohortsCourseOutput = Types.LearningCohortsCohortDto[];
 export const getApiCohortsCourseEndpoint = {
   operationId: 'getApiCohortsCourse' as const,
   method: 'GET' as const,
@@ -561,7 +1045,7 @@ export const getApiCohortsCourseEndpoint = {
 export interface GetApiCohortsCourseActiveInput {
   courseId: string;
 }
-export type GetApiCohortsCourseActiveOutput = Array<Types.LearningCohortsCohortDto>;
+export type GetApiCohortsCourseActiveOutput = Types.LearningCohortsCohortDto[];
 export const getApiCohortsCourseActiveEndpoint = {
   operationId: 'getApiCohortsCourseActive' as const,
   method: 'GET' as const,
@@ -576,7 +1060,7 @@ export const getApiCohortsCourseActiveEndpoint = {
 export interface GetApiCohortsCourseEnrollableInput {
   courseId: string;
 }
-export type GetApiCohortsCourseEnrollableOutput = Array<Types.LearningCohortsCohortDto>;
+export type GetApiCohortsCourseEnrollableOutput = Types.LearningCohortsCohortDto[];
 export const getApiCohortsCourseEnrollableEndpoint = {
   operationId: 'getApiCohortsCourseEnrollable' as const,
   method: 'GET' as const,
@@ -611,7 +1095,7 @@ export const postApiComplianceConsentDataSubjectRequestsProcessEndpoint = {
 } as const;
 
 export type GetApiComplianceConsentDataSubjectRequestsPendingInput = void;
-export type GetApiComplianceConsentDataSubjectRequestsPendingOutput = Array<Types.ComplianceConsentDataSubjectRequestDto>;
+export type GetApiComplianceConsentDataSubjectRequestsPendingOutput = Types.ComplianceConsentDataSubjectRequestDto[];
 export const getApiComplianceConsentDataSubjectRequestsPendingEndpoint = {
   operationId: 'getApiComplianceConsentDataSubjectRequestsPending' as const,
   method: 'GET' as const,
@@ -637,7 +1121,7 @@ export interface GetApiComplianceConsentPoliciesInput {
     tenantId?: string;
   };
 }
-export type GetApiComplianceConsentPoliciesOutput = Array<Types.ComplianceConsentConsentPolicyDto>;
+export type GetApiComplianceConsentPoliciesOutput = Types.ComplianceConsentConsentPolicyDto[];
 export const getApiComplianceConsentPoliciesEndpoint = {
   operationId: 'getApiComplianceConsentPolicies' as const,
   method: 'GET' as const,
@@ -686,7 +1170,7 @@ export const postApiComplianceConsentRevokeEndpoint = {
 export interface GetApiComplianceConsentUsersInput {
   userId: string;
 }
-export type GetApiComplianceConsentUsersOutput = Array<Types.ComplianceConsentUserConsentDto>;
+export type GetApiComplianceConsentUsersOutput = Types.ComplianceConsentUserConsentDto[];
 export const getApiComplianceConsentUsersEndpoint = {
   operationId: 'getApiComplianceConsentUsers' as const,
   method: 'GET' as const,
@@ -783,7 +1267,7 @@ export const postApiComplianceFerpaInspectionRequestsCompleteEndpoint = {
 } as const;
 
 export type GetApiComplianceFerpaInspectionRequestsPendingInput = void;
-export type GetApiComplianceFerpaInspectionRequestsPendingOutput = Array<Types.ComplianceFERPAFerpaInspectionRequestDto>;
+export type GetApiComplianceFerpaInspectionRequestsPendingOutput = Types.ComplianceFERPAFerpaInspectionRequestDto[];
 export const getApiComplianceFerpaInspectionRequestsPendingEndpoint = {
   operationId: 'getApiComplianceFerpaInspectionRequestsPending' as const,
   method: 'GET' as const,
@@ -807,7 +1291,7 @@ export const postApiComplianceFerpaRecordsEndpoint = {
 export interface GetApiComplianceFerpaStudentsConsentsInput {
   studentUserId: string;
 }
-export type GetApiComplianceFerpaStudentsConsentsOutput = Array<Types.ComplianceFERPAFerpaDisclosureConsentDto>;
+export type GetApiComplianceFerpaStudentsConsentsOutput = Types.ComplianceFERPAFerpaDisclosureConsentDto[];
 export const getApiComplianceFerpaStudentsConsentsEndpoint = {
   operationId: 'getApiComplianceFerpaStudentsConsents' as const,
   method: 'GET' as const,
@@ -819,7 +1303,7 @@ export const getApiComplianceFerpaStudentsConsentsEndpoint = {
 export interface GetApiComplianceFerpaStudentsDirectoryInformationInput {
   studentUserId: string;
 }
-export type GetApiComplianceFerpaStudentsDirectoryInformationOutput = Array<Types.ComplianceFERPAFerpaEducationRecordDto>;
+export type GetApiComplianceFerpaStudentsDirectoryInformationOutput = Types.ComplianceFERPAFerpaEducationRecordDto[];
 export const getApiComplianceFerpaStudentsDirectoryInformationEndpoint = {
   operationId: 'getApiComplianceFerpaStudentsDirectoryInformation' as const,
   method: 'GET' as const,
@@ -831,7 +1315,7 @@ export const getApiComplianceFerpaStudentsDirectoryInformationEndpoint = {
 export interface GetApiComplianceFerpaStudentsDisclosuresInput {
   studentUserId: string;
 }
-export type GetApiComplianceFerpaStudentsDisclosuresOutput = Array<Types.ComplianceFERPAFerpaDisclosureLogDto>;
+export type GetApiComplianceFerpaStudentsDisclosuresOutput = Types.ComplianceFERPAFerpaDisclosureLogDto[];
 export const getApiComplianceFerpaStudentsDisclosuresEndpoint = {
   operationId: 'getApiComplianceFerpaStudentsDisclosures' as const,
   method: 'GET' as const,
@@ -843,7 +1327,7 @@ export const getApiComplianceFerpaStudentsDisclosuresEndpoint = {
 export interface GetApiComplianceFerpaStudentsRecordsInput {
   studentUserId: string;
 }
-export type GetApiComplianceFerpaStudentsRecordsOutput = Array<Types.ComplianceFERPAFerpaEducationRecordDto>;
+export type GetApiComplianceFerpaStudentsRecordsOutput = Types.ComplianceFERPAFerpaEducationRecordDto[];
 export const getApiComplianceFerpaStudentsRecordsEndpoint = {
   operationId: 'getApiComplianceFerpaStudentsRecords' as const,
   method: 'GET' as const,
@@ -1048,7 +1532,7 @@ export interface GetApiContentsVersioningEntityHistoryInput {
   entityType: string;
   entityId: string;
 }
-export type GetApiContentsVersioningEntityHistoryOutput = Array<Types.ResourcesContentsContentVersionDto>;
+export type GetApiContentsVersioningEntityHistoryOutput = Types.ResourcesContentsContentVersionDto[];
 export const getApiContentsVersioningEntityHistoryEndpoint = {
   operationId: 'getApiContentsVersioningEntityHistory' as const,
   method: 'GET' as const,
@@ -1101,7 +1585,7 @@ export interface GetApiContentsVersioningPendingReviewInput {
     take?: number;
   };
 }
-export type GetApiContentsVersioningPendingReviewOutput = Array<Types.ResourcesContentsContentVersionDto>;
+export type GetApiContentsVersioningPendingReviewOutput = Types.ResourcesContentsContentVersionDto[];
 export const getApiContentsVersioningPendingReviewEndpoint = {
   operationId: 'getApiContentsVersioningPendingReview' as const,
   method: 'GET' as const,
@@ -1164,7 +1648,7 @@ export interface GetApiFollowersBlockedUsersInput {
     take?: number;
   };
 }
-export type GetApiFollowersBlockedUsersOutput = Array<Types.SocialFollowsControllersBlockDto>;
+export type GetApiFollowersBlockedUsersOutput = Types.SocialFollowsControllersBlockDto[];
 export const getApiFollowersBlockedUsersEndpoint = {
   operationId: 'getApiFollowersBlockedUsers' as const,
   method: 'GET' as const,
@@ -1234,7 +1718,7 @@ export interface GetApiFollowersFollowersInput {
     take?: number;
   };
 }
-export type GetApiFollowersFollowersOutput = Array<Types.SocialFollowsControllersFollowDto>;
+export type GetApiFollowersFollowersOutput = Types.SocialFollowsControllersFollowDto[];
 export const getApiFollowersFollowersEndpoint = {
   operationId: 'getApiFollowersFollowers' as const,
   method: 'GET' as const,
@@ -1253,7 +1737,7 @@ export interface GetApiFollowersFollowingInput {
     take?: number;
   };
 }
-export type GetApiFollowersFollowingOutput = Array<Types.SocialFollowsControllersFollowDto>;
+export type GetApiFollowersFollowingOutput = Types.SocialFollowsControllersFollowDto[];
 export const getApiFollowersFollowingEndpoint = {
   operationId: 'getApiFollowersFollowing' as const,
   method: 'GET' as const,
@@ -1334,7 +1818,7 @@ export interface GetApiFollowersMutedUsersInput {
     take?: number;
   };
 }
-export type GetApiFollowersMutedUsersOutput = Array<Types.SocialFollowsControllersMuteDto>;
+export type GetApiFollowersMutedUsersOutput = Types.SocialFollowsControllersMuteDto[];
 export const getApiFollowersMutedUsersEndpoint = {
   operationId: 'getApiFollowersMutedUsers' as const,
   method: 'GET' as const,
@@ -1459,7 +1943,7 @@ export interface GetApiGameJamsForGetApiGameJamsInput {
     take?: number;
   };
 }
-export type GetApiGameJamsForGetApiGameJamsOutput = Array<Types.GameJamsJamDto>;
+export type GetApiGameJamsForGetApiGameJamsOutput = Types.GameJamsJamDto[];
 export const getApiGameJamsForGetApiGameJamsEndpoint = {
   operationId: 'getApiGameJamsForGetApiGameJams' as const,
   method: 'GET' as const,
@@ -1495,7 +1979,7 @@ export const getApiGameJamsForGetApiGameJamsByIdEndpoint = {
 export interface GetApiGameJamsCriteriaInput {
   id: string;
 }
-export type GetApiGameJamsCriteriaOutput = Array<Types.GameJamsJamCriteriaDto>;
+export type GetApiGameJamsCriteriaOutput = Types.GameJamsJamCriteriaDto[];
 export const getApiGameJamsCriteriaEndpoint = {
   operationId: 'getApiGameJamsCriteria' as const,
   method: 'GET' as const,
@@ -1533,7 +2017,7 @@ export const postApiGameJamsStatusEndpoint = {
 export interface GetApiGameJamsSubmissionsInput {
   id: string;
 }
-export type GetApiGameJamsSubmissionsOutput = Array<Types.GameJamsJamSubmissionDto>;
+export type GetApiGameJamsSubmissionsOutput = Types.GameJamsJamSubmissionDto[];
 export const getApiGameJamsSubmissionsEndpoint = {
   operationId: 'getApiGameJamsSubmissions' as const,
   method: 'GET' as const,
@@ -1672,7 +2156,7 @@ export interface GetApiLearningEnrollmentsCoursesInput {
     status?: Types.LearningEnrollmentsEnrollmentStatus;
   };
 }
-export type GetApiLearningEnrollmentsCoursesOutput = Array<Types.LearningEnrollmentsEnrollmentDto>;
+export type GetApiLearningEnrollmentsCoursesOutput = Types.LearningEnrollmentsEnrollmentDto[];
 export const getApiLearningEnrollmentsCoursesEndpoint = {
   operationId: 'getApiLearningEnrollmentsCourses' as const,
   method: 'GET' as const,
@@ -1687,7 +2171,7 @@ export interface GetApiLearningEnrollmentsUsersInput {
     status?: Types.LearningEnrollmentsEnrollmentStatus;
   };
 }
-export type GetApiLearningEnrollmentsUsersOutput = Array<Types.LearningEnrollmentsEnrollmentDto>;
+export type GetApiLearningEnrollmentsUsersOutput = Types.LearningEnrollmentsEnrollmentDto[];
 export const getApiLearningEnrollmentsUsersEndpoint = {
   operationId: 'getApiLearningEnrollmentsUsers' as const,
   method: 'GET' as const,
@@ -1722,6 +2206,10 @@ export const getApiLiveEndpoint = {
   requiresAuth: false,
 } as const;
 
+/**
+ * Product revenue/subscription metrics are business-intelligence data:
+ * access requires the monetization analytics permission (issue #346, ViewAnalytics).
+ */
 export interface GetApiMetricsProductInput {
   query?: {
     startUtc?: string;
@@ -1738,6 +2226,10 @@ export const getApiMetricsProductEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Exports of revenue/subscription metrics are business-intelligence data:
+ * access requires the monetization analytics permission (issue #346, ViewAnalytics).
+ */
 export interface GetApiMetricsProductExportInput {
   query?: {
     startUtc?: string;
@@ -1765,7 +2257,7 @@ export interface GetApiNotificationsForGetApiNotificationsInput {
     isRead?: boolean;
   };
 }
-export type GetApiNotificationsForGetApiNotificationsOutput = Array<Types.NotificationsControllersNotificationDto>;
+export type GetApiNotificationsForGetApiNotificationsOutput = Types.NotificationsControllersNotificationDto[];
 export const getApiNotificationsForGetApiNotificationsEndpoint = {
   operationId: 'getApiNotificationsForGetApiNotifications' as const,
   method: 'GET' as const,
@@ -1937,7 +2429,7 @@ export const postApiNotificationsReadAllEndpoint = {
  * Gets the catalog of notification types with category and suppressibility classification (drives the preferences UI)
  */
 export type GetApiNotificationsTypesCatalogInput = void;
-export type GetApiNotificationsTypesCatalogOutput = Array<Types.NotificationsControllersNotificationTypeCatalogEntry>;
+export type GetApiNotificationsTypesCatalogOutput = Types.NotificationsControllersNotificationTypeCatalogEntry[];
 export const getApiNotificationsTypesCatalogEndpoint = {
   operationId: 'getApiNotificationsTypesCatalog' as const,
   method: 'GET' as const,
@@ -2026,7 +2518,7 @@ export const deleteApiPrerequisitesEndpoint = {
 export interface GetApiPrerequisitesCourseInput {
   courseId: string;
 }
-export type GetApiPrerequisitesCourseOutput = Array<Types.LearningCoursesPrerequisiteDto>;
+export type GetApiPrerequisitesCourseOutput = Types.LearningCoursesPrerequisiteDto[];
 export const getApiPrerequisitesCourseEndpoint = {
   operationId: 'getApiPrerequisitesCourse' as const,
   method: 'GET' as const,
@@ -2041,7 +2533,7 @@ export const getApiPrerequisitesCourseEndpoint = {
 export interface GetApiPrerequisitesCourseChainInput {
   courseId: string;
 }
-export type GetApiPrerequisitesCourseChainOutput = Array<Types.LearningCoursesPrerequisiteDto>;
+export type GetApiPrerequisitesCourseChainOutput = Types.LearningCoursesPrerequisiteDto[];
 export const getApiPrerequisitesCourseChainEndpoint = {
   operationId: 'getApiPrerequisitesCourseChain' as const,
   method: 'GET' as const,
@@ -2119,7 +2611,7 @@ export const getApiPrerequisitesCourseWouldCreateCycleEndpoint = {
 export interface GetApiPrerequisitesDependentsInput {
   courseId: string;
 }
-export type GetApiPrerequisitesDependentsOutput = Array<Types.LearningCoursesPrerequisiteDto>;
+export type GetApiPrerequisitesDependentsOutput = Types.LearningCoursesPrerequisiteDto[];
 export const getApiPrerequisitesDependentsEndpoint = {
   operationId: 'getApiPrerequisitesDependents' as const,
   method: 'GET' as const,
@@ -2344,7 +2836,7 @@ export const postApiSocialBlogPostsUnpublishEndpoint = {
 export interface GetApiSocialBlogPostsAiConversationsInput {
   postId: string;
 }
-export type GetApiSocialBlogPostsAiConversationsOutput = Array<Types.SocialBlogAuthoringBlogAiConversationDto>;
+export type GetApiSocialBlogPostsAiConversationsOutput = Types.SocialBlogAuthoringBlogAiConversationDto[];
 export const getApiSocialBlogPostsAiConversationsEndpoint = {
   operationId: 'getApiSocialBlogPostsAiConversations' as const,
   method: 'GET' as const,
@@ -2473,7 +2965,7 @@ export interface GetApiSocialBlogPostsMineInput {
     page?: number;
   };
 }
-export type GetApiSocialBlogPostsMineOutput = Array<Types.SocialBlogBlogPost>;
+export type GetApiSocialBlogPostsMineOutput = Types.SocialBlogBlogPost[];
 export const getApiSocialBlogPostsMineEndpoint = {
   operationId: 'getApiSocialBlogPostsMine' as const,
   method: 'GET' as const,
@@ -2596,7 +3088,7 @@ export interface GetApiSocialCoursesContentDiscussionsInput {
     take?: number;
   };
 }
-export type GetApiSocialCoursesContentDiscussionsOutput = Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>;
+export type GetApiSocialCoursesContentDiscussionsOutput = Types.LearningExperienceSocialServicesCourseDiscussionDto[];
 export const getApiSocialCoursesContentDiscussionsEndpoint = {
   operationId: 'getApiSocialCoursesContentDiscussions' as const,
   method: 'GET' as const,
@@ -2616,7 +3108,7 @@ export interface GetApiSocialCoursesDiscussionsInput {
     pinnedFirst?: boolean;
   };
 }
-export type GetApiSocialCoursesDiscussionsOutput = Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>;
+export type GetApiSocialCoursesDiscussionsOutput = Types.LearningExperienceSocialServicesCourseDiscussionDto[];
 export const getApiSocialCoursesDiscussionsEndpoint = {
   operationId: 'getApiSocialCoursesDiscussions' as const,
   method: 'GET' as const,
@@ -2711,7 +3203,7 @@ export interface GetApiSocialCoursesReviewsInput {
     approvedOnly?: boolean;
   };
 }
-export type GetApiSocialCoursesReviewsOutput = Array<Types.LearningExperienceSocialServicesCourseReviewDto>;
+export type GetApiSocialCoursesReviewsOutput = Types.LearningExperienceSocialServicesCourseReviewDto[];
 export const getApiSocialCoursesReviewsEndpoint = {
   operationId: 'getApiSocialCoursesReviews' as const,
   method: 'GET' as const,
@@ -2745,7 +3237,7 @@ export interface GetApiSocialDiscussionsRepliesInput {
     take?: number;
   };
 }
-export type GetApiSocialDiscussionsRepliesOutput = Array<Types.LearningExperienceSocialServicesDiscussionReplyDto>;
+export type GetApiSocialDiscussionsRepliesOutput = Types.LearningExperienceSocialServicesDiscussionReplyDto[];
 export const getApiSocialDiscussionsRepliesEndpoint = {
   operationId: 'getApiSocialDiscussionsReplies' as const,
   method: 'GET' as const,
@@ -2938,7 +3430,7 @@ export interface GetApiSocialFeedMeInput {
     filterByType?: Types.LearningExperienceSocialFeedItemType;
   };
 }
-export type GetApiSocialFeedMeOutput = Array<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto>;
+export type GetApiSocialFeedMeOutput = Types.LearningExperienceSocialServicesPersonalizedFeedItemDto[];
 export const getApiSocialFeedMeEndpoint = {
   operationId: 'getApiSocialFeedMe' as const,
   method: 'GET' as const,
@@ -3004,7 +3496,7 @@ export interface GetApiSocialFeedUsersInput {
     includeRead?: boolean;
   };
 }
-export type GetApiSocialFeedUsersOutput = Array<Types.SocialFeedFeedItemDto>;
+export type GetApiSocialFeedUsersOutput = Types.SocialFeedFeedItemDto[];
 export const getApiSocialFeedUsersEndpoint = {
   operationId: 'getApiSocialFeedUsers' as const,
   method: 'GET' as const,
@@ -3025,7 +3517,7 @@ export interface GetApiSocialGroupsForGetApiSocialGroupsInput {
     take?: number;
   };
 }
-export type GetApiSocialGroupsForGetApiSocialGroupsOutput = Array<Types.SocialGroupsSocialGroupDto>;
+export type GetApiSocialGroupsForGetApiSocialGroupsOutput = Types.SocialGroupsSocialGroupDto[];
 export const getApiSocialGroupsForGetApiSocialGroupsEndpoint = {
   operationId: 'getApiSocialGroupsForGetApiSocialGroups' as const,
   method: 'GET' as const,
@@ -3103,7 +3595,7 @@ export interface GetApiSocialGroupsMembersInput {
     take?: number;
   };
 }
-export type GetApiSocialGroupsMembersOutput = Array<Types.SocialGroupsSocialGroupMemberDto>;
+export type GetApiSocialGroupsMembersOutput = Types.SocialGroupsSocialGroupMemberDto[];
 export const getApiSocialGroupsMembersEndpoint = {
   operationId: 'getApiSocialGroupsMembers' as const,
   method: 'GET' as const,
@@ -3200,7 +3692,7 @@ export interface GetApiSocialLikesMeInput {
     take?: number;
   };
 }
-export type GetApiSocialLikesMeOutput = Array<Types.LearningExperienceSocialServicesCourseLikeDto>;
+export type GetApiSocialLikesMeOutput = Types.LearningExperienceSocialServicesCourseLikeDto[];
 export const getApiSocialLikesMeEndpoint = {
   operationId: 'getApiSocialLikesMe' as const,
   method: 'GET' as const,
@@ -3278,7 +3770,7 @@ export interface GetApiSocialProfilesSearchInput {
     take?: number;
   };
 }
-export type GetApiSocialProfilesSearchOutput = Array<Types.SocialProfilesSocialProfileDto>;
+export type GetApiSocialProfilesSearchOutput = Types.SocialProfilesSocialProfileDto[];
 export const getApiSocialProfilesSearchEndpoint = {
   operationId: 'getApiSocialProfilesSearch' as const,
   method: 'GET' as const,
@@ -3559,7 +4051,7 @@ export interface GetApiSocialReviewsMeInput {
     take?: number;
   };
 }
-export type GetApiSocialReviewsMeOutput = Array<Types.LearningExperienceSocialServicesCourseReviewDto>;
+export type GetApiSocialReviewsMeOutput = Types.LearningExperienceSocialServicesCourseReviewDto[];
 export const getApiSocialReviewsMeEndpoint = {
   operationId: 'getApiSocialReviewsMe' as const,
   method: 'GET' as const,
@@ -3605,7 +4097,7 @@ export const deleteApiSocialSavedPostsEndpoint = {
 } as const;
 
 export type GetApiSocialStoriesInput = void;
-export type GetApiSocialStoriesOutput = Array<Types.SocialFeedStoryDto>;
+export type GetApiSocialStoriesOutput = Types.SocialFeedStoryDto[];
 export const getApiSocialStoriesEndpoint = {
   operationId: 'getApiSocialStories' as const,
   method: 'GET' as const,
@@ -3724,7 +4216,7 @@ export interface GetApiSocialWishlistMeInput {
     take?: number;
   };
 }
-export type GetApiSocialWishlistMeOutput = Array<Types.LearningExperienceSocialServicesCourseWishlistDto>;
+export type GetApiSocialWishlistMeOutput = Types.LearningExperienceSocialServicesCourseWishlistDto[];
 export const getApiSocialWishlistMeEndpoint = {
   operationId: 'getApiSocialWishlistMe' as const,
   method: 'GET' as const,
@@ -3737,7 +4229,7 @@ export const getApiSocialWishlistMeEndpoint = {
  * Get all TestingLab role templates
  */
 export type GetApiTestingLabPermissionsRoleTemplatesInput = void;
-export type GetApiTestingLabPermissionsRoleTemplatesOutput = Array<Types.TestingLabTestingLabRoleTemplate>;
+export type GetApiTestingLabPermissionsRoleTemplatesOutput = Types.TestingLabTestingLabRoleTemplate[];
 export const getApiTestingLabPermissionsRoleTemplatesEndpoint = {
   operationId: 'getApiTestingLabPermissionsRoleTemplates' as const,
   method: 'GET' as const,
@@ -3989,6 +4481,91 @@ export const postApiTestingLabSettingsResetEndpoint = {
   requiresAuth: true,
 } as const;
 
+/**
+ * Revokes the remaining balance of a credit grant with an auditable reason. SystemAdmin only.
+ *
+ * Revokes the remaining balance of an account credit grant; the reason is captured on the grant and in the credit ledger. Requires the SystemAdmin role.
+ */
+export interface PostAccountCreditsRevokeInput {
+  grantId: string;
+  body?: Types.CommercePaymentsAccountCreditsControllerRevokeCreditInput;
+}
+export type PostAccountCreditsRevokeOutput = void;
+export const postAccountCreditsRevokeEndpoint = {
+  operationId: 'postAccountCreditsRevoke' as const,
+  method: 'POST' as const,
+  path: '/api/v1/account-credits/{grantId}:revoke' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Per-currency spendable credit balances of the calling user.
+ *
+ * Returns the spendable account credit balance of the calling user per ISO 4217 currency (Active grants, expiry-aware). User and tenant are derived from the authenticated actor.
+ */
+export type GetAccountCreditsBalanceInput = void;
+export type GetAccountCreditsBalanceOutput = Types.CommercePaymentsAccountCreditBalance[];
+export const getAccountCreditsBalanceEndpoint = {
+  operationId: 'getAccountCreditsBalance' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/balance' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Manually issues account credit to a user of the calling tenant. SystemAdmin only.
+ *
+ * Manually grants account credit to a tenant user with an optional expiry. The credit type restricts what the credit may be applied to. Requires the SystemAdmin role; the tenant is derived from the authenticated actor.
+ */
+export interface PostAccountCreditsGrantsInput {
+  body?: Types.CommercePaymentsAccountCreditsControllerIssueCreditInput;
+}
+export type PostAccountCreditsGrantsOutput = Types.CommercePaymentsAccountCreditGrant;
+export const postAccountCreditsGrantsEndpoint = {
+  operationId: 'postAccountCreditsGrants' as const,
+  method: 'POST' as const,
+  path: '/api/v1/account-credits/grants' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Paged credit ledger history of the calling user (grants, consumption, revocation, expiry).
+ *
+ * Returns a paged list of the calling user's account credit ledger rows, newest first. User and tenant are derived from the authenticated actor.
+ */
+export interface GetAccountCreditsHistoryInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAccountCreditsHistoryOutput = Types.PagedResultAccountCreditTransaction;
+export const getAccountCreditsHistoryEndpoint = {
+  operationId: 'getAccountCreditsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/history' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Growth metrics: credit issuance/usage/expiry rates, referral funnel and top referrers. SystemAdmin only.
+ *
+ * Credit ledger aggregates per currency (issued, applied, expired-unused waste, revoked, active balance, usage and expiration-waste rates), the referral conversion funnel (clicks → signups → conversions → rewards) and the top-referrers leaderboard. Requires the SystemAdmin role.
+ */
+export type GetAccountCreditsMetricsInput = void;
+export type GetAccountCreditsMetricsOutput = Types.CommercePaymentsAccountCreditMetricsReport;
+export const getAccountCreditsMetricsEndpoint = {
+  operationId: 'getAccountCreditsMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/account-credits/metrics' as const,
+  tags: ['CommercePaymentsAccountCredits'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAdminEconomyAdRewardsPendingClaimsInput {
   query?: {
     confirmed?: boolean;
@@ -4027,7 +4604,7 @@ export interface GetAdminEconomyAdRewardsReportsInput {
     limit?: number;
   };
 }
-export type GetAdminEconomyAdRewardsReportsOutput = Array<Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus>;
+export type GetAdminEconomyAdRewardsReportsOutput = Types.FinanceEconomyAdRewardsDurableAdProviderReportStatus[];
 export const getAdminEconomyAdRewardsReportsEndpoint = {
   operationId: 'getAdminEconomyAdRewardsReports' as const,
   method: 'GET' as const,
@@ -4080,7 +4657,7 @@ export const getAdminEconomyAdRewardsSessionsForGetAdminEconomyAdRewardsSessions
 } as const;
 
 export type GetAdminEconomyBountiesExpiredInput = void;
-export type GetAdminEconomyBountiesExpiredOutput = Array<Types.FinanceEconomyBountiesDurableBountyView>;
+export type GetAdminEconomyBountiesExpiredOutput = Types.FinanceEconomyBountiesDurableBountyView[];
 export const getAdminEconomyBountiesExpiredEndpoint = {
   operationId: 'getAdminEconomyBountiesExpired' as const,
   method: 'GET' as const,
@@ -4123,7 +4700,7 @@ export interface GetAdminEconomyComplianceFinancialCrimeCasesForGetAdminEconomyC
   };
 }
 export type GetAdminEconomyComplianceFinancialCrimeCasesForGetAdminEconomyComplianceFinancialCrimeCasesOutput =
-  Array<Types.ComplianceFinancialCrimeFinancialCrimeCase>;
+  Types.ComplianceFinancialCrimeFinancialCrimeCase[];
 export const getAdminEconomyComplianceFinancialCrimeCasesForGetAdminEconomyComplianceFinancialCrimeCasesEndpoint = {
   operationId: 'getAdminEconomyComplianceFinancialCrimeCasesForGetAdminEconomyComplianceFinancialCrimeCases' as const,
   method: 'GET' as const,
@@ -4216,7 +4793,7 @@ export const getAdminEconomyComplianceHoldsForGetAdminEconomyComplianceHoldsByHo
 export interface GetAdminEconomyComplianceHoldsAuditInput {
   holdId: string;
 }
-export type GetAdminEconomyComplianceHoldsAuditOutput = Array<Types.FinanceEconomyRiskComplianceHoldEvent>;
+export type GetAdminEconomyComplianceHoldsAuditOutput = Types.FinanceEconomyRiskComplianceHoldEvent[];
 export const getAdminEconomyComplianceHoldsAuditEndpoint = {
   operationId: 'getAdminEconomyComplianceHoldsAudit' as const,
   method: 'GET' as const,
@@ -4257,7 +4834,7 @@ export interface GetAdminEconomyComplianceTrustSafetyAppealsInput {
     take?: number;
   };
 }
-export type GetAdminEconomyComplianceTrustSafetyAppealsOutput = Array<Types.TrustSafetyTrustSafetyAppeal>;
+export type GetAdminEconomyComplianceTrustSafetyAppealsOutput = Types.TrustSafetyTrustSafetyAppeal[];
 export const getAdminEconomyComplianceTrustSafetyAppealsEndpoint = {
   operationId: 'getAdminEconomyComplianceTrustSafetyAppeals' as const,
   method: 'GET' as const,
@@ -4426,7 +5003,7 @@ export const getAdminEconomyLedgerAnchorsForGetAdminEconomyLedgerAnchorsByAnchor
 export interface GetAdminEconomyLedgerAnchorsVerificationsInput {
   anchorId: string;
 }
-export type GetAdminEconomyLedgerAnchorsVerificationsOutput = Array<Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus>;
+export type GetAdminEconomyLedgerAnchorsVerificationsOutput = Types.FinanceEconomyOperationsEconomyAnchorVerificationOperationalStatus[];
 export const getAdminEconomyLedgerAnchorsVerificationsEndpoint = {
   operationId: 'getAdminEconomyLedgerAnchorsVerifications' as const,
   method: 'GET' as const,
@@ -4510,7 +5087,7 @@ export const postAdminEconomyLedgerProjectionGenerationsApprovalsEndpoint = {
 export interface GetAdminEconomyLedgerProjectionGenerationsAuditInput {
   generation: number;
 }
-export type GetAdminEconomyLedgerProjectionGenerationsAuditOutput = Array<Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry>;
+export type GetAdminEconomyLedgerProjectionGenerationsAuditOutput = Types.FinanceEconomyOperationsEconomyProjectionApprovalAuditEntry[];
 export const getAdminEconomyLedgerProjectionGenerationsAuditEndpoint = {
   operationId: 'getAdminEconomyLedgerProjectionGenerationsAudit' as const,
   method: 'GET' as const,
@@ -4760,7 +5337,7 @@ export interface GetAdminEconomyPayoutRequestsInput {
     take?: number;
   };
 }
-export type GetAdminEconomyPayoutRequestsOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto>;
+export type GetAdminEconomyPayoutRequestsOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto[];
 export const getAdminEconomyPayoutRequestsEndpoint = {
   operationId: 'getAdminEconomyPayoutRequests' as const,
   method: 'GET' as const,
@@ -4793,7 +5370,7 @@ export const postAdminEconomyPayoutRequestsApproveEndpoint = {
 export interface GetAdminEconomyPayoutRequestsAuditInput {
   requestId: string;
 }
-export type GetAdminEconomyPayoutRequestsAuditOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewAuditDto>;
+export type GetAdminEconomyPayoutRequestsAuditOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewAuditDto[];
 export const getAdminEconomyPayoutRequestsAuditEndpoint = {
   operationId: 'getAdminEconomyPayoutRequestsAudit' as const,
   method: 'GET' as const,
@@ -4844,8 +5421,7 @@ export interface GetAdminEconomyPayoutRequestsOperationsForGetAdminEconomyPayout
     take?: number;
   };
 }
-export type GetAdminEconomyPayoutRequestsOperationsForGetAdminEconomyPayoutRequestsOperationsOutput =
-  Array<Types.APIControllersEconomyPayoutExecutionOperationDto>;
+export type GetAdminEconomyPayoutRequestsOperationsForGetAdminEconomyPayoutRequestsOperationsOutput = Types.APIControllersEconomyPayoutExecutionOperationDto[];
 export const getAdminEconomyPayoutRequestsOperationsForGetAdminEconomyPayoutRequestsOperationsEndpoint = {
   operationId: 'getAdminEconomyPayoutRequestsOperationsForGetAdminEconomyPayoutRequestsOperations' as const,
   method: 'GET' as const,
@@ -4958,7 +5534,7 @@ export const postAdminEconomyPoliciesApproveEndpoint = {
 export interface GetAdminEconomyPoliciesAuditInput {
   policyId: string;
 }
-export type GetAdminEconomyPoliciesAuditOutput = Array<Types.FinanceEconomyOperationsEconomyPolicyAuditEntry>;
+export type GetAdminEconomyPoliciesAuditOutput = Types.FinanceEconomyOperationsEconomyPolicyAuditEntry[];
 export const getAdminEconomyPoliciesAuditEndpoint = {
   operationId: 'getAdminEconomyPoliciesAudit' as const,
   method: 'GET' as const,
@@ -5098,7 +5674,7 @@ export const postAdminEconomyRiskReviewsRejectEndpoint = {
 export interface GetAdminEconomyRiskReviewsAuditInput {
   reviewId: string;
 }
-export type GetAdminEconomyRiskReviewsAuditOutput = Array<Types.FinanceEconomyRiskRiskReviewEvent>;
+export type GetAdminEconomyRiskReviewsAuditOutput = Types.FinanceEconomyRiskRiskReviewEvent[];
 export const getAdminEconomyRiskReviewsAuditEndpoint = {
   operationId: 'getAdminEconomyRiskReviewsAudit' as const,
   method: 'GET' as const,
@@ -5112,7 +5688,7 @@ export interface GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWit
     limit?: number;
   };
 }
-export type GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsOutput = Array<Types.FinanceEconomyTreasuryAdminWithdrawalRun>;
+export type GetAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsOutput = Types.FinanceEconomyTreasuryAdminWithdrawalRun[];
 export const getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawalsEndpoint = {
   operationId: 'getAdminEconomyTreasuryWithdrawalsForGetAdminEconomyTreasuryWithdrawals' as const,
   method: 'GET' as const,
@@ -5192,6 +5768,78 @@ export const postAdminEconomyTreasuryWithdrawalsReconcileEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/admin/economy/treasury/withdrawals/{runId}/reconcile' as const,
   tags: ['EconomyTreasuryAdministration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds the permission effectiveness compliance report (overall and per
+ * permission / evaluation surface / operation allow-deny rates) for a time range.
+ */
+export interface GetAuthorizationComplianceReportInput {
+  query?: {
+    tenantId?: string;
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetAuthorizationComplianceReportOutput = Types.IdentityAuthorizationPermissionComplianceReport;
+export const getAuthorizationComplianceReportEndpoint = {
+  operationId: 'getAuthorizationComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/compliance/report' as const,
+  tags: ['AccessControlPermissionCompliance'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Builds the permission graph of the caller's tenant: users, dynamic roles, and
+ * permission keys connected by assignment, inheritance, grant, and deny edges,
+ * with a data-quality summary (cycles, unregistered keys, orphaned roles).
+ */
+export interface GetAuthorizationPermissionGraphInput {
+  query?: {
+    includeUsers?: boolean;
+    format?: Types.IdentityAuthorizationGraphExportFormat;
+  };
+}
+export type GetAuthorizationPermissionGraphOutput = Types.IdentityAuthorizationModelsPermissionGraph;
+export const getAuthorizationPermissionGraphEndpoint = {
+  operationId: 'getAuthorizationPermissionGraph' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Simulates deleting a dynamic role and reports which users would lose permissions.
+ */
+export interface GetAuthorizationPermissionGraphRolesDeletionImpactInput {
+  roleId: string;
+}
+export type GetAuthorizationPermissionGraphRolesDeletionImpactOutput = Types.IdentityAuthorizationModelsRoleDeletionImpact;
+export const getAuthorizationPermissionGraphRolesDeletionImpactEndpoint = {
+  operationId: 'getAuthorizationPermissionGraphRolesDeletionImpact' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph/roles/{roleId}/deletion-impact' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Simulates removing a permission key from a dynamic role and reports which users
+ * would lose or retain the key.
+ */
+export interface GetAuthorizationPermissionGraphRolesPermissionRemovalImpactInput {
+  roleId: string;
+  permissionKey: string;
+}
+export type GetAuthorizationPermissionGraphRolesPermissionRemovalImpactOutput = Types.IdentityAuthorizationModelsPermissionRemovalImpact;
+export const getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint = {
+  operationId: 'getAuthorizationPermissionGraphRolesPermissionRemovalImpact' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-graph/roles/{roleId}/permission-removal-impact/{permissionKey}' as const,
+  tags: ['AccessControlPermissionGraph'] as const,
   requiresAuth: true,
 } as const;
 
@@ -5377,6 +6025,72 @@ export const putAuthorizationResourcesUsersPermissionsEndpoint = {
 } as const;
 
 /**
+ * Restores a soft-deleted tenant permission row inside the retention window.
+ */
+export interface PostAuthorizationRestorationsDeletedInput {
+  permissionId: string;
+}
+export type PostAuthorizationRestorationsDeletedOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsDeletedEndpoint = {
+  operationId: 'postAuthorizationRestorationsDeleted' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/deleted/{permissionId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverses a Grant/Revoke/Deny audit-log entry inside the retention window.
+ */
+export interface PostAuthorizationRestorationsUndoInput {
+  auditLogId: string;
+}
+export type PostAuthorizationRestorationsUndoOutput = Types.IdentityAuthorizationPermissionRestorationResult;
+export const postAuthorizationRestorationsUndoEndpoint = {
+  operationId: 'postAuthorizationRestorationsUndo' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/restorations/undo/{auditLogId}' as const,
+  tags: ['AccessControlPermissionRestoration'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Exports the permission state (roles, tenant defaults, user grants) of a tenant
+ * as a synchronization document. Omit tenantId for the global
+ * scope (system admins only).
+ */
+export interface GetAuthorizationSyncExportInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAuthorizationSyncExportOutput = Types.IdentityAuthorizationExternalPermissionSyncDocument;
+export const getAuthorizationSyncExportEndpoint = {
+  operationId: 'getAuthorizationSyncExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/sync/export' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Imports (or dry-runs) an external permission synchronization document. Invalid
+ * documents are rejected in full with their validation errors; nothing is
+ * partially applied.
+ */
+export interface PostAuthorizationSyncImportInput {
+  body?: Types.IdentityAuthorizationImportPermissionSyncInput;
+}
+export type PostAuthorizationSyncImportOutput = Types.IdentityAuthorizationPermissionSyncImportResult;
+export const postAuthorizationSyncImportEndpoint = {
+  operationId: 'postAuthorizationSyncImport' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/sync/import' as const,
+  tags: ['AccessControlPermissionSync'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Checks if a user has a specific tenant-level permission.
  */
 export interface GetAuthorizationTenantsHasPermissionInput {
@@ -5490,6 +6204,83 @@ export const postAuthorizationTenantsGrantEndpoint = {
 } as const;
 
 /**
+ * Gets permission grants expiring within a window (administrative visibility
+ * for upcoming expirations).
+ */
+export interface GetAuthorizationTenantsPermissionsExpiringInput {
+  tenantId: string;
+  query?: {
+    expiresBefore?: string;
+  };
+}
+export type GetAuthorizationTenantsPermissionsExpiringOutput = Types.IdentityAuthorizationGetExpiringTenantPermissionsOutput;
+export const getAuthorizationTenantsPermissionsExpiringEndpoint = {
+  operationId: 'getAuthorizationTenantsPermissionsExpiring' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/tenants/permissions:expiring' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-extends the expiration of permission grants in a tenant by a time period.
+ */
+export interface PostAuthorizationTenantsPermissionsExtendExpirationInput {
+  body?: Types.IdentityAuthorizationExtendTenantPermissionExpirationCommand;
+}
+export type PostAuthorizationTenantsPermissionsExtendExpirationOutput = number;
+export const postAuthorizationTenantsPermissionsExtendExpirationEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsExtendExpiration' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:extend-expiration' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Processes (deactivates, audits, notifies) all expired permission grants now,
+ * without waiting for the background worker. System admin only.
+ */
+export type PostAuthorizationTenantsPermissionsProcessExpiredInput = void;
+export type PostAuthorizationTenantsPermissionsProcessExpiredOutput = number;
+export const postAuthorizationTenantsPermissionsProcessExpiredEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsProcessExpired' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:process-expired' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Publishes upcoming-expiration notifications for grants expiring within the
+ * configured window, without waiting for the background worker. System admin only.
+ */
+export type PostAuthorizationTenantsPermissionsSendExpirationRemindersInput = void;
+export type PostAuthorizationTenantsPermissionsSendExpirationRemindersOutput = number;
+export const postAuthorizationTenantsPermissionsSendExpirationRemindersEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsSendExpirationReminders' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:send-expiration-reminders' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-sets an absolute expiration for permission grants in a tenant.
+ */
+export interface PostAuthorizationTenantsPermissionsSetExpirationInput {
+  body?: Types.IdentityAuthorizationSetTenantPermissionExpirationCommand;
+}
+export type PostAuthorizationTenantsPermissionsSetExpirationOutput = number;
+export const postAuthorizationTenantsPermissionsSetExpirationEndpoint = {
+  operationId: 'postAuthorizationTenantsPermissionsSetExpiration' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/tenants/permissions:set-expiration' as const,
+  tags: ['AccessControlTenantPermissions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Revokes tenant-level permissions from a user.
  */
 export interface PostAuthorizationTenantsRevokeInput {
@@ -5519,7 +6310,7 @@ export interface GetBillingChargesInput {
     pageSize?: number;
   };
 }
-export type GetBillingChargesOutput = Array<Types.CommercePaymentsPaymentResult>;
+export type GetBillingChargesOutput = Types.CommercePaymentsPaymentResult[];
 export const getBillingChargesEndpoint = {
   operationId: 'getBillingCharges' as const,
   method: 'GET' as const,
@@ -5608,6 +6399,204 @@ export const postBillingChargesRetryEndpoint = {
 } as const;
 
 /**
+ * List billing webhook inbox events
+ *
+ * Pages through the durable billing webhook inbox: provider events accepted from Stripe, PayPal, Apple App Store and Google Pay, with their processing status, attempt counters and error details. Supports filtering by status (processed/failed/pending), provider, provider event type and acceptance date range. Payload bodies are never returned.
+ */
+export interface GetBillingEventsForGetBillingEventsInput {
+  query?: {
+    status?: string;
+    provider?: string;
+    eventType?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingEventsForGetBillingEventsOutput = Types.PagedResultBillingWebhookEventListItemDto;
+export const getBillingEventsForGetBillingEventsEndpoint = {
+  operationId: 'getBillingEventsForGetBillingEvents' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a billing webhook inbox event by id
+ *
+ * Retrieves one durable webhook inbox event by its local identifier, including processing status, attempt count, error message and tenant/subscription references.
+ */
+export interface GetBillingEventsForGetBillingEventsByEventIdInput {
+  eventId: string;
+}
+export type GetBillingEventsForGetBillingEventsByEventIdOutput = Types.CommerceBillingBillingWebhookEventDto;
+export const getBillingEventsForGetBillingEventsByEventIdEndpoint = {
+  operationId: 'getBillingEventsForGetBillingEventsByEventId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/{eventId}' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List durable billing integration events from the platform outbox
+ *
+ * Pages through the named billing integration events (webhook processed/failed, invoice paid, subscription renewed/cancelled) recorded in the platform durable outbox, with their delivery status. Dead-lettered events can be replayed through the platform admin event transport endpoints.
+ */
+export interface GetBillingEventsOutboxForGetBillingEventsOutboxInput {
+  query?: {
+    eventName?: string;
+    status?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingEventsOutboxForGetBillingEventsOutboxOutput = Types.PagedResultBillingOutboxEventDto;
+export const getBillingEventsOutboxForGetBillingEventsOutboxEndpoint = {
+  operationId: 'getBillingEventsOutboxForGetBillingEventsOutbox' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/outbox' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one durable billing integration event by id
+ *
+ * Retrieves a single named billing integration event from the platform outbox read model by its durable event identifier.
+ */
+export interface GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdInput {
+  eventId: string;
+}
+export type GetBillingEventsOutboxForGetBillingEventsOutboxByEventIdOutput = Types.CommerceBillingBillingOutboxEventDto;
+export const getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint = {
+  operationId: 'getBillingEventsOutboxForGetBillingEventsOutboxByEventId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/events/outbox/{eventId}' as const,
+  tags: ['CommerceBillingEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the configured external billing providers with health and enabled state
+ *
+ * Returns one entry per supported external billing provider (stripe, paypal, applepay,
+ * apple_app_store, googlepay, google_play_store) with read-only configuration health
+ * (credentials configured, configuration valid, webhook endpoint verification material
+ * present) and the runtime enabled state (defaults to enabled; an explicit administrator
+ * disable persists a management override).
+ */
+export type GetBillingExternalProvidersForGetBillingExternalProvidersInput = void;
+export type GetBillingExternalProvidersForGetBillingExternalProvidersOutput = Types.CommerceBillingExternalBillingProviderStatusDto[];
+export const getBillingExternalProvidersForGetBillingExternalProvidersEndpoint = {
+  operationId: 'getBillingExternalProvidersForGetBillingExternalProviders' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/external-providers' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get the health and enabled state of a single external billing provider
+ *
+ * Fails closed with 404 for unknown provider keys.
+ */
+export interface GetBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyInput {
+  providerKey: string;
+}
+export type GetBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyOutput = Types.CommerceBillingExternalBillingProviderStatusDto;
+export const getBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyEndpoint = {
+  operationId: 'getBillingExternalProvidersForGetBillingExternalProvidersByProviderKey' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/external-providers/{providerKey}' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Disable an external billing provider at runtime
+ *
+ * Persists an explicit disable decision (idempotent) and writes an audit event.
+ * Fails closed with 404 for unknown provider keys.
+ */
+export interface PostBillingExternalProvidersDisableInput {
+  providerKey: string;
+}
+export type PostBillingExternalProvidersDisableOutput = Types.CommerceBillingExternalBillingProviderStatusDto;
+export const postBillingExternalProvidersDisableEndpoint = {
+  operationId: 'postBillingExternalProvidersDisable' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/external-providers/{providerKey}:disable' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Enable an external billing provider at runtime
+ *
+ * Persists an explicit enable decision (idempotent) and writes an audit event.
+ * Fails closed with 404 for unknown provider keys. Availability still requires
+ * valid provider configuration.
+ */
+export interface PostBillingExternalProvidersEnableInput {
+  providerKey: string;
+}
+export type PostBillingExternalProvidersEnableOutput = Types.CommerceBillingExternalBillingProviderStatusDto;
+export const postBillingExternalProvidersEnableEndpoint = {
+  operationId: 'postBillingExternalProvidersEnable' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/external-providers/{providerKey}:enable' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Produce a report-only migration dry-run between two external billing providers
+ *
+ * Scans subscriptions and classifies each by its external-provider binding: bound to the
+ * source provider while lacking a target-provider external identifier (the migration work
+ * list), already on the target provider, unattributable external identifiers (manual
+ * review), and subscriptions without external identifiers. The report never mutates
+ * state; executing provider switching is out of scope and gateway routing/failover is
+ * tracked in issue #413. Fails closed with 400 for unknown or identical provider keys.
+ */
+export interface PostBillingExternalProvidersMigrationDryRunInput {
+  body?: Types.CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput;
+}
+export type PostBillingExternalProvidersMigrationDryRunOutput = Types.CommerceBillingBillingProviderMigrationReport;
+export const postBillingExternalProvidersMigrationDryRunEndpoint = {
+  operationId: 'postBillingExternalProvidersMigrationDryRun' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/external-providers/migration:dry-run' as const,
+  tags: ['CommerceBillingExternalProviders'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Applies the calling user's account credits to one of their invoices (issue #410
+ * multi-tender settlement). Requires an Idempotency-Key header; the optional body
+ * caps the credit tender amount. User and tenant are derived from the actor.
+ *
+ * Settles part or all of an open/past-due invoice with the calling user's account credits, consumed FIFO by expiry in one atomic settlement (credit ledger rows + settlement record + invoice update). Requires the Idempotency-Key header; replays return the recorded settlement. The invoice must belong to the calling user; credits must match the invoice currency. The remaining balance stays owed to provider tenders.
+ */
+export interface PostBillingInvoicesAccountCreditsInput {
+  invoiceId: string;
+  body?: Types.CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput;
+}
+export type PostBillingInvoicesAccountCreditsOutput = Types.CommerceBillingInvoiceAccountCreditSettlementResult;
+export const postBillingInvoicesAccountCreditsEndpoint = {
+  operationId: 'postBillingInvoicesAccountCredits' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/invoices/{invoiceId}/account-credits' as const,
+  tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Retry invoice payment
  *
  * Accepts a local retry scheduling request for open or past-due invoices. External gateway capture requires configured payment-provider credentials.
@@ -5621,6 +6610,527 @@ export const postBillingInvoicesRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/invoices/{invoiceId}/retry' as const,
   tags: ['CommerceBillingInvoices'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List registered payment methods (own methods; system admins see the whole tenant).
+ *
+ * Lists the live payment methods registered for the tenant. Non-admin actors see their own methods; system admins see all methods in the requested tenant.
+ */
+export interface GetBillingPaymentMethodsInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto[];
+export const getBillingPaymentMethodsEndpoint = {
+  operationId: 'getBillingPaymentMethods' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Register a payment method from a tokenized gateway result.
+ *
+ * Registers a payment method from a Stripe payment method token (pm_...) produced by Stripe.js/Elements or a confirmed SetupIntent. Raw card data is never accepted; only display metadata returned by the gateway is stored.
+ */
+export interface PostBillingPaymentMethodsInput {
+  body?: Types.CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody;
+}
+export type PostBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsEndpoint = {
+  operationId: 'postBillingPaymentMethods' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a single payment method by ID.
+ *
+ * Returns a single registered payment method. Only the owner or a system administrator can read it.
+ */
+export interface GetPaymentMethodByIdInput {
+  paymentMethodId: string;
+}
+export type GetPaymentMethodByIdOutput = Types.CommercePaymentsPaymentMethodDto;
+export const getPaymentMethodByIdEndpoint = {
+  operationId: 'getPaymentMethodById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update display-only fields of a payment method.
+ *
+ * Updates display-only fields (nickname, billing address). Card details come from the gateway and cannot be edited here.
+ */
+export interface PutBillingPaymentMethodsInput {
+  paymentMethodId: string;
+  body?: Types.CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody;
+}
+export type PutBillingPaymentMethodsOutput = Types.CommercePaymentsPaymentMethodDto;
+export const putBillingPaymentMethodsEndpoint = {
+  operationId: 'putBillingPaymentMethods' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Remove a payment method (soft delete).
+ *
+ * Soft-deletes a payment method. Fails closed with 409 Conflict while any active subscription still bills with it; set a new default first to re-point subscriptions.
+ */
+export interface DeleteBillingPaymentMethodsInput {
+  paymentMethodId: string;
+}
+export type DeleteBillingPaymentMethodsOutput = void;
+export const deleteBillingPaymentMethodsEndpoint = {
+  operationId: 'deleteBillingPaymentMethods' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Make this payment method the default (custom action per Google API guidelines).
+ *
+ * Makes this payment method its owner's default inside the tenant. Enforces the single-default invariant and re-points subscriptions billed with the previous default.
+ */
+export interface PostBillingPaymentMethodsSetDefaultInput {
+  paymentMethodId: string;
+}
+export type PostBillingPaymentMethodsSetDefaultOutput = Types.CommercePaymentsPaymentMethodDto;
+export const postBillingPaymentMethodsSetDefaultEndpoint = {
+  operationId: 'postBillingPaymentMethodsSetDefault' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/payment-methods/{paymentMethodId}:set-default' as const,
+  tags: ['CommercePaymentsBillingPaymentMethods'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List pricing-decision ledger entries
+ *
+ * Pages through the durable pricing-decision ledger: one row per checkout/renewal calculation that produced a final price, with headline amounts, applied promo codes, winning pricing rule and drift status. Filterable by tenant, order, subscription, promo code, decision type, drift status and decision date range.
+ */
+export interface GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerInput {
+  query?: {
+    tenantId?: string;
+    orderId?: string;
+    subscriptionId?: string;
+    promoCode?: string;
+    decisionType?: string;
+    driftStatus?: string;
+    fromUtc?: string;
+    toUtc?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerOutput = Types.PagedResultPricingDecisionLedgerEntryDto;
+export const getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedger' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Validate a sample of ledger entries for pricing drift
+ *
+ * Drift detection over the pricing-decision ledger: samples entries (preferring never-validated ones), recomputes each final amount from its own breakdown document and stamps the entry Verified or Drifted. Drifted entries — where the stored final no longer follows from the recorded arithmetic — are surfaced first for review.
+ */
+export interface PostBillingPricingDiscountsLedgerValidateDriftInput {
+  body?: Types.CommerceBillingValidatePricingLedgerDriftInput;
+}
+export type PostBillingPricingDiscountsLedgerValidateDriftOutput = Types.CommerceBillingPricingLedgerDriftValidationResult;
+export const postBillingPricingDiscountsLedgerValidateDriftEndpoint = {
+  operationId: 'postBillingPricingDiscountsLedgerValidateDrift' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/:validate-drift' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a pricing-decision ledger entry by id
+ *
+ * Retrieves one pricing-decision ledger entry, including the full calculation breakdown JSON (base, per-rule adjustments, per-code promo applications, caps, final amount), correlation ids and the drift-validation outcome.
+ */
+export interface GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdInput {
+  entryId: string;
+}
+export type GetBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdOutput = Types.CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export const getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/{entryId}' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Discount effectiveness and pricing analytics over the ledger
+ *
+ * Aggregates the pricing-decision ledger over a window: total decisions, baseline vs final revenue, discount given, promo redemptions, per-code effectiveness (redemptions, discount given, baseline vs influenced revenue), per-pricing-rule impact, stacking outcomes and drift status counts. Feeds the monetization reporting dashboard.
+ */
+export interface GetBillingPricingDiscountsLedgerAnalyticsEffectivenessInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingPricingDiscountsLedgerAnalyticsEffectivenessOutput = Types.CommerceBillingPricingLedgerEffectivenessAggregate;
+export const getBillingPricingDiscountsLedgerAnalyticsEffectivenessEndpoint = {
+  operationId: 'getBillingPricingDiscountsLedgerAnalyticsEffectiveness' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-discounts-ledger/analytics/effectiveness' as const,
+  tags: ['CommerceBillingPricingDiscountsLedger'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get pricing rules (paginated) with optional filters
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineInput {
+  query?: {
+    isActive?: boolean;
+    ruleType?: Types.CommercePricingRuleType;
+    productId?: string;
+    searchTerm?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineOutput = Types.PagedResultPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngine' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a new pricing rule
+ */
+export interface PostBillingPricingEngineInput {
+  body?: Types.CommerceProductsCreatePricingRuleInput;
+}
+export type PostBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineEndpoint = {
+  operationId: 'postBillingPricingEngine' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run the pricing engine for a product: base/sale price, the highest-priority applicable
+ * rule (volume tiers, customer segment), and promo codes.
+ */
+export interface PostBillingPricingEngineCalculateInput {
+  body?: Types.CommerceProductsCalculatePricingInput;
+}
+export type PostBillingPricingEngineCalculateOutput = Types.CommerceProductsPricingCalculationResult;
+export const postBillingPricingEngineCalculateEndpoint = {
+  operationId: 'postBillingPricingEngineCalculate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/:calculate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a pricing rule by ID, including its volume tiers
+ */
+export interface GetBillingPricingEngineForGetBillingPricingEngineByRuleIdInput {
+  ruleId: string;
+}
+export type GetBillingPricingEngineForGetBillingPricingEngineByRuleIdOutput = Types.CommerceProductsPricingRuleDto;
+export const getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint = {
+  operationId: 'getBillingPricingEngineForGetBillingPricingEngineByRuleId' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a pricing rule (full update; tiers are replaced when provided)
+ */
+export interface PutBillingPricingEngineInput {
+  ruleId: string;
+  body?: Types.CommerceProductsUpdatePricingRuleInput;
+}
+export type PutBillingPricingEngineOutput = Types.CommerceProductsPricingRuleDto;
+export const putBillingPricingEngineEndpoint = {
+  operationId: 'putBillingPricingEngine' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a pricing rule (soft delete)
+ */
+export interface DeleteBillingPricingEngineInput {
+  ruleId: string;
+}
+export type DeleteBillingPricingEngineOutput = void;
+export const deleteBillingPricingEngineEndpoint = {
+  operationId: 'deleteBillingPricingEngine' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Activate a pricing rule
+ */
+export interface PostBillingPricingEngineActivateInput {
+  ruleId: string;
+}
+export type PostBillingPricingEngineActivateOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineActivateEndpoint = {
+  operationId: 'postBillingPricingEngineActivate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}:activate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deactivate a pricing rule
+ */
+export interface PostBillingPricingEngineDeactivateInput {
+  ruleId: string;
+}
+export type PostBillingPricingEngineDeactivateOutput = Types.CommerceProductsPricingRuleDto;
+export const postBillingPricingEngineDeactivateEndpoint = {
+  operationId: 'postBillingPricingEngineDeactivate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/pricing-engine/{ruleId}:deactivate' as const,
+  tags: ['CommerceProductsBillingPricingEngine'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List reconciliation runs, newest first. Tenant-scoped for non-admin actors.
+ *
+ * Returns a paged list of revenue reconciliation runs, newest first. Non-admin actors only see runs of their own tenant.
+ */
+export interface GetBillingRevenueAuditingInput {
+  query?: {
+    tenantId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingOutput = Types.PagedResultRevenueReconciliationRun;
+export const getBillingRevenueAuditingEndpoint = {
+  operationId: 'getBillingRevenueAuditing' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Run a reconciliation comparing an external accounting/ERP statement against internal
+ * revenue events for an inclusive period. Requires the SystemAdmin role.
+ *
+ * Compares external accounting/ERP statement lines against internal revenue events for an inclusive period, records an immutable reconciliation run and persists every discrepancy (missing internal/external references, amount and currency mismatches, duplicate external references). When no inline lines are supplied, lines are read from the configured external statement source.
+ */
+export interface PostBillingRevenueAuditingInput {
+  body?: Types.CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput;
+}
+export type PostBillingRevenueAuditingOutput = Types.CommercePaymentsRevenueReconciliationRun;
+export const postBillingRevenueAuditingEndpoint = {
+  operationId: 'postBillingRevenueAuditing' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Trigger anomaly detection for the trailing days and persist alerts. Requires the
+ * SystemAdmin role; the periodic worker performs the same pass automatically when
+ * `RevenueAuditing:WorkerEnabled` is set.
+ *
+ * Evaluates daily net revenue for the trailing days against the configured baseline window and persists anomaly alerts (spikes/drops at or above the z-score threshold). Baselines and z-scores are computed per currency; detection is idempotent per kind, day and currency.
+ */
+export interface PostBillingRevenueAuditingAnomaliesDetectInput {
+  body?: Types.CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput;
+}
+export type PostBillingRevenueAuditingAnomaliesDetectOutput = Types.CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult;
+export const postBillingRevenueAuditingAnomaliesDetectEndpoint = {
+  operationId: 'postBillingRevenueAuditingAnomaliesDetect' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing/anomalies/detect' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List revenue anomaly alerts, newest detection first. Tenant-scoped for non-admin actors.
+ *
+ * Returns a paged list of revenue anomaly alerts, newest detection first, optionally filtered by status (Open, Acknowledged). Non-admin actors only see alerts of their own tenant.
+ */
+export interface GetBillingRevenueAuditingAnomalyAlertsInput {
+  query?: {
+    tenantId?: string;
+    status?: Types.CommercePaymentsRevenueAnomalyStatus;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingAnomalyAlertsOutput = Types.PagedResultRevenueAnomalyAlert;
+export const getBillingRevenueAuditingAnomalyAlertsEndpoint = {
+  operationId: 'getBillingRevenueAuditingAnomalyAlerts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/anomaly-alerts' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledge an open anomaly alert, recording the reviewing operator. Requires the
+ * SystemAdmin role.
+ *
+ * Marks an open revenue anomaly alert as acknowledged, recording the reviewing operator and optional notes. The acting identity is taken from the authenticated actor, never from the request body.
+ */
+export interface PostBillingRevenueAuditingAnomalyAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput;
+}
+export type PostBillingRevenueAuditingAnomalyAlertsAcknowledgeOutput = void;
+export const postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint = {
+  operationId: 'postBillingRevenueAuditingAnomalyAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/api/v1/billing/revenue/auditing/anomaly-alerts/{alertId}/acknowledge' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Compliance report for an inclusive period: totals by event type, source and status,
+ * uncounted events, reconciliation coverage and an attestation statement.
+ *
+ * Builds a compliance-grade summary for the inclusive period: revenue totals grouped by event type, source and processing status with a per-currency breakdown (amounts are never consolidated across currencies), uncounted (pending/failed) events, reconciliation coverage across the period, and an attestation statement suitable for filings.
+ */
+export interface GetBillingRevenueAuditingComplianceReportInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingComplianceReportOutput = Types.CommercePaymentsRevenueComplianceReport;
+export const getBillingRevenueAuditingComplianceReportEndpoint = {
+  operationId: 'getBillingRevenueAuditingComplianceReport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/compliance-report' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Export the audit report for a period as CSV (RFC 4180) or JSON for external
+ * accounting and ERP systems.
+ *
+ * Serializes the compliance summary and daily trend for the inclusive period as RFC 4180 CSV or JSON, ready for delivery to external accounting and ERP systems.
+ */
+export interface GetBillingRevenueAuditingExportInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    format?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingExportOutput = Blob;
+export const getBillingRevenueAuditingExportEndpoint = {
+  operationId: 'getBillingRevenueAuditingExport' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/export' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get one reconciliation run with its counters and summary.
+ *
+ * Returns one reconciliation run, including matched/discrepancy counters and the machine-readable summary captured at completion.
+ */
+export interface GetRunByIdInput {
+  runId: string;
+}
+export type GetRunByIdOutput = Types.CommercePaymentsRevenueReconciliationRun;
+export const getRunByIdEndpoint = {
+  operationId: 'getRunById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/runs/{runId}' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the discrepancies recorded by a reconciliation run.
+ *
+ * Returns a paged list of the discrepancies recorded by a reconciliation run, optionally filtered by kind (MissingInternal, MissingExternal, AmountMismatch, CurrencyMismatch, DuplicateExternalReference).
+ */
+export interface GetBillingRevenueAuditingRunsDiscrepanciesInput {
+  runId: string;
+  query?: {
+    kind?: Types.CommercePaymentsRevenueDiscrepancyKind;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetBillingRevenueAuditingRunsDiscrepanciesOutput = Types.PagedResultRevenueReconciliationDiscrepancy;
+export const getBillingRevenueAuditingRunsDiscrepanciesEndpoint = {
+  operationId: 'getBillingRevenueAuditingRunsDiscrepancies' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/runs/{runId}/discrepancies' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Historical daily net-revenue trend for an inclusive period, with zero-activity days included.
+ *
+ * Returns one net-revenue point per UTC day and currency in the inclusive period (credit total, debit total, net total and event count, in that point's currency), including days without activity for every observed currency, plus range totals per currency. Amounts are never consolidated across currencies.
+ */
+export interface GetBillingRevenueAuditingTrendsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetBillingRevenueAuditingTrendsOutput = Types.CommercePaymentsRevenueTrendReport;
+export const getBillingRevenueAuditingTrendsEndpoint = {
+  operationId: 'getBillingRevenueAuditingTrends' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/revenue/auditing/trends' as const,
+  tags: ['CommercePaymentsBillingRevenueAuditing'] as const,
   requiresAuth: true,
 } as const;
 
@@ -5775,6 +7285,24 @@ export const postBillingWebhooksPaypalEndpoint = {
 } as const;
 
 /**
+ * Get the billing webhook security monitoring summary
+ *
+ * Admin-facing monitoring surface for the billing webhook security controls: the state of
+ * the source IP allowlist, the suspicious-activity threshold blocking (currently blocked
+ * sources), and the delivery health of the central security event pipeline that persists
+ * verification failures, allowlist rejections, and replay detections.
+ */
+export type GetBillingWebhooksSecurityInput = void;
+export type GetBillingWebhooksSecurityOutput = Types.CommerceBillingBillingWebhookSecuritySummaryDto;
+export const getBillingWebhooksSecurityEndpoint = {
+  operationId: 'getBillingWebhooksSecurity' as const,
+  method: 'GET' as const,
+  path: '/api/v1/billing/webhooks/security' as const,
+  tags: ['CommerceBillingWebhooks'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Handle Stripe webhook events with signature verification
  *
  * Processes Stripe webhook notifications with enhanced security through signature verification.
@@ -5815,7 +7343,7 @@ export const getBillingWebhooksWebhookEventsEndpoint = {
   method: 'GET' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}' as const,
   tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -5840,7 +7368,211 @@ export const postBillingWebhooksWebhookEventsRetryEndpoint = {
   method: 'POST' as const,
   path: '/api/v1/billing/webhooks/webhook-events/{eventId}:retry' as const,
   tags: ['CommerceBillingWebhooks'] as const,
-  requiresAuth: false,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List disputes with optional filters, newest first.
+ *
+ * Lists payment disputes with optional status, payment and user filters, newest first. Non-admin actors only see their own tenant's disputes.
+ */
+export interface GetDisputesInput {
+  query?: {
+    status?: Types.CommercePaymentsDisputeStatus;
+    paymentId?: string;
+    userId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetDisputesOutput = Types.CommercePaymentsDisputeListPage;
+export const getDisputesEndpoint = {
+  operationId: 'getDisputes' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a dispute for a payment. The disputing user is the authenticated actor.
+ *
+ * Creates a dispute against a payment. The disputing identity comes from the authenticated actor, never the request body.
+ */
+export interface PostDisputesInput {
+  body?: Types.CommercePaymentsDisputesControllerCreateDisputeInput;
+}
+export type PostDisputesOutput = Types.CommercePaymentsPaymentDispute;
+export const postDisputesEndpoint = {
+  operationId: 'postDisputes' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retrieve a single dispute by id.
+ *
+ * Retrieves a single payment dispute with its attached evidence.
+ */
+export interface GetDisputeByIdInput {
+  disputeId: string;
+}
+export type GetDisputeByIdOutput = Types.CommercePaymentsPaymentDispute;
+export const getDisputeByIdEndpoint = {
+  operationId: 'getDisputeById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/{disputeId}' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Accept a dispute: closes it as lost at the gateway and records the refund through the
+ * approval-aware refund path. Requires the `payments:admin` permission.
+ *
+ * Accepts the dispute (lost) and records the refund through the refund approval workflow. Requires the payments:admin permission.
+ */
+export interface PostDisputesAcceptInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerAcceptDisputeInput;
+}
+export type PostDisputesAcceptOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesAcceptEndpoint = {
+  operationId: 'postDisputesAccept' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:accept' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Cancel a dispute.
+ *
+ * Cancels an open dispute with a reason. Custom action per Google API guidelines.
+ */
+export interface PostDisputesCancelInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerCancelDisputeInput;
+}
+export type PostDisputesCancelOutput = void;
+export const postDisputesCancelEndpoint = {
+  operationId: 'postDisputesCancel' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:cancel' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Challenge a dispute by submitting the merchant evidence to the gateway. Requires the
+ * `payments:admin` permission.
+ *
+ * Submits the merchant evidence to the gateway to contest the chargeback. Requires the payments:admin permission.
+ */
+export interface PostDisputesChallengeInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerChallengeDisputeInput;
+}
+export type PostDisputesChallengeOutput = Types.CommercePaymentsDisputeActionResult;
+export const postDisputesChallengeEndpoint = {
+  operationId: 'postDisputesChallenge' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:challenge' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolve a dispute with an explicit outcome.
+ *
+ * Resolves a dispute with an explicit outcome (won, lost, partial refund, ...). Custom action per Google API guidelines.
+ */
+export interface PostDisputesResolveInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerResolveDisputeInput;
+}
+export type PostDisputesResolveOutput = void;
+export const postDisputesResolveEndpoint = {
+  operationId: 'postDisputesResolve' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:resolve' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Respond to a dispute by advancing its status (review, customer or merchant response).
+ *
+ * Advances a dispute's status (under review, pending customer or merchant response). Custom action per Google API guidelines.
+ */
+export interface PostDisputesRespondInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerRespondDisputeInput;
+}
+export type PostDisputesRespondOutput = void;
+export const postDisputesRespondEndpoint = {
+  operationId: 'postDisputesRespond' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}:respond' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the evidence attached to a dispute.
+ *
+ * Lists the evidence files attached to a payment dispute, newest first.
+ */
+export interface GetDisputesEvidenceInput {
+  disputeId: string;
+}
+export type GetDisputesEvidenceOutput = Types.CommercePaymentsDisputeEvidence[];
+export const getDisputesEvidenceEndpoint = {
+  operationId: 'getDisputesEvidence' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/{disputeId}/evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Attach evidence to a dispute. The submitting user is the authenticated actor.
+ *
+ * Attaches an evidence entry to a payment dispute. The submitting identity comes from the authenticated actor, never the request body.
+ */
+export interface PostDisputesEvidenceInput {
+  disputeId: string;
+  body?: Types.CommercePaymentsDisputesControllerAddDisputeEvidenceInput;
+}
+export type PostDisputesEvidenceOutput = Types.CommercePaymentsDisputeEvidence;
+export const postDisputesEvidenceEndpoint = {
+  operationId: 'postDisputesEvidence' as const,
+  method: 'POST' as const,
+  path: '/api/v1/disputes/{disputeId}/evidence' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dispute statistics for an inclusive window.
+ *
+ * Returns dispute counts by status, win/loss ratio for decided disputes and the average time to resolution for an inclusive window.
+ */
+export interface GetDisputesStatisticsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetDisputesStatisticsOutput = Types.CommercePaymentsDisputeStatistics;
+export const getDisputesStatisticsEndpoint = {
+  operationId: 'getDisputesStatistics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/disputes/statistics' as const,
+  tags: ['CommercePaymentsDisputes'] as const,
+  requiresAuth: true,
 } as const;
 
 export interface PostEconomyAdRewardsSessionsInput {
@@ -5885,7 +7617,7 @@ export interface GetEconomyBountiesForGetEconomyBountiesInput {
     status?: Types.FinanceEconomyBountiesBountyStatus;
   };
 }
-export type GetEconomyBountiesForGetEconomyBountiesOutput = Array<Types.FinanceEconomyBountiesDurableBountyView>;
+export type GetEconomyBountiesForGetEconomyBountiesOutput = Types.FinanceEconomyBountiesDurableBountyView[];
 export const getEconomyBountiesForGetEconomyBountiesEndpoint = {
   operationId: 'getEconomyBountiesForGetEconomyBounties' as const,
   method: 'GET' as const,
@@ -5948,7 +7680,7 @@ export const postEconomyBountiesReclaimEndpoint = {
  * Get my Economy capability readiness
  */
 export type GetEconomyCapabilitiesInput = void;
-export type GetEconomyCapabilitiesOutput = Array<Types.APIControllersEconomySelfServiceCapabilityDto>;
+export type GetEconomyCapabilitiesOutput = Types.APIControllersEconomySelfServiceCapabilityDto[];
 export const getEconomyCapabilitiesEndpoint = {
   operationId: 'getEconomyCapabilities' as const,
   method: 'GET' as const,
@@ -6040,7 +7772,7 @@ export interface GetEconomyPayoutRequestsInput {
     take?: number;
   };
 }
-export type GetEconomyPayoutRequestsOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto>;
+export type GetEconomyPayoutRequestsOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto[];
 export const getEconomyPayoutRequestsEndpoint = {
   operationId: 'getEconomyPayoutRequests' as const,
   method: 'GET' as const,
@@ -6089,7 +7821,7 @@ export interface GetEconomyPayoutsForGetEconomyPayoutsInput {
     take?: number;
   };
 }
-export type GetEconomyPayoutsForGetEconomyPayoutsOutput = Array<Types.FinanceEconomyPayoutsQueriesEconomyPayoutOperationDto>;
+export type GetEconomyPayoutsForGetEconomyPayoutsOutput = Types.FinanceEconomyPayoutsQueriesEconomyPayoutOperationDto[];
 export const getEconomyPayoutsForGetEconomyPayoutsEndpoint = {
   operationId: 'getEconomyPayoutsForGetEconomyPayouts' as const,
   method: 'GET' as const,
@@ -6147,7 +7879,7 @@ export interface GetEconomyTopUpsForGetEconomyTopUpsInput {
     take?: number;
   };
 }
-export type GetEconomyTopUpsForGetEconomyTopUpsOutput = Array<Types.FinanceEconomyFundingEconomyTopUpStatusDto>;
+export type GetEconomyTopUpsForGetEconomyTopUpsOutput = Types.FinanceEconomyFundingEconomyTopUpStatusDto[];
 export const getEconomyTopUpsForGetEconomyTopUpsEndpoint = {
   operationId: 'getEconomyTopUpsForGetEconomyTopUps' as const,
   method: 'GET' as const,
@@ -6226,7 +7958,7 @@ export interface GetEconomyWalletTransactionsInput {
     take?: number;
   };
 }
-export type GetEconomyWalletTransactionsOutput = Array<Types.FinanceEconomyContractsEconomyWalletTransactionDto>;
+export type GetEconomyWalletTransactionsOutput = Types.FinanceEconomyContractsEconomyWalletTransactionDto[];
 export const getEconomyWalletTransactionsEndpoint = {
   operationId: 'getEconomyWalletTransactions' as const,
   method: 'GET' as const,
@@ -6337,6 +8069,154 @@ export const deleteEmailDeliverySuppressionsEndpoint = {
   method: 'DELETE' as const,
   path: '/api/v1/email-delivery/suppressions/{email}' as const,
   tags: ['Notifications'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List the pending manual fraud reviews, oldest first.
+ *
+ * Lists payments held by the fraud gate with a pending manual review, oldest first. Requires the payments:admin permission.
+ */
+export interface GetFraudReviewsInput {
+  query?: {
+    tenantId?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetFraudReviewsOutput = Types.CommercePaymentsFraudReviewListItem[];
+export const getFraudReviewsEndpoint = {
+  operationId: 'getFraudReviews' as const,
+  method: 'GET' as const,
+  path: '/api/v1/fraud/reviews' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending fraud review, releasing the fraud hold so the payment may be retried.
+ *
+ * Approves the fraud review for a held payment, releasing the fraud hold so the payment can be retried through the manual retry flow. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsApproveInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsApproveOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsApproveEndpoint = {
+  operationId: 'postFraudReviewsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:approve' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Decline a pending fraud review, keeping the payment failed and non-retryable.
+ *
+ * Declines the fraud review for a held payment; it stays failed and is never retried. Requires the payments:admin permission.
+ */
+export interface PostFraudReviewsDenyInput {
+  paymentId: string;
+  body?: Types.CommercePaymentsFraudReviewsControllerResolveFraudReviewInput;
+}
+export type PostFraudReviewsDenyOutput = Types.CommercePaymentsFraudReviewResolutionResult;
+export const postFraudReviewsDenyEndpoint = {
+  operationId: 'postFraudReviewsDeny' as const,
+  method: 'POST' as const,
+  path: '/api/v1/fraud/reviews/{paymentId}:deny' as const,
+  tags: ['CommercePaymentsFraudReviews'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Purchases a gift subscription for any plan and duration (1-36 months).
+ *
+ * Creates a purchased gift for the given recipient with a positive amount in an ISO 4217 currency, a duration of 1-36 months, an optional plan restriction, an optional personal message and an optional scheduled delivery date (redemption is blocked before it). The full redemption code is returned exactly once and only stored as a SHA-256 hash; unredeemed gifts expire one year after purchase.
+ */
+export interface PostGiftsInput {
+  body?: Types.CommercePaymentsGiftsControllerPurchaseGiftRequestBody;
+}
+export type PostGiftsOutput = Types.CommercePaymentsGiftPurchaseResult;
+export const postGiftsEndpoint = {
+  operationId: 'postGifts' as const,
+  method: 'POST' as const,
+  path: '/api/v1/gifts' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Non-secret preview of a gift by redemption code (no giver identity exposed).
+ *
+ * Returns the public view of a gift (status, amount, currency, duration, plan, recipient name, personal message, delivery/expiry) for a redemption code. The giver identity is never exposed.
+ */
+export interface GetGiftsInput {
+  code: string;
+}
+export type GetGiftsOutput = Types.CommercePaymentsGiftPublicView;
+export const getGiftsEndpoint = {
+  operationId: 'getGifts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/{code}' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Redeems a gift with its redemption code; grants account credit to the calling account.
+ *
+ * Redeems the gift for the authenticated user and grants an account credit of the gift value to their account (existing or newly created accounts alike — the credit lands on whichever account redeems). Blocked before the scheduled delivery date, after the one-year expiry, for already-redeemed gifts, and when the giver tries to redeem their own gift.
+ */
+export interface PostGiftsRedeemInput {
+  code: string;
+}
+export type PostGiftsRedeemOutput = Types.CommercePaymentsGiftPublicView;
+export const postGiftsRedeemEndpoint = {
+  operationId: 'postGiftsRedeem' as const,
+  method: 'POST' as const,
+  path: '/api/v1/gifts/{code}/redeem' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gifts the calling user has redeemed, newest first.
+ *
+ * Returns a paged list of gifts redeemed by the calling user, newest first.
+ */
+export interface GetGiftsReceivedInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetGiftsReceivedOutput = Types.PagedResultGiftPublicView;
+export const getGiftsReceivedEndpoint = {
+  operationId: 'getGiftsReceived' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/received' as const,
+  tags: ['CommercePaymentsGifts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gifts the calling user has sent, newest first.
+ *
+ * Returns a paged list of gifts purchased by the calling user, newest first, with their status machine state.
+ */
+export interface GetGiftsSentInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetGiftsSentOutput = Types.PagedResultGiftPublicView;
+export const getGiftsSentEndpoint = {
+  operationId: 'getGiftsSent' as const,
+  method: 'GET' as const,
+  path: '/api/v1/gifts/sent' as const,
+  tags: ['CommercePaymentsGifts'] as const,
   requiresAuth: true,
 } as const;
 
@@ -6466,7 +8346,7 @@ export interface GetPaymentsInput {
     pageSize?: number;
   };
 }
-export type GetPaymentsOutput = Array<Types.CommercePaymentsPaymentResult>;
+export type GetPaymentsOutput = Types.CommercePaymentsPaymentResult[];
 export const getPaymentsEndpoint = {
   operationId: 'getPayments' as const,
   method: 'GET' as const,
@@ -6636,6 +8516,74 @@ export const postPaymentsRetryEndpoint = {
   operationId: 'postPaymentsRetry' as const,
   method: 'POST' as const,
   path: '/api/v1/payments/{paymentId}:retry' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retry-attempt history for one payment (issue #415)
+ *
+ * Every executed retry attempt — manual or dispatched by the automated retry queue — is
+ * persisted as a history entry recording when the attempt was scheduled and executed,
+ * its outcome, the gateway that ran it, and the gateway failure code and transaction
+ * reference when the attempt failed. Use this to audit dunning timelines and explain
+ * recovery outcomes.
+ */
+export interface GetPaymentsRetryAttemptsInput {
+  paymentId: string;
+}
+export type GetPaymentsRetryAttemptsOutput = Types.CommercePaymentsPaymentRetryAttemptDto[];
+export const getPaymentsRetryAttemptsEndpoint = {
+  operationId: 'getPaymentsRetryAttempts' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/{paymentId}:retry-attempts' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Payment success and failed-payment recovery metrics for an inclusive window.
+ *
+ * Aggregates the recovery analytics that billing administrators need to steer retry and
+ * dunning strategy (issue #403): first-attempt success rate, retry-recovery rate, recovered
+ * amounts grouped by currency, and dunning outcome counters (pending retry, due for retry,
+ * exhausted). Non-admin actors are scoped to their own tenant.
+ */
+export interface GetPaymentsRecoveryMetricsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+    tenantId?: string;
+  };
+}
+export type GetPaymentsRecoveryMetricsOutput = Types.CommercePaymentsPaymentRecoveryMetrics;
+export const getPaymentsRecoveryMetricsEndpoint = {
+  operationId: 'getPaymentsRecoveryMetrics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/recovery-metrics' as const,
+  tags: ['CommercePayments'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Failed payments that are due for a retry right now (retry-queue candidates).
+ *
+ * Returns the candidate set an automated retry queue would consume (issue #403; the queue
+ * itself is tracked in #415): failed payments with retry budget left whose configured
+ * backoff has elapsed, ordered by the scheduled next-retry time. Non-admin actors are
+ * scoped to their own tenant.
+ */
+export interface GetPaymentsRetryingCandidatesInput {
+  query?: {
+    tenantId?: string;
+    take?: number;
+  };
+}
+export type GetPaymentsRetryingCandidatesOutput = Types.CommercePaymentsPaymentResult[];
+export const getPaymentsRetryingCandidatesEndpoint = {
+  operationId: 'getPaymentsRetryingCandidates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/payments/retrying-candidates' as const,
   tags: ['CommercePayments'] as const,
   requiresAuth: true,
 } as const;
@@ -7122,7 +9070,7 @@ export const getPostsTagsPopularEndpoint = {
  */
 export interface GetPostsTagsSearchInput {
   query?: {
-    tags?: Array<string>;
+    tags?: string[];
     skip?: number;
     take?: number;
   };
@@ -7152,6 +9100,228 @@ export const getPostsTrendingEndpoint = {
   path: '/api/v1/posts/trending' as const,
   tags: ['SocialPosts'] as const,
   requiresAuth: false,
+} as const;
+
+/**
+ * Gets the caller's referral code and trackable link, creating them on first use.
+ *
+ * Returns the calling user's opaque unique referral code and the trackable share link built from it (AccountCredits:ReferralLinkBaseUrl base). Idempotent: every call returns the same per-user code.
+ */
+export type GetReferralsCodeInput = void;
+export type GetReferralsCodeOutput = Types.CommercePaymentsReferralsControllerReferralCodeOutput;
+export const getReferralsCodeEndpoint = {
+  operationId: 'getReferralsCode' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/code' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Tracking rows of the caller's referrals, newest first.
+ *
+ * Returns a paged list of the calling user's referral tracking rows, newest first, with funnel timestamps and status.
+ */
+export interface GetReferralsHistoryInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetReferralsHistoryOutput = Types.PagedResultReferral;
+export const getReferralsHistoryEndpoint = {
+  operationId: 'getReferralsHistory' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/history' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Funnel stats of the caller's referrals.
+ *
+ * Returns the calling user's referral funnel counters: shared rows, clicks, signups, conversions (first paid invoice), rewards issued, fraudulent blocks and expiries.
+ */
+export type GetReferralsStatsInput = void;
+export type GetReferralsStatsOutput = Types.CommercePaymentsReferralStats;
+export const getReferralsStatsEndpoint = {
+  operationId: 'getReferralsStats' as const,
+  method: 'GET' as const,
+  path: '/api/v1/referrals/stats' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Records a referral link click for funnel tracking.
+ *
+ * Records a click against a referral code (first click time kept on idempotent replays). The caller IP is hashed (SHA-256) for the same-IP fraud block and never persisted in clear.
+ */
+export interface PostReferralsTrackClickInput {
+  body?: Types.CommercePaymentsReferralsControllerTrackReferralClickInput;
+}
+export type PostReferralsTrackClickOutput = Types.CommercePaymentsReferral;
+export const postReferralsTrackClickEndpoint = {
+  operationId: 'postReferralsTrackClick' as const,
+  method: 'POST' as const,
+  path: '/api/v1/referrals/track-click' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * The signed-up caller applies a referral code to their account.
+ *
+ * Attaches the calling user as the referee of the referral code. Fail-closed blocks: self-referral, referral cap (AccountCredits:MaxReferralsPerUser) and same-IP repeats under the same referrer are rejected or recorded as fraudulent without reward eligibility.
+ */
+export interface PostReferralsTrackSignupInput {
+  body?: Types.CommercePaymentsReferralsControllerTrackReferralSignupInput;
+}
+export type PostReferralsTrackSignupOutput = Types.CommercePaymentsReferralSignupResult;
+export const postReferralsTrackSignupEndpoint = {
+  operationId: 'postReferralsTrackSignup' as const,
+  method: 'POST' as const,
+  path: '/api/v1/referrals/track-signup' as const,
+  tags: ['CommercePaymentsReferrals'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List refunds with optional filters, newest first.
+ *
+ * Lists refunds with optional status and period filters, newest first. Non-admin actors are scoped to their own tenant.
+ */
+export interface GetRefundsInput {
+  query?: {
+    status?: Types.CommercePaymentsRefundStatus;
+    fromUtc?: string;
+    toUtc?: string;
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetRefundsOutput = Types.CommercePaymentsRefundListPage;
+export const getRefundsEndpoint = {
+  operationId: 'getRefunds' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Request a refund for a payment. Amounts at or above the manual-approval threshold
+ * are queued as pending; amounts below it (or all refunds when no threshold is
+ * configured) execute immediately.
+ *
+ * Records a refund request. Amounts at or above the configured manual-approval threshold enter the pending-approval queue; smaller amounts (or all refunds when no threshold is configured) execute immediately through the gateway.
+ */
+export interface PostRefundsInput {
+  body?: Types.CommercePaymentsRefundsControllerRequestRefundHttpInput;
+}
+export type PostRefundsOutput = Types.CommercePaymentsRequestRefundResult;
+export const postRefundsEndpoint = {
+  operationId: 'postRefunds' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Retrieve a single refund by id.
+ *
+ * Retrieves a single refund with its lifecycle state, decision trail and gateway references.
+ */
+export interface GetRefundByIdInput {
+  refundId: string;
+}
+export type GetRefundByIdOutput = Types.CommercePaymentsRefundRecord;
+export const getRefundByIdEndpoint = {
+  operationId: 'getRefundById' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/{refundId}' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Approve a pending refund and execute it. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Approves the pending refund and executes it through the gateway. Requires the payments:refunds:approve permission. Custom action per Google API guidelines.
+ */
+export interface PostRefundsApproveInput {
+  refundId: string;
+  body?: Types.CommercePaymentsRefundsControllerRefundDecisionInput;
+}
+export type PostRefundsApproveOutput = Types.CommercePaymentsRefundDecisionResult;
+export const postRefundsApproveEndpoint = {
+  operationId: 'postRefundsApprove' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds/{refundId}:approve' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reject a pending refund; no money moves. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Rejects the pending refund; no money moves. Requires the payments:refunds:approve permission. Custom action per Google API guidelines.
+ */
+export interface PostRefundsRejectInput {
+  refundId: string;
+  body?: Types.CommercePaymentsRefundsControllerRefundDecisionInput;
+}
+export type PostRefundsRejectOutput = Types.CommercePaymentsRefundDecisionResult;
+export const postRefundsRejectEndpoint = {
+  operationId: 'postRefundsReject' as const,
+  method: 'POST' as const,
+  path: '/api/v1/refunds/{refundId}:reject' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * The pending refund-approval queue, oldest first. Requires the
+ * `payments:refunds:approve` permission.
+ *
+ * Lists refunds waiting for a manual approval decision, oldest first. Requires the payments:refunds:approve permission; non-admin actors are scoped to their own tenant.
+ */
+export interface GetRefundsPendingApprovalsInput {
+  query?: {
+    page?: number;
+    pageSize?: number;
+  };
+}
+export type GetRefundsPendingApprovalsOutput = Types.CommercePaymentsRefundApprovalQueuePage;
+export const getRefundsPendingApprovalsEndpoint = {
+  operationId: 'getRefundsPendingApprovals' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/pending-approvals' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Refund statistics for an inclusive window.
+ *
+ * Returns refund counts by status, completed refund amounts by currency and the reason breakdown for an inclusive window.
+ */
+export interface GetRefundsStatisticsInput {
+  query?: {
+    fromUtc?: string;
+    toUtc?: string;
+  };
+}
+export type GetRefundsStatisticsOutput = Types.CommercePaymentsRefundStatistics;
+export const getRefundsStatisticsEndpoint = {
+  operationId: 'getRefundsStatistics' as const,
+  method: 'GET' as const,
+  path: '/api/v1/refunds/statistics' as const,
+  tags: ['CommercePaymentsRefunds'] as const,
+  requiresAuth: true,
 } as const;
 
 /**
@@ -7202,7 +9372,7 @@ export interface GetSlaSlosForGetSlaSlosInput {
     take?: number;
   };
 }
-export type GetSlaSlosForGetSlaSlosOutput = Array<Types.MonitoringSLASloDto>;
+export type GetSlaSlosForGetSlaSlosOutput = Types.MonitoringSLASloDto[];
 export const getSlaSlosForGetSlaSlosEndpoint = {
   operationId: 'getSlaSlosForGetSlaSlos' as const,
   method: 'GET' as const,
@@ -7320,7 +9490,7 @@ export interface GetSlaViolationsInput {
     take?: number;
   };
 }
-export type GetSlaViolationsOutput = Array<Types.MonitoringSLASloViolationDto>;
+export type GetSlaViolationsOutput = Types.MonitoringSLASloViolationDto[];
 export const getSlaViolationsEndpoint = {
   operationId: 'getSlaViolations' as const,
   method: 'GET' as const,
@@ -7982,7 +10152,7 @@ export const postSubscriptionsUpgradeEndpoint = {
 export interface GetSubscriptionsBillingHistoryInput {
   subscriptionId: string;
 }
-export type GetSubscriptionsBillingHistoryOutput = Array<Types.CommerceSubscriptionsBillingHistoryDto>;
+export type GetSubscriptionsBillingHistoryOutput = Types.CommerceSubscriptionsBillingHistoryDto[];
 export const getSubscriptionsBillingHistoryEndpoint = {
   operationId: 'getSubscriptionsBillingHistory' as const,
   method: 'GET' as const,
@@ -8033,7 +10203,7 @@ export const getSubscriptionsUsageEndpoint = {
  * Get all tax jurisdictions
  */
 export type GetTaxJurisdictionsForGetTaxJurisdictionsInput = void;
-export type GetTaxJurisdictionsForGetTaxJurisdictionsOutput = Array<Types.CommercePaymentsTaxRate>;
+export type GetTaxJurisdictionsForGetTaxJurisdictionsOutput = Types.CommercePaymentsTaxRate[];
 export const getTaxJurisdictionsForGetTaxJurisdictionsEndpoint = {
   operationId: 'getTaxJurisdictionsForGetTaxJurisdictions' as const,
   method: 'GET' as const,
@@ -8121,7 +10291,7 @@ export interface GetTaxRulesForGetTaxRulesInput {
     effectiveDate?: string;
   };
 }
-export type GetTaxRulesForGetTaxRulesOutput = Array<Types.CommercePaymentsTaxRate>;
+export type GetTaxRulesForGetTaxRulesOutput = Types.CommercePaymentsTaxRate[];
 export const getTaxRulesForGetTaxRulesEndpoint = {
   operationId: 'getTaxRulesForGetTaxRules' as const,
   method: 'GET' as const,
@@ -8664,6 +10834,255 @@ export const getReadyEndpoint = {
   requiresAuth: false,
 } as const;
 
+export interface PostScimV2BulkInput {
+  body?: Types.IdentityProvisioningScimScimBulkInput;
+}
+export type PostScimV2BulkOutput = Types.IdentityProvisioningScimScimBulkOutput;
+export const postScimV2BulkEndpoint = {
+  operationId: 'postScimV2Bulk' as const,
+  method: 'POST' as const,
+  path: '/scim/v2/Bulk' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists provisioned groups with optional filter and 1-based pagination.
+ */
+export interface GetScimV2GroupsForGetScimV2GroupsInput {
+  query?: {
+    filter?: string;
+    startIndex?: string;
+    count?: string;
+  };
+}
+export type GetScimV2GroupsForGetScimV2GroupsOutput = Types.IdentityProvisioningScimScimListResponseScimGroupResource;
+export const getScimV2GroupsForGetScimV2GroupsEndpoint = {
+  operationId: 'getScimV2GroupsForGetScimV2Groups' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Groups' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a group. Idempotent on externalId (repeat POST returns 200).
+ */
+export interface PostScimV2GroupsInput {
+  body?: Types.IdentityProvisioningScimScimGroupInput;
+}
+export type PostScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const postScimV2GroupsEndpoint = {
+  operationId: 'postScimV2Groups' as const,
+  method: 'POST' as const,
+  path: '/scim/v2/Groups' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Fetches one provisioned group with its members.
+ */
+export interface GetScimV2GroupsForGetScimV2GroupsByRoleIdInput {
+  roleId: string;
+}
+export type GetScimV2GroupsForGetScimV2GroupsByRoleIdOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const getScimV2GroupsForGetScimV2GroupsByRoleIdEndpoint = {
+  operationId: 'getScimV2GroupsForGetScimV2GroupsByRoleId' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Replaces a group, including its full member list (RFC 7644 §3.5.1).
+ */
+export interface PutScimV2GroupsInput {
+  roleId: string;
+  body?: Types.IdentityProvisioningScimScimGroupInput;
+}
+export type PutScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const putScimV2GroupsEndpoint = {
+  operationId: 'putScimV2Groups' as const,
+  method: 'PUT' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a group: memberships are removed and the backing role deactivated.
+ */
+export interface DeleteScimV2GroupsInput {
+  roleId: string;
+}
+export type DeleteScimV2GroupsOutput = void;
+export const deleteScimV2GroupsEndpoint = {
+  operationId: 'deleteScimV2Groups' as const,
+  method: 'DELETE' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Patches a group: displayName, externalId and the members paths
+ * (`members`, `members[value eq "…"]`). Membership changes are
+ * audited and bump the tenant security version.
+ */
+export interface PatchScimV2GroupsInput {
+  roleId: string;
+  body?: Types.IdentityProvisioningScimScimPatchInput;
+}
+export type PatchScimV2GroupsOutput = Types.IdentityProvisioningScimScimGroupResource;
+export const patchScimV2GroupsEndpoint = {
+  operationId: 'patchScimV2Groups' as const,
+  method: 'PATCH' as const,
+  path: '/scim/v2/Groups/{roleId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetScimV2ResourcetypesInput = void;
+export type GetScimV2ResourcetypesOutput = void;
+export const getScimV2ResourcetypesEndpoint = {
+  operationId: 'getScimV2Resourcetypes' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/ResourceTypes' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetScimV2SchemasForGetScimV2SchemasInput = void;
+export type GetScimV2SchemasForGetScimV2SchemasOutput = void;
+export const getScimV2SchemasForGetScimV2SchemasEndpoint = {
+  operationId: 'getScimV2SchemasForGetScimV2Schemas' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Schemas' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetScimV2SchemasForGetScimV2SchemasBySchemaIdInput {
+  schemaId: string;
+}
+export type GetScimV2SchemasForGetScimV2SchemasBySchemaIdOutput = void;
+export const getScimV2SchemasForGetScimV2SchemasBySchemaIdEndpoint = {
+  operationId: 'getScimV2SchemasForGetScimV2SchemasBySchemaId' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Schemas/{schemaId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetScimV2ServiceproviderconfigInput = void;
+export type GetScimV2ServiceproviderconfigOutput = void;
+export const getScimV2ServiceproviderconfigEndpoint = {
+  operationId: 'getScimV2Serviceproviderconfig' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/ServiceProviderConfig' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists provisioned users with optional filter and 1-based pagination.
+ */
+export interface GetScimV2UsersForGetScimV2UsersInput {
+  query?: {
+    filter?: string;
+    startIndex?: string;
+    count?: string;
+  };
+}
+export type GetScimV2UsersForGetScimV2UsersOutput = Types.IdentityProvisioningScimScimListResponseScimUserResource;
+export const getScimV2UsersForGetScimV2UsersEndpoint = {
+  operationId: 'getScimV2UsersForGetScimV2Users' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Users' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a user. Idempotent on externalId: a repeated POST with the same
+ * externalId returns the existing resource with 200 instead of creating a copy.
+ */
+export interface PostScimV2UsersInput {
+  body?: Types.IdentityProvisioningScimScimUserInput;
+}
+export type PostScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
+export const postScimV2UsersEndpoint = {
+  operationId: 'postScimV2Users' as const,
+  method: 'POST' as const,
+  path: '/scim/v2/Users' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Fetches one provisioned user by id.
+ */
+export interface GetScimV2UsersForGetScimV2UsersByUserIdInput {
+  userId: string;
+}
+export type GetScimV2UsersForGetScimV2UsersByUserIdOutput = Types.IdentityProvisioningScimScimUserResource;
+export const getScimV2UsersForGetScimV2UsersByUserIdEndpoint = {
+  operationId: 'getScimV2UsersForGetScimV2UsersByUserId' as const,
+  method: 'GET' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Replaces a provisioned user (RFC 7644 §3.5.1).
+ */
+export interface PutScimV2UsersInput {
+  userId: string;
+  body?: Types.IdentityProvisioningScimScimUserInput;
+}
+export type PutScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
+export const putScimV2UsersEndpoint = {
+  operationId: 'putScimV2Users' as const,
+  method: 'PUT' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deprovisions a user: soft delete plus immediate session and token revocation.
+ */
+export interface DeleteScimV2UsersInput {
+  userId: string;
+}
+export type DeleteScimV2UsersOutput = void;
+export const deleteScimV2UsersEndpoint = {
+  operationId: 'deleteScimV2Users' as const,
+  method: 'DELETE' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Patches a provisioned user (RFC 7644 §3.5.2 add/remove/replace).
+ */
+export interface PatchScimV2UsersInput {
+  userId: string;
+  body?: Types.IdentityProvisioningScimScimPatchInput;
+}
+export type PatchScimV2UsersOutput = Types.IdentityProvisioningScimScimUserResource;
+export const patchScimV2UsersEndpoint = {
+  operationId: 'patchScimV2Users' as const,
+  method: 'PATCH' as const,
+  path: '/scim/v2/Users/{userId}' as const,
+  tags: ['IdentityProvisioningScim'] as const,
+  requiresAuth: true,
+} as const;
+
 /**
  * Serve transformed asset (resized, cropped, etc.) with CDN caching.
  *
@@ -8772,7 +11191,7 @@ export interface GetVTestingTemplatesInput {
     includeArchived?: boolean;
   };
 }
-export type GetVTestingTemplatesOutput = Array<Types.TestingLabTestingEventTemplateProjection>;
+export type GetVTestingTemplatesOutput = Types.TestingLabTestingEventTemplateProjection[];
 export const getVTestingTemplatesEndpoint = {
   operationId: 'getVTestingTemplates' as const,
   method: 'GET' as const,
@@ -8960,7 +11379,7 @@ export interface GetAccessReviewsCampaignsActiveInput {
     tenantId?: string;
   };
 }
-export type GetAccessReviewsCampaignsActiveOutput = Array<Types.IdentityAuthorizationAccessReviewCampaign>;
+export type GetAccessReviewsCampaignsActiveOutput = Types.IdentityAuthorizationAccessReviewCampaign[];
 export const getAccessReviewsCampaignsActiveEndpoint = {
   operationId: 'getAccessReviewsCampaignsActive' as const,
   method: 'GET' as const,
@@ -9010,7 +11429,7 @@ export interface GetAccessReviewsItemsPendingInput {
     tenantId?: string;
   };
 }
-export type GetAccessReviewsItemsPendingOutput = Array<Types.IdentityAuthorizationAccessReviewItem>;
+export type GetAccessReviewsItemsPendingOutput = Types.IdentityAuthorizationAccessReviewItem[];
 export const getAccessReviewsItemsPendingEndpoint = {
   operationId: 'getAccessReviewsItemsPending' as const,
   method: 'GET' as const,
@@ -9324,7 +11743,7 @@ export const getAdminAuditLogsEndpoint = {
 export interface PostAdminAuditLogsExportInput {
   body?: Types.ComplianceAuditAuditExportInput;
 }
-export type PostAdminAuditLogsExportOutput = void;
+export type PostAdminAuditLogsExportOutput = Blob;
 export const postAdminAuditLogsExportEndpoint = {
   operationId: 'postAdminAuditLogsExport' as const,
   method: 'POST' as const,
@@ -9354,7 +11773,7 @@ export const getAdminAuditLogsExportProgressEndpoint = {
 export interface PostAdminAuditLogsExportCsvInput {
   body?: Types.ComplianceAuditAuditExportInput;
 }
-export type PostAdminAuditLogsExportCsvOutput = void;
+export type PostAdminAuditLogsExportCsvOutput = Blob;
 export const postAdminAuditLogsExportCsvEndpoint = {
   operationId: 'postAdminAuditLogsExportCsv' as const,
   method: 'POST' as const,
@@ -9374,6 +11793,226 @@ export const postAdminAuditLogsExportJsonEndpoint = {
   operationId: 'postAdminAuditLogsExportJson' as const,
   method: 'POST' as const,
   path: '/v1/admin/audit-logs/export/json' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
+ *
+ * Null tenant context selects global-only rows. SHA256 detects content changes against
+ *             an independently protected expected digest; it does not certify event provenance or synchronize source clocks.
+ */
+export interface PostAdminAuditLogsReplaySnapshotsInput {
+  body?: Types.ComplianceAuditCaptureAuditReplayInput;
+}
+export type PostAdminAuditLogsReplaySnapshotsOutput = Types.ComplianceAuditAuditReplaySnapshotOutput;
+export const postAdminAuditLogsReplaySnapshotsEndpoint = {
+  operationId: 'postAdminAuditLogsReplaySnapshots' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/replay/snapshots' as const,
+  tags: ['ComplianceAuditReplay'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Downloads a completed scheduled export stored for its tenant.
+ */
+export interface GetAdminAuditLogsScheduledExportHistoryDownloadInput {
+  historyId: string;
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAdminAuditLogsScheduledExportHistoryDownloadOutput = void;
+export const getAdminAuditLogsScheduledExportHistoryDownloadEndpoint = {
+  operationId: 'getAdminAuditLogsScheduledExportHistoryDownload' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/scheduled-export-history/{historyId}/download' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists recurring audit exports for a tenant.
+ */
+export interface GetAdminAuditLogsScheduledExportsInput {
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAdminAuditLogsScheduledExportsOutput = Types.ComplianceAuditScheduledAuditExportOutput[];
+export const getAdminAuditLogsScheduledExportsEndpoint = {
+  operationId: 'getAdminAuditLogsScheduledExports' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/scheduled-exports' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a recurring audit export delivered to the tenant's configured storage.
+ *
+ * Uses a five-field cron expression and the supplied timezone. During a repeated local time at the end of daylight
+ * saving, the first UTC occurrence is used. Files are removed after the configured retention period while their
+ * execution history remains available.
+ */
+export interface PostAdminAuditLogsScheduledExportsInput {
+  body?: Types.ComplianceAuditCreateScheduledAuditExportInput;
+}
+export type PostAdminAuditLogsScheduledExportsOutput = Types.ComplianceAuditScheduledAuditExportOutput;
+export const postAdminAuditLogsScheduledExportsEndpoint = {
+  operationId: 'postAdminAuditLogsScheduledExports' as const,
+  method: 'POST' as const,
+  path: '/v1/admin/audit-logs/scheduled-exports' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Disables a recurring audit export without deleting its execution history.
+ */
+export interface DeleteAdminAuditLogsScheduledExportsInput {
+  exportId: string;
+  query?: {
+    tenantId?: string;
+  };
+}
+export type DeleteAdminAuditLogsScheduledExportsOutput = void;
+export const deleteAdminAuditLogsScheduledExportsEndpoint = {
+  operationId: 'deleteAdminAuditLogsScheduledExports' as const,
+  method: 'DELETE' as const,
+  path: '/v1/admin/audit-logs/scheduled-exports/{exportId}' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists recent executions for a scheduled audit export.
+ */
+export interface GetAdminAuditLogsScheduledExportsHistoryInput {
+  exportId: string;
+  query?: {
+    tenantId?: string;
+  };
+}
+export type GetAdminAuditLogsScheduledExportsHistoryOutput = Types.ComplianceAuditAuditExportHistoryOutput[];
+export const getAdminAuditLogsScheduledExportsHistoryEndpoint = {
+  operationId: 'getAdminAuditLogsScheduledExportsHistory' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/scheduled-exports/{exportId}/history' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches audit events by multiple action types, groups, and taxonomy categories.
+ */
+export interface GetAdminAuditLogsSearchByActionTypeInput {
+  query?: {
+    ActionTypes?: string[];
+    ActionGroups?: string[];
+    Categories?: string[];
+    LogicalOperator?: Types.ComplianceAuditAuditActionTypeLogicalOperator;
+    UserId?: string;
+    TenantId?: string;
+    StartDate?: string;
+    EndDate?: string;
+    Skip?: number;
+    Take?: number;
+    SortBy?: Types.ComplianceAuditAuditActionTypeSortField;
+    SortDirection?: Types.ComplianceAuditAuditActionTypeSortDirection;
+    IncludeTrends?: boolean;
+    TrendBucketSize?: Types.ComplianceAuditAuditActivityBucketSize;
+    IncludeRelatedActions?: boolean;
+  };
+}
+export type GetAdminAuditLogsSearchByActionTypeOutput = Types.ComplianceAuditAuditActionTypeSearchOutput;
+export const getAdminAuditLogsSearchByActionTypeEndpoint = {
+  operationId: 'getAdminAuditLogsSearchByActionType' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/search/by-action-type' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Exports matching action-type audit events as CSV or JSON.
+ */
+export interface GetAdminAuditLogsSearchByActionTypeExportInput {
+  query?: {
+    format?: string;
+    ActionTypes?: string[];
+    ActionGroups?: string[];
+    Categories?: string[];
+    LogicalOperator?: Types.ComplianceAuditAuditActionTypeLogicalOperator;
+    UserId?: string;
+    TenantId?: string;
+    StartDate?: string;
+    EndDate?: string;
+    Skip?: number;
+    Take?: number;
+    SortBy?: Types.ComplianceAuditAuditActionTypeSortField;
+    SortDirection?: Types.ComplianceAuditAuditActionTypeSortDirection;
+    IncludeTrends?: boolean;
+    TrendBucketSize?: Types.ComplianceAuditAuditActivityBucketSize;
+    IncludeRelatedActions?: boolean;
+  };
+}
+export type GetAdminAuditLogsSearchByActionTypeExportOutput = void;
+export const getAdminAuditLogsSearchByActionTypeExportEndpoint = {
+  operationId: 'getAdminAuditLogsSearchByActionTypeExport' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/search/by-action-type/export' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the hierarchical action type taxonomy and predefined investigation groups.
+ */
+export type GetAdminAuditLogsSearchByActionTypeTaxonomyInput = void;
+export type GetAdminAuditLogsSearchByActionTypeTaxonomyOutput = Types.ComplianceAuditAuditActionTypeTaxonomyOutput;
+export const getAdminAuditLogsSearchByActionTypeTaxonomyEndpoint = {
+  operationId: 'getAdminAuditLogsSearchByActionTypeTaxonomy' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/search/by-action-type/taxonomy' as const,
+  tags: ['ComplianceAudit'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Searches audit records over an explicit or relative date range and returns matching events with a time histogram.
+ *
+ * Use `start`/`end` with ISO-8601 timestamps, Unix seconds or milliseconds, or relative expressions
+ * such as `now-7d` and `now`. Alternatively use `period=last24h|last7d|last30d|today|thisWeek|thisMonth`.
+ * Offset-free values are interpreted in `timeZoneId` (UTC by default). Date-only end values include that
+ * calendar day. Hourly or daily histogram buckets include both UTC and local timestamps.
+ */
+export interface GetAdminAuditLogsSearchByDateRangeInput {
+  query?: {
+    Start?: string;
+    End?: string;
+    Period?: string;
+    TimeZoneId?: string;
+    BucketSize?: Types.ComplianceAuditAuditActivityBucketSize;
+    UserId?: string;
+    TenantId?: string;
+    ActionType?: string;
+    ResourceType?: string;
+    Category?: Types.ComplianceAuditAuditCategory;
+    RiskLevel?: Types.ComplianceAuditAuditRiskLevel;
+    Success?: boolean;
+    IpAddress?: string;
+    Skip?: number;
+    Take?: number;
+  };
+}
+export type GetAdminAuditLogsSearchByDateRangeOutput = Types.ComplianceAuditAuditDateRangeSearchOutput;
+export const getAdminAuditLogsSearchByDateRangeEndpoint = {
+  operationId: 'getAdminAuditLogsSearchByDateRange' as const,
+  method: 'GET' as const,
+  path: '/v1/admin/audit-logs/search/by-date-range' as const,
   tags: ['ComplianceAudit'] as const,
   requiresAuth: true,
 } as const;
@@ -9412,7 +12051,7 @@ export const postAdminEventsReplayEndpoint = {
 } as const;
 
 export type GetAdminEventsDeadLettersInput = void;
-export type GetAdminEventsDeadLettersOutput = Array<Types.APIEventingDeadLetterEvent>;
+export type GetAdminEventsDeadLettersOutput = Types.APIEventingDeadLetterEvent[];
 export const getAdminEventsDeadLettersEndpoint = {
   operationId: 'getAdminEventsDeadLetters' as const,
   method: 'GET' as const,
@@ -9644,7 +12283,7 @@ export interface GetAiHistoryInput {
     take?: number;
   };
 }
-export type GetAiHistoryOutput = Array<Types.AIAiConversationHistoryEntryDto>;
+export type GetAiHistoryOutput = Types.AIAiConversationHistoryEntryDto[];
 export const getAiHistoryEndpoint = {
   operationId: 'getAiHistory' as const,
   method: 'GET' as const,
@@ -9674,7 +12313,7 @@ export interface GetAiPromptTemplatesForGetAiPromptTemplatesInput {
     includeInactive?: boolean;
   };
 }
-export type GetAiPromptTemplatesForGetAiPromptTemplatesOutput = Array<Types.AIAiPromptTemplateDto>;
+export type GetAiPromptTemplatesForGetAiPromptTemplatesOutput = Types.AIAiPromptTemplateDto[];
 export const getAiPromptTemplatesForGetAiPromptTemplatesEndpoint = {
   operationId: 'getAiPromptTemplatesForGetAiPromptTemplates' as const,
   method: 'GET' as const,
@@ -9846,7 +12485,7 @@ export interface GetAssessmentsInteractiveVideoCuesContentEnrollmentsInput {
   contentId: string;
   enrollmentId: string;
 }
-export type GetAssessmentsInteractiveVideoCuesContentEnrollmentsOutput = Array<Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto>;
+export type GetAssessmentsInteractiveVideoCuesContentEnrollmentsOutput = Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto[];
 export const getAssessmentsInteractiveVideoCuesContentEnrollmentsEndpoint = {
   operationId: 'getAssessmentsInteractiveVideoCuesContentEnrollments' as const,
   method: 'GET' as const,
@@ -9924,7 +12563,7 @@ export const deleteAssessmentsRubricEndpoint = {
 export interface GetAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissionsInput {
   assessmentId: string;
 }
-export type GetAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissionsOutput = Array<Types.LearningAssessmentsAssessmentSubmissionDto>;
+export type GetAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissionsOutput = Types.LearningAssessmentsAssessmentSubmissionDto[];
 export const getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissionsEndpoint = {
   operationId: 'getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissions' as const,
   method: 'GET' as const,
@@ -10032,7 +12671,7 @@ export const putAssessmentsGroupEndpoint = {
 export interface GetAssessmentsInteractiveVideoCuesInput {
   id: string;
 }
-export type GetAssessmentsInteractiveVideoCuesOutput = Array<Types.LearningAssessmentsInteractiveVideoAssessmentCueDto>;
+export type GetAssessmentsInteractiveVideoCuesOutput = Types.LearningAssessmentsInteractiveVideoAssessmentCueDto[];
 export const getAssessmentsInteractiveVideoCuesEndpoint = {
   operationId: 'getAssessmentsInteractiveVideoCues' as const,
   method: 'GET' as const,
@@ -10198,7 +12837,7 @@ export const postAssessmentsContentRuntimeSubmissionsIndividualEndpoint = {
 export interface GetAssessmentsCourseInput {
   courseId: string;
 }
-export type GetAssessmentsCourseOutput = Array<Types.LearningAssessmentsAssessmentDto>;
+export type GetAssessmentsCourseOutput = Types.LearningAssessmentsAssessmentDto[];
 export const getAssessmentsCourseEndpoint = {
   operationId: 'getAssessmentsCourse' as const,
   method: 'GET' as const,
@@ -10261,7 +12900,7 @@ export const getAssessmentsCourseGradebookEndpoint = {
 export interface GetAssessmentsCourseGroupsInput {
   courseId: string;
 }
-export type GetAssessmentsCourseGroupsOutput = Array<Types.LearningAssessmentsAssessmentGroupDto>;
+export type GetAssessmentsCourseGroupsOutput = Types.LearningAssessmentsAssessmentGroupDto[];
 export const getAssessmentsCourseGroupsEndpoint = {
   operationId: 'getAssessmentsCourseGroups' as const,
   method: 'GET' as const,
@@ -10322,7 +12961,7 @@ export const deleteAssessmentsGroupsEndpoint = {
 export interface GetAssessmentsMySubmissionsInput {
   enrollmentId: string;
 }
-export type GetAssessmentsMySubmissionsOutput = Array<Types.LearningAssessmentsLearnerAssessmentSubmissionDto>;
+export type GetAssessmentsMySubmissionsOutput = Types.LearningAssessmentsLearnerAssessmentSubmissionDto[];
 export const getAssessmentsMySubmissionsEndpoint = {
   operationId: 'getAssessmentsMySubmissions' as const,
   method: 'GET' as const,
@@ -10347,8 +12986,8 @@ export const getAssessmentsPeerReviewsEndpoint = {
 } as const;
 
 /**
- * Submit a claimed peer review. Feedback is mandatory; scores follow the assessment's
- * rubric rules (rubric grid when one exists, plain 0..MaxScore otherwise).
+ * Legacy peer-review submit. Valid requests fail closed until peer review is implemented
+ * as a canonical grading stage.
  */
 export interface PostAssessmentsPeerReviewsSubmitInput {
   reviewId: string;
@@ -10461,7 +13100,7 @@ export const getAssessmentsSubmissionsForGetAssessmentsSubmissionsBySubmissionId
 export interface GetAssessmentsSubmissionsPeerReviewsInput {
   submissionId: string;
 }
-export type GetAssessmentsSubmissionsPeerReviewsOutput = Array<Types.LearningAssessmentsInstructorPeerReviewDto>;
+export type GetAssessmentsSubmissionsPeerReviewsOutput = Types.LearningAssessmentsInstructorPeerReviewDto[];
 export const getAssessmentsSubmissionsPeerReviewsEndpoint = {
   operationId: 'getAssessmentsSubmissionsPeerReviews' as const,
   method: 'GET' as const,
@@ -10471,13 +13110,13 @@ export const getAssessmentsSubmissionsPeerReviewsEndpoint = {
 } as const;
 
 /**
- * Reviews received on a submission (own row, or the group's rows for group submissions).
+ * Reviews received on a single individual or collective submission.
  * Owner-only, anonymized: no reviewer identity exists in the DTO at all.
  */
 export interface GetAssessmentsSubmissionsReceivedPeerReviewsInput {
   submissionId: string;
 }
-export type GetAssessmentsSubmissionsReceivedPeerReviewsOutput = Array<Types.LearningAssessmentsReceivedPeerReviewDto>;
+export type GetAssessmentsSubmissionsReceivedPeerReviewsOutput = Types.LearningAssessmentsReceivedPeerReviewDto[];
 export const getAssessmentsSubmissionsReceivedPeerReviewsEndpoint = {
   operationId: 'getAssessmentsSubmissionsReceivedPeerReviews' as const,
   method: 'GET' as const,
@@ -11009,11 +13648,447 @@ export const getAssetsSocialMediaEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface GetAuditCompliancePackagingForGetAuditCompliancePackagingInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditCompliancePackagingForGetAuditCompliancePackagingOutput = Types.ComplianceAuditCompliancePackageSummary[];
+export const getAuditCompliancePackagingForGetAuditCompliancePackagingEndpoint = {
+  operationId: 'getAuditCompliancePackagingForGetAuditCompliancePackaging' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditCompliancePackagingInput {
+  body?: Types.ComplianceAuditCreateCompliancePackageInput;
+}
+export type PostAuditCompliancePackagingOutput = Types.ComplianceAuditCompliancePackageOutput;
+export const postAuditCompliancePackagingEndpoint = {
+  operationId: 'postAuditCompliancePackaging' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/compliance-packaging' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditCompliancePackagingForGetAuditCompliancePackagingByIdInput {
+  id: string;
+}
+export type GetAuditCompliancePackagingForGetAuditCompliancePackagingByIdOutput = Types.ComplianceAuditCompliancePackageOutput;
+export const getAuditCompliancePackagingForGetAuditCompliancePackagingByIdEndpoint = {
+  operationId: 'getAuditCompliancePackagingForGetAuditCompliancePackagingById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging/{id}' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditCompliancePackagingDownloadInput {
+  id: string;
+}
+export type GetAuditCompliancePackagingDownloadOutput = Blob;
+export const getAuditCompliancePackagingDownloadEndpoint = {
+  operationId: 'getAuditCompliancePackagingDownload' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging/{id}/download' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditCompliancePackagingVerificationInput {
+  id: string;
+}
+export type GetAuditCompliancePackagingVerificationOutput = Types.ComplianceAuditComplianceArtifactVerification;
+export const getAuditCompliancePackagingVerificationEndpoint = {
+  operationId: 'getAuditCompliancePackagingVerification' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging/{id}/verification' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsOutput = Types.ComplianceAuditComplianceDocumentOutput[];
+export const getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsEndpoint = {
+  operationId: 'getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocuments' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging/documents' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditCompliancePackagingDocumentsInput {
+  body?: Types.ComplianceAuditUploadComplianceDocumentInput;
+}
+export type PostAuditCompliancePackagingDocumentsOutput = Types.ComplianceAuditComplianceDocumentOutput;
+export const postAuditCompliancePackagingDocumentsEndpoint = {
+  operationId: 'postAuditCompliancePackagingDocuments' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/compliance-packaging/documents' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdInput {
+  id: string;
+}
+export type GetAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdOutput = Types.ComplianceAuditComplianceDocumentOutput;
+export const getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint = {
+  operationId: 'getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging/documents/{id}' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditCompliancePackagingDocumentsReviewInput {
+  id: string;
+  body?: Types.ComplianceAuditReviewComplianceDocumentInput;
+}
+export type PostAuditCompliancePackagingDocumentsReviewOutput = Types.ComplianceAuditComplianceDocumentOutput;
+export const postAuditCompliancePackagingDocumentsReviewEndpoint = {
+  operationId: 'postAuditCompliancePackagingDocumentsReview' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/compliance-packaging/documents/{id}/review' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export type GetAuditCompliancePackagingTemplatesInput = void;
+export type GetAuditCompliancePackagingTemplatesOutput = Types.ComplianceAuditComplianceFrameworkTemplate[];
+export const getAuditCompliancePackagingTemplatesEndpoint = {
+  operationId: 'getAuditCompliancePackagingTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/compliance-packaging/templates' as const,
+  tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
+export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint = {
+  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPolicies' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditRetentionPoliciesInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostAuditRetentionPoliciesOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postAuditRetentionPoliciesEndpoint = {
+  operationId: 'postAuditRetentionPolicies' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/retention-policies' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdInput {
+  id: string;
+}
+export type GetAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint = {
+  operationId: 'getAuditRetentionPoliciesForGetAuditRetentionPoliciesById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetAuditRetentionPoliciesConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'getAuditRetentionPoliciesConfiguration' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAuditRetentionPoliciesConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutAuditRetentionPoliciesConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putAuditRetentionPoliciesConfigurationEndpoint = {
+  operationId: 'putAuditRetentionPoliciesConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/retention-policies/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetAuditRetentionPoliciesTemplatesInput = void;
+export type GetAuditRetentionPoliciesTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
+export const getAuditRetentionPoliciesTemplatesEndpoint = {
+  operationId: 'getAuditRetentionPoliciesTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-policies/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditRetentionSimulationForGetAuditRetentionSimulationInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditRetentionSimulationForGetAuditRetentionSimulationOutput = Types.ComplianceAuditAuditRetentionSimulationSummary[];
+export const getAuditRetentionSimulationForGetAuditRetentionSimulationEndpoint = {
+  operationId: 'getAuditRetentionSimulationForGetAuditRetentionSimulation' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-simulation' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAuditRetentionSimulationInput {
+  body?: Types.ComplianceAuditRunAuditRetentionSimulationInput;
+}
+export type PostAuditRetentionSimulationOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const postAuditRetentionSimulationEndpoint = {
+  operationId: 'postAuditRetentionSimulation' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/retention-simulation' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetAuditRetentionSimulationForGetAuditRetentionSimulationByIdInput {
+  id: string;
+}
+export type GetAuditRetentionSimulationForGetAuditRetentionSimulationByIdOutput = Types.ComplianceAuditAuditRetentionSimulationOutput;
+export const getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoint = {
+  operationId: 'getAuditRetentionSimulationForGetAuditRetentionSimulationById' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-simulation/{id}' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets the tenant retention policy configuration. With includeInherited, a tenant
+ * without an explicit configuration receives the platform baseline template the policy tree inherits from.
+ */
+export interface GetAuditRetentionSimulationConfigurationInput {
+  query?: {
+    includeInherited?: boolean;
+  };
+}
+export type GetAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const getAuditRetentionSimulationConfigurationEndpoint = {
+  operationId: 'getAuditRetentionSimulationConfiguration' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAuditRetentionSimulationConfigurationInput {
+  body?: Types.ComplianceAuditConfigureAuditRetentionInput;
+}
+export type PutAuditRetentionSimulationConfigurationOutput = Types.ComplianceAuditAuditRetentionConfigurationOutput;
+export const putAuditRetentionSimulationConfigurationEndpoint = {
+  operationId: 'putAuditRetentionSimulationConfiguration' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/retention-simulation/configuration' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the pre-built retention policy templates (platform baseline plus SOC 2, ISO 27001, GDPR,
+ * HIPAA, PCI DSS and FedRAMP presets) with their inheritance chain and sensitivity retention floors.
+ */
+export type GetAuditRetentionSimulationTemplatesInput = void;
+export type GetAuditRetentionSimulationTemplatesOutput = Types.ComplianceAuditAuditRetentionPolicyTemplate[];
+export const getAuditRetentionSimulationTemplatesEndpoint = {
+  operationId: 'getAuditRetentionSimulationTemplates' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/retention-simulation/templates' as const,
+  tags: ['ComplianceAuditRetentionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security alert queue for the current tenant.
+ */
+export interface GetAuditSecurityEventsAlertsInput {
+  query?: {
+    status?: Types.ComplianceAuditSecurityAlertStatus;
+    severity?: Types.ComplianceAuditAuditRiskLevel;
+    kind?: Types.ComplianceAuditSecurityEventKind;
+    ruleId?: string;
+    subjectUserId?: string;
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditSecurityEventsAlertsOutput = Types.ComplianceAuditSecurityAlertOutput[];
+export const getAuditSecurityEventsAlertsEndpoint = {
+  operationId: 'getAuditSecurityEventsAlerts' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/alerts' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a security alert, completing the incident lifecycle (detection → acknowledgement →
+ * resolution). The acting administrator is derived from the request context and recorded together
+ * with the resolution instant and note; the resolution is audited as a security event.
+ */
+export interface PostAuditSecurityEventsAlertsResolveInput {
+  alertId: string;
+  body?: Types.ComplianceAuditResolveSecurityAlertInput;
+}
+export type PostAuditSecurityEventsAlertsResolveOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postAuditSecurityEventsAlertsResolveEndpoint = {
+  operationId: 'postAuditSecurityEventsAlertsResolve' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/alerts/{alertId}:resolve' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Acknowledges an open security alert. The acting administrator is derived from the request context.
+ */
+export interface PostAuditSecurityEventsAlertsAcknowledgeInput {
+  alertId: string;
+  body?: Types.ComplianceAuditAcknowledgeSecurityAlertInput;
+}
+export type PostAuditSecurityEventsAlertsAcknowledgeOutput = Types.ComplianceAuditSecurityAlertOutput;
+export const postAuditSecurityEventsAlertsAcknowledgeEndpoint = {
+  operationId: 'postAuditSecurityEventsAlertsAcknowledge' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/alerts/{alertId}/acknowledge' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the durable delivery status of the security event pipeline for this instance.
+ */
+export type GetAuditSecurityEventsDeliveryStatusInput = void;
+export type GetAuditSecurityEventsDeliveryStatusOutput = Types.ComplianceAuditSecurityEventDeliveryStatusOutput;
+export const getAuditSecurityEventsDeliveryStatusEndpoint = {
+  operationId: 'getAuditSecurityEventsDeliveryStatus' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/delivery-status' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Runs one retention enforcement pass for the current tenant now. Passes respect legal holds
+ * and are recorded in the execution history; use `DryRun` to preview deletions.
+ */
+export interface PostAuditSecurityEventsRetentionEnforceInput {
+  body?: Types.ComplianceAuditEnforceSecurityLogRetentionInput;
+}
+export type PostAuditSecurityEventsRetentionEnforceOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput;
+export const postAuditSecurityEventsRetentionEnforceEndpoint = {
+  operationId: 'postAuditSecurityEventsRetentionEnforce' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/security-events/retention/enforce' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the retention execution history for the current tenant.
+ */
+export interface GetAuditSecurityEventsRetentionExecutionsInput {
+  query?: {
+    skip?: number;
+    take?: number;
+  };
+}
+export type GetAuditSecurityEventsRetentionExecutionsOutput = Types.ComplianceAuditSecurityLogRetentionExecutionOutput[];
+export const getAuditSecurityEventsRetentionExecutionsEndpoint = {
+  operationId: 'getAuditSecurityEventsRetentionExecutions' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/retention/executions' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the security log retention policy for the current tenant, when configured.
+ */
+export type GetAuditSecurityEventsRetentionPolicyInput = void;
+export type GetAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const getAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'getAuditSecurityEventsRetentionPolicy' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates or updates the security log retention policy for the current tenant.
+ */
+export interface PutAuditSecurityEventsRetentionPolicyInput {
+  body?: Types.ComplianceAuditConfigureSecurityLogRetentionInput;
+}
+export type PutAuditSecurityEventsRetentionPolicyOutput = Types.ComplianceAuditSecurityLogRetentionPolicyOutput;
+export const putAuditSecurityEventsRetentionPolicyEndpoint = {
+  operationId: 'putAuditSecurityEventsRetentionPolicy' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/security-events/retention/policy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Returns the complete security event taxonomy used by the security event pipeline.
+ */
+export type GetAuditSecurityEventsTaxonomyInput = void;
+export type GetAuditSecurityEventsTaxonomyOutput = Types.ComplianceAuditSecurityEventTaxonomyOutput;
+export const getAuditSecurityEventsTaxonomyEndpoint = {
+  operationId: 'getAuditSecurityEventsTaxonomy' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/security-events/taxonomy' as const,
+  tags: ['ComplianceAuditSecurityEvents'] as const,
+  requiresAuth: true,
+} as const;
+
 /**
  * List all API keys for the current user
  */
 export type GetAuthApiKeysInput = void;
-export type GetAuthApiKeysOutput = Array<Types.IdentityAuthenticationApiKeyDto>;
+export type GetAuthApiKeysOutput = Types.IdentityAuthenticationApiKeyDto[];
 export const getAuthApiKeysEndpoint = {
   operationId: 'getAuthApiKeys' as const,
   method: 'GET' as const,
@@ -11054,6 +14129,23 @@ export const postAuthApiKeysRevokeEndpoint = {
 } as const;
 
 /**
+ * Rotate an API key: issues a replacement key and starts the old key's
+ * overlap (grace) window, after which the old key is revoked.
+ */
+export interface PostAuthApiKeysRotateInput {
+  keyId: string;
+  body?: Types.IdentityAuthenticationRotateApiKeyInput;
+}
+export type PostAuthApiKeysRotateOutput = Types.IdentityAuthenticationRotateApiKeyOutput;
+export const postAuthApiKeysRotateEndpoint = {
+  operationId: 'postAuthApiKeysRotate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/api-keys/{keyId}:rotate' as const,
+  tags: ['AuthApiKeys'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Initiate Discord OAuth sign-in
  *
  * Initiates the Discord OAuth authorization-code sign-in flow and returns the authorization URL with the CSRF state parameter. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-authorize.
@@ -11083,6 +14175,40 @@ export const postAuthDiscordSignInCallbackEndpoint = {
   operationId: 'postAuthDiscordSignInCallback' as const,
   method: 'POST' as const,
   path: '/v1/auth/discord:sign-in-callback' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Consume a one-time email sign-in code.
+ *
+ * Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.
+ */
+export interface PostAuthEmailCodeConsumeInput {
+  body?: Types.IdentityAuthenticationConsumeEmailCodeInput;
+}
+export type PostAuthEmailCodeConsumeOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthEmailCodeConsumeEndpoint = {
+  operationId: 'postAuthEmailCodeConsume' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/email-code:consume' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Request a one-time email sign-in code.
+ *
+ * Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.
+ */
+export interface PostAuthEmailCodeRequestInput {
+  body?: Types.IdentityAuthenticationRequestEmailCodeInput;
+}
+export type PostAuthEmailCodeRequestOutput = Types.IdentityAuthenticationEmailCodeRequestResult;
+export const postAuthEmailCodeRequestEndpoint = {
+  operationId: 'postAuthEmailCodeRequest' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/email-code:request' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
 } as const;
@@ -11124,7 +14250,7 @@ export const postAuthEmailVerifyEndpoint = {
 /**
  * List the external logins linked to the current user, newest first.
  *
- * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.
+ * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked. Granted OAuth scopes (issue #250) are conveyed in the X-Granted-Scopes header as comma-separated 'provider=iso8601-consent-timestamp|consent-version|url-encoded-space-separated-scopes' triples, one entry per link with a recorded consent (consent-version 0 marks a legacy row); the header is omitted when no consents are recorded.
  */
 export type HeadAuthExternalLoginsInput = void;
 export type HeadAuthExternalLoginsOutput = void;
@@ -11139,7 +14265,7 @@ export const headAuthExternalLoginsEndpoint = {
 /**
  * Unlink an external provider from the current user.
  *
- * Removes the external login link for the given provider. Refused with 400 when it is the user's last sign-in method and no password is set.
+ * Removes the external login link for the given provider — this is the whole-provider full revocation of every granted scope and the recorded consent. Refused with 400 when it is the user's last sign-in method and no password is set.
  */
 export interface DeleteAuthExternalLoginsInput {
   provider: string;
@@ -11149,6 +14275,41 @@ export const deleteAuthExternalLoginsEndpoint = {
   operationId: 'deleteAuthExternalLogins' as const,
   method: 'DELETE' as const,
   path: '/v1/auth/external-logins/{provider}' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Preview the scopes a provider link flow will request (authorization-time consent screen data).
+ *
+ * Returns the exact OAuth scopes the provider link flow will request, resolved the same way the authorize step embeds them in the authorization URL. Powers the authorization-time consent surface shown before linking (issue #250).
+ */
+export interface GetAuthExternalLoginsLinkPreviewInput {
+  provider: string;
+}
+export type GetAuthExternalLoginsLinkPreviewOutput = Types.IdentityAuthenticationExternalLoginLinkPreviewOutput;
+export const getAuthExternalLoginsLinkPreviewEndpoint = {
+  operationId: 'getAuthExternalLoginsLinkPreview' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/external-logins/{provider}/link-preview' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revoke individual OAuth scope grants on a linked provider.
+ *
+ * Revokes individual scope grants on a linked provider without unlinking it; the remaining grant state is returned. Idempotent for scopes that are not currently granted. Revoking every remaining scope leaves the link in place with an empty grant list — whole-provider revocation remains the unlink endpoint (DELETE /external-logins/{provider}), which removes the link entirely.
+ */
+export interface PostAuthExternalLoginsScopesRevokeInput {
+  provider: string;
+  body?: Types.IdentityAuthenticationRevokeExternalLoginScopesInput;
+}
+export type PostAuthExternalLoginsScopesRevokeOutput = Types.IdentityAuthenticationRevokeExternalLoginScopesOutput;
+export const postAuthExternalLoginsScopesRevokeEndpoint = {
+  operationId: 'postAuthExternalLoginsScopesRevoke' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/external-logins/{provider}/scopes:revoke' as const,
   tags: ['Auth'] as const,
   requiresAuth: true,
 } as const;
@@ -11226,18 +14387,15 @@ export const getAuthGithubAuthorizeEndpoint = {
 /**
  * Handle GitHub OAuth callback
  *
- * Handles the GitHub OAuth callback, exchanging the authorization code for tokens.
+ * Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.
  */
-export interface GetAuthGithubCallbackInput {
-  query?: {
-    code?: string;
-    state?: string;
-  };
+export interface PostAuthGithubCallbackInput {
+  body?: Types.IdentityAuthenticationGitHubCallbackRequestDto;
 }
-export type GetAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
-export const getAuthGithubCallbackEndpoint = {
-  operationId: 'getAuthGithubCallback' as const,
-  method: 'GET' as const,
+export type PostAuthGithubCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthGithubCallbackEndpoint = {
+  operationId: 'postAuthGithubCallback' as const,
+  method: 'POST' as const,
   path: '/v1/auth/github:callback' as const,
   tags: ['Auth'] as const,
   requiresAuth: false,
@@ -11372,6 +14530,40 @@ export const getAuthMfaMethodsEndpoint = {
 } as const;
 
 /**
+ * Complete a verified first factor with the account's enrolled or newly provisioned MFA method.
+ *
+ * Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.
+ */
+export interface PostAuthMfaSignInCompleteInput {
+  body?: Types.IdentityAuthenticationCompleteMfaSignInInput;
+}
+export type PostAuthMfaSignInCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthMfaSignInCompleteEndpoint = {
+  operationId: 'postAuthMfaSignInComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sign-in/complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Provision the first TOTP factor using only the limited first-factor challenge.
+ *
+ * Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.
+ */
+export interface PostAuthMfaSignInEnrollmentInput {
+  body?: Types.IdentityAuthenticationStartMfaSignInEnrollmentInput;
+}
+export type PostAuthMfaSignInEnrollmentOutput = Types.IdentityAuthenticationMfaSignInEnrollmentOutput;
+export const postAuthMfaSignInEnrollmentEndpoint = {
+  operationId: 'postAuthMfaSignInEnrollment' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/mfa/sign-in/enrollment' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Complete SMS MFA setup by verifying the code
  *
  * Completes SMS MFA setup by verifying the code sent to the user's phone.
@@ -11455,6 +14647,167 @@ export const postAuthMfaVerifyEndpoint = {
 } as const;
 
 /**
+ * Discover federation providers for an email domain
+ *
+ * Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.
+ */
+export interface GetAuthOidcDiscoverProviderInput {
+  query?: {
+    email?: string;
+  };
+}
+export type GetAuthOidcDiscoverProviderOutput = Types.IdentityAuthenticationOidcDiscoverProviderOutput;
+export const getAuthOidcDiscoverProviderEndpoint = {
+  operationId: 'getAuthOidcDiscoverProvider' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/oidc:discover-provider' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Resolve the provider's front-channel logout URL
+ *
+ * Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.
+ */
+export interface GetAuthOidcEndSessionUrlInput {
+  slug: string;
+  query?: {
+    postLogoutRedirectUri?: string;
+  };
+}
+export type GetAuthOidcEndSessionUrlOutput = Types.IdentityAuthenticationOidcEndSessionUrlOutput;
+export const getAuthOidcEndSessionUrlEndpoint = {
+  operationId: 'getAuthOidcEndSessionUrl' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/oidc/{slug}:end-session-url' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Initiate OIDC federation provider sign-in
+ *
+ * Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.
+ */
+export interface PostAuthOidcSignInAuthorizeInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationOidcAuthorizeRequestDto;
+}
+export type PostAuthOidcSignInAuthorizeOutput = Types.IdentityAuthenticationOidcSignInOutput;
+export const postAuthOidcSignInAuthorizeEndpoint = {
+  operationId: 'postAuthOidcSignInAuthorize' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/oidc/{slug}:sign-in-authorize' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Handle OIDC federation provider callback
+ *
+ * Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).
+ */
+export interface PostAuthOidcSignInCallbackInput {
+  slug: string;
+  body?: Types.IdentityAuthenticationOidcCallbackRequestDto;
+}
+export type PostAuthOidcSignInCallbackOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOidcSignInCallbackEndpoint = {
+  operationId: 'postAuthOidcSignInCallback' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/oidc/{slug}:sign-in-callback' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Initiate an orchestrated authentication flow
+ *
+ * Validates the local primary credential (identifier + password), assesses sign-in risk and returns the persisted flow state with the required challenge ladder (MFA verification, device trust, risk challenge). Expired, inactive or unknown credentials fail closed.
+ */
+export interface PostAuthOrchestratedInitiateInput {
+  body?: Types.IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+}
+export type PostAuthOrchestratedInitiateOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedInitiateEndpoint = {
+  operationId: 'postAuthOrchestratedInitiate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated:initiate' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Get the current state of an orchestrated authentication flow
+ *
+ * Returns the current state of the flow. Abandoned, expired and unknown flows are not observable and return 404.
+ */
+export interface GetAuthOrchestratedInput {
+  flowId: string;
+}
+export type GetAuthOrchestratedOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const getAuthOrchestratedEndpoint = {
+  operationId: 'getAuthOrchestrated' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/orchestrated/{flowId}' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Abandon an in-flight orchestrated authentication flow
+ *
+ * Terminates the flow; later step, completion and lookup calls fail closed.
+ */
+export interface PostAuthOrchestratedAbandonInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedAbandonOutput = void;
+export const postAuthOrchestratedAbandonEndpoint = {
+  operationId: 'postAuthOrchestratedAbandon' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:abandon' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Complete an orchestrated authentication flow and issue tokens
+ *
+ * Issues access and refresh tokens once every required step of the flow is satisfied. Pending steps, abandoned, expired or already-unknown flows fail closed.
+ */
+export interface PostAuthOrchestratedCompleteInput {
+  flowId: string;
+}
+export type PostAuthOrchestratedCompleteOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthOrchestratedCompleteEndpoint = {
+  operationId: 'postAuthOrchestratedComplete' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:complete' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Satisfy one challenge step of an orchestrated authentication flow
+ *
+ * Verifies one challenge step (TOTP code, backup code or WebAuthn assertion) against the persisted flow and returns the updated state. Out-of-order, repeated, abandoned, expired or locked-out steps fail closed.
+ */
+export interface PostAuthOrchestratedProcessStepInput {
+  flowId: string;
+  body?: Types.IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+}
+export type PostAuthOrchestratedProcessStepOutput = Types.IdentityAuthenticationOrchestratedFlowStateOutput;
+export const postAuthOrchestratedProcessStepEndpoint = {
+  operationId: 'postAuthOrchestratedProcessStep' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/orchestrated/{flowId}:process-step' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
  * Change password for authenticated user
  *
  * Changes the password for the currently authenticated user.
@@ -11506,6 +14859,83 @@ export const postAuthPasswordResetRequestEndpoint = {
 } as const;
 
 /**
+ * Authenticate using email, username or international phone and a password.
+ *
+ * Resolves one unique account and applies the existing password, risk, tenant and session flow. Phone identifiers use a leading plus and up to 15 digits. Missing, ambiguous or invalid identifiers receive the generic authentication failure.
+ */
+export interface PostAuthPolymorphicInput {
+  body?: Types.IdentityAuthenticationPolymorphicSignInInput;
+}
+export type PostAuthPolymorphicOutput = Types.IdentityAuthenticationSignInOutput;
+export const postAuthPolymorphicEndpoint = {
+  operationId: 'postAuthPolymorphic' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/polymorphic' as const,
+  tags: ['Auth'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Lists the tenant's provisioning tokens (no plaintext).
+ */
+export type GetAuthScimProvisioningTokensInput = void;
+export type GetAuthScimProvisioningTokensOutput = Types.IdentityProvisioningScimProvisioningTokenDto[];
+export const getAuthScimProvisioningTokensEndpoint = {
+  operationId: 'getAuthScimProvisioningTokens' as const,
+  method: 'GET' as const,
+  path: '/v1/auth/scim-provisioning-tokens' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Issues a new tenant-scoped provisioning token. The plaintext is returned once.
+ */
+export interface PostAuthScimProvisioningTokensInput {
+  body?: Types.IdentityProvisioningCreateScimProvisioningTokenInput;
+}
+export type PostAuthScimProvisioningTokensOutput = Types.IdentityProvisioningCreateScimProvisioningTokenOutput;
+export const postAuthScimProvisioningTokensEndpoint = {
+  operationId: 'postAuthScimProvisioningTokens' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/scim-provisioning-tokens' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Revokes a provisioning token immediately.
+ */
+export interface PostAuthScimProvisioningTokensRevokeInput {
+  tokenId: string;
+  body?: Types.IdentityProvisioningRevokeScimProvisioningTokenInput;
+}
+export type PostAuthScimProvisioningTokensRevokeOutput = void;
+export const postAuthScimProvisioningTokensRevokeEndpoint = {
+  operationId: 'postAuthScimProvisioningTokensRevoke' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/scim-provisioning-tokens/{tokenId}:revoke' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Rotates a provisioning token; the old token stays valid for the grace window.
+ */
+export interface PostAuthScimProvisioningTokensRotateInput {
+  tokenId: string;
+  body?: Types.IdentityProvisioningRotateScimProvisioningTokenInput;
+}
+export type PostAuthScimProvisioningTokensRotateOutput = Types.IdentityProvisioningRotateScimProvisioningTokenOutput;
+export const postAuthScimProvisioningTokensRotateEndpoint = {
+  operationId: 'postAuthScimProvisioningTokensRotate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/scim-provisioning-tokens/{tokenId}:rotate' as const,
+  tags: ['AuthScimProvisioning'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Gets all service accounts with optional tenant filtering.
  */
 export interface GetAuthServiceAccountsForGetAuthServiceAccountsInput {
@@ -11513,7 +14943,7 @@ export interface GetAuthServiceAccountsForGetAuthServiceAccountsInput {
     tenantId?: string;
   };
 }
-export type GetAuthServiceAccountsForGetAuthServiceAccountsOutput = Array<Types.IdentityAuthenticationServiceAccountOutput>;
+export type GetAuthServiceAccountsForGetAuthServiceAccountsOutput = Types.IdentityAuthenticationServiceAccountOutput[];
 export const getAuthServiceAccountsForGetAuthServiceAccountsEndpoint = {
   operationId: 'getAuthServiceAccountsForGetAuthServiceAccounts' as const,
   method: 'GET' as const,
@@ -11728,7 +15158,7 @@ export const patchAuthServiceAccountsScopesEndpoint = {
  * Retrieves a list of all active sessions for the current user, including device and location information.
  */
 export type GetAuthSessionsInput = void;
-export type GetAuthSessionsOutput = Array<Types.IdentityAuthenticationSessionOutput>;
+export type GetAuthSessionsOutput = Types.IdentityAuthenticationSessionOutput[];
 export const getAuthSessionsEndpoint = {
   operationId: 'getAuthSessions' as const,
   method: 'GET' as const,
@@ -11858,7 +15288,7 @@ export interface GetAuthSigningKeysInput {
     status?: string;
   };
 }
-export type GetAuthSigningKeysOutput = Array<Types.IdentityAuthenticationJwtKeyInfoDto>;
+export type GetAuthSigningKeysOutput = Types.IdentityAuthenticationJwtKeyInfoDto[];
 export const getAuthSigningKeysEndpoint = {
   operationId: 'getAuthSigningKeys' as const,
   method: 'GET' as const,
@@ -11978,7 +15408,7 @@ export const postAuthTokensRevokeEndpoint = {
  * Retrieves a list of devices that have been marked as trusted for the current user.
  */
 export type GetAuthTrustedDevicesInput = void;
-export type GetAuthTrustedDevicesOutput = Array<Types.IdentityAuthenticationTrustedDeviceOutput>;
+export type GetAuthTrustedDevicesOutput = Types.IdentityAuthenticationTrustedDeviceOutput[];
 export const getAuthTrustedDevicesEndpoint = {
   operationId: 'getAuthTrustedDevices' as const,
   method: 'GET' as const,
@@ -12102,7 +15532,7 @@ export const postAuthWebauthnAuthenticationCompleteEndpoint = {
  * Get all WebAuthn credentials for the current user.
  */
 export type GetAuthWebauthnCredentialsForGetAuthWebauthnCredentialsInput = void;
-export type GetAuthWebauthnCredentialsForGetAuthWebauthnCredentialsOutput = Array<Types.IdentityAuthenticationWebAuthnCredentialInfo>;
+export type GetAuthWebauthnCredentialsForGetAuthWebauthnCredentialsOutput = Types.IdentityAuthenticationWebAuthnCredentialInfo[];
 export const getAuthWebauthnCredentialsForGetAuthWebauthnCredentialsEndpoint = {
   operationId: 'getAuthWebauthnCredentialsForGetAuthWebauthnCredentials' as const,
   method: 'GET' as const,
@@ -12127,7 +15557,9 @@ export const getAuthWebauthnCredentialsForGetAuthWebauthnCredentialsByCredential
 } as const;
 
 /**
- * Delete a WebAuthn credential.
+ * Delete a WebAuthn credential. Deletion performs a terminal revocation:
+ * the deleted credential can never be restored. Use
+ * `:deactivate` for a reversible transition.
  */
 export interface DeleteAuthWebauthnCredentialsInput {
   credentialId: string;
@@ -12168,6 +15600,38 @@ export const headAuthWebauthnCredentialsEndpoint = {
   operationId: 'headAuthWebauthnCredentials' as const,
   method: 'HEAD' as const,
   path: '/v1/auth/webauthn/credentials/{credentialId}' as const,
+  tags: ['AuthWebauthn'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reverse a temporary deactivation of a WebAuthn credential, returning it to
+ * active use. Revoked credentials are terminal and are never reactivated.
+ */
+export interface PostAuthWebauthnCredentialsActivateInput {
+  credentialId: string;
+}
+export type PostAuthWebauthnCredentialsActivateOutput = void;
+export const postAuthWebauthnCredentialsActivateEndpoint = {
+  operationId: 'postAuthWebauthnCredentialsActivate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/webauthn/credentials/{credentialId}:activate' as const,
+  tags: ['AuthWebauthn'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Temporarily deactivate a WebAuthn credential. Deactivation is reversible via
+ * `:activate`; a revoked credential can never be deactivated or restored.
+ */
+export interface PostAuthWebauthnCredentialsDeactivateInput {
+  credentialId: string;
+}
+export type PostAuthWebauthnCredentialsDeactivateOutput = void;
+export const postAuthWebauthnCredentialsDeactivateEndpoint = {
+  operationId: 'postAuthWebauthnCredentialsDeactivate' as const,
+  method: 'POST' as const,
+  path: '/v1/auth/webauthn/credentials/{credentialId}:deactivate' as const,
   tags: ['AuthWebauthn'] as const,
   requiresAuth: true,
 } as const;
@@ -12372,7 +15836,7 @@ export interface GetContentResourcesForGetContentResourcesInput {
     take?: number;
   };
 }
-export type GetContentResourcesForGetContentResourcesOutput = Array<Types.ContentPagesContentResourceDto>;
+export type GetContentResourcesForGetContentResourcesOutput = Types.ContentPagesContentResourceDto[];
 export const getContentResourcesForGetContentResourcesEndpoint = {
   operationId: 'getContentResourcesForGetContentResources' as const,
   method: 'GET' as const,
@@ -12474,7 +15938,7 @@ export const getContentResourcesBySlugEndpoint = {
 
 /**
  * Create or resume a content interaction
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsInput {
   query?: {
@@ -12493,7 +15957,7 @@ export const postCourseInteractionsEndpoint = {
 
 /**
  * Mark content as completed
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsCompleteInput {
   interactionId: string;
@@ -12513,7 +15977,7 @@ export const postCourseInteractionsCompleteEndpoint = {
 
 /**
  * Update progress for a content interaction
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsProgressInput {
   interactionId: string;
@@ -12533,7 +15997,7 @@ export const putCourseInteractionsProgressEndpoint = {
 
 /**
  * Submit content interaction (makes it immutable)
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PostCourseInteractionsSubmitInput {
   interactionId: string;
@@ -12553,7 +16017,7 @@ export const postCourseInteractionsSubmitEndpoint = {
 
 /**
  * Update time spent on content
- * Requires Edit permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface PutCourseInteractionsTimeSpentInput {
   interactionId: string;
@@ -12577,7 +16041,7 @@ export interface GetCourseInteractionsContentReflectionResponsesInput {
     programId?: string;
   };
 }
-export type GetCourseInteractionsContentReflectionResponsesOutput = Array<Types.LearningCoursesReflectionResponseResultDto>;
+export type GetCourseInteractionsContentReflectionResponsesOutput = Types.LearningCoursesReflectionResponseResultDto[];
 export const getCourseInteractionsContentReflectionResponsesEndpoint = {
   operationId: 'getCourseInteractionsContentReflectionResponses' as const,
   method: 'GET' as const,
@@ -12592,7 +16056,7 @@ export interface GetCourseInteractionsContentReflectionResponsesVisibleInput {
     programId?: string;
   };
 }
-export type GetCourseInteractionsContentReflectionResponsesVisibleOutput = Array<Types.LearningCoursesReflectionResponseResultDto>;
+export type GetCourseInteractionsContentReflectionResponsesVisibleOutput = Types.LearningCoursesReflectionResponseResultDto[];
 export const getCourseInteractionsContentReflectionResponsesVisibleEndpoint = {
   operationId: 'getCourseInteractionsContentReflectionResponsesVisible' as const,
   method: 'GET' as const,
@@ -12610,7 +16074,7 @@ export interface GetCourseInteractionsContentSurveyResultsInput {
     programId?: string;
   };
 }
-export type GetCourseInteractionsContentSurveyResultsOutput = Array<Types.LearningCoursesSurveyResponseResultDto>;
+export type GetCourseInteractionsContentSurveyResultsOutput = Types.LearningCoursesSurveyResponseResultDto[];
 export const getCourseInteractionsContentSurveyResultsEndpoint = {
   operationId: 'getCourseInteractionsContentSurveyResults' as const,
   method: 'GET' as const,
@@ -12625,7 +16089,7 @@ export interface GetCourseInteractionsContentSurveyResultsVisibleInput {
     programId?: string;
   };
 }
-export type GetCourseInteractionsContentSurveyResultsVisibleOutput = Array<Types.LearningCoursesSurveyResponseResultDto>;
+export type GetCourseInteractionsContentSurveyResultsVisibleOutput = Types.LearningCoursesSurveyResponseResultDto[];
 export const getCourseInteractionsContentSurveyResultsVisibleEndpoint = {
   operationId: 'getCourseInteractionsContentSurveyResultsVisible' as const,
   method: 'GET' as const,
@@ -12636,7 +16100,7 @@ export const getCourseInteractionsContentSurveyResultsVisibleEndpoint = {
 
 /**
  * Get all interactions for a user in a program
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserInput {
   programUserId: string;
@@ -12644,7 +16108,7 @@ export interface GetCourseInteractionsUserInput {
     programId?: string;
   };
 }
-export type GetCourseInteractionsUserOutput = Array<Types.LearningCoursesContentInteractionDto>;
+export type GetCourseInteractionsUserOutput = Types.LearningCoursesContentInteractionDto[];
 export const getCourseInteractionsUserEndpoint = {
   operationId: 'getCourseInteractionsUser' as const,
   method: 'GET' as const,
@@ -12655,7 +16119,7 @@ export const getCourseInteractionsUserEndpoint = {
 
 /**
  * Get interaction for specific user and content
- * Requires Read permission on the parent Program
+ * Requires an active enrollment in the parent Program.
  */
 export interface GetCourseInteractionsUserContentInput {
   programUserId: string;
@@ -12688,7 +16152,7 @@ export interface GetCoursesForGetCoursesInput {
     take?: number;
   };
 }
-export type GetCoursesForGetCoursesOutput = Array<Types.LearningCoursesProgramDto>;
+export type GetCoursesForGetCoursesOutput = Types.LearningCoursesProgramDto[];
 export const getCoursesForGetCoursesEndpoint = {
   operationId: 'getCoursesForGetCourses' as const,
   method: 'GET' as const,
@@ -12709,6 +16173,18 @@ export const postCoursesEndpoint = {
   method: 'POST' as const,
   path: '/v1/courses' as const,
   tags: ['LearningCoursesProgram'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface GetCoursesAccessCapabilitiesInput {
+  courseId: string;
+}
+export type GetCoursesAccessCapabilitiesOutput = Types.LearningCoursesCourseAccessCapabilities;
+export const getCoursesAccessCapabilitiesEndpoint = {
+  operationId: 'getCoursesAccessCapabilities' as const,
+  method: 'GET' as const,
+  path: '/v1/courses/{courseId}/access/capabilities' as const,
+  tags: ['LearningCoursesAccess'] as const,
   requiresAuth: true,
 } as const;
 
@@ -12743,7 +16219,7 @@ export interface GetCoursesCohortsScheduleAvailableContentInput {
   courseId: string;
   cohortId: string;
 }
-export type GetCoursesCohortsScheduleAvailableContentOutput = Array<Types.LearningCohortsAvailableCohortContentDto>;
+export type GetCoursesCohortsScheduleAvailableContentOutput = Types.LearningCohortsAvailableCohortContentDto[];
 export const getCoursesCohortsScheduleAvailableContentEndpoint = {
   operationId: 'getCoursesCohortsScheduleAvailableContent' as const,
   method: 'GET' as const,
@@ -12819,7 +16295,7 @@ export const getCoursesCohortsCalendarEndpoint = {
 export interface GetCoursesGroupSetsInput {
   courseId: string;
 }
-export type GetCoursesGroupSetsOutput = Array<Types.LearningAssessmentsGroupSetSummaryDto>;
+export type GetCoursesGroupSetsOutput = Types.LearningAssessmentsGroupSetSummaryDto[];
 export const getCoursesGroupSetsEndpoint = {
   operationId: 'getCoursesGroupSets' as const,
   method: 'GET' as const,
@@ -12851,7 +16327,7 @@ export interface GetCoursesGroupSetsGroupsInput {
   courseId: string;
   setId: string;
 }
-export type GetCoursesGroupSetsGroupsOutput = Array<Types.LearningAssessmentsGroupDetailDto>;
+export type GetCoursesGroupSetsGroupsOutput = Types.LearningAssessmentsGroupDetailDto[];
 export const getCoursesGroupSetsGroupsEndpoint = {
   operationId: 'getCoursesGroupSetsGroups' as const,
   method: 'GET' as const,
@@ -13463,7 +16939,7 @@ export const putCoursesPricingEndpoint = {
 export interface GetCoursesProductsInput {
   id: string;
 }
-export type GetCoursesProductsOutput = Array<string>;
+export type GetCoursesProductsOutput = string[];
 export const getCoursesProductsEndpoint = {
   operationId: 'getCoursesProducts' as const,
   method: 'GET' as const,
@@ -13482,7 +16958,7 @@ export interface GetCoursesUsersInput {
     take?: number;
   };
 }
-export type GetCoursesUsersOutput = Array<Types.LearningCoursesUserProgressDto>;
+export type GetCoursesUsersOutput = Types.LearningCoursesUserProgressDto[];
 export const getCoursesUsersEndpoint = {
   operationId: 'getCoursesUsers' as const,
   method: 'GET' as const,
@@ -13678,7 +17154,7 @@ export interface GetCoursesActivityGradesContentInput {
   programId: string;
   contentId: string;
 }
-export type GetCoursesActivityGradesContentOutput = Array<Types.LearningCoursesActivityGradeDto>;
+export type GetCoursesActivityGradesContentOutput = Types.LearningCoursesActivityGradeDto[];
 export const getCoursesActivityGradesContentEndpoint = {
   operationId: 'getCoursesActivityGradesContent' as const,
   method: 'GET' as const,
@@ -13694,7 +17170,7 @@ export interface GetCoursesActivityGradesGraderInput {
   programId: string;
   graderProgramUserId: string;
 }
-export type GetCoursesActivityGradesGraderOutput = Array<Types.LearningCoursesActivityGradeDto>;
+export type GetCoursesActivityGradesGraderOutput = Types.LearningCoursesActivityGradeDto[];
 export const getCoursesActivityGradesGraderEndpoint = {
   operationId: 'getCoursesActivityGradesGrader' as const,
   method: 'GET' as const,
@@ -13725,7 +17201,7 @@ export const getCoursesActivityGradesInteractionEndpoint = {
 export interface GetCoursesActivityGradesPendingInput {
   programId: string;
 }
-export type GetCoursesActivityGradesPendingOutput = Array<Types.LearningCoursesContentInteractionDto>;
+export type GetCoursesActivityGradesPendingOutput = Types.LearningCoursesContentInteractionDto[];
 export const getCoursesActivityGradesPendingEndpoint = {
   operationId: 'getCoursesActivityGradesPending' as const,
   method: 'GET' as const,
@@ -13756,7 +17232,7 @@ export interface GetCoursesActivityGradesStudentInput {
   programId: string;
   programUserId: string;
 }
-export type GetCoursesActivityGradesStudentOutput = Array<Types.LearningCoursesActivityGradeDto>;
+export type GetCoursesActivityGradesStudentOutput = Types.LearningCoursesActivityGradeDto[];
 export const getCoursesActivityGradesStudentEndpoint = {
   operationId: 'getCoursesActivityGradesStudent' as const,
   method: 'GET' as const,
@@ -13777,7 +17253,7 @@ export interface GetCoursesContentInput {
     level?: string;
   };
 }
-export type GetCoursesContentOutput = Array<Types.LearningCoursesProgramContentDto>;
+export type GetCoursesContentOutput = Types.LearningCoursesProgramContentDto[];
 export const getCoursesContentEndpoint = {
   operationId: 'getCoursesContent' as const,
   method: 'GET' as const,
@@ -13833,7 +17309,7 @@ export interface GetCoursesContentAuthoringAiConversationsInput {
   programId: string;
   contentId: string;
 }
-export type GetCoursesContentAuthoringAiConversationsOutput = Array<Types.LearningCoursesAiAuthoringConversationDto>;
+export type GetCoursesContentAuthoringAiConversationsOutput = Types.LearningCoursesAiAuthoringConversationDto[];
 export const getCoursesContentAuthoringAiConversationsEndpoint = {
   operationId: 'getCoursesContentAuthoringAiConversations' as const,
   method: 'GET' as const,
@@ -14093,7 +17569,7 @@ export interface GetCoursesContentChildrenInput {
   programId: string;
   parentId: string;
 }
-export type GetCoursesContentChildrenOutput = Array<Types.LearningCoursesProgramContentDto>;
+export type GetCoursesContentChildrenOutput = Types.LearningCoursesProgramContentDto[];
 export const getCoursesContentChildrenEndpoint = {
   operationId: 'getCoursesContentChildren' as const,
   method: 'GET' as const,
@@ -14109,7 +17585,7 @@ export interface GetCoursesContentByTypeInput {
   programId: string;
   type: Types.LearningCoursesProgramContentType;
 }
-export type GetCoursesContentByTypeOutput = Array<Types.LearningCoursesProgramContentDto>;
+export type GetCoursesContentByTypeOutput = Types.LearningCoursesProgramContentDto[];
 export const getCoursesContentByTypeEndpoint = {
   operationId: 'getCoursesContentByType' as const,
   method: 'GET' as const,
@@ -14125,7 +17601,7 @@ export interface GetCoursesContentByVisibilityInput {
   programId: string;
   visibility: Types.LearningCoursesVisibility;
 }
-export type GetCoursesContentByVisibilityOutput = Array<Types.LearningCoursesProgramContentDto>;
+export type GetCoursesContentByVisibilityOutput = Types.LearningCoursesProgramContentDto[];
 export const getCoursesContentByVisibilityEndpoint = {
   operationId: 'getCoursesContentByVisibility' as const,
   method: 'GET' as const,
@@ -14156,7 +17632,7 @@ export const postCoursesContentReorderEndpoint = {
 export interface GetCoursesContentRequiredInput {
   programId: string;
 }
-export type GetCoursesContentRequiredOutput = Array<Types.LearningCoursesProgramContentDto>;
+export type GetCoursesContentRequiredOutput = Types.LearningCoursesProgramContentDto[];
 export const getCoursesContentRequiredEndpoint = {
   operationId: 'getCoursesContentRequired' as const,
   method: 'GET' as const,
@@ -14172,7 +17648,7 @@ export interface PostCoursesContentSearchInput {
   programId: string;
   body?: Types.LearningCoursesSearchContentDto;
 }
-export type PostCoursesContentSearchOutput = Array<Types.LearningCoursesProgramContentDto>;
+export type PostCoursesContentSearchOutput = Types.LearningCoursesProgramContentDto[];
 export const postCoursesContentSearchEndpoint = {
   operationId: 'postCoursesContentSearch' as const,
   method: 'POST' as const,
@@ -14200,7 +17676,7 @@ export interface GetCoursesInteractionsEventsInput {
   programId: string;
   interactionId: string;
 }
-export type GetCoursesInteractionsEventsOutput = Array<Types.LearningCoursesContentInteractionEventDto>;
+export type GetCoursesInteractionsEventsOutput = Types.LearningCoursesContentInteractionEventDto[];
 export const getCoursesInteractionsEventsEndpoint = {
   operationId: 'getCoursesInteractionsEvents' as const,
   method: 'GET' as const,
@@ -14227,7 +17703,7 @@ export const postCoursesInteractionsEventsEndpoint = {
  * Get every course in which the current user has an active enrollment.
  */
 export type GetCoursesMeInput = void;
-export type GetCoursesMeOutput = Array<Types.LearningCoursesProgramDto>;
+export type GetCoursesMeOutput = Types.LearningCoursesProgramDto[];
 export const getCoursesMeEndpoint = {
   operationId: 'getCoursesMe' as const,
   method: 'GET' as const,
@@ -14245,7 +17721,7 @@ export interface GetCoursesPublicInput {
     take?: number;
   };
 }
-export type GetCoursesPublicOutput = Array<Types.LearningCoursesProgramDto>;
+export type GetCoursesPublicOutput = Types.LearningCoursesProgramDto[];
 export const getCoursesPublicEndpoint = {
   operationId: 'getCoursesPublic' as const,
   method: 'GET' as const,
@@ -14361,7 +17837,7 @@ export interface GetDelegatedAdminUserManagedResourcesInput {
     tenantId?: string;
   };
 }
-export type GetDelegatedAdminUserManagedResourcesOutput = Array<string>;
+export type GetDelegatedAdminUserManagedResourcesOutput = string[];
 export const getDelegatedAdminUserManagedResourcesEndpoint = {
   operationId: 'getDelegatedAdminUserManagedResources' as const,
   method: 'GET' as const,
@@ -14379,7 +17855,7 @@ export interface GetDelegatedAdminUserManagedUsersInput {
     tenantId?: string;
   };
 }
-export type GetDelegatedAdminUserManagedUsersOutput = Array<string>;
+export type GetDelegatedAdminUserManagedUsersOutput = string[];
 export const getDelegatedAdminUserManagedUsersEndpoint = {
   operationId: 'getDelegatedAdminUserManagedUsers' as const,
   method: 'GET' as const,
@@ -14397,7 +17873,7 @@ export interface GetDelegatedAdminUserScopesInput {
     tenantId?: string;
   };
 }
-export type GetDelegatedAdminUserScopesOutput = Array<Types.IdentityAuthorizationDelegatedAdminScope>;
+export type GetDelegatedAdminUserScopesOutput = Types.IdentityAuthorizationDelegatedAdminScope[];
 export const getDelegatedAdminUserScopesEndpoint = {
   operationId: 'getDelegatedAdminUserScopes' as const,
   method: 'GET' as const,
@@ -14417,7 +17893,7 @@ export interface GetDiscoveryCollectionsForGetDiscoveryCollectionsInput {
     take?: number;
   };
 }
-export type GetDiscoveryCollectionsForGetDiscoveryCollectionsOutput = Array<Types.LearningExperienceDiscoveryCourseCollectionDto>;
+export type GetDiscoveryCollectionsForGetDiscoveryCollectionsOutput = Types.LearningExperienceDiscoveryCourseCollectionDto[];
 export const getDiscoveryCollectionsForGetDiscoveryCollectionsEndpoint = {
   operationId: 'getDiscoveryCollectionsForGetDiscoveryCollections' as const,
   method: 'GET' as const,
@@ -14532,7 +18008,7 @@ export interface GetDiscoveryCollectionsCuratorInput {
     take?: number;
   };
 }
-export type GetDiscoveryCollectionsCuratorOutput = Array<Types.LearningExperienceDiscoveryCourseCollectionDto>;
+export type GetDiscoveryCollectionsCuratorOutput = Types.LearningExperienceDiscoveryCourseCollectionDto[];
 export const getDiscoveryCollectionsCuratorEndpoint = {
   operationId: 'getDiscoveryCollectionsCurator' as const,
   method: 'GET' as const,
@@ -14550,7 +18026,7 @@ export interface GetDiscoveryCollectionsFeaturedInput {
     take?: number;
   };
 }
-export type GetDiscoveryCollectionsFeaturedOutput = Array<Types.LearningExperienceDiscoveryCourseCollectionDto>;
+export type GetDiscoveryCollectionsFeaturedOutput = Types.LearningExperienceDiscoveryCourseCollectionDto[];
 export const getDiscoveryCollectionsFeaturedEndpoint = {
   operationId: 'getDiscoveryCollectionsFeatured' as const,
   method: 'GET' as const,
@@ -14587,7 +18063,7 @@ export interface GetDiscoveryFeaturedForGetDiscoveryFeaturedInput {
     take?: number;
   };
 }
-export type GetDiscoveryFeaturedForGetDiscoveryFeaturedOutput = Array<Types.LearningExperienceDiscoveryFeaturedContentDto>;
+export type GetDiscoveryFeaturedForGetDiscoveryFeaturedOutput = Types.LearningExperienceDiscoveryFeaturedContentDto[];
 export const getDiscoveryFeaturedForGetDiscoveryFeaturedEndpoint = {
   operationId: 'getDiscoveryFeaturedForGetDiscoveryFeatured' as const,
   method: 'GET' as const,
@@ -14689,7 +18165,7 @@ export interface GetDiscoveryFeaturedTypeInput {
     take?: number;
   };
 }
-export type GetDiscoveryFeaturedTypeOutput = Array<Types.LearningExperienceDiscoveryFeaturedContentDto>;
+export type GetDiscoveryFeaturedTypeOutput = Types.LearningExperienceDiscoveryFeaturedContentDto[];
 export const getDiscoveryFeaturedTypeEndpoint = {
   operationId: 'getDiscoveryFeaturedType' as const,
   method: 'GET' as const,
@@ -14723,7 +18199,7 @@ export interface GetDiscoverySearchHistoryInput {
     take?: number;
   };
 }
-export type GetDiscoverySearchHistoryOutput = Array<Types.LearningExperienceDiscoverySearchHistoryDto>;
+export type GetDiscoverySearchHistoryOutput = Types.LearningExperienceDiscoverySearchHistoryDto[];
 export const getDiscoverySearchHistoryEndpoint = {
   operationId: 'getDiscoverySearchHistory' as const,
   method: 'GET' as const,
@@ -14741,7 +18217,7 @@ export interface GetDiscoverySearchPopularInput {
     take?: number;
   };
 }
-export type GetDiscoverySearchPopularOutput = Array<Types.LearningExperienceDiscoveryPopularSearchResult>;
+export type GetDiscoverySearchPopularOutput = Types.LearningExperienceDiscoveryPopularSearchResult[];
 export const getDiscoverySearchPopularEndpoint = {
   operationId: 'getDiscoverySearchPopular' as const,
   method: 'GET' as const,
@@ -14801,7 +18277,7 @@ export interface GetEntitlementsInput {
     days?: number;
   };
 }
-export type GetEntitlementsOutput = Array<Types.CommerceProductsEntitlementInfoDto>;
+export type GetEntitlementsOutput = Types.CommerceProductsEntitlementInfoDto[];
 export const getEntitlementsEndpoint = {
   operationId: 'getEntitlements' as const,
   method: 'GET' as const,
@@ -14878,7 +18354,7 @@ export interface GetFeaturesInput {
     isEnabled?: boolean;
   };
 }
-export type GetFeaturesOutput = Array<Types.FeaturesFeatureFlagDto>;
+export type GetFeaturesOutput = Types.FeaturesFeatureFlagDto[];
 export const getFeaturesEndpoint = {
   operationId: 'getFeatures' as const,
   method: 'GET' as const,
@@ -15157,7 +18633,7 @@ export interface GetJitElevationsPendingInput {
     tenantId?: string;
   };
 }
-export type GetJitElevationsPendingOutput = Array<Types.IdentityAuthorizationJitElevationInput>;
+export type GetJitElevationsPendingOutput = Types.IdentityAuthorizationJitElevationInput[];
 export const getJitElevationsPendingEndpoint = {
   operationId: 'getJitElevationsPending' as const,
   method: 'GET' as const,
@@ -15175,7 +18651,7 @@ export interface GetJitElevationsUserInput {
     tenantId?: string;
   };
 }
-export type GetJitElevationsUserOutput = Array<Types.IdentityAuthorizationJitElevationInput>;
+export type GetJitElevationsUserOutput = Types.IdentityAuthorizationJitElevationInput[];
 export const getJitElevationsUserEndpoint = {
   operationId: 'getJitElevationsUser' as const,
   method: 'GET' as const,
@@ -15193,7 +18669,7 @@ export interface GetJitElevationsUserActiveInput {
     tenantId?: string;
   };
 }
-export type GetJitElevationsUserActiveOutput = Array<Types.IdentityAuthorizationJitElevationInput>;
+export type GetJitElevationsUserActiveOutput = Types.IdentityAuthorizationJitElevationInput[];
 export const getJitElevationsUserActiveEndpoint = {
   operationId: 'getJitElevationsUserActive' as const,
   method: 'GET' as const,
@@ -15227,7 +18703,7 @@ export interface GetLaunchPadForGetLaunchPadInput {
     status?: Types.LaunchPadLaunchPlanStatus;
   };
 }
-export type GetLaunchPadForGetLaunchPadOutput = Array<Types.LaunchPadLaunchPlan>;
+export type GetLaunchPadForGetLaunchPadOutput = Types.LaunchPadLaunchPlan[];
 export const getLaunchPadForGetLaunchPadEndpoint = {
   operationId: 'getLaunchPadForGetLaunchPad' as const,
   method: 'GET' as const,
@@ -15313,7 +18789,7 @@ export const postLaunchPadEventsApplicationsEndpoint = {
 export interface GetLaunchPadEventsApplicationsManagementInput {
   eventId: string;
 }
-export type GetLaunchPadEventsApplicationsManagementOutput = Array<Types.LaunchPadLaunchPadApplicationProjection>;
+export type GetLaunchPadEventsApplicationsManagementOutput = Types.LaunchPadLaunchPadApplicationProjection[];
 export const getLaunchPadEventsApplicationsManagementEndpoint = {
   operationId: 'getLaunchPadEventsApplicationsManagement' as const,
   method: 'GET' as const,
@@ -15325,7 +18801,7 @@ export const getLaunchPadEventsApplicationsManagementEndpoint = {
 export interface GetLaunchPadEventsRegistrationsManagementInput {
   eventId: string;
 }
-export type GetLaunchPadEventsRegistrationsManagementOutput = Array<Types.LaunchPadLaunchPadRegistrationProjection>;
+export type GetLaunchPadEventsRegistrationsManagementOutput = Types.LaunchPadLaunchPadRegistrationProjection[];
 export const getLaunchPadEventsRegistrationsManagementEndpoint = {
   operationId: 'getLaunchPadEventsRegistrationsManagement' as const,
   method: 'GET' as const,
@@ -15434,7 +18910,7 @@ export const postLaunchPadEventsApplicationsWithdrawEndpoint = {
 } as const;
 
 export type GetLaunchPadEventsApplicationsMeInput = void;
-export type GetLaunchPadEventsApplicationsMeOutput = Array<Types.LaunchPadLaunchPadApplicationProjection>;
+export type GetLaunchPadEventsApplicationsMeOutput = Types.LaunchPadLaunchPadApplicationProjection[];
 export const getLaunchPadEventsApplicationsMeEndpoint = {
   operationId: 'getLaunchPadEventsApplicationsMe' as const,
   method: 'GET' as const,
@@ -15444,7 +18920,7 @@ export const getLaunchPadEventsApplicationsMeEndpoint = {
 } as const;
 
 export type GetLaunchPadEventsManagementForGetLaunchPadEventsManagementInput = void;
-export type GetLaunchPadEventsManagementForGetLaunchPadEventsManagementOutput = Array<Types.LaunchPadLaunchPadEventProjection>;
+export type GetLaunchPadEventsManagementForGetLaunchPadEventsManagementOutput = Types.LaunchPadLaunchPadEventProjection[];
 export const getLaunchPadEventsManagementForGetLaunchPadEventsManagementEndpoint = {
   operationId: 'getLaunchPadEventsManagementForGetLaunchPadEventsManagement' as const,
   method: 'GET' as const,
@@ -15454,7 +18930,7 @@ export const getLaunchPadEventsManagementForGetLaunchPadEventsManagementEndpoint
 } as const;
 
 export type GetLaunchPadEventsPublicForGetLaunchPadEventsPublicInput = void;
-export type GetLaunchPadEventsPublicForGetLaunchPadEventsPublicOutput = Array<Types.LaunchPadLaunchPadEventProjection>;
+export type GetLaunchPadEventsPublicForGetLaunchPadEventsPublicOutput = Types.LaunchPadLaunchPadEventProjection[];
 export const getLaunchPadEventsPublicForGetLaunchPadEventsPublicEndpoint = {
   operationId: 'getLaunchPadEventsPublicForGetLaunchPadEventsPublic' as const,
   method: 'GET' as const,
@@ -15501,7 +18977,7 @@ export const postLaunchPadEventsRegistrationsTransitionEndpoint = {
 } as const;
 
 export type GetLaunchPadEventsRegistrationsMeInput = void;
-export type GetLaunchPadEventsRegistrationsMeOutput = Array<Types.LaunchPadLaunchPadRegistrationProjection>;
+export type GetLaunchPadEventsRegistrationsMeOutput = Types.LaunchPadLaunchPadRegistrationProjection[];
 export const getLaunchPadEventsRegistrationsMeEndpoint = {
   operationId: 'getLaunchPadEventsRegistrationsMe' as const,
   method: 'GET' as const,
@@ -15592,7 +19068,7 @@ export interface GetLearningPathsForGetLearningPathsInput {
     take?: number;
   };
 }
-export type GetLearningPathsForGetLearningPathsOutput = Array<Types.LearningExperienceLearningPathsLearningPathDto>;
+export type GetLearningPathsForGetLearningPathsOutput = Types.LearningExperienceLearningPathsLearningPathDto[];
 export const getLearningPathsForGetLearningPathsEndpoint = {
   operationId: 'getLearningPathsForGetLearningPaths' as const,
   method: 'GET' as const,
@@ -15811,7 +19287,7 @@ export interface GetLearningPathsEnrollmentsInput {
     take?: number;
   };
 }
-export type GetLearningPathsEnrollmentsOutput = Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>;
+export type GetLearningPathsEnrollmentsOutput = Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[];
 export const getLearningPathsEnrollmentsEndpoint = {
   operationId: 'getLearningPathsEnrollments' as const,
   method: 'GET' as const,
@@ -15913,7 +19389,7 @@ export interface GetLearningPathsCreatorInput {
     take?: number;
   };
 }
-export type GetLearningPathsCreatorOutput = Array<Types.LearningExperienceLearningPathsLearningPathDto>;
+export type GetLearningPathsCreatorOutput = Types.LearningExperienceLearningPathsLearningPathDto[];
 export const getLearningPathsCreatorEndpoint = {
   operationId: 'getLearningPathsCreator' as const,
   method: 'GET' as const,
@@ -15931,7 +19407,7 @@ export interface GetLearningPathsFeaturedInput {
     take?: number;
   };
 }
-export type GetLearningPathsFeaturedOutput = Array<Types.LearningExperienceLearningPathsLearningPathDto>;
+export type GetLearningPathsFeaturedOutput = Types.LearningExperienceLearningPathsLearningPathDto[];
 export const getLearningPathsFeaturedEndpoint = {
   operationId: 'getLearningPathsFeatured' as const,
   method: 'GET' as const,
@@ -15950,7 +19426,7 @@ export interface GetLearningPathsPopularInput {
     take?: number;
   };
 }
-export type GetLearningPathsPopularOutput = Array<Types.LearningExperienceLearningPathsLearningPathDto>;
+export type GetLearningPathsPopularOutput = Types.LearningExperienceLearningPathsLearningPathDto[];
 export const getLearningPathsPopularEndpoint = {
   operationId: 'getLearningPathsPopular' as const,
   method: 'GET' as const,
@@ -15971,7 +19447,7 @@ export interface GetLearningPathsSearchInput {
     take?: number;
   };
 }
-export type GetLearningPathsSearchOutput = Array<Types.LearningExperienceLearningPathsLearningPathDto>;
+export type GetLearningPathsSearchOutput = Types.LearningExperienceLearningPathsLearningPathDto[];
 export const getLearningPathsSearchEndpoint = {
   operationId: 'getLearningPathsSearch' as const,
   method: 'GET' as const,
@@ -16008,7 +19484,7 @@ export interface GetLearningPathsUserCompletedInput {
     take?: number;
   };
 }
-export type GetLearningPathsUserCompletedOutput = Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>;
+export type GetLearningPathsUserCompletedOutput = Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[];
 export const getLearningPathsUserCompletedEndpoint = {
   operationId: 'getLearningPathsUserCompleted' as const,
   method: 'GET' as const,
@@ -16028,7 +19504,7 @@ export interface GetLearningPathsUserEnrollmentsInput {
     take?: number;
   };
 }
-export type GetLearningPathsUserEnrollmentsOutput = Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>;
+export type GetLearningPathsUserEnrollmentsOutput = Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[];
 export const getLearningPathsUserEnrollmentsEndpoint = {
   operationId: 'getLearningPathsUserEnrollments' as const,
   method: 'GET' as const,
@@ -16065,7 +19541,7 @@ export interface GetLearningMeSearchInput {
     take?: number;
   };
 }
-export type GetLearningMeSearchOutput = Array<Types.LearningWorkspacesLearnerSearchResultDto>;
+export type GetLearningMeSearchOutput = Types.LearningWorkspacesLearnerSearchResultDto[];
 export const getLearningMeSearchEndpoint = {
   operationId: 'getLearningMeSearch' as const,
   method: 'GET' as const,
@@ -16109,7 +19585,7 @@ export interface GetMarketingLeadsInput {
     take?: number;
   };
 }
-export type GetMarketingLeadsOutput = Array<Types.ContentPagesMarketingLeadDto>;
+export type GetMarketingLeadsOutput = Types.ContentPagesMarketingLeadDto[];
 export const getMarketingLeadsEndpoint = {
   operationId: 'getMarketingLeads' as const,
   method: 'GET' as const,
@@ -16156,6 +19632,8 @@ export const getMeTasksEndpoint = {
  * OAuth2 client_credentials grant - authenticates a service account and returns a JWT token.
  *
  * This endpoint implements the OAuth2 client_credentials flow for machine-to-machine authentication.
+ * Authentication uses the `client_secret` form field, or an X.509 client certificate
+ * negotiated over TLS in lieu of the secret when one is bound to the service account.
  * The returned access token can be used to authenticate API requests.
  */
 export interface PostOauthTokenInput {
@@ -16197,7 +19675,7 @@ export interface GetOrdersForGetOrdersInput {
     status?: Types.CommerceOrdersOrderStatus;
   };
 }
-export type GetOrdersForGetOrdersOutput = Array<Types.CommerceOrdersOrderDto>;
+export type GetOrdersForGetOrdersOutput = Types.CommerceOrdersOrderDto[];
 export const getOrdersForGetOrdersEndpoint = {
   operationId: 'getOrdersForGetOrders' as const,
   method: 'GET' as const,
@@ -16309,7 +19787,7 @@ export interface GetPagesForGetPagesInput {
     take?: number;
   };
 }
-export type GetPagesForGetPagesOutput = Array<Types.ContentPagesPageDto>;
+export type GetPagesForGetPagesOutput = Types.ContentPagesPageDto[];
 export const getPagesForGetPagesEndpoint = {
   operationId: 'getPagesForGetPages' as const,
   method: 'GET' as const,
@@ -16415,7 +19893,7 @@ export const postPagesUnpublishEndpoint = {
 export interface GetPagesSectionsForGetPagesByPageIdSectionsInput {
   pageId: string;
 }
-export type GetPagesSectionsForGetPagesByPageIdSectionsOutput = Array<Types.ContentPagesPageSectionDto>;
+export type GetPagesSectionsForGetPagesByPageIdSectionsOutput = Types.ContentPagesPageSectionDto[];
 export const getPagesSectionsForGetPagesByPageIdSectionsEndpoint = {
   operationId: 'getPagesSectionsForGetPagesByPageIdSections' as const,
   method: 'GET' as const,
@@ -16494,7 +19972,7 @@ export const deletePagesSectionsEndpoint = {
  */
 export interface PostPagesSectionsReorderInput {
   pageId: string;
-  body?: Array<string>;
+  body?: string[];
 }
 export type PostPagesSectionsReorderOutput = void;
 export const postPagesSectionsReorderEndpoint = {
@@ -16529,7 +20007,7 @@ export interface GetPagesSitemapInput {
     locale?: string;
   };
 }
-export type GetPagesSitemapOutput = Array<Types.ContentPagesSitemapEntryDto>;
+export type GetPagesSitemapOutput = Types.ContentPagesSitemapEntryDto[];
 export const getPagesSitemapEndpoint = {
   operationId: 'getPagesSitemap' as const,
   method: 'GET' as const,
@@ -16547,7 +20025,7 @@ export interface GetPermissionAnalyticsAnomaliesInput {
     fromDate?: string;
   };
 }
-export type GetPermissionAnalyticsAnomaliesOutput = Array<Types.IdentityAuthorizationPermissionAnomaly>;
+export type GetPermissionAnalyticsAnomaliesOutput = Types.IdentityAuthorizationPermissionAnomaly[];
 export const getPermissionAnalyticsAnomaliesEndpoint = {
   operationId: 'getPermissionAnalyticsAnomalies' as const,
   method: 'GET' as const,
@@ -16586,7 +20064,7 @@ export interface GetPermissionAnalyticsResourcePatternsInput {
     toDate?: string;
   };
 }
-export type GetPermissionAnalyticsResourcePatternsOutput = Array<Types.IdentityAuthorizationResourceAccessPattern>;
+export type GetPermissionAnalyticsResourcePatternsOutput = Types.IdentityAuthorizationResourceAccessPattern[];
 export const getPermissionAnalyticsResourcePatternsEndpoint = {
   operationId: 'getPermissionAnalyticsResourcePatterns' as const,
   method: 'GET' as const,
@@ -16605,7 +20083,7 @@ export interface GetPermissionAnalyticsTrendsInput {
     toDate?: string;
   };
 }
-export type GetPermissionAnalyticsTrendsOutput = Array<Types.IdentityAuthorizationPermissionTrend>;
+export type GetPermissionAnalyticsTrendsOutput = Types.IdentityAuthorizationPermissionTrend[];
 export const getPermissionAnalyticsTrendsEndpoint = {
   operationId: 'getPermissionAnalyticsTrends' as const,
   method: 'GET' as const,
@@ -16624,7 +20102,7 @@ export interface GetPermissionAnalyticsUsageInput {
     toDate?: string;
   };
 }
-export type GetPermissionAnalyticsUsageOutput = Array<Types.IdentityAuthorizationPermissionUsageMetrics>;
+export type GetPermissionAnalyticsUsageOutput = Types.IdentityAuthorizationPermissionUsageMetrics[];
 export const getPermissionAnalyticsUsageEndpoint = {
   operationId: 'getPermissionAnalyticsUsage' as const,
   method: 'GET' as const,
@@ -16644,7 +20122,7 @@ export interface GetPermissionAnalyticsUserActivityInput {
     toDate?: string;
   };
 }
-export type GetPermissionAnalyticsUserActivityOutput = Array<Types.IdentityAuthorizationUserActivitySummary>;
+export type GetPermissionAnalyticsUserActivityOutput = Types.IdentityAuthorizationUserActivitySummary[];
 export const getPermissionAnalyticsUserActivityEndpoint = {
   operationId: 'getPermissionAnalyticsUserActivity' as const,
   method: 'GET' as const,
@@ -16740,7 +20218,7 @@ export interface GetPermissionDelegationsDelegateInput {
     tenantId?: string;
   };
 }
-export type GetPermissionDelegationsDelegateOutput = Array<Types.IdentityAuthorizationPermissionDelegation>;
+export type GetPermissionDelegationsDelegateOutput = Types.IdentityAuthorizationPermissionDelegation[];
 export const getPermissionDelegationsDelegateEndpoint = {
   operationId: 'getPermissionDelegationsDelegate' as const,
   method: 'GET' as const,
@@ -16758,7 +20236,7 @@ export interface GetPermissionDelegationsDelegatorInput {
     tenantId?: string;
   };
 }
-export type GetPermissionDelegationsDelegatorOutput = Array<Types.IdentityAuthorizationPermissionDelegation>;
+export type GetPermissionDelegationsDelegatorOutput = Types.IdentityAuthorizationPermissionDelegation[];
 export const getPermissionDelegationsDelegatorEndpoint = {
   operationId: 'getPermissionDelegationsDelegator' as const,
   method: 'GET' as const,
@@ -16813,7 +20291,7 @@ export const postProductsEndpoint = {
 export interface PostProductsBatchCreateInput {
   body?: Types.CommerceProductsBatchCreateProductsInput;
 }
-export type PostProductsBatchCreateOutput = Array<Types.CommerceProductsProductDto>;
+export type PostProductsBatchCreateOutput = Types.CommerceProductsProductDto[];
 export const postProductsBatchCreateEndpoint = {
   operationId: 'postProductsBatchCreate' as const,
   method: 'POST' as const,
@@ -16964,7 +20442,7 @@ export interface GetProductsPricingInput {
     includeUnpublished?: boolean;
   };
 }
-export type GetProductsPricingOutput = Array<Types.CommerceProductsProductPricingDto>;
+export type GetProductsPricingOutput = Types.CommerceProductsProductPricingDto[];
 export const getProductsPricingEndpoint = {
   operationId: 'getProductsPricing' as const,
   method: 'GET' as const,
@@ -17014,7 +20492,7 @@ export interface GetProjectsForGetProjectsInput {
     sortDirection?: string;
   };
 }
-export type GetProjectsForGetProjectsOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsForGetProjectsOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsForGetProjectsEndpoint = {
   operationId: 'getProjectsForGetProjects' as const,
   method: 'GET' as const,
@@ -17176,7 +20654,7 @@ export const postProjectsUnpublishEndpoint = {
 export interface GetProjectsCollaboratorsInput {
   id: string;
 }
-export type GetProjectsCollaboratorsOutput = Array<Types.ProjectsCollaboratorDto>;
+export type GetProjectsCollaboratorsOutput = Types.ProjectsCollaboratorDto[];
 export const getProjectsCollaboratorsEndpoint = {
   operationId: 'getProjectsCollaborators' as const,
   method: 'GET' as const,
@@ -17272,7 +20750,7 @@ export const getProjectsStatisticsEndpoint = {
 export interface GetProjectsVersionsInput {
   id: string;
 }
-export type GetProjectsVersionsOutput = Array<Types.ProjectsProjectVersionApiOutput>;
+export type GetProjectsVersionsOutput = Types.ProjectsProjectVersionApiOutput[];
 export const getProjectsVersionsEndpoint = {
   operationId: 'getProjectsVersions' as const,
   method: 'GET' as const,
@@ -17540,7 +21018,7 @@ export const postProjectsPermissionsShareWithRoleEndpoint = {
 export interface GetProjectsPermissionsCollaboratorsInput {
   projectId: string;
 }
-export type GetProjectsPermissionsCollaboratorsOutput = Array<Types.ProjectsProjectCollaboratorDto>;
+export type GetProjectsPermissionsCollaboratorsOutput = Types.ProjectsProjectCollaboratorDto[];
 export const getProjectsPermissionsCollaboratorsEndpoint = {
   operationId: 'getProjectsPermissionsCollaborators' as const,
   method: 'GET' as const,
@@ -17604,7 +21082,7 @@ export const deleteProjectsPermissionsCollaboratorsEndpoint = {
 export interface GetProjectsPermissionsMyPermissionsInput {
   projectId: string;
 }
-export type GetProjectsPermissionsMyPermissionsOutput = Array<Types.ProjectsEffectivePermission>;
+export type GetProjectsPermissionsMyPermissionsOutput = Types.ProjectsEffectivePermission[];
 export const getProjectsPermissionsMyPermissionsEndpoint = {
   operationId: 'getProjectsPermissionsMyPermissions' as const,
   method: 'GET' as const,
@@ -17619,7 +21097,7 @@ export const getProjectsPermissionsMyPermissionsEndpoint = {
 export interface GetProjectsPermissionsRoleTemplatesInput {
   projectId: string;
 }
-export type GetProjectsPermissionsRoleTemplatesOutput = Array<Types.ProjectsProjectRoleTemplate>;
+export type GetProjectsPermissionsRoleTemplatesOutput = Types.ProjectsProjectRoleTemplate[];
 export const getProjectsPermissionsRoleTemplatesEndpoint = {
   operationId: 'getProjectsPermissionsRoleTemplates' as const,
   method: 'GET' as const,
@@ -17631,7 +21109,7 @@ export const getProjectsPermissionsRoleTemplatesEndpoint = {
 export interface GetProjectsStoreProductsInput {
   projectId: string;
 }
-export type GetProjectsStoreProductsOutput = Array<Types.ProjectsProjectStoreProductProjection>;
+export type GetProjectsStoreProductsOutput = Types.ProjectsProjectStoreProductProjection[];
 export const getProjectsStoreProductsEndpoint = {
   operationId: 'getProjectsStoreProducts' as const,
   method: 'GET' as const,
@@ -17724,7 +21202,7 @@ export interface GetProjectsWorkHistoryInput {
     take?: number;
   };
 }
-export type GetProjectsWorkHistoryOutput = Array<Types.APIProjectWorkProjectWorkHistoryDto>;
+export type GetProjectsWorkHistoryOutput = Types.APIProjectWorkProjectWorkHistoryDto[];
 export const getProjectsWorkHistoryEndpoint = {
   operationId: 'getProjectsWorkHistory' as const,
   method: 'GET' as const,
@@ -17736,7 +21214,7 @@ export const getProjectsWorkHistoryEndpoint = {
 export interface GetProjectsWorkLabelsInput {
   projectId: string;
 }
-export type GetProjectsWorkLabelsOutput = Array<Types.APIProjectWorkProjectTaskLabelDto>;
+export type GetProjectsWorkLabelsOutput = Types.APIProjectWorkProjectTaskLabelDto[];
 export const getProjectsWorkLabelsEndpoint = {
   operationId: 'getProjectsWorkLabels' as const,
   method: 'GET' as const,
@@ -17774,7 +21252,7 @@ export const deleteProjectsWorkLabelsEndpoint = {
 export interface GetProjectsWorkMilestonesInput {
   projectId: string;
 }
-export type GetProjectsWorkMilestonesOutput = Array<Types.APIProjectWorkProjectMilestoneDto>;
+export type GetProjectsWorkMilestonesOutput = Types.APIProjectWorkProjectMilestoneDto[];
 export const getProjectsWorkMilestonesEndpoint = {
   operationId: 'getProjectsWorkMilestones' as const,
   method: 'GET' as const,
@@ -18037,7 +21515,7 @@ export interface GetProjectsAccessibleVersionsInput {
     take?: number;
   };
 }
-export type GetProjectsAccessibleVersionsOutput = Array<Types.ProjectsProjectVersionOptionProjection>;
+export type GetProjectsAccessibleVersionsOutput = Types.ProjectsProjectVersionOptionProjection[];
 export const getProjectsAccessibleVersionsEndpoint = {
   operationId: 'getProjectsAccessibleVersions' as const,
   method: 'GET' as const,
@@ -18057,7 +21535,7 @@ export interface GetProjectsCategoryInput {
     take?: number;
   };
 }
-export type GetProjectsCategoryOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsCategoryOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsCategoryEndpoint = {
   operationId: 'getProjectsCategory' as const,
   method: 'GET' as const,
@@ -18077,7 +21555,7 @@ export interface GetProjectsCreatorInput {
     take?: number;
   };
 }
-export type GetProjectsCreatorOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsCreatorOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsCreatorEndpoint = {
   operationId: 'getProjectsCreator' as const,
   method: 'GET' as const,
@@ -18095,7 +21573,7 @@ export interface GetProjectsFeaturedInput {
     take?: number;
   };
 }
-export type GetProjectsFeaturedOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsFeaturedOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsFeaturedEndpoint = {
   operationId: 'getProjectsFeatured' as const,
   method: 'GET' as const,
@@ -18145,7 +21623,7 @@ export interface GetProjectsMineInput {
     take?: number;
   };
 }
-export type GetProjectsMineOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsMineOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsMineEndpoint = {
   operationId: 'getProjectsMine' as const,
   method: 'GET' as const,
@@ -18158,7 +21636,7 @@ export const getProjectsMineEndpoint = {
  * Get current user's project invitations
  */
 export type GetProjectsMyInvitationsInput = void;
-export type GetProjectsMyInvitationsOutput = Array<Types.ProjectsProjectInvitationDto>;
+export type GetProjectsMyInvitationsOutput = Types.ProjectsProjectInvitationDto[];
 export const getProjectsMyInvitationsEndpoint = {
   operationId: 'getProjectsMyInvitations' as const,
   method: 'GET' as const,
@@ -18176,7 +21654,7 @@ export interface GetProjectsPopularInput {
     take?: number;
   };
 }
-export type GetProjectsPopularOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsPopularOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsPopularEndpoint = {
   operationId: 'getProjectsPopular' as const,
   method: 'GET' as const,
@@ -18194,7 +21672,7 @@ export interface GetProjectsRecentInput {
     take?: number;
   };
 }
-export type GetProjectsRecentOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsRecentOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsRecentEndpoint = {
   operationId: 'getProjectsRecent' as const,
   method: 'GET' as const,
@@ -18207,7 +21685,7 @@ export const getProjectsRecentEndpoint = {
  * Get available role templates for projects
  */
 export type GetProjectsRoleTemplatesInput = void;
-export type GetProjectsRoleTemplatesOutput = Array<Record<string, unknown>>;
+export type GetProjectsRoleTemplatesOutput = Record<string, unknown>[];
 export const getProjectsRoleTemplatesEndpoint = {
   operationId: 'getProjectsRoleTemplates' as const,
   method: 'GET' as const,
@@ -18222,7 +21700,7 @@ export const getProjectsRoleTemplatesEndpoint = {
 export interface GetProjectsRolesPermissionsInput {
   roleName: string;
 }
-export type GetProjectsRolesPermissionsOutput = Array<Types.IdentityAuthorizationPermissionType>;
+export type GetProjectsRolesPermissionsOutput = Types.IdentityAuthorizationPermissionType[];
 export const getProjectsRolesPermissionsEndpoint = {
   operationId: 'getProjectsRolesPermissions' as const,
   method: 'GET' as const,
@@ -18247,7 +21725,7 @@ export interface GetProjectsSearchInput {
     sortDirection?: string;
   };
 }
-export type GetProjectsSearchOutput = Array<Types.ProjectsProjectApiOutput>;
+export type GetProjectsSearchOutput = Types.ProjectsProjectApiOutput[];
 export const getProjectsSearchEndpoint = {
   operationId: 'getProjectsSearch' as const,
   method: 'GET' as const,
@@ -18286,6 +21764,7 @@ export interface GetPromoCodesForGetPromoCodesInput {
     type?: Types.CommerceProductsPromoCodeType;
     productId?: string;
     searchTerm?: string;
+    campaignId?: string;
     skip?: number;
     take?: number;
   };
@@ -18315,7 +21794,8 @@ export const postPromoCodesEndpoint = {
 } as const;
 
 /**
- * Apply promo codes to an order
+ * Apply promo codes to an order. Usage is recorded atomically per applied code
+ * (idempotent on the supplied key, fail-closed on usage limits).
  */
 export interface PostPromoCodesApplyInput {
   body?: Types.CommerceProductsApplyPromoCodesInput;
@@ -18325,6 +21805,21 @@ export const postPromoCodesApplyEndpoint = {
   operationId: 'postPromoCodesApply' as const,
   method: 'POST' as const,
   path: '/v1/promo-codes/:apply' as const,
+  tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Bulk-generate promo codes with a shared prefix and random suffixes
+ */
+export interface PostPromoCodesGenerateBulkInput {
+  body?: Types.CommerceProductsGenerateBulkPromoCodesInput;
+}
+export type PostPromoCodesGenerateBulkOutput = Types.CommerceProductsPromoCodeDto[];
+export const postPromoCodesGenerateBulkEndpoint = {
+  operationId: 'postPromoCodesGenerateBulk' as const,
+  method: 'POST' as const,
+  path: '/v1/promo-codes/:generate-bulk' as const,
   tags: ['CommerceProductsPromoCodes'] as const,
   requiresAuth: true,
 } as const;
@@ -18482,6 +21977,103 @@ export const getPromoCodesByCodeEndpoint = {
 } as const;
 
 /**
+ * Get aggregated campaign performance (uses, redemption rate, discount totals, top codes) within an optional window
+ */
+export interface GetPromoCodesCampaignsPerformanceInput {
+  campaignId: string;
+  query?: {
+    from?: string;
+    to?: string;
+  };
+}
+export type GetPromoCodesCampaignsPerformanceOutput = Types.CommerceProductsCampaignPerformanceDto;
+export const getPromoCodesCampaignsPerformanceEndpoint = {
+  operationId: 'getPromoCodesCampaignsPerformance' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-codes/campaigns/{campaignId}/performance' as const,
+  tags: ['CommerceProductsPromoCodes'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * List stacking rules ordered by priority (descending)
+ */
+export interface GetPromoStackingRulesForGetPromoStackingRulesInput {
+  query?: {
+    includeInactive?: boolean;
+  };
+}
+export type GetPromoStackingRulesForGetPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto[];
+export const getPromoStackingRulesForGetPromoStackingRulesEndpoint = {
+  operationId: 'getPromoStackingRulesForGetPromoStackingRules' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-stacking-rules' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Create a stacking rule
+ */
+export interface PostPromoStackingRulesInput {
+  body?: Types.CommerceProductsCreatePromoStackingRuleInput;
+}
+export type PostPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const postPromoStackingRulesEndpoint = {
+  operationId: 'postPromoStackingRules' as const,
+  method: 'POST' as const,
+  path: '/v1/promo-stacking-rules' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a stacking rule by ID
+ */
+export interface GetPromoStackingRulesForGetPromoStackingRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetPromoStackingRulesForGetPromoStackingRulesByRuleIdOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const getPromoStackingRulesForGetPromoStackingRulesByRuleIdEndpoint = {
+  operationId: 'getPromoStackingRulesForGetPromoStackingRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Update a stacking rule
+ */
+export interface PutPromoStackingRulesInput {
+  ruleId: string;
+  body?: Types.CommerceProductsUpdatePromoStackingRuleInput;
+}
+export type PutPromoStackingRulesOutput = Types.CommerceProductsPromoStackingRuleDto;
+export const putPromoStackingRulesEndpoint = {
+  operationId: 'putPromoStackingRules' as const,
+  method: 'PUT' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a stacking rule
+ */
+export interface DeletePromoStackingRulesInput {
+  ruleId: string;
+}
+export type DeletePromoStackingRulesOutput = void;
+export const deletePromoStackingRulesEndpoint = {
+  operationId: 'deletePromoStackingRules' as const,
+  method: 'DELETE' as const,
+  path: '/v1/promo-stacking-rules/{ruleId}' as const,
+  tags: ['CommerceProductsPromoStackingRules'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Dismiss a recommendation
  */
 export interface PostRecommendationsDismissInput {
@@ -18523,7 +22115,7 @@ export interface GetRecommendationsCoursesSimilarInput {
     maxResults?: number;
   };
 }
-export type GetRecommendationsCoursesSimilarOutput = Array<Types.LearningExperienceRecommendationsSimilarCourseDto>;
+export type GetRecommendationsCoursesSimilarOutput = Types.LearningExperienceRecommendationsSimilarCourseDto[];
 export const getRecommendationsCoursesSimilarEndpoint = {
   operationId: 'getRecommendationsCoursesSimilar' as const,
   method: 'GET' as const,
@@ -18544,7 +22136,7 @@ export interface GetRecommendationsMeInput {
     take?: number;
   };
 }
-export type GetRecommendationsMeOutput = Array<Types.LearningExperienceRecommendationsRecommendationDto>;
+export type GetRecommendationsMeOutput = Types.LearningExperienceRecommendationsRecommendationDto[];
 export const getRecommendationsMeEndpoint = {
   operationId: 'getRecommendationsMe' as const,
   method: 'GET' as const,
@@ -18562,7 +22154,7 @@ export interface PostRecommendationsMeGenerateInput {
     maxResults?: number;
   };
 }
-export type PostRecommendationsMeGenerateOutput = Array<Types.LearningExperienceRecommendationsRecommendationDto>;
+export type PostRecommendationsMeGenerateOutput = Types.LearningExperienceRecommendationsRecommendationDto[];
 export const postRecommendationsMeGenerateEndpoint = {
   operationId: 'postRecommendationsMeGenerate' as const,
   method: 'POST' as const,
@@ -18673,7 +22265,7 @@ export interface GetRecommendationsPopularInput {
     take?: number;
   };
 }
-export type GetRecommendationsPopularOutput = Array<Types.LearningExperienceRecommendationsPopularCourseDto>;
+export type GetRecommendationsPopularOutput = Types.LearningExperienceRecommendationsPopularCourseDto[];
 export const getRecommendationsPopularEndpoint = {
   operationId: 'getRecommendationsPopular' as const,
   method: 'GET' as const,
@@ -18695,7 +22287,7 @@ export interface GetRecommendationsTrendingInput {
     take?: number;
   };
 }
-export type GetRecommendationsTrendingOutput = Array<Types.LearningExperienceRecommendationsTrendingCourseDto>;
+export type GetRecommendationsTrendingOutput = Types.LearningExperienceRecommendationsTrendingCourseDto[];
 export const getRecommendationsTrendingEndpoint = {
   operationId: 'getRecommendationsTrending' as const,
   method: 'GET' as const,
@@ -18932,7 +22524,7 @@ export interface GetSodRulesForGetSodRulesInput {
     activeOnly?: boolean;
   };
 }
-export type GetSodRulesForGetSodRulesOutput = Array<Types.IdentityAuthorizationSoDRule>;
+export type GetSodRulesForGetSodRulesOutput = Types.IdentityAuthorizationSoDRule[];
 export const getSodRulesForGetSodRulesEndpoint = {
   operationId: 'getSodRulesForGetSodRules' as const,
   method: 'GET' as const,
@@ -19059,7 +22651,7 @@ export interface GetSodViolationsActiveInput {
     tenantId?: string;
   };
 }
-export type GetSodViolationsActiveOutput = Array<Types.IdentityAuthorizationSoDViolation>;
+export type GetSodViolationsActiveOutput = Types.IdentityAuthorizationSoDViolation[];
 export const getSodViolationsActiveEndpoint = {
   operationId: 'getSodViolationsActive' as const,
   method: 'GET' as const,
@@ -19077,7 +22669,7 @@ export interface GetSodViolationsDetectInput {
     tenantId?: string;
   };
 }
-export type GetSodViolationsDetectOutput = Array<Types.IdentityAuthorizationSoDViolation>;
+export type GetSodViolationsDetectOutput = Types.IdentityAuthorizationSoDViolation[];
 export const getSodViolationsDetectEndpoint = {
   operationId: 'getSodViolationsDetect' as const,
   method: 'GET' as const,
@@ -19095,7 +22687,7 @@ export interface GetSodViolationsUserInput {
     tenantId?: string;
   };
 }
-export type GetSodViolationsUserOutput = Array<Types.IdentityAuthorizationSoDViolation>;
+export type GetSodViolationsUserOutput = Types.IdentityAuthorizationSoDViolation[];
 export const getSodViolationsUserEndpoint = {
   operationId: 'getSodViolationsUser' as const,
   method: 'GET' as const,
@@ -19107,7 +22699,7 @@ export const getSodViolationsUserEndpoint = {
 export interface GetStoreProductsProjectsInput {
   productId: string;
 }
-export type GetStoreProductsProjectsOutput = Array<Types.ProjectsProjectStoreProductProjection>;
+export type GetStoreProductsProjectsOutput = Types.ProjectsProjectStoreProductProjection[];
 export const getStoreProductsProjectsEndpoint = {
   operationId: 'getStoreProductsProjects' as const,
   method: 'GET' as const,
@@ -19381,7 +22973,7 @@ export const postSupportTicketsMessagesEndpoint = {
 } as const;
 
 export type GetSupportTicketsAgentsInput = void;
-export type GetSupportTicketsAgentsOutput = Array<Types.CommerceProductsSupportAgentDto>;
+export type GetSupportTicketsAgentsOutput = Types.CommerceProductsSupportAgentDto[];
 export const getSupportTicketsAgentsEndpoint = {
   operationId: 'getSupportTicketsAgents' as const,
   method: 'GET' as const,
@@ -19463,7 +23055,7 @@ export interface GetTeamsForGetTeamsInput {
     take?: number;
   };
 }
-export type GetTeamsForGetTeamsOutput = Array<Types.APITeamsTeamDto>;
+export type GetTeamsForGetTeamsOutput = Types.APITeamsTeamDto[];
 export const getTeamsForGetTeamsEndpoint = {
   operationId: 'getTeamsForGetTeams' as const,
   method: 'GET' as const,
@@ -19536,7 +23128,7 @@ export const postTeamsRestoreEndpoint = {
 export interface GetTeamsInvitationsInput {
   teamId: string;
 }
-export type GetTeamsInvitationsOutput = Array<Types.APITeamsTeamInvitationDto>;
+export type GetTeamsInvitationsOutput = Types.APITeamsTeamInvitationDto[];
 export const getTeamsInvitationsEndpoint = {
   operationId: 'getTeamsInvitations' as const,
   method: 'GET' as const,
@@ -19614,7 +23206,7 @@ export const deleteTeamsMembersEndpoint = {
 export interface GetTeamsProjectsInput {
   teamId: string;
 }
-export type GetTeamsProjectsOutput = Array<Types.APITeamsTeamProjectSummary>;
+export type GetTeamsProjectsOutput = Types.APITeamsTeamProjectSummary[];
 export const getTeamsProjectsEndpoint = {
   operationId: 'getTeamsProjects' as const,
   method: 'GET' as const,
@@ -19659,7 +23251,7 @@ export interface GetTeamsMineInput {
     take?: number;
   };
 }
-export type GetTeamsMineOutput = Array<Types.APITeamsTeamDto>;
+export type GetTeamsMineOutput = Types.APITeamsTeamDto[];
 export const getTeamsMineEndpoint = {
   operationId: 'getTeamsMine' as const,
   method: 'GET' as const,
@@ -19669,7 +23261,7 @@ export const getTeamsMineEndpoint = {
 } as const;
 
 export type GetTeamsMyInvitationsInput = void;
-export type GetTeamsMyInvitationsOutput = Array<Types.APITeamsMyTeamInvitationDto>;
+export type GetTeamsMyInvitationsOutput = Types.APITeamsMyTeamInvitationDto[];
 export const getTeamsMyInvitationsEndpoint = {
   operationId: 'getTeamsMyInvitations' as const,
   method: 'GET' as const,
@@ -20077,7 +23669,7 @@ export interface GetTenantsAiHistoryInput {
     take?: number;
   };
 }
-export type GetTenantsAiHistoryOutput = Array<Types.AIAiConversationHistoryEntryDto>;
+export type GetTenantsAiHistoryOutput = Types.AIAiConversationHistoryEntryDto[];
 export const getTenantsAiHistoryEndpoint = {
   operationId: 'getTenantsAiHistory' as const,
   method: 'GET' as const,
@@ -20247,7 +23839,7 @@ export interface GetTenantsCapabilitiesAuditLogInput {
     toDate?: string;
   };
 }
-export type GetTenantsCapabilitiesAuditLogOutput = Array<Types.FeaturesCapabilityAuditLogDto>;
+export type GetTenantsCapabilitiesAuditLogOutput = Types.FeaturesCapabilityAuditLogDto[];
 export const getTenantsCapabilitiesAuditLogEndpoint = {
   operationId: 'getTenantsCapabilitiesAuditLog' as const,
   method: 'GET' as const,
@@ -20368,7 +23960,7 @@ export const patchTenantsMetadataCustomFieldsEndpoint = {
 export interface GetTenantsMetadataTagsInput {
   tenantId: string;
 }
-export type GetTenantsMetadataTagsOutput = Array<string>;
+export type GetTenantsMetadataTagsOutput = string[];
 export const getTenantsMetadataTagsEndpoint = {
   operationId: 'getTenantsMetadataTags' as const,
   method: 'GET' as const,
@@ -20384,7 +23976,7 @@ export const getTenantsMetadataTagsEndpoint = {
  */
 export interface PutTenantsMetadataTagsInput {
   tenantId: string;
-  body?: Array<string>;
+  body?: string[];
 }
 export type PutTenantsMetadataTagsOutput = void;
 export const putTenantsMetadataTagsEndpoint = {
@@ -20425,7 +24017,7 @@ export interface GetTenantsPaymentsInput {
     endDate?: string;
   };
 }
-export type GetTenantsPaymentsOutput = Array<Types.CommercePaymentsPaymentResult>;
+export type GetTenantsPaymentsOutput = Types.CommercePaymentsPaymentResult[];
 export const getTenantsPaymentsEndpoint = {
   operationId: 'getTenantsPayments' as const,
   method: 'GET' as const,
@@ -20442,7 +24034,7 @@ export const getTenantsPaymentsEndpoint = {
 export interface GetTenantsQuotasForGetTenantsByTenantIdQuotasInput {
   tenantId: string;
 }
-export type GetTenantsQuotasForGetTenantsByTenantIdQuotasOutput = Array<Types.ResourcesResourceQuotaOutput>;
+export type GetTenantsQuotasForGetTenantsByTenantIdQuotasOutput = Types.ResourcesResourceQuotaOutput[];
 export const getTenantsQuotasForGetTenantsByTenantIdQuotasEndpoint = {
   operationId: 'getTenantsQuotasForGetTenantsByTenantIdQuotas' as const,
   method: 'GET' as const,
@@ -20680,7 +24272,7 @@ export interface GetTenantsResourcesMetadataForGetTenantsByTenantIdResourcesMeta
     category?: string;
   };
 }
-export type GetTenantsResourcesMetadataForGetTenantsByTenantIdResourcesMetadataOutput = Array<Types.ResourcesResourceMetadata>;
+export type GetTenantsResourcesMetadataForGetTenantsByTenantIdResourcesMetadataOutput = Types.ResourcesResourceMetadata[];
 export const getTenantsResourcesMetadataForGetTenantsByTenantIdResourcesMetadataEndpoint = {
   operationId: 'getTenantsResourcesMetadataForGetTenantsByTenantIdResourcesMetadata' as const,
   method: 'GET' as const,
@@ -20755,7 +24347,7 @@ export interface GetTenantsResourcesSettingsForGetTenantsByTenantIdResourcesSett
     category?: string;
   };
 }
-export type GetTenantsResourcesSettingsForGetTenantsByTenantIdResourcesSettingsOutput = Array<Types.ResourcesResourceSettings>;
+export type GetTenantsResourcesSettingsForGetTenantsByTenantIdResourcesSettingsOutput = Types.ResourcesResourceSettings[];
 export const getTenantsResourcesSettingsForGetTenantsByTenantIdResourcesSettingsEndpoint = {
   operationId: 'getTenantsResourcesSettingsForGetTenantsByTenantIdResourcesSettings' as const,
   method: 'GET' as const,
@@ -21122,7 +24714,7 @@ export const getTestingAttendanceStudentsEndpoint = {
 } as const;
 
 export type GetTestingAvailableForTestingInput = void;
-export type GetTestingAvailableForTestingOutput = Array<Types.TestingLabTestingInput>;
+export type GetTestingAvailableForTestingOutput = Types.TestingLabTestingInput[];
 export const getTestingAvailableForTestingEndpoint = {
   operationId: 'getTestingAvailableForTesting' as const,
   method: 'GET' as const,
@@ -21138,7 +24730,7 @@ export interface GetTestingEventsForGetTestingEventsInput {
     take?: number;
   };
 }
-export type GetTestingEventsForGetTestingEventsOutput = Array<Types.TestingLabTestingEventProjection>;
+export type GetTestingEventsForGetTestingEventsOutput = Types.TestingLabTestingEventProjection[];
 export const getTestingEventsForGetTestingEventsEndpoint = {
   operationId: 'getTestingEventsForGetTestingEvents' as const,
   method: 'GET' as const,
@@ -21301,7 +24893,7 @@ export interface GetTestingEventsApplicationsForGetTestingEventsByEventIdApplica
     take?: number;
   };
 }
-export type GetTestingEventsApplicationsForGetTestingEventsByEventIdApplicationsOutput = Array<Types.TestingLabTestingProjectApplicationProjection>;
+export type GetTestingEventsApplicationsForGetTestingEventsByEventIdApplicationsOutput = Types.TestingLabTestingProjectApplicationProjection[];
 export const getTestingEventsApplicationsForGetTestingEventsByEventIdApplicationsEndpoint = {
   operationId: 'getTestingEventsApplicationsForGetTestingEventsByEventIdApplications' as const,
   method: 'GET' as const,
@@ -21351,10 +24943,10 @@ export const postTestingEventsApplicationsDraftsEndpoint = {
 export interface GetTestingEventsApplicationsTesterEligibilityInput {
   eventId: string;
   query?: {
-    testerUserIds?: Array<string>;
+    testerUserIds?: string[];
   };
 }
-export type GetTestingEventsApplicationsTesterEligibilityOutput = Array<Types.TestingLabTestingApplicationTesterEligibilityProjection>;
+export type GetTestingEventsApplicationsTesterEligibilityOutput = Types.TestingLabTestingApplicationTesterEligibilityProjection[];
 export const getTestingEventsApplicationsTesterEligibilityEndpoint = {
   operationId: 'getTestingEventsApplicationsTesterEligibility' as const,
   method: 'GET' as const,
@@ -21366,7 +24958,7 @@ export const getTestingEventsApplicationsTesterEligibilityEndpoint = {
 export interface GetTestingEventsCommitteeInput {
   eventId: string;
 }
-export type GetTestingEventsCommitteeOutput = Array<Types.TestingLabTestingEventCommitteeMemberProjection>;
+export type GetTestingEventsCommitteeOutput = Types.TestingLabTestingEventCommitteeMemberProjection[];
 export const getTestingEventsCommitteeEndpoint = {
   operationId: 'getTestingEventsCommittee' as const,
   method: 'GET' as const,
@@ -21417,7 +25009,7 @@ export const putTestingEventsConfigurationEndpoint = {
 export interface GetTestingEventsFeedbackInput {
   eventId: string;
 }
-export type GetTestingEventsFeedbackOutput = Array<Types.TestingLabTestingEventFeedbackReviewProjection>;
+export type GetTestingEventsFeedbackOutput = Types.TestingLabTestingEventFeedbackReviewProjection[];
 export const getTestingEventsFeedbackEndpoint = {
   operationId: 'getTestingEventsFeedback' as const,
   method: 'GET' as const,
@@ -21442,7 +25034,7 @@ export const putTestingEventsLearningEndpoint = {
 export interface GetTestingEventsSlotsInput {
   eventId: string;
 }
-export type GetTestingEventsSlotsOutput = Array<Types.TestingLabTestingEventSlotProjection>;
+export type GetTestingEventsSlotsOutput = Types.TestingLabTestingEventSlotProjection[];
 export const getTestingEventsSlotsEndpoint = {
   operationId: 'getTestingEventsSlots' as const,
   method: 'GET' as const,
@@ -21495,7 +25087,7 @@ export interface PostTestingEventsSlotsBatchInput {
   eventId: string;
   body?: Types.TestingLabCreateTestingEventSlotsInput;
 }
-export type PostTestingEventsSlotsBatchOutput = Array<Types.TestingLabTestingEventSlotProjection>;
+export type PostTestingEventsSlotsBatchOutput = Types.TestingLabTestingEventSlotProjection[];
 export const postTestingEventsSlotsBatchEndpoint = {
   operationId: 'postTestingEventsSlotsBatch' as const,
   method: 'POST' as const,
@@ -21660,7 +25252,7 @@ export interface GetTestingEventsApplicationsMeInput {
     eventId?: string;
   };
 }
-export type GetTestingEventsApplicationsMeOutput = Array<Types.TestingLabTestingProjectApplicationProjection>;
+export type GetTestingEventsApplicationsMeOutput = Types.TestingLabTestingProjectApplicationProjection[];
 export const getTestingEventsApplicationsMeEndpoint = {
   operationId: 'getTestingEventsApplicationsMe' as const,
   method: 'GET' as const,
@@ -21675,7 +25267,7 @@ export interface GetTestingEventsArchivedInput {
     take?: number;
   };
 }
-export type GetTestingEventsArchivedOutput = Array<Types.TestingLabTestingEventProjection>;
+export type GetTestingEventsArchivedOutput = Types.TestingLabTestingEventProjection[];
 export const getTestingEventsArchivedEndpoint = {
   operationId: 'getTestingEventsArchived' as const,
   method: 'GET' as const,
@@ -21702,7 +25294,7 @@ export interface GetTestingEventsFeedbackObligationsMeInput {
     eventId?: string;
   };
 }
-export type GetTestingEventsFeedbackObligationsMeOutput = Array<Types.TestingLabTestingFeedbackObligationProjection>;
+export type GetTestingEventsFeedbackObligationsMeOutput = Types.TestingLabTestingFeedbackObligationProjection[];
 export const getTestingEventsFeedbackObligationsMeEndpoint = {
   operationId: 'getTestingEventsFeedbackObligationsMe' as const,
   method: 'GET' as const,
@@ -21716,7 +25308,7 @@ export interface GetTestingEventsFeedbackMeInput {
     eventId?: string;
   };
 }
-export type GetTestingEventsFeedbackMeOutput = Array<Types.TestingLabTestingEventFeedbackProjection>;
+export type GetTestingEventsFeedbackMeOutput = Types.TestingLabTestingEventFeedbackProjection[];
 export const getTestingEventsFeedbackMeEndpoint = {
   operationId: 'getTestingEventsFeedbackMe' as const,
   method: 'GET' as const,
@@ -21748,7 +25340,7 @@ export interface GetTestingEventsPublicForGetTestingEventsPublicInput {
     take?: number;
   };
 }
-export type GetTestingEventsPublicForGetTestingEventsPublicOutput = Array<Types.TestingLabPublicTestingEventProjection>;
+export type GetTestingEventsPublicForGetTestingEventsPublicOutput = Types.TestingLabPublicTestingEventProjection[];
 export const getTestingEventsPublicForGetTestingEventsPublicEndpoint = {
   operationId: 'getTestingEventsPublicForGetTestingEventsPublic' as const,
   method: 'GET' as const,
@@ -21847,7 +25439,7 @@ export interface GetTestingEventsRegistrationsMeInput {
     eventId?: string;
   };
 }
-export type GetTestingEventsRegistrationsMeOutput = Array<Types.TestingLabTestingSlotRegistrationProjection>;
+export type GetTestingEventsRegistrationsMeOutput = Types.TestingLabTestingSlotRegistrationProjection[];
 export const getTestingEventsRegistrationsMeEndpoint = {
   operationId: 'getTestingEventsRegistrationsMe' as const,
   method: 'GET' as const,
@@ -21862,7 +25454,7 @@ export interface GetTestingEventsSlotsRegistrationsInput {
     status?: Types.TestingLabTestingSlotRegistrationStatus;
   };
 }
-export type GetTestingEventsSlotsRegistrationsOutput = Array<Types.TestingLabTestingSlotRegistrationProjection>;
+export type GetTestingEventsSlotsRegistrationsOutput = Types.TestingLabTestingSlotRegistrationProjection[];
 export const getTestingEventsSlotsRegistrationsEndpoint = {
   operationId: 'getTestingEventsSlotsRegistrations' as const,
   method: 'GET' as const,
@@ -21947,7 +25539,7 @@ export const postTestingFeedbackReportEndpoint = {
 export interface GetTestingFeedbackByUserInput {
   userId: string;
 }
-export type GetTestingFeedbackByUserOutput = Array<Types.TestingLabTestingFeedback>;
+export type GetTestingFeedbackByUserOutput = Types.TestingLabTestingFeedback[];
 export const getTestingFeedbackByUserEndpoint = {
   operationId: 'getTestingFeedbackByUser' as const,
   method: 'GET' as const,
@@ -21963,7 +25555,7 @@ export interface GetTestingLocationsForGetTestingLocationsInput {
     includeArchived?: boolean;
   };
 }
-export type GetTestingLocationsForGetTestingLocationsOutput = Array<Types.TestingLabTestingLocation>;
+export type GetTestingLocationsForGetTestingLocationsOutput = Types.TestingLabTestingLocation[];
 export const getTestingLocationsForGetTestingLocationsEndpoint = {
   operationId: 'getTestingLocationsForGetTestingLocations' as const,
   method: 'GET' as const,
@@ -22034,7 +25626,7 @@ export const postTestingLocationsRestoreEndpoint = {
 } as const;
 
 export type GetTestingMyRequestsInput = void;
-export type GetTestingMyRequestsOutput = Array<Types.TestingLabTestingInput>;
+export type GetTestingMyRequestsOutput = Types.TestingLabTestingInput[];
 export const getTestingMyRequestsEndpoint = {
   operationId: 'getTestingMyRequests' as const,
   method: 'GET' as const,
@@ -22051,7 +25643,7 @@ export interface GetTestingPublicSessionsInput {
     take?: number;
   };
 }
-export type GetTestingPublicSessionsOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingPublicSessionsOutput = Types.TestingLabTestingSession[];
 export const getTestingPublicSessionsEndpoint = {
   operationId: 'getTestingPublicSessions' as const,
   method: 'GET' as const,
@@ -22067,7 +25659,7 @@ export interface GetTestingRequestsForGetTestingRequestsInput {
     includeArchived?: boolean;
   };
 }
-export type GetTestingRequestsForGetTestingRequestsOutput = Array<Types.TestingLabTestingRequestDetailProjection>;
+export type GetTestingRequestsForGetTestingRequestsOutput = Types.TestingLabTestingRequestDetailProjection[];
 export const getTestingRequestsForGetTestingRequestsEndpoint = {
   operationId: 'getTestingRequestsForGetTestingRequests' as const,
   method: 'GET' as const,
@@ -22152,7 +25744,7 @@ export const getTestingRequestsDetailsEndpoint = {
 export interface GetTestingRequestsFeedbackInput {
   requestId: string;
 }
-export type GetTestingRequestsFeedbackOutput = Array<Types.TestingLabTestingFeedback>;
+export type GetTestingRequestsFeedbackOutput = Types.TestingLabTestingFeedback[];
 export const getTestingRequestsFeedbackEndpoint = {
   operationId: 'getTestingRequestsFeedback' as const,
   method: 'GET' as const,
@@ -22177,7 +25769,7 @@ export const postTestingRequestsFeedbackEndpoint = {
 export interface GetTestingRequestsParticipantsInput {
   requestId: string;
 }
-export type GetTestingRequestsParticipantsOutput = Array<Types.TestingLabTestingParticipant>;
+export type GetTestingRequestsParticipantsOutput = Types.TestingLabTestingParticipant[];
 export const getTestingRequestsParticipantsEndpoint = {
   operationId: 'getTestingRequestsParticipants' as const,
   method: 'GET' as const,
@@ -22240,7 +25832,7 @@ export const getTestingRequestsStatisticsEndpoint = {
 export interface GetTestingRequestsByCreatorInput {
   creatorId: string;
 }
-export type GetTestingRequestsByCreatorOutput = Array<Types.TestingLabTestingInput>;
+export type GetTestingRequestsByCreatorOutput = Types.TestingLabTestingInput[];
 export const getTestingRequestsByCreatorEndpoint = {
   operationId: 'getTestingRequestsByCreator' as const,
   method: 'GET' as const,
@@ -22252,7 +25844,7 @@ export const getTestingRequestsByCreatorEndpoint = {
 export interface GetTestingRequestsByProjectVersionInput {
   projectVersionId: string;
 }
-export type GetTestingRequestsByProjectVersionOutput = Array<Types.TestingLabTestingInput>;
+export type GetTestingRequestsByProjectVersionOutput = Types.TestingLabTestingInput[];
 export const getTestingRequestsByProjectVersionEndpoint = {
   operationId: 'getTestingRequestsByProjectVersion' as const,
   method: 'GET' as const,
@@ -22264,7 +25856,7 @@ export const getTestingRequestsByProjectVersionEndpoint = {
 export interface GetTestingRequestsByStatusInput {
   status: Types.TestingLabTestingRequestStatus;
 }
-export type GetTestingRequestsByStatusOutput = Array<Types.TestingLabTestingInput>;
+export type GetTestingRequestsByStatusOutput = Types.TestingLabTestingInput[];
 export const getTestingRequestsByStatusEndpoint = {
   operationId: 'getTestingRequestsByStatus' as const,
   method: 'GET' as const,
@@ -22278,7 +25870,7 @@ export interface GetTestingRequestsSearchInput {
     searchTerm?: string;
   };
 }
-export type GetTestingRequestsSearchOutput = Array<Types.TestingLabTestingInput>;
+export type GetTestingRequestsSearchOutput = Types.TestingLabTestingInput[];
 export const getTestingRequestsSearchEndpoint = {
   operationId: 'getTestingRequestsSearch' as const,
   method: 'GET' as const,
@@ -22293,7 +25885,7 @@ export interface GetTestingSessionsForGetTestingSessionsInput {
     take?: number;
   };
 }
-export type GetTestingSessionsForGetTestingSessionsOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingSessionsForGetTestingSessionsOutput = Types.TestingLabTestingSession[];
 export const getTestingSessionsForGetTestingSessionsEndpoint = {
   operationId: 'getTestingSessionsForGetTestingSessions' as const,
   method: 'GET' as const,
@@ -22394,7 +25986,7 @@ export interface GetTestingSessionsProjectsInput {
     includeInactive?: boolean;
   };
 }
-export type GetTestingSessionsProjectsOutput = Array<Types.TestingLabSessionProjectProjection>;
+export type GetTestingSessionsProjectsOutput = Types.TestingLabSessionProjectProjection[];
 export const getTestingSessionsProjectsEndpoint = {
   operationId: 'getTestingSessionsProjects' as const,
   method: 'GET' as const,
@@ -22457,7 +26049,7 @@ export const deleteTestingSessionsRegisterEndpoint = {
 export interface GetTestingSessionsRegistrationsInput {
   sessionId: string;
 }
-export type GetTestingSessionsRegistrationsOutput = Array<Types.TestingLabSessionRegistration>;
+export type GetTestingSessionsRegistrationsOutput = Types.TestingLabSessionRegistration[];
 export const getTestingSessionsRegistrationsEndpoint = {
   operationId: 'getTestingSessionsRegistrations' as const,
   method: 'GET' as const,
@@ -22481,7 +26073,7 @@ export const getTestingSessionsStatisticsEndpoint = {
 export interface GetTestingSessionsWaitlistInput {
   sessionId: string;
 }
-export type GetTestingSessionsWaitlistOutput = Array<Types.TestingLabSessionWaitlist>;
+export type GetTestingSessionsWaitlistOutput = Types.TestingLabSessionWaitlist[];
 export const getTestingSessionsWaitlistEndpoint = {
   operationId: 'getTestingSessionsWaitlist' as const,
   method: 'GET' as const,
@@ -22518,7 +26110,7 @@ export const deleteTestingSessionsWaitlistEndpoint = {
 export interface GetTestingSessionsByLocationInput {
   locationId: string;
 }
-export type GetTestingSessionsByLocationOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingSessionsByLocationOutput = Types.TestingLabTestingSession[];
 export const getTestingSessionsByLocationEndpoint = {
   operationId: 'getTestingSessionsByLocation' as const,
   method: 'GET' as const,
@@ -22530,7 +26122,7 @@ export const getTestingSessionsByLocationEndpoint = {
 export interface GetTestingSessionsByManagerInput {
   managerId: string;
 }
-export type GetTestingSessionsByManagerOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingSessionsByManagerOutput = Types.TestingLabTestingSession[];
 export const getTestingSessionsByManagerEndpoint = {
   operationId: 'getTestingSessionsByManager' as const,
   method: 'GET' as const,
@@ -22542,7 +26134,7 @@ export const getTestingSessionsByManagerEndpoint = {
 export interface GetTestingSessionsByRequestInput {
   testingRequestId: string;
 }
-export type GetTestingSessionsByRequestOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingSessionsByRequestOutput = Types.TestingLabTestingSession[];
 export const getTestingSessionsByRequestEndpoint = {
   operationId: 'getTestingSessionsByRequest' as const,
   method: 'GET' as const,
@@ -22554,7 +26146,7 @@ export const getTestingSessionsByRequestEndpoint = {
 export interface GetTestingSessionsByStatusInput {
   status: Types.TestingLabSessionStatus;
 }
-export type GetTestingSessionsByStatusOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingSessionsByStatusOutput = Types.TestingLabTestingSession[];
 export const getTestingSessionsByStatusEndpoint = {
   operationId: 'getTestingSessionsByStatus' as const,
   method: 'GET' as const,
@@ -22568,7 +26160,7 @@ export interface GetTestingSessionsSearchInput {
     searchTerm?: string;
   };
 }
-export type GetTestingSessionsSearchOutput = Array<Types.TestingLabTestingSession>;
+export type GetTestingSessionsSearchOutput = Types.TestingLabTestingSession[];
 export const getTestingSessionsSearchEndpoint = {
   operationId: 'getTestingSessionsSearch' as const,
   method: 'GET' as const,
@@ -23008,7 +26600,7 @@ export const postUsersUnsuspendForPostUsersByUserIdUnsuspendEndpoint = {
 export interface GetUsersEntitlementsInput {
   userId: string;
 }
-export type GetUsersEntitlementsOutput = Array<Types.CommerceProductsEntitlementInfoDto>;
+export type GetUsersEntitlementsOutput = Types.CommerceProductsEntitlementInfoDto[];
 export const getUsersEntitlementsEndpoint = {
   operationId: 'getUsersEntitlements' as const,
   method: 'GET' as const,
@@ -23856,7 +27448,7 @@ export const patchUsersProfileEndpoint = {
 export interface GetUsersQuotasForGetUsersByUserIdQuotasInput {
   userId: string;
 }
-export type GetUsersQuotasForGetUsersByUserIdQuotasOutput = Array<Types.ResourcesResourceQuotaOutput>;
+export type GetUsersQuotasForGetUsersByUserIdQuotasOutput = Types.ResourcesResourceQuotaOutput[];
 export const getUsersQuotasForGetUsersByUserIdQuotasEndpoint = {
   operationId: 'getUsersQuotasForGetUsersByUserIdQuotas' as const,
   method: 'GET' as const,
@@ -24091,7 +27683,7 @@ export const getUsersResourcesLimitsEndpoint = {
 export interface GetUsersResourcesMetadataForGetUsersByUserIdResourcesMetadataInput {
   userId: string;
 }
-export type GetUsersResourcesMetadataForGetUsersByUserIdResourcesMetadataOutput = Array<Types.ResourcesResourceMetadata>;
+export type GetUsersResourcesMetadataForGetUsersByUserIdResourcesMetadataOutput = Types.ResourcesResourceMetadata[];
 export const getUsersResourcesMetadataForGetUsersByUserIdResourcesMetadataEndpoint = {
   operationId: 'getUsersResourcesMetadataForGetUsersByUserIdResourcesMetadata' as const,
   method: 'GET' as const,
@@ -24145,7 +27737,7 @@ export const putUsersResourcesMetadataEndpoint = {
 export interface GetUsersResourcesSettingsForGetUsersByUserIdResourcesSettingsInput {
   userId: string;
 }
-export type GetUsersResourcesSettingsForGetUsersByUserIdResourcesSettingsOutput = Array<Types.ResourcesResourceSettings>;
+export type GetUsersResourcesSettingsForGetUsersByUserIdResourcesSettingsOutput = Types.ResourcesResourceSettings[];
 export const getUsersResourcesSettingsForGetUsersByUserIdResourcesSettingsEndpoint = {
   operationId: 'getUsersResourcesSettingsForGetUsersByUserIdResourcesSettings' as const,
   method: 'GET' as const,
@@ -24204,7 +27796,7 @@ export interface GetUsersResourcesUsageRecordsInput {
     endDate?: string;
   };
 }
-export type GetUsersResourcesUsageRecordsOutput = Array<Types.ResourcesUsageRecord>;
+export type GetUsersResourcesUsageRecordsOutput = Types.ResourcesUsageRecord[];
 export const getUsersResourcesUsageRecordsEndpoint = {
   operationId: 'getUsersResourcesUsageRecords' as const,
   method: 'GET' as const,
@@ -24265,7 +27857,7 @@ export const getUsersResourcesUsageSummaryEndpoint = {
  * Get current user's entitlements
  */
 export type GetUsersMeEntitlementsInput = void;
-export type GetUsersMeEntitlementsOutput = Array<Types.CommerceProductsEntitlementInfoDto>;
+export type GetUsersMeEntitlementsOutput = Types.CommerceProductsEntitlementInfoDto[];
 export const getUsersMeEntitlementsEndpoint = {
   operationId: 'getUsersMeEntitlements' as const,
   method: 'GET' as const,
@@ -24312,6 +27904,42 @@ export const endpoints = {
   postApiAnalyticsWarehouseRun: postApiAnalyticsWarehouseRunEndpoint,
   postApiAssetsAccessUrl: postApiAssetsAccessUrlEndpoint,
   getApiAssetsContent: getApiAssetsContentEndpoint,
+  getApiAuditCompliancePackagingForGetApiAuditCompliancePackaging: getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingEndpoint,
+  postApiAuditCompliancePackaging: postApiAuditCompliancePackagingEndpoint,
+  getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingById: getApiAuditCompliancePackagingForGetApiAuditCompliancePackagingByIdEndpoint,
+  getApiAuditCompliancePackagingDownload: getApiAuditCompliancePackagingDownloadEndpoint,
+  getApiAuditCompliancePackagingVerification: getApiAuditCompliancePackagingVerificationEndpoint,
+  getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocuments:
+    getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsEndpoint,
+  postApiAuditCompliancePackagingDocuments: postApiAuditCompliancePackagingDocumentsEndpoint,
+  getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsById:
+    getApiAuditCompliancePackagingDocumentsForGetApiAuditCompliancePackagingDocumentsByIdEndpoint,
+  postApiAuditCompliancePackagingDocumentsReview: postApiAuditCompliancePackagingDocumentsReviewEndpoint,
+  getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
+  postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
+  postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
+  getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
+  postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
+  getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesById: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesByIdEndpoint,
+  getApiAuditRetentionPoliciesConfiguration: getApiAuditRetentionPoliciesConfigurationEndpoint,
+  putApiAuditRetentionPoliciesConfiguration: putApiAuditRetentionPoliciesConfigurationEndpoint,
+  getApiAuditRetentionPoliciesTemplates: getApiAuditRetentionPoliciesTemplatesEndpoint,
+  getApiAuditRetentionSimulationForGetApiAuditRetentionSimulation: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationEndpoint,
+  postApiAuditRetentionSimulation: postApiAuditRetentionSimulationEndpoint,
+  getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationById: getApiAuditRetentionSimulationForGetApiAuditRetentionSimulationByIdEndpoint,
+  getApiAuditRetentionSimulationConfiguration: getApiAuditRetentionSimulationConfigurationEndpoint,
+  putApiAuditRetentionSimulationConfiguration: putApiAuditRetentionSimulationConfigurationEndpoint,
+  getApiAuditRetentionSimulationTemplates: getApiAuditRetentionSimulationTemplatesEndpoint,
+  getApiAuditSecurityEventsAlerts: getApiAuditSecurityEventsAlertsEndpoint,
+  postApiAuditSecurityEventsAlertsResolve: postApiAuditSecurityEventsAlertsResolveEndpoint,
+  postApiAuditSecurityEventsAlertsAcknowledge: postApiAuditSecurityEventsAlertsAcknowledgeEndpoint,
+  getApiAuditSecurityEventsDeliveryStatus: getApiAuditSecurityEventsDeliveryStatusEndpoint,
+  postApiAuditSecurityEventsRetentionEnforce: postApiAuditSecurityEventsRetentionEnforceEndpoint,
+  getApiAuditSecurityEventsRetentionExecutions: getApiAuditSecurityEventsRetentionExecutionsEndpoint,
+  getApiAuditSecurityEventsRetentionPolicy: getApiAuditSecurityEventsRetentionPolicyEndpoint,
+  putApiAuditSecurityEventsRetentionPolicy: putApiAuditSecurityEventsRetentionPolicyEndpoint,
+  getApiAuditSecurityEventsTaxonomy: getApiAuditSecurityEventsTaxonomyEndpoint,
   getApiCertificates: getApiCertificatesEndpoint,
   postApiCertificatesRevoke: postApiCertificatesRevokeEndpoint,
   getApiCertificatesCourse: getApiCertificatesCourseEndpoint,
@@ -24565,6 +28193,11 @@ export const endpoints = {
   patchApiTestingLabSettings: patchApiTestingLabSettingsEndpoint,
   getApiTestingLabSettingsExists: getApiTestingLabSettingsExistsEndpoint,
   postApiTestingLabSettingsReset: postApiTestingLabSettingsResetEndpoint,
+  postAccountCreditsRevoke: postAccountCreditsRevokeEndpoint,
+  getAccountCreditsBalance: getAccountCreditsBalanceEndpoint,
+  postAccountCreditsGrants: postAccountCreditsGrantsEndpoint,
+  getAccountCreditsHistory: getAccountCreditsHistoryEndpoint,
+  getAccountCreditsMetrics: getAccountCreditsMetricsEndpoint,
   getAdminEconomyAdRewardsPendingClaims: getAdminEconomyAdRewardsPendingClaimsEndpoint,
   getAdminEconomyAdRewardsReconciliations: getAdminEconomyAdRewardsReconciliationsEndpoint,
   getAdminEconomyAdRewardsReports: getAdminEconomyAdRewardsReportsEndpoint,
@@ -24671,6 +28304,10 @@ export const endpoints = {
   getAdminEconomyTreasuryWithdrawalsAudit: getAdminEconomyTreasuryWithdrawalsAuditEndpoint,
   postAdminEconomyTreasuryWithdrawalsDispatch: postAdminEconomyTreasuryWithdrawalsDispatchEndpoint,
   postAdminEconomyTreasuryWithdrawalsReconcile: postAdminEconomyTreasuryWithdrawalsReconcileEndpoint,
+  getAuthorizationComplianceReport: getAuthorizationComplianceReportEndpoint,
+  getAuthorizationPermissionGraph: getAuthorizationPermissionGraphEndpoint,
+  getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
+  getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
   getAuthorizationResourcesPermissions: getAuthorizationResourcesPermissionsEndpoint,
   getAuthorizationResourcesUsers: getAuthorizationResourcesUsersEndpoint,
@@ -24682,6 +28319,10 @@ export const endpoints = {
   postAuthorizationResourcesShare: postAuthorizationResourcesShareEndpoint,
   deleteAuthorizationResourcesUsersAccess: deleteAuthorizationResourcesUsersAccessEndpoint,
   putAuthorizationResourcesUsersPermissions: putAuthorizationResourcesUsersPermissionsEndpoint,
+  postAuthorizationRestorationsDeleted: postAuthorizationRestorationsDeletedEndpoint,
+  postAuthorizationRestorationsUndo: postAuthorizationRestorationsUndoEndpoint,
+  getAuthorizationSyncExport: getAuthorizationSyncExportEndpoint,
+  postAuthorizationSyncImport: postAuthorizationSyncImportEndpoint,
   getAuthorizationTenantsHasPermission: getAuthorizationTenantsHasPermissionEndpoint,
   getAuthorizationTenantsPermissions: getAuthorizationTenantsPermissionsEndpoint,
   postAuthorizationTenantsDefaults: postAuthorizationTenantsDefaultsEndpoint,
@@ -24689,6 +28330,11 @@ export const endpoints = {
   postAuthorizationTenantsDenyRemove: postAuthorizationTenantsDenyRemoveEndpoint,
   postAuthorizationTenantsGlobalDefaults: postAuthorizationTenantsGlobalDefaultsEndpoint,
   postAuthorizationTenantsGrant: postAuthorizationTenantsGrantEndpoint,
+  getAuthorizationTenantsPermissionsExpiring: getAuthorizationTenantsPermissionsExpiringEndpoint,
+  postAuthorizationTenantsPermissionsExtendExpiration: postAuthorizationTenantsPermissionsExtendExpirationEndpoint,
+  postAuthorizationTenantsPermissionsProcessExpired: postAuthorizationTenantsPermissionsProcessExpiredEndpoint,
+  postAuthorizationTenantsPermissionsSendExpirationReminders: postAuthorizationTenantsPermissionsSendExpirationRemindersEndpoint,
+  postAuthorizationTenantsPermissionsSetExpiration: postAuthorizationTenantsPermissionsSetExpirationEndpoint,
   postAuthorizationTenantsRevoke: postAuthorizationTenantsRevokeEndpoint,
   getBillingCharges: getBillingChargesEndpoint,
   postBillingCharges: postBillingChargesEndpoint,
@@ -24696,7 +28342,46 @@ export const endpoints = {
   postBillingChargesCancel: postBillingChargesCancelEndpoint,
   postBillingChargesRefund: postBillingChargesRefundEndpoint,
   postBillingChargesRetry: postBillingChargesRetryEndpoint,
+  getBillingEventsForGetBillingEvents: getBillingEventsForGetBillingEventsEndpoint,
+  getBillingEventsForGetBillingEventsByEventId: getBillingEventsForGetBillingEventsByEventIdEndpoint,
+  getBillingEventsOutboxForGetBillingEventsOutbox: getBillingEventsOutboxForGetBillingEventsOutboxEndpoint,
+  getBillingEventsOutboxForGetBillingEventsOutboxByEventId: getBillingEventsOutboxForGetBillingEventsOutboxByEventIdEndpoint,
+  getBillingExternalProvidersForGetBillingExternalProviders: getBillingExternalProvidersForGetBillingExternalProvidersEndpoint,
+  getBillingExternalProvidersForGetBillingExternalProvidersByProviderKey: getBillingExternalProvidersForGetBillingExternalProvidersByProviderKeyEndpoint,
+  postBillingExternalProvidersDisable: postBillingExternalProvidersDisableEndpoint,
+  postBillingExternalProvidersEnable: postBillingExternalProvidersEnableEndpoint,
+  postBillingExternalProvidersMigrationDryRun: postBillingExternalProvidersMigrationDryRunEndpoint,
+  postBillingInvoicesAccountCredits: postBillingInvoicesAccountCreditsEndpoint,
   postBillingInvoicesRetry: postBillingInvoicesRetryEndpoint,
+  getBillingPaymentMethods: getBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethods: postBillingPaymentMethodsEndpoint,
+  getPaymentMethodById: getPaymentMethodByIdEndpoint,
+  putBillingPaymentMethods: putBillingPaymentMethodsEndpoint,
+  deleteBillingPaymentMethods: deleteBillingPaymentMethodsEndpoint,
+  postBillingPaymentMethodsSetDefault: postBillingPaymentMethodsSetDefaultEndpoint,
+  getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedger: getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerEndpoint,
+  postBillingPricingDiscountsLedgerValidateDrift: postBillingPricingDiscountsLedgerValidateDriftEndpoint,
+  getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryId:
+    getBillingPricingDiscountsLedgerForGetBillingPricingDiscountsLedgerByEntryIdEndpoint,
+  getBillingPricingDiscountsLedgerAnalyticsEffectiveness: getBillingPricingDiscountsLedgerAnalyticsEffectivenessEndpoint,
+  getBillingPricingEngineForGetBillingPricingEngine: getBillingPricingEngineForGetBillingPricingEngineEndpoint,
+  postBillingPricingEngine: postBillingPricingEngineEndpoint,
+  postBillingPricingEngineCalculate: postBillingPricingEngineCalculateEndpoint,
+  getBillingPricingEngineForGetBillingPricingEngineByRuleId: getBillingPricingEngineForGetBillingPricingEngineByRuleIdEndpoint,
+  putBillingPricingEngine: putBillingPricingEngineEndpoint,
+  deleteBillingPricingEngine: deleteBillingPricingEngineEndpoint,
+  postBillingPricingEngineActivate: postBillingPricingEngineActivateEndpoint,
+  postBillingPricingEngineDeactivate: postBillingPricingEngineDeactivateEndpoint,
+  getBillingRevenueAuditing: getBillingRevenueAuditingEndpoint,
+  postBillingRevenueAuditing: postBillingRevenueAuditingEndpoint,
+  postBillingRevenueAuditingAnomaliesDetect: postBillingRevenueAuditingAnomaliesDetectEndpoint,
+  getBillingRevenueAuditingAnomalyAlerts: getBillingRevenueAuditingAnomalyAlertsEndpoint,
+  postBillingRevenueAuditingAnomalyAlertsAcknowledge: postBillingRevenueAuditingAnomalyAlertsAcknowledgeEndpoint,
+  getBillingRevenueAuditingComplianceReport: getBillingRevenueAuditingComplianceReportEndpoint,
+  getBillingRevenueAuditingExport: getBillingRevenueAuditingExportEndpoint,
+  getRunById: getRunByIdEndpoint,
+  getBillingRevenueAuditingRunsDiscrepancies: getBillingRevenueAuditingRunsDiscrepanciesEndpoint,
+  getBillingRevenueAuditingTrends: getBillingRevenueAuditingTrendsEndpoint,
   getBillingSubscriptions: getBillingSubscriptionsEndpoint,
   postBillingSubscriptions: postBillingSubscriptionsEndpoint,
   getBillingSubscriptionById: getBillingSubscriptionByIdEndpoint,
@@ -24705,9 +28390,21 @@ export const endpoints = {
   postBillingWebhooksApplePay: postBillingWebhooksApplePayEndpoint,
   postBillingWebhooksGooglePay: postBillingWebhooksGooglePayEndpoint,
   postBillingWebhooksPaypal: postBillingWebhooksPaypalEndpoint,
+  getBillingWebhooksSecurity: getBillingWebhooksSecurityEndpoint,
   postBillingWebhooksStripe: postBillingWebhooksStripeEndpoint,
   getBillingWebhooksWebhookEvents: getBillingWebhooksWebhookEventsEndpoint,
   postBillingWebhooksWebhookEventsRetry: postBillingWebhooksWebhookEventsRetryEndpoint,
+  getDisputes: getDisputesEndpoint,
+  postDisputes: postDisputesEndpoint,
+  getDisputeById: getDisputeByIdEndpoint,
+  postDisputesAccept: postDisputesAcceptEndpoint,
+  postDisputesCancel: postDisputesCancelEndpoint,
+  postDisputesChallenge: postDisputesChallengeEndpoint,
+  postDisputesResolve: postDisputesResolveEndpoint,
+  postDisputesRespond: postDisputesRespondEndpoint,
+  getDisputesEvidence: getDisputesEvidenceEndpoint,
+  postDisputesEvidence: postDisputesEvidenceEndpoint,
+  getDisputesStatistics: getDisputesStatisticsEndpoint,
   postEconomyAdRewardsSessions: postEconomyAdRewardsSessionsEndpoint,
   getEconomyAdRewardsSessions: getEconomyAdRewardsSessionsEndpoint,
   postEconomyAdRewardsSessionsComplete: postEconomyAdRewardsSessionsCompleteEndpoint,
@@ -24742,6 +28439,14 @@ export const endpoints = {
   getEmailDeliveryNotificationsTimeline: getEmailDeliveryNotificationsTimelineEndpoint,
   getEmailDeliverySuppressions: getEmailDeliverySuppressionsEndpoint,
   deleteEmailDeliverySuppressions: deleteEmailDeliverySuppressionsEndpoint,
+  getFraudReviews: getFraudReviewsEndpoint,
+  postFraudReviewsApprove: postFraudReviewsApproveEndpoint,
+  postFraudReviewsDeny: postFraudReviewsDenyEndpoint,
+  postGifts: postGiftsEndpoint,
+  getGifts: getGiftsEndpoint,
+  postGiftsRedeem: postGiftsRedeemEndpoint,
+  getGiftsReceived: getGiftsReceivedEndpoint,
+  getGiftsSent: getGiftsSentEndpoint,
   postIntegrationsEconomyStripeConnectWebhook: postIntegrationsEconomyStripeConnectWebhookEndpoint,
   postIntegrationsEconomySumsubWebhook: postIntegrationsEconomySumsubWebhookEndpoint,
   postNotificationsEmailEvents: postNotificationsEmailEventsEndpoint,
@@ -24754,6 +28459,9 @@ export const endpoints = {
   postPaymentsCancel: postPaymentsCancelEndpoint,
   postPaymentsRefund: postPaymentsRefundEndpoint,
   postPaymentsRetry: postPaymentsRetryEndpoint,
+  getPaymentsRetryAttempts: getPaymentsRetryAttemptsEndpoint,
+  getPaymentsRecoveryMetrics: getPaymentsRecoveryMetricsEndpoint,
+  getPaymentsRetryingCandidates: getPaymentsRetryingCandidatesEndpoint,
   postPaymentsSetupIntents: postPaymentsSetupIntentsEndpoint,
   postPaymentsSubscriptionCheckoutsComplete: postPaymentsSubscriptionCheckoutsCompleteEndpoint,
   postPaymentsTaxCalculate: postPaymentsTaxCalculateEndpoint,
@@ -24785,6 +28493,18 @@ export const endpoints = {
   getPostsTagsPopular: getPostsTagsPopularEndpoint,
   getPostsTagsSearch: getPostsTagsSearchEndpoint,
   getPostsTrending: getPostsTrendingEndpoint,
+  getReferralsCode: getReferralsCodeEndpoint,
+  getReferralsHistory: getReferralsHistoryEndpoint,
+  getReferralsStats: getReferralsStatsEndpoint,
+  postReferralsTrackClick: postReferralsTrackClickEndpoint,
+  postReferralsTrackSignup: postReferralsTrackSignupEndpoint,
+  getRefunds: getRefundsEndpoint,
+  postRefunds: postRefundsEndpoint,
+  getRefundById: getRefundByIdEndpoint,
+  postRefundsApprove: postRefundsApproveEndpoint,
+  postRefundsReject: postRefundsRejectEndpoint,
+  getRefundsPendingApprovals: getRefundsPendingApprovalsEndpoint,
+  getRefundsStatistics: getRefundsStatisticsEndpoint,
   getReportsChurn: getReportsChurnEndpoint,
   postSlaSlis: postSlaSlisEndpoint,
   getSlaSlosForGetSlaSlos: getSlaSlosForGetSlaSlosEndpoint,
@@ -24870,6 +28590,23 @@ export const endpoints = {
   postLtiLogin: postLtiLoginEndpoint,
   getMetrics: getMetricsEndpoint,
   getReady: getReadyEndpoint,
+  postScimV2Bulk: postScimV2BulkEndpoint,
+  getScimV2GroupsForGetScimV2Groups: getScimV2GroupsForGetScimV2GroupsEndpoint,
+  postScimV2Groups: postScimV2GroupsEndpoint,
+  getScimV2GroupsForGetScimV2GroupsByRoleId: getScimV2GroupsForGetScimV2GroupsByRoleIdEndpoint,
+  putScimV2Groups: putScimV2GroupsEndpoint,
+  deleteScimV2Groups: deleteScimV2GroupsEndpoint,
+  patchScimV2Groups: patchScimV2GroupsEndpoint,
+  getScimV2Resourcetypes: getScimV2ResourcetypesEndpoint,
+  getScimV2SchemasForGetScimV2Schemas: getScimV2SchemasForGetScimV2SchemasEndpoint,
+  getScimV2SchemasForGetScimV2SchemasBySchemaId: getScimV2SchemasForGetScimV2SchemasBySchemaIdEndpoint,
+  getScimV2Serviceproviderconfig: getScimV2ServiceproviderconfigEndpoint,
+  getScimV2UsersForGetScimV2Users: getScimV2UsersForGetScimV2UsersEndpoint,
+  postScimV2Users: postScimV2UsersEndpoint,
+  getScimV2UsersForGetScimV2UsersByUserId: getScimV2UsersForGetScimV2UsersByUserIdEndpoint,
+  putScimV2Users: putScimV2UsersEndpoint,
+  deleteScimV2Users: deleteScimV2UsersEndpoint,
+  patchScimV2Users: patchScimV2UsersEndpoint,
   getT: getTEndpoint,
   postVCoursesCheckoutComplete: postVCoursesCheckoutCompleteEndpoint,
   getVMarketplaceCart: getVMarketplaceCartEndpoint,
@@ -24915,6 +28652,16 @@ export const endpoints = {
   getAdminAuditLogsExportProgress: getAdminAuditLogsExportProgressEndpoint,
   postAdminAuditLogsExportCsv: postAdminAuditLogsExportCsvEndpoint,
   postAdminAuditLogsExportJson: postAdminAuditLogsExportJsonEndpoint,
+  postAdminAuditLogsReplaySnapshots: postAdminAuditLogsReplaySnapshotsEndpoint,
+  getAdminAuditLogsScheduledExportHistoryDownload: getAdminAuditLogsScheduledExportHistoryDownloadEndpoint,
+  getAdminAuditLogsScheduledExports: getAdminAuditLogsScheduledExportsEndpoint,
+  postAdminAuditLogsScheduledExports: postAdminAuditLogsScheduledExportsEndpoint,
+  deleteAdminAuditLogsScheduledExports: deleteAdminAuditLogsScheduledExportsEndpoint,
+  getAdminAuditLogsScheduledExportsHistory: getAdminAuditLogsScheduledExportsHistoryEndpoint,
+  getAdminAuditLogsSearchByActionType: getAdminAuditLogsSearchByActionTypeEndpoint,
+  getAdminAuditLogsSearchByActionTypeExport: getAdminAuditLogsSearchByActionTypeExportEndpoint,
+  getAdminAuditLogsSearchByActionTypeTaxonomy: getAdminAuditLogsSearchByActionTypeTaxonomyEndpoint,
+  getAdminAuditLogsSearchByDateRange: getAdminAuditLogsSearchByDateRangeEndpoint,
   getAdminAuditLogsStatistics: getAdminAuditLogsStatisticsEndpoint,
   postAdminEventsReplay: postAdminEventsReplayEndpoint,
   getAdminEventsDeadLetters: getAdminEventsDeadLettersEndpoint,
@@ -25021,20 +28768,58 @@ export const endpoints = {
   getAssetsSearch: getAssetsSearchEndpoint,
   postAssetsSocialMedia: postAssetsSocialMediaEndpoint,
   getAssetsSocialMedia: getAssetsSocialMediaEndpoint,
+  getAuditCompliancePackagingForGetAuditCompliancePackaging: getAuditCompliancePackagingForGetAuditCompliancePackagingEndpoint,
+  postAuditCompliancePackaging: postAuditCompliancePackagingEndpoint,
+  getAuditCompliancePackagingForGetAuditCompliancePackagingById: getAuditCompliancePackagingForGetAuditCompliancePackagingByIdEndpoint,
+  getAuditCompliancePackagingDownload: getAuditCompliancePackagingDownloadEndpoint,
+  getAuditCompliancePackagingVerification: getAuditCompliancePackagingVerificationEndpoint,
+  getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocuments:
+    getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsEndpoint,
+  postAuditCompliancePackagingDocuments: postAuditCompliancePackagingDocumentsEndpoint,
+  getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsById:
+    getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint,
+  postAuditCompliancePackagingDocumentsReview: postAuditCompliancePackagingDocumentsReviewEndpoint,
+  getAuditCompliancePackagingTemplates: getAuditCompliancePackagingTemplatesEndpoint,
+  getAuditRetentionPoliciesForGetAuditRetentionPolicies: getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint,
+  postAuditRetentionPolicies: postAuditRetentionPoliciesEndpoint,
+  getAuditRetentionPoliciesForGetAuditRetentionPoliciesById: getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint,
+  getAuditRetentionPoliciesConfiguration: getAuditRetentionPoliciesConfigurationEndpoint,
+  putAuditRetentionPoliciesConfiguration: putAuditRetentionPoliciesConfigurationEndpoint,
+  getAuditRetentionPoliciesTemplates: getAuditRetentionPoliciesTemplatesEndpoint,
+  getAuditRetentionSimulationForGetAuditRetentionSimulation: getAuditRetentionSimulationForGetAuditRetentionSimulationEndpoint,
+  postAuditRetentionSimulation: postAuditRetentionSimulationEndpoint,
+  getAuditRetentionSimulationForGetAuditRetentionSimulationById: getAuditRetentionSimulationForGetAuditRetentionSimulationByIdEndpoint,
+  getAuditRetentionSimulationConfiguration: getAuditRetentionSimulationConfigurationEndpoint,
+  putAuditRetentionSimulationConfiguration: putAuditRetentionSimulationConfigurationEndpoint,
+  getAuditRetentionSimulationTemplates: getAuditRetentionSimulationTemplatesEndpoint,
+  getAuditSecurityEventsAlerts: getAuditSecurityEventsAlertsEndpoint,
+  postAuditSecurityEventsAlertsResolve: postAuditSecurityEventsAlertsResolveEndpoint,
+  postAuditSecurityEventsAlertsAcknowledge: postAuditSecurityEventsAlertsAcknowledgeEndpoint,
+  getAuditSecurityEventsDeliveryStatus: getAuditSecurityEventsDeliveryStatusEndpoint,
+  postAuditSecurityEventsRetentionEnforce: postAuditSecurityEventsRetentionEnforceEndpoint,
+  getAuditSecurityEventsRetentionExecutions: getAuditSecurityEventsRetentionExecutionsEndpoint,
+  getAuditSecurityEventsRetentionPolicy: getAuditSecurityEventsRetentionPolicyEndpoint,
+  putAuditSecurityEventsRetentionPolicy: putAuditSecurityEventsRetentionPolicyEndpoint,
+  getAuditSecurityEventsTaxonomy: getAuditSecurityEventsTaxonomyEndpoint,
   getAuthApiKeys: getAuthApiKeysEndpoint,
   postAuthApiKeys: postAuthApiKeysEndpoint,
   postAuthApiKeysRevoke: postAuthApiKeysRevokeEndpoint,
+  postAuthApiKeysRotate: postAuthApiKeysRotateEndpoint,
   postAuthDiscordSignInAuthorize: postAuthDiscordSignInAuthorizeEndpoint,
   postAuthDiscordSignInCallback: postAuthDiscordSignInCallbackEndpoint,
+  postAuthEmailCodeConsume: postAuthEmailCodeConsumeEndpoint,
+  postAuthEmailCodeRequest: postAuthEmailCodeRequestEndpoint,
   postAuthEmailSendVerification: postAuthEmailSendVerificationEndpoint,
   postAuthEmailVerify: postAuthEmailVerifyEndpoint,
   headAuthExternalLogins: headAuthExternalLoginsEndpoint,
   deleteAuthExternalLogins: deleteAuthExternalLoginsEndpoint,
+  getAuthExternalLoginsLinkPreview: getAuthExternalLoginsLinkPreviewEndpoint,
+  postAuthExternalLoginsScopesRevoke: postAuthExternalLoginsScopesRevokeEndpoint,
   postAuthExternalLoginsDiscordLinkAuthorize: postAuthExternalLoginsDiscordLinkAuthorizeEndpoint,
   postAuthExternalLoginsDiscordLinkCallback: postAuthExternalLoginsDiscordLinkCallbackEndpoint,
   postAuthExternalLoginsGoogle: postAuthExternalLoginsGoogleEndpoint,
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
-  getAuthGithubCallback: getAuthGithubCallbackEndpoint,
+  postAuthGithubCallback: postAuthGithubCallbackEndpoint,
   postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
@@ -25043,14 +28828,30 @@ export const endpoints = {
   getAuthMfaBackupCodes: getAuthMfaBackupCodesEndpoint,
   postAuthMfaBackupCodesRegenerate: postAuthMfaBackupCodesRegenerateEndpoint,
   getAuthMfaMethods: getAuthMfaMethodsEndpoint,
+  postAuthMfaSignInComplete: postAuthMfaSignInCompleteEndpoint,
+  postAuthMfaSignInEnrollment: postAuthMfaSignInEnrollmentEndpoint,
   postAuthMfaSmsComplete: postAuthMfaSmsCompleteEndpoint,
   postAuthMfaSmsSetup: postAuthMfaSmsSetupEndpoint,
   postAuthMfaTotpComplete: postAuthMfaTotpCompleteEndpoint,
   postAuthMfaTotpSetup: postAuthMfaTotpSetupEndpoint,
   postAuthMfaVerify: postAuthMfaVerifyEndpoint,
+  getAuthOidcDiscoverProvider: getAuthOidcDiscoverProviderEndpoint,
+  getAuthOidcEndSessionUrl: getAuthOidcEndSessionUrlEndpoint,
+  postAuthOidcSignInAuthorize: postAuthOidcSignInAuthorizeEndpoint,
+  postAuthOidcSignInCallback: postAuthOidcSignInCallbackEndpoint,
+  postAuthOrchestratedInitiate: postAuthOrchestratedInitiateEndpoint,
+  getAuthOrchestrated: getAuthOrchestratedEndpoint,
+  postAuthOrchestratedAbandon: postAuthOrchestratedAbandonEndpoint,
+  postAuthOrchestratedComplete: postAuthOrchestratedCompleteEndpoint,
+  postAuthOrchestratedProcessStep: postAuthOrchestratedProcessStepEndpoint,
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   postAuthPasswordReset: postAuthPasswordResetEndpoint,
   postAuthPasswordResetRequest: postAuthPasswordResetRequestEndpoint,
+  postAuthPolymorphic: postAuthPolymorphicEndpoint,
+  getAuthScimProvisioningTokens: getAuthScimProvisioningTokensEndpoint,
+  postAuthScimProvisioningTokens: postAuthScimProvisioningTokensEndpoint,
+  postAuthScimProvisioningTokensRevoke: postAuthScimProvisioningTokensRevokeEndpoint,
+  postAuthScimProvisioningTokensRotate: postAuthScimProvisioningTokensRotateEndpoint,
   getAuthServiceAccountsForGetAuthServiceAccounts: getAuthServiceAccountsForGetAuthServiceAccountsEndpoint,
   postAuthServiceAccounts: postAuthServiceAccountsEndpoint,
   getAuthServiceAccountsForGetAuthServiceAccountsByServiceAccountId: getAuthServiceAccountsForGetAuthServiceAccountsByServiceAccountIdEndpoint,
@@ -25093,6 +28894,8 @@ export const endpoints = {
   deleteAuthWebauthnCredentials: deleteAuthWebauthnCredentialsEndpoint,
   patchAuthWebauthnCredentials: patchAuthWebauthnCredentialsEndpoint,
   headAuthWebauthnCredentials: headAuthWebauthnCredentialsEndpoint,
+  postAuthWebauthnCredentialsActivate: postAuthWebauthnCredentialsActivateEndpoint,
+  postAuthWebauthnCredentialsDeactivate: postAuthWebauthnCredentialsDeactivateEndpoint,
   postAuthWebauthnCredentialsVerify: postAuthWebauthnCredentialsVerifyEndpoint,
   postAuthWebauthnRegistrationBegin: postAuthWebauthnRegistrationBeginEndpoint,
   postAuthWebauthnRegistrationComplete: postAuthWebauthnRegistrationCompleteEndpoint,
@@ -25124,6 +28927,7 @@ export const endpoints = {
   getCourseInteractionsUserContent: getCourseInteractionsUserContentEndpoint,
   getCoursesForGetCourses: getCoursesForGetCoursesEndpoint,
   postCourses: postCoursesEndpoint,
+  getCoursesAccessCapabilities: getCoursesAccessCapabilitiesEndpoint,
   getCoursesCohortsSchedule: getCoursesCohortsScheduleEndpoint,
   putCoursesCohortsSchedule: putCoursesCohortsScheduleEndpoint,
   getCoursesCohortsScheduleAvailableContent: getCoursesCohortsScheduleAvailableContentEndpoint,
@@ -25488,6 +29292,7 @@ export const endpoints = {
   getPromoCodesForGetPromoCodes: getPromoCodesForGetPromoCodesEndpoint,
   postPromoCodes: postPromoCodesEndpoint,
   postPromoCodesApply: postPromoCodesApplyEndpoint,
+  postPromoCodesGenerateBulk: postPromoCodesGenerateBulkEndpoint,
   postPromoCodesValidate: postPromoCodesValidateEndpoint,
   getPromoCodesForGetPromoCodesByPromoCodeId: getPromoCodesForGetPromoCodesByPromoCodeIdEndpoint,
   putPromoCodes: putPromoCodesEndpoint,
@@ -25498,6 +29303,12 @@ export const endpoints = {
   postPromoCodesDeactivate: postPromoCodesDeactivateEndpoint,
   getPromoCodesUsage: getPromoCodesUsageEndpoint,
   getPromoCodesByCode: getPromoCodesByCodeEndpoint,
+  getPromoCodesCampaignsPerformance: getPromoCodesCampaignsPerformanceEndpoint,
+  getPromoStackingRulesForGetPromoStackingRules: getPromoStackingRulesForGetPromoStackingRulesEndpoint,
+  postPromoStackingRules: postPromoStackingRulesEndpoint,
+  getPromoStackingRulesForGetPromoStackingRulesByRuleId: getPromoStackingRulesForGetPromoStackingRulesByRuleIdEndpoint,
+  putPromoStackingRules: putPromoStackingRulesEndpoint,
+  deletePromoStackingRules: deletePromoStackingRulesEndpoint,
   postRecommendationsDismiss: postRecommendationsDismissEndpoint,
   postRecommendationsViewed: postRecommendationsViewedEndpoint,
   getRecommendationsCoursesSimilar: getRecommendationsCoursesSimilarEndpoint,

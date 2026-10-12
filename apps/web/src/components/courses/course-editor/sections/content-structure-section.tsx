@@ -565,7 +565,7 @@ export function ContentStructureSection() {
 
             <div>
               <label className="text-sm font-medium">Description</label>
-              <Textarea placeholder="Brief description of this lesson..." value={lessonFormData.description} onChange={(e) => setLessonFormData({ ...lessonFormData, description: e.target.value })} rows={3} />
+              <Textarea placeholder="Brief description of this lesson..." value={lessonFormData.description} onChange={(e) => { setLessonFormData({ ...lessonFormData, description: e.target.value }); }} rows={3} />
             </div>
 
             <div>

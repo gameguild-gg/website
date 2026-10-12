@@ -1,3 +1,5 @@
+using GameGuild.API.Core.Security;
+using GameGuild.Identity.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GameGuild.API.Eventing;
@@ -11,6 +13,9 @@ internal static class EventTransportServiceCollectionExtensions
         services.AddSingleton<IUseCaseEventContractRegistry, UseCaseEventContractRegistry>();
         services.AddScoped<IUseCaseEventVerifier, UseCaseEventVerifier>();
         services.AddScoped<IDurableEventProducer, DurableEventProducer>();
+        services.AddScoped<IIntegrationEventHandler<RefreshTokenReplayContainedV1>, RefreshTokenReplayAlertHandler>();
+        services.AddScoped<IIntegrationEventHandler<SuspiciousLoginDetectedV1>, SuspiciousLoginAlertHandler>();
+        services.AddScoped<IIntegrationEventHandler<SuspiciousLoginDetectedV1>, RiskEventSessionRevocationHandler>();
         services.AddScoped<IInboxStore, InboxStore>();
         services.AddScoped<IOutboxDispatcher, OutboxDispatcher>();
         services.AddScoped<IEventReplayService, EventReplayService>();

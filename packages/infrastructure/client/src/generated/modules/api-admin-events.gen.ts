@@ -32,7 +32,7 @@ export class ApiAdminEventsModule {
 
   /**
    */
-  async getAdminEventsDeadLetters(): Promise<Result<Array<Types.APIEventingDeadLetterEvent>, ApiError>> {
+  async getAdminEventsDeadLetters(): Promise<Result<Types.APIEventingDeadLetterEvent[], ApiError>> {
     const url = '/v1/admin/events/dead-letters';
 
     const result = await this.client.request({
@@ -41,7 +41,7 @@ export class ApiAdminEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIEventingDeadLetterEvent>, ApiError>;
+    return result as Result<Types.APIEventingDeadLetterEvent[], ApiError>;
   }
 
   /**

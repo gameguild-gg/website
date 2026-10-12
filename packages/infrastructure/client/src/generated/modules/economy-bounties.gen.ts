@@ -19,7 +19,7 @@ export class EconomyBountiesModule {
    */
   async getEconomyBountiesForGetEconomyBounties(query?: {
     status?: Types.FinanceEconomyBountiesBountyStatus;
-  }): Promise<Result<Array<Types.FinanceEconomyBountiesDurableBountyView>, ApiError>> {
+  }): Promise<Result<Types.FinanceEconomyBountiesDurableBountyView[], ApiError>> {
     const url = '/api/v1/economy/bounties';
 
     const result = await this.client.request({
@@ -29,7 +29,7 @@ export class EconomyBountiesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FinanceEconomyBountiesDurableBountyView>, ApiError>;
+    return result as Result<Types.FinanceEconomyBountiesDurableBountyView[], ApiError>;
   }
 
   /**

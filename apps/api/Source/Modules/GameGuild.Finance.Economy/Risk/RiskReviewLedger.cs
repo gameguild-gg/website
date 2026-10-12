@@ -57,7 +57,10 @@ public sealed class RiskReviewLedger
     {
         get
         {
-            lock (_gate) return [.. _events];
+            lock (_gate)
+            {
+                return [.. _events];
+            }
         }
     }
 
@@ -78,23 +81,46 @@ public sealed class RiskReviewLedger
         int requiredApprovals,
         Guid? appealOf)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Review ID cannot be empty.", nameof(id));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Review ID cannot be empty.", nameof(id));
+        }
+
         ArgumentNullException.ThrowIfNull(decision);
         if (decision.Outcome != RiskOutcome.Review)
+        {
             throw new ArgumentException("Only Review decisions can create a review case.", nameof(decision));
-        if (submittedBy == Guid.Empty) throw new ArgumentException("Submitter cannot be empty.", nameof(submittedBy));
+        }
+
+        if (submittedBy == Guid.Empty)
+        {
+            throw new ArgumentException("Submitter cannot be empty.", nameof(submittedBy));
+        }
+
         ArgumentNullException.ThrowIfNull(evidenceHashes);
         if (evidenceHashes.Count == 0 || evidenceHashes.Any(string.IsNullOrWhiteSpace))
+        {
             throw new ArgumentException("Review evidence hashes are required.", nameof(evidenceHashes));
+        }
+
         if (requiredApprovals is < 1 or > 2)
+        {
             throw new ArgumentOutOfRangeException(nameof(requiredApprovals));
+        }
 
         lock (_gate)
         {
-            if (_cases.ContainsKey(id)) throw new InvalidOperationException("Review case already exists.");
+            if (_cases.ContainsKey(id))
+            {
+                throw new InvalidOperationException("Review case already exists.");
+            }
+
             if (appealOf is not null && (!_cases.TryGetValue(appealOf.Value, out var appealed) ||
                                          appealed.Status != RiskReviewStatus.Rejected))
+            {
                 throw new InvalidOperationException("Only a rejected review case can be appealed.");
+            }
+
             var review = new RiskReviewCase(
                 id, decision.Id, submittedBy, RiskReviewStatus.Pending, submittedAt, null, null, null,
                 requiredApprovals, [], appealOf);
@@ -162,7 +188,9 @@ public sealed class RiskReviewLedger
             var current = Current(id);
             ValidatePendingResolution(current, actorId, occurredAt);
             if (current.Approvers.Contains(actorId))
+            {
                 throw new InvalidOperationException("A reviewer cannot approve the same case twice.");
+            }
 
             var approvers = current.Approvers.Append(actorId).ToArray();
             var isApproved = approvers.Length >= current.RequiredApprovals;
@@ -215,8 +243,16 @@ public sealed class RiskReviewLedger
         RiskManualDecisionCode decisionCode,
         string resolution)
     {
-        if (actorId == Guid.Empty) throw new ArgumentException("Reviewer cannot be empty.", nameof(actorId));
-        if (!Enum.IsDefined(decisionCode)) throw new ArgumentOutOfRangeException(nameof(decisionCode));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Reviewer cannot be empty.", nameof(actorId));
+        }
+
+        if (!Enum.IsDefined(decisionCode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(decisionCode));
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(resolution);
     }
 
@@ -226,10 +262,18 @@ public sealed class RiskReviewLedger
         DateTimeOffset occurredAt)
     {
         if (current.Status != RiskReviewStatus.Pending)
+        {
             throw new InvalidOperationException("Risk review case has already been resolved.");
+        }
+
         if (current.SubmittedBy == actorId)
+        {
             throw new InvalidOperationException("The submitter cannot resolve their own risk review.");
+        }
+
         if (occurredAt < current.SubmittedAt)
+        {
             throw new ArgumentException("Resolution cannot predate review submission.", nameof(occurredAt));
+        }
     }
 }

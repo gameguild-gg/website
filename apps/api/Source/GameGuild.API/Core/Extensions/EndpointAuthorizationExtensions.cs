@@ -16,7 +16,10 @@ public static class EndpointAuthorizationExtensions
     /// <returns>The endpoint convention builder for chaining</returns>
     public static TBuilder RequirePermission<TBuilder>(this TBuilder builder, string permissionName) where TBuilder : IEndpointConventionBuilder
     {
-        if (string.IsNullOrWhiteSpace(permissionName)) throw new ArgumentException("Permission name cannot be null or whitespace.", nameof(permissionName));
+        if (string.IsNullOrWhiteSpace(permissionName))
+        {
+            throw new ArgumentException("Permission name cannot be null or whitespace.", nameof(permissionName));
+        }
 
         builder.Add(endpointBuilder => { endpointBuilder.Metadata.Add(new RequiresPermissionAttribute(permissionName)); });
 
@@ -32,7 +35,10 @@ public static class EndpointAuthorizationExtensions
     /// <returns>The endpoint convention builder for chaining</returns>
     public static TBuilder RequirePermissions<TBuilder>(this TBuilder builder, params string[ ] permissionNames) where TBuilder : IEndpointConventionBuilder
     {
-        if (permissionNames == null || permissionNames.Length == 0) throw new ArgumentException("At least one permission name must be specified.", nameof(permissionNames));
+        if (permissionNames == null || permissionNames.Length == 0)
+        {
+            throw new ArgumentException("At least one permission name must be specified.", nameof(permissionNames));
+        }
 
         builder.Add(endpointBuilder =>
             {

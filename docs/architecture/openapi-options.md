@@ -148,6 +148,16 @@ configurable locale-specific documents advance issue #147. Descriptions and
 examples for the remaining models and final acceptance remain before it can
 close.
 
+## Version document reconciliation
+
+Global document selection follows the explorer's resolved full API version and
+explicit action mappings. Custom groups retain unambiguous aliases or receive
+version-qualified aliases; Swagger UI uses the same catalog as document
+registration. See [versioned-openapi-reconciliation.md](versioned-openapi-reconciliation.md)
+for naming, migration and current original-criterion verification. The earlier
+coverage and pending-work paragraphs above are dated implementation history;
+they do not supersede the current reconciliation.
+
 ## Document generation measurement
 
 The `OpenApiDocumentGenerationBenchmarks` fixture generates the full `v1`

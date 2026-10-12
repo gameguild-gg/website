@@ -15,9 +15,15 @@ public sealed class LocalizationOptions : BaseOptions
     {
         base.Validate();
 
-        if (string.IsNullOrWhiteSpace(DefaultCulture)) throw new InvalidOperationException("DefaultCulture must be configured.");
+        if (string.IsNullOrWhiteSpace(DefaultCulture))
+        {
+            throw new InvalidOperationException("DefaultCulture must be configured.");
+        }
 
-        if (SupportedCultures == null || SupportedCultures.Length == 0) throw new InvalidOperationException("SupportedCultures must contain at least one culture.");
+        if (SupportedCultures == null || SupportedCultures.Length == 0)
+        {
+            throw new InvalidOperationException("SupportedCultures must contain at least one culture.");
+        }
     }
 
     public static LocalizationOptions CreateDefault() { return new LocalizationOptions(); }

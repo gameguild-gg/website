@@ -1130,6 +1130,16 @@ public class PaymentsModuleDiTests
         services.Should().Contain(sd => sd.ServiceType == typeof(IStripePaymentService));
         services.Should().Contain(sd => sd.ServiceType == typeof(IStripeCustomerService));
         services.Should().Contain(sd => sd.ServiceType == typeof(IPaymentGateway));
+
+        // Verify the multi-gateway failover wiring (issue #413)
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayRegistry));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IPaymentGatewaySelector));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayCircuitBreaker));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayAvailabilityAlerter));
+        services.Should().Contain(sd => sd.ServiceType == typeof(IGatewayMetricsService));
+        services.Should().Contain(
+            sd => sd.ServiceType == typeof(IPaymentGateway) && sd.ImplementationType == typeof(FailoverPaymentGateway),
+            "the failover composite is the single IPaymentGateway resolved by the payment path");
     }
 
     [Fact]
@@ -1820,6 +1830,9 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentGateway>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
             new Mock<ISubscriptionPaymentContextService>().Object,
+            Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            FraudTestHelpers.AllowAllDetectionService(),
             NullLogger<ProcessPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1831,6 +1844,11 @@ public class PaymentCommandHandlerConstructorTests
             new Mock<IPaymentRepository>().Object,
             new Mock<IPaymentGateway>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
+            Options.Create(new PaymentRetryOptions()),
+            new PaymentRetryPolicyResolver(Options.Create(new PaymentRetryOptions())),
+            new Mock<IPaymentDunningLifecycleService>().Object,
+            new Mock<IRevenueAuditService>().Object,
+            new Mock<IActorContextAccessor>().Object,
             NullLogger<RetryPaymentCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1849,8 +1867,7 @@ public class PaymentCommandHandlerConstructorTests
     public void ProcessRefundCommandHandler_CanBeConstructed()
     {
         var handler = new ProcessRefundCommandHandler(
-            new Mock<IPaymentRepository>().Object,
-            new Mock<IPaymentGateway>().Object,
+            new Mock<IRefundProcessingService>().Object,
             NullLogger<ProcessRefundCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1861,6 +1878,7 @@ public class PaymentCommandHandlerConstructorTests
         var handler = new UpdatePaymentStatusCommandHandler(
             new Mock<IPaymentRepository>().Object,
             new Mock<IPaymentSubscriptionSyncService>().Object,
+            Options.Create(new PaymentRetryOptions()),
             NullLogger<UpdatePaymentStatusCommandHandler>.Instance);
         handler.Should().NotBeNull();
     }
@@ -1960,7 +1978,9 @@ public class PaymentControllerConstructorTests
             new Mock<ISender>().Object,
             new Mock<IActorContextAccessor>().Object,
             new Mock<IStripeCustomerService>().Object,
-            new Mock<ISubscriptionPaymentContextService>().Object);
+            new Mock<ISubscriptionPaymentContextService>().Object,
+            new Mock<IPaymentRetryMethodChangeService>().Object,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<PaymentsController>.Instance);
         controller.Should().NotBeNull();
     }
 
@@ -2110,12 +2130,6 @@ public class EntityConstructorTests
         entity.Should().NotBeNull();
     }
 
-    [Fact]
-    public void PromoStackingRule_PartialConstructor()
-    {
-        var entity = new PromoStackingRule(new { });
-        entity.Should().NotBeNull();
-    }
 }
 
 #endregion

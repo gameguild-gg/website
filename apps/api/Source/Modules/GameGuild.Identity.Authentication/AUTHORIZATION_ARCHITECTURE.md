@@ -1,4 +1,180 @@
+# Passwordless first-factor MFA policy integration — 2026-10-10
+
+Email-code and magic-link consumption apply `ISignInMfaService.BeginAsync` after
+verifying their single-use first factor and loading the current eligible account.
+They supply the verified subject and token version, requested tenant and device
+context. The real policy service resolves tenant eligibility and either issues
+credentials or persists an expiring, limited MFA challenge. A pending response
+retains its enrollment/completion message and contains no ordinary credentials.
+The legacy magic-link constructor fails closed if its MFA policy service is missing;
+an injected session issuer cannot provide a fallback around that policy.
+
+`EmailCode` joins the persisted first-factor enum. Its existing string conversion
+and column length support this value without a database shape change. The web
+authorizers preserve typed MFA challenges, prioritize challenge completion over
+stale first-factor fields, and reuse the existing enrollment/completion form.
+
+Focused mocked web checks passed 50 cases. Real HTTP/PostgreSQL policy and replay
+regressions for all three first factors are included for hosted CI; those new native
+checks have not yet run. This checkpoint does not close an issue or accept PR #704.
+
+# Web MFA consumer checkpoint — 2026-10-08
+
+## Required MFA audit and the security-event pipeline — 2026-10-08
+
+Required, denied, enrollment-started and verified sign-in MFA events use
+`ISecurityEventLogger.RecordInCommandAsync` with the same scoped
+`IApplicationDbContext` as the owning command. Classification, audit records and
+alert evaluation share that transaction. A relational context must already have
+the command's transaction. Capture failures propagate: these operations cannot
+use an independently committed context or spool fallback as success evidence.
+The existing retry/spool transport remains available for other security events.
+Native regressions verify the supplied context/token, propagated failures and
+atomic rollback of audit, proof, provider state, challenge and credentials.
+
+## Native operation cancellation correction — 2026-10-08
+
+The host transaction owner rolls back with an independent token when the request
+is canceled. Cleanup always discards pending permission audit snapshots, clears
+tracked writes and resets operation retry state, including when rollback fails.
+The original command failure is preserved; rollback diagnostics contain only
+the exception type. Both unchanged cancellation regressions failed before the
+fix and passed afterward, within the complete 147-case host selection using
+its supported real PostgreSQL connection. The earlier two Docker named-pipe
+failures remain recorded. Code attempt03 reached real limited MFA enrollment
+but timed out at completion before submission/grading acceptance. Complete
+Code and #145 acceptance remain pending; see the reconciliation document and
+source-bound receipts for exact scopes. No issue is closed by this correction.
+The full authentication (2,535) and authorization (1,667) projects also passed;
+the three current selections total 4,349 passes, zero failures/skips. Source
+hashes and all 55 primary-checkout changes were preserved, and the exact owned
+PostgreSQL container was independently verified absent.
+
+The native first-factor challenge now continues through CSRF-protected web enrollment/completion. The verified session is finalized only after completion; recovery codes are one-time response data excluded from JWT/session claims. The existing form and Code runner consume this flow. Combined native selections passed 4,379; client build/typecheck and 1,155 tests and all 21 form tests passed. Local Code attempts stopped at disposable PostgreSQL readiness before functional tests; fresh CI/scanner/license gates and complete #145 acceptance remain pending. Details and unchanged original criteria are in `docs/architecture/authentication-mfa-policy-reconciliation.md`.
+
 # Authorization Architecture Documentation
+
+## 2026-10-08 native limited MFA enrollment checkpoint — #145
+
+The limited enrollment route is bound solely to the persisted first-factor challenge.
+Provisioning returns no ordinary credential/session or recovery code. The challenge
+records configuration identity, canonical-secret fingerprint and initialization time.
+Subject transaction/row locks serialize setup and confirmation; only the same live
+challenge resumes its pending setup. Completion requires real TOTP, revalidates exact
+configuration/account/tenant/version/policy, consumes once and generates recovery
+codes after proof. Required MFA audit failures roll back the owning command. A unique
+user MFA index aborts on duplicate legacy factors without deleting or selecting rows.
+
+The unchanged native regression reproduced 404 before implementation and now passes.
+Native selections passed: authentication 2,528, authorization 1,667, required audit 6,
+host architecture/security 137, PostgreSQL HTTP/migration 34, OpenAPI documentation 8
+and actual document capture 1. The regenerated client passed build/typecheck and
+1,140 tests. Separate reconciliation retains unit17's Integration compile failure
+and native20's cleanup collection timeout; their passing selections are source-bound
+and exact owned-container absence was verified. Primary 55 files are preserved.
+
+This is a validated checkpoint, not complete #145 acceptance or a merged PR. Web MFA
+consumer integration, other schemes, original criteria and Release/scanner gates remain.
+See [MFA policy reconciliation](../../../../../docs/architecture/authentication-mfa-policy-reconciliation.md).
+
+## 2026-10-08 public MFA completion and session proof checkpoint — #145
+
+`POST /v1/auth/mfa/sign-in/complete` verifies an expiring, server-bound first-factor
+challenge with TOTP or a backup code. The request cannot select subject, tenant,
+token version or policy. Verification, atomic challenge consumption, credential
+and session issuance, proof metadata and required audit writes share the existing
+command transaction. A native HTTP failure after proof persistence rolls back
+the consumed code, challenge, session and refresh token; a retry then succeeds.
+
+The immutable server-created proof is persisted in `session_mfa_evidence` before
+MFA access-token signing. Refresh checks its current account/enrollment/tenant/
+version/policy binding and preserves the original `auth_time` and `mfa_time`.
+Ordinary tokens cannot acquire MFA claims through custom claims. The native
+migration adds only the proof table, constraints and session relation.
+
+Full authentication and authorization projects passed 2,518 and 1,667 tests.
+The focused host selection passed 137; the extended native PostgreSQL selection
+passed 19, including real TOTP replay across challenges, new/legacy backup codes,
+concurrent HTTP completion, rollback, refresh and migration checks. Eight native
+OpenAPI documentation tests passed; the actual document produced the regenerated
+client, whose build/typecheck and 1,135 tests passed. Primary changes and original
+failing regression assertions were preserved. Limited enrollment/recovery, other
+schemes and the remaining original #145 criteria are still pending; #145 is open.
+See [MFA policy reconciliation](../../../../../docs/architecture/authentication-mfa-policy-reconciliation.md).
+
+## 2026-10-08 password MFA preparation checkpoint — #145
+
+Local password sign-in captures the account version observed before first-factor
+verification and requires a current subject/tenant MFA preparation before ordinary
+credential issuance. Required, enrolled or high-risk cases persist a five-minute
+opaque challenge and return only its limited bearer; the database stores its hash.
+Server-owned pending outcomes retain the command's successful challenge/audit
+writes through mapping without representing an authenticated session. A pending
+response is not logged as a successful sign-in.
+
+TOTP acceptance persists an atomic time-step watermark bound to the enrollment
+and canonical secret fingerprint, with caller-transaction/savepoint rollback.
+The two added tables have a native migration and upgrade/rollback/model checks.
+The selected 4,295 native tests passed, including mandatory and optional anonymous
+password HTTP against migrated PostgreSQL. Public completion/enrollment, MFA
+credential/session evidence and enforcement across other schemes remain pending;
+this checkpoint does not close #145. Scope, results and limits are recorded in
+[MFA policy reconciliation](../../../../../docs/architecture/authentication-mfa-policy-reconciliation.md).
+
+## 2026-10-05 Web3 backend identity and session boundary — #292 / #291
+
+Web3 nonce generation now accounts for the actual bounded host cache and requires
+both nonce/challenge and wallet bindings to be retained. Trusted-clock expiry,
+canonical SIWE/chain checks, mixed-case checksum validation and atomic local
+consumption precede account lookup and credential issuance. Unknown/evicted or
+already consumed nonces fail closed; shared-store/replica acceptance is separate.
+
+The verified insert-only provider key resolves a persisted user. Wallet possession
+does not verify or automatically link an email account. Stored account status and
+active tenant membership precede the existing hashed refresh generator and required
+session binding. JWT claims use the stored user version and actual session GUID.
+The command transaction rolls back required identity/credential writes on failure;
+an already consumed nonce cannot be retried. Expected authentication denials use
+the existing sanitized 401 exception mapping. The native five-criterion scope and
+execution boundaries are documented in
+[Web3 backend reconciliation](../../../../../docs/architecture/web3-backend-authentication-reconciliation.md).
+The parent retains provider/UI, linking and complete product journey requirements.
+
+## 2026-10-05 unavailable-account token boundary — #262 / #263
+
+Otherwise active refresh issuance requires a user returned by the existing live-user repository,
+before tenant provisioning, token generation or session mutation. Missing/deleted
+accounts receive generic invalid-refresh denial before issuance; revoked/replaced
+replay still commits containment of extant tokens/sessions without inventing a
+profile or version update. Fallback email/version identities
+are no longer minted. A production user JWT with a valid `token_version` also
+requires a current live-user version; null lookup results reject the bearer and
+clear its identity through the same protected/public boundary as revoked tokens.
+
+Versionless legacy tokens and service-account tokens retain their existing flow.
+The production service token generator carries `actor_kind=Service` and no user
+version; no user profile is invented for that machine identity. This correction
+does not change JWT claims, keys, schema, TTL policy or public response contracts.
+Actual PostgreSQL/production-JWT deleted-account failures, successful controls
+and whole-endpoint concurrent refresh acceptance are recorded in
+[lifecycle reconciliation](../../../../../docs/architecture/refresh-token-lifecycle-reconciliation.md).
+
+## 2026-10-05 active bearer revocation — #262 / #263
+
+The active host calls `UseTokenRevocation` after authentication and before tenant,
+actor and authorization construction. Existing configured JTI/user revocation and
+stored user token-version checks now govern protected requests. A rejected identity
+is cleared; protected responses use generic 401 Problem Details and a Bearer challenge.
+Explicit anonymous endpoints continue with an anonymous identity, preserving public
+sign-in/recovery/health when the client still carries an old revoked JWT.
+
+Five signed-JWT relational baseline failures and three passing controls are retained.
+Whole-flow acceptance for the bounded #262 requirement is being executed; #263 still
+requires persisted family lineage, full issuance/race acceptance, session-specific
+revocation, actor guards, alerts/audit and scheduled cleanup/metrics. Legacy tokens
+without a version claim retain the existing compatibility behavior. Configured cache
+provider/distributed acceptance is separate from persisted replay version invalidation.
+See [the acceptance record](../../../../../docs/architecture/bearer-revocation-reconciliation.md).
 
 **Module:** GameGuild.Identity.Authentication  
 **Date:** November 10, 2025  
@@ -353,13 +529,20 @@ GrantContentTypePermission(
 **Purpose**: Performance optimization for permission checks
 
 **Features**:
-- **In-Memory Cache**: Fast permission lookups
-- **TTL-Based**: Automatic expiration
-- **Invalidation**: Clear on permission changes
-- **Cache Statistics**: Monitor cache performance
+- **Hybrid Cache**: Per-instance L1 memory with optional shared Redis-backed L2; misses continue to the database source of truth.
+- **TTL and Capacity**: Separate configurable lifetimes for policies, permissions, ACLs, and rulesets, with bounded L1 size.
+- **Versioned Invalidation**: Tenant/user security versions, key tracking, bulk invalidation, and Redis Pub/Sub propagation keep grants and revocations coherent across instances.
+- **Bulk Decision Cache**: When the hybrid permission cache and tenant security-version store are registered, bulk decisions are cached across calls. Keys include the user, tenant, permission, content type, resource, and both tenant and global security versions. The service re-reads the versions after evaluation and retries if they changed, so a result evaluated across a permission mutation is not returned or cached under the earlier version. If three consecutive snapshots change, the batch fails instead of returning a potentially stale decision. Without both collaborators, checks use the database-backed batch path without decision caching.
+- **Bounded Bulk Evaluation**: Collection-based checks process at most 256 requests per database batch and preserve input order. Streaming checks default to 128 requests per batch; callers may select any size from 1 to 256 and process decisions as they are yielded.
+- **Warmup and Metrics**: Manual and popularity-based warmup plus hit, miss, eviction, and latency metrics.
+- **Health Alerts**: A periodic monitor logs cache health and emits structured warnings for low hit rate or high average latency after the configured minimum sample size.
 
-**Endpoint**:
-- `POST /v1/permissions/cache/clear`
+**Administrative endpoints** (system-admin authorization applies to statistics and warmup):
+- `GET /v1/permissions/cache/stats`
+- `POST /v1/permissions/cache:clear`
+- `POST /v1/permissions/cache:warm`
+
+Metrics use the `Authorization:Cache` options, including `EnableMetrics`, `MetricsLoggingIntervalSeconds`, `MinimumHitRateWarningThreshold`, `MinimumRequestsForPerformanceWarning`, and `LookupLatencyWarningThresholdMilliseconds`.
 
 ---
 
@@ -1795,10 +1978,462 @@ public async Task Authorization_PerformsUnderLoad()
 
 ## Platform Authorization Hardening
 
+### In-process verification, reset and magic-link token consumption
+
+EmailVerificationService generates opaque 32-character lowercase hexadecimal
+tokens from 16 cryptographically random bytes. Cache keys contain the full SHA-256
+digest of the supplied token rather than the bearer credential. Generation,
+validation, consumption and expiry removal use the same digest key.
+
+Purpose, requested user and expiry checks precede an atomic claim on the shared
+TokenInfo. Exactly one concurrent consumer may claim a token, including callers
+using separate scoped service instances with the same cache. A claimed token is
+already invalid before physical cache removal; only the winner can mark email
+verification and return a successful token-validation result. Wrong-purpose and
+wrong-user requests do not consume an otherwise valid token.
+
+These guarantees cover the configured in-process MemoryCache. They do not certify
+distributed consumption across independent hosts or introduce a persistent token
+store. Existing token lifetimes, public token format, HTTP contracts, returned
+identity and log redaction are retained.
+
+### Credential metadata in durable email notifications
+
+Verification, password-reset and magic-link metadata is protected with the host's
+ASP.NET Data Protection provider before notification delivery-service persistence.
+The purpose binds the notification ID, type, channel, recipient, tenant and explicit
+recipient address. Renderers decrypt into a local value and leave tracked and stored
+metadata encrypted. Invalid, foreign or malformed payloads fail with a fixed message
+before sending; failed delivery retains the existing retry and dead-letter behavior.
+
+The existing email sweep also protects a bounded batch of legacy plaintext rows,
+including sent, held, dead-lettered and soft-deleted history across tenants, without
+changing delivery state or retry counters. Due rows outside the history batch are
+protected before any lifecycle write. Backfill failure aborts that sweep; it does
+not acknowledge or send an unprotected credential. Completion requires running
+sweeps against the deployed database and observing no remaining legacy rows.
+
+Notification input retains the 4,000-character limit. The Metadata column becomes
+PostgreSQL text to accommodate encryption and Unicode expansion. Rollback locks
+the table and refuses values that would be truncated by the old column limit.
+Decryption across deployments requires the existing persisted Data Protection
+keyring and consistent application identity. This source change does not certify
+production keyring encryption, historical backups, or deployed backfill completion.
+
+### Encryption of persisted Data Protection keys
+
+Durable key registration requires both certificate PEM variables, encoded in
+base64, in every environment. Missing, partial, malformed, mismatched, expired or
+unsuitable RSA certificates stop startup with fixed diagnostics. Runtime startup
+does not generate a certificate or permit plaintext key storage. The certificate
+private key belongs outside the database and must remain available across host
+restarts; local operators must provide their own stable development certificate.
+
+A certificate-encrypted repository protects the canonical Data Protection XML
+serialization as text inside an outer envelope using the framework's XML encryptor
+and decryptor, preserving namespaces, comments and whitespace. On a read it
+locks persisted rows, protects legacy repository encodings transactionally and
+returns the unchanged canonical XML to the framework. Key IDs, master material,
+descriptors, expiration dates and revocations are retained. Existing payloads
+remain readable; no old keys are revoked or deleted. Invalid storage or an
+unavailable certificate aborts the read without committing partial conversions.
+
+The provider execution strategy owns the complete locked read, conversion, save
+and commit transaction, including when PostgreSQL automatic retries are enabled.
+Each attempt clears the dedicated context's tracked state and reloads durable
+rows. An aborted attempt cannot leave uncommitted envelopes hiding plaintext
+legacy rows from the next attempt. Transient write retries preserve canonical
+key identity, revocations and previously protected payloads.
+
+GitHub CI, including the Emception API browser cycle, prepares a synthetic
+certificate outside uploaded artifacts for each disposable runner. It masks the
+private key and removes temporary PEM files.
+Explicit certificate configuration takes precedence; partial configuration fails.
+This CI preparation is separate from runtime startup. Production deployment,
+certificate retention/rotation, historical backups and legacy-row counts still
+require operational verification; source tests alone do not certify them.
+
+### Tenant capability administration
+
+Capability HTTP reads require an authenticated resolved actor and a nonempty target
+tenant matching the actor's request tenant. An authenticated SystemAdmin may select
+another tenant explicitly. Overrides, removal, plan synchronization and audit-log
+reads additionally require tenant administration (Owner, TenantAdmin or Admin) or
+SystemAdmin. The `features:manage` policy governs feature-flag configuration; that
+permission alone does not grant capability entitlement administration.
+
+Mutation handlers and the capability service enforce the same administrator and
+tenant checks before any persistence call, including calls outside MVC or the CQRS
+authorization pipeline. User actors require a nonempty GUID subject. The resolved
+actor supplies override, removal and plan-synchronization audit identity; legacy command/service `UserId`
+arguments cannot impersonate another user. Non-user actors record null user IDs.
+Background synchronization must establish a trusted authenticated SystemAdmin
+context; an actor's System kind alone grants no access. Existing plan mapping,
+audit records and cache invalidation remain in place. Internal capability queries
+retain their service contract; HTTP reads enforce tenant scope before querying.
+
+Plan synchronization preserves every explicit entitlement row, including expired
+overrides, under the existing unique tenant/key constraint. Only plan-sourced rows
+are updated. New rows, value changes and source-only plan changes receive an audit
+entry in the same save as the entitlement mutation. Repeating an unchanged plan
+does not create extra audit entries. The actor recorded on both the row and audit
+is the resolved user, or null for a trusted non-user actor.
+
+### Refresh-token lifecycle audit and metrics
+
+The identity module emits credential-free `RefreshTokenLifecycleEvent` records through
+`IRefreshTokenLifecycleRecorder`. The host stores issuance, rotation, explicit revocation,
+account-wide revocation and completed replay containment in the same database transaction
+as the token and session mutations. A failed transaction retains neither these audit rows
+nor a committed-operation metric. Pure rejections use a separate scoped context so a
+denied command cannot erase their audit evidence. Replay containment still returns the
+server-only commit-on-denial result; it never returns credentials.
+
+Audit records contain opaque owner/token/parent/session identifiers and bounded reasons.
+An owner identifier recovered from storage does not authenticate the requester. Tenant
+context comes from resolved membership or an already authenticated owner, never an
+unverified requested tenant. Raw credentials, hashes, emails and request headers are
+excluded from lifecycle metadata. Audit storage failures propagate; the existing
+best-effort authentication transport cannot erase this transactional evidence.
+
+`GameGuild.Identity.Authentication.RefreshTokens` is registered in the host's OpenTelemetry
+meter provider. The attempt counter counts entry to an operation. The persisted-outcome
+counter is emitted only after `SaveChanges` has committed independently or the owning EF
+transaction has committed. Rollback and transaction failure discard staged counts.
+Tags are limited to operation, outcome and reason enums; no account, tenant, session,
+credential or IP appears in metric dimensions. Metrics describe the current process;
+the database audit is the authoritative history, including across restarts. A failing
+telemetry listener cannot reverse a successful database commit.
+
+### Security email acceptance
+
+Security email rows require a rendered message and an `IConfirmedEmailSender`
+receipt whose `Accepted` flag is true before the dispatcher marks them Sent.
+A disabled sender, missing message or sender without that capability follows the
+existing retry and dead-letter path. Provider acceptance is distinct from its
+optional message identifier; a successful response without an identifier is valid.
+SMTP, SES and SendGrid expose that distinction without changing `IEmailSender.SendAsync`.
+
+The registered Security renderer HTML-encodes the message, excludes persisted
+metadata and directs the recipient to the ordinary trusted application address.
+Provider acceptance does not prove inbox placement or that the recipient read it.
+The durable replay producer, retry/idempotence integration and the full #263
+acceptance remain under validation; this delivery boundary alone does not close it.
+
+### Persisted refresh-token parent and session lineage
+
+Refresh tokens have nullable `ParentTokenId` and `SessionId` foreign keys to the
+persisted predecessor and session. Existing rows retain unknown metadata as null;
+the migration does not guess bindings from timestamps, users or token hashes.
+New sessions bind their stored refresh token to the real session after creation.
+Successful refresh rotation records the predecessor ID only after winning the
+existing atomic revocation claim. Session creation/refresh and rotation require
+`IRefreshTokenLineageRepository` from the same configured token repository;
+custom stores must implement this capability. Manual sessions created without a
+refresh credential retain their existing behavior. An authentication session
+with a supplied credential must successfully bind its persisted token; a missing
+row fails before success audit or returned credentials.
+
+Binding validates token/session ownership, matching hashes, active state, expiry
+and immutable existing bindings. Rotation additionally requires the claimed
+parent's matching successor hash and compatible owned session. The repository
+reads the parent outside the change tracker because SQL atomic claims bypass it;
+adding metadata must not overwrite the persisted revocation with stale state.
+An incomplete lineage write cannot return successful authentication credentials.
+Credential login retains its generic failure response; refresh failures and
+cancellation propagate. The host command transaction rolls back unsuccessful
+database mutations. Legacy parents can be
+bound only by an observed successful rotation with the owned persisted session.
+
+Retention deletes eligible leaves before predecessors. An active or otherwise
+retained descendant keeps its complete known chain; sessions referenced by any
+retained token are kept. Restrictive foreign keys reject dangling references and
+prevent deletion from silently breaking lineage. Downgrading the migration drops
+these metadata columns and their links while retaining token rows, hashes and
+revocation state; newly written lineage is consequently lost on downgrade.
+
+This covers credential/session flows and local refresh rotation. It does not
+establish complete issuance metadata for every external authentication provider,
+nor all original #263 audit, alert, scheduled cleanup and metrics requirements.
+Those original criteria remain open until their separate evidence is accepted.
+
+### Refresh credential expiration and session limits
+
+`Jwt:RefreshTokenSlidingExpiration` defaults to `true`, retaining renewal on each
+successful refresh. With `false`, rotation preserves the predecessor's deadline
+or a shorter configured TTL. Both modes retain `SessionOptions.AbsoluteTimeoutMinutes`
+measured from the original session creation; rotation cannot reset that boundary.
+The existing idle timeout and active-session checks remain mandatory.
+
+Session binding and rotation cap the stored refresh credential at the actual
+persisted session deadline. Credential sign-in, sign-up, OAuth/Discord and Web3
+report that deadline in both refresh expiration response fields. A null, foreign,
+inactive, expired or wrongly bound session cannot return successful credentials.
+The provider issuer for magic-link/WebAuthn retains its persisted-token/session
+checks. `RefreshTokenExpirationDays` remains the canonical TTL configuration;
+the historical `RefreshTokenExpiryInDays` fallback remains supported.
+
+This boundary is validated by real HTTP/PostgreSQL cases for both sliding modes
+and one-day/thirty-day absolute limits. Complete #263 acceptance remains separate
+from those four expiration cases.
+
+### Authenticated self revocation across all sessions
+
+`POST /v1/auth/sessions:terminate-all` binds `RevokeAllUserTokensCommand`.
+The handler requires an authenticated User actor with a nonempty GUID subject;
+the command carries no user selector. It revokes that user's active refresh
+tokens, terminates their sessions with the existing logout reason, advances
+their stored token version once and records a user revocation cutoff through
+the existing distributed revocation service. The IP comes from the host
+connection. The route and response shape are preserved.
+
+The host command transaction covers the database mutations. Persistence,
+revocation-store failures and cancellation propagate; the endpoint must not
+report successful logout after an incomplete write. The cache and PostgreSQL
+do not share a transaction: a cutoff already written before a later database
+commit failure remains a denial of earlier tokens. This is a conservative
+failure outcome, and callers must sign in again or retry after the failure.
+The cutoff records the minimum token version advanced by that operation. A
+signed token at or above that version is not rejected solely because its
+second-granular iat precedes the cutoff's fractional second. Tokens without a
+version and ordinary time-only cutoffs retain the earlier timestamp rule;
+the stored database version and session validity checks still run. Both
+configured stores implement the required typed version boundary. A custom
+store must implement that capability for the guarded self-revocation command.
+The session-only command remains separate for ending other sessions, MFA
+containment and refresh-replay containment; those paths retain their own
+existing version/security policy. No raw credentials are added to events.
+
+All 19 original #263 criteria remain authoritative. This increment covers the
+existing all-session entry point; explicit parent/session token lineage,
+complete token-operation audit/alerts, scheduled retention and metrics still
+require separate acceptance.
+
+### Explicit Refresh-Token Revocation Ownership
+
+The self-service revoke command requires an authenticated `User` actor with a
+nonempty GUID subject from `IActorContextAccessor`. Anonymous, service, system,
+webhook and external actors are rejected before token hashing or repository reads.
+Stored refresh-token ownership must match that subject before the existing revoke
+service can mutate a token or its linked session. Request/command `UserId`, tenant
+administration and system-administrator roles do not grant cross-user access to
+this self-service operation. The HTTP controller retains its host-observed IP;
+request-body IP is not audit evidence.
+
+Unknown tokens keep the existing invalid-token contract. Successful own-token
+revocation still marks the token revoked and terminates its linked session with
+`UserLogout`, without revoking unrelated users or advancing the account version.
+This ownership guard does not establish all #263 lineage, cleanup, telemetry or
+alert-delivery requirements. Original issue criteria remain authoritative.
+
+Session-bound access tokens additionally require a single, valid nonempty
+`session_id` claim, an existing active/unexpired session without termination, and
+a session owner matching the token subject. The production revocation middleware
+reads stored session state on each authenticated session-bound request. Missing,
+expired, terminated, malformed or cross-user sessions clear identity and reject
+protected requests with generic401. Explicit anonymous endpoints continue with
+no stale actor. Legacy user and service tokens without a session claim retain
+their existing JTI/user-version compatibility; this does not invent session
+binding for those historical tokens. No session state is changed by validation.
+
+### Refresh Token Repository Predicates
+
+Active-token listing and user-wide revocation use mapped `IsRevoked` and
+`ExpiresAt` columns and one captured UTC timestamp. The ignored computed
+`IsActive` property must not appear in SQL predicates. Queries stay in the
+database and retain user isolation, strict expiry and current active-row behavior.
+This repository correction does not establish family lineage, complete service
+rotation atomicity or revocation consumption in the host's bearer pipeline.
+
+Refresh replay containment returns a server-only denial only after required token,
+session and applicable account-version writes succeed. Its explicit `ICommitOnFailureOutcome`
+preserves those mutations through the command transaction while the endpoint still
+returns generic 401. Business failure classification remains unchanged. Ordinary
+failed outcomes and exceptions keep rollback behavior; request data cannot supply
+the commit contract. Profile mapping preserves the internal denial without fetching
+or exposing an account. Separate PostgreSQL HTTP and transaction cases verify
+containment persistence and ordinary failure/exception rollback.
+
+`Jwt:RefreshTokenReplayContainmentScope` selects `Family` (default) or `Account`.
+Family containment uses the persisted, owner-checked session binding, terminates
+that session, and revokes its descendants without changing the account token
+version. Signed bearers from that family are denied by the session guard; other
+owned sessions remain usable. Account containment retains the existing all-session
+revocation and version increment. A legacy token without a provable persisted
+family falls back to account containment. Explicit revoke-all is independent.
+Session metadata updates cannot clear committed termination state or reactivate a
+family from a stale tracked object. Family termination locks its session before
+querying descendants; a waiting refresh must pass the current persisted binding
+checks and cannot acknowledge an orphan replacement. Unknown policy values fail
+configuration validation.
+
+[Scope and remaining acceptance](../../../../../docs/architecture/refresh-token-rotation-reconciliation.md).
+
+### MFA Recovery State
+
+New recovery codes use salted, versioned PBKDF2-HMAC-SHA256 (600,000 iterations)
+and default to 12 characters. Legacy SHA-256 codes remain verifiable until used or
+regenerated. Both formats use constant-time hash comparison. Issued-set metadata
+preserves the original count; legacy total/used counts are explicitly unknown.
+The v1 counters keep their numeric types. For unknown legacy history they return
+lower bounds and `areUsageCountsKnown=false`; configuration's issued count is null.
+Status endpoints disclose counts without hashes or plaintext.
+
+MFA row updates compare the original backup set, failure counter, lockout,
+enablement, setup completion and encrypted TOTP secret. A conflicting write reloads
+the row before a bounded retry. Success requires a committed consumption; stale
+failed attempts cannot restore consumed codes. Pending setup codes cannot complete
+enrollment. Successful TOTP confirmation records setup completion. Cancellation
+propagates through the verifier and orchestrator.
+New enrollments have a fixed persisted expiration which failed attempts cannot
+extend; legacy pending rows use the prior timestamp fallback.
+
+### Polymorphic Password Entry Point
+
+`POST /v1/auth/polymorphic` is explicitly anonymous and reviewed in the host
+allowlist, with the existing authentication rate limit. The CQRS command has a
+durable use-case event contract which excludes credentials and issued tokens.
+The Users module performs bounded two-candidate lookup without depending on the
+Authentication module. Zero or multiple undeleted matches are denied; no first
+match or email fallback can authenticate an unresolved identifier.
+
+Resolved account identity is server-only, reloaded before password verification
+and cannot be supplied through JSON. The existing local flow still performs
+password verification, generic denial/timing/attempt recording, risk analysis,
+tenant membership resolution, JWT issuance and persisted session creation.
+Tenant in the anonymous request selects a membership to validate; it is not an
+authenticated tenant claim. IP and user agent come from the existing HTTP context.
+Device fingerprint is an observational hint passed to risk and session storage,
+not independent proof of device trust. High-risk results retain step-up handling
+without issuing a completed login session.
+
+Phone lookup uses the stored canonical international string, without silently
+rewriting legacy data or asserting phone ownership. Unsupported password
+identifier types use generic denial. [Requirement and execution map](../../../../../docs/architecture/polymorphic-signin-reconciliation.md).
+
+### Password History Acceptance
+
+Current-password and five previous-hash checks are retained in both change and
+reset. Expected-current-hash updates and EF concurrency tokens protect one
+committed history/version transition across competing requests. Mixed-format
+history remains bounded and excluded from serialized users and responses.
+Fresh migrated PostgreSQL/HTTP definitions and their controlled race timing are
+recorded in the [#251 acceptance map](../../../../../docs/architecture/password-history-reconciliation.md).
+Fixture-principal/token-service execution does not certify external email
+delivery or real bearer identity proofing; those acceptance boundaries stay open.
+
+### Password Hash Boundaries
+
+Password writes retain policy checks, history rejection and the original-hash
+concurrency guard. Validated BCrypt cost remains 12 by default, configurable from
+10 to 16. New inputs beyond 72 UTF-8 bytes use explicitly identified salted
+PBKDF2-HMAC-SHA256 with 600,000 iterations and full-input verification. Long input
+cannot authenticate against a truncated legacy BCrypt hash; recovery creates a
+full-length hash. History conservatively rejects reuse of an ambiguous legacy
+prefix. Legacy suffixes cannot be reconstructed or certified from stored hashes.
+See [the requirement and compatibility map](../../../../../docs/architecture/password-hashing-reconciliation.md).
+
+### Authentication Timing Boundaries
+
+Local password authentication creates one server-owned monotonic timing origin
+before account lookup. Polymorphic authentication propagates the origin created
+before candidate resolution through an internal request property; clients cannot
+supply it in JSON. Local account/IP lockout admission and PostgreSQL advisory-lock
+contention start and reuse that origin through a private server-side HTTP context
+key. Denials retain the lockout policy, complete actual dummy credential work and
+return the same generic unauthorized detail as failed password verification.
+String context keys and request JSON cannot seed the origin. Completed BCrypt/PBKDF2
+verification is tracked independently
+of account existence or credential validity. Missing/passwordless accounts,
+unusable hashes and rejected oversized legacy inputs receive actual dummy BCrypt
+work using the current password-policy cost. The shared 400 ms floor subtracts
+total elapsed work and introduces no account-dependent random delay.
+Positive fractional waits round upward to whole timer milliseconds. After waking,
+the same monotonic origin is checked again until the floor is met; an early timer
+does not lower the configured minimum.
+
+Request cancellation is checked before and after credential work and interrupts
+the remaining delay. A lookup that returns after cancellation cannot start new
+verification work. A synchronous hash already running cannot be interrupted.
+Attempt/risk/audit handling precedes failed-credential compensation; a failed
+attempt store cannot bypass compensation after an unexpected lookup error. A
+timing failure is not retried as another hash or claimed as completed protection.
+The legacy simulation helper uses the same work and floor for either account
+class. Existing custom-provider signatures remain compatible; unknown completed
+work is treated conservatively.
+
+The floor is a minimum, not a universal constant-time guarantee. Supported legacy
+hash costs, PBKDF2, storage/network latency and host load can exceed it. Functional
+tests and in-process HTTP observations do not certify timing indistinguishability
+in production. See [the execution and remaining-acceptance map](../../../../../docs/architecture/authentication-timing-reconciliation.md).
+
+### Authentication Response Projection
+
+Authentication response conversion preserves server-issued tokens, explicit
+expirations, tenant/session identity, challenge flags and risk metadata. Repository
+profile lookup uses the server response's user ID; an embedded response profile
+cannot override the persisted identity or verified-email assertion. Complete names
+are projected without changing the entity. A stored phone is disclosed only when
+authentication succeeds with a nonempty access token and neither MFA nor step-up
+is still required. Phone possession is not inferred as phone verification.
+
+Server-owned MFA pending outcomes preserve the verified first-factor subject ID,
+resolved tenant and a detached profile projection under the same phone-redaction
+rule. They remain failed/pending authentication outcomes with no ordinary tokens
+or session. The projection uses the current subject already verified by the MFA
+gate and does not replace the internal transaction outcome marker or fetch a
+request-supplied identity. Committed denials remain anonymous and profile-free.
+
+The public legacy refresh converter preserves supplied expiry/duration/profile;
+it never extends a supplied expired timestamp. Only a genuinely missing expiry
+may be derived from a positive duration. Conversion copies mutable containers and
+does not mutate sources, write accounts or bypass authentication/authorization.
+
 This section documents the authorization-hardening invariants of the common platform
 modules. Everything below applies to the platform modules that are shared verbatim
 across products; product-specific behavior hooks in exclusively through the documented
 extension points.
+
+### New-User Handle Assignment
+
+New user factories assign a lowercase ASCII handle independently of the display
+name. Accents are removed, separators become hyphens, and compatible dots and
+underscores remain supported. Existing stored handles, including legacy nulls,
+are preserved on reads and display-name updates. Local signup validates the
+canonical candidate before persistence or token issuance and passes the chosen
+handle separately from the display name.
+
+The user repository reserves handles across persisted users (including deleted
+rows) and unsaved batch members. Automatically generated collisions receive a
+bounded user-ID suffix; an explicitly chosen collision returns a Username
+validation error without silently renaming the choice. PostgreSQL's existing
+unique index remains the final concurrent-write guard. Only its username-specific
+unique violation can trigger one generated-handle save retry. The retry preserves
+entity versions and durable-event capture; email and other persistence failures
+retain their existing failure path. No user schema or authorization claim changes
+are required.
+
+### JWT Algorithm and Additional-Claim Boundaries
+
+Access-token issuance, all `JwtTokenService` validation paths and the API's active
+JWT bearer registration use the recorded HS256 policy. Each validator explicitly
+restricts `ValidAlgorithms` to HS256; a valid signature under another algorithm
+does not satisfy this token contract. `GetPrincipalFromExpiredToken` bypasses
+lifetime validation only, retaining signature, algorithm, issuer and audience checks.
+
+The public additional-claims overload preserves legitimate custom values, repeated
+claims and their JSON value types. It rejects null/blank claim entries and reserved
+protocol, identity, tenant, session, role, permission, MFA and actor claims, including
+aliases used by current extractors and configured authorization claim names.
+Callers must use typed issuance parameters for server-owned identity and authorization
+data; arbitrary additional claims cannot replace or extend those security assertions.
+Existing public method signatures and HTTP response contracts are preserved.
+
+`JwtGenerationValidationPolicyTests` and `JwtBearerValidationHttpTests` exercise
+issuance, unsupported algorithms, tampering, wrong keys/issuer/audience, time validity,
+custom claims and reserved-claim rejection. The bearer fixture invokes the actual
+host authentication registration over HTTP; it does not certify session/account
+revocation or external-provider acceptance tracked by separate requirements.
 
 ### Fail-Closed Permission Mapping (CQRS `AuthorizationBehavior`)
 
@@ -1856,6 +2491,23 @@ guarded Authorization-module commands, and acting-user identity (`GrantedBy`,
 `RevokedBy`, `CreatedByUserId`, …) always comes from the authenticated actor context,
 never from the request body.
 
+### Automatic Permission Audit Hooks
+
+`ApplicationDbContext` captures added, modified, and deleted EF-tracked entities whose
+type or changed property represents permissions. It stores the actor, tenant, target user,
+correlation ID, command type, and before/after property snapshots, then sends grouped
+permission events to the centralized `IAuditService`. CQRS commands flush those records
+after the owning transaction commits; a rollback discards the pending snapshots. Audit
+storage and extension-hook failures are logged and do not fail an already-committed
+permission mutation.
+
+The default filter audits all permission entities. Hosts may selectively exclude entity
+types or EF operation kinds under `Audit:PermissionHooks:ExcludedEntityTypes` and
+`Audit:PermissionHooks:ExcludedOperations`. Product-specific behavior can register an
+`IPermissionAuditHook`; each hook receives the committed changes and the centralized
+audit request. Permission mutations should use the EF unit of work and CQRS operation
+pipeline so snapshots are captured and emitted only after successful persistence.
+
 ### Per-Product Policy Seed Extension Point
 
 The common `PolicyDefinitionSeeder` seeds **platform-generic policies only**. A product
@@ -1883,6 +2535,22 @@ identifiers.
   authentication plus the `Features.Read` policy (reads) or `Features.Manage` policy
   (mutations). No feature-flag endpoint is public; anonymous callers can never mutate
   flags. Feature *evaluation* for callers happens through the evaluation/SDK surfaces.
+  The four runtime MVC evaluation actions bind identity, tenant and permissions to
+  `IActorContextAccessor`. They reject missing authentication or invalid User subjects
+  with 401, and mismatched body/query user or tenant selectors with 403 before calling
+  evaluation services. Matching selectors remain supported for existing clients.
+  SystemAdmin callers evaluate their own current context on these runtime routes;
+  these routes do not provide an administrative impersonation or preview operation.
+  Authenticated service actors retain a null UserId; a missing tenant remains null
+  so tenant-targeted rules retain their fail-closed behavior and global flags can
+  still be evaluated. An empty tenant GUID is invalid. Subscription-plan targeting
+  uses the actor's `subscription_plan` attribute, never a body-supplied plan. The
+  controller copies the effective permissions and takes IP, user agent and request
+  time from the request transport/server. It creates a new evaluation context and
+  does not mutate the submitted body. Environment and custom attributes remain
+  client-provided evaluation hints; they are not identity or permission assertions.
+  This invariant covers these MVC entry points, not every internal SDK context
+  factory, the freshness of plan attributes, or the completeness of cache keys.
 - **Ledgers** (`GameGuild.Finance.Ledgers`): controllers require authentication plus
   `Ledgers.Read` / `Ledgers.Write`. The effective tenant is the **actor's tenant** — a
   route-supplied tenant is honored only for SystemAdmin; cross-tenant reads fail
@@ -1903,7 +2571,49 @@ and writes an audit entry on **every mutation path** (grants, revokes, defaults,
 content-type and resource grants, expired-permission cleanup). Invalidation failures
 propagate — a mutation whose cache invalidation failed is never reported as successful.
 
+### Scheduled refresh-token retention
+
+The host registers an enabled `RefreshTokenCleanupWorker` with a fresh scoped
+operation per cycle. `Authentication:RefreshTokenCleanup` validates retention
+(default 30 days), batch size (default 500), batches per store (default 10), startup
+delay (default two minutes), interval (default one hour), and execution deadline
+(default one minute). Cycles run sequentially; failures and timeouts retry at the
+next interval, and shutdown cancels both database work and the timer.
+
+Token deletion requires both the original expiration and any revocation timestamp
+to precede the retention cutoff. A predecessor survives while a child survives;
+an unexpired revoked leaf remains evidence for reuse detection. Sessions survive
+while any stored token references them. Each cycle bounds writes in both stores.
+Deletion and a redacted system audit row commit in one database transaction.
+Audit/storage/cancellation failure rolls the cycle back. Cleanup counters report
+committed row counts only after commit, with bounded resource/outcome dimensions.
+The scheduler is an internal system operation and exposes no public cleanup API.
+Tests disable automatic scheduling explicitly and exercise the worker separately.
+
 ### Architecture Rules (enforced by build/tests)
+
+### Verified provider session issuance
+
+Magic-link consumption and WebAuthn authentication completion delegate credential
+issuance to `IAuthenticatedSessionIssuer` after verifying the provider identity and
+loading an available stored account. Issuance requires an active membership in an
+active tenant; pending or cancelled invitations and revoked memberships grant no
+access. Login does not provision or reactivate memberships. Requested foreign tenants
+are rejected before writing credentials. Roles come from the existing tenant resolver.
+
+The issuer persists a hashed root refresh token, creates its owned session, and checks
+the stored binding before generating an access token carrying that session and tenant.
+The refresh deadline is capped to the persisted session's absolute deadline. Response
+lifetimes come from the actual JWT and stored deadlines. Provider commands run inside
+the host command transaction: a binding, persistence, cancellation or issuance failure
+must escape that transaction so its writes roll back. Credentials are returned only
+after the transaction succeeds. Missing issuer configuration fails closed.
+
+These invariants cover initial session issuance. They do not certify provider delivery,
+browser authenticator ceremonies, enterprise federation, or the complete refresh-token
+lifecycle requirements; those retain their separate acceptance evidence.
+
+### Architecture enforcement
 
 - **Controller authorization (GGARCH008 + `ControllerAuthorizationArchitectureTests`)**:
   every MVC endpoint must carry `[Authorize]` (class or action) or an explicit

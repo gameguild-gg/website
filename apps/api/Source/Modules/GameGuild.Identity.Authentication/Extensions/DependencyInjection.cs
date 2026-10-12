@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IUserAuthorizationTokenVersionService, UserAuthorizationTokenVersionService>();
         services.AddScoped<IRequestHandler<LocalSignUpCommand, SignInResponse>, LocalSignUpHandler>();
         services.AddScoped<IRequestHandler<LocalSignInCommand, SignInResponse>, LocalSignInHandler>();
+        services.AddScoped<IRequestHandler<PolymorphicSignInCommand, SignInResponse>, PolymorphicSignInHandler>();
         services.AddScoped<IRequestHandler<RefreshTokenCommand, SignInResponse>, RefreshTokenHandler>();
         services.AddScoped<IRequestHandler<GoogleIdTokenSignInCommand, SignInResponse>, GoogleIdTokenSignInHandler>();
         services.AddScoped<IRequestHandler<SendEmailVerificationCommand, EmailVerificationResponse>, SendEmailVerificationCommandHandler>();
@@ -33,6 +34,8 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetPermissionTemplatesQuery, IEnumerable<PermissionTemplateDto>>, GetPermissionTemplatesQueryHandler>();
         services.AddScoped<ICommandHandler<ApplyPermissionTemplateCommand, ApplyPermissionTemplateResult>, ApplyPermissionTemplateCommandHandler>();
         services.AddScoped<IQueryHandler<GetPermissionCacheStatsQuery, PermissionCacheStatsDto>, GetPermissionCacheStatsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetPermissionCacheKeysQuery, PermissionCacheKeysDto>, GetPermissionCacheKeysQueryHandler>();
+        services.AddScoped<IQueryHandler<GetPermissionCacheKeyQuery, PermissionCacheKeyInfoDto?>, GetPermissionCacheKeyQueryHandler>();
         services.AddScoped<ICommandHandler<WarmPermissionCacheCommand, PermissionCacheWarmupResult>, WarmPermissionCacheCommandHandler>();
 
         // Register validators
@@ -46,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailRenderer, EmailVerificationRenderer>();
         services.AddScoped<IEmailRenderer, PasswordResetRenderer>();
         services.AddScoped<IEmailRenderer, MagicLinkRenderer>();
+        services.AddScoped<IEmailRenderer, EmailCodeRenderer>();
 
         // Each durable listener is invoked with its own transactional inbox receipt.
         services.AddScoped<SendWelcomeEmailHandler>();

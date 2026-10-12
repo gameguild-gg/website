@@ -65,10 +65,15 @@ internal sealed class GoogleAiAdapter(IHttpClientFactory httpClientFactory, ILog
             while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
             {
                 if (!line.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
+                }
+
                 var data = line[5..].Trim();
                 if (data.Length == 0 || data == "[DONE]")
+                {
                     continue;
+                }
 
                 using var document = JsonDocument.Parse(data);
                 var root = document.RootElement;
@@ -81,22 +86,34 @@ internal sealed class GoogleAiAdapter(IHttpClientFactory httpClientFactory, ILog
                 if (!root.TryGetProperty("candidates", out var candidates)
                     || candidates.ValueKind != JsonValueKind.Array
                     || candidates.GetArrayLength() == 0)
+                {
                     continue;
+                }
+
                 var candidate = candidates[0];
                 if (candidate.TryGetProperty("finishReason", out var finishElement) && finishElement.ValueKind == JsonValueKind.String)
+                {
                     finishReason = finishElement.GetString();
+                }
+
                 var delta = candidate.TryGetProperty("content", out var contentElement)
                     && contentElement.TryGetProperty("parts", out var partsElement)
                         ? AiJsonHelpers.ExtractTextFromParts(partsElement)
                         : null;
                 if (string.IsNullOrEmpty(delta))
+                {
                     continue;
+                }
+
                 text.Append(delta);
                 await onDelta(delta, cancellationToken).ConfigureAwait(false);
             }
 
             if (text.Length == 0)
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.GoogleEmptyResponse", "Google returned an empty response."));
+            }
+
             return Result.Success(new AiProviderExecutionResult(request.Model, text.ToString(), finishReason, inputTokens, outputTokens, totalTokens));
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -152,7 +169,9 @@ internal sealed class GoogleAiAdapter(IHttpClientFactory httpClientFactory, ILog
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
+            {
                 return Result.Failure<AiProviderExecutionResult>(AiProviderErrorMapper.Map("Google", response.StatusCode, responseBody));
+            }
 
             using var document = JsonDocument.Parse(responseBody);
             var root = document.RootElement;
@@ -170,7 +189,9 @@ internal sealed class GoogleAiAdapter(IHttpClientFactory httpClientFactory, ILog
                     : null;
 
             if (string.IsNullOrWhiteSpace(text))
+            {
                 return Result.Failure<AiProviderExecutionResult>(Error.Failure("AI.GoogleEmptyResponse", "Google returned an empty response."));
+            }
 
             var usage = root.TryGetProperty("usageMetadata", out var usageElement) ? usageElement : default;
 

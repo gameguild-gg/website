@@ -20,6 +20,8 @@ public static class OpenTelemetryExtensions
             return builder;
         }
 
+        ValidateOptions(options);
+
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(
@@ -77,6 +79,7 @@ public static class OpenTelemetryExtensions
                     .AddMeter(
                         "GameGuild.API.RateLimiting",
                         "GameGuild.Identity.Authentication.PermissionBulkCheck",
+                        "GameGuild.Identity.Authentication.RefreshTokens",
                         "GameGuild.Identity.Authorization.Cache");
 
                 if (options.ConsoleExporterEnabled)
@@ -98,9 +101,45 @@ public static class OpenTelemetryExtensions
     }
 
     private static OtlpExportProtocol ResolveProtocol(string? protocol)
-        => string.Equals(protocol, "grpc", StringComparison.OrdinalIgnoreCase)
-            ? OtlpExportProtocol.Grpc
-            : OtlpExportProtocol.HttpProtobuf;
+    {
+        if (string.IsNullOrWhiteSpace(protocol)
+            || string.Equals(protocol.Trim(), "http/protobuf", StringComparison.OrdinalIgnoreCase))
+        {
+            return OtlpExportProtocol.HttpProtobuf;
+        }
+
+        if (string.Equals(protocol.Trim(), "grpc", StringComparison.OrdinalIgnoreCase))
+        {
+            return OtlpExportProtocol.Grpc;
+        }
+
+        throw new InvalidOperationException(
+            $"OpenTelemetry:OtlpProtocol '{protocol}' is unsupported. Use 'http/protobuf' or 'grpc'.");
+    }
+
+    private static void ValidateOptions(OpenTelemetryRuntimeOptions options)
+    {
+        if (!options.ConsoleExporterEnabled && string.IsNullOrWhiteSpace(options.OtlpEndpoint))
+        {
+            throw new InvalidOperationException(
+                "OpenTelemetry is enabled, but no exporter is configured. Set OpenTelemetry:OtlpEndpoint or enable OpenTelemetry:ConsoleExporterEnabled.");
+        }
+
+        if (string.IsNullOrWhiteSpace(options.OtlpEndpoint))
+        {
+            return;
+        }
+
+        if (!Uri.TryCreate(options.OtlpEndpoint.Trim(), UriKind.Absolute, out var endpoint)
+            || (!string.Equals(endpoint.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(endpoint.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException(
+                "OpenTelemetry:OtlpEndpoint must be an absolute HTTP or HTTPS URI.");
+        }
+
+        _ = ResolveProtocol(options.OtlpProtocol);
+    }
 
     private static bool IsHealthPath(PathString path)
         => path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase)

@@ -21,17 +21,17 @@ export class LearningCoursesProgramContentModule {
    * Supports filtering via query parameters:
    * - level=top: Get only top-level content
    */
-  async getCoursesContent(programId: string, query?: { level?: string }): Promise<Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>> {
+  async getCoursesContent(programId: string, query?: { level?: string }): Promise<Result<Types.LearningCoursesProgramContentDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
   }
 
   /**
@@ -71,7 +71,7 @@ export class LearningCoursesProgramContentModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -249,7 +249,7 @@ export class LearningCoursesProgramContentModule {
   /**
    * Get child content for a specific parent (resource-level Read permission required on parent Program)
    */
-  async getCoursesContentChildren(programId: string, parentId: string): Promise<Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>> {
+  async getCoursesContentChildren(programId: string, parentId: string): Promise<Result<Types.LearningCoursesProgramContentDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content/${parentId}/children`;
 
     const result = await this.client.request({
@@ -258,7 +258,7 @@ export class LearningCoursesProgramContentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
   }
 
   /**
@@ -267,7 +267,7 @@ export class LearningCoursesProgramContentModule {
   async getCoursesContentByType(
     programId: string,
     type: Types.LearningCoursesProgramContentType,
-  ): Promise<Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesProgramContentDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content/by-type/${type}`;
 
     const result = await this.client.request({
@@ -276,7 +276,7 @@ export class LearningCoursesProgramContentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
   }
 
   /**
@@ -285,7 +285,7 @@ export class LearningCoursesProgramContentModule {
   async getCoursesContentByVisibility(
     programId: string,
     visibility: Types.LearningCoursesVisibility,
-  ): Promise<Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesProgramContentDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content/by-visibility/${visibility}`;
 
     const result = await this.client.request({
@@ -294,7 +294,7 @@ export class LearningCoursesProgramContentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
   }
 
   /**
@@ -319,7 +319,7 @@ export class LearningCoursesProgramContentModule {
   /**
    * Get required content for a program (resource-level Read permission required on parent Program)
    */
-  async getCoursesContentRequired(programId: string): Promise<Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>> {
+  async getCoursesContentRequired(programId: string): Promise<Result<Types.LearningCoursesProgramContentDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content/required`;
 
     const result = await this.client.request({
@@ -328,7 +328,7 @@ export class LearningCoursesProgramContentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
   }
 
   /**
@@ -337,7 +337,7 @@ export class LearningCoursesProgramContentModule {
   async postCoursesContentSearch(
     programId: string,
     body: Types.LearningCoursesSearchContentDto,
-  ): Promise<Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesProgramContentDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content/search`;
 
     // Validate request body
@@ -350,7 +350,7 @@ export class LearningCoursesProgramContentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesProgramContentDto>, ApiError>;
+    return result as Result<Types.LearningCoursesProgramContentDto[], ApiError>;
   }
 
   /**

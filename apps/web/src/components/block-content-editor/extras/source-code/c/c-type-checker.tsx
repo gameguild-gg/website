@@ -113,7 +113,7 @@ export function CTypeChecker({ monaco, editor, code }: CTypeCheckerProps) {
 
         // Track braces
         const openBraces = (line.match(/{/g) || []).length
-        const closeBraces = (line.match(/}/g) || []).length
+        const closeBraces = (line.match(/}/g) ?? []).length
         braceCount += openBraces - closeBraces
 
         // Check for variable declarations

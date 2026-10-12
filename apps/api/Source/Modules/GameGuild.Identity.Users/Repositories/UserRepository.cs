@@ -1,4 +1,6 @@
+using GameGuild.CQRS;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace GameGuild.Identity.Users;
 
@@ -7,6 +9,7 @@ namespace GameGuild.Identity.Users;
 /// </summary>
 public class UserRepository(IApplicationDbContext context) : IUserRepository
 {
+    private readonly HashSet<User> _pendingUsers = [];
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await context.Set<User>().FirstOrDefaultAsync(u => u.Id == id && u.DeletedAt == null, cancellationToken).ConfigureAwait(false);
@@ -32,7 +35,25 @@ public class UserRepository(IApplicationDbContext context) : IUserRepository
         return (users, totalCount);
     }
 
-    public async Task AddAsync(User user, CancellationToken cancellationToken = default) { await context.Set<User>().AddAsync(user, cancellationToken).ConfigureAwait(false); }
+    public Task AddAsync(User user) => AddAsync(user, CancellationToken.None);
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (user.Username is null)
+        {
+            user.AssignGeneratedUsername(UsernameSlug.Generate(user.Name));
+        }
+        else if (!user.HasGeneratedUsername)
+        {
+            user.Username = UsernameSlug.FromExplicit(user.Username);
+        }
+
+        await AllocateUsernameAsync(user, cancellationToken).ConfigureAwait(false);
+        await context.Set<User>().AddAsync(user, cancellationToken).ConfigureAwait(false);
+        _pendingUsers.Add(user);
+    }
 
     public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
@@ -51,7 +72,115 @@ public class UserRepository(IApplicationDbContext context) : IUserRepository
         return Task.CompletedTask;
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default) { await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false); }
+    public Task SaveChangesAsync() => SaveChangesAsync(CancellationToken.None);
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        // The application context increments entity versions and captures durable events before saving.
+        // A failed username INSERT must not increment those versions twice when retried.
+        var versions = (context as DbContext)?.ChangeTracker.Entries<EntityBase<Guid>>()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified)
+            .ToDictionary(entry => entry.Entity, entry => entry.Entity.Version);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException exception) when (IsUsernameConflict(exception))
+        {
+            if (versions is not null)
+            {
+                foreach (var (entity, version) in versions)
+                {
+                    entity.Version = version;
+                }
+            }
+
+            var retry = false;
+            foreach (var user in _pendingUsers)
+            {
+                if (!await UsernameIsReservedAsync(user.Username!, user, cancellationToken).ConfigureAwait(false))
+                {
+                    continue;
+                }
+
+                if (!user.HasGeneratedUsername)
+                {
+                    throw UsernameUnavailable();
+                }
+
+                await AllocateUsernameAsync(user, cancellationToken).ConfigureAwait(false);
+                retry = true;
+            }
+
+            if (!retry)
+            {
+                throw UsernameUnavailable();
+            }
+
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (DbUpdateException retryException) when (IsUsernameConflict(retryException))
+            {
+                throw UsernameUnavailable();
+            }
+        }
+
+        _pendingUsers.Clear();
+    }
+
+    private async Task AllocateUsernameAsync(User user, CancellationToken cancellationToken)
+    {
+        var slug = user.Username!;
+        if (!await UsernameIsReservedAsync(slug, user, cancellationToken).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        if (!user.HasGeneratedUsername)
+        {
+            throw UsernameUnavailable();
+        }
+
+        for (var attempt = 1; attempt <= 8; attempt++)
+        {
+            var candidate = UsernameSlug.WithDisambiguator(slug, user.Id, attempt);
+            if (!await UsernameIsReservedAsync(candidate, user, cancellationToken).ConfigureAwait(false))
+            {
+                user.AssignGeneratedUsername(candidate);
+                return;
+            }
+        }
+
+        throw UsernameUnavailable();
+    }
+
+    private async Task<bool> UsernameIsReservedAsync(string username, User user, CancellationToken cancellationToken)
+    {
+        // Deleted users retain their handles under the existing unique index, and unsaved batch members
+        // reserve handles too. Comparisons match the existing case-insensitive lookup contract.
+        if (context.Set<User>().Local.Any(existing => existing.Id != user.Id
+            && string.Equals(existing.Username, username, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        var canonical = username.ToLowerInvariant();
+        return await context.Set<User>().IgnoreQueryFilters()
+            .AnyAsync(existing => existing.Id != user.Id && existing.Username != null
+                && existing.Username.ToLower() == canonical, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static bool IsUsernameConflict(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "IX_Users_Username"
+        };
+
+    private static RequestValidationException UsernameUnavailable() =>
+        new([new ValidationError(nameof(User.Username), "Username is already in use. Choose a different username.")]);
 
     // Bulk operations
     public async Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
@@ -64,7 +193,16 @@ public class UserRepository(IApplicationDbContext context) : IUserRepository
         return await context.Set<User>().Where(u => emails.Contains(u.Email) && u.DeletedAt == null).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task AddRangeAsync(IEnumerable<User> users, CancellationToken cancellationToken = default) { await context.Set<User>().AddRangeAsync(users, cancellationToken).ConfigureAwait(false); }
+    public Task AddRangeAsync(IEnumerable<User> users) => AddRangeAsync(users, CancellationToken.None);
+
+    public async Task AddRangeAsync(IEnumerable<User> users, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(users);
+        foreach (var user in users)
+        {
+            await AddAsync(user, cancellationToken).ConfigureAwait(false);
+        }
+    }
 
     public async Task UpdateRangeAsync(IEnumerable<User> users, CancellationToken cancellationToken = default)
     {
@@ -98,7 +236,10 @@ public class UserRepository(IApplicationDbContext context) : IUserRepository
     {
         var query = context.Set<User>().Where(u => u.DeletedAt == null);
 
-        if (isActive.HasValue) query = query.Where(u => u.IsActive == isActive.Value);
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
 
         var totalCount = await query.CountAsync(cancellationToken).ConfigureAwait(false);
         var skip = (pageNumber - 1) * pageSize;
@@ -144,17 +285,44 @@ public class UserRepository(IApplicationDbContext context) : IUserRepository
 
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(username)) return null;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return null;
+        }
+
+        var normalizedUsername = username.ToLowerInvariant();
         return await context.Set<User>()
-            .FirstOrDefaultAsync(u => u.Username != null && u.Username.ToLower() == username.ToLower() && u.DeletedAt == null, cancellationToken)
+            .FirstOrDefaultAsync(u => u.Username != null && u.Username.ToLower() == normalizedUsername && u.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    public Task<IReadOnlyList<User>> FindSignInCandidatesAsync(string identifier, SignInIdentifierType type) =>
+        FindSignInCandidatesAsync(identifier, type, CancellationToken.None);
+
+    public async Task<IReadOnlyList<User>> FindSignInCandidatesAsync(string identifier, SignInIdentifierType type, CancellationToken cancellationToken)
+    {
+        var normalized = identifier.ToLowerInvariant();
+        var query = context.Set<User>().AsNoTracking().Where(user => user.DeletedAt == null);
+        query = type switch
+        {
+            SignInIdentifierType.Email => query.Where(user => user.Email.ToLower() == normalized),
+            SignInIdentifierType.Username => query.Where(user => user.Username != null && user.Username.ToLower() == normalized),
+            SignInIdentifierType.Phone => query.Where(user => user.PhoneNumber == identifier),
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
+        return await query.Take(2).ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(username)) return false;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return false;
+        }
+
+        var normalizedUsername = username.ToLowerInvariant();
         return await context.Set<User>()
-            .AnyAsync(u => u.Username != null && u.Username.ToLower() == username.ToLower() && u.DeletedAt == null, cancellationToken)
+            .AnyAsync(u => u.Username != null && u.Username.ToLower() == normalizedUsername && u.DeletedAt == null, cancellationToken)
             .ConfigureAwait(false);
     }
 

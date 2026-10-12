@@ -43,7 +43,7 @@ export class MonitoringSlaModule {
     isEnabled?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.MonitoringSLASloDto>, ApiError>> {
+  }): Promise<Result<Types.MonitoringSLASloDto[], ApiError>> {
     const url = '/api/v1/sla/slos';
 
     const result = await this.client.request({
@@ -53,7 +53,7 @@ export class MonitoringSlaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.MonitoringSLASloDto>, ApiError>;
+    return result as Result<Types.MonitoringSLASloDto[], ApiError>;
   }
 
   /**
@@ -196,7 +196,7 @@ export class MonitoringSlaModule {
     endDate?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.MonitoringSLASloViolationDto>, ApiError>> {
+  }): Promise<Result<Types.MonitoringSLASloViolationDto[], ApiError>> {
     const url = '/api/v1/sla/violations';
 
     const result = await this.client.request({
@@ -206,7 +206,7 @@ export class MonitoringSlaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.MonitoringSLASloViolationDto>, ApiError>;
+    return result as Result<Types.MonitoringSLASloViolationDto[], ApiError>;
   }
 
   /**

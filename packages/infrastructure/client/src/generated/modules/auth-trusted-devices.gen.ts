@@ -20,7 +20,7 @@ export class AuthTrustedDevicesModule {
    *
    * Retrieves a list of devices that have been marked as trusted for the current user.
    */
-  async getAuthTrustedDevices(): Promise<Result<Array<Types.IdentityAuthenticationTrustedDeviceOutput>, ApiError>> {
+  async getAuthTrustedDevices(): Promise<Result<Types.IdentityAuthenticationTrustedDeviceOutput[], ApiError>> {
     const url = '/v1/auth/trusted-devices';
 
     const result = await this.client.request({
@@ -29,7 +29,7 @@ export class AuthTrustedDevicesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthenticationTrustedDeviceOutput>, ApiError>;
+    return result as Result<Types.IdentityAuthenticationTrustedDeviceOutput[], ApiError>;
   }
 
   /**

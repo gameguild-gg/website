@@ -20,10 +20,7 @@ export class CommerceOrdersModule {
    * Use owner=me to get current user's orders.
    * Admin users can list all orders without owner filter.
    */
-  async getOrdersForGetOrders(query?: {
-    owner?: string;
-    status?: Types.CommerceOrdersOrderStatus;
-  }): Promise<Result<Array<Types.CommerceOrdersOrderDto>, ApiError>> {
+  async getOrdersForGetOrders(query?: { owner?: string; status?: Types.CommerceOrdersOrderStatus }): Promise<Result<Types.CommerceOrdersOrderDto[], ApiError>> {
     const url = '/v1/orders';
 
     const result = await this.client.request({
@@ -33,7 +30,7 @@ export class CommerceOrdersModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceOrdersOrderDto>, ApiError>;
+    return result as Result<Types.CommerceOrdersOrderDto[], ApiError>;
   }
 
   /**

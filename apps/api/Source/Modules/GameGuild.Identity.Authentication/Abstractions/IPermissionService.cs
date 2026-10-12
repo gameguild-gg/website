@@ -213,12 +213,22 @@ public interface IPermissionService
     Task<Dictionary<Guid, Dictionary<PermissionType, bool>>> BulkCheckPermissionsAsync(Guid[ ] userIds, Guid? tenantId, PermissionType[ ] permissions);
 
     /// <summary>
-    ///     Evaluate a bounded batch of permission checks that may target different users,
-    ///     tenants, content types, and resources.
+    ///     Evaluate permission checks for different users, tenants, content types, and resources.
     /// </summary>
+    /// <remarks>
+    ///     Requests are evaluated in batches of at most 256 and results retain the input order.
+    ///     This overload returns the full result set in memory. Use a streaming overload when
+    ///     the request source or result set is too large to retain at once.
+    /// </remarks>
+    /// <param name="requests">The checks to evaluate.</param>
+    /// <returns>One decision for each input request, in input order.</returns>
     Task<IReadOnlyList<BulkPermissionCheckResult>> BulkCheckPermissionsAsync(
         IReadOnlyCollection<BulkPermissionCheckRequest> requests);
 
+    /// <summary>Evaluate a collection of permission checks and observe cancellation.</summary>
+    /// <param name="requests">The checks to evaluate.</param>
+    /// <param name="cancellationToken">Cancels database reads and batch evaluation.</param>
+    /// <returns>One decision for each input request, in input order.</returns>
     Task<IReadOnlyList<BulkPermissionCheckResult>> BulkCheckPermissionsAsync(
         IReadOnlyCollection<BulkPermissionCheckRequest> requests,
         CancellationToken cancellationToken);
@@ -227,17 +237,33 @@ public interface IPermissionService
     ///     Stream permission decisions in bounded batches so callers do not need to hold
     ///     the entire request and result set in memory.
     /// </summary>
+    /// <remarks>Uses a batch size of 128 and preserves request order.</remarks>
+    /// <param name="requests">An asynchronous source of permission checks.</param>
+    /// <returns>Decisions as each bounded batch is evaluated.</returns>
     IAsyncEnumerable<BulkPermissionCheckResult> StreamBulkCheckPermissionsAsync(
         IAsyncEnumerable<BulkPermissionCheckRequest> requests);
 
+    /// <summary>Stream decisions for an asynchronous source using the requested bounded batch size.</summary>
+    /// <param name="requests">An asynchronous source of permission checks.</param>
+    /// <param name="batchSize">The maximum checks evaluated together; must be between 1 and 256.</param>
+    /// <returns>Decisions as each bounded batch is evaluated.</returns>
     IAsyncEnumerable<BulkPermissionCheckResult> StreamBulkCheckPermissionsAsync(
         IAsyncEnumerable<BulkPermissionCheckRequest> requests,
         int batchSize);
 
+    /// <summary>Stream decisions for an asynchronous source and observe cancellation.</summary>
+    /// <param name="requests">An asynchronous source of permission checks.</param>
+    /// <param name="cancellationToken">Cancels input enumeration, database reads, and evaluation.</param>
+    /// <returns>Decisions as each bounded batch is evaluated.</returns>
     IAsyncEnumerable<BulkPermissionCheckResult> StreamBulkCheckPermissionsAsync(
         IAsyncEnumerable<BulkPermissionCheckRequest> requests,
         CancellationToken cancellationToken);
 
+    /// <summary>Stream decisions using a bounded batch size and observe cancellation.</summary>
+    /// <param name="requests">An asynchronous source of permission checks.</param>
+    /// <param name="batchSize">The maximum checks evaluated together; must be between 1 and 256.</param>
+    /// <param name="cancellationToken">Cancels input enumeration, database reads, and evaluation.</param>
+    /// <returns>Decisions as each bounded batch is evaluated.</returns>
     IAsyncEnumerable<BulkPermissionCheckResult> StreamBulkCheckPermissionsAsync(
         IAsyncEnumerable<BulkPermissionCheckRequest> requests,
         int batchSize,

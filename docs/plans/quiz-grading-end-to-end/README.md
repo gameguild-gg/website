@@ -1,16 +1,25 @@
 # Quiz grading end-to-end
 
-Status: em implementação; Parte 1 concluída e Parte 2 pronta para iniciar.
+Status: em implementação; Partes 1, 2, seu fechamento e o caminho crítico da
+Parte 3 concluídos. A Parte 4 possui gate de entrada aprovado e começa pela
+preparação `SEQ-12A`; os schemas de peer e release agendado ainda dependem de
+proposta e aprovação explícitas.
 
 Data: 2026-08-21.
 
-Atualizado: 2026-09-15.
+Atualizado: 2026-10-09.
 
 ## Objetivo
 
 Este diretório é a fonte canônica do plano para fechar o fluxo de grading de
 quiz, desde a autoria pelo professor até a publicação do resultado ao aluno e
 sua participação no gradebook.
+
+O plano auxiliar
+[`09-quiz-grading-scenario-runner.md`](./09-quiz-grading-scenario-runner.md)
+define a preparação reproduzível de cenários para teste humano e Playwright.
+Seu MVP está implementado e reduz o custo de validar os novos estados de
+review, sem alterar o runtime ou o modelo relacional.
 
 O documento anterior
 [`quiz-assessment-end-to-end-grading-flow.md`](../quiz-assessment-end-to-end-grading-flow.md)
@@ -267,16 +276,20 @@ Leitura central do fluxo:
 | [05-learner-attempts-and-results.md](./05-learner-attempts-and-results.md) | aluno | tentativa oficial, payload seguro e resultado completo |
 | [06-gradebook-audit-and-operations.md](./06-gradebook-audit-and-operations.md) | consolidação | nota final, pesos, auditoria, filas e notificações |
 | [07-delivery-roadmap-and-tests.md](./07-delivery-roadmap-and-tests.md) | qualidade | estratégia de PRs, gates e matriz E2E |
-| [08-implementation-sequence.md](./08-implementation-sequence.md) | execução | índice, regras globais e passagem entre as três partes |
+| [08-implementation-sequence.md](./08-implementation-sequence.md) | execução | índice, regras globais e passagem entre as quatro partes |
 | [Parte 1](./implementation-sequence/01-foundation-and-authoring.md) | execução | fundação, autoria, segurança e publicação fail-closed |
 | [Parte 2](./implementation-sequence/02-core-grading-e2e.md) | execução | test run e E2E oficial individual e coletivo |
-| [Parte 3](./implementation-sequence/03-review-expansion-and-operations.md) | execução | reviews adicionais, operação e auditoria final |
+| [Fechamento da Parte 2](./implementation-sequence/02a-core-grading-e2e-closeout.md) | gate corretivo | somente os pendentes pós-implementação, sem repetir `SEQ-07` a `SEQ-11` |
+| [Parte 3](./implementation-sequence/03-contextual-access-and-personas.md) | execução | personas contextuais, sessões reais e acesso consistente |
+| [Parte 4](./implementation-sequence/04-review-expansion-and-operations.md) | execução | reviews adicionais, operação e auditoria final |
 
 Os documentos `00` a `06` são especificações temáticas e sua numeração não é
 uma sequência de codificação. A ordem obrigatória de implementação está no
 índice [`08-implementation-sequence.md`](./08-implementation-sequence.md), que
-encadeia três partes executadas e aprovadas separadamente. O documento `07`
-detalha os testes e critérios transversais consumidos por essa sequência.
+encadeia quatro partes executadas e aprovadas separadamente. O fechamento `02a` é
+um gate corretivo surgido da auditoria da primeira execução da Parte 2, não uma
+parte autônoma. O documento `07` detalha os testes e critérios transversais
+consumidos por essa sequência.
 
 ## Decisões estruturais obrigatórias
 
@@ -418,7 +431,7 @@ as torna autoridades do runtime.
 
 ## Dependências
 
-Esta visão apresenta dependências conceituais, não substitui as três partes da
+Esta visão apresenta dependências conceituais, não substitui as quatro partes da
 fila executável indexada por
 [`08-implementation-sequence.md`](./08-implementation-sequence.md).
 

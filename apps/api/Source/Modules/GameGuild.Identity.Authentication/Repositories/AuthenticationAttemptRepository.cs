@@ -65,9 +65,15 @@ public class AuthenticationAttemptRepository(IApplicationDbContext context) : IA
     {
         var query = AuthenticationAttempts.Where(a => a.IpAddress == ipAddress);
 
-        if (fromDate.HasValue) query = query.Where(a => a.AttemptedAt >= fromDate.Value);
+        if (fromDate.HasValue)
+        {
+            query = query.Where(a => a.AttemptedAt >= fromDate.Value);
+        }
 
-        if (toDate.HasValue) query = query.Where(a => a.AttemptedAt <= toDate.Value);
+        if (toDate.HasValue)
+        {
+            query = query.Where(a => a.AttemptedAt <= toDate.Value);
+        }
 
         return await query.OrderByDescending(a => a.AttemptedAt).ToListAsync(cancellationToken);
     }
@@ -86,7 +92,10 @@ public class AuthenticationAttemptRepository(IApplicationDbContext context) : IA
     {
         var attempt = await GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
 
-        if (attempt == null) return false;
+        if (attempt == null)
+        {
+            return false;
+        }
 
         AuthenticationAttempts.Remove(attempt);
         var changes = await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -108,7 +117,10 @@ public class AuthenticationAttemptRepository(IApplicationDbContext context) : IA
     {
         var oldAttempts = await AuthenticationAttempts.Where(a => a.AttemptedAt < olderThan).ToListAsync(cancellationToken);
 
-        if (oldAttempts.Count == 0) return 0;
+        if (oldAttempts.Count == 0)
+        {
+            return 0;
+        }
 
         AuthenticationAttempts.RemoveRange(oldAttempts);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

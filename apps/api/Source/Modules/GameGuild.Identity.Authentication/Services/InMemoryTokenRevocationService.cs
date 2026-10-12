@@ -20,7 +20,7 @@ namespace GameGuild.Identity.Authentication;
 ///         using Redis SETEX with TTL matching token expiry for automatic cleanup.
 ///     </para>
 /// </remarks>
-public sealed class InMemoryTokenRevocationService : ITokenRevocationService
+public sealed class InMemoryTokenRevocationService : ITokenRevocationService, IVersionedUserTokenRevocationService
 {
     private readonly ILogger<InMemoryTokenRevocationService> _logger;
     
@@ -28,7 +28,7 @@ public sealed class InMemoryTokenRevocationService : ITokenRevocationService
     private readonly ConcurrentDictionary<string, RevokedToken> _revokedTokens = new();
     
     // UserId -> RevokedAt (for "revoke all user tokens" functionality)
-    private readonly ConcurrentDictionary<Guid, DateTime> _userRevocationTimes = new();
+    private readonly ConcurrentDictionary<Guid, UserTokenRevocationBoundary> _userRevocationTimes = new();
 
     public InMemoryTokenRevocationService(ILogger<InMemoryTokenRevocationService> logger)
     {
@@ -59,11 +59,22 @@ public sealed class InMemoryTokenRevocationService : ITokenRevocationService
 
     /// <inheritdoc />
     public Task RevokeAllUserTokensAsync(Guid userId, string? reason = null, CancellationToken cancellationToken = default)
+        => RevokeAllUserTokensCoreAsync(userId, null, reason, cancellationToken);
+
+    public Task RevokeAllUserTokensAsync(Guid userId, int minimumTokenVersion, string? reason, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimumTokenVersion);
+        return RevokeAllUserTokensCoreAsync(userId, minimumTokenVersion, reason, cancellationToken);
+    }
+
+    private Task RevokeAllUserTokensCoreAsync(Guid userId, int? minimumTokenVersion, string? reason, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         var revocationTime = SystemClock.UtcNow;
         
         // Update or add the user's revocation time
-        _userRevocationTimes.AddOrUpdate(userId, revocationTime, (_, _) => revocationTime);
+        var boundary = new UserTokenRevocationBoundary(revocationTime, minimumTokenVersion);
+        _userRevocationTimes.AddOrUpdate(userId, boundary, (_, _) => boundary);
         
         _logger.LogInformation(
             "All tokens revoked for user: UserId={UserId}, RevokedAt={RevokedAt}, Reason={Reason}",
@@ -92,17 +103,21 @@ public sealed class InMemoryTokenRevocationService : ITokenRevocationService
 
     /// <inheritdoc />
     public Task<bool> IsUserTokenRevokedAsync(Guid userId, DateTime tokenIssuedAt, CancellationToken cancellationToken = default)
+        => IsUserTokenRevokedAsync(userId, tokenIssuedAt, null, cancellationToken);
+
+    public Task<bool> IsUserTokenRevokedAsync(Guid userId, DateTime tokenIssuedAt, int? tokenVersion, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (_userRevocationTimes.TryGetValue(userId, out var revocationTime))
         {
             // Token is revoked if it was issued before the revocation time
-            var isRevoked = tokenIssuedAt < revocationTime;
+            var isRevoked = revocationTime.IsRevoked(tokenIssuedAt, tokenVersion);
             
             if (isRevoked)
             {
                 _logger.LogDebug(
                     "User token check: UserId={UserId}, IssuedAt={IssuedAt}, RevokedAt={RevokedAt} - REVOKED",
-                    userId, tokenIssuedAt, revocationTime);
+                    userId, tokenIssuedAt, revocationTime.RevokedAt);
             }
 
             return Task.FromResult(isRevoked);
@@ -133,7 +148,7 @@ public sealed class InMemoryTokenRevocationService : ITokenRevocationService
         var userCleanupThreshold = now.AddHours(-24);
         foreach (var kvp in _userRevocationTimes)
         {
-            if (kvp.Value < userCleanupThreshold)
+            if (kvp.Value.RevokedAt < userCleanupThreshold)
             {
                 _userRevocationTimes.TryRemove(kvp.Key, out _);
             }

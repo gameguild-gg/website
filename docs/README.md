@@ -37,6 +37,8 @@ This directory contains the cleaned and consolidated project documentation migra
 
 - `testing/test-architecture.md` – Test layers & organization
 - `setup/environment.md` – Environment variables, running services
+- `setup/local-development-cleanup.md` – Safe shutdown, cleanup, diagnostics, and local environment recovery
+- `setup/dev-fast.md` – Fast dynamic application environment for functional testing
 
 ## Security
 

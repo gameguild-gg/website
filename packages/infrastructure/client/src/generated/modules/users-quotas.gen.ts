@@ -20,7 +20,7 @@ export class UsersQuotasModule {
    *
    * Retrieves all configured resource quotas for a specific user.
    */
-  async getUsersQuotasForGetUsersByUserIdQuotas(userId: string): Promise<Result<Array<Types.ResourcesResourceQuotaOutput>, ApiError>> {
+  async getUsersQuotasForGetUsersByUserIdQuotas(userId: string): Promise<Result<Types.ResourcesResourceQuotaOutput[], ApiError>> {
     const url = `/v1/users/${userId}/quotas`;
 
     const result = await this.client.request({
@@ -29,7 +29,7 @@ export class UsersQuotasModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesResourceQuotaOutput>, ApiError>;
+    return result as Result<Types.ResourcesResourceQuotaOutput[], ApiError>;
   }
 
   /**

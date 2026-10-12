@@ -24,8 +24,10 @@ public sealed record AdRewardDependencySnapshot(
             !FraudDecisionAvailable || !CounterStoreAvailable || !RevenueReportsCurrent ||
             !LossBudgetAvailable || !ReserveSnapshotAvailable ||
             requiresProviderProof && !ProviderProofServiceAvailable)
+        {
             throw new AdRewardDependencyUnavailableException(
-                "Ad reward issuance dependencies are unavailable or stale.");
+            "Ad reward issuance dependencies are unavailable or stale.");
+        }
     }
 }
 
@@ -44,7 +46,11 @@ public sealed record AdRewardBudgetPolicy
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumNetworkSoftUnits);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumGlobalSoftUnits);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fundedLossBudgetUsdNanos);
-        if (window <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window));
+        if (window <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(window));
+        }
+
         MaximumUserSoftUnits = maximumUserSoftUnits;
         MaximumDeviceSoftUnits = maximumDeviceSoftUnits;
         MaximumNetworkSoftUnits = maximumNetworkSoftUnits;
@@ -162,22 +168,38 @@ public sealed class AdRewardCoordinator
 
     public IReadOnlyList<AdRewardCompletionResult> Completions
     {
-        get { lock (_gate) return [.. _completions]; }
+        get { lock (_gate)
+            {
+                return [.. _completions];
+            }
+        }
     }
 
     public IReadOnlyList<AdRewardBudgetConsumption> BudgetConsumptions
     {
-        get { lock (_gate) return [.. _budgets]; }
+        get { lock (_gate)
+            {
+                return [.. _budgets];
+            }
+        }
     }
 
     public IReadOnlyList<PendingAdRewardClaim> PendingClaims
     {
-        get { lock (_gate) return [.. _pending]; }
+        get { lock (_gate)
+            {
+                return [.. _pending];
+            }
+        }
     }
 
     public IReadOnlyList<AdRewardAttribution> Attributions
     {
-        get { lock (_gate) return [.. _attributions]; }
+        get { lock (_gate)
+            {
+                return [.. _attributions];
+            }
+        }
     }
 
     public AdRewardCompletionResult Complete(AdRewardCompletionCommand command)
@@ -187,34 +209,55 @@ public sealed class AdRewardCoordinator
         {
             if (_idempotency.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.SessionId == command.Claims.SessionId) return duplicate;
+                if (duplicate.SessionId == command.Claims.SessionId)
+                {
+                    return duplicate;
+                }
+
                 throw new AdRewardIdempotencyConflictException(
                     "Ad reward idempotency key is bound to another session.");
             }
 
             var validatedClaims = _tokens.Validate(command.Token.Value, command.CompletedAt);
             if (validatedClaims != command.Claims)
+            {
                 throw new AdRewardRiskBindingException("Signed session claims do not match the completion command.");
+            }
+
             var policy = _policies.Current(command.Claims.Network, command.CompletedAt);
             if (policy.Version != command.Claims.PolicyVersion)
+            {
                 throw new AdRewardRiskBindingException("Session policy version is no longer the bound policy.");
+            }
+
             _controls.EnsureIssuanceEnabled(policy.Network);
             var immediate = policy.IssuanceMode == AdRewardIssuanceMode.ImmediateProviderProof;
             command.Dependencies.EnsureReady(immediate, command.CompletedAt);
             if (!policy.IsReportCurrent(command.CompletedAt))
+            {
                 throw new AdRewardDependencyUnavailableException("Ad network revenue reports are stale.");
+            }
+
             EnsureSessionUnused(command.Claims.SessionId);
             if (command.Proof is not null && _consumedProofs.Contains(command.Proof.ProviderEventId))
+            {
                 throw new AdProviderProofReplayException("Provider completion proof was already consumed.");
+            }
+
             var independentlyVerified = _playback.Verify(
                 command.Claims, command.Playback, command.Proof, policy, command.CompletedAt);
             if (!independentlyVerified)
+            {
                 return RecordPending(command, policy);
+            }
 
             var quote = _accumulator.Preview(
                 command.Claims.WalletId, command.IdempotencyKey, policy, 1);
             if (quote.RewardSoftUnits == 0)
+            {
                 return RecordRemainderOnly(command, policy);
+            }
+
             ValidateRiskBinding(command, quote);
             var lossBudget = SoftFaceValueUsdNanos(quote.RewardSoftUnits);
             EnsureBudgetAvailable(command, quote.RewardSoftUnits, lossBudget);
@@ -260,22 +303,35 @@ public sealed class AdRewardCoordinator
         {
             if (_idempotency.TryGetValue(command.IdempotencyKey.Value, out var duplicate))
             {
-                if (duplicate.SessionId == command.SessionId) return duplicate;
+                if (duplicate.SessionId == command.SessionId)
+                {
+                    return duplicate;
+                }
+
                 throw new AdRewardIdempotencyConflictException(
                     "Deferred confirmation idempotency key is bound to another session.");
             }
             if (!_pendingContexts.TryGetValue(command.SessionId, out var pending))
+            {
                 throw new AdRewardReplayException("Deferred ad reward claim is not pending.");
+            }
+
             if (command.Report.Network != pending.Claims.Network ||
                 !command.Report.VerifiedSessionIds.Contains(command.SessionId) ||
                 command.Report.ImportedAt > command.ConfirmedAt)
+            {
                 throw new AdProviderReportVerificationException(
-                    "Verified provider report does not authorize this deferred session.");
+                "Verified provider report does not authorize this deferred session.");
+            }
+
             _controls.EnsureIssuanceEnabled(pending.Claims.Network);
             command.Dependencies.EnsureReady(false, command.ConfirmedAt);
             var policy = _policies.Get(pending.Claims.Network, pending.Claims.PolicyVersion);
             if (command.ConfirmedAt > command.Report.PeriodEnd + policy.ReportStaleAfter)
+            {
                 throw new AdRewardDependencyUnavailableException("Deferred provider report is stale.");
+            }
+
             var quote = _accumulator.Preview(
                 pending.Claims.WalletId, command.IdempotencyKey, policy, 1);
             var synthetic = pending with
@@ -292,7 +348,10 @@ public sealed class AdRewardCoordinator
                 CompletedAt = command.ConfirmedAt
             };
             if (quote.RewardSoftUnits == 0)
+            {
                 return RecordDeferredRemainderOnly(synthetic, policy, command.Report);
+            }
+
             ValidateRiskBinding(synthetic, quote);
             var lossBudget = SoftFaceValueUsdNanos(quote.RewardSoftUnits);
             EnsureBudgetAvailable(synthetic, quote.RewardSoftUnits, lossBudget);
@@ -411,7 +470,9 @@ public sealed class AdRewardCoordinator
     private void EnsureSessionUnused(Guid sessionId)
     {
         if (_consumedSessions.Contains(sessionId))
+        {
             throw new AdRewardReplayException("Ad reward session was already completed.");
+        }
     }
 
     private static void ValidateRiskBinding(AdRewardCompletionCommand command, AdRewardQuote quote)
@@ -429,12 +490,16 @@ public sealed class AdRewardCoordinator
             command.Context.EntityGraphVersion != command.EntityCluster.Version ||
             !string.Equals(command.Context.EntityGraphEvidenceHash, command.EntityCluster.EvidenceHash, StringComparison.Ordinal) ||
             !command.Context.SourceRoots.SequenceEqual([command.SourceId]))
+        {
             throw new AdRewardRiskBindingException("Ad reward risk authorization is not bound to the exact issuance.");
+        }
 
         var nodes = command.EntityCluster.Nodes;
         if (!nodes.Contains(new RiskEntityNode(RiskEntityType.Account, command.Claims.UserId.ToString("N"))) ||
             !nodes.Contains(new RiskEntityNode(RiskEntityType.DeviceRiskToken, command.Claims.DeviceRiskHash)))
+        {
             throw new AdRewardRiskBindingException("Entity graph does not contain the bound account and device.");
+        }
 
         var required = new[]
         {
@@ -447,7 +512,9 @@ public sealed class AdRewardCoordinator
         };
         var actual = command.Authorization.Counter.Allocations.Select(allocation => allocation.Key).ToHashSet();
         if (required.Any(key => !actual.Contains(key)))
+        {
             throw new AdRewardRiskBindingException("Ad reward authorization lacks required aggregate exposure limits.");
+        }
     }
 
     private void EnsureBudgetAvailable(AdRewardCompletionCommand command, long softUnits, long lossBudget)
@@ -468,7 +535,9 @@ public sealed class AdRewardCoordinator
     private static void EnsureLimit(long consumed, long requested, long maximum, string dimension)
     {
         if (requested > maximum - consumed)
+        {
             throw new AdRewardBudgetExceededException($"Ad reward {dimension} limit was exceeded.");
+        }
     }
 
     private static long SoftFaceValueUsdNanos(long softUnits)

@@ -21,7 +21,7 @@ export class GameJamsModule {
     status?: Types.GameJamsJamStatus;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.GameJamsJamDto>, ApiError>> {
+  }): Promise<Result<Types.GameJamsJamDto[], ApiError>> {
     const url = '/api/game-jams';
 
     const result = await this.client.request({
@@ -31,7 +31,7 @@ export class GameJamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.GameJamsJamDto>, ApiError>;
+    return result as Result<Types.GameJamsJamDto[], ApiError>;
   }
 
   /**
@@ -74,7 +74,7 @@ export class GameJamsModule {
 
   /**
    */
-  async getApiGameJamsCriteria(id: string): Promise<Result<Array<Types.GameJamsJamCriteriaDto>, ApiError>> {
+  async getApiGameJamsCriteria(id: string): Promise<Result<Types.GameJamsJamCriteriaDto[], ApiError>> {
     const url = `/api/game-jams/${id}/criteria`;
 
     const result = await this.client.request({
@@ -83,7 +83,7 @@ export class GameJamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.GameJamsJamCriteriaDto>, ApiError>;
+    return result as Result<Types.GameJamsJamCriteriaDto[], ApiError>;
   }
 
   /**
@@ -126,7 +126,7 @@ export class GameJamsModule {
 
   /**
    */
-  async getApiGameJamsSubmissions(id: string): Promise<Result<Array<Types.GameJamsJamSubmissionDto>, ApiError>> {
+  async getApiGameJamsSubmissions(id: string): Promise<Result<Types.GameJamsJamSubmissionDto[], ApiError>> {
     const url = `/api/game-jams/${id}/submissions`;
 
     const result = await this.client.request({
@@ -135,7 +135,7 @@ export class GameJamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.GameJamsJamSubmissionDto>, ApiError>;
+    return result as Result<Types.GameJamsJamSubmissionDto[], ApiError>;
   }
 
   /**

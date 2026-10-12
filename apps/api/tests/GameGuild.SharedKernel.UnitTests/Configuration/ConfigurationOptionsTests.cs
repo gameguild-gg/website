@@ -335,7 +335,7 @@ public class MfaOptionsTests
         options.MaxFailedAttempts.Should().Be(5);
         options.LockoutDurationMinutes.Should().Be(15);
         options.BackupCodesCount.Should().Be(10);
-        options.BackupCodeLength.Should().Be(8);
+        options.BackupCodeLength.Should().Be(12);
         options.TotpTimeStepSeconds.Should().Be(30);
         options.TotpClockSkew.Should().Be(1);
         options.SetupSessionDurationMinutes.Should().Be(10);

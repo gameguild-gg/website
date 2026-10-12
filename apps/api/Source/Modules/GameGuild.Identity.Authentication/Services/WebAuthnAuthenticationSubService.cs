@@ -2,6 +2,7 @@ using System.Text.Json;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 using GameGuild.Identity.Users;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Identity.Authentication;
@@ -13,13 +14,26 @@ public class WebAuthnAuthenticationSubService(
     IFido2 fido2,
     IWebAuthnCredentialRepository credentialRepository,
     IUserRepository userRepository,
-    ILogger<WebAuthnAuthenticationSubService> logger) : IWebAuthnAuthenticationService
+    ILogger<WebAuthnAuthenticationSubService> logger,
+    IAuthenticationAuditEventSink? auditEventSink,
+    IHttpContextAccessor? httpContextAccessor) : IWebAuthnAuthenticationService
 {
+    public WebAuthnAuthenticationSubService(
+        IFido2 fido2,
+        IWebAuthnCredentialRepository credentialRepository,
+        IUserRepository userRepository,
+        ILogger<WebAuthnAuthenticationSubService> logger)
+        : this(fido2, credentialRepository, userRepository, logger, null, null)
+    {
+    }
+
     public async Task<WebAuthnAuthenticationOptionsResult> BeginAuthenticationAsync(
         string? userEmail = null,
         Guid? userId = null,
         CancellationToken cancellationToken = default)
     {
+        var resolvedUserId = userId;
+
         try
         {
             List<PublicKeyCredentialDescriptor>? allowedCredentials = null;
@@ -35,6 +49,12 @@ public class WebAuthnAuthenticationSubService(
 
                 if (allowedCredentials.Count == 0)
                 {
+                    await RecordAuthenticationEventAsync(
+                        "Authentication.ChallengeFailed",
+                        false,
+                        userId,
+                        "NoWebAuthnCredentials").ConfigureAwait(false);
+
                     return new WebAuthnAuthenticationOptionsResult
                     {
                         Success = false,
@@ -47,6 +67,7 @@ public class WebAuthnAuthenticationSubService(
                 var user = await userRepository.GetByEmailAsync(userEmail, cancellationToken).ConfigureAwait(false);
                 if (user != null)
                 {
+                    resolvedUserId = user.Id;
                     var credentials = await credentialRepository
                         .GetActiveByUserIdAsync(user.Id, cancellationToken).ConfigureAwait(false);
                     allowedCredentials = credentials
@@ -70,6 +91,11 @@ public class WebAuthnAuthenticationSubService(
                 AssertionOptions = options
             });
 
+            await RecordAuthenticationEventAsync(
+                "Authentication.ChallengeIssued",
+                true,
+                resolvedUserId).ConfigureAwait(false);
+
             return new WebAuthnAuthenticationOptionsResult
             {
                 Success = true,
@@ -81,6 +107,12 @@ public class WebAuthnAuthenticationSubService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to begin WebAuthn authentication");
+            await RecordAuthenticationEventAsync(
+                "Authentication.ChallengeFailed",
+                false,
+                resolvedUserId,
+                "ChallengeInitializationFailed").ConfigureAwait(false);
+
             return new WebAuthnAuthenticationOptionsResult
             {
                 Success = false,
@@ -95,12 +127,22 @@ public class WebAuthnAuthenticationSubService(
         string? userAgent = null,
         CancellationToken cancellationToken = default)
     {
+        Guid? resolvedUserId = null;
+
         try
         {
             // Parse the assertion response
             var assertionResponseObj = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(assertionResponse);
             if (assertionResponseObj == null)
             {
+                await RecordAuthenticationEventAsync(
+                    "Authentication.Failed",
+                    false,
+                    resolvedUserId,
+                    "InvalidAssertionResponse",
+                    ipAddress,
+                    userAgent).ConfigureAwait(false);
+
                 return new WebAuthnAuthenticationResult { Success = false, Error = "Invalid assertion response" };
             }
 
@@ -110,13 +152,31 @@ public class WebAuthnAuthenticationSubService(
                 .GetByCredentialIdAsync(credentialIdBase64, cancellationToken).ConfigureAwait(false);
             if (storedCredential == null)
             {
+                await RecordAuthenticationEventAsync(
+                    "Authentication.Failed",
+                    false,
+                    resolvedUserId,
+                    "CredentialNotFound",
+                    ipAddress,
+                    userAgent).ConfigureAwait(false);
+
                 return new WebAuthnAuthenticationResult { Success = false, Error = "Credential not found" };
             }
+
+            resolvedUserId = storedCredential.UserId;
 
             // Find matching session
             var session = WebAuthnSessionStore.FindFirst(s => s.AssertionOptions != null);
             if (session?.AssertionOptions == null)
             {
+                await RecordAuthenticationEventAsync(
+                    "Authentication.Failed",
+                    false,
+                    resolvedUserId,
+                    "AuthenticationSessionMissing",
+                    ipAddress,
+                    userAgent).ConfigureAwait(false);
+
                 return new WebAuthnAuthenticationResult { Success = false, Error = "Authentication session not found or expired" };
             }
 
@@ -148,6 +208,13 @@ public class WebAuthnAuthenticationSubService(
                 "WebAuthn authentication successful for user {UserId}",
                 storedCredential.UserId);
 
+            await RecordAuthenticationEventAsync(
+                "Authentication.Succeeded",
+                true,
+                storedCredential.UserId,
+                ipAddress: ipAddress,
+                userAgent: userAgent).ConfigureAwait(false);
+
             return new WebAuthnAuthenticationResult
             {
                 Success = true,
@@ -159,11 +226,52 @@ public class WebAuthnAuthenticationSubService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to complete WebAuthn authentication");
+            await RecordAuthenticationEventAsync(
+                "Authentication.Failed",
+                false,
+                resolvedUserId,
+                "AssertionVerificationFailed",
+                ipAddress,
+                userAgent).ConfigureAwait(false);
+
             return new WebAuthnAuthenticationResult
             {
                 Success = false,
                 Error = "Failed to complete WebAuthn authentication"
             };
+        }
+    }
+
+    private async Task RecordAuthenticationEventAsync(
+        string actionType,
+        bool success,
+        Guid? userId,
+        string? safeErrorMessage = null,
+        string? ipAddress = null,
+        string? userAgent = null)
+    {
+        if (auditEventSink is null)
+        {
+            return;
+        }
+
+        var httpContext = httpContextAccessor?.HttpContext;
+
+        try
+        {
+            await auditEventSink.RecordAsync(new AuthenticationAuditEvent(
+                actionType,
+                userId,
+                success,
+                "WebAuthn",
+                ipAddress ?? httpContext?.Connection.RemoteIpAddress?.ToString(),
+                userAgent ?? httpContext?.Request.Headers.UserAgent.ToString(),
+                ErrorMessage: safeErrorMessage),
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Could not record WebAuthn authentication audit event {ActionType}", actionType);
         }
     }
 }

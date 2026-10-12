@@ -415,4 +415,70 @@ public class AuditServiceTests : IDisposable
 
         streamed.Should().ContainSingle().Which.Id.Should().Be(expected.Id);
     }
+
+    [Fact]
+    public async Task GetAuditActivityAsync_ShouldAggregateMatchingRecordsIntoUtcBuckets()
+    {
+        var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var start = new DateTime(2026, 5, 1, 10, 0, 0, DateTimeKind.Utc);
+        var matchingFirst = new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UserId = userId,
+            ActionType = "Updated",
+            ResourceType = "Project",
+            CreatedAt = start.AddMinutes(5)
+        };
+        var matchingSecond = new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UserId = userId,
+            ActionType = "Updated",
+            ResourceType = "Project",
+            CreatedAt = start.AddMinutes(45)
+        };
+        var nextHour = new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            UserId = userId,
+            ActionType = "Updated",
+            ResourceType = "Project",
+            CreatedAt = start.AddHours(1).AddMinutes(10)
+        };
+        var otherTenant = new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            UserId = userId,
+            ActionType = "Updated",
+            ResourceType = "Project",
+            CreatedAt = start.AddMinutes(15)
+        };
+
+        _context.Set<AuditLog>().AddRange(matchingFirst, matchingSecond, nextHour, otherTenant);
+        await _context.SaveChangesAsync();
+
+        var query = new AuditLogQuery
+        {
+            TenantId = tenantId,
+            UserId = userId,
+            ActionType = "Updated",
+            StartDate = start,
+            EndDate = start.AddHours(2)
+        };
+
+        var hourly = await _auditService.GetAuditActivityAsync(query, AuditActivityBucketSize.Hourly);
+        var daily = await _auditService.GetAuditActivityAsync(query, AuditActivityBucketSize.Daily);
+
+        hourly.Should().BeEquivalentTo(
+        [
+            new AuditActivityBucket(start, 2),
+            new AuditActivityBucket(start.AddHours(1), 1)
+        ], options => options.WithStrictOrdering());
+        daily.Should().ContainSingle().Which.Should().Be(new AuditActivityBucket(start.Date, 3));
+    }
 }

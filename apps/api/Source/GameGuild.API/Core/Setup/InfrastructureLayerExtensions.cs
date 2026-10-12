@@ -2,13 +2,16 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using GameGuild.API.Context;
+using GameGuild.API.Core.Compliance;
 using GameGuild.AI;
 using GameGuild.Analytics;
 using GameGuild.API.Database;
 using GameGuild.API.Eventing;
 using GameGuild.API.Core.Quotas;
 using GameGuild.API.Core.CostAccounting;
+using GameGuild.API.Core.Security;
 using GameGuild.Assets.Extensions;
+using GameGuild.Assets.Storage;
 using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Orders;
 using GameGuild.Commerce.Payments;
@@ -18,6 +21,7 @@ using GameGuild.Features;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context;
+using GameGuild.Identity.Provisioning;
 using GameGuild.Identity.Tenants;
 using GameGuild.Localization;
 using GameGuild.Monitoring.SLA;
@@ -168,6 +172,9 @@ public static class InfrastructureLayerExtensions
                 };
             }
         });
+        services.AddScoped<IAuditScheduledExportStorage, AuditScheduledExportStorageAdapter>();
+        services.AddScoped<IAuditRetentionDataSource, PostgreSqlAuditRetentionDataSource>();
+        services.AddScoped<IComplianceEvidenceDataSource, PostgreSqlComplianceEvidenceDataSource>();
         logger.LogInformation("Compliance Audit Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 03a. Authentication Application (command handlers, validators, core auth services)
@@ -179,6 +186,11 @@ public static class InfrastructureLayerExtensions
         stepStopwatch.Restart();
         services.AddAuthenticationData(configuration);
         logger.LogInformation("Authentication Data registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
+
+        // 03c. SCIM Provisioning (RFC 7643/7644 surface, feature-flagged via Scim:Enabled)
+        stepStopwatch.Restart();
+        services.AddScimProvisioningModule(configuration);
+        logger.LogInformation("SCIM Provisioning Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 04. Authorization Application (policy infrastructure, Access Control List service, Permission Services)
         stepStopwatch.Restart();
@@ -210,9 +222,21 @@ public static class InfrastructureLayerExtensions
         services.AddUnifiedAuthorizationLayer();
         logger.LogInformation("Unified Authorization Layer registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
+        // 10.0 Permission Evaluation Engine (issue #358): evaluation throttle, webhooks,
+        // external sync, restoration, compliance reporting.
+        stepStopwatch.Restart();
+        services.AddPermissionEngineServices();
+        logger.LogInformation("Permission Evaluation Engine registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
+
         // 10a. Resources Module (quota, usage tracking, SLA services)
         stepStopwatch.Restart();
         services.AddResourcesInfrastructure(configuration);
+        // FluentValidation pipeline behavior (issue #394): registered BEFORE the quota and
+        // operation/audit behaviors so invalid commands short-circuit with
+        // RequestValidationException without consuming resource quotas and without opening a
+        // use-case operation transaction (no operation event is ever emitted for them).
+        // Behaviors wrap in registration order, so this runs after AuthorizationBehavior.
+        services.AddTransient(typeof(GameGuild.CQRS.IPipelineBehavior<,>), typeof(GameGuild.CQRS.ValidationBehavior<,>));
         services.AddResourceQuotaBehavior();
         services.AddTransient(typeof(GameGuild.CQRS.IPipelineBehavior<,>), typeof(UseCaseOperationBehavior<,>));
         services.Configure<QuotaReconciliationOptions>(
@@ -244,6 +268,11 @@ public static class InfrastructureLayerExtensions
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)
         stepStopwatch.Restart();
         services.AddOrdersModule();
+        // Promo engine (issue #418): the atomic usage recorder and the audit logger do not
+        // match the I{Name}Service/Repository/Reader convention scan, so they need explicit
+        // registration for the promo apply/checkout flows to resolve.
+        services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeUsageRecorder, global::GameGuild.Commerce.Products.PromoCodeUsageRecorder>();
+        services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeAuditLogger, global::GameGuild.Commerce.Products.PromoCodeAuditLogger>();
         logger.LogInformation("Commerce Orders Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)
@@ -262,6 +291,9 @@ public static class InfrastructureLayerExtensions
         // 10d. Commerce Billing Module (webhook services for Stripe, PayPal, ApplePay)
         stepStopwatch.Restart();
         services.AddBillingModule(configuration);
+        // Connect the billing module's outbox read port to the platform outbox read model
+        // (issue #396: billing events monitoring over the existing durable transport).
+        services.AddScoped<IBillingOutboxEventReader, Core.Integration.BillingOutboxEventReader>();
         logger.LogInformation("Billing Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10e. Commerce Payments Module (payment gateway, payment services)
@@ -316,6 +348,8 @@ public static class InfrastructureLayerExtensions
     {
         databaseOptions ??= DatabaseOptions.CreateDefault();
 
+        services.Configure<PermissionAuditOptions>(configuration.GetSection(PermissionAuditOptions.SectionName));
+
         var connectionString = PostgresConnectionString.Resolve(configuration, databaseOptions.ConnectionStringName)
                                ?? throw new InvalidOperationException(
                                    $"Connection string '{databaseOptions.ConnectionStringName}' not found. " +
@@ -324,9 +358,19 @@ public static class InfrastructureLayerExtensions
         services.AddScoped<CostTelemetryContext>();
         services.AddScoped<ICostTelemetryRecorder>(provider => provider.GetRequiredService<CostTelemetryContext>());
         services.AddScoped<CostTelemetryDbCommandInterceptor>();
+        services.AddScoped<RefreshTokenLifecycleMetricBuffer>();
+        services.AddScoped<IRefreshTokenLifecycleRecorder, RefreshTokenLifecycleRecorder>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddOptions<RefreshTokenCleanupOptions>()
+            .Bind(configuration.GetSection(RefreshTokenCleanupOptions.SectionName))
+            .Validate(policy => policy.Validate().Count == 0, "Invalid refresh-token cleanup configuration.")
+            .ValidateOnStart();
+        services.AddScoped<IRefreshTokenCleanupOperation, RefreshTokenCleanupOperation>();
+        services.AddHostedService<RefreshTokenCleanupWorker>();
         services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
             options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());
+            options.AddInterceptors(provider.GetRequiredService<RefreshTokenLifecycleMetricBuffer>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

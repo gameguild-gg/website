@@ -19,6 +19,11 @@ services.AddAuthorizationCaching(options =>
     options.MaxL1CacheSize = 5000;
     options.UsePubSubInvalidation = true;
     options.InvalidationChannelName = "gg:auth:invalidate";
+    options.L2CompressionEnabled = true;
+    options.L2CompressionAlgorithm = L2CompressionAlgorithm.GZip;
+    options.L2CompressionThresholdBytes = 1024;
+    options.RedisServiceName = null; // Sentinel master set name, when Sentinel fronts the topology
+    options.RedisConnectRetry = 3;   // failover connect attempts
 });
 ```
 
@@ -37,9 +42,10 @@ channel for each isolated application deployment that shares the same Redis
 server.
 
 `MaxL1CacheSize` bounds the entries registered through the authorization cache
-key tracker. When the cap is exceeded, the tracker removes a prior L1 entry and
-records a `capacity` eviction. This cap is scoped to tracked authorization
-entries; it does not set `SizeLimit` on the shared application `IMemoryCache`.
+key tracker. When the cap is exceeded, the tracker removes the
+least-recently-used L1 entry and records a `capacity` eviction. This cap is
+scoped to tracked authorization entries; it does not set `SizeLimit` on the
+shared application `IMemoryCache`.
 
 Permission changes advance the shared tenant security version before publishing
 user, resource, or policy invalidation events. Cache keys include this version,
@@ -48,12 +54,53 @@ fails. Publish failures are logged, and old cache entries expire through their
 configured TTLs. Pub/Sub provides prompt local cleanup. A singleton per-process key index tracks L1 entries from cache services and request scopes so received events can evict the actual local entries.
 Wildcard matching scans this in-memory index; the implementation does not issue Redis key scans for deletion.
 
+ACL cache keys length-prefix their free-form segments: the `resourceType` and
+`resourceId` parts of `acl:` and `acl:subj:` keys are emitted as
+`{length}:{value}` components (for example `8:Document:7:res-123`) instead of the
+bare raw strings. The leading character count makes the encoding injective, so
+delimiter-bearing identifiers can never collide two distinct resources onto one
+cached access decision, while the raw value stays embedded in the key so
+wildcard and substring invalidation patterns — built from the same
+length-prefixed components — keep matching resource entries. GUID-valued
+segments (tenant, user, role, group) and the `tv`/`uv`/`gv` version suffixes
+remain human-readable, so key-inspection output shows which subject and version
+scope an entry belongs to and which resource pair it was computed for.
+
 ACL keys also include a shared global security version stored under the reserved
 `Guid.Empty` version scope. Global role assignment, removal, update, and deletion
 advance this version and publish a global invalidation event. This makes prior
 ACL keys unreachable across tenants even when Pub/Sub is unavailable; received
 events also clear tracked ACL entries from the local L1 cache.
 The tenant and global versions are read together in one database query.
+
+ACL decisions derived from time-bound grants (`ExpiresAt` on ACL entries) are
+cached with the boundary attached. Time-based expiration performs no mutation and
+advances no security version, so the cached copy polices itself: writes clamp the
+L1 and L2 TTL to the seconds remaining before the earliest effective grant
+expiration (never above the configured TTL), and every read re-checks the
+boundary before serving, which also covers entries promoted from L2 to L1.
+A decision whose grants already lapsed is returned once from the authoritative
+evaluation but never cached.
+
+Bulk permission-check decisions (the `IPermissionService` bulk and streaming
+paths, cached under the `permission` cache type with `bulk:v2` keys) carry the
+same expiry envelope. Each cached value is a decision record with
+`EffectiveUntilUtc` — the earliest `ExpiresAt` among the grants that conveyed or
+denied the requested permission for that decision; entries backed by multiple
+participating grants use the minimum remaining lifetime. Writes pass that
+remaining lifetime as the entry TTL, and the cache layers clamp it to the
+configured TTLs, so an explicit TTL only ever shortens them. Reads treat an
+entry whose envelope boundary has passed as a miss (fail closed) and re-evaluate
+from the authoritative grants, so a stable-version cached allow can never
+outlive an expiring grant even when TTL eviction lags (for example after an L2
+promotion or a clock skew). A decision whose floored remaining lifetime is
+already zero is returned once but never cached. The `bulk` segment of the cache
+key was bumped from `v1` to `v2` together with this envelope, so pre-envelope
+boolean entries are never read again. Sustained-throughput and load evidence
+for the bulk path is deliberately not part of the CI suite: it is measured by
+the dedicated `GameGuild.Identity.Authorization.PerformanceTests` BenchmarkDotNet
+projects against a real database, which require a benchmark environment; see
+that project's README.
 
 Bulk invalidation accepts 1–500 typed targets (user, resource, policy, or role/group
 dependency), advances the tenant version once, evicts matching local L1 entries,
@@ -72,6 +119,30 @@ and per-cache-type counts. `PerformanceMetrics` includes the average measured
 cache lookup duration and sample count per cache type since process start. It
 retains no raw samples and does not aggregate across instances. The OpenTelemetry
 histogram remains the source for percentile analysis in the configured collector.
+
+Route reconciliation for issue #353: the issue's requested
+`/api/cache/permissions/*` surface is implemented under the platform's versioned
+API convention as `/v{version}/permissions/cache/*` —
+`GET /v{version}/permissions/cache/stats`,
+`POST /v{version}/permissions/cache:clear`,
+`POST /v{version}/permissions/cache:warm`,
+`GET /v{version}/permissions/cache/keys`, and
+`GET /v{version}/permissions/cache/keys:inspect?key=...`.
+No unversioned `/api/cache/permissions` alias is registered because the
+repository has no precedent for duplicate unversioned routes.
+
+System administrators can list and inspect tracked L1 cache keys for debugging
+with `GET /v{version}/permissions/cache/keys` (query parameters: `search`, a
+case-insensitive substring of the key; `cacheType`, an exact match such as
+`acl`; `page`, 1-based; `pageSize`, capped at 200 with a default of 50) and
+`GET /v{version}/permissions/cache/keys:inspect?key=<cacheKey>` (404 when the
+key is not tracked in this process). Both endpoints are `[Authorize]`-guarded
+with the SystemAdmin policy — they are not anonymous and are not listed in the
+anonymous endpoint registry. Each entry reports the key, its cache type, the
+first-tracked and last-access timestamps, and whether the entry is currently
+present in the process-local L1 cache. Results are process-local snapshots
+ordered most-recently-used first; they reflect only the serving replica and are
+read-only (no cache or permission mutation).
 
 Set `OpenTelemetry:Enabled` to `true` to export the authorization cache meter
 alongside traces. It uses the configured console exporter and OTLP endpoint and
@@ -113,6 +184,131 @@ and returns a miss so the calling service can load the authoritative value from
 its backing store. L2 write and removal failures are logged without failing the
 request; the L1 operation remains in effect. Caller-requested cancellation still
 propagates.
+
+### L2 payload compression
+
+L2 values are compressed before they are written to Redis when
+`L2CompressionEnabled` is `true` (the default), `L2CompressionAlgorithm` is not
+`None`, and the serialized payload is at least `L2CompressionThresholdBytes`
+bytes (default 1024). `GZip` (the default) trades a smaller ratio for lower CPU
+per write; `Brotli` trades higher CPU for a better ratio. Compression failures
+fall back to storing the raw payload instead of failing the write.
+
+Compressed payloads carry a versioned envelope (a `GGC1` magic marker, an
+algorithm byte, then the compressed stream). Readers negotiate transparently:
+enveloped bytes are decompressed, and bytes without the marker are treated as
+the raw JSON written before compression was enabled (or by a replica with
+compression disabled). An enveloped entry that cannot be decoded — for example
+an unknown algorithm byte after a downgrade — is logged and treated as a miss,
+so the authoritative value is reloaded and rewritten. This keeps mixed-version
+deployments readable during a rolling upgrade.
+
+### L1 capacity eviction is least-recently-used
+
+When the tracked-entry cap (`MaxL1CacheSize`) is exceeded, the key tracker
+removes the least-recently-used entry rather than the oldest-inserted one.
+Every L1 read hit recorded through the hybrid cache refreshes the key's
+last-access ordering; entries that are never read again are evicted first.
+TTL behavior is unchanged: expired entries still leave the index through the
+registered post-eviction callbacks, and insertion order breaks ties.
+
+### Redis topology and failover
+
+`RedisServiceName` passes the Sentinel master set name through to StackExchange.Redis
+(`ConfigurationOptions.ServiceName`); list the Sentinel endpoints themselves in
+the connection string. `RedisConnectTimeoutMilliseconds` and `RedisConnectRetry`
+override the connect timeout and the number of failover connect attempts, and
+`RedisProxy` selects `None`, `Twemproxy`, or `Envoyproxy`. Unset options never
+override values from the connection string. Redis Cluster needs no dedicated
+setting: list the cluster endpoints comma-separated and the client follows
+MOVED/ASK redirects automatically. The multiplexer is always built with
+`AbortOnConnectFail = false` so a failed initial connect retries in the
+background. TLS client-certificate selection and per-endpoint Sentinel
+credentials are deferred: configure them through the connection string.
+
+### Redis cache backup and disaster recovery
+
+The authorization cache is a **derived, rebuildable** store. PostgreSQL holds the
+authoritative permissions and ACL entries; every cache miss falls through to the
+database. Disaster recovery for the cache is therefore an availability concern,
+never a data-recovery concern: the safest recovery is an empty cache.
+
+**Persistence tradeoffs (RDB snapshots vs AOF).** The local Compose Redis already
+enables AOF (`--appendonly yes` with the `redis-data` volume). AOF journals every
+write and, with the default `appendfsync everysec`, loses at most about one
+second of writes at the cost of larger files and a replay-based restart. RDB
+snapshots (`--save <seconds> <changes>`, or `BGSAVE`) are compact point-in-time
+files that restart fast but lose everything since the last snapshot. The
+recommended combination for a deployment that wants warm-restart optimization is
+both: AOF for the small loss window and a scheduled RDB as the cold-backup
+artifact. For the authorization cache specifically, either choice is acceptable,
+because the versioned-key rule below makes restored entries harmless.
+
+**Versioned-key safety on restore.** Every ACL and permission cache key embeds
+the tenant, global, and user security versions current at write time. Restoring
+a Redis backup (or failing over to a replica with stale data) cannot resurrect
+stale authorization decisions: lookups build keys from the *current* security
+versions, so old-version entries are unreachable and simply expire through
+their TTLs. This is the same mechanism that makes a lost Pub/Sub invalidation
+harmless.
+
+**Backup procedure.** To take a backup without stopping the service:
+
+```bash
+# Snapshot to RDB without blocking Redis
+docker exec game-guild-redis redis-cli BGSAVE
+# Copy the artifact out of the volume, then store it offsite (encrypted)
+docker run --rm -v game-guild-redis-data:/data -v "$PWD:/backup" alpine \
+  cp /data/dump.rdb /backup/redis-auth-cache-$(date -u +%Y%m%dT%H%M%SZ).rdb
+```
+
+Alternative for remote capture: `redis-cli --rdb /backup/dump.rdb`. Schedule
+`BGSAVE` through `--save 900 1` (or the deployment's scheduler) and keep the
+retention the deployment requires; the files are small because cache values are
+single enum decisions.
+
+**Restore procedure (database-authoritative).**
+
+1. Prefer not restoring at all: start Redis empty and let the cache refill from
+   misses. This is the correct choice after any permission incident.
+2. If warm restart is wanted (for example restoring a whole host), restore the
+   RDB into the `redis-data` volume (or AOF files) while the API is stopped, then
+   start Redis, then the API. Restored entries whose embedded security versions
+   still match remain usable; everything else is unreachable and expires.
+3. After a restore, optionally prewarm hot decisions with
+   `POST /v{version}/permissions/cache:warm` and let popularity-based warming
+   refill the rest.
+4. Never restore a backup into a deployment whose database was rolled back
+   further than the backup: the database is authoritative, and a cache newer
+   than the database only causes harmless misses, but a database rollback must
+   be followed by a cache flush (below) so long-TTL entries cannot mask the
+   rollback.
+
+**Flush procedure for a suspect or corrupted cache.** Delete only this
+deployment's key namespace, never `FLUSHALL`/`FLUSHDB` on a shared Redis:
+
+```bash
+# The instanceName configured in AddAuthorizationRedisCache prefixes every key
+docker exec game-guild-redis sh -c \
+  'redis-cli --scan --pattern "gg:auth:*" | xargs -r redis-cli UNLINK'
+```
+
+Then warm as in step 3. (Redis `SCAN` never blocks the server; `UNLINK` deletes
+in the background.)
+
+**Failover monitoring.** The Compose healthcheck (`redis-cli ping`) gates
+container restarts. At the application boundary, the multiplexer reconnects in
+the background (`AbortOnConnectFail = false`, `RedisConnectRetry`) and the cache
+degrades to database reads while Redis is unavailable — watch the cache metrics
+for sustained miss-ratio elevation (alert rules in
+[authorization-cache-alerts.yml](./authorization-cache-alerts.yml)) as the
+signal of a degraded or failed Redis. For the Redis server itself, export
+`redis_up`, `redis_master_repl_offset` drift on replicas, `redis_aof_last_write_status`,
+and `redis_rdb_last_save_timestamp_seconds` staleness into the same Prometheus
+pipeline that loads the authorization-cache rules, and route alerts through the
+Alertmanager receiver configured for the deployment. Sentinel and Cluster
+topologies additionally alert on `redis_master_up` / managed-failover events
+from the provider.
 
 The authorization and authentication unit suites cover the L1/L2 cache behavior,
 DI registration, version increments, serialized event payloads, subscriber

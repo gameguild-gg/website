@@ -24,7 +24,7 @@ export class ApiTeamsModule {
     includeArchived?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.APITeamsTeamDto>, ApiError>> {
+  }): Promise<Result<Types.APITeamsTeamDto[], ApiError>> {
     const url = '/v1/teams';
 
     const result = await this.client.request({
@@ -34,7 +34,7 @@ export class ApiTeamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APITeamsTeamDto>, ApiError>;
+    return result as Result<Types.APITeamsTeamDto[], ApiError>;
   }
 
   /**
@@ -141,7 +141,7 @@ export class ApiTeamsModule {
 
   /**
    */
-  async getTeamsInvitations(teamId: string): Promise<Result<Array<Types.APITeamsTeamInvitationDto>, ApiError>> {
+  async getTeamsInvitations(teamId: string): Promise<Result<Types.APITeamsTeamInvitationDto[], ApiError>> {
     const url = `/v1/teams/${teamId}/invitations`;
 
     const result = await this.client.request({
@@ -150,7 +150,7 @@ export class ApiTeamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APITeamsTeamInvitationDto>, ApiError>;
+    return result as Result<Types.APITeamsTeamInvitationDto[], ApiError>;
   }
 
   /**
@@ -303,12 +303,7 @@ export class ApiTeamsModule {
    * Gets Teams where the authenticated user has an active membership.
    * This endpoint remains personal even when the actor has administrative capabilities.
    */
-  async getTeamsMine(query?: {
-    includeArchived?: boolean;
-    search?: string;
-    skip?: number;
-    take?: number;
-  }): Promise<Result<Array<Types.APITeamsTeamDto>, ApiError>> {
+  async getTeamsMine(query?: { includeArchived?: boolean; search?: string; skip?: number; take?: number }): Promise<Result<Types.APITeamsTeamDto[], ApiError>> {
     const url = '/v1/teams/mine';
 
     const result = await this.client.request({
@@ -318,12 +313,12 @@ export class ApiTeamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APITeamsTeamDto>, ApiError>;
+    return result as Result<Types.APITeamsTeamDto[], ApiError>;
   }
 
   /**
    */
-  async getTeamsMyInvitations(): Promise<Result<Array<Types.APITeamsMyTeamInvitationDto>, ApiError>> {
+  async getTeamsMyInvitations(): Promise<Result<Types.APITeamsMyTeamInvitationDto[], ApiError>> {
     const url = '/v1/teams/my-invitations';
 
     const result = await this.client.request({
@@ -332,7 +327,7 @@ export class ApiTeamsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APITeamsMyTeamInvitationDto>, ApiError>;
+    return result as Result<Types.APITeamsMyTeamInvitationDto[], ApiError>;
   }
 }
 

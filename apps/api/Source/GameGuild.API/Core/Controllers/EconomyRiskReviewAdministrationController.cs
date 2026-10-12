@@ -31,7 +31,11 @@ public sealed class EconomyRiskReviewAdministrationController(
         [FromQuery] string? cursor = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryReviewer(out var tenantId, out _)) return Forbid();
+        if (!TryReviewer(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         return Ok(await reviews.ListAsync(
             tenantId, status, limit, cursor, cancellationToken).ConfigureAwait(false));
     }
@@ -41,7 +45,11 @@ public sealed class EconomyRiskReviewAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid reviewId, CancellationToken cancellationToken)
     {
-        if (!TryReviewer(out var tenantId, out _)) return Forbid();
+        if (!TryReviewer(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(await reviews.CurrentAsync(tenantId, reviewId, cancellationToken)
@@ -58,7 +66,11 @@ public sealed class EconomyRiskReviewAdministrationController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Audit(Guid reviewId, CancellationToken cancellationToken)
     {
-        if (!TryReviewer(out var tenantId, out _)) return Forbid();
+        if (!TryReviewer(out var tenantId, out _))
+        {
+            return Forbid();
+        }
+
         try
         {
             return Ok(await reviews.EventsAsync(tenantId, reviewId, cancellationToken)
@@ -79,7 +91,11 @@ public sealed class EconomyRiskReviewAdministrationController(
         [FromBody] ResolveEconomyRiskReviewRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryReviewer(out var tenantId, out var actorId)) return Forbid();
+        if (!TryReviewer(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         return await ResolveAsync(sender.Send(new ApproveEconomyRiskReviewEndpointCommand(
             tenantId, reviewId, actorId, request.DecisionCode, request.Resolution, timeProvider.GetUtcNow()),
@@ -95,7 +111,11 @@ public sealed class EconomyRiskReviewAdministrationController(
         [FromBody] ResolveEconomyRiskReviewRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryReviewer(out var tenantId, out var actorId)) return Forbid();
+        if (!TryReviewer(out var tenantId, out var actorId))
+        {
+            return Forbid();
+        }
+
         ArgumentNullException.ThrowIfNull(request);
         return await ResolveAsync(sender.Send(new RejectEconomyRiskReviewEndpointCommand(
             tenantId, reviewId, actorId, request.DecisionCode, request.Resolution, timeProvider.GetUtcNow()),
@@ -126,7 +146,10 @@ public sealed class EconomyRiskReviewAdministrationController(
         if (!actor.IsAuthenticated || actor.TenantId is not { } resolvedTenant ||
             actor.SubjectIdAsGuid is not { } resolvedActor ||
             !actor.HasPermission(EconomyPermission.Keys.OperateCompliance))
+        {
             return false;
+        }
+
         tenantId = resolvedTenant;
         actorId = resolvedActor;
         return true;

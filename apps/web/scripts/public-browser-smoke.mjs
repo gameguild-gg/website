@@ -11,14 +11,15 @@ const publicRoutes = [
   ['Home', '/'],
   ['Courses', '/courses'],
   ['Programs', '/programs'],
-  ['Testing Lab', '/testing-lab'],
+  ['Testing Lab', '/testing-lab', 'Test. Play. Earn.'],
+  ['Testing Lab introduction', '/testing-lab/landing', 'Game Testing Lab'],
   ['Launch Pad', '/launch-pad'],
   ['Projects', '/projects'],
   ['Community', '/community'],
   ['Jobs', '/jobs'],
   ['About', '/about'],
-  ['Sign in', '/sign-in'],
-  ['Sign up', '/sign-up'],
+  ['Sign in', '/sign-in', 'Welcome back'],
+  ['Sign up', '/sign-up', 'Create your GameGuild account'],
 ];
 
 const footerRoutes = [
@@ -93,7 +94,7 @@ async function runRealAuthFlow(page) {
   await accountMenu.click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.waitForURL('**/sign-in', { timeout: 20_000 });
-  await page.getByRole('heading', { name: /Welcome back to GameGuild/i }).waitFor({ timeout: 20_000 });
+  await page.getByRole('heading', { name: 'Welcome back', exact: true, level: 1 }).waitFor({ timeout: 20_000 });
 
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
@@ -147,8 +148,11 @@ async function main() {
   });
 
   try {
-    for (const [label, route] of publicRoutes) {
+    for (const [label, route, heading] of publicRoutes) {
       await assertRouteRenders(page, label, route);
+      if (heading) {
+        await page.getByRole('heading', { name: heading, exact: true, level: 1 }).waitFor();
+      }
     }
 
     for (const [label, route] of footerRoutes) {
@@ -156,8 +160,10 @@ async function main() {
     }
 
     await page.goto(routeUrl('/'), { waitUntil: 'domcontentloaded' });
+    await waitForClientHydration(page);
     const desktopNav = page.getByRole('navigation', { name: 'Main navigation' });
-    await desktopNav.getByRole('link', { name: 'Courses' }).click();
+    await desktopNav.getByRole('button', { name: 'Learn', exact: true }).click();
+    await page.getByRole('menu').getByRole('menuitem', { name: 'Courses', exact: true }).click();
     await page.waitForURL('**/courses');
     await page.getByRole('heading', { name: /Build the game development portfolio/i }).waitFor();
 
@@ -167,11 +173,11 @@ async function main() {
     await page.getByRole('button', { name: 'Open public navigation' }).click();
     await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Testing Lab' }).click();
     await page.waitForURL('**/testing-lab');
-    await page.getByRole('heading', { name: 'Game Testing Lab', exact: true, level: 1 }).waitFor();
+    await page.getByRole('heading', { name: 'Test. Play. Earn.', exact: true, level: 1 }).waitFor();
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(routeUrl('/sign-in'), { waitUntil: 'domcontentloaded' });
-    await page.getByRole('heading', { name: /Welcome back to GameGuild/i }).waitFor();
+    await page.getByRole('heading', { name: 'Welcome back', exact: true, level: 1 }).waitFor();
     await page.getByLabel('Email').waitFor();
     await page.getByLabel('Password', { exact: true }).waitFor();
 
@@ -209,6 +215,13 @@ async function main() {
 
     await writeBrowserEvidence(evidencePath, { passed: true, errors: [] });
     console.log(`Public browser smoke passed against ${baseUrl}`);
+  } catch (error) {
+    const headings = await page.getByRole('heading').allTextContents().catch(() => []);
+    console.error(JSON.stringify({
+      path: new URL(page.url()).pathname,
+      headings: headings.slice(0, 6).map((heading) => heading.trim().slice(0, 256)),
+    }));
+    throw error;
   } finally {
     await browser.close();
   }

@@ -42,7 +42,7 @@ public sealed class OpenTelemetryExtensionsTests
     }
 
     [Theory]
-    [InlineData("", false, null, null)]
+    [InlineData("", true, null, null)]
     [InlineData("custom-api", true, "http://127.0.0.1:4317", "grpc")]
     public void AddOpenTelemetryObservability_WhenEnabled_RegistersResolvableTracing(
         string serviceName,
@@ -67,14 +67,64 @@ public sealed class OpenTelemetryExtensionsTests
         provider.GetRequiredService<MeterProvider>().Should().NotBeNull();
     }
 
+    [Fact]
+    public void AddOpenTelemetryObservability_WhenEnabledWithoutExporter_ThrowsConfigurationError()
+    {
+        var builder = CreateBuilder(new Dictionary<string, string?>
+        {
+            ["OpenTelemetry:Enabled"] = "true",
+            ["OpenTelemetry:ConsoleExporterEnabled"] = "false"
+        });
+
+        var act = () => builder.AddOpenTelemetryObservability();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*no exporter is configured*");
+    }
+
+    [Theory]
+    [InlineData("relative/collector")]
+    [InlineData("ftp://collector:4318")]
+    public void AddOpenTelemetryObservability_WhenEnabledWithInvalidEndpoint_ThrowsConfigurationError(
+        string endpoint)
+    {
+        var builder = CreateBuilder(new Dictionary<string, string?>
+        {
+            ["OpenTelemetry:Enabled"] = "true",
+            ["OpenTelemetry:OtlpEndpoint"] = endpoint
+        });
+
+        var act = () => builder.AddOpenTelemetryObservability();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*absolute HTTP or HTTPS URI*");
+    }
+
     [Theory]
     [InlineData("grpc", OtlpExportProtocol.Grpc)]
     [InlineData("GRPC", OtlpExportProtocol.Grpc)]
     [InlineData("http/protobuf", OtlpExportProtocol.HttpProtobuf)]
+    [InlineData("HTTP/PROTOBUF", OtlpExportProtocol.HttpProtobuf)]
     [InlineData(null, OtlpExportProtocol.HttpProtobuf)]
     public void ResolveProtocol_ShouldMapSupportedValues(string? protocol, OtlpExportProtocol expected)
     {
         InvokePrivate<OtlpExportProtocol>("ResolveProtocol", protocol).Should().Be(expected);
+    }
+
+    [Fact]
+    public void AddOpenTelemetryObservability_WhenEnabledWithUnsupportedProtocol_ThrowsConfigurationError()
+    {
+        var builder = CreateBuilder(new Dictionary<string, string?>
+        {
+            ["OpenTelemetry:Enabled"] = "true",
+            ["OpenTelemetry:OtlpEndpoint"] = "http://127.0.0.1:4318",
+            ["OpenTelemetry:OtlpProtocol"] = "http/json"
+        });
+
+        var act = () => builder.AddOpenTelemetryObservability();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*unsupported*");
     }
 
     [Theory]

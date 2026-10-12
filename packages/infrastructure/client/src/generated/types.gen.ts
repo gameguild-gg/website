@@ -12,7 +12,7 @@ import { z } from 'zod';
 /** Canonical request shape for conversational completions. */
 export interface AIAiChatInput {
   maxTokens?: number | null;
-  messages?: Array<AIAiChatMessage> | null;
+  messages?: AIAiChatMessage[] | null;
   model?: string | null;
   provider?: string | null;
   systemPrompt?: string | null;
@@ -155,7 +155,7 @@ export interface AIAiQuotaStatusDto {
 /** Data model for AI Ai Quota Status Response. */
 export interface AIAiQuotaStatusOutput {
   generatedAtUtc?: string;
-  quotas?: Array<AIAiQuotaStatusDto> | null;
+  quotas?: AIAiQuotaStatusDto[] | null;
   tenantId?: string;
 }
 
@@ -164,7 +164,7 @@ export interface AIAiStatusOutput {
   allowTenantOverrides?: boolean;
   defaultProvider?: string | null;
   enabled?: boolean;
-  providers?: Array<AIAiProviderStatusDto> | null;
+  providers?: AIAiProviderStatusDto[] | null;
 }
 
 /** Normalized token usage information returned by a provider. */
@@ -229,7 +229,7 @@ export interface AnalyticsAnalyticsWarehouseRunOutput {
 export interface AnalyticsAnalyzeFunnelQuery {
   endDate?: string;
   startDate?: string;
-  steps?: Array<string> | null;
+  steps?: string[] | null;
   tenantId?: string | null;
 }
 
@@ -240,7 +240,7 @@ export interface AnalyticsCreateDashboardInput {
   slug?: string | null;
   tenantId?: string | null;
   title?: string | null;
-  widgets?: Array<AnalyticsDashboardWidgetInput> | null;
+  widgets?: AnalyticsDashboardWidgetInput[] | null;
 }
 
 /** Data model for Analytics Dashboard Dto. */
@@ -253,7 +253,7 @@ export interface AnalyticsDashboardDto {
   tenantId?: string | null;
   title?: string | null;
   updatedAt?: string;
-  widgets?: Array<AnalyticsDashboardWidgetDto> | null;
+  widgets?: AnalyticsDashboardWidgetDto[] | null;
 }
 
 /** Data model for Analytics Dashboard Widget Dto. */
@@ -304,7 +304,7 @@ export interface AnalyticsProductMetricsOutput {
   startUtc?: string;
   subscriptions?: AnalyticsProductSubscriptionMetrics;
   tenantId?: string | null;
-  thresholds?: Array<AnalyticsProductMetricThreshold> | null;
+  thresholds?: AnalyticsProductMetricThreshold[] | null;
 }
 
 /** Data model for Analytics Product Metric Threshold. */
@@ -357,7 +357,7 @@ export interface AnalyticsUpdateDashboardInput {
   isDefault?: boolean;
   slug?: string | null;
   title?: string | null;
-  widgets?: Array<AnalyticsDashboardWidgetInput> | null;
+  widgets?: AnalyticsDashboardWidgetInput[] | null;
 }
 
 /** OpenAPI schema for Analytics Widget Type. */
@@ -365,7 +365,7 @@ export type AnalyticsWidgetType = 'Counter' | 'Chart' | 'Table' | 'Gauge' | 'Tim
 
 /** Data model for API Access Access Capabilities Response. */
 export interface APIAccessAccessCapabilitiesOutput {
-  capabilities?: Array<string> | null;
+  capabilities?: string[] | null;
 }
 
 /** Data model for API Controllers Activate Economy Kill Switch Request. */
@@ -377,7 +377,7 @@ export interface APIControllersActivateEconomyKillSwitchInput {
 
 /** Data model for API Controllers Ad Reward Protected Operation Failure Response. */
 export interface APIControllersAdRewardProtectedOperationFailureOutput {
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
@@ -504,12 +504,12 @@ export interface APIControllersDependencyHealthItem {
   isHealthy?: boolean;
   name?: string | null;
   status?: string | null;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
 }
 
 /** Dependency health check response model */
 export interface APIControllersDependencyHealthOutput {
-  dependencies?: Array<APIControllersDependencyHealthItem> | null;
+  dependencies?: APIControllersDependencyHealthItem[] | null;
   error?: string | null;
   healthyCount?: number;
   status?: string | null;
@@ -563,7 +563,7 @@ export interface APIControllersEconomyPayoutExecutionOperationDto {
 /** Data model for API Controllers Economy Self Service Capability Dto. */
 export interface APIControllersEconomySelfServiceCapabilityDto {
   capability?: FinanceEconomyRiskEconomyValueMovementCapability;
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   state?: APISetupEconomyCapabilityReadinessState;
 }
 
@@ -580,7 +580,7 @@ export interface APIControllersEconomyTopUpFailureOutput {
 
 /** Data model for API Controllers Economy Transfer Protected Operation Failure Response. */
 export interface APIControllersEconomyTransferProtectedOperationFailureOutput {
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
@@ -616,7 +616,7 @@ export interface APIControllersInspectEconomyCapabilityReadinessInput {
   operationFingerprint?: string | null;
   providerHash?: string | null;
   riskDecisionId?: string;
-  sourceRootHashes?: Array<string> | null;
+  sourceRootHashes?: string[] | null;
   subjectReference?: string | null;
 }
 
@@ -631,14 +631,14 @@ export interface APIControllersLivenessOutput {
 
 /** Data model for API Controllers Marketplace Protected Operation Failure Response. */
 export interface APIControllersMarketplaceProtectedOperationFailureOutput {
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
 
 /** Data model for API Controllers Payout Protected Operation Failure Response. */
 export interface APIControllersPayoutProtectedOperationFailureOutput {
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   reviewId?: string | null;
   state?: FinanceEconomyRiskEconomyProtectedOperationState;
 }
@@ -674,13 +674,13 @@ export interface APIControllersProposeEconomyReserveInput {
   id?: string;
   authorizationEpoch?: number;
   buffers?: FinanceEconomyReservesReserveBufferPosition;
-  custodyObservationIds?: Array<string> | null;
+  custodyObservationIds?: string[] | null;
   expectedActiveVersion?: number | null;
   expiresAt?: string;
   irreversibleInFlightProviderCostUsdNanos?: number;
   observedAt?: string;
   policyVersion?: number;
-  services?: Array<FinanceEconomyReservesReserveServiceObservation> | null;
+  services?: FinanceEconomyReservesReserveServiceObservation[] | null;
   version?: number;
 }
 
@@ -794,7 +794,7 @@ export interface APIProjectsAddProjectTeamInput {
   contributionPercentage?: number;
   notes?: string | null;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
   role?: ProjectsProjectTeamRole;
   teamId?: string;
 }
@@ -841,10 +841,10 @@ export interface APIProjectsProjectAllocationDto {
 
 /** Data model for API Projects Project Ownership Dto. */
 export interface APIProjectsProjectOwnershipDto {
-  agreements?: Array<APIProjectsProjectTeamAgreementDto> | null;
-  allocations?: Array<APIProjectsProjectAllocationDto> | null;
+  agreements?: APIProjectsProjectTeamAgreementDto[] | null;
+  allocations?: APIProjectsProjectAllocationDto[] | null;
   projectId?: string;
-  teams?: Array<APIProjectsProjectTeamOwnershipDto> | null;
+  teams?: APIProjectsProjectTeamOwnershipDto[] | null;
 }
 
 /** Data model for API Projects Project Team Agreement Dto. */
@@ -869,7 +869,7 @@ export interface APIProjectsProjectTeamOwnershipDto {
   endedAt?: string | null;
   isActive?: boolean;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   role?: ProjectsProjectTeamRole;
   teamId?: string;
   teamName?: string | null;
@@ -895,7 +895,7 @@ export interface APIProjectsUpdateProjectTeamInput {
   contributionPercentage?: number;
   notes?: string | null;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
   role?: ProjectsProjectTeamRole;
 }
 
@@ -955,7 +955,7 @@ export interface APIProjectWorkMoveProjectWorkTaskInput {
 /** Data model for API Project Work Project Board Dto. */
 export interface APIProjectWorkProjectBoardDto {
   id?: string;
-  columns?: Array<APIProjectWorkProjectWorkColumnDto> | null;
+  columns?: APIProjectWorkProjectWorkColumnDto[] | null;
   name?: string | null;
   projectId?: string;
 }
@@ -1005,7 +1005,7 @@ export interface APIProjectWorkProjectWorkColumnDto {
   kind?: ProjectWorkProjectWorkColumnKind;
   name?: string | null;
   position?: number;
-  tasks?: Array<APIProjectWorkProjectWorkTaskDto> | null;
+  tasks?: APIProjectWorkProjectWorkTaskDto[] | null;
   workInProgressLimit?: number | null;
 }
 
@@ -1021,10 +1021,10 @@ export interface APIProjectWorkProjectWorkHistoryDto {
 
 /** Data model for API Project Work Project Work Task Details Dto. */
 export interface APIProjectWorkProjectWorkTaskDetailsDto {
-  checklist?: Array<APIProjectWorkProjectChecklistItemDto> | null;
-  comments?: Array<APIProjectWorkProjectTaskCommentDto> | null;
-  dependencies?: Array<APIProjectWorkProjectTaskDependencyDto> | null;
-  labels?: Array<APIProjectWorkProjectTaskLabelDto> | null;
+  checklist?: APIProjectWorkProjectChecklistItemDto[] | null;
+  comments?: APIProjectWorkProjectTaskCommentDto[] | null;
+  dependencies?: APIProjectWorkProjectTaskDependencyDto[] | null;
+  labels?: APIProjectWorkProjectTaskLabelDto[] | null;
   task?: APIProjectWorkProjectWorkTaskDto;
 }
 
@@ -1124,7 +1124,7 @@ export interface APITeamsTeamDto {
   id?: string;
   description?: string | null;
   isPersonal?: boolean;
-  members?: Array<APITeamsTeamMemberDto> | null;
+  members?: APITeamsTeamMemberDto[] | null;
   name?: string | null;
   slug?: string | null;
   status?: TeamsTeamStatus;
@@ -1230,7 +1230,7 @@ export interface AssetsCommandsBulkDeleteAssetItem {
 /** Data model for Assets Commands Bulk Delete Assets Response. */
 export interface AssetsCommandsBulkDeleteAssetsOutput {
   failed?: number;
-  items?: Array<AssetsCommandsBulkDeleteAssetItem> | null;
+  items?: AssetsCommandsBulkDeleteAssetItem[] | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -1247,7 +1247,7 @@ export interface AssetsCommandsBulkUploadAssetItem {
 /** Data model for Assets Commands Bulk Upload Assets Response. */
 export interface AssetsCommandsBulkUploadAssetsOutput {
   failed?: number;
-  items?: Array<AssetsCommandsBulkUploadAssetItem> | null;
+  items?: AssetsCommandsBulkUploadAssetItem[] | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -1266,18 +1266,18 @@ export interface AssetsControllersAssetExtractedTextOutput {
 
 /** Data model for Assets Controllers Bulk Asset Access Url Request. */
 export interface AssetsControllersBulkAssetAccessUrlInput {
-  assetIds?: Array<string> | null;
+  assetIds?: string[] | null;
   directStorageUrl?: boolean;
 }
 
 /** Data model for Assets Controllers Bulk Delete Assets Request. */
 export interface AssetsControllersBulkDeleteAssetsInput {
-  assetIds?: Array<string> | null;
+  assetIds?: string[] | null;
 }
 
 /** Data model for Assets Controllers Content Moderation Request. */
 export interface AssetsControllersContentModerationInput {
-  labels?: Array<string> | null;
+  labels?: string[] | null;
   notes?: string | null;
   status?: AssetsModerationStatus;
 }
@@ -1307,9 +1307,9 @@ export interface AssetsControllersReportAssetInput {
 
 /** Data model for Assets Controllers Restrict Asset Folder Request. */
 export interface AssetsControllersRestrictAssetFolderInput {
-  authorities?: Array<string> | null;
+  authorities?: string[] | null;
   mode?: AssetsAssetFolderRestrictionMode;
-  teamIds?: Array<string> | null;
+  teamIds?: string[] | null;
 }
 
 /** Data model for Assets Controllers Review Report Request. */
@@ -1355,7 +1355,7 @@ export interface AssetsQueriesAssetPreviewOutput {
   previewMode?: string | null;
   thumbnailUrl?: string | null;
   usedOcr?: boolean;
-  warnings?: Array<string> | null;
+  warnings?: string[] | null;
 }
 
 /** Data model for Assets Queries Asset Retention Candidate Response. */
@@ -1373,7 +1373,7 @@ export interface AssetsQueriesAssetRetentionReportOutput {
   candidateBytes?: number;
   candidates?: number;
   gracePeriodHours?: number;
-  items?: Array<AssetsQueriesAssetRetentionCandidateOutput> | null;
+  items?: AssetsQueriesAssetRetentionCandidateOutput[] | null;
   limit?: number;
   markedForDeletion?: number;
   onLegalHold?: number;
@@ -1381,7 +1381,7 @@ export interface AssetsQueriesAssetRetentionReportOutput {
 
 /** Data model for Assets Queries Asset Search Response. */
 export interface AssetsQueriesAssetSearchOutput {
-  items?: Array<AssetsQueriesAssetSearchResult> | null;
+  items?: AssetsQueriesAssetSearchResult[] | null;
   returned?: number;
   totalMatched?: number;
 }
@@ -1432,7 +1432,7 @@ export interface AssetsQueriesBulkAssetAccessUrlItem {
 /** Data model for Assets Queries Bulk Asset Access Urls Response. */
 export interface AssetsQueriesBulkAssetAccessUrlsOutput {
   failed?: number;
-  items?: Array<AssetsQueriesBulkAssetAccessUrlItem> | null;
+  items?: AssetsQueriesBulkAssetAccessUrlItem[] | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -1470,7 +1470,7 @@ export interface BulkOperationError {
 /** Response for bulk operations */
 export interface BulkOperationOutput {
   /** Per-item error details for failed operations. */
-  errors?: Array<BulkOperationError> | null;
+  errors?: BulkOperationError[] | null;
   /** Number of items that failed. */
   failedOperations?: number;
   /** Whether every item in the batch succeeded. */
@@ -1481,6 +1481,244 @@ export interface BulkOperationOutput {
   successRate?: number;
   /** Total number of items submitted for processing. */
   totalRequested?: number;
+}
+
+/** Request body for the migration dry-run endpoint. */
+export interface CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput {
+  sourceProvider?: string | null;
+  targetProvider?: string | null;
+}
+
+/** Request body capping the credit tender of an invoice settlement. */
+export interface CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput {
+  /** Optional positive cap on the credit amount to apply. */
+  maxAmount?: number | null;
+}
+
+/** Read model over a durable billing integration event published through the platform outbox. */
+export interface CommerceBillingBillingOutboxEventDto {
+  /** Aggregate identifier the event refers to. */
+  aggregateId?: string | null;
+  /** Aggregate the event refers to. */
+  aggregateType?: string | null;
+  /** Correlation identifier of the emitting operation. */
+  correlationId?: string;
+  /** Durable event identifier. */
+  eventId?: string;
+  /** Stable event name, e.g. commerce.billing.invoice-paid.v1. */
+  eventName?: string | null;
+  /** Stable CLR type name of the event payload. */
+  eventType?: string | null;
+  /** When the event occurred. */
+  occurredAtUtc?: string;
+  /** Schema version of the event payload. */
+  schemaVersion?: number;
+  status?: CommerceBillingBillingOutboxEventStatus;
+  /** Tenant scope of the event. */
+  tenantId?: string;
+}
+
+/** Delivery status of a durable billing event in the platform outbox. */
+export type CommerceBillingBillingOutboxEventStatus = 'Pending' | 'Completed' | 'DeadLettered';
+
+/** Classification of a subscription row within a provider-migration dry-run report. */
+export type CommerceBillingBillingProviderMigrationEntryClassification =
+  'BoundToSourceMissingTargetExternalId' | 'AlreadyOnTargetProvider' | 'UnattributedExternalId' | 'NotExternallyBound';
+
+/** Report-only result of a provider-migration dry-run (issue #397). No state is
+mutated; executing the actual migration is explicitly out of scope and deferred
+(gateway routing/failover is tracked separately in #413). */
+export interface CommerceBillingBillingProviderMigrationReport {
+  /** Subscriptions already carrying a target-provider external identifier. */
+  alreadyOnTargetProviderCount: number;
+  /** Subscriptions bound to the source provider lacking a target external identifier — the migration work list. */
+  boundToSourceMissingTargetExternalIdCount: number;
+  /** Always true: this report never mutates state. */
+  dryRun: boolean;
+  /** Classified subscription entries (capped for response size; the counts above
+always reflect the full scan). */
+  entries?: CommerceBillingBillingProviderMigrationReportEntry[] | null;
+  /** When the report was produced. */
+  generatedAtUtc: string;
+  /** Always false: reassurance flag for API consumers. */
+  mutationApplied: boolean;
+  /** Subscriptions without any external identifier (out of scope). */
+  notExternallyBoundCount: number;
+  /** Provider the subscriptions would be migrated away from. */
+  sourceProvider: string | null;
+  /** Provider the subscriptions would be migrated to. */
+  targetProvider: string | null;
+  /** Total subscriptions scanned. */
+  totalSubscriptionsScanned: number;
+  /** Subscriptions whose external identifier could not be attributed — manual review required. */
+  unattributedExternalIdCount: number;
+}
+
+/** One subscription row of a GameGuild.Commerce.Billing.BillingProviderMigrationReport. */
+export interface CommerceBillingBillingProviderMigrationReportEntry {
+  classification: CommerceBillingBillingProviderMigrationEntryClassification;
+  /** External (provider) subscription identifier as stored. */
+  externalId: string | null;
+  /** Current subscription status. */
+  status: string | null;
+  /** Internal subscription identifier. */
+  subscriptionId: string;
+  /** Owning tenant identifier. */
+  tenantId: string;
+}
+
+/** State of the CIDR source allowlist enforced on the provider callback endpoints. */
+export interface CommerceBillingBillingWebhookAllowlistStatusDto {
+  /** Number of configured CIDR entries. */
+  configuredNetworkCount?: number;
+  /** Configured CIDR entries (admin-visible; providers rotate egress ranges). */
+  configuredNetworks?: string[] | null;
+  /** Whether any allowlist entry is configured (fail closed when true). */
+  isEnabled?: boolean;
+}
+
+/** A webhook source currently blocked for suspicious activity. */
+export interface CommerceBillingBillingWebhookBlockedSourceDto {
+  blockedUntilUtc?: string;
+  failureCount?: number;
+  sourceKey?: string | null;
+}
+
+/** DTO for webhook event response */
+export interface CommerceBillingBillingWebhookEventDto {
+  id?: string;
+  createdAt?: string;
+  errorMessage?: string | null;
+  eventType?: string | null;
+  externalEventId?: string | null;
+  isFailed?: boolean;
+  isProcessed?: boolean;
+  processedAt?: string | null;
+  processingAttempts?: number;
+  provider?: string | null;
+  subscriptionId?: string | null;
+  tenantId?: string | null;
+}
+
+/** List item of the billing webhook inbox event feed (issue #396). Payloads are excluded. */
+export interface CommerceBillingBillingWebhookEventListItemDto {
+  /** Local inbox row identifier. */
+  id?: string;
+  /** When the event was accepted into the inbox. */
+  createdAt?: string;
+  /** Error of the last failed attempt, when present. */
+  errorMessage?: string | null;
+  /** Provider event type, e.g. invoice.payment_succeeded. */
+  eventType?: string | null;
+  /** Provider-scoped event identifier. */
+  externalEventId?: string | null;
+  /** Whether the last attempt failed. */
+  isFailed?: boolean;
+  /** Whether processing completed. */
+  isProcessed?: boolean;
+  /** When processing completed. */
+  processedAt?: string | null;
+  /** Number of processing attempts. */
+  processingAttempts?: number;
+  /** Payment provider that emitted the webhook. */
+  provider?: string | null;
+  /** Related subscription, when known. */
+  subscriptionId?: string | null;
+  /** Related tenant, when known. */
+  tenantId?: string | null;
+}
+
+/** A security alert surfaced from the Compliance.Audit pipeline. */
+export interface CommerceBillingBillingWebhookSecurityAlertDto {
+  id?: string;
+  kind?: string | null;
+  raisedAtUtc?: string | null;
+  ruleId?: string | null;
+  severity?: string | null;
+  title?: string | null;
+}
+
+/** Admin-facing summary of the billing webhook security posture: allowlist state,
+suspicious-activity blocking, and the delivery health of the security event pipeline. */
+export interface CommerceBillingBillingWebhookSecuritySummaryDto {
+  /** UTC moment the summary was produced. */
+  generatedAtUtc?: string;
+  /** Open (unacknowledged) security alerts raised by the pipeline. */
+  openSecurityAlerts?: CommerceBillingBillingWebhookSecurityAlertDto[] | null;
+  securityEventPipeline?: ComplianceAuditSecurityEventDeliveryStatusOutput;
+  sourceIpAllowlist?: CommerceBillingBillingWebhookAllowlistStatusDto;
+  suspiciousActivity?: CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
+}
+
+/** State of the suspicious-activity auto-blocking monitor. */
+export interface CommerceBillingBillingWebhookSuspiciousActivityStatusDto {
+  /** How long (seconds) a blocked source stays blocked. */
+  blockDurationSeconds?: number;
+  /** Sources currently blocked, ordered by remaining block duration. */
+  blockedSources?: CommerceBillingBillingWebhookBlockedSourceDto[] | null;
+  /** Failures within the window that trigger a temporary block. */
+  failureThreshold?: number;
+  /** Whether threshold blocking is enabled (fail open when false). */
+  isEnabled?: boolean;
+  /** Sliding window (seconds) in which failures are counted per source. */
+  windowSeconds?: number;
+}
+
+/** Drift outcome count row. */
+export interface CommerceBillingDriftOutcomeRow {
+  /** Drift status. */
+  driftStatus?: string | null;
+  /** Ledger entries in this status. */
+  entries?: number;
+}
+
+/** Read-only management and health snapshot of one configured external
+billing provider (issue #397 provider-management API). */
+export interface CommerceBillingExternalBillingProviderStatusDto {
+  /** Provider configuration validation errors (read-only, never contains secrets). */
+  configurationErrors?: string[] | null;
+  /** Whether the provider has its API credentials configured. */
+  configured: boolean;
+  /** Whether the provider's configuration passes validation
+(M:GameGuild.Commerce.Billing.BillingConfiguration.ValidateProvider(System.String) plus provider-specific
+credential completeness). Validation errors are surfaced read-only in
+GameGuild.Commerce.Billing.ExternalBillingProviderStatusDto.ConfigurationErrors. */
+  configValid: boolean;
+  /** Whether the provider is enabled at runtime. Defaults to true; an explicit
+administrator disable persists a management state row. */
+  enabled: boolean;
+  /** When the enabled state was last changed by an administrator (null when the
+provider keeps its default enabled disposition). */
+  enabledStateChangedAt?: string | null;
+  /** Derived health summary: "healthy" (configured, valid config, webhook endpoint
+ready), "degraded" (configured but incomplete — webhook verification or config
+validation issues) or "not-configured" (no credentials). */
+  health: string | null;
+  /** Provider key from GameGuild.Commerce.PaymentProviders (stripe, paypal, ...). */
+  providerKey: string | null;
+  /** Whether the provider's webhook verification material is configured so the
+callback endpoint can authenticate provider events (signing secret / webhook
+id / shared secret / verification keys). */
+  webhookEndpointConfigured: boolean;
+}
+
+/** Outcome of the credit tender application. */
+export interface CommerceBillingInvoiceAccountCreditSettlementResult {
+  /** Credit tender amount applied. */
+  amountApplied?: number;
+  /** Amount still owed to provider tenders. */
+  amountRemaining?: number;
+  /** Per-grant FIFO consumption breakdown. */
+  consumedGrants?: CommercePaymentsAccountCreditConsumption[] | null;
+  /** Shared currency of invoice and consumed grants. */
+  currency?: string | null;
+  /** True when the idempotency key matched an existing settlement. */
+  idempotentReplay?: boolean;
+  /** Settled invoice. */
+  invoiceId?: string;
+  /** Human-readable invoice number. */
+  invoiceNumber?: string | null;
+  invoiceStatus?: CommerceBillingInvoiceStatus;
 }
 
 /** Data model for Commerce Billing Invoice Payment Retry Result. */
@@ -1496,6 +1734,190 @@ export interface CommerceBillingInvoicePaymentRetryResult {
 
 /** Invoice status enumeration with monotonic transitions */
 export type CommerceBillingInvoiceStatus = 'Draft' | 'Open' | 'Paid' | 'Void' | 'PastDue' | 'Uncollectible';
+
+/** Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
+the drift-validation outcome (recomputed amount, reason). */
+export interface CommerceBillingPricingDecisionLedgerEntryDetailDto {
+  /** Client IP captured with the decision. */
+  actorIpAddress?: string | null;
+  /** Full calculation breakdown (JSON). */
+  breakdownJson?: string | null;
+  /** Why the entry drifted, when it did. */
+  driftReason?: string | null;
+  entry?: CommerceBillingPricingDecisionLedgerEntryDto;
+  /** Calculation idempotency key. */
+  idempotencyKey?: string | null;
+  /** Final amount recomputed from the breakdown by the drift validator. */
+  recomputedFinalAmount?: number | null;
+}
+
+/** Ledger list item (issue #400): one pricing decision with its correlation ids and
+headline amounts. The full breakdown document is returned on the detail read only. */
+export interface CommerceBillingPricingDecisionLedgerEntryDto {
+  /** Ledger row identifier. */
+  id?: string;
+  /** User the price was computed for. */
+  actorUserId?: string | null;
+  /** Winning pricing rule, when one applied. */
+  appliedPricingRuleId?: string | null;
+  /** Normalized applied promo codes. */
+  appliedPromoCodes?: string[] | null;
+  /** Stacking rule name, when one governed resolution. */
+  appliedStackingRuleName?: string | null;
+  /** Baseline amount. */
+  baseAmount?: number;
+  /** Billing cycle for renewal quotes. */
+  billingCycleNumber?: number | null;
+  /** Currency (ISO 4217). */
+  currency?: string | null;
+  /** Decision timestamp (UTC). */
+  decidedAtUtc?: string;
+  /** Decision type (CheckoutLineItem, RenewalQuote, OrderPromoApply). */
+  decisionType?: string | null;
+  /** Drift validation status. */
+  driftStatus?: string | null;
+  /** Final committed amount. */
+  finalAmount?: number;
+  /** Order correlation. */
+  orderId?: string | null;
+  /** Order line item correlation. */
+  orderLineItemId?: string | null;
+  /** Engine version stamp. */
+  pricingEngineVersion?: string | null;
+  /** Product correlation. */
+  productId?: string | null;
+  /** Promo discount total. */
+  promoDiscountTotal?: number;
+  /** Quantity priced. */
+  quantity?: number;
+  /** Pricing-rule reduction total. */
+  ruleAdjustmentTotal?: number;
+  /** Subscription correlation. */
+  subscriptionId?: string | null;
+  /** Tenant scope. */
+  tenantId?: string | null;
+  /** When drift validation last stamped the entry. */
+  validatedAtUtc?: string | null;
+}
+
+/** Result of one drift-validated ledger entry. */
+export interface CommerceBillingPricingLedgerDriftOutcome {
+  /** Whether the two diverge beyond tolerance. */
+  drifted?: boolean;
+  /** Ledger row identifier. */
+  entryId?: string;
+  /** Why the entry drifted (or could not be validated), when applicable. */
+  reason?: string | null;
+  /** Final amount recomputed from the breakdown. */
+  recomputedFinalAmount?: number;
+  /** Final amount as persisted. */
+  storedFinalAmount?: number;
+}
+
+/** Drift-validation summary (issue #400). */
+export interface CommerceBillingPricingLedgerDriftValidationResult {
+  /** Entries whose recomputation diverged beyond tolerance. */
+  driftedCount?: number;
+  /** Per-entry outcomes, drifted entries first. */
+  outcomes?: CommerceBillingPricingLedgerDriftOutcome[] | null;
+  /** Entries selected for validation. */
+  sampleSize?: number;
+  /** Entries skipped because their breakdown could not be parsed. */
+  skippedCount?: number;
+  /** Entries successfully recomputed (verified or drifted). */
+  validated?: number;
+  /** When the validation pass ran. */
+  validatedAtUtc?: string;
+  /** Entries whose recomputation matched the stored final. */
+  verifiedCount?: number;
+  /** Window end (null = unbounded). */
+  windowEnd?: string | null;
+  /** Window start (null = unbounded). */
+  windowStart?: string | null;
+}
+
+/** Full effectiveness aggregation result. */
+export interface CommerceBillingPricingLedgerEffectivenessAggregate {
+  /** Entries per drift status. */
+  driftOutcomes?: CommerceBillingDriftOutcomeRow[] | null;
+  /** Window start (null = unbounded). */
+  fromUtc?: string | null;
+  /** Decisions per stacking outcome. */
+  stackingOutcomes?: CommerceBillingStackingOutcomeRow[] | null;
+  /** Tenant scope, when filtered. */
+  tenantId?: string | null;
+  /** Promo codes ranked by discount given (top 20). */
+  topPromoCodes?: CommerceBillingPromoCodeEffectivenessRow[] | null;
+  /** Pricing rules ranked by adjustment total (top 20). */
+  topRules?: CommerceBillingPricingRuleImpactRow[] | null;
+  totals?: CommerceBillingPricingLedgerTotals;
+  /** Window end (null = unbounded). */
+  toUtc?: string | null;
+}
+
+/** Overall totals of the effectiveness aggregation. */
+export interface CommerceBillingPricingLedgerTotals {
+  /** Sum of base amounts (pre-discount). */
+  baselineRevenue?: number;
+  /** Baseline minus final revenue. */
+  discountGiven?: number;
+  /** Decisions that applied at least one promo code. */
+  entriesWithPromo?: number;
+  /** Decisions that applied a pricing rule. */
+  entriesWithRule?: number;
+  /** Decisions in the window. */
+  entryCount?: number;
+  /** Sum of final amounts (post-discount). */
+  finalRevenue?: number;
+  /** Total promo applications (an entry may apply several codes). */
+  promoRedemptions?: number;
+}
+
+/** Per-pricing-rule impact row. */
+export interface CommerceBillingPricingRuleImpactRow {
+  /** Rule adjustment total across those entries. */
+  adjustmentTotal?: number;
+  /** Baseline revenue of those entries. */
+  baselineRevenue?: number;
+  /** Ledger entries that applied this rule. */
+  decisions?: number;
+  /** Final revenue of those entries. */
+  finalRevenue?: number;
+  /** Applied rule identifier. */
+  ruleId?: string;
+}
+
+/** Per-promo-code effectiveness row (discount ROI view). */
+export interface CommerceBillingPromoCodeEffectivenessRow {
+  /** Baseline (pre-discount) revenue of those entries. */
+  baselineRevenue?: number;
+  /** Normalized promo code. */
+  code?: string | null;
+  /** Discount total attributed to this code. */
+  discountGiven?: number;
+  /** Ledger entries that applied this code. */
+  redemptions?: number;
+  /** Final revenue collected on those entries. */
+  revenueInfluenced?: number;
+}
+
+/** Stacking outcome count row. */
+export interface CommerceBillingStackingOutcomeRow {
+  /** Ledger entries resolved under this outcome. */
+  decisions?: number;
+  /** Rule name, or "(no stacking rule)" for single/default resolution. */
+  stackingRuleName?: string | null;
+}
+
+/** Request body for the drift-validation endpoint. */
+export interface CommerceBillingValidatePricingLedgerDriftInput {
+  /** Inclusive window start (null = unbounded). */
+  fromUtc?: string | null;
+  /** How many entries to validate (1-200, default 25). */
+  sampleSize?: number;
+  /** Inclusive window end (null = unbounded). */
+  toUtc?: string | null;
+}
 
 /** OpenAPI schema for Commerce Order Charge State. */
 export type CommerceOrderChargeState = 'Succeeded' | 'Failed' | 'Processing' | 'RequiresAction' | 'RequiresReconciliation';
@@ -1563,7 +1985,7 @@ export interface CommerceOrdersCreateOrderInput {
 /** Data model for Commerce Orders Marketplace Cart Dto. */
 export interface CommerceOrdersMarketplaceCartDto {
   id?: string | null;
-  items?: Array<CommerceOrdersMarketplaceCartItemDto> | null;
+  items?: CommerceOrdersMarketplaceCartItemDto[] | null;
   state?: CommerceOrdersMarketplaceCartState;
   tenantId?: string;
   userId?: string;
@@ -1585,7 +2007,7 @@ export type CommerceOrdersMarketplaceCartState = 'Active' | 'CheckedOut' | 'Aban
 /** Data model for Commerce Orders Marketplace Checkout Dto. */
 export interface CommerceOrdersMarketplaceCheckoutDto {
   cartId?: string;
-  orders?: Array<CommerceOrdersMarketplaceCheckoutOrderDto> | null;
+  orders?: CommerceOrdersMarketplaceCheckoutOrderDto[] | null;
 }
 
 /** Data model for Commerce Orders Marketplace Checkout Order Dto. */
@@ -1603,7 +2025,7 @@ export interface CommerceOrdersOrderCaptureDto {
   currency?: string | null;
   discountTotal?: number;
   idempotencyKey?: string | null;
-  lineItems?: Array<CommerceOrdersOrderLineItemDto> | null;
+  lineItems?: CommerceOrdersOrderLineItemDto[] | null;
   paidAt?: string | null;
   paymentId?: string | null;
   paymentMessage?: string | null;
@@ -1628,7 +2050,7 @@ export interface CommerceOrdersOrderDto {
   currency?: string | null;
   discountTotal?: number;
   idempotencyKey?: string | null;
-  lineItems?: Array<CommerceOrdersOrderLineItemDto> | null;
+  lineItems?: CommerceOrdersOrderLineItemDto[] | null;
   paidAt?: string | null;
   paymentMethod?: string | null;
   paymentProviderReference?: string | null;
@@ -1676,6 +2098,178 @@ export interface CommerceOrdersSetMarketplaceCartItemQuantityInput {
   quantity?: number;
 }
 
+/** Per-currency spendable credit balance of a user. */
+export interface CommercePaymentsAccountCreditBalance {
+  /** Sum of remaining balances of Active grants. */
+  available?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Earliest expiry among the backing grants, when any expire. */
+  earliestExpiry?: string | null;
+  /** Number of Active grants backing the balance. */
+  grantCount?: number;
+}
+
+/** One grant's share of a consumption. */
+export interface CommercePaymentsAccountCreditConsumption {
+  /** Amount taken from the grant. */
+  amount?: number;
+  /** Consumed grant. */
+  grantId?: string;
+  /** Grant remaining balance after the consumption. */
+  remainingAfter?: number;
+}
+
+/** A grant of account credit issued to a user (issue #410 v1). Grants are separated by
+source, currency, credit type and expiry; consumption always drains grants FIFO by
+expiry (earliest GameGuild.Commerce.Payments.AccountCreditGrant.ExpiresAt first, non-expiring last). Creation is
+idempotent per GameGuild.Commerce.Payments.AccountCreditGrant.IdempotencyKey within a tenant. */
+export interface CommercePaymentsAccountCreditGrant {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Original granted amount. */
+  amount?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  creditType?: CommercePaymentsAccountCreditType;
+  /** ISO 4217 currency code (upper-case, three letters). */
+  currency: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Human-readable description captured at issuance. */
+  description: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Optional expiry; null means the grant does not expire. */
+  expiresAt?: string | null;
+  /** When the grant was fully consumed, if it was. */
+  fullyUsedAt?: string | null;
+  /** Idempotency key unique per tenant; replaying a grant with the same key returns the original. */
+  idempotencyKey?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Whether the grant currently holds spendable credit. */
+  isSpendable?: boolean;
+  /** Amount still available to consume. */
+  remainingAmount?: number;
+  /** Reason captured when the grant was revoked. */
+  revocationReason?: string | null;
+  source?: CommercePaymentsAccountCreditSource;
+  /** Optional reference to the originating entity (gift id, referral id, invoice id). */
+  sourceReferenceId?: string | null;
+  status?: CommercePaymentsAccountCreditGrantStatus;
+  /** Tenant ID for multi-tenant isolation. */
+  tenantId: string;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Owner of the credit. */
+  userId: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle status of an account credit grant. */
+export type CommercePaymentsAccountCreditGrantStatus = 'Active' | 'FullyUsed' | 'Expired' | 'Revoked';
+
+/** Growth metrics report (issue #410): credit issuance/usage/expiry plus referral funnel and top referrers. */
+export interface CommercePaymentsAccountCreditMetricsReport {
+  credit?: CommercePaymentsCreditMetrics;
+  referralFunnel?: CommercePaymentsReferralFunnelMetrics;
+  /** Top referrers by rewarded referrals (max 10). */
+  topReferrers?: CommercePaymentsReferrerLeaderboardEntry[] | null;
+}
+
+/** Request body for manual credit issuance. */
+export interface CommercePaymentsAccountCreditsControllerIssueCreditInput {
+  /** Positive amount to grant. */
+  amount?: number;
+  creditType?: CommercePaymentsAccountCreditType;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Reason/description captured on the ledger. */
+  description?: string | null;
+  /** Optional expiry (UTC). */
+  expiresAt?: string | null;
+  /** Optional idempotency key unique per tenant. */
+  idempotencyKey?: string | null;
+  /** Tenant user receiving the credit. */
+  userId?: string;
+}
+
+/** Request body for credit revocation. */
+export interface CommercePaymentsAccountCreditsControllerRevokeCreditInput {
+  /** Auditable revocation reason. */
+  reason?: string | null;
+}
+
+/** Where an account credit grant came from. */
+export type CommercePaymentsAccountCreditSource = 'Manual' | 'Gift' | 'Referral' | 'Refund';
+
+/** Immutable ledger row per account-credit lifecycle event (issue #410 v1): exactly one
+row is appended for every grant, consumption, revocation and expiry of an
+GameGuild.Commerce.Payments.AccountCreditGrant. */
+export interface CommercePaymentsAccountCreditTransaction {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Amount involved in the event (granted, consumed, revoked or expired). */
+  amount?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** ISO 4217 currency code of the grant. */
+  currency: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Description captured for the ledger row. */
+  description: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Grant the row was appended for. */
+  grantId: string;
+  /** Idempotency key of the operation that produced the row, when one was supplied. */
+  idempotencyKey?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Optional reference (invoice id for consumption, admin actor note, etc.). */
+  referenceId?: string | null;
+  /** Grant remaining balance right after the event. */
+  remainingAfter?: number;
+  /** Tenant ID for multi-tenant isolation. */
+  tenantId: string;
+  type?: CommercePaymentsAccountCreditTransactionType;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Owner of the credit the row belongs to. */
+  userId: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle event kinds recorded in the account credit ledger. */
+export type CommercePaymentsAccountCreditTransactionType = 'Grant' | 'Consume' | 'Revoke' | 'Expire';
+
+/** What an account credit grant may be applied to. */
+export type CommercePaymentsAccountCreditType = 'General' | 'Subscription' | 'Addon';
+
 /** Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 export interface CommercePaymentsBillingChargesControllerCancelBillingChargeInput {
   canceledBy?: string | null;
@@ -1699,7 +2293,7 @@ export interface CommercePaymentsBillingChargesControllerRefundBillingChargeInpu
 /** Tax calculation request DTO */
 export interface CommercePaymentsCalculateTaxInput {
   amount: number;
-  applicableExemptions?: Array<string> | null;
+  applicableExemptions?: string[] | null;
   currency: string | null;
   customerType: string | null;
   customerVatNumber?: string | null;
@@ -1735,8 +2329,349 @@ export interface CommercePaymentsCreateWalletInput {
   currency?: string | null;
 }
 
+/** Credit totals per currency for the metrics report. */
+export interface CommercePaymentsCreditCurrencyMetrics {
+  /** Sum of remaining balances of Active grants. */
+  activeBalance?: number;
+  /** Number of Active grants. */
+  activeGrantCount?: number;
+  /** Sum of Consume ledger amounts (usage). */
+  applied?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Sum of Expire ledger amounts (expiration waste). */
+  expiredUnused?: number;
+  /** Sum of Grant ledger amounts. */
+  issued?: number;
+  /** Sum of Revoke ledger amounts. */
+  revoked?: number;
+}
+
+/** Aggregate credit metrics across currencies (rates are global in v1). */
+export interface CommercePaymentsCreditMetrics {
+  /** ExpiredUnused / Issued across currencies, when Issued > 0. */
+  expirationWasteRate?: number | null;
+  /** Totals per currency. */
+  perCurrency?: CommercePaymentsCreditCurrencyMetrics[] | null;
+  /** Applied / Issued across currencies, when Issued > 0. */
+  usageRate?: number | null;
+}
+
 /** Customer types */
 export type CommercePaymentsCustomerType = 'B2C' | 'B2B';
+
+/** Result of an accept or challenge action on a dispute. */
+export interface CommercePaymentsDisputeActionResult {
+  /** The dispute the action was applied to. */
+  disputeId: string;
+  /** Failure reason when GameGuild.Commerce.Payments.DisputeActionResult.Success is false. */
+  failureReason?: string | null;
+  refund?: CommercePaymentsRefundRecord;
+  /** Whether the action was applied. */
+  success: boolean;
+}
+
+/** Entity representing dispute evidence */
+export interface CommercePaymentsDisputeEvidence {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Evidence description */
+  description?: string | null;
+  dispute?: CommercePaymentsPaymentDispute;
+  /** Foreign key to the PaymentDispute entity */
+  disputeId: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  evidenceType?: CommercePaymentsEvidenceType;
+  /** File name */
+  fileName?: string | null;
+  /** File size in bytes */
+  fileSize?: number | null;
+  /** File URL */
+  fileUrl?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  /** Whether this evidence is from the merchant */
+  isFromMerchant?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Metadata (JSON) */
+  metadata?: string | null;
+  /** MIME type */
+  mimeType?: string | null;
+  /** Submitted timestamp */
+  submittedAt?: string;
+  /** Submitted by user ID */
+  submittedBy: string;
+  tenantId?: string | null;
+  /** Evidence title */
+  title: string;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Paged read model for dispute listings. */
+export interface CommercePaymentsDisputeListPage {
+  /** Disputes for the requested page, newest first. */
+  items: CommercePaymentsDisputeRecord[] | null;
+  /** 1-based page number. */
+  page: number;
+  /** Page size used for the query. */
+  pageSize: number;
+  /** Total matches across all pages. */
+  totalCount: number;
+}
+
+/** Read model for one dispute (issue #419). */
+export interface CommercePaymentsDisputeRecord {
+  /** Disputed amount. */
+  amount: number;
+  /** When the dispute was created. */
+  createdAt: string;
+  /** Detailed description. */
+  description?: string | null;
+  /** Dispute identifier. */
+  disputeId: string;
+  /** Response due date. */
+  dueDate?: string | null;
+  /** Number of attached evidence files. */
+  evidenceCount: number;
+  /** Deadline for evidence submission, when provided by the gateway. */
+  evidenceDueBy?: string | null;
+  /** Gateway dispute id, when reconciled from a webhook. */
+  gatewayDisputeId?: string | null;
+  /** Gateway that owns the dispute. */
+  gatewayName?: string | null;
+  /** Payment the dispute was raised against. */
+  paymentId: string;
+  /** Dispute reason. */
+  reason: string | null;
+  resolution?: CommercePaymentsDisputeResolution;
+  /** Resolution notes. */
+  resolutionNotes?: string | null;
+  /** When the dispute was resolved. */
+  resolvedAt?: string | null;
+  status: CommercePaymentsDisputeStatus;
+  type: CommercePaymentsDisputeType;
+  /** User associated with the dispute. */
+  userId: string;
+}
+
+/** Dispute resolution types */
+export type CommercePaymentsDisputeResolution = 'Won' | 'Lost' | 'PartialRefund' | 'MerchantCredit' | 'Replacement' | 'MutualAgreement';
+
+/** Request body for accepting a dispute. */
+export interface CommercePaymentsDisputesControllerAcceptDisputeInput {
+  issueRefund?: boolean;
+  notes?: string | null;
+}
+
+/** Request body for attaching evidence. */
+export interface CommercePaymentsDisputesControllerAddDisputeEvidenceInput {
+  description?: string | null;
+  evidenceType?: CommercePaymentsEvidenceType;
+  fileName?: string | null;
+  fileSize?: number | null;
+  fileUrl?: string | null;
+  mimeType?: string | null;
+  title?: string | null;
+}
+
+/** Request body for cancelling a dispute. */
+export interface CommercePaymentsDisputesControllerCancelDisputeInput {
+  reason?: string | null;
+}
+
+/** Request body for challenging a dispute. */
+export interface CommercePaymentsDisputesControllerChallengeDisputeInput {
+  evidenceSummary?: string | null;
+}
+
+/** Request body for creating a dispute. */
+export interface CommercePaymentsDisputesControllerCreateDisputeInput {
+  amount?: number;
+  description?: string | null;
+  paymentId?: string;
+  reason?: string | null;
+  type?: CommercePaymentsDisputeType;
+}
+
+/** Request body for resolving a dispute. */
+export interface CommercePaymentsDisputesControllerResolveDisputeInput {
+  notes?: string | null;
+  resolution?: CommercePaymentsDisputeResolution;
+}
+
+/** Request body for responding to a dispute. */
+export interface CommercePaymentsDisputesControllerRespondDisputeInput {
+  dueDateUtc?: string | null;
+  status?: CommercePaymentsDisputeStatus;
+}
+
+/** Dispute statistics read model (issue #419). */
+export interface CommercePaymentsDisputeStatistics {
+  /** Average hours from dispute creation to resolution for resolved disputes; null when none resolved. */
+  averageResolutionHours?: number | null;
+  /** Dispute count by status in the window. */
+  countByStatus: {
+    Cancelled?: number;
+    Lost?: number;
+    PendingCustomerResponse?: number;
+    PendingMerchantResponse?: number;
+    Resolved?: number;
+    Submitted?: number;
+    UnderReview?: number;
+    Won?: number;
+  } | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Disputes lost by the merchant in the window. */
+  lostCount: number;
+  /** Total disputes considered in the window. */
+  totalCount: number;
+  /** Total disputed amount in the window (currency follows the underlying payments). */
+  totalDisputedAmount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+  /** Win/loss ratio for decided disputes; null when none were decided. */
+  winLossRatio?: number | null;
+  /** Disputes won by the merchant in the window. */
+  wonCount: number;
+}
+
+/** Dispute status */
+export type CommercePaymentsDisputeStatus =
+  'Submitted' | 'UnderReview' | 'PendingCustomerResponse' | 'PendingMerchantResponse' | 'Resolved' | 'Won' | 'Lost' | 'Cancelled';
+
+/** Dispute types */
+export type CommercePaymentsDisputeType =
+  'Fraudulent' | 'ProductNotReceived' | 'ProductNotAsDescribed' | 'Duplicate' | 'IncorrectAmount' | 'ServiceNotProvided' | 'CreditNotProcessed' | 'Other';
+
+/** Evidence types */
+export type CommercePaymentsEvidenceType =
+  'Receipt' | 'Communication' | 'Photo' | 'Video' | 'ShippingInfo' | 'Contract' | 'BankStatement' | 'Documentation' | 'Other';
+
+/** Read model for one pending fraud review. */
+export interface CommercePaymentsFraudReviewListItem {
+  /** Charged amount. */
+  amount: number;
+  /** When the payment attempt was created. */
+  createdAt: string;
+  /** ISO 4217 currency code. */
+  currency: string | null;
+  /** Bounded JSON signal evidence bundle. */
+  evidence?: string | null;
+  /** Provider customer reference, when bound. */
+  externalCustomerId?: string | null;
+  /** Payment awaiting review. */
+  paymentId: string;
+  /** Bounded decision reason. */
+  reason: string | null;
+  riskLevel: CommercePaymentsFraudRiskLevel;
+  /** Aggregate fraud score (0-100). */
+  score: number;
+  /** Subscription the payment was charged for. */
+  subscriptionId?: string | null;
+  /** Tenant that owns the payment. */
+  tenantId: string;
+}
+
+/** Result of resolving a fraud review. */
+export interface CommercePaymentsFraudReviewResolutionResult {
+  /** Failure reason when GameGuild.Commerce.Payments.FraudReviewResolutionResult.Success is false. */
+  failureReason?: string | null;
+  /** Payment whose review was resolved. */
+  paymentId: string;
+  /** When the review was resolved. */
+  resolvedAt?: string | null;
+  /** Administrator who resolved the review. */
+  reviewedByUserId?: string | null;
+  reviewStatus?: CommercePaymentsFraudReviewStatus;
+  /** Whether the review was resolved successfully. */
+  success: boolean;
+}
+
+/** Request body for resolving a fraud review. */
+export interface CommercePaymentsFraudReviewsControllerResolveFraudReviewInput {
+  notes?: string | null;
+}
+
+/** Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+export type CommercePaymentsFraudReviewStatus = 'PendingReview' | 'Approved' | 'Declined';
+
+/** Risk band derived from the aggregate fraud score. */
+export type CommercePaymentsFraudRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** Public (non-secret) view of a gift for the redemption preview endpoint. */
+export interface CommercePaymentsGiftPublicView {
+  /** Gift id. */
+  id?: string;
+  /** Monetary value. */
+  amount?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Optional scheduled delivery date. */
+  deliveryDate?: string | null;
+  /** Gift duration in months. */
+  durationMonths?: number;
+  /** Redemption deadline (purchase + 1 year). */
+  expiresAt?: string;
+  /** Masked giver identity (local part of the giver email is never exposed; v1 shows a display label). */
+  giverDisplayName?: string | null;
+  /** Optional personal message. */
+  personalMessage?: string | null;
+  /** Optional plan restriction. */
+  planId?: string | null;
+  /** Optional recipient display name. */
+  recipientName?: string | null;
+  /** Non-secret support prefix. */
+  redemptionCodePrefix?: string | null;
+  status?: CommercePaymentsGiftStatus;
+}
+
+/** Result of a gift purchase: the gift plus the full redemption code shown exactly once. */
+export interface CommercePaymentsGiftPurchaseResult {
+  gift?: CommercePaymentsGiftPublicView;
+  /** Full redemption code — only returned at purchase time. */
+  redemptionCode?: string | null;
+}
+
+/** Request body for gift purchase. */
+export interface CommercePaymentsGiftsControllerPurchaseGiftRequestBody {
+  /** Positive monetary value. */
+  amount?: number;
+  /** ISO 4217 currency code. */
+  currency?: string | null;
+  /** Optional scheduled delivery date (UTC); redemption is blocked before it. */
+  deliveryDate?: string | null;
+  /** Gift duration 1-36 months. */
+  durationMonths?: number;
+  /** Optional personal message (max 500 characters). */
+  personalMessage?: string | null;
+  /** Optional plan restriction; null means any plan. */
+  planId?: string | null;
+  /** Recipient email address. */
+  recipientEmail?: string | null;
+  /** Optional recipient display name. */
+  recipientName?: string | null;
+}
+
+/** Gift subscription status machine (Purchased → Delivered → Redeemed / Expired, plus Refunded). */
+export type CommercePaymentsGiftStatus = 'Purchased' | 'Delivered' | 'Redeemed' | 'Expired' | 'Refunded';
 
 /** Data model for Commerce Payments Lock Wallet Request. */
 export interface CommercePaymentsLockWalletInput {
@@ -1772,6 +2707,18 @@ export interface CommercePaymentsPatchTaxRuleInput {
   rate?: number | null;
 }
 
+/** First-attempt outcome counters for payments created in the window. */
+export interface CommercePaymentsPaymentAttemptMetrics {
+  /** Payments currently in GameGuild.Commerce.Payments.PaymentStatus.Failed. */
+  failedPayments?: number;
+  /** Payments that reached GameGuild.Commerce.Payments.PaymentStatus.Succeeded (including later refunded/disputed). */
+  succeededPayments?: number;
+  /** Succeeded / total as a percentage (0–100); 0 when there are no payments. */
+  successRate?: number;
+  /** Payments created in the window. */
+  totalPayments?: number;
+}
+
 /** Result of a payment cancellation operation */
 export interface CommercePaymentsPaymentCancellationResult {
   /** When the payment was canceled */
@@ -1792,6 +2739,135 @@ export interface CommercePaymentsPaymentCancellationResult {
   success: boolean;
 }
 
+/** An amount total for one currency; currency totals are kept separate (issue #404 mixed-currency rule). */
+export interface CommercePaymentsPaymentCurrencyAmount {
+  amount?: number;
+  currency?: string | null;
+  paymentCount?: number;
+}
+
+/** Entity representing a payment dispute */
+export interface CommercePaymentsPaymentDispute {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Dispute amount */
+  amount?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Detailed description */
+  description?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Due date for response */
+  dueDate?: string | null;
+  /** Navigation property to dispute evidence */
+  evidence?: CommercePaymentsDisputeEvidence[] | null;
+  /** Deadline by which evidence must be submitted to the gateway, when provided. */
+  evidenceDueBy?: string | null;
+  /** Gateway dispute identifier (e.g. the Stripe `dp_...` id) when this dispute was
+reconciled from a gateway webhook (issue #419). Unique per gateway dispute. */
+  gatewayDisputeId?: string | null;
+  /** Gateway that owns GameGuild.Commerce.Payments.PaymentDispute.GatewayDisputeId (e.g. stripe). */
+  gatewayName?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Foreign key to the Payment entity */
+  paymentId: string;
+  /** Dispute reason */
+  reason: string;
+  resolution?: CommercePaymentsDisputeResolution;
+  /** Resolution notes */
+  resolutionNotes?: string | null;
+  /** Resolved timestamp */
+  resolvedAt?: string | null;
+  /** Resolved by user ID */
+  resolvedBy?: string | null;
+  status?: CommercePaymentsDisputeStatus;
+  tenantId?: string | null;
+  type?: CommercePaymentsDisputeType;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Foreign key to the User entity */
+  userId: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Dunning outcomes for failed payments in the window, as of the query execution time. */
+export interface CommercePaymentsPaymentDunningOutcomeMetrics {
+  /** Failed payments with retries remaining whose next-retry time has passed (retry-queue candidates). */
+  dueForRetryPayments?: number;
+  /** Failed payments with no retries left (dunning escalation terminal). */
+  exhaustedPayments?: number;
+  /** Failed payments with retries remaining and a future next-retry time (recovery in flight). */
+  pendingRetryPayments?: number;
+}
+
+/** Display-safe projection of a registered payment method. */
+export interface CommercePaymentsPaymentMethodDto {
+  id?: string;
+  billingAddress?: string | null;
+  cardBrand?: string | null;
+  cardExpMonth?: number | null;
+  cardExpYear?: number | null;
+  cardLast4?: string | null;
+  createdAt?: string;
+  expiresAt?: string | null;
+  expiresInDays?: number | null;
+  gatewayPaymentMethodId?: string | null;
+  gatewayProvider?: string | null;
+  isDefault?: boolean;
+  lastUsedAt?: string | null;
+  nickname?: string | null;
+  status?: string | null;
+  tenantId?: string;
+  type?: string | null;
+  updatedAt?: string;
+  userId?: string;
+}
+
+/** Request body for registering a payment method from a gateway token. */
+export interface CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  gatewayPaymentMethodId?: string | null;
+  nickname?: string | null;
+  ownerUserId?: string | null;
+  setAsDefault?: boolean;
+  tenantId?: string;
+}
+
+/** Request body for updating payment-method display fields. */
+export interface CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody {
+  billingAddress?: string | null;
+  nickname?: string | null;
+}
+
+/** Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
+Powers `GET api/v{v}/payments/recovery-metrics`. */
+export interface CommercePaymentsPaymentRecoveryMetrics {
+  attempts?: CommercePaymentsPaymentAttemptMetrics;
+  dunning?: CommercePaymentsPaymentDunningOutcomeMetrics;
+  /** Inclusive window start. */
+  fromUtc?: string;
+  retries?: CommercePaymentsPaymentRetryRecoveryMetrics;
+  /** Tenant the metrics were scoped to, or null for all tenants. */
+  tenantId?: string | null;
+  /** Inclusive window end. */
+  toUtc?: string;
+}
+
 /** Result of payment processing */
 export interface CommercePaymentsPaymentResult {
   amount?: Money;
@@ -1808,6 +2884,41 @@ Links payment to specific invoice for audit trail and preventing duplicate appli
   /** Tenant that owns the payment. Required for authorization at API boundaries. */
   tenantId?: string;
   transactionId?: string | null;
+}
+
+/** Read model for one persisted GameGuild.Commerce.Payments.PaymentRetryAttempt (issue #415). */
+export interface CommercePaymentsPaymentRetryAttemptDto {
+  /** 1-based retry attempt number. */
+  attemptNumber?: number;
+  /** When the attempt was executed. */
+  executedAtUtc?: string;
+  /** Gateway failure code when the attempt failed. */
+  failureCode?: string | null;
+  /** Gateway failure message when the attempt failed. */
+  failureMessage?: string | null;
+  /** Gateway that executed the attempt. */
+  gateway?: string | null;
+  /** Gateway transaction reference when one exists. */
+  gatewayTransactionId?: string | null;
+  outcome?: CommercePaymentsPaymentStatus;
+  /** Payment the attempt belongs to. */
+  paymentId?: string;
+  /** When the attempt was scheduled to run; null for immediate manual retries. */
+  scheduledForUtc?: string | null;
+}
+
+/** Retry-recovery counters for payments that failed at least once. */
+export interface CommercePaymentsPaymentRetryRecoveryMetrics {
+  /** Payments that failed at least once (currently failed or with retry history). */
+  everFailedPayments?: number;
+  /** Recovered charge amounts grouped by currency (mixed currencies are never summed into one figure). */
+  recoveredAmounts?: CommercePaymentsPaymentCurrencyAmount[] | null;
+  /** Payments that failed at least once and eventually succeeded. */
+  recoveredPayments?: number;
+  /** Payments with at least one retry attempt. */
+  retriedPayments?: number;
+  /** Recovered / ever-failed as a percentage (0–100); 0 when none ever failed. */
+  retryRecoveryRate?: number;
 }
 
 /** Result of payment retry */
@@ -1865,7 +2976,8 @@ export interface CommercePaymentsPaymentsControllerRefundInput {
 }
 
 /** Payment processing status */
-export type CommercePaymentsPaymentStatus = 'Pending' | 'Processing' | 'Succeeded' | 'Failed' | 'Cancelled' | 'RequiresAction' | 'Refunded' | 'Disputed';
+export type CommercePaymentsPaymentStatus =
+  'Pending' | 'Processing' | 'Succeeded' | 'Failed' | 'Cancelled' | 'RequiresAction' | 'Refunded' | 'Disputed' | 'PartiallyRefunded';
 
 /** Result model for refund processing operations */
 export interface CommercePaymentsProcessRefundResult {
@@ -1896,6 +3008,576 @@ export interface CommercePaymentsProcessRefundResult {
   status: CommercePaymentsTransactionStatus;
 }
 
+/** Referral tracking record (issue #410 v1). One opaque referral code is generated per
+referrer (the first GameGuild.Commerce.Payments.ReferralStatus.Pending row anchors the code);
+every referee journey gets its own row carrying that shared code, so a referrer can
+accumulate referrals up to the configured cap. The fraud blocks (self-referral,
+same-IP repeat) reuse the velocity thinking of the payments fraud gate (issue #409). */
+export interface CommercePaymentsReferral {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** First tracked click. */
+  clickedAt?: string | null;
+  /** First paid invoice of the referee. */
+  conversionAt?: string | null;
+  /** Invoice that triggered the conversion. */
+  conversionInvoiceId?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Reason captured when the referral was flagged fraudulent. */
+  fraudReason?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Referee email when captured at click time. */
+  refereeEmail?: string | null;
+  /** SHA-256 hash of the referee IP captured at signup (fraud block). */
+  refereeIpHash?: string | null;
+  /** Credit grant issued to the referee. */
+  refereeRewardGrantId?: string | null;
+  /** Subscription whose first paid invoice converted the referral. */
+  refereeSubscriptionId?: string | null;
+  /** Referee user once they signed up. */
+  refereeUserId?: string | null;
+  /** Opaque unique referral code (URL-safe). */
+  referralCode: string;
+  /** Trackable share link built from the code. */
+  referralLink?: string | null;
+  /** SHA-256 hash of the referrer IP captured at click time (fraud block). */
+  referrerIpHash?: string | null;
+  /** Credit grant issued to the referrer. */
+  referrerRewardGrantId?: string | null;
+  /** Existing customer sharing the code. */
+  referrerUserId: string;
+  /** When rewards were issued. */
+  rewardIssuedAt?: string | null;
+  /** When the code/link was shared. */
+  sharedAt: string;
+  /** Referee signup. */
+  signupAt?: string | null;
+  status?: CommercePaymentsReferralStatus;
+  /** Tenant ID for multi-tenant isolation. */
+  tenantId: string;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Referral funnel counters (clicks → signups → conversions → rewards). */
+export interface CommercePaymentsReferralFunnelMetrics {
+  /** Rows with a tracked click. */
+  clicks?: number;
+  /** Tracking rows created. */
+  codesShared?: number;
+  /** Rows converted by a first paid invoice. */
+  conversions?: number;
+  /** Rows blocked by the fraud rules. */
+  fraudulent?: number;
+  /** Rows with rewards issued. */
+  rewardsIssued?: number;
+  /** Rows with a signed-up referee. */
+  signups?: number;
+}
+
+/** Response body carrying the referral code and share link. */
+export interface CommercePaymentsReferralsControllerReferralCodeOutput {
+  /** Opaque unique referral code of the caller. */
+  code?: string | null;
+  /** Trackable share link. */
+  link?: string | null;
+}
+
+/** Request body for click tracking. */
+export interface CommercePaymentsReferralsControllerTrackReferralClickInput {
+  /** Optional referee email captured at click time. */
+  refereeEmail?: string | null;
+  /** Referral code from the shared link. */
+  referralCode?: string | null;
+}
+
+/** Request body for signup tracking. */
+export interface CommercePaymentsReferralsControllerTrackReferralSignupInput {
+  /** Referral code being applied to the caller's signup. */
+  referralCode?: string | null;
+}
+
+/** Signup outcome for the referee applying a referral code. */
+export interface CommercePaymentsReferralSignupResult {
+  /** True when a fraud rule blocked the signup. */
+  blocked?: boolean;
+  /** Block reason when Blocked. */
+  reason?: string | null;
+  referral?: CommercePaymentsReferral;
+}
+
+/** Referral funnel counters of one referrer. */
+export interface CommercePaymentsReferralStats {
+  /** Rows with at least one tracked click. */
+  clicked?: number;
+  /** Referees with a first paid invoice. */
+  converted?: number;
+  /** Referrals expired before conversion. */
+  expired?: number;
+  /** Referrals blocked by the fraud rules. */
+  fraudulent?: number;
+  /** The referrer's opaque unique code. */
+  referralCode?: string | null;
+  /** Trackable share link built from the code. */
+  referralLink?: string | null;
+  /** Referrer the stats belong to. */
+  referrerUserId?: string;
+  /** Fully rewarded referrals. */
+  rewardIssued?: number;
+  /** Rows created (code shares tracked). */
+  shared?: number;
+  /** Referees that signed up. */
+  signedUp?: number;
+}
+
+/** Referral funnel status. */
+export type CommercePaymentsReferralStatus = 'Pending' | 'Clicked' | 'SignedUp' | 'Converted' | 'RewardIssued' | 'Expired' | 'Fraudulent';
+
+/** One leaderboard row: referrer by rewarded referrals. */
+export interface CommercePaymentsReferrerLeaderboardEntry {
+  /** Referrals blocked as fraudulent. */
+  fraudulentReferrals?: number;
+  /** Referrer. */
+  referrerUserId?: string;
+  /** Referrals in status RewardIssued. */
+  rewardedReferrals?: number;
+}
+
+/** Paged read model for the pending refund-approval queue. */
+export interface CommercePaymentsRefundApprovalQueuePage {
+  /** Queue items for the requested page, oldest first. */
+  items: CommercePaymentsRefundRecord[] | null;
+  /** 1-based page number. */
+  page: number;
+  /** Page size used for the query. */
+  pageSize: number;
+  /** Total queue size across all pages. */
+  totalCount: number;
+}
+
+/** Result of an approval or rejection decision on a refund request. */
+export interface CommercePaymentsRefundDecisionResult {
+  /** Failure reason when GameGuild.Commerce.Payments.RefundDecisionResult.Success is false. */
+  failureReason?: string | null;
+  refund?: CommercePaymentsRefundRecord;
+  /** Whether the decision was applied. */
+  success: boolean;
+}
+
+/** Paged read model for refund listings. */
+export interface CommercePaymentsRefundListPage {
+  /** Refunds for the requested page, newest first. */
+  items: CommercePaymentsRefundRecord[] | null;
+  /** 1-based page number. */
+  page: number;
+  /** Page size used for the query. */
+  pageSize: number;
+  /** Total matches across all pages. */
+  totalCount: number;
+}
+
+/** Read model for a GameGuild.Commerce.Payments.Refund row (issue #419). */
+export interface CommercePaymentsRefundRecord {
+  /** Refund amount in major currency units. */
+  amount: number;
+  /** Number of gateway execution attempts. */
+  attemptCount?: number;
+  /** ISO 4217 currency code. */
+  currency: string | null;
+  /** When the approval decision was recorded. */
+  decidedAt?: string | null;
+  /** Administrator who approved or rejected the refund, when manual. */
+  decidedByUserId?: string | null;
+  /** Notes recorded with the approval or rejection decision. */
+  decisionNotes?: string | null;
+  /** Dispute that triggered this refund, when applicable. */
+  disputeId?: string | null;
+  /** When the gateway rejected the attempt. */
+  failedAt?: string | null;
+  /** Bounded failure reason, when failed. */
+  failureReason?: string | null;
+  /** Gateway that executed the refund. */
+  gatewayName?: string | null;
+  /** Gateway refund identifier once the gateway accepted the refund. */
+  gatewayRefundId?: string | null;
+  /** Payment the refund was issued against. */
+  paymentId: string;
+  /** When the gateway confirmed the refund. */
+  processedAt?: string | null;
+  /** Short machine-readable reason. */
+  reason: string | null;
+  /** Optional human-readable reason details. */
+  reasonDetails?: string | null;
+  /** Refund identifier. */
+  refundId: string;
+  /** When the refund was requested. */
+  requestedAt: string;
+  /** Identity of the requester. */
+  requestedByUserId: string;
+  /** Whether manual approval is (or was) required. */
+  requiresApproval: boolean;
+  status: CommercePaymentsRefundStatus;
+  /** Tenant that owns the refunded payment. */
+  tenantId: string;
+}
+
+/** Request body for approve/reject decisions. */
+export interface CommercePaymentsRefundsControllerRefundDecisionInput {
+  notes?: string | null;
+}
+
+/** Request body for requesting a refund. */
+export interface CommercePaymentsRefundsControllerRequestRefundHttpInput {
+  amount?: number | null;
+  idempotencyKey?: string | null;
+  paymentId?: string;
+  reason?: string | null;
+  reasonDetails?: string | null;
+}
+
+/** Refund statistics read model (issue #419). */
+export interface CommercePaymentsRefundStatistics {
+  /** Refunded amount by currency for completed refunds in the window. */
+  completedAmountByCurrency: Record<string, number> | null;
+  /** Completed refund count per reason in the window. */
+  completedCountByReason: Record<string, number> | null;
+  /** Refund count by lifecycle status in the window. */
+  countByStatus: { Approved?: number; Completed?: number; Failed?: number; Pending?: number; Processing?: number; Rejected?: number } | null;
+  /** Inclusive window start. */
+  fromUtc: string;
+  /** Total refunds considered in the window (all statuses). */
+  totalCount: number;
+  /** Inclusive window end. */
+  toUtc: string;
+}
+
+/** Lifecycle status of a refund request (issue #419). */
+export type CommercePaymentsRefundStatus = 'Pending' | 'Approved' | 'Rejected' | 'Processing' | 'Completed' | 'Failed';
+
+/** Result of creating a refund request. */
+export interface CommercePaymentsRequestRefundResult {
+  /** Failure reason when GameGuild.Commerce.Payments.RequestRefundResult.Success is false. */
+  failureReason?: string | null;
+  refund?: CommercePaymentsRefundRecord;
+  /** Whether the refund is queued for manual approval. */
+  requiresApproval: boolean;
+  /** Whether the request was recorded (or replayed) successfully. */
+  success: boolean;
+}
+
+/** Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Baselines are computed per currency; detection is idempotent per
+(kind, day, currency): re-running detection for the same day and currency never
+duplicates an alert. */
+export interface CommercePaymentsRevenueAnomalyAlert {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the alert was acknowledged (UTC). */
+  acknowledgedAtUtc?: string | null;
+  /** Operator that acknowledged the alert. */
+  acknowledgedByUserId?: string | null;
+  /** Optional operator notes recorded at acknowledgement. */
+  acknowledgementNotes?: string | null;
+  /** Number of baseline days used for the evaluation. */
+  baselineDays?: number;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** ISO-4217 currency code of the daily net revenue series evaluated. Amounts are never compared across currencies. */
+  currency: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Moment the anomaly was detected (UTC). */
+  detectedAtUtc?: string;
+  /** UTC day (midnight) the anomalous net revenue belongs to. */
+  detectedForDateUtc?: string;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Baseline (mean) net revenue expected for the evaluated day, in GameGuild.Commerce.Payments.RevenueAnomalyAlert.Currency. */
+  expectedNetRevenue?: number;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueAnomalyKind;
+  /** Net revenue observed for the evaluated day, in GameGuild.Commerce.Payments.RevenueAnomalyAlert.Currency. */
+  observedNetRevenue?: number;
+  status?: CommercePaymentsRevenueAnomalyStatus;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+  /** Standard-score of the observation against the baseline, rounded to 4 decimals. */
+  zScore?: number;
+}
+
+/** Kind of revenue anomaly detected by the statistical detector */
+export type CommercePaymentsRevenueAnomalyKind = 'Spike' | 'Drop';
+
+/** Lifecycle status of a revenue anomaly alert */
+export type CommercePaymentsRevenueAnomalyStatus = 'Open' | 'Acknowledged';
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput {
+  notes?: string | null;
+}
+
+/** Result of a manual anomaly detection pass. */
+export interface CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult {
+  alertsCreated?: number;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput {
+  evaluationDateUtc?: string | null;
+  tenantId?: string | null;
+}
+
+/** Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+export interface CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput {
+  externalStatementId?: string | null;
+  lines?: CommercePaymentsRevenueAuditingControllerStatementLineInput[] | null;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  source?: string | null;
+  tenantId?: string | null;
+}
+
+/** One external statement line supplied inline. */
+export interface CommercePaymentsRevenueAuditingControllerStatementLineInput {
+  amount?: number;
+  currency?: string | null;
+  occurredAtUtc?: string;
+  referenceId?: string | null;
+}
+
+/** Compliance-grade revenue summary for an inclusive period, broken down by currency. */
+export interface CommercePaymentsRevenueComplianceReport {
+  /** Human-readable attestation statement for compliance filings. States gross revenue per currency; no cross-currency consolidation is performed. */
+  attestation?: string | null;
+  /** Start of the period (inclusive). */
+  fromUtc?: string;
+  /** Moment the report was produced. */
+  generatedAtUtc?: string;
+  reconciliation?: CommercePaymentsRevenueReconciliationCoverage;
+  /** Revenue totals grouped by (event type, currency). */
+  totalsByEventType?: CommercePaymentsRevenueEventGroupTotal[] | null;
+  /** Revenue totals grouped by (source, currency). */
+  totalsBySource?: CommercePaymentsRevenueEventGroupTotal[] | null;
+  /** Revenue totals grouped by (processing status, currency). */
+  totalsByStatus?: CommercePaymentsRevenueEventGroupTotal[] | null;
+  /** End of the period (inclusive). */
+  toUtc?: string;
+  /** Revenue events still pending processing (not counted as recognized revenue). */
+  uncountedEventCount?: number;
+}
+
+/** Kind of mismatch detected between an external statement and internal revenue events */
+export type CommercePaymentsRevenueDiscrepancyKind =
+  'MissingInternal' | 'MissingExternal' | 'AmountMismatch' | 'CurrencyMismatch' | 'DuplicateExternalReference';
+
+/** Grouped totals for one key of a grouping dimension (event type, source or status), in one currency. */
+export interface CommercePaymentsRevenueEventGroupTotal {
+  /** Number of revenue events in the group. */
+  count?: number;
+  /** ISO-4217 currency code the totals are denominated in. Amounts are never consolidated across currencies. */
+  currency?: string | null;
+  /** Grouping key (enum name). */
+  key?: string | null;
+  /** Sum of event amounts in the group, in Currency. */
+  total?: number;
+}
+
+/** Reconciliation coverage summary included in compliance reports. */
+export interface CommercePaymentsRevenueReconciliationCoverage {
+  /** Total discrepancies recorded by those runs. */
+  discrepancies?: number;
+  /** Completion timestamp of the most recent run, if any. */
+  lastRunCompletedAtUtc?: string | null;
+  /** Total statement lines matched by those runs. */
+  matchedLines?: number;
+  /** Number of reconciliation runs overlapping the period. */
+  reconciliationRuns?: number;
+}
+
+/** One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+export interface CommercePaymentsRevenueReconciliationDiscrepancy {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Amount reported by the external statement, when applicable. */
+  externalAmount?: number | null;
+  /** Currency reported by the external statement, when applicable. */
+  externalCurrency?: string | null;
+  /** Settlement moment reported by the external statement, when applicable. */
+  externalOccurredAtUtc?: string | null;
+  /** External reference of the mismatched statement line. */
+  externalReference: string;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Amount recorded internally, when a revenue event was found. */
+  internalAmount?: number | null;
+  /** Currency recorded internally, when a revenue event was found. */
+  internalCurrency?: string | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  kind?: CommercePaymentsRevenueDiscrepancyKind;
+  /** Human-readable explanation of the mismatch. */
+  message?: string | null;
+  /** Internal revenue event involved in the mismatch, when one was found. */
+  revenueEventId?: string | null;
+  run?: CommercePaymentsRevenueReconciliationRun;
+  /** Run that recorded the discrepancy. */
+  runId?: string;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+export interface CommercePaymentsRevenueReconciliationRun {
+  /** Unique identifier for the entity.
+Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
+  id?: string;
+  /** Moment the run committed its results (UTC). */
+  completedAtUtc?: string | null;
+  /** Timestamp when the entity was created.
+Protected setter prevents modification after initial creation; EF Core uses backing field. */
+  createdAt: string;
+  /** Timestamp when the entity was soft-deleted (null if not deleted).
+Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
+  deletedAt?: string | null;
+  /** Discrepancies recorded by this run. */
+  discrepancies?: CommercePaymentsRevenueReconciliationDiscrepancy[] | null;
+  /** Number of discrepancies recorded by the run. */
+  discrepancyCount?: number;
+  /** Domain events raised by this entity */
+  domainEvents?: CQRSIDomainEvent[] | null;
+  /** Optional identifier of the statement/batch within the external system. */
+  externalStatementId?: string | null;
+  /** Reason the run failed, when GameGuild.Commerce.Payments.RevenueReconciliationRun.Status is GameGuild.Commerce.Payments.RevenueReconciliationStatus.Failed. */
+  failureReason?: string | null;
+  /** Actor that initiated the run, when initiated by an interactive request. */
+  initiatedByUserId?: string | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  /** Checks if this entity is soft-deleted */
+  isDeleted?: boolean;
+  isGlobal?: boolean;
+  /** Checks if this entity is newly created (not yet persisted to a database) */
+  isNew?: boolean;
+  /** Number of statement lines matched to an internal revenue event. */
+  matchedCount?: number;
+  /** Inclusive end of the reconciled period (UTC). */
+  periodEndUtc?: string;
+  /** Inclusive start of the reconciled period (UTC). */
+  periodStartUtc?: string;
+  /** External system the statement came from (for example "stripe-payouts" or "manual-export"). */
+  source: string;
+  /** Moment the run started (UTC). */
+  startedAtUtc?: string;
+  /** Number of statement lines evaluated by the run. */
+  statementLineCount?: number;
+  status?: CommercePaymentsRevenueReconciliationStatus;
+  /** Machine-readable totals snapshot (per discrepancy kind) captured at completion. */
+  summaryJson?: string | null;
+  tenantId?: string | null;
+  /** Timestamp when the entity was last updated.
+Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
+  updatedAt: string;
+  /** Version number for optimistic concurrency control.
+Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
+Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
+  version?: number;
+}
+
+/** Lifecycle status of a revenue reconciliation run */
+export type CommercePaymentsRevenueReconciliationStatus = 'Running' | 'Completed' | 'Failed';
+
+/** Range totals of a historical revenue trend for one currency. */
+export interface CommercePaymentsRevenueTrendCurrencyTotal {
+  /** ISO-4217 currency code the totals are denominated in. */
+  currency?: string | null;
+  /** Credit total across the range, in Currency. */
+  totalCredit?: number;
+  /** Debit total across the range, in Currency. */
+  totalDebit?: number;
+  /** Net total across the range, in Currency. */
+  totalNet?: number;
+}
+
+/** One point of a historical revenue trend, for one currency. */
+export interface CommercePaymentsRevenueTrendPoint {
+  /** Credit-side total for the day, in Currency. */
+  creditTotal?: number;
+  /** ISO-4217 currency code the point is denominated in. */
+  currency?: string | null;
+  /** UTC day (midnight) the point covers. */
+  dateUtc?: string;
+  /** Debit-side total for the day, in Currency. */
+  debitTotal?: number;
+  /** Revenue events counted for the day in this currency. */
+  eventCount?: number;
+  /** Net total for the day, in Currency. */
+  netTotal?: number;
+}
+
+/** Historical revenue trend over an inclusive date range, broken down by currency. */
+export interface CommercePaymentsRevenueTrendReport {
+  /** Start of the range (inclusive). */
+  fromUtc?: string;
+  /** One point per (UTC day, currency) pair for every currency observed in the range, including zero-activity days for those currencies. Empty when the range has no revenue events, since zero amounts cannot be attributed to a currency. */
+  points?: CommercePaymentsRevenueTrendPoint[] | null;
+  /** Range totals per currency observed in the period. Amounts are never consolidated across currencies. */
+  totalsByCurrency?: CommercePaymentsRevenueTrendCurrencyTotal[] | null;
+  /** End of the range (inclusive). */
+  toUtc?: string;
+}
+
 /** Individual tax breakdown (for compound/multiple taxes) */
 export interface CommercePaymentsTaxBreakdown {
   description?: string | null;
@@ -1916,7 +3598,7 @@ export interface CommercePaymentsTaxCalculationResult {
   jurisdictionName?: string | null;
   subtotalAmount?: number;
   taxAmount?: number;
-  taxBreakdowns?: Array<CommercePaymentsTaxBreakdown> | null;
+  taxBreakdowns?: CommercePaymentsTaxBreakdown[] | null;
   taxDescription?: string | null;
   taxType?: CommercePaymentsTaxType;
   totalAmount?: number;
@@ -1930,7 +3612,7 @@ export interface CommercePaymentsTaxExemptionValidationResult {
   validationMessage?: string | null;
   validFrom?: string | null;
   validTo?: string | null;
-  warnings?: Array<string> | null;
+  warnings?: string[] | null;
 }
 
 /** Entity representing a tax jurisdiction */
@@ -1939,7 +3621,7 @@ export interface CommercePaymentsTaxJurisdiction {
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
   /** Navigation property to child jurisdictions */
-  childJurisdictions?: Array<CommercePaymentsTaxJurisdiction> | null;
+  childJurisdictions?: CommercePaymentsTaxJurisdiction[] | null;
   /** Jurisdiction code */
   code: string;
   /** Timestamp when the entity was created.
@@ -1949,8 +3631,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this jurisdiction is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -1968,7 +3650,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Tax registration number */
   taxRegistrationNumber?: string | null;
   /** Navigation property to tax rules */
-  taxRules?: Array<CommercePaymentsTaxRule> | null;
+  taxRules?: CommercePaymentsTaxRule[] | null;
   tenantId?: string | null;
   type?: CommercePaymentsTaxJurisdictionType;
   /** Timestamp when the entity was last updated.
@@ -2009,12 +3691,12 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Rate description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Effective from date */
   effectiveFrom?: string;
   /** Effective to date */
   effectiveTo?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this rate is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -2062,14 +3744,14 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Rule description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Effective from date */
   effectiveFrom?: string | null;
   /** Effective to date */
   effectiveTo?: string | null;
   /** Exemption conditions (JSON) */
   exemptionConditions?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this rule is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -2145,8 +3827,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this wallet is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -2164,7 +3846,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   monthlyLimit?: number | null;
   tenantId?: string | null;
   /** Navigation property to wallet transactions */
-  transactions?: Array<CommercePaymentsWalletTransaction> | null;
+  transactions?: CommercePaymentsWalletTransaction[] | null;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
@@ -2204,8 +3886,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Transaction description */
   description: string;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -2237,6 +3919,20 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Wallet transaction types */
 export type CommercePaymentsWalletTransactionType = 'Credit' | 'Debit' | 'TransferIn' | 'TransferOut' | 'Refund' | 'Fee' | 'Adjustment';
 
+/** Types of pricing rules - consolidated from Products and Payments modules */
+export type CommercePricingRuleType =
+  | 'VolumeDiscount'
+  | 'FixedPriceOverride'
+  | 'TimeBased'
+  | 'RegionBased'
+  | 'SegmentBased'
+  | 'MarketBased'
+  | 'Percentage'
+  | 'FixedAmount'
+  | 'BuyXGetY'
+  | 'TieredPricing'
+  | 'Bundle';
+
 /** Data model for Commerce Products Add My Support Ticket Message Request. */
 export interface CommerceProductsAddMySupportTicketMessageInput {
   body?: string | null;
@@ -2256,13 +3952,20 @@ export interface CommerceProductsAppliedPromoCode {
   discountAmount?: number;
   /** Discount percentage from this code */
   discountPercentage?: number | null;
+  /** Billing periods granted (FreeMonths only) */
+  freeMonthsGranted?: number | null;
+  /** Trial days granted (FreeTrialExtension only) */
+  trialExtensionDays?: number | null;
+  type?: CommerceProductsPromoCodeType;
 }
 
 /** Request to apply promo codes */
 export interface CommerceProductsApplyPromoCodesInput {
+  idempotencyKey?: string | null;
   orderAmount?: number;
+  orderId?: string | null;
   productId?: string | null;
-  promoCodes?: Array<string> | null;
+  promoCodes?: string[] | null;
 }
 
 /** Data model for Commerce Products Assign Support Ticket Request. */
@@ -2272,13 +3975,13 @@ export interface CommerceProductsAssignSupportTicketInput {
 
 /** Request model for batch creating products */
 export interface CommerceProductsBatchCreateProductsInput {
-  products?: Array<CommerceProductsBatchProductCreateItem> | null;
+  products?: CommerceProductsBatchProductCreateItem[] | null;
 }
 
 /** Item for batch product creation */
 export interface CommerceProductsBatchProductCreateItem {
   affiliateCommissionPercentage?: number;
-  bundleItems?: Array<string> | null;
+  bundleItems?: string[] | null;
   creatorId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
@@ -2290,6 +3993,65 @@ export interface CommerceProductsBatchProductCreateItem {
   type?: CommerceProductsProductType;
 }
 
+/** Request to calculate a price through the pricing engine. */
+export interface CommerceProductsCalculatePricingInput {
+  customerSegment?: string | null;
+  pricingId?: string | null;
+  productId?: string;
+  promoCodes?: string[] | null;
+  quantity?: number;
+}
+
+/** A campaign code approaching expiry */
+export interface CommerceProductsCampaignExpiringCodeDto {
+  /** Promo code string */
+  code?: string | null;
+  /** Promo code ID */
+  promoCodeId?: string;
+  /** Expiry timestamp */
+  validUntil?: string;
+}
+
+/** Aggregated performance for a promo campaign within a window */
+export interface CommerceProductsCampaignPerformanceDto {
+  /** Number of currently active codes */
+  activeCodes?: number;
+  /** Average discount per use */
+  averageDiscountPerUse?: number;
+  /** Campaign identifier */
+  campaignId?: string | null;
+  /** Campaign codes expiring within the next 30 days */
+  expiringCodes?: CommerceProductsCampaignExpiringCodeDto[] | null;
+  /** Uses divided by total MaxUses capacity (null when no code declares limits) */
+  redemptionRate?: number | null;
+  /** Codes ranked by uses within the window */
+  topCodes?: CommerceProductsCampaignTopCodeDto[] | null;
+  /** Number of codes in the campaign */
+  totalCodes?: number;
+  /** Sum of discounts given within the window */
+  totalDiscountGiven?: number;
+  /** Recorded uses within the window */
+  totalUses?: number;
+  /** Distinct users within the window */
+  uniqueUsers?: number;
+  /** Window end (null = unbounded) */
+  windowEnd?: string | null;
+  /** Window start (null = unbounded) */
+  windowStart?: string | null;
+}
+
+/** A campaign code ranked by usage */
+export interface CommerceProductsCampaignTopCodeDto {
+  /** Promo code string */
+  code?: string | null;
+  /** Discount given within the window */
+  discountGiven?: number;
+  /** Promo code ID */
+  promoCodeId?: string;
+  /** Recorded uses within the window */
+  uses?: number;
+}
+
 /** Data model for Commerce Products Change Support Ticket Priority Request. */
 export interface CommerceProductsChangeSupportTicketPriorityInput {
   priority?: CommerceProductsSupportTicketPriority;
@@ -2297,13 +4059,16 @@ export interface CommerceProductsChangeSupportTicketPriorityInput {
 
 /** Request to check multiple product access */
 export interface CommerceProductsCheckMultipleAccessInput {
-  productIds?: Array<string> | null;
+  productIds?: string[] | null;
 }
 
 /** Data model for Commerce Products Close Support Ticket Request. */
 export interface CommerceProductsCloseSupportTicketInput {
   closingNotes?: string | null;
 }
+
+/** Conflict resolution strategies for stacked promo codes */
+export type CommerceProductsConflictResolutionStrategy = 'HighestDiscount' | 'LowestDiscount' | 'FirstCodeOnly' | 'LastCodeOnly' | 'Sequential' | 'Additive';
 
 /** Data model for Commerce Products Create My Support Ticket Request. */
 export interface CommerceProductsCreateMySupportTicketInput {
@@ -2313,10 +4078,35 @@ export interface CommerceProductsCreateMySupportTicketInput {
   subject?: string | null;
 }
 
+/** Request to create a pricing rule. */
+export interface CommerceProductsCreatePricingRuleInput {
+  buyQuantity?: number | null;
+  customerSegment?: string | null;
+  daysOfWeek?: string | null;
+  description?: string | null;
+  discountAmount?: number | null;
+  discountPercentage?: number | null;
+  endDate?: string | null;
+  fixedPrice?: number | null;
+  getQuantity?: number | null;
+  isActive?: boolean;
+  maxQuantity?: number | null;
+  minQuantity?: number | null;
+  name?: string | null;
+  priority?: number;
+  productId?: string | null;
+  region?: string | null;
+  ruleType?: CommercePricingRuleType;
+  startDate?: string | null;
+  tiers?: CommerceProductsPricingRuleTierInput[] | null;
+  timeEnd?: string | null;
+  timeStart?: string | null;
+}
+
 /** Request model for creating a product */
 export interface CommerceProductsCreateProductInput {
   affiliateCommissionPercentage?: number;
-  bundleItems?: Array<string> | null;
+  bundleItems?: string[] | null;
   description?: string | null;
   imageUrl?: string | null;
   isBundle?: boolean;
@@ -2329,13 +4119,18 @@ export interface CommerceProductsCreateProductInput {
 
 /** Request to create a promo code */
 export interface CommerceProductsCreatePromoCodeInput {
+  applyToRenewal?: boolean;
+  campaignId?: string | null;
   code?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
   isActive?: boolean;
   isExclusive?: boolean;
+  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -2345,6 +4140,19 @@ export interface CommerceProductsCreatePromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
+}
+
+/** Request to create a promo stacking rule */
+export interface CommerceProductsCreatePromoStackingRuleInput {
+  allowExclusiveStacking?: boolean;
+  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
+  description?: string | null;
+  isActive?: boolean;
+  maxStackableCount?: number;
+  maxTotalDiscountAmount?: number | null;
+  maxTotalDiscountPercentage?: number | null;
+  name?: string | null;
+  priority?: number;
 }
 
 /** Data model for Commerce Products Create Support Ticket Request. */
@@ -2376,6 +4184,30 @@ export interface CommerceProductsEntitlementInfoDto {
   subscriptionStatus?: string | null;
 }
 
+/** Request to bulk-generate promo codes with a shared prefix and random suffixes */
+export interface CommerceProductsGenerateBulkPromoCodesInput {
+  applyToRenewal?: boolean;
+  campaignId?: string | null;
+  count?: number;
+  currency?: string | null;
+  description?: string | null;
+  discountAmount?: number | null;
+  discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
+  maxDiscountAmount?: number | null;
+  maxUses?: number | null;
+  maxUsesPerUser?: number | null;
+  minimumOrderAmount?: number | null;
+  name?: string | null;
+  prefix?: string | null;
+  productId?: string | null;
+  stackingPriority?: number;
+  type?: CommerceProductsPromoCodeType;
+  validFrom?: string | null;
+  validUntil?: string | null;
+}
+
 /** Request to grant an entitlement */
 export interface CommerceProductsGrantEntitlementInput {
   acquisitionType?: CommerceProductsProductAcquisitionType;
@@ -2389,7 +4221,7 @@ export interface CommerceProductsGrantEntitlementInput {
 /** Request model for partial product update (PATCH) */
 export interface CommerceProductsPatchProductInput {
   affiliateCommissionPercentage?: number | null;
-  bundleItems?: Array<string> | null;
+  bundleItems?: string[] | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -2403,12 +4235,17 @@ export interface CommerceProductsPatchProductInput {
 
 /** Request to partially update a promo code (PATCH) */
 export interface CommerceProductsPatchPromoCodeInput {
+  applyToRenewal?: boolean | null;
+  campaignId?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
   isActive?: boolean | null;
   isExclusive?: boolean | null;
+  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -2418,6 +4255,109 @@ export interface CommerceProductsPatchPromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
+}
+
+/** Result of pricing calculation */
+export interface CommerceProductsPricingCalculationResult {
+  /** List of applied promo codes */
+  appliedPromoCodes?: string[] | null;
+  /** ID of the winning pricing rule, if any (issue #395) */
+  appliedRuleId?: string | null;
+  /** Name of the winning pricing rule, if any (issue #395) */
+  appliedRuleName?: string | null;
+  /** Original base price */
+  basePrice?: number;
+  /** Currency code */
+  currency?: string | null;
+  /** Final calculated price */
+  finalPrice?: number;
+  /** Whether sale is active */
+  isSaleActive?: boolean;
+  /** Discount from promo codes */
+  promoDiscount?: number;
+  /** Per-unit discount produced by the winning pricing rule (issue #395) */
+  ruleDiscount?: number;
+  /** Sale price if active */
+  salePrice?: number | null;
+}
+
+/** Read model for a pricing rule (issue #395 dynamic & tiered pricing engine). */
+export interface CommerceProductsPricingRuleDto {
+  /** Rule ID */
+  id?: string;
+  /** Buy X (Buy X Get Y rules) */
+  buyQuantity?: number | null;
+  /** Creation timestamp (UTC) */
+  createdAt?: string;
+  /** Customer segment the rule is restricted to */
+  customerSegment?: string | null;
+  /** Days of week the rule applies to (comma-separated 0=Sunday..6=Saturday) */
+  daysOfWeek?: string | null;
+  /** Optional description */
+  description?: string | null;
+  /** Fixed discount amount */
+  discountAmount?: number | null;
+  /** Percentage discount */
+  discountPercentage?: number | null;
+  /** Optional expiry (UTC) */
+  endDate?: string | null;
+  /** Fixed per-unit price override */
+  fixedPrice?: number | null;
+  /** Get Y (Buy X Get Y rules) */
+  getQuantity?: number | null;
+  /** Whether the rule is active */
+  isActive?: boolean;
+  /** Maximum quantity for the rule to apply */
+  maxQuantity?: number | null;
+  /** Minimum quantity for the rule to apply */
+  minQuantity?: number | null;
+  /** Rule name */
+  name?: string | null;
+  /** Priority (higher wins) */
+  priority?: number;
+  /** Product the rule applies to (null = global rule) */
+  productId?: string | null;
+  /** Geographic region (RegionBased rules) */
+  region?: string | null;
+  ruleType?: CommercePricingRuleType;
+  /** Optional activation start (UTC) */
+  startDate?: string | null;
+  /** Volume tiers for tiered/volume rules */
+  tiers?: CommerceProductsPricingRuleTierDto[] | null;
+  /** Time-of-day window end (HH:MM, TimeBased rules) */
+  timeEnd?: string | null;
+  /** Time-of-day window start (HH:MM, TimeBased rules) */
+  timeStart?: string | null;
+  /** Last update timestamp (UTC) */
+  updatedAt?: string;
+  /** Optimistic concurrency version */
+  version?: number;
+}
+
+/** Read model for a pricing rule tier (volume tier of a pricing rule). */
+export interface CommerceProductsPricingRuleTierDto {
+  /** Tier ID */
+  id?: string;
+  /** Percentage discount per unit for the tier */
+  discountPercentage?: number | null;
+  /** Maximum quantity for the tier (null = no upper bound) */
+  maxQuantity?: number | null;
+  /** Minimum quantity for the tier (null = no lower bound) */
+  minQuantity?: number | null;
+  /** Fixed per-unit price for the tier */
+  price?: number | null;
+}
+
+/** Write model for a pricing rule tier. */
+export interface CommerceProductsPricingRuleTierInput {
+  /** Percentage discount per unit for the tier */
+  discountPercentage?: number | null;
+  /** Maximum quantity for the tier (null = no upper bound) */
+  maxQuantity?: number | null;
+  /** Minimum quantity for the tier (null = no lower bound) */
+  minQuantity?: number | null;
+  /** Fixed per-unit price for the tier */
+  price?: number | null;
 }
 
 /** Represents how a user acquired access to a product */
@@ -2430,7 +4370,7 @@ export interface CommerceProductsProductDto {
   /** Affiliate commission percentage */
   affiliateCommissionPercentage?: number;
   /** Bundle item IDs */
-  bundleItems?: Array<string> | null;
+  bundleItems?: string[] | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Creator user ID */
@@ -2448,7 +4388,7 @@ export interface CommerceProductsProductDto {
   /** Product name */
   name?: string | null;
   /** Pricing information (optional) */
-  pricing?: Array<CommerceProductsProductPricingDto> | null;
+  pricing?: CommerceProductsProductPricingDto[] | null;
   /** Referral commission percentage */
   referralCommissionPercentage?: number;
   /** Short description */
@@ -2506,37 +4446,53 @@ export type CommerceProductsProductType =
 /** Result of applying one or more promo codes */
 export interface CommerceProductsPromoCodeApplicationResult {
   /** List of codes that were applied */
-  appliedCodes?: Array<CommerceProductsAppliedPromoCode> | null;
+  appliedCodes?: CommerceProductsAppliedPromoCode[] | null;
   /** Amount after discounts */
   finalAmount?: number;
   /** Original order amount */
   originalAmount?: number;
   /** List of codes that were rejected with reasons */
-  rejectedCodes?: Array<CommerceProductsRejectedPromoCode> | null;
+  rejectedCodes?: CommerceProductsRejectedPromoCode[] | null;
+  /** Name of the stacking rule that governed resolution (null = single-code default) */
+  stackingRuleName?: string | null;
   /** Total discount applied */
   totalDiscount?: number;
+  /** Whether usage rows were persisted for the applied codes */
+  usageRecorded?: boolean;
 }
 
 /** Promo code data transfer object */
 export interface CommerceProductsPromoCodeDto {
   /** Promo code ID */
   id?: string;
+  /** Whether the discount applies to renewals */
+  applyToRenewal?: boolean;
+  /** Campaign identifier for tracking */
+  campaignId?: string | null;
   /** The promo code string */
   code?: string | null;
   /** Creation timestamp */
   createdAt?: string;
   /** Currency code */
   currency?: string | null;
+  /** Number of recorded uses */
+  currentUses?: number;
   /** Description of the promo */
   description?: string | null;
-  /** Fixed amount discount (for fixed type) */
+  /** Fixed amount discount (target price for SetPrice) */
   discountAmount?: number | null;
   /** Percentage discount (for percentage type) */
   discountPercentage?: number | null;
+  /** Free months granted / discount duration */
+  durationMonths?: number | null;
+  /** Trial days granted by FreeTrialExtension codes */
+  freeTrialExtensionDays?: number | null;
   /** Whether the code is active */
   isActive?: boolean;
   /** Whether the code cannot be stacked */
   isExclusive?: boolean;
+  /** Cap for percentage discounts */
+  maxDiscountAmount?: number | null;
   /** Maximum total uses */
   maxUses?: number | null;
   /** Maximum uses per user */
@@ -2561,7 +4517,8 @@ export interface CommerceProductsPromoCodeDto {
 }
 
 /** Represents the type of promo code discount */
-export type CommerceProductsPromoCodeType = 'PercentageOff' | 'FixedAmountOff' | 'FreeTrial' | 'BuyOneGetOne' | 'FreeShipping';
+export type CommerceProductsPromoCodeType =
+  'PercentageOff' | 'FixedAmountOff' | 'FreeTrial' | 'BuyOneGetOne' | 'FreeShipping' | 'FreeTrialExtension' | 'FreeMonths' | 'SetPrice';
 
 /** Promo code usage statistics DTO */
 export interface CommerceProductsPromoCodeUsageDto {
@@ -2599,6 +4556,29 @@ export interface CommerceProductsPromoCodeValidationResult {
   errorMessage?: string | null;
   /** Whether the code is valid */
   isValid?: boolean;
+}
+
+/** Promo stacking rule DTO */
+export interface CommerceProductsPromoStackingRuleDto {
+  /** Rule ID */
+  id?: string;
+  /** Allow exclusive code stacking */
+  allowExclusiveStacking?: boolean;
+  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
+  /** Rule description */
+  description?: string | null;
+  /** Whether the rule is active */
+  isActive?: boolean;
+  /** Max codes that can stack */
+  maxStackableCount?: number;
+  /** Max total discount amount */
+  maxTotalDiscountAmount?: number | null;
+  /** Max total discount percentage */
+  maxTotalDiscountPercentage?: number | null;
+  /** Rule name */
+  name?: string | null;
+  /** Priority level */
+  priority?: number;
 }
 
 /** Details of a rejected promo code */
@@ -2653,7 +4633,7 @@ export interface CommerceProductsSupportTicketDto {
   lastMessageAt?: string | null;
   lastMessagePreview?: string | null;
   messageCount?: number;
-  messages?: Array<CommerceProductsSupportTicketMessageDto> | null;
+  messages?: CommerceProductsSupportTicketMessageDto[] | null;
   openedAt?: string;
   priority?: CommerceProductsSupportTicketPriority;
   reporterEmail?: string | null;
@@ -2697,10 +4677,35 @@ export interface CommerceProductsSupportTicketSummaryDto {
   resolvedToday?: number;
 }
 
+/** Request to update a pricing rule (full update; tiers are replaced when provided). */
+export interface CommerceProductsUpdatePricingRuleInput {
+  buyQuantity?: number | null;
+  customerSegment?: string | null;
+  daysOfWeek?: string | null;
+  description?: string | null;
+  discountAmount?: number | null;
+  discountPercentage?: number | null;
+  endDate?: string | null;
+  fixedPrice?: number | null;
+  getQuantity?: number | null;
+  isActive?: boolean;
+  maxQuantity?: number | null;
+  minQuantity?: number | null;
+  name?: string | null;
+  priority?: number;
+  productId?: string | null;
+  region?: string | null;
+  ruleType?: CommercePricingRuleType;
+  startDate?: string | null;
+  tiers?: CommerceProductsPricingRuleTierInput[] | null;
+  timeEnd?: string | null;
+  timeStart?: string | null;
+}
+
 /** Request model for updating a product */
 export interface CommerceProductsUpdateProductInput {
   affiliateCommissionPercentage?: number | null;
-  bundleItems?: Array<string> | null;
+  bundleItems?: string[] | null;
   description?: string | null;
   expectedVersion?: number | null;
   imageUrl?: string | null;
@@ -2714,12 +4719,17 @@ export interface CommerceProductsUpdateProductInput {
 
 /** Request to update a promo code */
 export interface CommerceProductsUpdatePromoCodeInput {
+  applyToRenewal?: boolean | null;
+  campaignId?: string | null;
   currency?: string | null;
   description?: string | null;
   discountAmount?: number | null;
   discountPercentage?: number | null;
+  durationMonths?: number | null;
+  freeTrialExtensionDays?: number | null;
   isActive?: boolean | null;
   isExclusive?: boolean | null;
+  maxDiscountAmount?: number | null;
   maxUses?: number | null;
   maxUsesPerUser?: number | null;
   minimumOrderAmount?: number | null;
@@ -2729,6 +4739,18 @@ export interface CommerceProductsUpdatePromoCodeInput {
   type?: CommerceProductsPromoCodeType;
   validFrom?: string | null;
   validUntil?: string | null;
+}
+
+/** Request to update a promo stacking rule */
+export interface CommerceProductsUpdatePromoStackingRuleInput {
+  allowExclusiveStacking?: boolean | null;
+  conflictStrategy?: CommerceProductsConflictResolutionStrategy;
+  description?: string | null;
+  isActive?: boolean | null;
+  maxStackableCount?: number | null;
+  maxTotalDiscountAmount?: number | null;
+  maxTotalDiscountPercentage?: number | null;
+  priority?: number | null;
 }
 
 /** Request to validate a promo code */
@@ -2821,7 +4843,7 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** When the subscription ends (null for active subscriptions) */
   endDate?: string | null;
   /** External customer ID for payment provider */
@@ -2832,7 +4854,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
 Required for audit trail - no subscription without payment proof.
 Null only for legacy/migrated subscriptions. */
   fulfilledOrderId?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if the subscription is currently active */
   isActive?: boolean;
   /** Checks if the subscription is cancelled */
@@ -2863,6 +4885,10 @@ If null, the subscription uses the current plan price on renewal. */
   metadata?: string | null;
   /** When the next billing cycle occurs */
   nextBillingDate?: string;
+  /** Local payment-method registry ID (GameGuild.Commerce.Payments, issue #414) used to
+bill this subscription. Plain reference — no cross-module FK; guarded by the
+Payments module's delete rule. */
+  paymentMethodId?: string | null;
   plan?: CommerceSubscriptionsSubscriptionPlan;
   /** Reference to the subscription plan */
   planId: string;
@@ -2996,7 +5022,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Detailed description of the plan */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** External ID for integration with payment providers (Stripe, etc.) */
   externalId?: string | null;
   /** Features included in this plan (JSON serialized list of feature codes) */
@@ -3007,7 +5033,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   hasCustomBranding?: boolean;
   /** Whether this plan includes priority support */
   hasPrioritySupport?: boolean;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this plan is currently available for new subscriptions */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -3033,7 +5059,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   slug: string;
   /** Display order for sorting plans */
   sortOrder?: number;
-  subscriptions?: Array<CommerceSubscriptionsSubscription> | null;
+  subscriptions?: CommerceSubscriptionsSubscription[] | null;
   tenantId?: string | null;
   /** Trial period in days (0 = no trial) */
   trialPeriodDays?: number;
@@ -3101,7 +5127,7 @@ export interface CommerceSubscriptionsSubscriptionPlanOperationsControllerValida
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Compare Plans Request. */
 export interface CommerceSubscriptionsSubscriptionPlansCrudControllerComparePlansInput {
   basePlanId?: string;
-  comparePlanIds?: Array<string> | null;
+  comparePlanIds?: string[] | null;
 }
 
 /** Data model for Commerce Subscriptions Subscription Plans Crud Controller+Create Plan Request. */
@@ -3128,6 +5154,7 @@ export interface CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscrip
   name?: string | null;
   slug?: string | null;
   sortOrder?: number | null;
+  trialPeriodDays?: number | null;
 }
 
 /** Request to create a subscription */
@@ -3186,7 +5213,7 @@ export interface CommerceSubscriptionsSubscriptionUpgradeResult {
 export interface CommerceSubscriptionsSubscriptionUsageDto {
   apiCallsThisMonth?: number;
   isOverLimit?: boolean;
-  limitWarnings?: Array<string> | null;
+  limitWarnings?: string[] | null;
   maxApiCallsPerMonth?: number | null;
   maxStorageMb?: number | null;
   maxUsers?: number | null;
@@ -3194,6 +5221,76 @@ export interface CommerceSubscriptionsSubscriptionUsageDto {
   subscriptionId?: string;
   usersCount?: number;
 }
+
+/** Data model for Compliance Audit Acknowledge Security Alert Request. */
+export interface ComplianceAuditAcknowledgeSecurityAlertInput {
+  notes?: string | null;
+}
+
+/** Data model for Compliance Audit Audit Access Age Bucket. */
+export interface ComplianceAuditAuditAccessAgeBucket {
+  ageDays?: number;
+  readCount?: number;
+}
+
+/** Data model for Compliance Audit Audit Action Type Descriptor. */
+export interface ComplianceAuditAuditActionTypeDescriptor {
+  actionType?: string | null;
+  categoryPath?: string[] | null;
+  groups?: string[] | null;
+}
+
+/** Data model for Compliance Audit Audit Action Type Frequency. */
+export interface ComplianceAuditAuditActionTypeFrequency {
+  actionType?: string | null;
+  eventCount?: number;
+}
+
+/** Data model for Compliance Audit Audit Action Type Group Descriptor. */
+export interface ComplianceAuditAuditActionTypeGroupDescriptor {
+  description?: string | null;
+  name?: string | null;
+}
+
+/** OpenAPI schema for Compliance Audit Audit Action Type Logical Operator. */
+export type ComplianceAuditAuditActionTypeLogicalOperator = 'Any' | 'All' | 'None';
+
+/** Data model for Compliance Audit Audit Action Type Search Response. */
+export interface ComplianceAuditAuditActionTypeSearchOutput {
+  frequency?: ComplianceAuditAuditActionTypeFrequency[] | null;
+  relatedActions?: ComplianceAuditAuditRelatedAction[] | null;
+  results?: ComplianceAuditAuditLogOutput;
+  trends?: ComplianceAuditAuditActionTypeTrend[] | null;
+}
+
+/** OpenAPI schema for Compliance Audit Audit Action Type Sort Direction. */
+export type ComplianceAuditAuditActionTypeSortDirection = 'Ascending' | 'Descending';
+
+/** OpenAPI schema for Compliance Audit Audit Action Type Sort Field. */
+export type ComplianceAuditAuditActionTypeSortField = 'CreatedAt' | 'ActionType' | 'ResourceType' | 'UserId' | 'RiskLevel';
+
+/** Data model for Compliance Audit Audit Action Type Taxonomy Response. */
+export interface ComplianceAuditAuditActionTypeTaxonomyOutput {
+  actionTypes?: ComplianceAuditAuditActionTypeDescriptor[] | null;
+  groups?: ComplianceAuditAuditActionTypeGroupDescriptor[] | null;
+}
+
+/** Data model for Compliance Audit Audit Action Type Trend. */
+export interface ComplianceAuditAuditActionTypeTrend {
+  actionType?: string | null;
+  eventCount?: number;
+  startUtc?: string;
+}
+
+/** Data model for Compliance Audit Audit Activity Bucket Response. */
+export interface ComplianceAuditAuditActivityBucketOutput {
+  eventCount?: number;
+  startLocal?: string;
+  startUtc?: string;
+}
+
+/** Resolution used to group audit activity over a date range. */
+export type ComplianceAuditAuditActivityBucketSize = 'Hourly' | 'Daily';
 
 /** Data model for Compliance Audit Audit Actor Context. */
 export interface ComplianceAuditAuditActorContext {
@@ -3206,6 +5303,16 @@ export interface ComplianceAuditAuditActorContext {
 export type ComplianceAuditAuditCategory =
   'General' | 'Authentication' | 'Authorization' | 'Permission' | 'User' | 'Admin' | 'Security' | 'Data' | 'System' | 'Tenant' | 'Privacy';
 
+/** Data model for Compliance Audit Audit Date Range Search Response. */
+export interface ComplianceAuditAuditDateRangeSearchOutput {
+  activity?: ComplianceAuditAuditActivityBucketOutput[] | null;
+  bucketSize?: ComplianceAuditAuditActivityBucketSize;
+  endDateUtc?: string;
+  results?: ComplianceAuditAuditLogOutput;
+  startDateUtc?: string;
+  timeZoneId?: string | null;
+}
+
 /** Data model for Compliance Audit Audit Event Context. */
 export interface ComplianceAuditAuditEventContext {
   actionType?: string | null;
@@ -3213,12 +5320,26 @@ export interface ComplianceAuditAuditEventContext {
   riskLevel?: string | null;
 }
 
+/** Data model for Compliance Audit Audit Export History Response. */
+export interface ComplianceAuditAuditExportHistoryOutput {
+  id?: string;
+  errorMessage?: string | null;
+  executedAt?: string;
+  executionDuration?: string;
+  fileAvailable?: boolean;
+  fileName?: string | null;
+  fileSizeBytes?: number;
+  recordCount?: number;
+  scheduledExportId?: string;
+  status?: ComplianceAuditExportStatus;
+}
+
 /** Data model for Compliance Audit Audit Export Request. */
 export interface ComplianceAuditAuditExportInput {
   actionType?: string | null;
   category?: ComplianceAuditAuditCategory;
   /** Ordered CSV columns. Omit to include every supported audit field. */
-  columns?: Array<string> | null;
+  columns?: string[] | null;
   endDate?: string | null;
   ipAddress?: string | null;
   /** Optional 1-based page number. Omit both pagination fields to export all matching rows. */
@@ -3231,6 +5352,10 @@ export interface ComplianceAuditAuditExportInput {
   success?: boolean | null;
   tenantId?: string | null;
   userId?: string | null;
+  /** Optional HTTPS endpoint to notify when this export completes, fails, or is cancelled.
+Its exact host must be listed in `Audit:ExportWebhooks:AllowedHosts`; notifications are signed with
+`Audit:ExportWebhooks:SigningSecret` and include an idempotency key. */
+  webhookUrl?: string | null;
 }
 
 /** Data model for Compliance Audit Audit Export Progress Response. */
@@ -3248,7 +5373,7 @@ export interface ComplianceAuditAuditExportProgressOutput {
 /** Data model for Compliance Audit Audit Json Export Document. */
 export interface ComplianceAuditAuditJsonExportDocument {
   pagination?: ComplianceAuditAuditJsonExportPagination;
-  records?: Array<ComplianceAuditAuditJsonExportRecord> | null;
+  records?: ComplianceAuditAuditJsonExportRecord[] | null;
   schemaVersion?: string | null;
 }
 
@@ -3296,7 +5421,7 @@ export interface ComplianceAuditAuditLogDto {
 
 /** Data model for Compliance Audit Audit Log Response. */
 export interface ComplianceAuditAuditLogOutput {
-  logs?: Array<ComplianceAuditAuditLogDto> | null;
+  logs?: ComplianceAuditAuditLogDto[] | null;
   skip?: number;
   take?: number;
   totalCount?: number;
@@ -3314,10 +5439,260 @@ export interface ComplianceAuditAuditOutcomeContext {
   success?: boolean;
 }
 
+/** Data model for Compliance Audit Audit Related Action. */
+export interface ComplianceAuditAuditRelatedAction {
+  actionType?: string | null;
+  correlationCount?: number;
+}
+
+/** Safe event fields shared with the Web replay core. UserId may identify a subject;
+            it must not be presented as verified attribution without additional source evidence. */
+export interface ComplianceAuditAuditReplaySnapshotEvent {
+  id?: string | null;
+  actionType?: string | null;
+  correlationId?: string | null;
+  createdAt?: string | null;
+  resourceId?: string | null;
+  resourceType?: string | null;
+  sessionId?: string | null;
+  success?: boolean;
+  tenantId?: string | null;
+  userId?: string | null;
+}
+
+/** Documents the exact canonical JSON response; its digest is delivered in a response header. */
+export interface ComplianceAuditAuditReplaySnapshotOutput {
+  capturedAtUtc?: string | null;
+  endUtc?: string | null;
+  events?: ComplianceAuditAuditReplaySnapshotEvent[] | null;
+  schemaVersion?: number;
+  startUtc?: string | null;
+  tenantId?: string | null;
+  totalCount?: number;
+}
+
 /** Data model for Compliance Audit Audit Resource Context. */
 export interface ComplianceAuditAuditResourceContext {
   resourceId?: string | null;
   resourceType?: string | null;
+}
+
+/** Data model for Compliance Audit Audit Retention Compliance Violation. */
+export interface ComplianceAuditAuditRetentionComplianceViolation {
+  obligation?: string | null;
+  reason?: string | null;
+  source?: string | null;
+}
+
+/** The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
+export interface ComplianceAuditAuditRetentionConfigurationOutput {
+  id?: string;
+  configuration?: ComplianceAuditConfigureAuditRetentionInput;
+  inheritedFromTemplateId?: string | null;
+  revision?: number;
+  tenantId?: string;
+  updatedAtUtc?: string;
+  updatedByUserId?: string;
+}
+
+/** OpenAPI schema for Compliance Audit Audit Retention Growth Model. */
+export type ComplianceAuditAuditRetentionGrowthModel = 'Constant' | 'HistoricalTrend' | 'CompoundAnnual';
+
+/** Data model for Compliance Audit Audit Retention Historical Evidence. */
+export interface ComplianceAuditAuditRetentionHistoricalEvidence {
+  accessAges?: ComplianceAuditAuditAccessAgeBucket[] | null;
+  asOfUtc?: string;
+  availableHistoryDays?: number;
+  averageDailyLogicalBytes?: number;
+  averageDailyRecords?: number;
+  cohorts?: ComplianceAuditAuditStorageDailyCohort[] | null;
+  dailyLogicalBytesTrend?: number;
+  dailyRecordsTrend?: number;
+  daysWithRecords?: number;
+  historicalDays?: number;
+  measurementMethod?: string | null;
+  observedAccessDays?: number;
+  observedReadCount?: number;
+  oldestObservedAccessAgeDays?: number | null;
+  storedLogicalBytes?: number;
+  storedRecordCount?: number;
+  weeklySeasonality?: ComplianceAuditAuditRetentionWeekdayFactor[] | null;
+}
+
+/** Data model for Compliance Audit Audit Retention Month Forecast. */
+export interface ComplianceAuditAuditRetentionMonthForecast {
+  budget?: number | null;
+  budgetVariance?: number | null;
+  endBillableBytes?: number;
+  endRecordCount?: number;
+  endUtcDateExclusive?: string;
+  month?: number;
+  retrievalCost?: number;
+  startUtcDate?: string;
+  storageCost?: number;
+  tiers?: ComplianceAuditAuditRetentionTierForecast[] | null;
+  totalCost?: number;
+}
+
+/** A configured obligation, with an administrator-provided source; no regulatory minimum is assumed. */
+export interface ComplianceAuditAuditRetentionObligation {
+  maximumRetentionDays?: number | null;
+  minimumRetentionDays?: number;
+  name: string;
+  source: string;
+}
+
+/** Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+export interface ComplianceAuditAuditRetentionPolicySensitivityRule {
+  /** Optional maximum retention, in days, after which data at this classification may be purged. */
+  maximumRetentionDays: number | null;
+  /** Minimum retention, in days, enforced for data at this classification. */
+  minimumRetentionDays: number;
+  /** Why this classification receives this retention period. */
+  rationale: string | null;
+  sensitivity: ComplianceAuditSensitivityLevel;
+}
+
+/** Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+export interface ComplianceAuditAuditRetentionPolicyTemplate {
+  /** Stable template identifier referenced by GameGuild.Compliance.Audit.AuditRetentionPolicyTemplate.BaseTemplateId. */
+  id: string | null;
+  baselineScenario: ComplianceAuditAuditRetentionScenario;
+  /** Template this one inherits obligations and sensitivity floors from; null for the baseline. */
+  baseTemplateId: string | null;
+  /** What the template presets and why. */
+  description: string | null;
+  /** Human-readable template name. */
+  displayName: string | null;
+  /** Regulatory framework or policy family this template targets. */
+  framework: string | null;
+  /** True only for the platform baseline every other template inherits from. */
+  isBaseline: boolean;
+  /** Retention obligations with the administrator-provided regulatory source for each. */
+  obligations: ComplianceAuditAuditRetentionObligation[] | null;
+  /** Publication timestamp of this template revision (UTC). */
+  publishedAtUtc: string;
+  /** Sensitivity classification floors; retention grows with classification. */
+  sensitivityRules: ComplianceAuditAuditRetentionPolicySensitivityRule[] | null;
+  /** Storage tier price assumptions preset by the template. */
+  tierPrices: ComplianceAuditAuditStorageTierPrice[] | null;
+}
+
+/** Data model for Compliance Audit Audit Retention Recommendation. */
+export interface ComplianceAuditAuditRetentionRecommendation {
+  evaluatedCandidates?: number;
+  reason?: string | null;
+  savingsComparedWithBaseline?: number | null;
+  suggestedScenario?: ComplianceAuditAuditRetentionScenarioResult;
+}
+
+/** Data model for Compliance Audit Audit Retention Risk. */
+export interface ComplianceAuditAuditRetentionRisk {
+  code?: string | null;
+  description?: string | null;
+  severity?: string | null;
+}
+
+/** Data model for Compliance Audit Audit Retention Scenario. */
+export interface ComplianceAuditAuditRetentionScenario {
+  coldUntilDays?: number;
+  hotDays?: number;
+  name: string;
+  retentionDays?: number;
+  warmUntilDays?: number;
+}
+
+/** Data model for Compliance Audit Audit Retention Scenario Result. */
+export interface ComplianceAuditAuditRetentionScenarioResult {
+  budgetVariance?: number | null;
+  complianceStatus?: string | null;
+  complianceViolations?: ComplianceAuditAuditRetentionComplianceViolation[] | null;
+  differenceFromBaseline?: number;
+  expectedReadLatencyMilliseconds?: number | null;
+  initialExpiredLogicalBytes?: number;
+  initialExpiredRecords?: number;
+  months?: ComplianceAuditAuditRetentionMonthForecast[] | null;
+  p95ReadLatencyMilliseconds?: number | null;
+  risks?: ComplianceAuditAuditRetentionRisk[] | null;
+  savingsPercent?: number | null;
+  scenario?: ComplianceAuditAuditRetentionScenario;
+  slowObservedReadsPercent?: number | null;
+  totalCost?: number;
+  totalRetrievalCost?: number;
+  totalStorageCost?: number;
+  unavailableObservedReadsPercent?: number | null;
+  years?: ComplianceAuditAuditRetentionYearForecast[] | null;
+}
+
+/** Data model for Compliance Audit Audit Retention Simulation Response. */
+export interface ComplianceAuditAuditRetentionSimulationOutput {
+  id?: string;
+  configurationRevision?: number;
+  configurationSnapshot?: ComplianceAuditConfigureAuditRetentionInput;
+  createdAtUtc?: string;
+  createdByUserId?: string;
+  report?: ComplianceAuditAuditRetentionSimulationReport;
+  request?: ComplianceAuditRunAuditRetentionSimulationInput;
+  tenantId?: string;
+}
+
+/** Data model for Compliance Audit Audit Retention Simulation Report. */
+export interface ComplianceAuditAuditRetentionSimulationReport {
+  annualGrowthPercent?: number | null;
+  assumptions?: string[] | null;
+  baseline?: ComplianceAuditAuditRetentionScenarioResult;
+  currency?: string | null;
+  evidence?: ComplianceAuditAuditRetentionHistoricalEvidence;
+  forecastMonths?: number;
+  growthModel?: ComplianceAuditAuditRetentionGrowthModel;
+  modelVersion?: string | null;
+  recommendation?: ComplianceAuditAuditRetentionRecommendation;
+  scenarios?: ComplianceAuditAuditRetentionScenarioResult[] | null;
+  storageOverheadMultiplier?: number;
+}
+
+/** Data model for Compliance Audit Audit Retention Simulation Summary. */
+export interface ComplianceAuditAuditRetentionSimulationSummary {
+  id?: string;
+  baselineTotalCost?: number;
+  configurationRevision?: number;
+  createdAtUtc?: string;
+  createdByUserId?: string;
+  currency?: string | null;
+  forecastMonths?: number;
+  recommendedTotalCost?: number | null;
+}
+
+/** Data model for Compliance Audit Audit Retention Tier Forecast. */
+export interface ComplianceAuditAuditRetentionTierForecast {
+  endBillableBytes?: number;
+  endRecordCount?: number;
+  retrievalCost?: number;
+  storageCost?: number;
+  tier?: ComplianceAuditAuditStorageTier;
+}
+
+/** Data model for Compliance Audit Audit Retention Weekday Factor. */
+export interface ComplianceAuditAuditRetentionWeekdayFactor {
+  bytesMultiplier?: number;
+  dayOfWeek?: number;
+  recordsMultiplier?: number;
+}
+
+/** Data model for Compliance Audit Audit Retention Year Forecast. */
+export interface ComplianceAuditAuditRetentionYearForecast {
+  budget?: number | null;
+  budgetVariance?: number | null;
+  forecastYear?: number;
+  months?: number;
+  retrievalCost?: number;
+  storageCost?: number;
+  totalCost?: number;
 }
 
 /** Risk level for audit events */
@@ -3333,6 +5708,24 @@ export interface ComplianceAuditAuditStatisticsOutput {
   securityEvents?: number;
   startDate?: string;
   totalEvents?: number;
+}
+
+/** Measured PostgreSQL logical row bytes; physical disk, compression and index costs are separate assumptions. */
+export interface ComplianceAuditAuditStorageDailyCohort {
+  dateUtc?: string;
+  logicalBytes?: number;
+  recordCount?: number;
+}
+
+/** OpenAPI schema for Compliance Audit Audit Storage Tier. */
+export type ComplianceAuditAuditStorageTier = 'Hot' | 'Warm' | 'Cold' | 'Archive';
+
+/** Data model for Compliance Audit Audit Storage Tier Price. */
+export interface ComplianceAuditAuditStorageTierPrice {
+  expectedReadLatencyMilliseconds?: number;
+  monthlyCostPerGiB?: number;
+  retrievalCostPerGiB?: number;
+  tier?: ComplianceAuditAuditStorageTier;
 }
 
 /** Authentication audit entry. */
@@ -3352,13 +5745,227 @@ export interface ComplianceAuditAuthenticationAuditEntry {
 
 /** Response for authentication audit logs. */
 export interface ComplianceAuditAuthenticationAuditOutput {
-  entries?: Array<ComplianceAuditAuthenticationAuditEntry> | null;
+  entries?: ComplianceAuditAuthenticationAuditEntry[] | null;
   failedLogins?: number;
   skip?: number;
   successfulLogins?: number;
   take?: number;
   totalCount?: number;
   uniqueIpAddresses?: number;
+}
+
+/** Data model for Compliance Audit Capture Audit Replay Request. */
+export interface ComplianceAuditCaptureAuditReplayInput {
+  end: string;
+  start: string;
+}
+
+/** Data model for Compliance Audit Compliance Artifact Entry. */
+export interface ComplianceAuditComplianceArtifactEntry {
+  length?: number;
+  mediaType?: string | null;
+  path?: string | null;
+  sha256?: string | null;
+}
+
+/** Data model for Compliance Audit Compliance Artifact Manifest. */
+export interface ComplianceAuditComplianceArtifactManifest {
+  capturedAtUtc?: string;
+  entries?: ComplianceAuditComplianceArtifactEntry[] | null;
+  formatVersion?: string | null;
+  name?: string | null;
+  packageId?: string;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  preparedByUserId?: string;
+  template?: ComplianceAuditComplianceFrameworkTemplate;
+  templateSha256?: string | null;
+  tenantId?: string;
+  validation?: ComplianceAuditCompliancePackageValidationReport;
+}
+
+/** Data model for Compliance Audit Compliance Artifact Seal. */
+export interface ComplianceAuditComplianceArtifactSeal {
+  algorithm?: string | null;
+  keyId?: string | null;
+  manifestSha256?: string | null;
+  signature?: string | null;
+}
+
+/** Data model for Compliance Audit Compliance Artifact Verification. */
+export interface ComplianceAuditComplianceArtifactVerification {
+  errors?: string[] | null;
+  isValid?: boolean;
+}
+
+/** Data model for Compliance Audit Compliance Control Evidence Result. */
+export interface ComplianceAuditComplianceControlEvidenceResult {
+  controlId?: string | null;
+  documentIds?: string[] | null;
+  evidencePaths?: string[] | null;
+  gaps?: ComplianceAuditComplianceEvidenceGap[] | null;
+  status?: string | null;
+}
+
+/** References and collection mappings, not a reproduction of a licensed standard or a certification. */
+export interface ComplianceAuditComplianceControlTemplate {
+  id?: string | null;
+  automaticEvidence?: ComplianceAuditComplianceEvidenceKind[] | null;
+  requiredDocumentTypes?: string[] | null;
+  sourceUri?: string | null;
+}
+
+/** Document metadata only. Uploaded bytes are included in separately audited sealed package downloads. */
+export interface ComplianceAuditComplianceDocumentOutput {
+  id?: string;
+  contentLength?: number;
+  contentSha256?: string | null;
+  controlIds?: string[] | null;
+  mediaType?: string | null;
+  name?: string | null;
+  review?: ComplianceAuditComplianceDocumentReview;
+  reviewedAtUtc?: string | null;
+  reviewedByUserId?: string | null;
+  reviewNotes?: string | null;
+  revision?: number;
+  sourceUri?: string | null;
+  templateId?: string | null;
+  type?: string | null;
+  uploadedByUserId?: string;
+  validFromUtc?: string;
+  validUntilUtc?: string;
+}
+
+/** Data model for Compliance Audit Compliance Document Requirement. */
+export interface ComplianceAuditComplianceDocumentRequirement {
+  requiredFields?: string[] | null;
+  requiresControlAssessments?: boolean;
+  requiresPeriodCoverage?: boolean;
+  type?: string | null;
+}
+
+/** OpenAPI schema for Compliance Audit Compliance Document Review. */
+export type ComplianceAuditComplianceDocumentReview = 'Pending' | 'Approved' | 'Rejected';
+
+/** Data model for Compliance Audit Compliance Evidence Gap. */
+export interface ComplianceAuditComplianceEvidenceGap {
+  code?: string | null;
+  controlId?: string | null;
+  detail?: string | null;
+  documentId?: string | null;
+}
+
+/** OpenAPI schema for Compliance Audit Compliance Evidence Kind. */
+export type ComplianceAuditComplianceEvidenceKind = 'Operations' | 'Authentication' | 'Authorization' | 'Incidents' | 'Integrity' | 'Retention';
+
+/** OpenAPI schema for Compliance Audit Compliance Evidence Period Mode. */
+export type ComplianceAuditComplianceEvidencePeriodMode = 'PointInTime' | 'Period';
+
+/** Compliance frameworks for audit and evidence packaging */
+export type ComplianceAuditComplianceFramework = 'SOC2Type1' | 'SOC2Type2' | 'ISO27001' | 'GDPR' | 'HIPAA' | 'PCI_DSS' | 'CCPA' | 'FedRAMP' | 'NIST' | 'Custom';
+
+/** Data model for Compliance Audit Compliance Framework Template. */
+export interface ComplianceAuditComplianceFrameworkTemplate {
+  id?: string | null;
+  controls?: ComplianceAuditComplianceControlTemplate[] | null;
+  documents?: ComplianceAuditComplianceDocumentRequirement[] | null;
+  framework?: ComplianceAuditComplianceFramework;
+  periodMode?: ComplianceAuditComplianceEvidencePeriodMode;
+  sources?: string[] | null;
+  version?: string | null;
+}
+
+/** Data model for Compliance Audit Compliance Package Response. */
+export interface ComplianceAuditCompliancePackageOutput {
+  manifest?: ComplianceAuditComplianceArtifactManifest;
+  seal?: ComplianceAuditComplianceArtifactSeal;
+  summary?: ComplianceAuditCompliancePackageSummary;
+}
+
+/** Data model for Compliance Audit Compliance Package Summary. */
+export interface ComplianceAuditCompliancePackageSummary {
+  id?: string;
+  artifactLength?: number;
+  artifactSha256?: string | null;
+  capturedAtUtc?: string;
+  gapCount?: number;
+  name?: string | null;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  preparedByUserId?: string;
+  readyForAuditorReview?: boolean;
+  signingKeyId?: string | null;
+  templateId?: string | null;
+}
+
+/** Data model for Compliance Audit Compliance Package Validation Report. */
+export interface ComplianceAuditCompliancePackageValidationReport {
+  assumptions?: string[] | null;
+  controls?: ComplianceAuditComplianceControlEvidenceResult[] | null;
+  gaps?: ComplianceAuditComplianceEvidenceGap[] | null;
+  readyForAuditorReview?: boolean;
+}
+
+/** Data model for Compliance Audit Compliance Scope Exclusion. */
+export interface ComplianceAuditComplianceScopeExclusion {
+  applicabilityDocumentId?: string;
+  controlId: string;
+  rationale: string;
+}
+
+/** Data model for Compliance Audit Configure Audit Retention Request. */
+export interface ComplianceAuditConfigureAuditRetentionInput {
+  baseline: ComplianceAuditAuditRetentionScenario;
+  currency: string;
+  expectedRevision?: number;
+  maximumReadLatencyMilliseconds?: number;
+  monthlyBudget?: number | null;
+  obligations: ComplianceAuditAuditRetentionObligation[];
+  /** All existing records are preserved through this inclusive UTC date in every scenario. */
+  preserveAllRecordsThroughUtcDate?: string | null;
+  storageOverheadMultiplier?: number;
+  tierPrices: ComplianceAuditAuditStorageTierPrice[];
+}
+
+/** Configures the retention policy applied to a tenant's security audit log. */
+export interface ComplianceAuditConfigureSecurityLogRetentionInput {
+  /** Per-category overrides. Keys are `AuditCategory` names; values are days (30..3650). */
+  categoryOverrides?: Record<string, number> | null;
+  /** Revision the caller observed; rejected on mismatch to avoid lost updates. */
+  expectedRevision?: number;
+  /** When set to a future instant, retention enforcement is suspended until then. */
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+}
+
+/** Data model for Compliance Audit Create Compliance Package Request. */
+export interface ComplianceAuditCreateCompliancePackageInput {
+  documentIds: string[];
+  exclusions: ComplianceAuditComplianceScopeExclusion[];
+  name: string;
+  periodEndUtc?: string;
+  periodStartUtc?: string;
+  templateId: string;
+}
+
+/** Data model for Compliance Audit Create Scheduled Audit Export Request. */
+export interface ComplianceAuditCreateScheduledAuditExportInput {
+  actionType?: string | null;
+  /** Ordered CSV columns. Omit to include every supported audit field. */
+  columns?: string[] | null;
+  /** Five-field cron expression: minute, hour, day of month, month, and day of week. */
+  cronExpression: string;
+  endDate?: string | null;
+  exportFormat?: ComplianceAuditExportFormat;
+  jobName: string;
+  /** Number of days a generated file is retained. Execution history is retained. */
+  retentionDays?: number;
+  riskLevel?: ComplianceAuditAuditRiskLevel;
+  startDate?: string | null;
+  tenantId?: string;
+  /** Timezone identifier recognized by the API host, such as UTC or America/New_York. */
+  timezone: string;
+  userId?: string | null;
 }
 
 /** Data model for Compliance Audit Daily Activity Trend. */
@@ -3369,6 +5976,18 @@ export interface ComplianceAuditDailyActivityTrend {
   securityViolations?: number;
   totalEvents?: number;
 }
+
+/** Data model for Compliance Audit Enforce Security Log Retention Request. */
+export interface ComplianceAuditEnforceSecurityLogRetentionInput {
+  /** When true, the pass only reports what would be deleted; no rows are removed. */
+  dryRun?: boolean;
+}
+
+/** OpenAPI schema for Compliance Audit Export Format. */
+export type ComplianceAuditExportFormat = 'Json' | 'Csv' | 'Xml' | 'Parquet';
+
+/** OpenAPI schema for Compliance Audit Export Status. */
+export type ComplianceAuditExportStatus = 'Pending' | 'InProgress' | 'Completed' | 'Failed' | 'Cancelled';
 
 /** Data model for Compliance Audit Failure Reason Count. */
 export interface ComplianceAuditFailureReasonCount {
@@ -3398,7 +6017,7 @@ export interface ComplianceAuditPermissionAuditEntry {
 /** Response for permission audit logs. */
 export interface ComplianceAuditPermissionAuditOutput {
   denyOperations?: number;
-  entries?: Array<ComplianceAuditPermissionAuditEntry> | null;
+  entries?: ComplianceAuditPermissionAuditEntry[] | null;
   grantOperations?: number;
   revokeOperations?: number;
   skip?: number;
@@ -3406,10 +6025,79 @@ export interface ComplianceAuditPermissionAuditOutput {
   totalCount?: number;
 }
 
+/** Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
+export interface ComplianceAuditResolveSecurityAlertInput {
+  /** Resolution note recorded on the alert and in the resolution audit event. */
+  notes?: string | null;
+}
+
+/** Data model for Compliance Audit Review Compliance Document Request. */
+export interface ComplianceAuditReviewComplianceDocumentInput {
+  decision?: ComplianceAuditComplianceDocumentReview;
+  expectedRevision?: number;
+  notes: string;
+}
+
+/** Data model for Compliance Audit Run Audit Retention Simulation Request. */
+export interface ComplianceAuditRunAuditRetentionSimulationInput {
+  annualGrowthPercent?: number | null;
+  forecastMonths?: number;
+  growthModel?: ComplianceAuditAuditRetentionGrowthModel;
+  historicalDays?: number;
+  scenarios: ComplianceAuditAuditRetentionScenario[];
+}
+
+/** Data model for Compliance Audit Scheduled Audit Export Response. */
+export interface ComplianceAuditScheduledAuditExportOutput {
+  id?: string;
+  createdAt?: string;
+  cronExpression?: string | null;
+  destination?: string | null;
+  exportFormat?: ComplianceAuditExportFormat;
+  failureCount?: number;
+  isEnabled?: boolean;
+  jobName?: string | null;
+  lastRunAt?: string | null;
+  nextRunAt?: string | null;
+  retentionDays?: number;
+  successCount?: number;
+  tenantId?: string;
+  timezone?: string | null;
+  updatedAt?: string;
+}
+
+/** Data model for Compliance Audit Security Alert Response. */
+export interface ComplianceAuditSecurityAlertOutput {
+  id?: string;
+  acknowledgedAtUtc?: string | null;
+  acknowledgedByUserId?: string | null;
+  acknowledgementNotes?: string | null;
+  description?: string | null;
+  firstSeenAtUtc?: string;
+  ipAddress?: string | null;
+  kind?: ComplianceAuditSecurityEventKind;
+  lastSeenAtUtc?: string;
+  occurrenceCount?: number;
+  resolutionNotes?: string | null;
+  resolvedAtUtc?: string | null;
+  resolvedByUserId?: string | null;
+  ruleId?: string | null;
+  severity?: ComplianceAuditAuditRiskLevel;
+  sourceActionType?: string | null;
+  sourceAuditLogId?: string | null;
+  status?: ComplianceAuditSecurityAlertStatus;
+  subjectUserId?: string | null;
+  tenantId?: string | null;
+  title?: string | null;
+}
+
+/** Status of a security alert raised by the security event pipeline. */
+export type ComplianceAuditSecurityAlertStatus = 'Open' | 'Acknowledged' | 'Resolved';
+
 /** Security audit dashboard with aggregated statistics. */
 export interface ComplianceAuditSecurityAuditDashboard {
   crossTenantAttempts?: number;
-  dailyTrends?: Array<ComplianceAuditDailyActivityTrend> | null;
+  dailyTrends?: ComplianceAuditDailyActivityTrend[] | null;
   endDate?: string;
   failedLogins?: number;
   highRiskEvents?: number;
@@ -3421,9 +6109,9 @@ export interface ComplianceAuditSecurityAuditDashboard {
   successfulLogins?: number;
   suspiciousLoginAttempts?: number;
   tenantId?: string | null;
-  topActiveUsers?: Array<ComplianceAuditTopUserActivity> | null;
-  topFailureReasons?: Array<ComplianceAuditFailureReasonCount> | null;
-  topIpAddresses?: Array<ComplianceAuditTopIpActivity> | null;
+  topActiveUsers?: ComplianceAuditTopUserActivity[] | null;
+  topFailureReasons?: ComplianceAuditFailureReasonCount[] | null;
+  topIpAddresses?: ComplianceAuditTopIpActivity[] | null;
   totalAuthenticationAttempts?: number;
   totalPermissionChanges?: number;
   totalSecurityViolations?: number;
@@ -3432,6 +6120,78 @@ export interface ComplianceAuditSecurityAuditDashboard {
 
 /** Source type for security audit entries. */
 export type ComplianceAuditSecurityAuditSourceType = 'Authentication' | 'Permission' | 'General' | 'All';
+
+/** Durable delivery status of the security event pipeline for the current instance. */
+export interface ComplianceAuditSecurityEventDeliveryStatusOutput {
+  databaseWriteAttemptsBeforeSpool?: number;
+  lastDrainAttemptedAtUtc?: string | null;
+  lastDrainError?: string | null;
+  lastDrainSucceededAtUtc?: string | null;
+  oldestSpooledEventUtc?: string | null;
+  spooledEventCount?: number;
+  spoolingEnabled?: boolean;
+}
+
+/** Kinds of security-relevant events recognized by the security event pipeline.
+Every kind maps to a default severity, an escalation policy for failed outcomes,
+and a stable description used by the taxonomy endpoint. */
+export type ComplianceAuditSecurityEventKind =
+  | 'Authentication'
+  | 'Authorization'
+  | 'SessionManagement'
+  | 'AccountLifecycle'
+  | 'ThreatDetection'
+  | 'DataProtection'
+  | 'TenantIsolation'
+  | 'ConfigurationChange'
+  | 'DataMovement'
+  | 'Other';
+
+/** One entry of the published security event taxonomy. */
+export interface ComplianceAuditSecurityEventTaxonomyEntry {
+  actionType?: string | null;
+  defaultSeverity?: ComplianceAuditAuditRiskLevel;
+  description?: string | null;
+  escalateOnFailure?: boolean;
+  kind?: ComplianceAuditSecurityEventKind;
+}
+
+/** Response of `GET /api/audit/security-events/taxonomy`: the complete security event taxonomy. */
+export interface ComplianceAuditSecurityEventTaxonomyOutput {
+  entries: ComplianceAuditSecurityEventTaxonomyEntry[];
+  kinds?: string[] | null;
+  totalEntries?: number;
+}
+
+/** Data model for Compliance Audit Security Log Retention Execution Response. */
+export interface ComplianceAuditSecurityLogRetentionExecutionOutput {
+  id?: string;
+  cutoffUtc?: string;
+  deletedCount?: number;
+  dryRun?: boolean;
+  evaluatedCount?: number;
+  executedAtUtc?: string;
+  legalHoldActive?: boolean;
+  policyRetentionDays?: number;
+  tenantId?: string;
+  triggeredByUserId?: string | null;
+}
+
+/** Data model for Compliance Audit Security Log Retention Policy Response. */
+export interface ComplianceAuditSecurityLogRetentionPolicyOutput {
+  id?: string;
+  categoryOverrides?: Record<string, number> | null;
+  configuredAtUtc?: string;
+  legalHoldActive?: boolean;
+  legalHoldUntilUtc?: string | null;
+  retentionDays?: number;
+  revision?: number;
+  tenantId?: string;
+  updatedByUserId?: string;
+}
+
+/** Defines sensitivity levels for data access auditing */
+export type ComplianceAuditSensitivityLevel = 'Public' | 'Internal' | 'Confidential' | 'Restricted' | 'HighlyRestricted';
 
 /** Data model for Compliance Audit Top Ip Activity. */
 export interface ComplianceAuditTopIpActivity {
@@ -3518,7 +6278,7 @@ export interface ComplianceAuditUnifiedSecurityAuditInput {
 /** Response containing unified security audit logs. */
 export interface ComplianceAuditUnifiedSecurityAuditOutput {
   /** The audit log entries. */
-  entries?: Array<ComplianceAuditUnifiedSecurityAuditEntry> | null;
+  entries?: ComplianceAuditUnifiedSecurityAuditEntry[] | null;
   /** Number of records skipped. */
   skip?: number;
   /** Breakdown by source type. */
@@ -3527,6 +6287,21 @@ export interface ComplianceAuditUnifiedSecurityAuditOutput {
   take?: number;
   /** Total count of matching records. */
   totalCount?: number;
+}
+
+/** Data model for Compliance Audit Upload Compliance Document Request. */
+export interface ComplianceAuditUploadComplianceDocumentInput {
+  contentBase64: string;
+  controlIds: string[];
+  mediaType: string;
+  name: string;
+  sourceUri: string;
+  templateId: string;
+  type: string;
+  /** Declared structured fields for PDF/text evidence; JSON evidence uses fields from its actual contents. */
+  validationFields: Record<string, string>;
+  validFromUtc?: string;
+  validUntilUtc?: string;
 }
 
 /** Data model for Compliance Consent Consent Policy Dto. */
@@ -3806,9 +6581,9 @@ export interface ComplianceFinancialCrimeFinancialCrimeCaseDecision {
 /** Data model for Compliance Financial Crime Financial Crime Case Details. */
 export interface ComplianceFinancialCrimeFinancialCrimeCaseDetails {
   case?: ComplianceFinancialCrimeFinancialCrimeCase;
-  decisions?: Array<ComplianceFinancialCrimeFinancialCrimeCaseDecision> | null;
-  events?: Array<ComplianceFinancialCrimeFinancialCrimeCaseEvent> | null;
-  regulatoryReferences?: Array<ComplianceFinancialCrimeFinancialCrimeRegulatoryReference> | null;
+  decisions?: ComplianceFinancialCrimeFinancialCrimeCaseDecision[] | null;
+  events?: ComplianceFinancialCrimeFinancialCrimeCaseEvent[] | null;
+  regulatoryReferences?: ComplianceFinancialCrimeFinancialCrimeRegulatoryReference[] | null;
 }
 
 /** Data model for Compliance Financial Crime Financial Crime Case Event. */
@@ -4043,7 +6818,7 @@ export interface ContentPagesPageDto {
   publishedAt?: string | null;
   robotsDirective?: string | null;
   scheduledPublishAt?: string | null;
-  sections?: Array<ContentPagesPageSectionDto> | null;
+  sections?: ContentPagesPageSectionDto[] | null;
   slug?: string | null;
   sortOrder?: number;
   status?: string | null;
@@ -4204,7 +6979,7 @@ export type ErrorType = 'Failure' | 'Validation' | 'Problem' | 'NotFound' | 'Con
 export interface FeaturesBulkEvaluationInput {
   context?: FeaturesFeatureContext;
   /** List of feature keys to evaluate */
-  featureKeys?: Array<string> | null;
+  featureKeys?: string[] | null;
 }
 
 /** DTO for capability audit log entries. */
@@ -4244,7 +7019,7 @@ export interface FeaturesFeatureContext {
   environment?: string | null;
   ipAddress?: string | null;
   /** User permissions for permission-based targeting */
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   requestTime?: string;
   subscriptionPlanId?: string | null;
   tenantId?: string | null;
@@ -4272,7 +7047,7 @@ export interface FeaturesFeatureFlagDto {
   isEnabled: boolean;
   key: string | null;
   name: string | null;
-  targets?: Array<FeaturesFeatureFlagTargetDto> | null;
+  targets?: FeaturesFeatureFlagTargetDto[] | null;
   tenantId?: string | null;
   type: FeaturesFeatureFlagType;
   updatedAt?: string | null;
@@ -4333,10 +7108,10 @@ export interface FeaturesUpdateFeatureInput {
 
 /** Data model for Fido2 Net Lib Assertion Options. */
 export interface Fido2NetLibAssertionOptions {
-  allowCredentials?: Array<ObjectsPublicKeyCredentialDescriptor> | null;
+  allowCredentials?: ObjectsPublicKeyCredentialDescriptor[] | null;
   challenge?: string | null;
   extensions?: ObjectsAuthenticationExtensionsClientInputs;
-  hints?: Array<ObjectsPublicKeyCredentialHint> | null;
+  hints?: ObjectsPublicKeyCredentialHint[] | null;
   rpId?: string | null;
   timeout?: number;
   userVerification?: ObjectsUserVerificationRequirement;
@@ -4353,13 +7128,13 @@ export interface Fido2NetLibAuthenticatorSelection {
 /** Data model for Fido2 Net Lib Credential Create Options. */
 export interface Fido2NetLibCredentialCreateOptions {
   attestation?: ObjectsAttestationConveyancePreference;
-  attestationFormats?: Array<ObjectsAttestationStatementFormatIdentifier> | null;
+  attestationFormats?: ObjectsAttestationStatementFormatIdentifier[] | null;
   authenticatorSelection?: Fido2NetLibAuthenticatorSelection;
   challenge: string | null;
-  excludeCredentials?: Array<ObjectsPublicKeyCredentialDescriptor> | null;
+  excludeCredentials?: ObjectsPublicKeyCredentialDescriptor[] | null;
   extensions?: ObjectsAuthenticationExtensionsClientInputs;
-  hints?: Array<ObjectsPublicKeyCredentialHint> | null;
-  pubKeyCredParams: Array<Fido2NetLibPubKeyCredParam> | null;
+  hints?: ObjectsPublicKeyCredentialHint[] | null;
+  pubKeyCredParams: Fido2NetLibPubKeyCredParam[] | null;
   rp: Fido2NetLibPublicKeyCredentialRpEntity;
   timeout?: number;
   user: Fido2NetLibFido2User;
@@ -4389,7 +7164,7 @@ export interface Fido2NetLibPublicKeyCredentialRpEntity {
 export interface FinanceEconomyAdRewardsAdPlaybackEvidence {
   completedAt?: string;
   focusLoss?: string;
-  milestones?: Array<number> | null;
+  milestones?: number[] | null;
   playbackDuration?: string;
   startedAt?: string;
   visibleDuration?: string;
@@ -4406,7 +7181,7 @@ export interface FinanceEconomyAdRewardsAdProviderReport {
   periodStart?: string;
   reportId?: string | null;
   signature?: string | null;
-  verifiedSessionIds?: Array<string> | null;
+  verifiedSessionIds?: string[] | null;
   version?: number;
 }
 
@@ -4486,8 +7261,8 @@ export interface FinanceEconomyAdRewardsAdRewardSessionEventOperationalStatus {
 /** Data model for Finance Economy Ad Rewards Ad Reward Session Operational Details. */
 export interface FinanceEconomyAdRewardsAdRewardSessionOperationalDetails {
   completion?: FinanceEconomyAdRewardsAdRewardCompletionOperationalStatus;
-  events?: Array<FinanceEconomyAdRewardsAdRewardSessionEventOperationalStatus> | null;
-  milestones?: Array<FinanceEconomyAdRewardsAdRewardMilestoneOperationalStatus> | null;
+  events?: FinanceEconomyAdRewardsAdRewardSessionEventOperationalStatus[] | null;
+  milestones?: FinanceEconomyAdRewardsAdRewardMilestoneOperationalStatus[] | null;
   summary?: FinanceEconomyAdRewardsAdRewardSessionOperationalSummary;
 }
 
@@ -4510,7 +7285,7 @@ export interface FinanceEconomyAdRewardsDurableAdProviderReportImportResult {
   isDuplicate?: boolean;
   providerReportId?: string;
   reconciliation?: FinanceEconomyAdRewardsAdRewardReconciliation;
-  verifiedPendingSessions?: Array<string> | null;
+  verifiedPendingSessions?: string[] | null;
 }
 
 /** Data model for Finance Economy Ad Rewards Durable Ad Provider Report Status. */
@@ -4664,7 +7439,7 @@ export interface FinanceEconomyBountiesPersistedBountyTerminalEvent {
   firstJournalSequence?: number;
   idempotencyKey?: FinanceEconomyContractsIdempotencyKey;
   occurredAt?: string;
-  outputLots?: Array<FinanceEconomyBountiesBountyTerminalOutputLot> | null;
+  outputLots?: FinanceEconomyBountiesBountyTerminalOutputLot[] | null;
   proceedsLotId?: FinanceEconomyContractsCreditLotId;
   proceedsSourceStampId?: FinanceEconomyContractsSourceStampId;
   returnedUnits?: number;
@@ -4912,12 +7687,12 @@ export interface FinanceEconomyMarketplaceDurableMarketplaceRefundDebt {
 /** Data model for Finance Economy Marketplace Durable Marketplace Refund Result. */
 export interface FinanceEconomyMarketplaceDurableMarketplaceRefundResult {
   cumulativeRefundedQuantity?: number;
-  debts?: Array<FinanceEconomyMarketplaceDurableMarketplaceRefundDebt> | null;
+  debts?: FinanceEconomyMarketplaceDurableMarketplaceRefundDebt[] | null;
   entitlementStatus?: FinanceEconomyMarketplaceMarketplaceEntitlementStatus;
   isDuplicate?: boolean;
   journalHash?: string | null;
   journalSequence?: number;
-  legs?: Array<FinanceEconomyContractsCoinAmount> | null;
+  legs?: FinanceEconomyContractsCoinAmount[] | null;
   postingId?: FinanceEconomyContractsPostingId;
   quantity?: number;
   refundedAt?: string;
@@ -4933,7 +7708,7 @@ export interface FinanceEconomyMarketplaceDurableMarketplaceSettlementResult {
   isDuplicate?: boolean;
   journalHash?: string | null;
   journalSequence?: number;
-  legs?: Array<FinanceEconomyMarketplaceMarketplacePriceLegSnapshot> | null;
+  legs?: FinanceEconomyMarketplaceMarketplacePriceLegSnapshot[] | null;
   orderId?: string;
   postingId?: FinanceEconomyContractsPostingId;
   productId?: string;
@@ -5007,10 +7782,10 @@ export interface FinanceEconomyMarketplaceMarketplaceSettlementLegOperationalSta
 
 /** Data model for Finance Economy Marketplace Marketplace Settlement Operational Details. */
 export interface FinanceEconomyMarketplaceMarketplaceSettlementOperationalDetails {
-  events?: Array<FinanceEconomyMarketplaceMarketplaceEventOperationalStatus> | null;
-  legs?: Array<FinanceEconomyMarketplaceMarketplaceSettlementLegOperationalStatus> | null;
-  outbox?: Array<FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus> | null;
-  refunds?: Array<FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus> | null;
+  events?: FinanceEconomyMarketplaceMarketplaceEventOperationalStatus[] | null;
+  legs?: FinanceEconomyMarketplaceMarketplaceSettlementLegOperationalStatus[] | null;
+  outbox?: FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus[] | null;
+  refunds?: FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus[] | null;
   summary?: FinanceEconomyMarketplaceMarketplaceSettlementOperationalSummary;
 }
 
@@ -5046,7 +7821,7 @@ export type FinanceEconomyMarketplaceProductCurrencyMode = 'HardOnly' | 'SoftOnl
 
 /** Data model for Finance Economy Operations Economy Active Reserve Operational Details. */
 export interface FinanceEconomyOperationsEconomyActiveReserveOperationalDetails {
-  allocations?: Array<FinanceEconomyOperationsEconomyReserveAssetAllocationOperationalStatus> | null;
+  allocations?: FinanceEconomyOperationsEconomyReserveAssetAllocationOperationalStatus[] | null;
   head?: FinanceEconomyOperationsEconomyReserveOperationalStatus;
   reconciliation?: FinanceEconomyOperationsEconomyCustodyReconciliationOperationalStatus;
 }
@@ -5085,8 +7860,8 @@ export interface FinanceEconomyOperationsEconomyAnchorVerificationOperationalSta
 
 /** Data model for Finance Economy Operations Economy Capability Configuration Snapshot. */
 export interface FinanceEconomyOperationsEconomyCapabilityConfigurationSnapshot {
-  killSwitches?: Array<FinanceEconomyOperationsEconomyKillSwitchOperationalStatus> | null;
-  policies?: Array<FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus> | null;
+  killSwitches?: FinanceEconomyOperationsEconomyKillSwitchOperationalStatus[] | null;
+  policies?: FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus[] | null;
 }
 
 /** Data model for Finance Economy Operations Economy Capability Policy Operational Status. */
@@ -5170,7 +7945,7 @@ export interface FinanceEconomyOperationsEconomyKillSwitchOperationalStatus {
   epoch?: number;
   isActive?: boolean;
   reason?: string | null;
-  releaseApprovers?: Array<string> | null;
+  releaseApprovers?: string[] | null;
   releasedAt?: string | null;
   releaseProposedBy?: string | null;
   scope?: FinanceEconomyRiskEconomyKillSwitchScope;
@@ -5180,7 +7955,7 @@ export interface FinanceEconomyOperationsEconomyKillSwitchOperationalStatus {
 export interface FinanceEconomyOperationsEconomyLedgerHealthSnapshot {
   activeProjection?: FinanceEconomyOperationsEconomyProjectionOperationalStatus;
   activeReserve?: FinanceEconomyOperationsEconomyReserveOperationalStatus;
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   head?: FinanceEconomyOperationsEconomyJournalHeadStatus;
   isAnchorHealthy?: boolean;
   isJournalHealthy?: boolean;
@@ -5192,79 +7967,79 @@ export interface FinanceEconomyOperationsEconomyLedgerHealthSnapshot {
 
 /** Data model for Finance Economy Operations Economy Operational Page Ad Reward Pending Claim Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageAdRewardPendingClaimOperationalStatus {
-  items?: Array<FinanceEconomyAdRewardsAdRewardPendingClaimOperationalStatus> | null;
+  items?: FinanceEconomyAdRewardsAdRewardPendingClaimOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Ad Reward Reconciliation Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageAdRewardReconciliationOperationalStatus {
-  items?: Array<FinanceEconomyAdRewardsAdRewardReconciliationOperationalStatus> | null;
+  items?: FinanceEconomyAdRewardsAdRewardReconciliationOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Ad Reward Session Operational Summary. */
 export interface FinanceEconomyOperationsEconomyOperationalPageAdRewardSessionOperationalSummary {
-  items?: Array<FinanceEconomyAdRewardsAdRewardSessionOperationalSummary> | null;
+  items?: FinanceEconomyAdRewardsAdRewardSessionOperationalSummary[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Anchor Operational Details. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyAnchorOperationalDetails {
-  items?: Array<FinanceEconomyOperationsEconomyAnchorOperationalDetails> | null;
+  items?: FinanceEconomyOperationsEconomyAnchorOperationalDetails[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Capability Policy Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyCapabilityPolicyOperationalStatus {
-  items?: Array<FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus> | null;
+  items?: FinanceEconomyOperationsEconomyCapabilityPolicyOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Custody Observation Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyCustodyObservationOperationalStatus {
-  items?: Array<FinanceEconomyOperationsEconomyCustodyObservationOperationalStatus> | null;
+  items?: FinanceEconomyOperationsEconomyCustodyObservationOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Journal Verification Run Details. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyJournalVerificationRunDetails {
-  items?: Array<FinanceEconomyOperationsEconomyJournalVerificationRunDetails> | null;
+  items?: FinanceEconomyOperationsEconomyJournalVerificationRunDetails[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Projection Generation Operational Details. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyProjectionGenerationOperationalDetails {
-  items?: Array<FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetails> | null;
+  items?: FinanceEconomyOperationsEconomyProjectionGenerationOperationalDetails[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Economy Reserve Proposal Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageEconomyReserveProposalOperationalStatus {
-  items?: Array<FinanceEconomyOperationsEconomyReserveProposalOperationalStatus> | null;
+  items?: FinanceEconomyOperationsEconomyReserveProposalOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Legacy Economy Shadow Batch Summary. */
 export interface FinanceEconomyOperationsEconomyOperationalPageLegacyEconomyShadowBatchSummary {
-  items?: Array<FinanceEconomyOperationsLegacyEconomyShadowBatchSummary> | null;
+  items?: FinanceEconomyOperationsLegacyEconomyShadowBatchSummary[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Marketplace Outbox Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageMarketplaceOutboxOperationalStatus {
-  items?: Array<FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus> | null;
+  items?: FinanceEconomyMarketplaceMarketplaceOutboxOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Marketplace Refund Operational Status. */
 export interface FinanceEconomyOperationsEconomyOperationalPageMarketplaceRefundOperationalStatus {
-  items?: Array<FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus> | null;
+  items?: FinanceEconomyMarketplaceMarketplaceRefundOperationalStatus[] | null;
   nextCursor?: string | null;
 }
 
 /** Data model for Finance Economy Operations Economy Operational Page Marketplace Settlement Operational Summary. */
 export interface FinanceEconomyOperationsEconomyOperationalPageMarketplaceSettlementOperationalSummary {
-  items?: Array<FinanceEconomyMarketplaceMarketplaceSettlementOperationalSummary> | null;
+  items?: FinanceEconomyMarketplaceMarketplaceSettlementOperationalSummary[] | null;
   nextCursor?: string | null;
 }
 
@@ -5396,7 +8171,7 @@ export interface FinanceEconomyOperationsLegacyEconomyShadowBatchView {
   transactionCount?: number;
   transactionSnapshotHash?: string | null;
   walletCount?: number;
-  wallets?: Array<FinanceEconomyOperationsLegacyEconomyShadowWalletView> | null;
+  wallets?: FinanceEconomyOperationsLegacyEconomyShadowWalletView[] | null;
   walletSnapshotHash?: string | null;
 }
 
@@ -5504,7 +8279,7 @@ export interface FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewDto {
 
 /** Data model for Finance Economy Projections Projection Generation State. */
 export interface FinanceEconomyProjectionsProjectionGenerationState {
-  approvedBy?: Array<string> | null;
+  approvedBy?: string[] | null;
   generation?: number;
   isActive?: boolean;
   journalHash?: string | null;
@@ -5597,7 +8372,7 @@ export type FinanceEconomyReservesReserveCoverageState = 'Covered' | 'Shortfall'
 
 /** Data model for Finance Economy Reserves Reserve Head. */
 export interface FinanceEconomyReservesReserveHead {
-  assetAllocations?: Array<FinanceEconomyReservesExternalReserveAsset> | null;
+  assetAllocations?: FinanceEconomyReservesExternalReserveAsset[] | null;
   authorizationEpoch?: number;
   coverage?: FinanceEconomyReservesReserveCoverageState;
   evidenceHash?: string | null;
@@ -5638,7 +8413,7 @@ export interface FinanceEconomyRiskCapabilityAuthorizationReceipt {
   actorId?: string;
   capability?: FinanceEconomyRiskEconomyValueMovementCapability;
   destinationHash?: string | null;
-  evidenceHashes?: Array<string> | null;
+  evidenceHashes?: string[] | null;
   expiresAt?: string;
   issuedAt?: string;
   jurisdictionCode?: string | null;
@@ -5651,7 +8426,7 @@ export interface FinanceEconomyRiskCapabilityAuthorizationReceipt {
   reserveVersion?: number;
   riskDecisionId?: string;
   signature?: string | null;
-  sourceRootHashes?: Array<string> | null;
+  sourceRootHashes?: string[] | null;
   subjectReference?: string | null;
   tenantId?: string;
 }
@@ -5676,7 +8451,7 @@ export interface FinanceEconomyRiskComplianceHold {
 /** Data model for Finance Economy Risk Compliance Hold Administration State. */
 export interface FinanceEconomyRiskComplianceHoldAdministrationState {
   hold?: FinanceEconomyRiskComplianceHold;
-  releaseApprovers?: Array<string> | null;
+  releaseApprovers?: string[] | null;
   releasePolicyEvidenceHash?: string | null;
   releaseProposedAt?: string | null;
   releaseProposedBy?: string | null;
@@ -5695,7 +8470,7 @@ export interface FinanceEconomyRiskComplianceHoldEvent {
 
 /** Data model for Finance Economy Risk Compliance Hold Page. */
 export interface FinanceEconomyRiskComplianceHoldPage {
-  items?: Array<FinanceEconomyRiskComplianceHoldAdministrationState> | null;
+  items?: FinanceEconomyRiskComplianceHoldAdministrationState[] | null;
   nextCursor?: string | null;
 }
 
@@ -5709,7 +8484,7 @@ export interface FinanceEconomyRiskComplianceHoldScope {
 
 /** Data model for Finance Economy Risk Economy Capability Evaluation Result. */
 export interface FinanceEconomyRiskEconomyCapabilityEvaluationResult {
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   isReady?: boolean;
   receipt?: FinanceEconomyRiskCapabilityAuthorizationReceipt;
   state?: FinanceEconomyRiskEconomyCapabilityReadinessStatus;
@@ -5772,7 +8547,7 @@ export interface FinanceEconomyRiskEconomyKillSwitchState {
   epoch?: number;
   isActive?: boolean;
   reason?: string | null;
-  releaseApprovers?: Array<string> | null;
+  releaseApprovers?: string[] | null;
   releasedAt?: string | null;
   releaseProposedAt?: string | null;
   releaseProposedBy?: string | null;
@@ -5806,7 +8581,7 @@ export type FinanceEconomyRiskRiskManualDecisionCode = 'EvidenceVerified' | 'Ris
 export interface FinanceEconomyRiskRiskReviewCase {
   id?: string;
   appealOf?: string | null;
-  approvers?: Array<string> | null;
+  approvers?: string[] | null;
   decisionId?: string;
   requiredApprovals?: number;
   resolution?: string | null;
@@ -5821,7 +8596,7 @@ export interface FinanceEconomyRiskRiskReviewCase {
 export interface FinanceEconomyRiskRiskReviewEvent {
   actorId?: string;
   decisionCode?: FinanceEconomyRiskRiskManualDecisionCode;
-  evidenceHashes?: Array<string> | null;
+  evidenceHashes?: string[] | null;
   kind?: FinanceEconomyRiskRiskReviewEventKind;
   occurredAt?: string;
   resolution?: string | null;
@@ -5834,7 +8609,7 @@ export type FinanceEconomyRiskRiskReviewEventKind = 'Submitted' | 'ApprovalRecor
 
 /** Data model for Finance Economy Risk Risk Review Page. */
 export interface FinanceEconomyRiskRiskReviewPage {
-  items?: Array<FinanceEconomyRiskRiskReviewCase> | null;
+  items?: FinanceEconomyRiskRiskReviewCase[] | null;
   nextCursor?: string | null;
 }
 
@@ -5879,7 +8654,7 @@ export interface FinanceEconomyTreasuryAdminWithdrawalAuditEvent {
 
 /** Data model for Finance Economy Treasury Admin Withdrawal Audit View. */
 export interface FinanceEconomyTreasuryAdminWithdrawalAuditView {
-  events?: Array<FinanceEconomyTreasuryAdminWithdrawalAuditEvent> | null;
+  events?: FinanceEconomyTreasuryAdminWithdrawalAuditEvent[] | null;
   integrityValid?: boolean;
   runId?: string;
 }
@@ -5950,9 +8725,9 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endDate: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -6017,9 +8792,9 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   feedback?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -6084,7 +8859,11 @@ export interface IdentityAuthenticationApiKeyDto {
   keyPrefix?: string | null;
   lastUsedAt?: string | null;
   name?: string | null;
-  scopes?: Array<string> | null;
+  /** Key replaced by this key (set when this key was issued by a rotation) */
+  replacesKeyId?: string | null;
+  /** When the rotation overlap window for this key ends (rotated keys only) */
+  rotationGraceEndsAt?: string | null;
+  scopes?: string[] | null;
   usageCount?: number;
 }
 
@@ -6095,21 +8874,26 @@ export interface IdentityAuthenticationAssignRoleToUserInput {
   userId?: string;
 }
 
+/** Multi-step authentication flow steps */
+export type IdentityAuthenticationAuthenticationStep = 'PrimaryCredential' | 'MfaVerification' | 'DeviceTrust' | 'RiskChallenge';
+
 /** Backup codes response */
 export interface IdentityAuthenticationBackupCodesOutput {
-  codes?: Array<string> | null;
+  codes?: string[] | null;
   generatedAt?: string;
 }
 
 /** Response containing backup codes status */
 export interface IdentityAuthenticationBackupCodesStatusOutput {
+  /** False for legacy sets whose original issued/used counts cannot be reconstructed. */
+  areUsageCountsKnown?: boolean;
   /** Whether the user has any backup codes */
   hasBackupCodes: boolean;
   /** Number of codes remaining (unused) */
   remainingCount: number;
-  /** Total number of backup codes generated */
+  /** Original number generated when known; otherwise the remaining count is a lower bound */
   totalCount: number;
-  /** Number of codes that have been used */
+  /** Number used when known; otherwise zero is a lower bound, not historical proof */
   usedCount: number;
 }
 
@@ -6135,7 +8919,7 @@ export interface IdentityAuthenticationBulkAssignRolesCommand {
   /** The role to assign to each user. */
   roleId?: string;
   /** Users receiving the role. Duplicate IDs are collapsed before processing. */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Outcome for a user in a bulk role assignment. */
@@ -6155,7 +8939,7 @@ export interface IdentityAuthenticationBulkRoleAssignmentResult {
   reactivated?: number;
   roleId?: string;
   totalRequested?: number;
-  users?: Array<IdentityAuthenticationBulkRoleAssignmentItemResult> | null;
+  users?: IdentityAuthenticationBulkRoleAssignmentItemResult[] | null;
 }
 
 /** Result status for one requested user. */
@@ -6183,6 +8967,14 @@ export interface IdentityAuthenticationClientCredentialsTokenOutput {
 export interface IdentityAuthenticationCompleteMfaSetupInput {
   code: string;
   secretKey: string;
+}
+
+/** Completes the bound, expiring sign-in challenge. The server supplies identity and tenant. */
+export interface IdentityAuthenticationCompleteMfaSignInInput {
+  code: string;
+  deviceFingerprint?: string | null;
+  method?: IdentityAuthenticationMfaMethod;
+  mfaToken: string;
 }
 
 /** Request to complete password reset */
@@ -6213,6 +9005,18 @@ export interface IdentityAuthenticationCompleteWebAuthnRegistrationInput {
   isPasswordless?: boolean;
 }
 
+/** Request to consume a one-time email sign-in code. */
+export interface IdentityAuthenticationConsumeEmailCodeInput {
+  /** Six-digit one-time code received by email. */
+  code: string;
+  /** Optional device fingerprint for refresh-token session tracking. */
+  deviceFingerprint?: string | null;
+  /** Email address the code belongs to. */
+  email: string;
+  /** Optional tenant context. */
+  tenantId?: string | null;
+}
+
 /** Request to consume a passwordless magic sign-in link. */
 export interface IdentityAuthenticationConsumeMagicLinkInput {
   /** Optional device fingerprint for refresh-token session tracking. */
@@ -6228,7 +9032,7 @@ export interface IdentityAuthenticationCreateApiKeyCommand {
   expiresAt?: string | null;
   ipWhitelist?: string | null;
   name: string | null;
-  scopes: Array<string> | null;
+  scopes: string[] | null;
 }
 
 /** Data model for Identity Authentication Create Api Key Response. */
@@ -6239,14 +9043,14 @@ export interface IdentityAuthenticationCreateApiKeyOutput {
   expiresAt?: string | null;
   keyPrefix?: string | null;
   name?: string | null;
-  scopes?: Array<string> | null;
+  scopes?: string[] | null;
 }
 
 /** Request DTO for creating a new role */
 export interface IdentityAuthenticationCreateRoleInput {
   description?: string | null;
   name?: string | null;
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   tenantId?: string | null;
 }
 
@@ -6266,6 +9070,9 @@ export interface IdentityAuthenticationCreateStepUpChallengeInput {
   payloadHash?: string | null;
   targetReference?: string | null;
 }
+
+/** Credential type detection */
+export type IdentityAuthenticationCredentialType = 'Email' | 'Username' | 'Phone' | 'WalletAddress' | 'Certificate';
 
 /** Represents detailed device information for security tracking. */
 export interface IdentityAuthenticationDeviceInfo {
@@ -6318,6 +9125,8 @@ export interface IdentityAuthenticationDiscordCallbackRequestDto {
   code: string;
   /** The same redirect URI used in the authorization request */
   redirectUri: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
   state: string;
   /** Optional tenant context */
@@ -6353,6 +9162,13 @@ so the caller can stash it in its state cookie) */
   state: string | null;
 }
 
+/** Data model for Identity Authentication Email Code Request Result. */
+export interface IdentityAuthenticationEmailCodeRequestResult {
+  expiresInMinutes?: number;
+  message?: string | null;
+  success?: boolean;
+}
+
 /** Response for email verification request */
 export interface IdentityAuthenticationEmailVerificationOutput {
   /** Success message */
@@ -6373,6 +9189,28 @@ export interface IdentityAuthenticationEmailVerificationResult {
   verifiedAt?: string | null;
 }
 
+/** Authorization-time consent preview: the exact scopes a link flow will request from
+the provider, shown to the user before they continue (issue #250). */
+export interface IdentityAuthenticationExternalLoginLinkPreviewOutput {
+  provider: string | null;
+  /** Scope tokens that will appear on the authorization request. */
+  requestedScopes: string[] | null;
+}
+
+/** Request body for the GitHub OAuth callback endpoint */
+export interface IdentityAuthenticationGitHubCallbackRequestDto {
+  /** OAuth authorization code from the GitHub callback */
+  code: string;
+  /** The same redirect URI used in the authorization request */
+  redirectUri: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
+  /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
+  state: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
 /** Response for GitHub sign-in initiation */
 export interface IdentityAuthenticationGitHubSignInOutput {
   /** GitHub OAuth authorization URL */
@@ -6382,6 +9220,21 @@ export interface IdentityAuthenticationGitHubSignInOutput {
 /** Request for Google ID token sign-in */
 export interface IdentityAuthenticationGoogleIdTokenRequestDto {
   idToken: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
+  tenantId?: string | null;
+}
+
+/** Request body to initiate an orchestrated authentication flow. */
+export interface IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto {
+  /** Optional device fingerprint used for trusted-device recognition.
+Missing or unrecognized fingerprints fail closed to a device-trust challenge. */
+  deviceFingerprint?: string | null;
+  /** Credential identifier (email) of the account signing in. */
+  identifier: string;
+  /** The account password; verified as the primary credential at initiation. */
+  password: string;
+  /** Optional tenant context for the resulting sign-in. */
   tenantId?: string | null;
 }
 
@@ -6410,6 +9263,10 @@ export interface IdentityAuthenticationLocalSignInInput {
   /** Alias for Email to support polymorphic sign-in scenarios */
   emailOrUsername?: string | null;
   password: string;
+  /** When true, the session is persistent ("remember me"): the refresh token uses the
+configurable persistent lifetime (`Jwt:PersistentRefreshTokenExpirationDays`)
+instead of the standard one. Null or false keeps the standard lifetime. */
+  rememberMe?: boolean | null;
   /** Optional tenant ID to use for the sign-in. If not provided, will use the first available tenant for the user */
   tenantId?: string | null;
   username?: string | null;
@@ -6474,9 +9331,11 @@ export interface IdentityAuthenticationMagicLinkRequestResult {
 
 /** MFA configuration response */
 export interface IdentityAuthenticationMfaConfigurationOutput {
+  /** Original issued count; null for legacy sets whose issuance metadata is unavailable. */
+  backupCodesIssued?: number | null;
   backupCodesRemaining?: number;
   enabledAt?: string | null;
-  enabledMethods?: Array<string> | null;
+  enabledMethods?: string[] | null;
   isEnabled?: boolean;
 }
 
@@ -6508,17 +9367,25 @@ export interface IdentityAuthenticationMfaMethodInfo {
 export interface IdentityAuthenticationMfaMethodsOutput {
   defaultMethod?: IdentityAuthenticationMfaMethod;
   /** List of all MFA methods */
-  methods: Array<IdentityAuthenticationMfaMethodInfo> | null;
+  methods: IdentityAuthenticationMfaMethodInfo[] | null;
 }
 
 /** Response of MFA setup operation */
 export interface IdentityAuthenticationMfaSetupOutput {
-  backupCodes?: Array<string> | null;
+  backupCodes?: string[] | null;
   errorMessage?: string | null;
   isSuccess?: boolean;
   qrCodeData?: string | null;
   qrCodeUri?: string | null;
   secretKey?: string | null;
+}
+
+/** Provisioning data only; this response never grants an authenticated session. */
+export interface IdentityAuthenticationMfaSignInEnrollmentOutput {
+  expiresAt?: string;
+  qrCodeUri?: string | null;
+  secretKey?: string | null;
+  success?: boolean;
 }
 
 /** Success response for MFA operations */
@@ -6538,6 +9405,76 @@ export interface IdentityAuthenticationMfaVerificationOutput {
 export interface IdentityAuthenticationOAuth2ErrorOutput {
   error?: string | null;
   errorDescription?: string | null;
+}
+
+/** Request to initiate an OIDC federation provider sign-in */
+export interface IdentityAuthenticationOidcAuthorizeRequestDto {
+  /** The redirect URI registered with the federation provider */
+  redirectUri: string;
+}
+
+/** Request body for the OIDC federation callback endpoint */
+export interface IdentityAuthenticationOidcCallbackRequestDto {
+  /** OAuth authorization code returned by the federation provider */
+  code: string;
+  /** The same redirect URI used in the authorization request */
+  redirectUri: string;
+  /** Whether the caller asked for a persistent ("remember me") refresh-token lifetime */
+  rememberMe?: boolean | null;
+  /** OAuth state parameter for CSRF protection (validated web-side against the signed state cookie) */
+  state: string;
+  /** Optional tenant context */
+  tenantId?: string | null;
+}
+
+/** A discovered federation provider serving one email domain. */
+export interface IdentityAuthenticationOidcDiscoveredProvider {
+  displayName: string | null;
+  slug: string | null;
+}
+
+/** Response for domain-to-provider discovery */
+export interface IdentityAuthenticationOidcDiscoverProviderOutput {
+  /** Federation providers whose configured email domains match the requested address */
+  providers: IdentityAuthenticationOidcDiscoveredProvider[] | null;
+}
+
+/** Response for OIDC logout forwarding */
+export interface IdentityAuthenticationOidcEndSessionUrlOutput {
+  /** The provider's end-session URL with the post-logout redirect applied; null when the
+provider's discovery document does not advertise an end_session_endpoint. */
+  endSessionUrl?: string | null;
+}
+
+/** Response for OIDC federation sign-in initiation */
+export interface IdentityAuthenticationOidcSignInOutput {
+  /** The provider's authorization URL with client, redirect, scope, and state parameters applied */
+  authUrl: string | null;
+  /** CSRF state parameter embedded in the authorization URL (also returned separately
+so the caller can stash it in its state cookie) */
+  state: string | null;
+}
+
+/** Response describing the state of an orchestrated authentication flow. */
+export interface IdentityAuthenticationOrchestratedFlowStateOutput {
+  /** Steps already satisfied. */
+  completedSteps?: IdentityAuthenticationAuthenticationStep[] | null;
+  currentStep?: IdentityAuthenticationAuthenticationStep;
+  /** When the flow expires; expired flows fail closed. */
+  expiresAt?: string;
+  /** Unique identifier of the flow; carried by the client across step processing and completion. */
+  flowId?: string;
+  /** When the flow was initiated. */
+  initiatedAt?: string;
+  /** Whether every required step is satisfied and the flow can be completed. */
+  isComplete?: boolean;
+  nextStep?: IdentityAuthenticationAuthenticationStep;
+  /** Every step the flow requires before completion. */
+  requiredSteps?: IdentityAuthenticationAuthenticationStep[] | null;
+  /** Risk score (0–1) that drove the challenge ladder for this flow. */
+  riskScore?: number | null;
+  /** The authenticated user, identified after primary-credential validation. */
+  userId?: string | null;
 }
 
 /** Request to change password for authenticated user */
@@ -6592,6 +9529,29 @@ export interface IdentityAuthenticationPatchServiceAccountInput {
   scopes?: string | null;
 }
 
+/** Password sign-in using one email, username or canonical international phone identifier. */
+export interface IdentityAuthenticationPolymorphicSignInInput {
+  credential?: string | null;
+  credentialType?: IdentityAuthenticationCredentialType;
+  deviceFingerprint?: string | null;
+  password?: string | null;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
+  tenantId?: string | null;
+}
+
+/** Request body to satisfy one challenge step of an orchestrated authentication flow.
+Exactly one proof field (TOTP code, backup code or WebAuthn assertion) is required. */
+export interface IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto {
+  /** One-time backup code, when satisfying the step with a recovery code. */
+  backupCode?: string | null;
+  step: IdentityAuthenticationAuthenticationStep;
+  /** TOTP verification code, when satisfying the step with the authenticator app. */
+  totpCode?: string | null;
+  /** Serialized WebAuthn assertion, when satisfying the step with a passkey/security key. */
+  webAuthnAssertion?: string | null;
+}
+
 /** Request DTO for refreshing tokens */
 export interface IdentityAuthenticationRefreshTokenInput {
   refreshToken: string;
@@ -6602,6 +9562,14 @@ export interface IdentityAuthenticationRefreshTokenInput {
 export interface IdentityAuthenticationRemoveRoleFromUserInput {
   roleId?: string;
   userId?: string;
+}
+
+/** Request to send a one-time email sign-in code. */
+export interface IdentityAuthenticationRequestEmailCodeInput {
+  /** Email address to send the sign-in code to. */
+  email: string;
+  /** Optional tenant context. */
+  tenantId?: string | null;
 }
 
 /** Request to send a passwordless magic sign-in link. */
@@ -6625,6 +9593,24 @@ export interface IdentityAuthenticationRevokeApiKeyInput {
   reason?: string | null;
 }
 
+/** Request to revoke individual OAuth scope grants on a linked provider.
+Revoking every remaining scope is allowed and leaves the link in place with an
+empty grant list; removing the whole provider remains the unlink endpoint's job. */
+export interface IdentityAuthenticationRevokeExternalLoginScopesInput {
+  /** Scope tokens to revoke. Each must be a valid scope token (non-empty, no whitespace). */
+  scopes: string[];
+}
+
+/** Post-revocation snapshot of the link's grant state. */
+export interface IdentityAuthenticationRevokeExternalLoginScopesOutput {
+  /** UTC moment the underlying consent was recorded (revocation does not re-stamp it), when one exists. */
+  consentedAt?: string | null;
+  consentVersion?: number;
+  /** Scope grants remaining after the revocation. */
+  grantedScopes: string[] | null;
+  provider: string | null;
+}
+
 /** Request for revoking a refresh token */
 export interface IdentityAuthenticationRevokeRefreshTokenInput {
   ipAddress?: string | null;
@@ -6634,6 +9620,30 @@ export interface IdentityAuthenticationRevokeRefreshTokenInput {
 
 /** Risk level for session security and anomaly detection */
 export type IdentityAuthenticationRiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** Data model for Identity Authentication Rotate Api Key Request. */
+export interface IdentityAuthenticationRotateApiKeyInput {
+  /** Optional absolute expiry for the replacement key; defaults to preserving the old key's expiry. */
+  expiresAt?: string | null;
+  /** Optional overlap window, in minutes, during which the old key keeps working;
+defaults to the configured rotation grace period. Zero revokes the old key immediately. */
+  gracePeriodMinutes?: number | null;
+  /** Optional display name for the replacement key; defaults to the old key's name. */
+  name?: string | null;
+  /** Optional scopes for the replacement key; defaults to the old key's scopes. */
+  scopes?: string[] | null;
+}
+
+/** Data model for Identity Authentication Rotate Api Key Response. */
+export interface IdentityAuthenticationRotateApiKeyOutput {
+  newKey?: IdentityAuthenticationCreateApiKeyOutput;
+  /** When the old key stops being honored (null when it was revoked immediately) */
+  oldKeyGraceEndsAt?: string | null;
+  /** The key that was rotated (now superseded) */
+  oldKeyId?: string;
+  /** Whether the old key was revoked immediately instead of getting an overlap window */
+  oldKeyRevoked?: boolean;
+}
 
 /** Request to manually rotate signing key */
 export interface IdentityAuthenticationRotateKeyInput {
@@ -6664,7 +9674,7 @@ export interface IdentityAuthenticationServiceAccountAuditEntry {
 
 /** Response for service account audit log. */
 export interface IdentityAuthenticationServiceAccountAuditLogOutput {
-  entries?: Array<IdentityAuthenticationServiceAccountAuditEntry> | null;
+  entries?: IdentityAuthenticationServiceAccountAuditEntry[] | null;
   page?: number;
   pageSize?: number;
   serviceAccountId?: string;
@@ -6722,10 +9732,10 @@ export interface IdentityAuthenticationSessionSecurityAnalysis {
   analyzedAt?: string;
   isSuspicious?: boolean;
   metadata?: Record<string, string> | null;
-  riskFactors?: Array<string> | null;
+  riskFactors?: string[] | null;
   riskLevel?: IdentityAuthenticationRiskLevel;
   riskScore?: number;
-  securityFlags?: Array<string> | null;
+  securityFlags?: string[] | null;
   sessionId?: string;
   totalDeviceCount?: number;
   unusualActivityDetected?: boolean;
@@ -6752,10 +9762,16 @@ export interface IdentityAuthenticationSignInOutput {
   accessToken?: string | null;
   /** When the access token expires (short-lived) */
   accessTokenExpiresAt?: string;
+  /**     Authentication context class reference (OIDC `acr`) attested by the federated
+identity provider for this sign-in. Null for non-federated flows. */
+  authenticationContextClassReference?: string | null;
+  /**     Authentication method references (OIDC `amr`) attested by the federated
+identity provider for this sign-in. Null for non-federated flows. */
+  authenticationMethodReferences?: string[] | null;
   /** Available step-up authentication methods */
-  availableMethods?: Array<string> | null;
+  availableMethods?: string[] | null;
   /** List of tenants the user has access to */
-  availableTenants?: Array<TenantInfo> | null;
+  availableTenants?: TenantInfo[] | null;
   /** User email */
   email?: string | null;
   /** Backward compatible field: originally represented refresh token expiry (or conflated); prefer using AccessTokenExpiresAt / RefreshTokenExpiresAt. */
@@ -6764,10 +9780,15 @@ export interface IdentityAuthenticationSignInOutput {
   expiresIn?: number;
   /** Response message */
   message?: string | null;
+  /** Recovery codes returned once, only when a limited enrollment finishes with verified TOTP. */
+  mfaEnrollmentBackupCodes?: string[] | null;
   /** MFA session ID if MFA is required */
   mfaSessionId?: string | null;
   /** MFA token */
   mfaToken?: string | null;
+  /**     Whether the federated identity provider attested multi-factor authentication
+(`amr` containing "mfa") for this sign-in. */
+  mfaVerifiedByProvider?: boolean;
   /** Refresh token */
   refreshToken?: string | null;
   /** When the refresh token expires (long-lived) */
@@ -6777,7 +9798,7 @@ export interface IdentityAuthenticationSignInOutput {
   /** Whether step-up authentication is required due to high-risk login */
   requiresStepUp?: boolean;
   /** List of risk factors detected */
-  riskFactors?: Array<string> | null;
+  riskFactors?: string[] | null;
   riskLevel?: IdentityAuthenticationRiskLevel;
   /** Session ID */
   sessionId?: string;
@@ -6810,6 +9831,11 @@ export interface IdentityAuthenticationSmsMfaSetupOutput {
   message: string | null;
   /** Masked phone number for confirmation */
   phoneNumberMasked: string | null;
+}
+
+/** Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
+export interface IdentityAuthenticationStartMfaSignInEnrollmentInput {
+  mfaToken: string;
 }
 
 /** Data model for Identity Authentication Step Up Challenge Response. */
@@ -6850,7 +9876,7 @@ export interface IdentityAuthenticationUpdateRoleInput {
   description?: string | null;
   isActive?: boolean | null;
   name?: string | null;
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
 }
 
 /** Request to update scopes. */
@@ -6916,6 +9942,8 @@ export interface IdentityAuthenticationWeb3VerifyInput {
   deviceFingerprint?: string | null;
   /** Nonce contained in the SIWE challenge message */
   nonce: string;
+  /** When true, issues a persistent ("remember me") refresh token using the persistent lifetime. */
+  rememberMe?: boolean | null;
   /** EIP-191 signature over the SIWE challenge message */
   signature: string;
   /** Optional tenant context */
@@ -6968,21 +9996,44 @@ export interface IdentityAuthenticationWebAuthnCredentialInfo {
   authenticatorType?: IdentityAuthenticationWebAuthnAuthenticatorType;
   backedUp?: boolean;
   createdAt?: string;
+  /** When the credential was temporarily deactivated, if applicable. */
+  deactivatedAt?: string | null;
   friendlyName?: string | null;
   isDefault?: boolean;
   isPasswordless?: boolean;
   lastUsedAt?: string | null;
+  /** When the credential was revoked (terminal), if applicable. */
+  revokedAt?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+}
+
+/** Lifecycle status of a WebAuthn credential. */
+export type IdentityAuthenticationWebAuthnCredentialStatus = 'Active' | 'Deactivated' | 'Revoked';
+
+/** Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+export interface IdentityAuthenticationWebAuthnCredentialTransitionResult {
+  /** Machine-readable failure reason (`CredentialNotFound`, `InvalidTransition`)
+or `null` on success. */
+  error?: string | null;
+  /** Human-readable explanation of the failure, or `null` on success. */
+  errorDescription?: string | null;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
+  /** Whether the requested transition was applied. */
+  success?: boolean;
 }
 
 /** Result of verifying a WebAuthn credential. */
 export interface IdentityAuthenticationWebAuthnCredentialVerifyResult {
   error?: string | null;
+  /** Whether the credential is temporarily deactivated (reversible, unlike revocation). */
+  isDeactivated?: boolean;
   isExpired?: boolean;
   isRevoked?: boolean;
   isValid?: boolean;
   lastUsedAt?: string | null;
   /** Signature counter for replay attack protection (increases with each use). */
   signatureCount?: number;
+  status?: IdentityAuthenticationWebAuthnCredentialStatus;
   success?: boolean;
 }
 
@@ -7033,7 +10084,7 @@ export interface IdentityAuthorizationAccessReviewCampaign {
   createdBy?: string;
   description?: string | null;
   endDate?: string;
-  items?: Array<IdentityAuthorizationAccessReviewItem> | null;
+  items?: IdentityAuthorizationAccessReviewItem[] | null;
   name?: string | null;
   notificationTemplate?: string | null;
   reminderFrequencyDays?: number;
@@ -7100,7 +10151,7 @@ export interface IdentityAuthorizationCommandsCreateAccessReviewCampaignCommand 
 
 /** Command to create a new SoD rule */
 export interface IdentityAuthorizationCommandsCreateSoDRuleCommand {
-  conflictingPermissions?: Array<string> | null;
+  conflictingPermissions?: string[] | null;
   description?: string | null;
   isEnabled?: boolean;
   name?: string | null;
@@ -7114,7 +10165,7 @@ export interface IdentityAuthorizationCommandsDelegatePermissionsCommand {
   delegateUserId?: string;
   delegatorUserId?: string;
   expiresAt?: string | null;
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   reason?: string | null;
   resourceId?: string | null;
   tenantId?: string | null;
@@ -7124,10 +10175,10 @@ export interface IdentityAuthorizationCommandsDelegatePermissionsCommand {
 /** Command to grant delegated admin scope */
 export interface IdentityAuthorizationCommandsGrantDelegatedAdminCommand {
   adminUserId?: string;
-  allowedOperations?: Array<string> | null;
+  allowedOperations?: string[] | null;
   description?: string | null;
-  managedResourceTypes?: Array<string> | null;
-  managedUserIds?: Array<string> | null;
+  managedResourceTypes?: string[] | null;
+  managedUserIds?: string[] | null;
   name?: string | null;
   organizationalUnitId?: string | null;
   tenantId?: string | null;
@@ -7195,7 +10246,7 @@ export interface IdentityAuthorizationControllersRevokeItemInput {
 
 /** Data model for Identity Authorization Controllers Update So DRule Request. */
 export interface IdentityAuthorizationControllersUpdateSoDRuleInput {
-  conflictingPermissions?: Array<string> | null;
+  conflictingPermissions?: string[] | null;
   description?: string | null;
   isEnabled?: boolean;
   name?: string | null;
@@ -7245,7 +10296,7 @@ export interface IdentityAuthorizationDenyTenantPermissionCommand {
   /** Gets the ID of the user denying the permissions. */
   deniedBy: string;
   /** Gets the permissions to deny. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the optional reason for denying permissions. */
   reason?: string | null;
   tenantId: CQRSModelsTenantId;
@@ -7272,7 +10323,7 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
   /** Gets whether the user is the owner of the resource. */
   isOwner?: boolean;
   /** Gets the list of effective permissions. */
-  permissions: Array<IdentityAuthorizationEffectivePermissionDto> | null;
+  permissions: IdentityAuthorizationEffectivePermissionDto[] | null;
   /** Gets the resource ID. */
   resourceId: string;
   /** Gets the resource type. */
@@ -7284,9 +10335,94 @@ export interface IdentityAuthorizationEffectivePermissionsOutput {
 /** Status of JIT elevation request */
 export type IdentityAuthorizationElevationRequestStatus = 'None' | 'Pending' | 'Approved' | 'Denied' | 'Active' | 'Expired' | 'Revoked';
 
+/** A tenant permission grant that is about to expire. */
+export interface IdentityAuthorizationExpiringTenantPermission {
+  /** Gets the expiration instant. */
+  expiresAt: string;
+  /** Gets the grant ID. */
+  permissionId: string;
+  /** Gets the grant's permission strings. */
+  permissions: string[] | null;
+  /** Gets the user ID the grant belongs to (null for tenant defaults). */
+  userId?: string | null;
+}
+
+/** Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+export interface IdentityAuthorizationExtendTenantPermissionExpirationCommand {
+  /** Gets the positive extension period. */
+  extension: string;
+  /** Gets the IDs of the permission grants to extend. */
+  permissionIds: string[] | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Permission entry in the sync contract (one TenantPermission row). */
+export interface IdentityAuthorizationExternalPermissionEntry {
+  /** Denied permissions (DENY-WINS). */
+  denyPermissions?: string[] | null;
+  /** Whether the entry is active. */
+  isActive?: boolean;
+  /** Allowed permissions. */
+  permissions?: string[] | null;
+  /** Subject user (null = tenant defaults). */
+  userId?: string | null;
+}
+
+/** Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+export interface IdentityAuthorizationExternalPermissionSyncDocument {
+  /** When the document was produced. */
+  exportedAtUtc?: string;
+  /** Permission entries (tenant defaults and user grants) to synchronize. */
+  permissions?: IdentityAuthorizationExternalPermissionEntry[] | null;
+  /** Role definitions to synchronize. */
+  roles?: IdentityAuthorizationExternalRoleDefinition[] | null;
+  /** Contract version; the only supported value is `1.0`. */
+  schemaVersion?: string | null;
+  /** Tenant scope of the document (null = global, system-admin only). */
+  tenantId?: string | null;
+}
+
+/** Role definition in the sync contract. */
+export interface IdentityAuthorizationExternalRoleDefinition {
+  /** Additional parent role names (multi-parent inheritance, issue #358). */
+  additionalParentRoleNames?: string[] | null;
+  /** Inherited permissions the role opts out of (selective blocking, issue #358). */
+  blockedInheritedPermissions?: string[] | null;
+  /** Directly assigned deny permissions (DENY-WINS). */
+  denyPermissions?: string[] | null;
+  /** Optional description. */
+  description?: string | null;
+  /** Display name. */
+  displayName?: string | null;
+  /** Whether the role is active. */
+  isActive?: boolean;
+  /** Unique role name within the tenant scope. */
+  name?: string | null;
+  /** Primary parent role name (optional). */
+  parentRoleName?: string | null;
+  /** Directly assigned allow permissions. */
+  permissions?: string[] | null;
+  /** Conflict-resolution priority. */
+  priority?: number;
+}
+
+/** Response containing grants that are about to expire in a tenant. */
+export interface IdentityAuthorizationGetExpiringTenantPermissionsOutput {
+  /** Gets the grants expiring within the requested window, ordered by expiration instant. */
+  expiring: IdentityAuthorizationExpiringTenantPermission[] | null;
+  /** Gets the tenant ID. */
+  tenantId: string;
+}
+
 /** Response containing pending invitations for the current user. */
 export interface IdentityAuthorizationGetPendingResourceInvitationsOutput {
-  invitations: Array<IdentityAuthorizationResourceInvitationDto> | null;
+  invitations: IdentityAuthorizationResourceInvitationDto[] | null;
   totalCount?: number;
 }
 
@@ -7306,7 +10442,7 @@ export interface IdentityAuthorizationGetResourceUsersOutput {
   /** Gets the total count of users. */
   totalCount?: number;
   /** Gets the list of users with access. */
-  users: Array<IdentityAuthorizationResourceUser> | null;
+  users: IdentityAuthorizationResourceUser[] | null;
 }
 
 /** Response containing tenant permissions for a user. */
@@ -7316,7 +10452,7 @@ export interface IdentityAuthorizationGetTenantPermissionsOutput {
   /** Gets whether the user is a tenant admin. */
   isTenantAdmin?: boolean;
   /** Gets the list of permissions. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the tenant ID. */
   tenantId: string;
   /** Gets the user ID. */
@@ -7330,13 +10466,16 @@ export interface IdentityAuthorizationGrantTenantPermissionCommand {
   /** Gets the ID of the user granting the permissions. */
   grantedBy: string;
   /** Gets the permissions to grant. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the optional reason for granting permissions. */
   reason?: string | null;
   tenantId: CQRSModelsTenantId;
   /** Gets the user ID to grant permissions to. */
   userId: string;
 }
+
+/** Graph export formats */
+export type IdentityAuthorizationGraphExportFormat = 'None' | 'DOT' | 'JSON' | 'GraphML';
 
 /** Response indicating whether the user has the requested permission. */
 export interface IdentityAuthorizationHasPermissionOutput {
@@ -7356,6 +10495,15 @@ export interface IdentityAuthorizationHasPermissionOutput {
 
 /** Impact severity level */
 export type IdentityAuthorizationImpactSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
+
+/** Request body for the permission sync import endpoint. */
+export interface IdentityAuthorizationImportPermissionSyncInput {
+  document?: IdentityAuthorizationExternalPermissionSyncDocument;
+  /** Validate and report without applying. */
+  dryRun?: boolean;
+  /** Optional target tenant (null/empty = global scope, system admins only). */
+  tenantId?: string | null;
+}
 
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
@@ -7393,15 +10541,159 @@ export interface IdentityAuthorizationJitElevationInput {
   updatedAt?: string | null;
 }
 
+/** A user affected by a simulated permission change, with the reason. */
+export interface IdentityAuthorizationModelsImpactedUser {
+  /** Permission keys the user loses entirely as a result of the change. */
+  lostPermissionKeys?: string[] | null;
+  /** Why the user is impacted (e.g. permission keys lost, or retention path). */
+  reason?: string | null;
+  /** For retention results: whether a direct user grant still provides the permission. */
+  retainedViaDirectGrant?: boolean;
+  /** For retention results: role chains that still provide the permission. */
+  retainedViaRoleIds?: string[] | null;
+  /** The affected user id. */
+  userId?: string;
+}
+
+/** Snapshot of a tenant's permission structure rendered as a directed graph:
+users -> roles -> permissions, including inheritance, denies, and direct grants. */
+export interface IdentityAuthorizationModelsPermissionGraph {
+  /** Graph edges. */
+  edges?: IdentityAuthorizationModelsPermissionGraphEdge[] | null;
+  /** UTC timestamp of generation. */
+  generatedAtUtc?: string;
+  /** Whether user nodes and their edges are included. */
+  includesUsers?: boolean;
+  /** Graph nodes. */
+  nodes?: IdentityAuthorizationModelsPermissionGraphNode[] | null;
+  summary?: IdentityAuthorizationModelsPermissionGraphSummary;
+  /** Tenant the graph was built for (null = global scope). */
+  tenantId?: string | null;
+}
+
+/** A cycle detected in the role-inheritance graph. */
+export interface IdentityAuthorizationModelsPermissionGraphCycle {
+  /** Role ids participating in the cycle, in walk order. */
+  roleIds?: string[] | null;
+}
+
+/** A directed edge of the permission graph. */
+export interface IdentityAuthorizationModelsPermissionGraphEdge {
+  /** Source node id. */
+  sourceId?: string | null;
+  /** Target node id. */
+  targetId?: string | null;
+  type?: IdentityAuthorizationModelsPermissionGraphEdgeType;
+}
+
+/** Type of an edge in the permission graph. */
+export type IdentityAuthorizationModelsPermissionGraphEdgeType =
+  'RoleInheritsFrom' | 'RoleGrantsPermission' | 'RoleDeniesPermission' | 'UserAssignedRole' | 'UserDirectGrant' | 'UserDirectDeny';
+
+/** A single node of the permission graph. */
+export interface IdentityAuthorizationModelsPermissionGraphNode {
+  /** Stable node identifier: `role:{roleId}`, `user:{userId}`, or `perm:{permissionKey}`.
+The tenant-default pseudo-role uses `role:tenant-default:{tenantId}`. */
+  id?: string | null;
+  /** Role nodes: whether the role is currently active. */
+  isActive?: boolean | null;
+  /** Permission nodes: whether the key exists in the GameGuild.Identity.Authorization.PermissionRegistry. */
+  isRegistered?: boolean;
+  /** Role nodes: whether this is a system role that cannot be deleted. */
+  isSystem?: boolean | null;
+  /** Human-readable label (role display name, user id, or permission key). */
+  label?: string | null;
+  /** Permission nodes: resource segment of the key (the part before the first colon). */
+  resource?: string | null;
+  /** Tenant scope of the entity (null for global roles). */
+  tenantId?: string | null;
+  type?: IdentityAuthorizationModelsPermissionGraphNodeType;
+}
+
+/** Type of a node in the permission graph. */
+export type IdentityAuthorizationModelsPermissionGraphNodeType = 'Role' | 'User' | 'Permission';
+
+/** Aggregated quality/statistics report for a permission graph. */
+export interface IdentityAuthorizationModelsPermissionGraphSummary {
+  /** Number of user -> permission direct grant edges. */
+  directGrantCount?: number;
+  /** Total number of edges. */
+  edgeCount?: number;
+  /** Cycles found in role inheritance (a data defect; resolution caps hierarchy walks). */
+  inheritanceCycles?: IdentityAuthorizationModelsPermissionGraphCycle[] | null;
+  /** Roles whose `ParentRoleId` points to a role that does not exist in scope. */
+  orphanedRoleIds?: string[] | null;
+  /** Number of permission nodes. */
+  permissionCount?: number;
+  /** Number of role nodes (including the tenant-default pseudo-role when present). */
+  roleCount?: number;
+  /** Permission keys present in stored grants/roles but not registered in
+GameGuild.Identity.Authorization.PermissionRegistry. Unknown keys fail closed at check time and usually
+indicate a typo or a permission removed from code while still stored. */
+  unregisteredPermissionKeys?: string[] | null;
+  /** Number of user nodes. */
+  userCount?: number;
+}
+
+/** Result of simulating the removal of a permission key from a role. */
+export interface IdentityAuthorizationModelsPermissionRemovalImpact {
+  /** Descendant roles whose inheritance chain passes through this role. */
+  downstreamRoleIds?: string[] | null;
+  /** Whether the key is only provided by an ancestor role (inherited). */
+  grantedViaInheritance?: boolean;
+  /** Whether the role's inheritance chain currently provides the key. */
+  isGranted?: boolean;
+  /** The permission key under analysis. */
+  permissionKey?: string | null;
+  /** Whether the key is stored verbatim on the role itself (removable directly). */
+  removableDirectly?: boolean;
+  /** Whether the role exists in the requested scope. */
+  roleFound?: boolean;
+  /** The analyzed role id. */
+  roleId?: string;
+  /** The role name (empty when not found). */
+  roleName?: string | null;
+  severity?: IdentityAuthorizationImpactSeverity;
+  /** Users who currently hold the key and would lose it after the removal. */
+  usersLosingPermission?: IdentityAuthorizationModelsImpactedUser[] | null;
+  /** Users who hold the key and would retain it through another path. */
+  usersRetainingPermission?: IdentityAuthorizationModelsImpactedUser[] | null;
+  /** Non-fatal findings. */
+  warnings?: string[] | null;
+}
+
+/** Result of simulating the deletion of a dynamic role. */
+export interface IdentityAuthorizationModelsRoleDeletionImpact {
+  /** Sample of user ids currently assigned (capped). */
+  assignedUserIds?: string[] | null;
+  /** Roles that inherit from this role and would need re-parenting. */
+  childRoleIds?: string[] | null;
+  /** Number of currently valid user assignments to the role. */
+  directAssignmentCount?: number;
+  /** Whether the role is a system role (deletion must be refused). */
+  isSystemRole?: boolean;
+  /** Whether the role exists in the requested scope. */
+  roleFound?: boolean;
+  /** The analyzed role id. */
+  roleId?: string;
+  /** The role name (empty when not found). */
+  roleName?: string | null;
+  severity?: IdentityAuthorizationImpactSeverity;
+  /** Users who lose at least one permission key entirely when the role is deleted. */
+  usersLosingPermissions?: IdentityAuthorizationModelsImpactedUser[] | null;
+  /** Non-fatal findings (system role, orphaned children, wildcard grants lost, cycles). */
+  warnings?: string[] | null;
+}
+
 /** Data model for Identity Authorization Permission Analytics Report. */
 export interface IdentityAuthorizationPermissionAnalyticsReport {
   activeUsers?: number;
-  anomalies?: Array<IdentityAuthorizationPermissionAnomaly> | null;
+  anomalies?: IdentityAuthorizationPermissionAnomaly[] | null;
   periodEnd?: string;
   periodStart?: string;
   tenantId?: string | null;
-  topPermissions?: Array<IdentityAuthorizationPermissionUsageMetrics> | null;
-  topUsers?: Array<IdentityAuthorizationUserActivitySummary> | null;
+  topPermissions?: IdentityAuthorizationPermissionUsageMetrics[] | null;
+  topUsers?: IdentityAuthorizationUserActivitySummary[] | null;
   totalGrants?: number;
   totalRevokes?: number;
 }
@@ -7415,13 +10707,61 @@ export interface IdentityAuthorizationPermissionAnomaly {
   userId?: string;
 }
 
+/** Allow/deny rates for one reporting dimension value. */
+export interface IdentityAuthorizationPermissionComplianceBreakdown {
+  /** Allow outcomes. */
+  allow?: number;
+  /** Allow share for this value (0-1). */
+  allowRate?: number;
+  /** Deny outcomes. */
+  deny?: number;
+  /** Deny share for this value (0-1). */
+  denyRate?: number;
+  /** Error outcomes. */
+  error?: number;
+  /** The dimension value (permission, source surface or operation). */
+  key?: string | null;
+  /** Evaluations for this value. */
+  total?: number;
+}
+
+/** Compliance report over recorded permission evaluations. */
+export interface IdentityAuthorizationPermissionComplianceReport {
+  /** Evaluations with outcome Allow. */
+  allowCount?: number;
+  /** Share of evaluations that allowed (0-1). Denominator excludes nothing. */
+  allowRate?: number;
+  /** Effectiveness breakdown per triggering operation (when recorded). */
+  byOperation?: IdentityAuthorizationPermissionComplianceBreakdown[] | null;
+  /** Effectiveness breakdown per evaluated permission. */
+  byPermission?: IdentityAuthorizationPermissionComplianceBreakdown[] | null;
+  /** Effectiveness breakdown per evaluation surface (the layer that reported the evaluation, e.g. `graphql`). */
+  bySource?: IdentityAuthorizationPermissionComplianceBreakdown[] | null;
+  /** Evaluations with outcome Deny. */
+  denyCount?: number;
+  /** Share of evaluations that denied (0-1). */
+  denyRate?: number;
+  /** Evaluations with outcome Error (failed closed). */
+  errorCount?: number;
+  /** Share of evaluations that errored and failed closed (0-1). */
+  errorRate?: number;
+  /** Inclusive range start. */
+  fromUtc?: string;
+  /** Tenant scope of the report (null = global report). */
+  tenantId?: string | null;
+  /** Recorded evaluations in range. */
+  totalEvaluations?: number;
+  /** Inclusive range end. */
+  toUtc?: string;
+}
+
 /** Permission delegation allows users to delegate their permissions to other users */
 export interface IdentityAuthorizationPermissionDelegation {
   id?: string;
   canSubDelegate?: boolean;
   conditions?: string | null;
   createdAt?: string;
-  delegatedPermissions?: Array<string> | null;
+  delegatedPermissions?: string[] | null;
   delegateUserId?: string;
   delegatorUserId?: string;
   expiresAt?: string | null;
@@ -7433,6 +10773,42 @@ export interface IdentityAuthorizationPermissionDelegation {
   updatedAt?: string | null;
   usageCount?: number;
   usageLimit?: number | null;
+}
+
+/** Result of a permission restoration attempt. */
+export interface IdentityAuthorizationPermissionRestorationResult {
+  /** Human-readable outcome description. */
+  message?: string | null;
+  /** The affected TenantPermission id (when known). */
+  restoredPermissionId?: string | null;
+  /** Whether the restoration was applied. */
+  succeeded?: boolean;
+  /** Tenant scope of the restoration (from the restored/undone record, never from the caller). */
+  tenantId?: string | null;
+}
+
+/** One planned change of a synchronization import. */
+export interface IdentityAuthorizationPermissionSyncChange {
+  /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
+  kind?: string | null;
+  /** The permissions or role fields involved. */
+  payload?: Record<string, string> | null;
+  /** Human-readable target description (role name or user id). */
+  target?: string | null;
+}
+
+/** Result of a synchronization import (or dry-run preview). */
+export interface IdentityAuthorizationPermissionSyncImportResult {
+  /** True when the plan was actually applied (false for dry-runs and invalid documents). */
+  applied?: boolean;
+  /** The planned changes (the full plan when valid). */
+  changes?: IdentityAuthorizationPermissionSyncChange[] | null;
+  /** True when this was a dry-run. */
+  dryRun?: boolean;
+  /** False when validation failed — nothing was applied (fail-closed). */
+  isValid?: boolean;
+  /** Validation problems (empty when valid). */
+  validationErrors?: string[] | null;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -7554,7 +10930,7 @@ export type IdentityAuthorizationPermissionType =
 export interface IdentityAuthorizationPermissionUpdateResult {
   errorMessage?: string | null;
   success?: boolean;
-  updatedPermissions?: Array<string> | null;
+  updatedPermissions?: string[] | null;
   userId?: string;
 }
 
@@ -7569,7 +10945,7 @@ export interface IdentityAuthorizationPermissionUsageMetrics {
 /** Command to remove deny entries from a user's permissions. */
 export interface IdentityAuthorizationRemoveDenyPermissionsCommand {
   /** Gets the deny permissions to remove. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the ID of the user removing the deny permissions. */
   removedBy: string;
   tenantId: CQRSModelsTenantId;
@@ -7615,7 +10991,7 @@ export interface IdentityAuthorizationResourceInvitationDto {
   /** Optional invitation message. */
   message?: string | null;
   /** The permissions to be granted when accepted. */
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   /** The shared resource identifier. */
   resourceId?: string | null;
   /** The shared resource type. */
@@ -7641,7 +11017,7 @@ export interface IdentityAuthorizationResourceUser {
   /** Gets when the user last accessed the resource. */
   lastAccessedAt?: string | null;
   /** Gets the permissions the user has. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the resource ID. */
   resourceId: string | null;
   /** Gets the resource type. */
@@ -7653,7 +11029,7 @@ export interface IdentityAuthorizationResourceUser {
 /** Command to revoke tenant-level permissions from a user. */
 export interface IdentityAuthorizationRevokeTenantPermissionCommand {
   /** Gets the permissions to revoke. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the optional reason for revoking permissions. */
   reason?: string | null;
   /** Gets the ID of the user revoking the permissions. */
@@ -7667,7 +11043,7 @@ export interface IdentityAuthorizationRevokeTenantPermissionCommand {
 These are baseline permissions applied to all users across all tenants. */
 export interface IdentityAuthorizationSetGlobalDefaultPermissionsCommand {
   /** Gets the permissions to set as global defaults. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
 }
@@ -7676,9 +11052,21 @@ export interface IdentityAuthorizationSetGlobalDefaultPermissionsCommand {
 These are baseline permissions applied to all users in a specific tenant. */
 export interface IdentityAuthorizationSetTenantDefaultPermissionsCommand {
   /** Gets the permissions to set as tenant defaults. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the ID of the user setting the permissions. */
   setBy: string;
+  tenantId: CQRSModelsTenantId;
+}
+
+/** Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+export interface IdentityAuthorizationSetTenantPermissionExpirationCommand {
+  /** Gets the new expiration instant (null = permanent). */
+  expiresAt?: string | null;
+  /** Gets the IDs of the permission grants to update. */
+  permissionIds: string[] | null;
+  /** Gets the optional reason recorded in the audit log. */
+  reason?: string | null;
   tenantId: CQRSModelsTenantId;
 }
 
@@ -7693,7 +11081,7 @@ export interface IdentityAuthorizationShareResourceCommand {
   /** Gets whether to notify users about the share via email/notification. */
   notifyUsers?: boolean;
   /** Gets the permissions to grant to the users. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets whether the users must accept the share before gaining access. */
   requireAcceptance?: boolean;
   /** Gets the ID of the resource being shared. */
@@ -7702,9 +11090,9 @@ export interface IdentityAuthorizationShareResourceCommand {
   resourceType: string | null;
   tenantId: CQRSModelsTenantId;
   /** Gets the email addresses of users to share with (alternative to UserIds). */
-  userEmails?: Array<string> | null;
+  userEmails?: string[] | null;
   /** Gets the IDs of users to share the resource with. */
-  userIds: Array<string> | null;
+  userIds: string[] | null;
 }
 
 /** Result of sharing a resource. */
@@ -7743,7 +11131,7 @@ export interface IdentityAuthorizationSoDRule {
   tenantId?: CQRSModelsTenantId;
   updatedAt?: string | null;
   violationCount?: number;
-  violations?: Array<IdentityAuthorizationSoDViolation> | null;
+  violations?: IdentityAuthorizationSoDViolation[] | null;
 }
 
 /** Type of SoD rule */
@@ -7785,7 +11173,7 @@ export interface IdentityAuthorizationUpdateUserPermissionsCommand {
   /** Gets the optional expiration date for the permissions. */
   expiresAt?: string | null;
   /** Gets the new set of permissions to grant to the user. */
-  permissions: Array<string> | null;
+  permissions: string[] | null;
   /** Gets the ID of the resource. */
   resourceId: string | null;
   /** Gets the type of resource. */
@@ -7803,6 +11191,233 @@ export interface IdentityAuthorizationUserActivitySummary {
   permissionChanges?: number;
   totalActions?: number;
   userId?: string;
+}
+
+/** Data model for Identity Provisioning Create Scim Provisioning Token Request. */
+export interface IdentityProvisioningCreateScimProvisioningTokenInput {
+  expiresAt?: string | null;
+  name: string | null;
+  /** Token scopes; defaults to scim:read + scim:write. */
+  scopes?: string[] | null;
+}
+
+/** Data model for Identity Provisioning Create Scim Provisioning Token Response. */
+export interface IdentityProvisioningCreateScimProvisioningTokenOutput {
+  id?: string;
+  createdAt?: string;
+  expiresAt?: string | null;
+  name?: string | null;
+  scopes?: string[] | null;
+  tenantId?: string;
+  /** The only time the plaintext token is returned. */
+  token?: string | null;
+}
+
+/** Data model for Identity Provisioning Revoke Scim Provisioning Token Request. */
+export interface IdentityProvisioningRevokeScimProvisioningTokenInput {
+  reason?: string | null;
+}
+
+/** Data model for Identity Provisioning Rotate Scim Provisioning Token Request. */
+export interface IdentityProvisioningRotateScimProvisioningTokenInput {
+  expiresAt?: string | null;
+  /** Overlap window in minutes; defaults to the configured rotation grace period. Zero revokes immediately. */
+  gracePeriodMinutes?: number | null;
+  name?: string | null;
+  scopes?: string[] | null;
+}
+
+/** Data model for Identity Provisioning Rotate Scim Provisioning Token Response. */
+export interface IdentityProvisioningRotateScimProvisioningTokenOutput {
+  id?: string;
+  expiresAt?: string | null;
+  oldTokenGraceEndsAt?: string | null;
+  replacesTokenId?: string | null;
+  scopes?: string[] | null;
+  token?: string | null;
+}
+
+/** RFC 7644 §3.12 error body: `{schemas, status, scimType?, detail}`. */
+export interface IdentityProvisioningScimErrorBody {
+  detail?: string | null;
+  schemas?: string[] | null;
+  scimType?: string | null;
+  status?: number;
+}
+
+/** Data model for Identity Provisioning Scim Provisioning Token Dto. */
+export interface IdentityProvisioningScimProvisioningTokenDto {
+  id?: string;
+  createdAt?: string;
+  expiresAt?: string | null;
+  isActive?: boolean;
+  lastUsedAt?: string | null;
+  name?: string | null;
+  replacesTokenId?: string | null;
+  rotationGraceEndsAt?: string | null;
+  scopes?: string[] | null;
+  usageCount?: number;
+}
+
+/** RFC 7644 §3.7 BulkRequest body. */
+export interface IdentityProvisioningScimScimBulkInput {
+  failOnErrors?: number | null;
+  Operations?: IdentityProvisioningScimScimBulkOperation[] | null;
+  schemas?: string[] | null;
+}
+
+/** One bulk operation. */
+export interface IdentityProvisioningScimScimBulkOperation {
+  bulkId?: string | null;
+  data?: NodesJsonNode;
+  method?: string | null;
+  path?: string | null;
+  version?: string | null;
+}
+
+/** RFC 7644 §3.7 BulkResponse body. */
+export interface IdentityProvisioningScimScimBulkOutput {
+  Operations?: IdentityProvisioningScimScimBulkResponseOperation[] | null;
+  schemas?: string[] | null;
+}
+
+/** One bulk response operation. */
+export interface IdentityProvisioningScimScimBulkResponseOperation {
+  bulkId?: string | null;
+  location?: string | null;
+  method?: string | null;
+  status?: IdentityProvisioningScimScimBulkStatus;
+  version?: string | null;
+}
+
+/** Bulk operation status envelope. */
+export interface IdentityProvisioningScimScimBulkStatus {
+  code?: number;
+  detail?: string | null;
+  scimType?: string | null;
+}
+
+/** RFC 7643 §8.2 email sub-attribute. The provider stores one primary e-mail. */
+export interface IdentityProvisioningScimScimEmail {
+  display?: string | null;
+  primary?: boolean | null;
+  type?: string | null;
+  value?: string | null;
+}
+
+/** Inbound SCIM Group payload for POST (create) and PUT (replace). */
+export interface IdentityProvisioningScimScimGroupInput {
+  displayName?: string | null;
+  externalId?: string | null;
+  members?: IdentityProvisioningScimScimMember[] | null;
+  schemas?: string[] | null;
+}
+
+/** SCIM Group resource rendered by this provider (backed by a tenant role). */
+export interface IdentityProvisioningScimScimGroupResource {
+  id?: string | null;
+  displayName?: string | null;
+  externalId?: string | null;
+  members?: IdentityProvisioningScimScimMember[] | null;
+  meta?: IdentityProvisioningScimScimMeta;
+  schemas?: string[] | null;
+}
+
+/** RFC 7644 §3.4.2.3 ListResponse envelope. `startIndex` is 1-based. */
+export interface IdentityProvisioningScimScimListResponseScimGroupResource {
+  itemsPerPage?: number;
+  /** RFC 7644 §3.4.2.3 spells this member `Resources` with a capital R while
+every other member is camelCase, so the name is pinned explicitly instead of
+following the host's camelCase policy (which would emit "resources"). */
+  Resources?: IdentityProvisioningScimScimGroupResource[] | null;
+  schemas?: string[] | null;
+  startIndex?: number;
+  totalResults?: number;
+}
+
+/** RFC 7644 §3.4.2.3 ListResponse envelope. `startIndex` is 1-based. */
+export interface IdentityProvisioningScimScimListResponseScimUserResource {
+  itemsPerPage?: number;
+  /** RFC 7644 §3.4.2.3 spells this member `Resources` with a capital R while
+every other member is camelCase, so the name is pinned explicitly instead of
+following the host's camelCase policy (which would emit "resources"). */
+  Resources?: IdentityProvisioningScimScimUserResource[] | null;
+  schemas?: string[] | null;
+  startIndex?: number;
+  totalResults?: number;
+}
+
+/** RFC 7643 §8.4 group member reference. */
+export interface IdentityProvisioningScimScimMember {
+  $ref?: string | null;
+  display?: string | null;
+  value?: string | null;
+}
+
+/** RFC 7643 §3.1 meta attribute. */
+export interface IdentityProvisioningScimScimMeta {
+  created?: string | null;
+  lastModified?: string | null;
+  location?: string | null;
+  resourceType?: string | null;
+}
+
+/** RFC 7643 §8.1 name sub-attribute as represented by this provider. */
+export interface IdentityProvisioningScimScimName {
+  familyName?: string | null;
+  formatted?: string | null;
+  givenName?: string | null;
+}
+
+/** RFC 7644 §3.5.2 PatchOp request body. */
+export interface IdentityProvisioningScimScimPatchInput {
+  Operations?: IdentityProvisioningScimScimPatchOperation[] | null;
+  schemas?: string[] | null;
+}
+
+/** One PATCH operation. `op` is add/remove/replace (case-insensitive);
+`value` is preserved as a raw JSON node because PATCH values are
+attribute-dependent. */
+export interface IdentityProvisioningScimScimPatchOperation {
+  op?: string | null;
+  path?: string | null;
+  value?: NodesJsonNode;
+}
+
+/** RFC 7643 §8.3 phone number sub-attribute. The provider stores one number. */
+export interface IdentityProvisioningScimScimPhoneNumber {
+  type?: string | null;
+  value?: string | null;
+}
+
+/**     Inbound SCIM User payload for POST (create) and PUT (replace). Unknown
+attributes (including extension schemas) are ignored rather than rejected. */
+export interface IdentityProvisioningScimScimUserInput {
+  active?: boolean | null;
+  displayName?: string | null;
+  emails?: IdentityProvisioningScimScimEmail[] | null;
+  externalId?: string | null;
+  name?: IdentityProvisioningScimScimName;
+  password?: string | null;
+  phoneNumbers?: IdentityProvisioningScimScimPhoneNumber[] | null;
+  schemas?: string[] | null;
+  userName?: string | null;
+}
+
+/** SCIM User resource rendered by this provider. Only implemented attributes are
+exposed; the full core schema advertisement lives in
+GameGuild.Identity.Provisioning.Scim.ScimDiscoveryDocuments. */
+export interface IdentityProvisioningScimScimUserResource {
+  id?: string | null;
+  active?: boolean;
+  displayName?: string | null;
+  emails?: IdentityProvisioningScimScimEmail[] | null;
+  externalId?: string | null;
+  meta?: IdentityProvisioningScimScimMeta;
+  name?: IdentityProvisioningScimScimName;
+  phoneNumbers?: IdentityProvisioningScimScimPhoneNumber[] | null;
+  schemas?: string[] | null;
+  userName?: string | null;
 }
 
 /** Response for adding a tenant member */
@@ -7836,12 +11451,12 @@ export interface IdentityTenantsArchiveInput {
 
 /** Command to perform bulk activation of tenants */
 export interface IdentityTenantsBulkActivateTenantsCommand {
-  tenantIds?: Array<string> | null;
+  tenantIds?: string[] | null;
 }
 
 /** Command to perform bulk archival of tenants */
 export interface IdentityTenantsBulkArchiveTenantsCommand {
-  tenantIds?: Array<string> | null;
+  tenantIds?: string[] | null;
 }
 
 /** Data for a single tenant to create in a bulk operation */
@@ -7859,30 +11474,30 @@ export interface IdentityTenantsBulkCreateTenantItem {
 /** Command to create multiple tenants at once */
 export interface IdentityTenantsBulkCreateTenantsCommand {
   /** Collection of tenant data to create */
-  tenants?: Array<IdentityTenantsBulkCreateTenantItem> | null;
+  tenants?: IdentityTenantsBulkCreateTenantItem[] | null;
 }
 
 /** Command to perform bulk deactivation of tenants */
 export interface IdentityTenantsBulkDeactivateTenantsCommand {
-  tenantIds?: Array<string> | null;
+  tenantIds?: string[] | null;
 }
 
 /** Command to perform bulk deletion of tenants */
 export interface IdentityTenantsBulkDeleteTenantsCommand {
   hardDelete?: boolean;
-  tenantIds?: Array<string> | null;
+  tenantIds?: string[] | null;
 }
 
 /** Command to permanently purge multiple tenants (irreversible hard delete) */
 export interface IdentityTenantsBulkPurgeTenantsCommand {
   /** Collection of tenant IDs to permanently delete */
-  tenantIds?: Array<string> | null;
+  tenantIds?: string[] | null;
 }
 
 /** Command to restore multiple soft-deleted tenants at once */
 export interface IdentityTenantsBulkUndeleteTenantsCommand {
   /** Collection of tenant IDs to restore */
-  tenantIds?: Array<string> | null;
+  tenantIds?: string[] | null;
 }
 
 /** Data for a single tenant update in a bulk operation */
@@ -7898,7 +11513,7 @@ export interface IdentityTenantsBulkUpdateTenantItem {
 /** Command to update multiple tenants at once */
 export interface IdentityTenantsBulkUpdateTenantsCommand {
   /** Collection of tenant updates */
-  updates?: Array<IdentityTenantsBulkUpdateTenantItem> | null;
+  updates?: IdentityTenantsBulkUpdateTenantItem[] | null;
 }
 
 /** Request model for creating a tenant */
@@ -7916,7 +11531,7 @@ export interface IdentityTenantsCreateTenantInput {
 /** Response containing all tenant memberships for a user. */
 export interface IdentityTenantsGetUserMembershipsOutput {
   /** List of tenant memberships the user belongs to */
-  memberships?: Array<IdentityTenantsUserMembershipDto> | null;
+  memberships?: IdentityTenantsUserMembershipDto[] | null;
   /** Total count of memberships */
   totalCount?: number;
 }
@@ -7944,7 +11559,7 @@ export interface IdentityTenantsReplaceTenantMetadataInput {
   /** Complete set of external references */
   externalReferences?: Record<string, string> | null;
   /** Complete set of tags */
-  tags?: Array<string> | null;
+  tags?: string[] | null;
 }
 
 /** Request model for replacing tenant settings */
@@ -7977,7 +11592,7 @@ export interface IdentityTenantsSetTenantMembershipStatusOutput {
 export interface IdentityTenantsSlugValidation {
   isAvailable?: boolean;
   isValid?: boolean;
-  suggestedAlternatives?: Array<string> | null;
+  suggestedAlternatives?: string[] | null;
 }
 
 /** Represents a tenant in a multi-tenant system.
@@ -8004,10 +11619,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Description of the tenant */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Checks if the tenant has any active members. */
   hasActiveMembers?: boolean;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this tenant is currently active */
   isActive?: boolean;
   /** Whether this tenant is archived (distinct from deleted) */
@@ -8025,17 +11640,17 @@ PostgreSQL filtered unique index ensures only one tenant can be default */
   /** Slug for the tenant (URL-friendly unique identifier) */
   slug: string;
   /** Navigation property to tenant domains */
-  tenantDomains?: Array<IdentityTenantsTenantDomain> | null;
+  tenantDomains?: IdentityTenantsTenantDomain[] | null;
   tenantId?: string | null;
   /** Navigation property to tenant members */
-  tenantMembers?: Array<IdentityTenantsTenantMember> | null;
+  tenantMembers?: IdentityTenantsTenantMember[] | null;
   tenantSettings?: IdentityTenantsTenantSettings;
   tenantStatistics?: IdentityTenantsTenantStatistics;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
   /** Navigation property to usage tracking records */
-  usageTrackingRecords?: Array<IdentityTenantsUsageTracking> | null;
+  usageTrackingRecords?: IdentityTenantsUsageTracking[] | null;
   /** Version number for optimistic concurrency control.
 Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
 Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
@@ -8090,7 +11705,7 @@ export interface IdentityTenantsTenantBrandingDto {
 /** Business information data transfer object for tenant classification */
 export interface IdentityTenantsTenantBusinessInfoDto {
   /** Compliance and regulatory requirements */
-  complianceRequirements?: Array<string> | null;
+  complianceRequirements?: string[] | null;
   /** Geographic location and regulatory information */
   geographicRegion?: string | null;
   /** Industry sector and vertical market */
@@ -8152,10 +11767,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Gets the full domain string including subdomain if present */
   fullDomain?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -8203,7 +11818,7 @@ export interface IdentityTenantsTenantMember {
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
   /** Collection of child members in the organizational hierarchy. */
-  childMembers?: Array<IdentityTenantsTenantMember> | null;
+  childMembers?: IdentityTenantsTenantMember[] | null;
   /** Timestamp when the entity was created.
 Protected setter prevents modification after initial creation; EF Core uses backing field. */
   createdAt: string;
@@ -8211,8 +11826,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this membership is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -8262,7 +11877,7 @@ export interface IdentityTenantsTenantMetadataDto {
   /** External system identifiers and references */
   externalReferences?: Record<string, string> | null;
   /** Collection of tags for categorization and filtering */
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   /** Timestamp when the metadata was last updated */
   updatedAt?: string;
 }
@@ -8272,7 +11887,7 @@ export interface IdentityTenantsTenantSecuritySettingsDto {
   /** API rate limiting settings */
   apiRateLimits?: Record<string, number> | null;
   /** IP address whitelist for access control */
-  ipWhitelist?: Array<string> | null;
+  ipWhitelist?: string[] | null;
   /** Password requirements and policies */
   passwordPolicy?: Record<string, Record<string, unknown> | null> | null;
   /** Session timeout settings */
@@ -8304,12 +11919,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Enable/disable API access for this tenant */
   enableApiAccess?: boolean;
   /** Enable/disable audit logging for this tenant */
   enableAuditLogging?: boolean;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Integration settings (JSON)
 Stores external service configuration, API keys, and SSO settings. */
   integrationSettingsJson?: string | null;
@@ -8379,10 +11994,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Number of inactive members */
   inactiveMembers?: number;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -8461,11 +12076,11 @@ export interface IdentityTenantsTenantValidationError {
 
 /** Tenant validation response */
 export interface IdentityTenantsTenantValidationOutput {
-  errors?: Array<IdentityTenantsTenantValidationError> | null;
+  errors?: IdentityTenantsTenantValidationError[] | null;
   isValid?: boolean;
   slugValidation?: IdentityTenantsSlugValidation;
-  suggestions?: Array<string> | null;
-  warnings?: Array<IdentityTenantsTenantValidationWarning> | null;
+  suggestions?: string[] | null;
+  warnings?: IdentityTenantsTenantValidationWarning[] | null;
 }
 
 /** Validation warning detail */
@@ -8506,7 +12121,7 @@ export interface IdentityTenantsUpdateTenantBrandingInput {
 /** Request model for updating tenant business information */
 export interface IdentityTenantsUpdateTenantBusinessInfoInput {
   /** Compliance requirements */
-  complianceRequirements?: Array<string> | null;
+  complianceRequirements?: string[] | null;
   /** Geographic region */
   geographicRegion?: string | null;
   /** Industry sector */
@@ -8608,7 +12223,7 @@ export interface IdentityTenantsUpdateTenantMetadataInput {
   /** External references to update */
   externalReferences?: Record<string, string> | null;
   /** Tags to add or update */
-  tags?: Array<string> | null;
+  tags?: string[] | null;
 }
 
 /** Request model for updating security settings */
@@ -8616,7 +12231,7 @@ export interface IdentityTenantsUpdateTenantSecuritySettingsInput {
   /** API rate limits to update */
   apiRateLimits?: Record<string, number> | null;
   /** IP whitelist to update */
-  ipWhitelist?: Array<string> | null;
+  ipWhitelist?: string[] | null;
   /** Password policy to update */
   passwordPolicy?: Record<string, Record<string, unknown> | null> | null;
   /** Session timeout to update */
@@ -8669,7 +12284,7 @@ export interface IdentityTenantsUpdateTenantSystemLimitsInput {
 /** Request model for updating tenant tags */
 export interface IdentityTenantsUpdateTenantTagsInput {
   /** List of tags to set */
-  tags?: Array<string> | null;
+  tags?: string[] | null;
 }
 
 /** Request model for updating UI settings */
@@ -8714,8 +12329,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -8796,56 +12411,56 @@ export interface IdentityTenantsValidateTenantInput {
 /** Request model for bulk activating users via API */
 export interface IdentityUsersBulkActivateUsersInput {
   /** Collection of user IDs to activate */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Response of bulk activate users operation */
 export interface IdentityUsersBulkActivateUsersOutput {
   /** Successfully activated users */
-  activatedUsers?: Array<IdentityUsersUserDto> | null;
+  activatedUsers?: IdentityUsersUserDto[] | null;
   /** User IDs that failed to activate */
-  failedUserIds?: Array<string> | null;
+  failedUserIds?: string[] | null;
 }
 
 /** Request model for bulk creating users via API */
 export interface IdentityUsersBulkCreateUsersInput {
   /** Collection of users to create */
-  users?: Array<IdentityUsersCreateUserRequestItem> | null;
+  users?: IdentityUsersCreateUserRequestItem[] | null;
 }
 
 /** Response of bulk create users operation */
 export interface IdentityUsersBulkCreateUsersOutput {
   /** Successfully created user IDs */
-  createdUserIds?: Array<string> | null;
+  createdUserIds?: string[] | null;
   /** Email addresses that failed to create */
-  failedEmails?: Array<string> | null;
+  failedEmails?: string[] | null;
 }
 
 /** Request model for bulk deactivating users via API */
 export interface IdentityUsersBulkDeactivateUsersInput {
   /** Collection of user IDs to deactivate */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Response of bulk deactivate users operation */
 export interface IdentityUsersBulkDeactivateUsersOutput {
   /** Successfully deactivated users */
-  deactivatedUsers?: Array<IdentityUsersUserDto> | null;
+  deactivatedUsers?: IdentityUsersUserDto[] | null;
   /** User IDs that failed to deactivate */
-  failedUserIds?: Array<string> | null;
+  failedUserIds?: string[] | null;
 }
 
 /** Request model for bulk deleting users via API */
 export interface IdentityUsersBulkDeleteUsersInput {
   /** Collection of user IDs to delete */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Request model for bulk notification operations */
 export interface IdentityUsersBulkNotificationInput {
   filterCriteria?: IdentityUsersNotificationFilterCriteria;
   /** IDs of notifications to operate on */
-  notificationIds?: Array<string> | null;
+  notificationIds?: string[] | null;
   /** Operation to perform */
   operation?: string | null;
 }
@@ -8854,55 +12469,55 @@ export interface IdentityUsersBulkNotificationInput {
 export interface IdentityUsersBulkPurgeUsersInput {
   strategy?: IdentityUsersPurgeStrategy;
   /** Collection of user IDs to permanently delete */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Request model for bulk restore users operation */
 export interface IdentityUsersBulkRestoreUsersInput {
   /** Collection of user IDs to restore */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Response of bulk restore users operation */
 export interface IdentityUsersBulkRestoreUsersOutput {
   /** User IDs that failed to restore */
-  failedUserIds?: Array<string> | null;
+  failedUserIds?: string[] | null;
   /** Successfully restored users */
-  restoredUsers?: Array<IdentityUsersUserDto> | null;
+  restoredUsers?: IdentityUsersUserDto[] | null;
 }
 
 /** Request model for bulk suspending users via API */
 export interface IdentityUsersBulkSuspendUsersInput {
   /** Collection of user IDs to suspend */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Response of bulk suspend users operation */
 export interface IdentityUsersBulkSuspendUsersOutput {
   /** User IDs that failed to suspend */
-  failedUserIds?: Array<string> | null;
+  failedUserIds?: string[] | null;
   /** Successfully suspended users */
-  suspendedUsers?: Array<IdentityUsersUserDto> | null;
+  suspendedUsers?: IdentityUsersUserDto[] | null;
 }
 
 /** Request model for bulk unsuspending users via API */
 export interface IdentityUsersBulkUnsuspendUsersInput {
   /** Collection of user IDs to unsuspend */
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Response of bulk unsuspend users operation */
 export interface IdentityUsersBulkUnsuspendUsersOutput {
   /** User IDs that failed to unsuspend */
-  failedUserIds?: Array<string> | null;
+  failedUserIds?: string[] | null;
   /** Successfully unsuspended users */
-  unsuspendedUsers?: Array<IdentityUsersUserDto> | null;
+  unsuspendedUsers?: IdentityUsersUserDto[] | null;
 }
 
 /** Request model for bulk updating users via API */
 export interface IdentityUsersBulkUpdateUsersInput {
   /** Collection of user updates */
-  updates?: Array<IdentityUsersUpdateUserRequestItem> | null;
+  updates?: IdentityUsersUpdateUserRequestItem[] | null;
 }
 
 /** Request model for creating a user via API */
@@ -8942,7 +12557,7 @@ export interface IdentityUsersNotificationActionDto {
 /** Filter criteria for notifications */
 export interface IdentityUsersNotificationFilterCriteria {
   /** Filter by categories */
-  categories?: Array<string> | null;
+  categories?: string[] | null;
   /** Filter by creation date from */
   dateFrom?: string | null;
   /** Filter by creation date to */
@@ -8952,9 +12567,9 @@ export interface IdentityUsersNotificationFilterCriteria {
   /** Filter by read status */
   isRead?: boolean | null;
   /** Filter by priorities */
-  priorities?: Array<string> | null;
+  priorities?: string[] | null;
   /** Filter by types */
-  types?: Array<string> | null;
+  types?: string[] | null;
 }
 
 /** Notification priority levels */
@@ -8985,7 +12600,7 @@ export interface IdentityUsersReplaceUserMetadataInput {
   /** Complete set of external references */
   externalReferences?: Record<string, string> | null;
   /** Complete set of tags */
-  tags?: Array<string> | null;
+  tags?: string[] | null;
 }
 
 /** Request model for replacing user notification preferences */
@@ -9065,9 +12680,9 @@ export interface IdentityUsersUpdateUserMetadataInput {
   /** External references to update */
   externalReferences?: Record<string, string> | null;
   /** Tags to add to the user */
-  tagsToAdd?: Array<string> | null;
+  tagsToAdd?: string[] | null;
   /** Tags to remove from the user */
-  tagsToRemove?: Array<string> | null;
+  tagsToRemove?: string[] | null;
 }
 
 /** Request model for updating user notification preferences */
@@ -9147,12 +12762,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Email address of the user (unique) */
   email: string;
   /** Check if the user has a password set (vs OAuth-only) */
   hasPassword?: boolean;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this user is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -9172,7 +12787,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Full name of the user */
   name: string;
   /** Collection of notifications for this user. */
-  notifications?: Array<IdentityUsersUserNotification> | null;
+  notifications?: IdentityUsersUserNotification[] | null;
   /** Optional phone number */
   phoneNumber?: string | null;
   preferences?: IdentityUsersUserPreferences;
@@ -9181,7 +12796,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   tenantId?: string | null;
   /** Collection of tenant memberships for this user.
 Provides direct navigation to all tenants the user belongs to. */
-  tenantMemberships?: Array<IdentityTenantsTenantMember> | null;
+  tenantMemberships?: IdentityTenantsTenantMember[] | null;
   /** Token version for immediate session invalidation.
 Increment this when: user changes password, signs out all sessions,
 or admin forces logout. JWT tokens with older versions are rejected. */
@@ -9189,7 +12804,7 @@ or admin forces logout. JWT tokens with older versions are rejected. */
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
   updatedAt: string;
-  /** Optional username for display (unique if set) */
+  /** Unique handle. Factories assign a canonical handle to new users; legacy null handles remain readable. */
   username?: string | null;
   /** Version number for optimistic concurrency control.
 Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
@@ -9269,10 +12884,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** External system references and IDs */
   externalReferences?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9306,7 +12921,7 @@ export interface IdentityUsersUserMetadataDto {
   /** Dictionary of external system references */
   externalReferences?: Record<string, string> | null;
   /** List of tags associated with the user */
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   /** When the metadata was last updated */
   updatedAt?: string | null;
   /** The user identifier that this metadata belongs to */
@@ -9333,8 +12948,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether the notification is archived */
   isArchived?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -9377,10 +12992,10 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Data transfer object for detailed notification information */
 export interface IdentityUsersUserNotificationDetailDto {
   /** Available actions for the notification */
-  actions?: Array<IdentityUsersNotificationActionDto> | null;
+  actions?: IdentityUsersNotificationActionDto[] | null;
   notification?: IdentityUsersUserNotificationDto;
   /** Related notifications */
-  relatedNotifications?: Array<IdentityUsersUserNotificationDto> | null;
+  relatedNotifications?: IdentityUsersUserNotificationDto[] | null;
 }
 
 /** Data transfer object for user notification */
@@ -9457,10 +13072,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** General application preferences (theme, language, timezone) */
   generalPreferences?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9553,10 +13168,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Display name for the profile (can be different from User.Name) */
   displayName?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** User's gender */
   gender?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9678,8 +13293,8 @@ export interface LaunchPadCreateLaunchPadSlotInput {
 
 /** Data model for Launch Pad Create Launch Plan Request. */
 export interface LaunchPadCreateLaunchPlanInput {
-  channels?: Array<string> | null;
-  checklistItems?: Array<LaunchPadLaunchChecklistItemInput> | null;
+  channels?: string[] | null;
+  checklistItems?: LaunchPadLaunchChecklistItemInput[] | null;
   name?: string | null;
   positioning?: string | null;
   projectId?: string;
@@ -9700,8 +13315,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   isComplete?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -9752,8 +13367,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9770,7 +13385,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   reviewedByUserId?: string | null;
   status?: LaunchPadLaunchPadApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
   submittedAssetReferenceIdsJson?: string | null;
   submittedAt?: string;
   submittedByUser?: IdentityUsersUser;
@@ -9794,7 +13409,7 @@ export interface LaunchPadLaunchPadApplicationProjection {
   projectVersionId?: string;
   status?: LaunchPadLaunchPadApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
   submittedAt?: string;
   submittedByUserId?: string;
 }
@@ -9807,7 +13422,7 @@ export interface LaunchPadLaunchPadEvent {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  applications?: Array<LaunchPadLaunchPadApplication> | null;
+  applications?: LaunchPadLaunchPadApplication[] | null;
   applicationsCloseAt?: string | null;
   applicationsOpenAt?: string | null;
   /** Timestamp when the entity was created.
@@ -9818,16 +13433,16 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endsAt?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   name: string;
-  slots?: Array<LaunchPadLaunchPadParticipantSlot> | null;
+  slots?: LaunchPadLaunchPadParticipantSlot[] | null;
   startsAt?: string;
   status?: LaunchPadLaunchPadEventStatus;
   tenantId?: string | null;
@@ -9843,7 +13458,7 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Data model for Launch Pad Launch Pad Event Detail Projection. */
 export interface LaunchPadLaunchPadEventDetailProjection {
   event?: LaunchPadLaunchPadEventProjection;
-  slots?: Array<LaunchPadLaunchPadSlotProjection> | null;
+  slots?: LaunchPadLaunchPadSlotProjection[] | null;
 }
 
 /** Data model for Launch Pad Launch Pad Event Projection. */
@@ -9876,8 +13491,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9915,10 +13530,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endsAt?: string;
   hasCapacity?: boolean;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -9927,7 +13542,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   launchPadEvent?: LaunchPadLaunchPadEvent;
   launchPadEventId?: string;
   name: string;
-  registrations?: Array<LaunchPadLaunchPadParticipantRegistration> | null;
+  registrations?: LaunchPadLaunchPadParticipantRegistration[] | null;
   reservedCount?: number;
   role?: LaunchPadLaunchPadParticipantRole;
   startsAt?: string;
@@ -9980,8 +13595,8 @@ export interface LaunchPadLaunchPlan {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  channels?: Array<string> | null;
-  checklistItems?: Array<LaunchPadLaunchChecklistItem> | null;
+  channels?: string[] | null;
+  checklistItems?: LaunchPadLaunchChecklistItem[] | null;
   /** Timestamp when the entity was created.
 Protected setter prevents modification after initial creation; EF Core uses backing field. */
   createdAt: string;
@@ -9989,8 +13604,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -10034,7 +13649,7 @@ export interface LaunchPadSubmitLaunchPadApplicationInput {
   pitch?: string | null;
   projectId?: string;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
 }
 
 /** Data model for Launch Pad Transition Launch Pad Event Request. */
@@ -10051,7 +13666,7 @@ export interface LaunchPadTransitionLaunchPadRegistrationInput {
 export interface LaunchPadUpdateLaunchPadApplicationInput {
   pitch?: string | null;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
 }
 
 /** Data model for Launch Pad Update Launch Pad Event Request. */
@@ -10078,7 +13693,7 @@ export interface LearningAssessmentsAnonymousReviewAssessmentDto {
 
 /** Data model for Learning Assessments Anonymous Review Rubric Dto. */
 export interface LearningAssessmentsAnonymousReviewRubricDto {
-  criteria?: Array<LearningAssessmentsRubricCriterionDto> | null;
+  criteria?: LearningAssessmentsRubricCriterionDto[] | null;
 }
 
 /** THE anonymity boundary for reviewers: the reviewee's submission stripped of every identity,
@@ -10142,7 +13757,7 @@ export interface LearningAssessmentsAssessmentDto {
 export interface LearningAssessmentsAssessmentGroupAnalyticsDto {
   assessmentCount?: number;
   averagePercent?: LearningGradingContractsPercentValue;
-  distribution?: Array<LearningAssessmentsAssessmentScoreBucketDto> | null;
+  distribution?: LearningAssessmentsAssessmentScoreBucketDto[] | null;
   gradedCount?: number;
   groupId?: string | null;
   groupName?: string | null;
@@ -10218,9 +13833,9 @@ export interface LearningAssessmentsCourseAssessmentAnalyticsDto {
   assessmentCount?: number;
   averagePercent?: LearningGradingContractsPercentValue;
   courseId?: string;
-  distribution?: Array<LearningAssessmentsAssessmentScoreBucketDto> | null;
+  distribution?: LearningAssessmentsAssessmentScoreBucketDto[] | null;
   gradedCount?: number;
-  groups?: Array<LearningAssessmentsAssessmentGroupAnalyticsDto> | null;
+  groups?: LearningAssessmentsAssessmentGroupAnalyticsDto[] | null;
   passRate?: LearningGradingContractsPercentValue;
   ungradedCount?: number;
 }
@@ -10375,7 +13990,7 @@ export interface LearningAssessmentsGradingContractsAssessmentExecutionDeliveryI
 export interface LearningAssessmentsGradingContractsAssessmentExecutionDeliveryV1 {
   definitionRevisionId?: string;
   executionSnapshotHash?: string | null;
-  itemOrder?: Array<string> | null;
+  itemOrder?: string[] | null;
   items?: Record<string, LearningAssessmentsGradingContractsAssessmentExecutionDeliveryItemV1> | null;
   schemaVersion?: number;
 }
@@ -10396,7 +14011,7 @@ export type LearningAssessmentsGradingContractsContentCompletionMode = 'on-submi
 
 /** Data model for Learning Assessments Grading Contracts Grade Item Result V1. */
 export interface LearningAssessmentsGradingContractsGradeItemResultV1 {
-  evidenceRefs?: Array<string> | null;
+  evidenceRefs?: string[] | null;
   feedback?: string | null;
   handlerKey?: string | null;
   handlerVersion?: string | null;
@@ -10413,9 +14028,9 @@ export type LearningAssessmentsGradingContractsGradeItemState = 'graded' | 'pend
 
 /** Data model for Learning Assessments Grading Contracts Grade Result V1. */
 export interface LearningAssessmentsGradingContractsGradeResultV1 {
-  evidenceRefs?: Array<string> | null;
+  evidenceRefs?: string[] | null;
   feedback?: string | null;
-  items?: Array<LearningAssessmentsGradingContractsGradeItemResultV1> | null;
+  items?: LearningAssessmentsGradingContractsGradeItemResultV1[] | null;
   maxScore?: LearningGradingContractsScoreValue;
   schemaVersion?: number;
   score?: LearningGradingContractsScoreValue | null;
@@ -10460,7 +14075,7 @@ export interface LearningAssessmentsGradingQueueAssessmentDto {
 No peer-review data here — SpeedGrader fetches reviews per submission. */
 export interface LearningAssessmentsGradingQueueDto {
   assessment?: LearningAssessmentsGradingQueueAssessmentDto;
-  items?: Array<LearningAssessmentsGradingQueueItemDto> | null;
+  items?: LearningAssessmentsGradingQueueItemDto[] | null;
   needsGrading?: number;
   total?: number;
 }
@@ -10482,7 +14097,7 @@ export interface LearningAssessmentsGradingQueueItemDto {
   groupName?: string | null;
   isGroup?: boolean;
   isLate?: boolean;
-  memberNames?: Array<string> | null;
+  memberNames?: string[] | null;
   status?: LearningAssessmentsSubmissionStatus;
   submissionId?: string;
   submittedAt?: string | null;
@@ -10498,8 +14113,11 @@ export interface LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1 {
   deliveryHash?: string | null;
   executionId?: string;
   executionSnapshotHash?: string | null;
-  history?: Array<LearningAssessmentsGradingRuntimeGradeRoundViewV1> | null;
+  history?: LearningAssessmentsGradingRuntimeGradeRoundViewV1[] | null;
+  instructorVisibleContent?: Record<string, unknown> | null;
   instructorVisibleResult?: LearningAssessmentsGradingContractsGradeResultV1;
+  instructorVisibleRubric?: Record<string, unknown> | null;
+  instructorVisibleRubricScores?: Record<string, LearningGradingContractsScoreValue> | null;
   itemMaxScores?: Record<string, LearningGradingContractsScoreValue> | null;
   learnerVisibleResult?: LearningAssessmentsGradingContractsGradeResultV1;
   released?: boolean;
@@ -10531,7 +14149,7 @@ export interface LearningAssessmentsGradingRuntimeAssessmentTestRunViewV1 {
   assessmentId?: string;
   candidateStillMatchesDraft?: boolean;
   definitionRevisionId?: string;
-  diagnostics?: Array<string> | null;
+  diagnostics?: string[] | null;
   execution?: LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1;
   personaDisplayName?: string | null;
   personaKey?: string | null;
@@ -10555,7 +14173,7 @@ export interface LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1 {
   courseId?: string;
   coursePercentUnits?: number | null;
   enrollmentId?: string;
-  groups?: Array<LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1> | null;
+  groups?: LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1[] | null;
   hasWithheldContribution?: boolean;
   learnerVisible?: boolean;
 }
@@ -10563,7 +14181,7 @@ export interface LearningAssessmentsGradingRuntimeGradebookCourseProjectionV1 {
 /** Data model for Learning Assessments Grading Runtime Gradebook Group Projection V1. */
 export interface LearningAssessmentsGradingRuntimeGradebookGroupProjectionV1 {
   assessmentGroupId?: string;
-  assessments?: Array<LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1> | null;
+  assessments?: LearningAssessmentsGradingRuntimeGradebookAssessmentProjectionV1[] | null;
   contributionPercent?: LearningGradingContractsPercentValue;
   groupRatio?: LearningGradingContractsPercentValue;
   weightPercent?: LearningGradingContractsPercentValue;
@@ -10594,8 +14212,9 @@ export interface LearningAssessmentsGradingRuntimeInstructorItemResolutionV1 {
 /** Data model for Learning Assessments Grading Runtime Instructor Review Resolution V1. */
 export interface LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1 {
   feedback?: string | null;
-  items?: Array<LearningAssessmentsGradingRuntimeInstructorItemResolutionV1> | null;
+  items?: LearningAssessmentsGradingRuntimeInstructorItemResolutionV1[] | null;
   overrideReason?: string | null;
+  rubricScores?: Record<string, LearningGradingContractsScoreValue> | null;
   schemaVersion?: number;
 }
 
@@ -10618,7 +14237,7 @@ export interface LearningAssessmentsGroupDetailDto {
   id?: string;
   capacity?: number;
   memberCount?: number;
-  members?: Array<LearningAssessmentsGroupMemberDto> | null;
+  members?: LearningAssessmentsGroupMemberDto[] | null;
   name?: string | null;
 }
 
@@ -10654,7 +14273,7 @@ export interface LearningAssessmentsGroupSetDto {
 /** Group set listing entry with per-group summary. */
 export interface LearningAssessmentsGroupSetSummaryDto {
   id?: string;
-  groups?: Array<LearningAssessmentsGroupSummaryDto> | null;
+  groups?: LearningAssessmentsGroupSummaryDto[] | null;
   name?: string | null;
 }
 
@@ -10777,7 +14396,7 @@ export interface LearningAssessmentsRubricCriterionDto {
 /** Rubric read shape with criteria ordered by GameGuild.Learning.Assessments.RubricCriterionDto.Order. */
 export interface LearningAssessmentsRubricDto {
   id?: string;
-  criteria?: Array<LearningAssessmentsRubricCriterionDto> | null;
+  criteria?: LearningAssessmentsRubricCriterionDto[] | null;
   title?: string | null;
 }
 
@@ -10797,7 +14416,7 @@ export interface LearningAssessmentsSaveRubricCriterionInput {
 
 /** Request to create or fully replace an assessment rubric. */
 export interface LearningAssessmentsSaveRubricInput {
-  criteria?: Array<LearningAssessmentsSaveRubricCriterionInput> | null;
+  criteria?: LearningAssessmentsSaveRubricCriterionInput[] | null;
   title?: string | null;
 }
 
@@ -10869,7 +14488,7 @@ export interface LearningAssessmentsTaskItemDto {
 
 /** Data model for Learning Assessments Tasks Dto. */
 export interface LearningAssessmentsTasksDto {
-  items?: Array<LearningAssessmentsTaskItemDto> | null;
+  items?: LearningAssessmentsTaskItemDto[] | null;
 }
 
 /** Request to update a weighted assessment group. */
@@ -11084,15 +14703,15 @@ export interface LearningCohortsCohortScheduleConflictDto {
 export interface LearningCohortsCohortScheduleDto {
   id?: string;
   cohortId?: string;
-  items?: Array<LearningCohortsCohortScheduleItemDto> | null;
-  meetingDays?: Array<SystemDayOfWeek> | null;
+  items?: LearningCohortsCohortScheduleItemDto[] | null;
+  meetingDays?: SystemDayOfWeek[] | null;
   meetingDurationMinutes?: number;
   meetingStartTime?: string;
   pacingMode?: LearningCohortsCohortPacingMode;
   releasePolicy?: LearningCohortsCohortReleasePolicy;
   timezoneId?: string | null;
   unitsPerPeriod?: number;
-  unscheduledContentIds?: Array<string> | null;
+  unscheduledContentIds?: string[] | null;
   version?: number;
 }
 
@@ -11125,9 +14744,9 @@ export type LearningCohortsCohortScheduleItemType = 'ContentRelease' | 'LiveSess
 /** Data model for Learning Cohorts Cohort Schedule Preview Dto. */
 export interface LearningCohortsCohortSchedulePreviewDto {
   calculatedEndDate?: string;
-  conflicts?: Array<LearningCohortsCohortScheduleConflictDto> | null;
+  conflicts?: LearningCohortsCohortScheduleConflictDto[] | null;
   hasBlockingConflicts?: boolean;
-  items?: Array<LearningCohortsCohortSchedulePreviewItemDto> | null;
+  items?: LearningCohortsCohortSchedulePreviewItemDto[] | null;
 }
 
 /** Data model for Learning Cohorts Cohort Schedule Preview Item Dto. */
@@ -11148,7 +14767,7 @@ export interface LearningCohortsCohortSchedulePreviewItemDto {
 /** Data model for Learning Cohorts Cohort Schedule Summary Dto. */
 export interface LearningCohortsCohortScheduleSummaryDto {
   itemCount?: number;
-  meetingDays?: Array<SystemDayOfWeek> | null;
+  meetingDays?: SystemDayOfWeek[] | null;
   meetingStartTime?: string;
   pacingMode?: LearningCohortsCohortPacingMode;
   releasePolicy?: LearningCohortsCohortReleasePolicy;
@@ -11165,7 +14784,7 @@ export type LearningCohortsCohortVisibilityOverride = 'Inherited' | 'Hidden' | '
 /** Data model for Learning Cohorts Course Cohort Calendar Dto. */
 export interface LearningCohortsCourseCohortCalendarDto {
   courseId?: string;
-  entries?: Array<LearningCohortsCohortCalendarEntryDto> | null;
+  entries?: LearningCohortsCohortCalendarEntryDto[] | null;
 }
 
 /** Request to create a new cohort */
@@ -11186,12 +14805,12 @@ export interface LearningCohortsPreviewCohortScheduleInput {
   assessmentDueOffsetDays?: number;
   cohortEndDate?: string;
   firstInstructionalDate?: string;
-  meetingDays?: Array<SystemDayOfWeek> | null;
+  meetingDays?: SystemDayOfWeek[] | null;
   meetingDurationMinutes?: number;
   meetingStartTime?: string;
   pacingMode?: LearningCohortsCohortPacingMode;
   releasePolicy?: LearningCohortsCohortReleasePolicy;
-  skippedDates?: Array<string> | null;
+  skippedDates?: string[] | null;
   timezoneId?: string | null;
   unitsPerPeriod?: number;
 }
@@ -11271,7 +14890,7 @@ export interface LearningCoursesAiAuthoringConversationDto {
   authorId?: string;
   contentId?: string;
   lastMessageAt?: string;
-  messages?: Array<LearningCoursesAiAuthoringMessageDto> | null;
+  messages?: LearningCoursesAiAuthoringMessageDto[] | null;
 }
 
 /** Data model for Learning Courses Ai Authoring Message Dto. */
@@ -11453,7 +15072,7 @@ export interface LearningCoursesCompleteCourseCheckoutOutput {
   amount?: number;
   courseId?: string;
   currency?: string | null;
-  enrollmentIds?: Array<string> | null;
+  enrollmentIds?: string[] | null;
   entitlementId?: string;
   learningUrl?: string | null;
   paymentProviderReference?: string | null;
@@ -11462,7 +15081,7 @@ export interface LearningCoursesCompleteCourseCheckoutOutput {
 
 /** Data model for Learning Courses Completion Rates Dto. */
 export interface LearningCoursesCompletionRatesDto {
-  completionTrends?: Array<LearningCoursesCompletionTrendDto> | null;
+  completionTrends?: LearningCoursesCompletionTrendDto[] | null;
   contentCompletionRates?: Record<string, number> | null;
   overallCompletionRate?: number;
   programId?: string;
@@ -11571,6 +15190,20 @@ export interface LearningCoursesContentSummaryDto {
   contentType?: string | null;
   estimatedMinutes?: number | null;
   title?: string | null;
+}
+
+/** Data model for Learning Courses Course Access Capabilities. */
+export interface LearningCoursesCourseAccessCapabilities {
+  canAccessWorkspace?: boolean;
+  canEdit?: boolean;
+  canLearn?: boolean;
+  canPublish?: boolean;
+  canReviewAsStaff?: boolean;
+  courseExists?: boolean;
+  courseId?: string;
+  hasActiveEnrollment?: boolean;
+  isOwner?: boolean;
+  isTenantMember?: boolean;
 }
 
 /** Data model for Learning Courses Course Support Ticket Message Request. */
@@ -11726,7 +15359,7 @@ export interface LearningCoursesMoveContentDto {
 /** Data model for Learning Courses Prerequisite Check Result Dto. */
 export interface LearningCoursesPrerequisiteCheckResultDto {
   isSatisfied?: boolean;
-  prerequisites?: Array<LearningCoursesPrerequisiteStatusDto> | null;
+  prerequisites?: LearningCoursesPrerequisiteStatusDto[] | null;
 }
 
 /** Data model for Learning Courses Prerequisite Dto. */
@@ -11787,7 +15420,7 @@ export interface LearningCoursesProgramContentDto {
   id?: string;
   activitySettings?: LearningCoursesActivitySettings;
   body?: string | null;
-  children?: Array<LearningCoursesProgramContentDto> | null;
+  children?: LearningCoursesProgramContentDto[] | null;
   childrenCount?: number;
   createdAt?: string;
   description?: string | null;
@@ -11902,12 +15535,12 @@ export interface LearningCoursesRejectProgramDto {
 
 /** Data model for Learning Courses Reorder Content Dto. */
 export interface LearningCoursesReorderContentDto {
-  contentIds?: Array<string> | null;
+  contentIds?: string[] | null;
 }
 
 /** Data model for Learning Courses Reorder Prerequisites Request. */
 export interface LearningCoursesReorderPrerequisitesInput {
-  prerequisiteIds?: Array<string> | null;
+  prerequisiteIds?: string[] | null;
 }
 
 /** Data model for Learning Courses Resolve Course Support Ticket Request. */
@@ -11922,7 +15555,7 @@ export interface LearningCoursesRevenueAnalyticsDto {
   monthlyPurchases?: number;
   monthlyRevenue?: number;
   programId?: string;
-  revenueChart?: Array<LearningCoursesRevenueChartDto> | null;
+  revenueChart?: LearningCoursesRevenueChartDto[] | null;
   totalPurchases?: number;
   totalRevenue?: number;
 }
@@ -11959,7 +15592,7 @@ export interface LearningCoursesSearchContentDto {
 export interface LearningCoursesSendCourseStudentMessageInput {
   message?: string | null;
   subject?: string | null;
-  userIds?: Array<string> | null;
+  userIds?: string[] | null;
 }
 
 /** Data model for Learning Courses Send Course Student Message Response. */
@@ -12024,8 +15657,8 @@ export interface LearningCoursesTest {
 /** Test buckets for a coding assignment. Field names are PascalCase on the wire (deliberate divergence from the draft).
 Visibility values match `TestVisibilityType` from the draft: `"Public"`, `"Private"`. */
 export interface LearningCoursesTestSuite {
-  private?: Array<LearningCoursesTest> | null;
-  public?: Array<LearningCoursesTest> | null;
+  private?: LearningCoursesTest[] | null;
+  public?: LearningCoursesTest[] | null;
 }
 
 /** DTO for updating existing activity grades */
@@ -12119,7 +15752,7 @@ export interface LearningCoursesUpdateTimeSpentInput {
 export interface LearningCoursesUserProgressDto {
   completedAt?: string | null;
   completionPercentage?: LearningGradingContractsPercentValue;
-  contentProgress?: Array<LearningCoursesContentProgressDto> | null;
+  contentProgress?: LearningCoursesContentProgressDto[] | null;
   courseId?: string;
   enrollmentId?: string;
   lastAccessedAt?: string | null;
@@ -12319,7 +15952,7 @@ export interface LearningExperienceLearningPathsLearningPathCourseDto {
 export interface LearningExperienceLearningPathsLearningPathDetailDto {
   id?: string;
   completionCount?: number;
-  courses?: Array<LearningExperienceLearningPathsLearningPathCourseDto> | null;
+  courses?: LearningExperienceLearningPathsLearningPathCourseDto[] | null;
   createdAt?: string;
   creatorId?: string;
   description?: string | null;
@@ -12389,7 +16022,7 @@ export interface LearningExperienceLearningPathsLearningPathStatisticsDto {
 
 /** DTO for reordering courses in a learning path */
 export interface LearningExperienceLearningPathsReorderCoursesDto {
-  courses?: Array<LearningExperienceLearningPathsCourseOrderDto> | null;
+  courses?: LearningExperienceLearningPathsCourseOrderDto[] | null;
 }
 
 /** DTO for updating a learning path */
@@ -12414,11 +16047,11 @@ export interface LearningExperienceRecommendationsAddSkillInput {
 
 /** DTO for creating/updating user learning profile */
 export interface LearningExperienceRecommendationsCreateOrUpdateLearningProfileDto {
-  learningGoals?: Array<string> | null;
-  preferredCategories?: Array<string> | null;
+  learningGoals?: string[] | null;
+  preferredCategories?: string[] | null;
   preferredDifficulty?: string | null;
   preferredDuration?: string | null;
-  skills?: Array<string> | null;
+  skills?: string[] | null;
 }
 
 /** DTO for popular course result */
@@ -12474,7 +16107,7 @@ export interface LearningExperienceRecommendationsSimilarCourseDto {
   category?: string | null;
   courseId?: string;
   description?: string | null;
-  matchingTags?: Array<string> | null;
+  matchingTags?: string[] | null;
   similarityScore?: number;
   thumbnail?: string | null;
   title?: string | null;
@@ -12496,11 +16129,11 @@ export interface LearningExperienceRecommendationsUserLearningProfileDto {
   id?: string;
   createdAt?: string;
   lastActivityAt?: string | null;
-  learningGoals?: Array<string> | null;
-  preferredCategories?: Array<string> | null;
+  learningGoals?: string[] | null;
+  preferredCategories?: string[] | null;
   preferredDifficulty?: string | null;
   preferredDuration?: string | null;
-  skills?: Array<string> | null;
+  skills?: string[] | null;
   totalCoursesCompleted?: number;
   totalHoursLearned?: number;
   updatedAt?: string;
@@ -12832,26 +16465,26 @@ export interface LearningWorkspacesLearnerCourseSummaryDto {
 
 /** Data model for Learning Workspaces Learner Course Workspace Dto. */
 export interface LearningWorkspacesLearnerCourseWorkspaceDto {
-  assessmentGroups?: Array<LearningWorkspacesLearnerAssessmentGroupDto> | null;
-  assessments?: Array<LearningWorkspacesLearnerAssessmentDto> | null;
-  calendar?: Array<LearningWorkspacesLearnerScheduleEntryDto> | null;
-  certificates?: Array<LearningWorkspacesLearnerCertificateDto> | null;
+  assessmentGroups?: LearningWorkspacesLearnerAssessmentGroupDto[] | null;
+  assessments?: LearningWorkspacesLearnerAssessmentDto[] | null;
+  calendar?: LearningWorkspacesLearnerScheduleEntryDto[] | null;
+  certificates?: LearningWorkspacesLearnerCertificateDto[] | null;
   cohort?: LearningWorkspacesLearnerCohortDto;
-  content?: Array<LearningWorkspacesLearnerContentDto> | null;
+  content?: LearningWorkspacesLearnerContentDto[] | null;
   course?: LearningWorkspacesLearnerCourseSummaryDto;
-  discussions?: Array<LearningWorkspacesLearnerDiscussionDto> | null;
-  progress?: Array<LearningWorkspacesLearnerContentProgressDto> | null;
-  submissions?: Array<LearningWorkspacesLearnerAssessmentSubmissionDto> | null;
+  discussions?: LearningWorkspacesLearnerDiscussionDto[] | null;
+  progress?: LearningWorkspacesLearnerContentProgressDto[] | null;
+  submissions?: LearningWorkspacesLearnerAssessmentSubmissionDto[] | null;
 }
 
 /** Data model for Learning Workspaces Learner Dashboard Dto. */
 export interface LearningWorkspacesLearnerDashboardDto {
-  announcements?: Array<LearningWorkspacesLearnerAnnouncementDto> | null;
-  certificates?: Array<LearningWorkspacesLearnerCertificateDto> | null;
-  courses?: Array<LearningWorkspacesLearnerCourseSummaryDto> | null;
-  deadlines?: Array<LearningWorkspacesLearnerAssessmentDeadlineDto> | null;
-  grades?: Array<LearningWorkspacesLearnerGradeSummaryDto> | null;
-  upcoming?: Array<LearningWorkspacesLearnerScheduleEntryDto> | null;
+  announcements?: LearningWorkspacesLearnerAnnouncementDto[] | null;
+  certificates?: LearningWorkspacesLearnerCertificateDto[] | null;
+  courses?: LearningWorkspacesLearnerCourseSummaryDto[] | null;
+  deadlines?: LearningWorkspacesLearnerAssessmentDeadlineDto[] | null;
+  grades?: LearningWorkspacesLearnerGradeSummaryDto[] | null;
+  upcoming?: LearningWorkspacesLearnerScheduleEntryDto[] | null;
 }
 
 /** Data model for Learning Workspaces Learner Discussion Dto. */
@@ -12895,8 +16528,8 @@ export interface LearningWorkspacesLearnerGradeSummaryDto {
   earnedPoints?: LearningGradingContractsScoreValue | null;
   finalGrade?: LearningGradingContractsPercentValue | null;
   gradedAssessments?: number;
-  groups?: Array<LearningWorkspacesLearnerAssessmentGroupDto> | null;
-  items?: Array<LearningWorkspacesLearnerGradeItemDto> | null;
+  groups?: LearningWorkspacesLearnerAssessmentGroupDto[] | null;
+  items?: LearningWorkspacesLearnerGradeItemDto[] | null;
   percentage?: LearningGradingContractsPercentValue | null;
   possiblePoints?: LearningGradingContractsScoreValue | null;
   totalAssessments?: number;
@@ -12935,9 +16568,19 @@ export interface LearningWorkspacesLearnerSearchResultDto {
   title?: string | null;
 }
 
-/** Represents a money value with currency */
+/** Represents a money value with currency.
+Amounts are stored as a decimal in major units (e.g. dollars) rounded to the
+currency's ISO 4217 minor-unit exponent (see GameGuild.Iso4217CurrencyCatalog):
+JPY keeps zero decimals, USD two, KWD three. Minor-unit (integer) access is available
+through GameGuild.Money.MinorUnits and M:GameGuild.Money.FromMinorUnits(System.Int64,System.String) for provider
+integrations that speak the smallest currency unit.
+The persisted/serialized shape stays exactly { Amount, Currency } — the minor-unit
+members are computed and excluded from JSON and EF mappings, so existing invoices,
+payments, and API contracts are unaffected. */
 export interface Money {
+  /** Amount in major units, already rounded to the currency's minor-unit exponent. */
   amount?: number;
+  /** Upper-case ISO 4217 currency code. */
   currency?: string | null;
 }
 
@@ -13148,6 +16791,29 @@ export interface MvcProblemDetails {
   [key: string]: any;
 }
 
+/** Data model for Mvc Validation Problem Details. */
+export interface MvcValidationProblemDetails {
+  detail?: string | null;
+  errors?: Record<string, string[]> | null;
+  instance?: string | null;
+  status?: number | null;
+  title?: string | null;
+  type?: string | null;
+  [key: string]: any;
+}
+
+/** Data model for Nodes Json Node. */
+export interface NodesJsonNode {
+  options?: NodesJsonNodeOptions;
+  parent?: NodesJsonNode;
+  root?: NodesJsonNode;
+}
+
+/** Data model for Nodes Json Node Options. */
+export interface NodesJsonNodeOptions {
+  propertyNameCaseInsensitive?: boolean;
+}
+
 /** Data model for Notifications Controllers Dead Letter Dto. */
 export interface NotificationsControllersDeadLetterDto {
   id?: string;
@@ -13198,7 +16864,7 @@ export interface NotificationsControllersEmailSuppressionDto {
 
 /** Data model for Notifications Controllers Muted Types Response. */
 export interface NotificationsControllersMutedTypesOutput {
-  mutedTypes?: Array<string> | null;
+  mutedTypes?: string[] | null;
 }
 
 /** Data model for Notifications Controllers Notification Dto. */
@@ -13226,7 +16892,7 @@ export interface NotificationsControllersNotificationPreferenceDto {
   inAppEnabled?: boolean;
   learningEnabled?: boolean;
   marketingEnabled?: boolean;
-  mutedTypes?: Array<string> | null;
+  mutedTypes?: string[] | null;
   pushEnabled?: boolean;
   quietHoursEnd?: string | null;
   quietHoursStart?: string | null;
@@ -13237,7 +16903,7 @@ export interface NotificationsControllersNotificationPreferenceDto {
 
 /** Data model for Notifications Controllers Notification Timeline Dto. */
 export interface NotificationsControllersNotificationTimelineDto {
-  events?: Array<NotificationsControllersEmailDeliveryEventDto> | null;
+  events?: NotificationsControllersEmailDeliveryEventDto[] | null;
   notificationId?: string;
   providerMessageId?: string | null;
 }
@@ -13290,7 +16956,7 @@ export interface NotificationsControllersUpdateDigestFrequencyInput {
 
 /** Data model for Notifications Controllers Update Muted Types Request. */
 export interface NotificationsControllersUpdateMutedTypesInput {
-  types?: Array<string> | null;
+  types?: string[] | null;
 }
 
 /** Data model for Notifications Controllers Update Preferences Request. */
@@ -13363,7 +17029,7 @@ export type ObjectsLargeBlobSupport = 'Required' | 'Preferred';
 /** Data model for Objects Public Key Credential Descriptor. */
 export interface ObjectsPublicKeyCredentialDescriptor {
   id?: string | null;
-  transports?: Array<ObjectsAuthenticatorTransport> | null;
+  transports?: ObjectsAuthenticatorTransport[] | null;
   type?: ObjectsPublicKeyCredentialType;
 }
 
@@ -13381,13 +17047,82 @@ export type ObjectsUserVerificationRequirement = 'Required' | 'Preferred' | 'Dis
 
 /** Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultAccountCreditTransaction {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsAccountCreditTransaction[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultBillingOutboxEventDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingBillingOutboxEventDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultBillingWebhookEventListItemDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingBillingWebhookEventListItemDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
 export interface PagedResultDeadLetterDto {
   /** Whether there are more items after this page. */
   hasNextPage?: boolean;
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<NotificationsControllersDeadLetterDto> | null;
+  items?: NotificationsControllersDeadLetterDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13410,7 +17145,7 @@ export interface PagedResultEmailDeliveryEventDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<NotificationsControllersEmailDeliveryEventDto> | null;
+  items?: NotificationsControllersEmailDeliveryEventDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13433,7 +17168,76 @@ export interface PagedResultEmailSuppressionDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<NotificationsControllersEmailSuppressionDto> | null;
+  items?: NotificationsControllersEmailSuppressionDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultGiftPublicView {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsGiftPublicView[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultPricingDecisionLedgerEntryDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceBillingPricingDecisionLedgerEntryDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultPricingRuleDto {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommerceProductsPricingRuleDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13456,7 +17260,7 @@ export interface PagedResultProductDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<CommerceProductsProductDto> | null;
+  items?: CommerceProductsProductDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13479,7 +17283,99 @@ export interface PagedResultPromoCodeDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<CommerceProductsPromoCodeDto> | null;
+  items?: CommerceProductsPromoCodeDto[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultReferral {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsReferral[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueAnomalyAlert {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsRevenueAnomalyAlert[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationDiscrepancy {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsRevenueReconciliationDiscrepancy[] | null;
+  /** Current page number (1-based). */
+  pageNumber?: number;
+  /** Number of items per page. */
+  pageSize?: number;
+  /** Number of items skipped (offset). */
+  skip?: number;
+  /** Number of items requested per page (alias for GameGuild.PagedResult`1.PageSize). */
+  take?: number;
+  /** Total number of items across all pages. */
+  totalCount?: number;
+  /** Total number of pages. */
+  totalPages?: number;
+}
+
+/** Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+export interface PagedResultRevenueReconciliationRun {
+  /** Whether there are more items after this page. */
+  hasNextPage?: boolean;
+  /** Whether there are pages before this one. */
+  hasPreviousPage?: boolean;
+  /** The items in the current page. */
+  items?: CommercePaymentsRevenueReconciliationRun[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13502,7 +17398,7 @@ export interface PagedResultSubscription {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<CommerceSubscriptionsSubscription> | null;
+  items?: CommerceSubscriptionsSubscription[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13525,7 +17421,7 @@ export interface PagedResultSubscriptionNotificationDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<CommerceSubscriptionsSubscriptionNotificationDto> | null;
+  items?: CommerceSubscriptionsSubscriptionNotificationDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13548,7 +17444,7 @@ export interface PagedResultSupportTicketDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<CommerceProductsSupportTicketDto> | null;
+  items?: CommerceProductsSupportTicketDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13571,7 +17467,7 @@ export interface PagedResultTenant {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<IdentityTenantsTenant> | null;
+  items?: IdentityTenantsTenant[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13594,7 +17490,7 @@ export interface PagedResultTenantAuditLogEntry {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<IdentityTenantsTenantAuditLogEntry> | null;
+  items?: IdentityTenantsTenantAuditLogEntry[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13617,7 +17513,7 @@ export interface PagedResultUserDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<IdentityUsersUserDto> | null;
+  items?: IdentityUsersUserDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13640,7 +17536,7 @@ export interface PagedResultUserNotificationDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<IdentityUsersUserNotificationDto> | null;
+  items?: IdentityUsersUserNotificationDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13663,7 +17559,7 @@ export interface PagedResultUserProfileDto {
   /** Whether there are pages before this one. */
   hasPreviousPage?: boolean;
   /** The items in the current page. */
-  items?: Array<IdentityUsersUserProfileDto> | null;
+  items?: IdentityUsersUserProfileDto[] | null;
   /** Current page number (1-based). */
   pageNumber?: number;
   /** Number of items per page. */
@@ -13705,7 +17601,7 @@ export interface ProjectsAddCollaboratorInput {
   email?: string | null;
   expiresAt?: string | null;
   message?: string | null;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
   requireAcceptance?: boolean;
 }
 
@@ -13737,7 +17633,7 @@ export interface ProjectsCreateProjectInput {
   repositoryUrl?: string | null;
   shortDescription?: string | null;
   status?: ContentStatus;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   title: string;
   type?: ProjectsProjectType;
   visibility?: ContentVisibility;
@@ -13758,7 +17654,7 @@ export type ProjectsDevelopmentStatus = 'Planning' | 'InDevelopment' | 'Alpha' |
 export interface ProjectsEffectivePermission {
   expiresAt?: string | null;
   isOwner?: boolean;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
   resourceId?: string;
   resourceType?: string | null;
 }
@@ -13795,13 +17691,13 @@ export interface ProjectsProject {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  allocations?: Array<ProjectsProjectMemberAllocation> | null;
+  allocations?: ProjectsProjectMemberAllocation[] | null;
   /** Computed property: Average rating from feedback */
   averageRating?: number | null;
   category?: ProjectsProjectCategory;
   categoryId?: string | null;
   /** Navigation property to project collaborators */
-  collaborators?: Array<ProjectsProjectCollaborator> | null;
+  collaborators?: ProjectsProjectCollaborator[] | null;
   /** Copyright information */
   copyright?: string | null;
   /** Timestamp when the entity was created.
@@ -13815,7 +17711,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   description?: string | null;
   developmentStatus?: ProjectsDevelopmentStatus;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Download URL or platform links */
   downloadUrl?: string | null;
   /** Featured image or thumbnail URL */
@@ -13823,14 +17719,14 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Computed property: Total feedback count */
   feedbackCount?: number;
   /** Navigation property to project feedback/reviews */
-  feedbacks?: Array<ProjectsProjectFeedback> | null;
+  feedbacks?: ProjectsProjectFeedback[] | null;
   /** Computed property: Number of followers */
   followerCount?: number;
   /** Navigation property to project followers */
-  followers?: Array<ProjectsProjectFollower> | null;
+  followers?: ProjectsProjectFollower[] | null;
   /** Project image/logo URL */
   imageUrl?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Computed property: Is the project active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -13841,7 +17737,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   /** Navigation property to jam submissions */
-  jamSubmissions?: Array<ProjectsProjectJamSubmission> | null;
+  jamSubmissions?: ProjectsProjectJamSubmission[] | null;
   latestVersion?: ProjectsProjectVersion;
   /** License type for the project */
   license?: string | null;
@@ -13849,7 +17745,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** When the project was published */
   publishedAt?: string | null;
   /** Navigation property to project releases */
-  releases?: Array<ProjectsProjectRelease> | null;
+  releases?: ProjectsProjectRelease[] | null;
   /** Repository URL */
   repositoryUrl?: string | null;
   /** Short description (max 500 chars) */
@@ -13861,11 +17757,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   status: ContentStatus;
   /** Project tags (JSON array) */
   tags?: string | null;
-  teamAgreements?: Array<ProjectsProjectTeamAgreement> | null;
+  teamAgreements?: ProjectsProjectTeamAgreement[] | null;
   /** Computed property: Number of teams working on this project */
   teamCount?: number;
   /** Navigation property to project teams */
-  teams?: Array<ProjectsProjectTeam> | null;
+  teams?: ProjectsProjectTeam[] | null;
   tenantId?: string | null;
   /** Project title */
   title: string;
@@ -13878,7 +17774,7 @@ Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Se
 Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
   version?: number;
   /** Navigation property to project versions */
-  versions?: Array<ProjectsProjectVersion> | null;
+  versions?: ProjectsProjectVersion[] | null;
   visibility: ContentVisibility;
   /** Website URL */
   websiteUrl?: string | null;
@@ -13891,7 +17787,7 @@ export interface ProjectsProjectApiOutput {
   averageRating?: number | null;
   category?: ProjectsProjectCategoryApiOutput;
   categoryId?: string | null;
-  collaborators?: Array<ProjectsProjectCollaboratorApiOutput> | null;
+  collaborators?: ProjectsProjectCollaboratorApiOutput[] | null;
   copyright?: string | null;
   createdAt?: string;
   createdById?: string | null;
@@ -13908,7 +17804,7 @@ export interface ProjectsProjectApiOutput {
   license?: string | null;
   metadata?: ProjectsProjectMetadataApiOutput;
   publishedAt?: string | null;
-  releases?: Array<ProjectsProjectReleaseApiOutput> | null;
+  releases?: ProjectsProjectReleaseApiOutput[] | null;
   repositoryUrl?: string | null;
   shortDescription?: string | null;
   slug?: string | null;
@@ -13916,12 +17812,12 @@ export interface ProjectsProjectApiOutput {
   status?: ContentStatus;
   tags?: string | null;
   teamCount?: number;
-  teams?: Array<ProjectsProjectTeamApiOutput> | null;
+  teams?: ProjectsProjectTeamApiOutput[] | null;
   tenantId?: string | null;
   title?: string | null;
   type?: ProjectsProjectType;
   updatedAt?: string;
-  versions?: Array<ProjectsProjectVersionApiOutput> | null;
+  versions?: ProjectsProjectVersionApiOutput[] | null;
   visibility?: ContentVisibility;
   websiteUrl?: string | null;
 }
@@ -13938,8 +17834,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -13947,7 +17843,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   isNew?: boolean;
   name: string;
   /** Projects in this category */
-  projects?: Array<ProjectsProject> | null;
+  projects?: ProjectsProject[] | null;
   tenantId?: string | null;
   /** Timestamp when the entity was last updated.
 Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses backing field. */
@@ -13976,8 +17872,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether the collaborator is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -14014,7 +17910,7 @@ export interface ProjectsProjectCollaboratorApiOutput {
   isActive?: boolean;
   joinedAt?: string;
   leftAt?: string | null;
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   role?: string | null;
   userId?: string;
   userName?: string | null;
@@ -14027,7 +17923,7 @@ export interface ProjectsProjectCollaboratorDto {
   invitedBy?: string | null;
   isOwner?: boolean;
   joinedAt?: string;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
   profilePictureUrl?: string | null;
   role?: string | null;
   userId?: string;
@@ -14050,10 +17946,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Number of helpful votes */
   helpfulVotes?: number;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether this feedback is featured */
@@ -14101,12 +17997,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Whether the follower wants email notifications */
   emailNotifications?: boolean;
   /** Date when the user started following */
   followedAt?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14165,12 +18061,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Final score calculated from all ratings */
   finalScore?: number | null;
   /** Whether this submission won an award */
   hasAward?: boolean;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether the submission is eligible for judging */
@@ -14188,7 +18084,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Ranking in the jam (if calculated) */
   ranking?: number | null;
   /** Navigation property to jam scores */
-  scores?: Array<GameJamsJamScore> | null;
+  scores?: GameJamsJamScore[] | null;
   /** Submission notes or description */
   submissionNotes?: string | null;
   /** Date when the project was submitted to the jam */
@@ -14216,10 +18112,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endsAt?: string | null;
   function: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -14252,10 +18148,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   downloadCount?: number;
   followerCount?: number;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14300,14 +18196,14 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Release description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Number of downloads for this release */
   downloadCount?: number;
   /** Download URL for this release */
   downloadUrl?: string | null;
   /** File size in bytes */
   fileSize?: number | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14372,7 +18268,7 @@ export interface ProjectsProjectReleaseApiOutput {
 export interface ProjectsProjectRoleTemplate {
   description?: string | null;
   name?: string | null;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
 }
 
 /** Statistics and analytics DTO for a project */
@@ -14423,7 +18319,7 @@ export interface ProjectsProjectTeam {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  allocations?: Array<ProjectsProjectMemberAllocation> | null;
+  allocations?: ProjectsProjectMemberAllocation[] | null;
   /** Date when the team was assigned to the project */
   assignedAt?: string;
   /** Team's contribution percentage (0-100) */
@@ -14435,10 +18331,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Date when the team's involvement ended (if applicable) */
   endedAt?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether the team is currently active on this project */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -14484,9 +18380,9 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   deliverables: string;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endsAt?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14523,7 +18419,7 @@ export interface ProjectsProjectTeamApiOutput {
   name?: string | null;
   notes?: string | null;
   participationMode?: ProjectsProjectTeamParticipationMode;
-  permissions?: Array<string> | null;
+  permissions?: string[] | null;
   role?: ProjectsProjectTeamRole;
   slug?: string | null;
   teamId?: string;
@@ -14558,10 +18454,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Download count */
   downloadCount?: number;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -14624,8 +18520,8 @@ export interface ProjectsShareProjectWithRoleInput {
   notifyUsers?: boolean;
   requireAcceptance?: boolean;
   roleName?: string | null;
-  userEmails?: Array<string> | null;
-  userIds?: Array<string> | null;
+  userEmails?: string[] | null;
+  userIds?: string[] | null;
 }
 
 /** Result of a bulk share operation. */
@@ -14639,7 +18535,7 @@ export interface ProjectsShareResult {
 /** Request to update collaborator permissions */
 export interface ProjectsUpdateCollaboratorInput {
   expiresAt?: string | null;
-  permissions?: Array<IdentityAuthorizationPermissionType> | null;
+  permissions?: IdentityAuthorizationPermissionType[] | null;
 }
 
 /** Request to update a project collaborator */
@@ -14657,7 +18553,7 @@ export interface ProjectsUpdateProjectInput {
   repositoryUrl?: string | null;
   shortDescription?: string | null;
   status?: ContentStatus;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   title?: string | null;
   type?: ProjectsProjectType;
   visibility?: ContentVisibility;
@@ -14695,7 +18591,7 @@ export interface ResourcesCheckResourceQuotaInput {
 /** Request to cleanup orphaned resources */
 export interface ResourcesCleanupOrphanedResourcesInput {
   dryRun?: boolean;
-  resourceTypes?: Array<ResourcesResourceUsageType> | null;
+  resourceTypes?: ResourcesResourceUsageType[] | null;
 }
 
 /** Data model for Resources Contents Add Review Request. */
@@ -14708,7 +18604,7 @@ export interface ResourcesContentsAddReviewInput {
 /** Data model for Resources Contents Bulk Generate Contracts Request. */
 export interface ResourcesContentsBulkGenerateContractsInput {
   continueOnError?: boolean;
-  contracts?: Array<ResourcesContentsGenerateContractInput> | null;
+  contracts?: ResourcesContentsGenerateContractInput[] | null;
 }
 
 /** Data model for Resources Contents Bulk Generated Contract Item Response. */
@@ -14723,7 +18619,7 @@ export interface ResourcesContentsBulkGeneratedContractItemOutput {
 export interface ResourcesContentsBulkGeneratedContractsOutput {
   failed?: number;
   hasFailures?: boolean;
-  items?: Array<ResourcesContentsBulkGeneratedContractItemOutput> | null;
+  items?: ResourcesContentsBulkGeneratedContractItemOutput[] | null;
   successful?: number;
   totalRequested?: number;
 }
@@ -14817,7 +18713,7 @@ export interface ResourcesContentsGeneratedContractOutput {
   entityId?: string;
   entityType?: string | null;
   generatedAtUtc?: string;
-  missingVariables?: Array<string> | null;
+  missingVariables?: string[] | null;
   published?: boolean;
   templateKey?: string | null;
   title?: string | null;
@@ -14894,8 +18790,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Display order for UI purposes */
   displayOrder?: number;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this metadata entry is active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -15009,8 +18905,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Display order for UI purposes */
   displayOrder?: number;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this setting is active/enabled */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -15133,8 +19029,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15180,7 +19076,7 @@ export interface ResourcesUsageTrendDataPoint {
 
 /** Result of usage trends query */
 export interface ResourcesUsageTrendsResult {
-  dataPoints?: Array<ResourcesUsageTrendDataPoint> | null;
+  dataPoints?: ResourcesUsageTrendDataPoint[] | null;
   endDate?: string;
   granularity?: ResourcesTrendGranularity;
   startDate?: string;
@@ -15211,7 +19107,7 @@ export interface SocialBlogAuthoringBlogAiConversationDto {
   authorId?: string;
   blogPostId?: string;
   lastMessageAt?: string;
-  messages?: Array<SocialBlogAuthoringBlogAiMessageDto> | null;
+  messages?: SocialBlogAuthoringBlogAiMessageDto[] | null;
 }
 
 /** Credit accounting snapshot for a run or wallet. */
@@ -15302,7 +19198,7 @@ export interface SocialBlogAuthoringBlogPostDto {
   revision?: number;
   slug?: string | null;
   status?: SocialBlogBlogPostStatus;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   title?: string | null;
   twitterCard?: string | null;
   updatedAt?: string;
@@ -15332,8 +19228,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
   deletedAt?: string | null;
   deletedByUserId?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15371,10 +19267,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   excerpt?: string | null;
   format?: SocialBlogBlogContentFormat;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -15391,7 +19287,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   slug?: string | null;
   status?: SocialBlogBlogPostStatus;
   structuredDataOverride?: string | null;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   /** Serialized tags for persistence (jsonb column). */
   tagsJson?: string | null;
   tenantId?: string | null;
@@ -15449,7 +19345,7 @@ export interface SocialBlogControllersUpdateBlogPostDraftInput {
   ogImageUrl?: string | null;
   revision?: number;
   structuredDataOverride?: string | null;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   title?: string | null;
   twitterCard?: string | null;
 }
@@ -15467,7 +19363,7 @@ export interface SocialBlogQueriesBlogCommentDto {
 /** Page of comments, oldest-first, with depth-1 replies flattened under their parents. */
 export interface SocialBlogQueriesBlogCommentPage {
   hasMore?: boolean;
-  items?: Array<SocialBlogQueriesBlogCommentDto> | null;
+  items?: SocialBlogQueriesBlogCommentDto[] | null;
 }
 
 /** Full public post detail: body, format, SEO fields, revision, and updated timestamp. */
@@ -15475,7 +19371,7 @@ export interface SocialBlogQueriesBlogPostDetailDto {
   id?: string;
   allowComments?: boolean;
   canonicalUrlOverride?: string | null;
-  coAuthorHandles?: Array<string> | null;
+  coAuthorHandles?: string[] | null;
   commentCount?: number;
   content?: string | null;
   excerpt?: string | null;
@@ -15492,7 +19388,7 @@ export interface SocialBlogQueriesBlogPostDetailDto {
   revision?: number;
   slug?: string | null;
   structuredDataOverride?: string | null;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   title?: string | null;
   twitterCard?: string | null;
   updatedAt?: string;
@@ -15503,7 +19399,7 @@ export interface SocialBlogQueriesBlogPostDetailDto {
 (Content/JsonBody) — list surfaces never ship the body. */
 export interface SocialBlogQueriesBlogPostSummaryDto {
   id?: string;
-  coAuthorHandles?: Array<string> | null;
+  coAuthorHandles?: string[] | null;
   commentCount?: number;
   excerpt?: string | null;
   ogImageUrl?: string | null;
@@ -15513,14 +19409,14 @@ export interface SocialBlogQueriesBlogPostSummaryDto {
   reactionCount?: number;
   readTimeMinutes?: number;
   slug?: string | null;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   title?: string | null;
 }
 
 /** Page of published posts ordered newest-first (keyset on PublishedAt, then Id). */
 export interface SocialBlogQueriesBlogPostSummaryPage {
   hasMore?: boolean;
-  items?: Array<SocialBlogQueriesBlogPostSummaryDto> | null;
+  items?: SocialBlogQueriesBlogPostSummaryDto[] | null;
 }
 
 /** Canonical (handle, slug) route a stale URL resolves to, for permanent redirects. */
@@ -15616,7 +19512,7 @@ export interface SocialFeedSocialFeedItemDto {
   engagement?: SocialFeedFeedEngagementDto;
   kind?: SocialFeedSocialFeedItemKind;
   post?: SocialFeedSocialPostContentDto;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   testingSession?: SocialFeedTestingSessionFeedDto;
   viewer?: SocialFeedFeedViewerStateDto;
 }
@@ -15626,7 +19522,7 @@ export type SocialFeedSocialFeedItemKind = 'Post' | 'Repost' | 'TestingSession';
 
 /** Data model for Social Feed Social Feed Page Dto. */
 export interface SocialFeedSocialFeedPageDto {
-  items?: Array<SocialFeedSocialFeedItemDto> | null;
+  items?: SocialFeedSocialFeedItemDto[] | null;
   nextCursor?: string | null;
 }
 
@@ -15690,13 +19586,13 @@ export interface SocialFeedTestingSessionFeedDto {
 
 /** Data model for Social Follows Controllers Batch Counts Request. */
 export interface SocialFollowsControllersBatchCountsInput {
-  entityIds?: Array<string> | null;
+  entityIds?: string[] | null;
   entityType?: string | null;
 }
 
 /** Data model for Social Follows Controllers Batch Status Request. */
 export interface SocialFollowsControllersBatchStatusInput {
-  entityIds?: Array<string> | null;
+  entityIds?: string[] | null;
   entityType?: string | null;
 }
 
@@ -15869,7 +19765,7 @@ export interface SocialPostsControllersAddCommentInput {
 export interface SocialPostsControllersCreatePostInput {
   assetReferenceId?: string | null;
   content?: string | null;
-  tags?: Array<string> | null;
+  tags?: string[] | null;
   visibility?: SocialPostsPostVisibility;
 }
 
@@ -15962,13 +19858,13 @@ export interface SocialProfilesSocialProfileDto {
   handle?: string | null;
   headline?: string | null;
   location?: string | null;
-  portfolioItems?: Array<SocialProfilesProfilePortfolioItemDto> | null;
+  portfolioItems?: SocialProfilesProfilePortfolioItemDto[] | null;
   postCount?: number;
   projectCount?: number;
   showActivity?: boolean;
   showPortfolio?: boolean;
   showSkills?: boolean;
-  skills?: Array<SocialProfilesProfileSkillDto> | null;
+  skills?: SocialProfilesProfileSkillDto[] | null;
   socialLinksJson?: string | null;
   timeZone?: string | null;
   userId?: string;
@@ -16064,9 +19960,9 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
-  invitations?: Array<TeamsTeamInvitation> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
+  invitations?: TeamsTeamInvitation[] | null;
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -16074,7 +19970,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Checks if this entity is newly created (not yet persisted to a database) */
   isNew?: boolean;
   isPersonal?: boolean;
-  members?: Array<TeamsTeamMember> | null;
+  members?: TeamsTeamMember[] | null;
   name: string;
   slug: string;
   status?: TeamsTeamStatus;
@@ -16103,9 +19999,9 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   expiresAt?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   invitedByUserId?: string;
   invitedEmail?: string | null;
   invitedUserId?: string | null;
@@ -16142,8 +20038,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
@@ -16280,7 +20176,7 @@ export interface TestingLabCreateTestingEventInput {
 
 /** Data model for Testing Lab Create Testing Event Slots Request. */
 export interface TestingLabCreateTestingEventSlotsInput {
-  slots?: Array<TestingLabUpsertTestingEventSlotInput> | null;
+  slots?: TestingLabUpsertTestingEventSlotInput[] | null;
 }
 
 /** Data model for Testing Lab Create Testing Lab Role Request. */
@@ -16403,11 +20299,11 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   feedback?: TestingLabTestingFeedback;
   /** Foreign key to the feedback being rated */
   feedbackId: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether this rating is global (tenant-independent) */
@@ -16479,11 +20375,11 @@ export interface TestingLabPublicTestingEventProjection {
   configuration?: TestingLabTestingEventConfigurationProjection;
   description?: string | null;
   endsAt?: string;
-  games?: Array<TestingLabPublicTestingEventGameProjection> | null;
+  games?: TestingLabPublicTestingEventGameProjection[] | null;
   mode?: TestingLabTestingEventMode;
   name?: string | null;
   requiresFeedback?: boolean;
-  slots?: Array<TestingLabPublicTestingEventSlotProjection> | null;
+  slots?: TestingLabPublicTestingEventSlotProjection[] | null;
   startsAt?: string;
   status?: TestingLabTestingEventStatus;
   timeZoneId?: string | null;
@@ -16509,7 +20405,7 @@ export interface TestingLabPublicTestingEventSlotProjection {
 /** Data model for Testing Lab Questionnaire Answer. */
 export interface TestingLabQuestionnaireAnswer {
   questionId?: string | null;
-  selectedOptionIds?: Array<string> | null;
+  selectedOptionIds?: string[] | null;
   textValue?: string | null;
 }
 
@@ -16531,14 +20427,14 @@ export interface TestingLabQuestionnaireOption {
 
 /** Data model for Testing Lab Questionnaire Response. */
 export interface TestingLabQuestionnaireOutput {
-  answers?: Array<TestingLabQuestionnaireAnswer> | null;
+  answers?: TestingLabQuestionnaireAnswer[] | null;
 }
 
 /** Data model for Testing Lab Questionnaire Question. */
 export interface TestingLabQuestionnaireQuestion {
   id?: string | null;
   condition?: TestingLabQuestionnaireCondition;
-  options?: Array<TestingLabQuestionnaireOption> | null;
+  options?: TestingLabQuestionnaireOption[] | null;
   prompt?: string | null;
   required?: boolean;
   type?: TestingLabQuestionnaireQuestionType;
@@ -16549,7 +20445,7 @@ export type TestingLabQuestionnaireQuestionType = 'FreeText' | 'SingleChoice' | 
 
 /** Data model for Testing Lab Questionnaire Schema. */
 export interface TestingLabQuestionnaireSchema {
-  questions?: Array<TestingLabQuestionnaireQuestion> | null;
+  questions?: TestingLabQuestionnaireQuestion[] | null;
   title?: string | null;
 }
 
@@ -16584,7 +20480,7 @@ export interface TestingLabSaveTestingProjectApplicationDraftInput {
   feedbackQuestionnaire?: TestingLabQuestionnaireSchema;
   preferredAvailability?: string | null;
   projectVersionId?: string | null;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
 }
 
 /** Data model for Testing Lab Session Project Projection. */
@@ -16618,8 +20514,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether the user has checked in */
   isCheckedIn?: boolean;
   /** Whether the user has checked out */
@@ -16676,8 +20572,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -16736,7 +20632,7 @@ export interface TestingLabSubmitTestingProjectApplicationInput {
   preferredAvailability?: string | null;
   projectId?: string;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
 }
 
 /** Data model for Testing Lab Testing Application Review Asset Projection. */
@@ -16751,7 +20647,7 @@ export interface TestingLabTestingApplicationReviewAssetProjection {
 /** Data model for Testing Lab Testing Application Review Package Projection. */
 export interface TestingLabTestingApplicationReviewPackageProjection {
   applicationId?: string;
-  assets?: Array<TestingLabTestingApplicationReviewAssetProjection> | null;
+  assets?: TestingLabTestingApplicationReviewAssetProjection[] | null;
   brief?: TestingLabTestingProjectBrief;
   feedbackQuestionnaire?: TestingLabQuestionnaireSchema;
   projectId?: string;
@@ -16766,7 +20662,7 @@ export type TestingLabTestingApplicationStatus = 'Draft' | 'Pending' | 'UnderRev
 
 /** Data model for Testing Lab Testing Application Tester Eligibility Projection. */
 export interface TestingLabTestingApplicationTesterEligibilityProjection {
-  eligibleApplicationIds?: Array<string> | null;
+  eligibleApplicationIds?: string[] | null;
   testerUserId?: string;
 }
 
@@ -16786,8 +20682,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -16829,10 +20725,10 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   event?: TestingLabTestingEvent;
   eventId?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   isActive?: boolean;
   isChair?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -16860,7 +20756,7 @@ export interface TestingLabTestingEvent {
   /** Unique identifier for the entity.
 Setter is public for EF Core materialization; prefer constructor or factory methods for domain code. */
   id?: string;
-  applications?: Array<TestingLabTestingProjectApplication> | null;
+  applications?: TestingLabTestingProjectApplication[] | null;
   applicationsCloseAt?: string;
   applicationsOpenAt?: string;
   approvalMode?: TestingLabTestingEventApprovalMode;
@@ -16868,7 +20764,7 @@ Setter is public for EF Core materialization; prefer constructor or factory meth
   cancelledAt?: string | null;
   candidateInstructions?: string | null;
   cohortId?: string | null;
-  committeeMembers?: Array<TestingLabTestingCommitteeMember> | null;
+  committeeMembers?: TestingLabTestingCommitteeMember[] | null;
   configurationFrozenAt?: string | null;
   courseId?: string | null;
   /** Timestamp when the entity was created.
@@ -16879,10 +20775,10 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   deletedAt?: string | null;
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endsAt?: string;
   generalRules?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -16906,7 +20802,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   reminderDaysBeforeOverride?: string | null;
   requiresFeedback?: boolean;
   sentReminderDays?: string | null;
-  slots?: Array<TestingLabTestingEventSlot> | null;
+  slots?: TestingLabTestingEventSlot[] | null;
   sourceTemplateId?: string | null;
   sourceTemplateRevisionId?: string | null;
   startsAt?: string;
@@ -17005,7 +20901,7 @@ export interface TestingLabTestingEventProjection {
   managerUserId?: string;
   mode?: TestingLabTestingEventMode;
   name?: string | null;
-  recurrenceDaysOfWeek?: Array<SystemDayOfWeek> | null;
+  recurrenceDaysOfWeek?: SystemDayOfWeek[] | null;
   recurrenceEndsAt?: string | null;
   recurrenceFrequency?: TestingLabTestingEventRecurrenceFrequency;
   recurrenceInterval?: number | null;
@@ -17025,7 +20921,7 @@ export type TestingLabTestingEventRecurrenceFrequency = 'Daily' | 'Weekly' | 'Mo
 
 /** Data model for Testing Lab Testing Event Recurrence Request. */
 export interface TestingLabTestingEventRecurrenceInput {
-  daysOfWeek?: Array<SystemDayOfWeek> | null;
+  daysOfWeek?: SystemDayOfWeek[] | null;
   endsAt?: string | null;
   frequency?: TestingLabTestingEventRecurrenceFrequency;
   interval?: number;
@@ -17045,11 +20941,11 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   endsAt?: string;
   event?: TestingLabTestingEvent;
   eventId?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17141,7 +21037,7 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   event?: TestingLabTestingEvent;
   eventId?: string | null;
   /** Feedback data in JSON format */
@@ -17149,7 +21045,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   feedbackForm?: TestingLabTestingFeedbackForm;
   /** Foreign key to the feedback form */
   feedbackFormId?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   /** Whether this feedback is global (tenant-independent) */
@@ -17166,7 +21062,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   overallRating?: number | null;
   qualityRating?: TestingLabFeedbackQuality;
   /** Quality ratings for this feedback */
-  qualityRatings?: Array<TestingLabFeedbackQualityRating> | null;
+  qualityRatings?: TestingLabFeedbackQualityRating[] | null;
   questionnaireRevisionId?: string | null;
   /** When this feedback was reported */
   reportedAt?: string | null;
@@ -17232,7 +21128,7 @@ export interface TestingLabTestingFeedbackDirectoryItem {
 
 /** Data model for Testing Lab Testing Feedback Directory Page. */
 export interface TestingLabTestingFeedbackDirectoryPage {
-  items?: Array<TestingLabTestingFeedbackDirectoryItem> | null;
+  items?: TestingLabTestingFeedbackDirectoryItem[] | null;
   skip?: number;
   take?: number;
   totalCount?: number;
@@ -17252,16 +21148,16 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Form description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Feedback submissions using this form */
-  feedback?: Array<TestingLabTestingFeedback> | null;
+  feedback?: TestingLabTestingFeedback[] | null;
   /** Form structure in JSON format */
   formData: string;
   formSchema?: string | null;
   formType?: TestingLabFeedbackFormType;
   /** Version number of this form */
   formVersion?: number;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this form is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -17277,7 +21173,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Number of feedback submissions */
   submissionCount?: number;
   /** Tags as array */
-  tagArray?: Array<string> | null;
+  tagArray?: string[] | null;
   /** Tags for categorization */
   tags?: string | null;
   tenantId?: string | null;
@@ -17335,7 +21231,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Request description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** URL to download the product/game build */
   downloadUrl?: string | null;
   /** Testing duration */
@@ -17345,11 +21241,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Estimated testing duration in hours */
   estimatedDurationHours?: number | null;
   /** Feedback collected for this request */
-  feedback?: Array<TestingLabTestingFeedback> | null;
+  feedback?: TestingLabTestingFeedback[] | null;
   /** Simple feedback form content (plain text questions) */
   feedbackFormContent?: string | null;
   /** Feedback forms associated with this request */
-  feedbackForms?: Array<TestingLabTestingFeedbackForm> | null;
+  feedbackForms?: TestingLabTestingFeedbackForm[] | null;
   /** Instructions content (text format) */
   instructionsContent?: string | null;
   /** File ID for instruction documents */
@@ -17357,7 +21253,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   instructionsType: TestingLabInstructionType;
   /** URL for instructions */
   instructionsUrl?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this request is currently active */
   isActive?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -17370,13 +21266,13 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   maxTesters?: number | null;
   mode?: TestingLabTestingMode;
   /** Participants in this testing request */
-  participants?: Array<TestingLabTestingParticipant> | null;
+  participants?: TestingLabTestingParticipant[] | null;
   priority?: TestingLabTestingPriority;
   projectVersion?: ProjectsProjectVersion;
   /** Foreign key to the project version (optional - can be standalone testing) */
   projectVersionId?: string | null;
   /** Testing sessions for this request */
-  sessions?: Array<TestingLabTestingSession> | null;
+  sessions?: TestingLabTestingSession[] | null;
   /** Testing start date */
   startDate: string;
   status: TestingLabTestingRequestStatus;
@@ -17395,13 +21291,13 @@ Protected setter prevents direct manipulation outside the entity hierarchy; EF C
 /** Data model for Testing Lab Testing Lab Analytics Report Projection. */
 export interface TestingLabTestingLabAnalyticsReportProjection {
   current?: TestingLabTestingLabAnalyticsSummaryProjection;
-  events?: Array<TestingLabTestingLabEventAnalyticsProjection> | null;
+  events?: TestingLabTestingLabEventAnalyticsProjection[] | null;
   fromDate?: string;
   generatedAt?: string;
   locations?: TestingLabTestingLabLocationAnalyticsProjection;
   previous?: TestingLabTestingLabAnalyticsSummaryProjection;
   toDate?: string;
-  trend?: Array<TestingLabTestingLabAnalyticsTrendProjection> | null;
+  trend?: TestingLabTestingLabAnalyticsTrendProjection[] | null;
 }
 
 /** Data model for Testing Lab Testing Lab Analytics Summary Projection. */
@@ -17563,13 +21459,13 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Location description */
   description?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Available equipment/resources */
   equipment?: string | null;
   equipmentAvailable?: string | null;
   /** Full address as string */
   fullAddress?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether this location is currently available */
   isAvailable?: boolean;
   /** Checks if this entity is soft-deleted */
@@ -17587,7 +21483,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Postal code */
   postalCode?: string | null;
   /** Testing sessions at this location */
-  sessions?: Array<TestingLabTestingSession> | null;
+  sessions?: TestingLabTestingSession[] | null;
   /** State/Province */
   state?: string | null;
   status?: TestingLabLocationStatus;
@@ -17622,16 +21518,16 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Feedback provided by this participant */
-  feedback?: Array<TestingLabTestingFeedback> | null;
+  feedback?: TestingLabTestingFeedback[] | null;
   /** Number of feedback submissions */
   feedbackCount?: number;
   /** Whether instructions have been acknowledged */
   instructionsAcknowledged: boolean;
   /** When instructions were acknowledged */
   instructionsAcknowledgedAt?: string | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether participation is active */
   isActive?: boolean;
   /** Whether participation is completed */
@@ -17697,7 +21593,7 @@ export interface TestingLabTestingParticipantDirectoryProjection {
   attendedCount?: number;
   checkedInCount?: number;
   completedCount?: number;
-  items?: Array<TestingLabTestingParticipantDirectoryItemProjection> | null;
+  items?: TestingLabTestingParticipantDirectoryItemProjection[] | null;
   noShowCount?: number;
   registeredCount?: number;
   totalCount?: number;
@@ -17737,12 +21633,12 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   event?: TestingLabTestingEvent;
   eventApplicationResponse?: TestingLabQuestionnaireOutput;
   eventApplicationResponseJson?: string | null;
   eventId?: string;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17753,11 +21649,11 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   projectId?: string;
   projectVersion?: ProjectsProjectVersion;
   projectVersionId?: string | null;
-  questionnaireRevisions?: Array<TestingLabTestingQuestionnaireRevision> | null;
+  questionnaireRevisions?: TestingLabTestingQuestionnaireRevision[] | null;
   rulesAcceptedAt?: string | null;
   status?: TestingLabTestingApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
   submittedAssetReferenceIdsJson?: string | null;
   submittedBy?: IdentityUsersUser;
   submittedByUserId?: string;
@@ -17769,7 +21665,7 @@ Protected setter — use M:GameGuild.EntityBase`1.Touch to update. EF Core uses 
 Uses ConcurrencyCheck for cross-database compatibility (Postgres, SQLite, SQL Server).
 Protected setter prevents direct manipulation outside the entity hierarchy; EF Core uses backing field. */
   version?: number;
-  votes?: Array<TestingLabTestingApplicationVote> | null;
+  votes?: TestingLabTestingApplicationVote[] | null;
 }
 
 /** Data model for Testing Lab Testing Project Application Projection. */
@@ -17790,9 +21686,9 @@ export interface TestingLabTestingProjectApplicationProjection {
   rulesAcceptedAt?: string | null;
   status?: TestingLabTestingApplicationStatus;
   submissionVersionPolicy?: ProjectsVersionSubmissionPolicy;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
   submittedByUserId?: string;
-  votes?: Array<TestingLabTestingApplicationVoteProjection> | null;
+  votes?: TestingLabTestingApplicationVoteProjection[] | null;
 }
 
 /** Data model for Testing Lab Testing Project Brief. */
@@ -17800,9 +21696,9 @@ export interface TestingLabTestingProjectBrief {
   controls?: string | null;
   installationAndAccess?: string | null;
   knownLimitations?: string | null;
-  links?: Array<string> | null;
+  links?: string[] | null;
   testObjective?: string | null;
-  testTasks?: Array<string> | null;
+  testTasks?: string[] | null;
 }
 
 /** Data model for Testing Lab Testing Questionnaire Revision. */
@@ -17819,8 +21715,8 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Checks if this entity is soft-deleted */
   isDeleted?: boolean;
   isGlobal?: boolean;
@@ -17897,7 +21793,7 @@ Protected setter prevents modification after initial creation; EF Core uses back
 Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityBase`1.Restore. EF Core uses backing field. */
   deletedAt?: string | null;
   /** Domain events raised by this entity */
-  domainEvents?: Array<CQRSIDomainEvent> | null;
+  domainEvents?: CQRSIDomainEvent[] | null;
   /** Session duration */
   duration?: string;
   /** Session end time */
@@ -17906,8 +21802,8 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Optional event slot that scheduled this operational session. */
   eventSlotId?: string | null;
   /** Testing feedback for this session */
-  feedback?: Array<TestingLabTestingFeedback> | null;
-  integrationEvents?: Array<IDurableIntegrationEvent> | null;
+  feedback?: TestingLabTestingFeedback[] | null;
+  integrationEvents?: IDurableIntegrationEvent[] | null;
   /** Whether the session is currently active */
   isActive?: boolean;
   /** Whether the session is completed */
@@ -17937,7 +21833,7 @@ Protected setter — use M:GameGuild.EntityBase`1.SoftDelete/M:GameGuild.EntityB
   /** Number of registered testers */
   registeredTesterCount?: number;
   /** Session registrations */
-  registrations?: Array<TestingLabSessionRegistration> | null;
+  registrations?: TestingLabSessionRegistration[] | null;
   /** Session date */
   sessionDate: string;
   /** Session name */
@@ -18054,7 +21950,7 @@ export interface TestingLabUpdateTestingLocationDto {
 export interface TestingLabUpdateTestingProjectApplicationInput {
   preferredAvailability?: string | null;
   projectVersionId?: string;
-  submittedAssetReferenceIds?: Array<string> | null;
+  submittedAssetReferenceIds?: string[] | null;
 }
 
 /** Data model for Testing Lab Update Testing Request Dto. */
@@ -18103,9 +21999,9 @@ export interface TestingLabUpsertTestingEventTemplateInput {
 
 /** Data model for Testing Lab User Testing Lab Permissions. */
 export interface TestingLabUserTestingLabPermissions {
-  assignedRoles?: Array<string> | null;
+  assignedRoles?: string[] | null;
   permissions?: TestingLabTestingLabPermissionsDto;
-  resourcePermissions?: Array<TestingLabTestingLabResourcePermissionDto> | null;
+  resourcePermissions?: TestingLabTestingLabResourcePermissionDto[] | null;
   tenantId?: string | null;
   userId?: string;
 }
@@ -18311,8 +22207,35 @@ export let AssetsVirusScanStatusSchema: z.ZodType<AssetsVirusScanStatus>;
 export let BillingCycleSchema: z.ZodType<BillingCycle>;
 export let BulkOperationErrorSchema: z.ZodType<BulkOperationError>;
 export let BulkOperationOutputSchema: z.ZodType<BulkOperationOutput>;
+export let CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema: z.ZodType<CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput>;
+export let CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInputSchema: z.ZodType<CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput>;
+export let CommerceBillingBillingOutboxEventDtoSchema: z.ZodType<CommerceBillingBillingOutboxEventDto>;
+export let CommerceBillingBillingOutboxEventStatusSchema: z.ZodType<CommerceBillingBillingOutboxEventStatus>;
+export let CommerceBillingBillingProviderMigrationEntryClassificationSchema: z.ZodType<CommerceBillingBillingProviderMigrationEntryClassification>;
+export let CommerceBillingBillingProviderMigrationReportSchema: z.ZodType<CommerceBillingBillingProviderMigrationReport>;
+export let CommerceBillingBillingProviderMigrationReportEntrySchema: z.ZodType<CommerceBillingBillingProviderMigrationReportEntry>;
+export let CommerceBillingBillingWebhookAllowlistStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookAllowlistStatusDto>;
+export let CommerceBillingBillingWebhookBlockedSourceDtoSchema: z.ZodType<CommerceBillingBillingWebhookBlockedSourceDto>;
+export let CommerceBillingBillingWebhookEventDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventDto>;
+export let CommerceBillingBillingWebhookEventListItemDtoSchema: z.ZodType<CommerceBillingBillingWebhookEventListItemDto>;
+export let CommerceBillingBillingWebhookSecurityAlertDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecurityAlertDto>;
+export let CommerceBillingBillingWebhookSecuritySummaryDtoSchema: z.ZodType<CommerceBillingBillingWebhookSecuritySummaryDto>;
+export let CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema: z.ZodType<CommerceBillingBillingWebhookSuspiciousActivityStatusDto>;
+export let CommerceBillingDriftOutcomeRowSchema: z.ZodType<CommerceBillingDriftOutcomeRow>;
+export let CommerceBillingExternalBillingProviderStatusDtoSchema: z.ZodType<CommerceBillingExternalBillingProviderStatusDto>;
+export let CommerceBillingInvoiceAccountCreditSettlementResultSchema: z.ZodType<CommerceBillingInvoiceAccountCreditSettlementResult>;
 export let CommerceBillingInvoicePaymentRetryResultSchema: z.ZodType<CommerceBillingInvoicePaymentRetryResult>;
 export let CommerceBillingInvoiceStatusSchema: z.ZodType<CommerceBillingInvoiceStatus>;
+export let CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDetailDto>;
+export let CommerceBillingPricingDecisionLedgerEntryDtoSchema: z.ZodType<CommerceBillingPricingDecisionLedgerEntryDto>;
+export let CommerceBillingPricingLedgerDriftOutcomeSchema: z.ZodType<CommerceBillingPricingLedgerDriftOutcome>;
+export let CommerceBillingPricingLedgerDriftValidationResultSchema: z.ZodType<CommerceBillingPricingLedgerDriftValidationResult>;
+export let CommerceBillingPricingLedgerEffectivenessAggregateSchema: z.ZodType<CommerceBillingPricingLedgerEffectivenessAggregate>;
+export let CommerceBillingPricingLedgerTotalsSchema: z.ZodType<CommerceBillingPricingLedgerTotals>;
+export let CommerceBillingPricingRuleImpactRowSchema: z.ZodType<CommerceBillingPricingRuleImpactRow>;
+export let CommerceBillingPromoCodeEffectivenessRowSchema: z.ZodType<CommerceBillingPromoCodeEffectivenessRow>;
+export let CommerceBillingStackingOutcomeRowSchema: z.ZodType<CommerceBillingStackingOutcomeRow>;
+export let CommerceBillingValidatePricingLedgerDriftInputSchema: z.ZodType<CommerceBillingValidatePricingLedgerDriftInput>;
 export let CommerceOrderChargeStateSchema: z.ZodType<CommerceOrderChargeState>;
 export let CommerceOrderPaymentIntentPreparationSchema: z.ZodType<CommerceOrderPaymentIntentPreparation>;
 export let CommerceOrdersAddMarketplaceCartItemInputSchema: z.ZodType<CommerceOrdersAddMarketplaceCartItemInput>;
@@ -18333,6 +22256,17 @@ export let CommerceOrdersOrderLineItemDtoSchema: z.ZodType<CommerceOrdersOrderLi
 export let CommerceOrdersOrderMarketplaceCurrencyChoiceSchema: z.ZodType<CommerceOrdersOrderMarketplaceCurrencyChoice>;
 export let CommerceOrdersOrderStatusSchema: z.ZodType<CommerceOrdersOrderStatus>;
 export let CommerceOrdersSetMarketplaceCartItemQuantityInputSchema: z.ZodType<CommerceOrdersSetMarketplaceCartItemQuantityInput>;
+export let CommercePaymentsAccountCreditBalanceSchema: z.ZodType<CommercePaymentsAccountCreditBalance>;
+export let CommercePaymentsAccountCreditConsumptionSchema: z.ZodType<CommercePaymentsAccountCreditConsumption>;
+export let CommercePaymentsAccountCreditGrantSchema: z.ZodType<CommercePaymentsAccountCreditGrant>;
+export let CommercePaymentsAccountCreditGrantStatusSchema: z.ZodType<CommercePaymentsAccountCreditGrantStatus>;
+export let CommercePaymentsAccountCreditMetricsReportSchema: z.ZodType<CommercePaymentsAccountCreditMetricsReport>;
+export let CommercePaymentsAccountCreditsControllerIssueCreditInputSchema: z.ZodType<CommercePaymentsAccountCreditsControllerIssueCreditInput>;
+export let CommercePaymentsAccountCreditsControllerRevokeCreditInputSchema: z.ZodType<CommercePaymentsAccountCreditsControllerRevokeCreditInput>;
+export let CommercePaymentsAccountCreditSourceSchema: z.ZodType<CommercePaymentsAccountCreditSource>;
+export let CommercePaymentsAccountCreditTransactionSchema: z.ZodType<CommercePaymentsAccountCreditTransaction>;
+export let CommercePaymentsAccountCreditTransactionTypeSchema: z.ZodType<CommercePaymentsAccountCreditTransactionType>;
+export let CommercePaymentsAccountCreditTypeSchema: z.ZodType<CommercePaymentsAccountCreditType>;
 export let CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCancelBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerCreateBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerCreateBillingChargeInput>;
 export let CommercePaymentsBillingChargesControllerRefundBillingChargeInputSchema: z.ZodType<CommercePaymentsBillingChargesControllerRefundBillingChargeInput>;
@@ -18340,14 +22274,51 @@ export let CommercePaymentsCalculateTaxInputSchema: z.ZodType<CommercePaymentsCa
 export let CommercePaymentsCreateTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsCreateTaxJurisdictionInput>;
 export let CommercePaymentsCreateTaxRuleInputSchema: z.ZodType<CommercePaymentsCreateTaxRuleInput>;
 export let CommercePaymentsCreateWalletInputSchema: z.ZodType<CommercePaymentsCreateWalletInput>;
+export let CommercePaymentsCreditCurrencyMetricsSchema: z.ZodType<CommercePaymentsCreditCurrencyMetrics>;
+export let CommercePaymentsCreditMetricsSchema: z.ZodType<CommercePaymentsCreditMetrics>;
 export let CommercePaymentsCustomerTypeSchema: z.ZodType<CommercePaymentsCustomerType>;
+export let CommercePaymentsDisputeActionResultSchema: z.ZodType<CommercePaymentsDisputeActionResult>;
+export let CommercePaymentsDisputeEvidenceSchema: z.ZodType<CommercePaymentsDisputeEvidence>;
+export let CommercePaymentsDisputeListPageSchema: z.ZodType<CommercePaymentsDisputeListPage>;
+export let CommercePaymentsDisputeRecordSchema: z.ZodType<CommercePaymentsDisputeRecord>;
+export let CommercePaymentsDisputeResolutionSchema: z.ZodType<CommercePaymentsDisputeResolution>;
+export let CommercePaymentsDisputesControllerAcceptDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerAcceptDisputeInput>;
+export let CommercePaymentsDisputesControllerAddDisputeEvidenceInputSchema: z.ZodType<CommercePaymentsDisputesControllerAddDisputeEvidenceInput>;
+export let CommercePaymentsDisputesControllerCancelDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerCancelDisputeInput>;
+export let CommercePaymentsDisputesControllerChallengeDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerChallengeDisputeInput>;
+export let CommercePaymentsDisputesControllerCreateDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerCreateDisputeInput>;
+export let CommercePaymentsDisputesControllerResolveDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerResolveDisputeInput>;
+export let CommercePaymentsDisputesControllerRespondDisputeInputSchema: z.ZodType<CommercePaymentsDisputesControllerRespondDisputeInput>;
+export let CommercePaymentsDisputeStatisticsSchema: z.ZodType<CommercePaymentsDisputeStatistics>;
+export let CommercePaymentsDisputeStatusSchema: z.ZodType<CommercePaymentsDisputeStatus>;
+export let CommercePaymentsDisputeTypeSchema: z.ZodType<CommercePaymentsDisputeType>;
+export let CommercePaymentsEvidenceTypeSchema: z.ZodType<CommercePaymentsEvidenceType>;
+export let CommercePaymentsFraudReviewListItemSchema: z.ZodType<CommercePaymentsFraudReviewListItem>;
+export let CommercePaymentsFraudReviewResolutionResultSchema: z.ZodType<CommercePaymentsFraudReviewResolutionResult>;
+export let CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema: z.ZodType<CommercePaymentsFraudReviewsControllerResolveFraudReviewInput>;
+export let CommercePaymentsFraudReviewStatusSchema: z.ZodType<CommercePaymentsFraudReviewStatus>;
+export let CommercePaymentsFraudRiskLevelSchema: z.ZodType<CommercePaymentsFraudRiskLevel>;
+export let CommercePaymentsGiftPublicViewSchema: z.ZodType<CommercePaymentsGiftPublicView>;
+export let CommercePaymentsGiftPurchaseResultSchema: z.ZodType<CommercePaymentsGiftPurchaseResult>;
+export let CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema: z.ZodType<CommercePaymentsGiftsControllerPurchaseGiftRequestBody>;
+export let CommercePaymentsGiftStatusSchema: z.ZodType<CommercePaymentsGiftStatus>;
 export let CommercePaymentsLockWalletInputSchema: z.ZodType<CommercePaymentsLockWalletInput>;
 export let CommercePaymentsModelsFreezeWalletInputSchema: z.ZodType<CommercePaymentsModelsFreezeWalletInput>;
 export let CommercePaymentsModelsPatchWalletInputSchema: z.ZodType<CommercePaymentsModelsPatchWalletInput>;
 export let CommercePaymentsPatchTaxJurisdictionInputSchema: z.ZodType<CommercePaymentsPatchTaxJurisdictionInput>;
 export let CommercePaymentsPatchTaxRuleInputSchema: z.ZodType<CommercePaymentsPatchTaxRuleInput>;
+export let CommercePaymentsPaymentAttemptMetricsSchema: z.ZodType<CommercePaymentsPaymentAttemptMetrics>;
 export let CommercePaymentsPaymentCancellationResultSchema: z.ZodType<CommercePaymentsPaymentCancellationResult>;
+export let CommercePaymentsPaymentCurrencyAmountSchema: z.ZodType<CommercePaymentsPaymentCurrencyAmount>;
+export let CommercePaymentsPaymentDisputeSchema: z.ZodType<CommercePaymentsPaymentDispute>;
+export let CommercePaymentsPaymentDunningOutcomeMetricsSchema: z.ZodType<CommercePaymentsPaymentDunningOutcomeMetrics>;
+export let CommercePaymentsPaymentMethodDtoSchema: z.ZodType<CommercePaymentsPaymentMethodDto>;
+export let CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody>;
+export let CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema: z.ZodType<CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody>;
+export let CommercePaymentsPaymentRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRecoveryMetrics>;
 export let CommercePaymentsPaymentResultSchema: z.ZodType<CommercePaymentsPaymentResult>;
+export let CommercePaymentsPaymentRetryAttemptDtoSchema: z.ZodType<CommercePaymentsPaymentRetryAttemptDto>;
+export let CommercePaymentsPaymentRetryRecoveryMetricsSchema: z.ZodType<CommercePaymentsPaymentRetryRecoveryMetrics>;
 export let CommercePaymentsPaymentRetryResultSchema: z.ZodType<CommercePaymentsPaymentRetryResult>;
 export let CommercePaymentsPaymentsControllerCancelPaymentInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCancelPaymentInput>;
 export let CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInputSchema: z.ZodType<CommercePaymentsPaymentsControllerCompleteSubscriptionCheckoutInput>;
@@ -18357,6 +22328,42 @@ export let CommercePaymentsPaymentsControllerProcessPaymentInputSchema: z.ZodTyp
 export let CommercePaymentsPaymentsControllerRefundInputSchema: z.ZodType<CommercePaymentsPaymentsControllerRefundInput>;
 export let CommercePaymentsPaymentStatusSchema: z.ZodType<CommercePaymentsPaymentStatus>;
 export let CommercePaymentsProcessRefundResultSchema: z.ZodType<CommercePaymentsProcessRefundResult>;
+export let CommercePaymentsReferralSchema: z.ZodType<CommercePaymentsReferral>;
+export let CommercePaymentsReferralFunnelMetricsSchema: z.ZodType<CommercePaymentsReferralFunnelMetrics>;
+export let CommercePaymentsReferralsControllerReferralCodeOutputSchema: z.ZodType<CommercePaymentsReferralsControllerReferralCodeOutput>;
+export let CommercePaymentsReferralsControllerTrackReferralClickInputSchema: z.ZodType<CommercePaymentsReferralsControllerTrackReferralClickInput>;
+export let CommercePaymentsReferralsControllerTrackReferralSignupInputSchema: z.ZodType<CommercePaymentsReferralsControllerTrackReferralSignupInput>;
+export let CommercePaymentsReferralSignupResultSchema: z.ZodType<CommercePaymentsReferralSignupResult>;
+export let CommercePaymentsReferralStatsSchema: z.ZodType<CommercePaymentsReferralStats>;
+export let CommercePaymentsReferralStatusSchema: z.ZodType<CommercePaymentsReferralStatus>;
+export let CommercePaymentsReferrerLeaderboardEntrySchema: z.ZodType<CommercePaymentsReferrerLeaderboardEntry>;
+export let CommercePaymentsRefundApprovalQueuePageSchema: z.ZodType<CommercePaymentsRefundApprovalQueuePage>;
+export let CommercePaymentsRefundDecisionResultSchema: z.ZodType<CommercePaymentsRefundDecisionResult>;
+export let CommercePaymentsRefundListPageSchema: z.ZodType<CommercePaymentsRefundListPage>;
+export let CommercePaymentsRefundRecordSchema: z.ZodType<CommercePaymentsRefundRecord>;
+export let CommercePaymentsRefundsControllerRefundDecisionInputSchema: z.ZodType<CommercePaymentsRefundsControllerRefundDecisionInput>;
+export let CommercePaymentsRefundsControllerRequestRefundHttpInputSchema: z.ZodType<CommercePaymentsRefundsControllerRequestRefundHttpInput>;
+export let CommercePaymentsRefundStatisticsSchema: z.ZodType<CommercePaymentsRefundStatistics>;
+export let CommercePaymentsRefundStatusSchema: z.ZodType<CommercePaymentsRefundStatus>;
+export let CommercePaymentsRequestRefundResultSchema: z.ZodType<CommercePaymentsRequestRefundResult>;
+export let CommercePaymentsRevenueAnomalyAlertSchema: z.ZodType<CommercePaymentsRevenueAnomalyAlert>;
+export let CommercePaymentsRevenueAnomalyKindSchema: z.ZodType<CommercePaymentsRevenueAnomalyKind>;
+export let CommercePaymentsRevenueAnomalyStatusSchema: z.ZodType<CommercePaymentsRevenueAnomalyStatus>;
+export let CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput>;
+export let CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult>;
+export let CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput>;
+export let CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput>;
+export let CommercePaymentsRevenueAuditingControllerStatementLineInputSchema: z.ZodType<CommercePaymentsRevenueAuditingControllerStatementLineInput>;
+export let CommercePaymentsRevenueComplianceReportSchema: z.ZodType<CommercePaymentsRevenueComplianceReport>;
+export let CommercePaymentsRevenueDiscrepancyKindSchema: z.ZodType<CommercePaymentsRevenueDiscrepancyKind>;
+export let CommercePaymentsRevenueEventGroupTotalSchema: z.ZodType<CommercePaymentsRevenueEventGroupTotal>;
+export let CommercePaymentsRevenueReconciliationCoverageSchema: z.ZodType<CommercePaymentsRevenueReconciliationCoverage>;
+export let CommercePaymentsRevenueReconciliationDiscrepancySchema: z.ZodType<CommercePaymentsRevenueReconciliationDiscrepancy>;
+export let CommercePaymentsRevenueReconciliationRunSchema: z.ZodType<CommercePaymentsRevenueReconciliationRun>;
+export let CommercePaymentsRevenueReconciliationStatusSchema: z.ZodType<CommercePaymentsRevenueReconciliationStatus>;
+export let CommercePaymentsRevenueTrendCurrencyTotalSchema: z.ZodType<CommercePaymentsRevenueTrendCurrencyTotal>;
+export let CommercePaymentsRevenueTrendPointSchema: z.ZodType<CommercePaymentsRevenueTrendPoint>;
+export let CommercePaymentsRevenueTrendReportSchema: z.ZodType<CommercePaymentsRevenueTrendReport>;
 export let CommercePaymentsTaxBreakdownSchema: z.ZodType<CommercePaymentsTaxBreakdown>;
 export let CommercePaymentsTaxCalculationResultSchema: z.ZodType<CommercePaymentsTaxCalculationResult>;
 export let CommercePaymentsTaxExemptionValidationResultSchema: z.ZodType<CommercePaymentsTaxExemptionValidationResult>;
@@ -18373,6 +22380,7 @@ export let CommercePaymentsUserWalletSchema: z.ZodType<CommercePaymentsUserWalle
 export let CommercePaymentsValidateTaxExemptionInputSchema: z.ZodType<CommercePaymentsValidateTaxExemptionInput>;
 export let CommercePaymentsWalletTransactionSchema: z.ZodType<CommercePaymentsWalletTransaction>;
 export let CommercePaymentsWalletTransactionTypeSchema: z.ZodType<CommercePaymentsWalletTransactionType>;
+export let CommercePricingRuleTypeSchema: z.ZodType<CommercePricingRuleType>;
 export let CommerceProductsAddMySupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddMySupportTicketMessageInput>;
 export let CommerceProductsAddSupportTicketMessageInputSchema: z.ZodType<CommerceProductsAddSupportTicketMessageInput>;
 export let CommerceProductsAppliedPromoCodeSchema: z.ZodType<CommerceProductsAppliedPromoCode>;
@@ -18380,18 +22388,30 @@ export let CommerceProductsApplyPromoCodesInputSchema: z.ZodType<CommerceProduct
 export let CommerceProductsAssignSupportTicketInputSchema: z.ZodType<CommerceProductsAssignSupportTicketInput>;
 export let CommerceProductsBatchCreateProductsInputSchema: z.ZodType<CommerceProductsBatchCreateProductsInput>;
 export let CommerceProductsBatchProductCreateItemSchema: z.ZodType<CommerceProductsBatchProductCreateItem>;
+export let CommerceProductsCalculatePricingInputSchema: z.ZodType<CommerceProductsCalculatePricingInput>;
+export let CommerceProductsCampaignExpiringCodeDtoSchema: z.ZodType<CommerceProductsCampaignExpiringCodeDto>;
+export let CommerceProductsCampaignPerformanceDtoSchema: z.ZodType<CommerceProductsCampaignPerformanceDto>;
+export let CommerceProductsCampaignTopCodeDtoSchema: z.ZodType<CommerceProductsCampaignTopCodeDto>;
 export let CommerceProductsChangeSupportTicketPriorityInputSchema: z.ZodType<CommerceProductsChangeSupportTicketPriorityInput>;
 export let CommerceProductsCheckMultipleAccessInputSchema: z.ZodType<CommerceProductsCheckMultipleAccessInput>;
 export let CommerceProductsCloseSupportTicketInputSchema: z.ZodType<CommerceProductsCloseSupportTicketInput>;
+export let CommerceProductsConflictResolutionStrategySchema: z.ZodType<CommerceProductsConflictResolutionStrategy>;
 export let CommerceProductsCreateMySupportTicketInputSchema: z.ZodType<CommerceProductsCreateMySupportTicketInput>;
+export let CommerceProductsCreatePricingRuleInputSchema: z.ZodType<CommerceProductsCreatePricingRuleInput>;
 export let CommerceProductsCreateProductInputSchema: z.ZodType<CommerceProductsCreateProductInput>;
 export let CommerceProductsCreatePromoCodeInputSchema: z.ZodType<CommerceProductsCreatePromoCodeInput>;
+export let CommerceProductsCreatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsCreatePromoStackingRuleInput>;
 export let CommerceProductsCreateSupportTicketInputSchema: z.ZodType<CommerceProductsCreateSupportTicketInput>;
 export let CommerceProductsEntitlementCheckResultSchema: z.ZodType<CommerceProductsEntitlementCheckResult>;
 export let CommerceProductsEntitlementInfoDtoSchema: z.ZodType<CommerceProductsEntitlementInfoDto>;
+export let CommerceProductsGenerateBulkPromoCodesInputSchema: z.ZodType<CommerceProductsGenerateBulkPromoCodesInput>;
 export let CommerceProductsGrantEntitlementInputSchema: z.ZodType<CommerceProductsGrantEntitlementInput>;
 export let CommerceProductsPatchProductInputSchema: z.ZodType<CommerceProductsPatchProductInput>;
 export let CommerceProductsPatchPromoCodeInputSchema: z.ZodType<CommerceProductsPatchPromoCodeInput>;
+export let CommerceProductsPricingCalculationResultSchema: z.ZodType<CommerceProductsPricingCalculationResult>;
+export let CommerceProductsPricingRuleDtoSchema: z.ZodType<CommerceProductsPricingRuleDto>;
+export let CommerceProductsPricingRuleTierDtoSchema: z.ZodType<CommerceProductsPricingRuleTierDto>;
+export let CommerceProductsPricingRuleTierInputSchema: z.ZodType<CommerceProductsPricingRuleTierInput>;
 export let CommerceProductsProductAcquisitionTypeSchema: z.ZodType<CommerceProductsProductAcquisitionType>;
 export let CommerceProductsProductDtoSchema: z.ZodType<CommerceProductsProductDto>;
 export let CommerceProductsProductPricingDtoSchema: z.ZodType<CommerceProductsProductPricingDto>;
@@ -18401,6 +22421,7 @@ export let CommerceProductsPromoCodeDtoSchema: z.ZodType<CommerceProductsPromoCo
 export let CommerceProductsPromoCodeTypeSchema: z.ZodType<CommerceProductsPromoCodeType>;
 export let CommerceProductsPromoCodeUsageDtoSchema: z.ZodType<CommerceProductsPromoCodeUsageDto>;
 export let CommerceProductsPromoCodeValidationResultSchema: z.ZodType<CommerceProductsPromoCodeValidationResult>;
+export let CommerceProductsPromoStackingRuleDtoSchema: z.ZodType<CommerceProductsPromoStackingRuleDto>;
 export let CommerceProductsRejectedPromoCodeSchema: z.ZodType<CommerceProductsRejectedPromoCode>;
 export let CommerceProductsResolveSupportTicketInputSchema: z.ZodType<CommerceProductsResolveSupportTicketInput>;
 export let CommerceProductsRevokeEntitlementInputSchema: z.ZodType<CommerceProductsRevokeEntitlementInput>;
@@ -18412,8 +22433,10 @@ export let CommerceProductsSupportTicketMessageDtoSchema: z.ZodType<CommerceProd
 export let CommerceProductsSupportTicketPrioritySchema: z.ZodType<CommerceProductsSupportTicketPriority>;
 export let CommerceProductsSupportTicketStatusSchema: z.ZodType<CommerceProductsSupportTicketStatus>;
 export let CommerceProductsSupportTicketSummaryDtoSchema: z.ZodType<CommerceProductsSupportTicketSummaryDto>;
+export let CommerceProductsUpdatePricingRuleInputSchema: z.ZodType<CommerceProductsUpdatePricingRuleInput>;
 export let CommerceProductsUpdateProductInputSchema: z.ZodType<CommerceProductsUpdateProductInput>;
 export let CommerceProductsUpdatePromoCodeInputSchema: z.ZodType<CommerceProductsUpdatePromoCodeInput>;
+export let CommerceProductsUpdatePromoStackingRuleInputSchema: z.ZodType<CommerceProductsUpdatePromoStackingRuleInput>;
 export let CommerceProductsValidatePromoCodeInputSchema: z.ZodType<CommerceProductsValidatePromoCodeInput>;
 export let CommerceSubscriptionsBillingHistoryDtoSchema: z.ZodType<CommerceSubscriptionsBillingHistoryDto>;
 export let CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInputSchema: z.ZodType<CommerceSubscriptionsBillingSubscriptionsControllerCancelBillingSubscriptionInput>;
@@ -18453,9 +22476,24 @@ export let CommerceSubscriptionsSubscriptionsControllerPutSubscriptionInputSchem
 export let CommerceSubscriptionsSubscriptionStatusSchema: z.ZodType<CommerceSubscriptionsSubscriptionStatus>;
 export let CommerceSubscriptionsSubscriptionUpgradeResultSchema: z.ZodType<CommerceSubscriptionsSubscriptionUpgradeResult>;
 export let CommerceSubscriptionsSubscriptionUsageDtoSchema: z.ZodType<CommerceSubscriptionsSubscriptionUsageDto>;
+export let ComplianceAuditAcknowledgeSecurityAlertInputSchema: z.ZodType<ComplianceAuditAcknowledgeSecurityAlertInput>;
+export let ComplianceAuditAuditAccessAgeBucketSchema: z.ZodType<ComplianceAuditAuditAccessAgeBucket>;
+export let ComplianceAuditAuditActionTypeDescriptorSchema: z.ZodType<ComplianceAuditAuditActionTypeDescriptor>;
+export let ComplianceAuditAuditActionTypeFrequencySchema: z.ZodType<ComplianceAuditAuditActionTypeFrequency>;
+export let ComplianceAuditAuditActionTypeGroupDescriptorSchema: z.ZodType<ComplianceAuditAuditActionTypeGroupDescriptor>;
+export let ComplianceAuditAuditActionTypeLogicalOperatorSchema: z.ZodType<ComplianceAuditAuditActionTypeLogicalOperator>;
+export let ComplianceAuditAuditActionTypeSearchOutputSchema: z.ZodType<ComplianceAuditAuditActionTypeSearchOutput>;
+export let ComplianceAuditAuditActionTypeSortDirectionSchema: z.ZodType<ComplianceAuditAuditActionTypeSortDirection>;
+export let ComplianceAuditAuditActionTypeSortFieldSchema: z.ZodType<ComplianceAuditAuditActionTypeSortField>;
+export let ComplianceAuditAuditActionTypeTaxonomyOutputSchema: z.ZodType<ComplianceAuditAuditActionTypeTaxonomyOutput>;
+export let ComplianceAuditAuditActionTypeTrendSchema: z.ZodType<ComplianceAuditAuditActionTypeTrend>;
+export let ComplianceAuditAuditActivityBucketOutputSchema: z.ZodType<ComplianceAuditAuditActivityBucketOutput>;
+export let ComplianceAuditAuditActivityBucketSizeSchema: z.ZodType<ComplianceAuditAuditActivityBucketSize>;
 export let ComplianceAuditAuditActorContextSchema: z.ZodType<ComplianceAuditAuditActorContext>;
 export let ComplianceAuditAuditCategorySchema: z.ZodType<ComplianceAuditAuditCategory>;
+export let ComplianceAuditAuditDateRangeSearchOutputSchema: z.ZodType<ComplianceAuditAuditDateRangeSearchOutput>;
 export let ComplianceAuditAuditEventContextSchema: z.ZodType<ComplianceAuditAuditEventContext>;
+export let ComplianceAuditAuditExportHistoryOutputSchema: z.ZodType<ComplianceAuditAuditExportHistoryOutput>;
 export let ComplianceAuditAuditExportInputSchema: z.ZodType<ComplianceAuditAuditExportInput>;
 export let ComplianceAuditAuditExportProgressOutputSchema: z.ZodType<ComplianceAuditAuditExportProgressOutput>;
 export let ComplianceAuditAuditJsonExportDocumentSchema: z.ZodType<ComplianceAuditAuditJsonExportDocument>;
@@ -18465,22 +22503,86 @@ export let ComplianceAuditAuditLogDtoSchema: z.ZodType<ComplianceAuditAuditLogDt
 export let ComplianceAuditAuditLogOutputSchema: z.ZodType<ComplianceAuditAuditLogOutput>;
 export let ComplianceAuditAuditNetworkContextSchema: z.ZodType<ComplianceAuditAuditNetworkContext>;
 export let ComplianceAuditAuditOutcomeContextSchema: z.ZodType<ComplianceAuditAuditOutcomeContext>;
+export let ComplianceAuditAuditRelatedActionSchema: z.ZodType<ComplianceAuditAuditRelatedAction>;
+export let ComplianceAuditAuditReplaySnapshotEventSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotEvent>;
+export let ComplianceAuditAuditReplaySnapshotOutputSchema: z.ZodType<ComplianceAuditAuditReplaySnapshotOutput>;
 export let ComplianceAuditAuditResourceContextSchema: z.ZodType<ComplianceAuditAuditResourceContext>;
+export let ComplianceAuditAuditRetentionComplianceViolationSchema: z.ZodType<ComplianceAuditAuditRetentionComplianceViolation>;
+export let ComplianceAuditAuditRetentionConfigurationOutputSchema: z.ZodType<ComplianceAuditAuditRetentionConfigurationOutput>;
+export let ComplianceAuditAuditRetentionGrowthModelSchema: z.ZodType<ComplianceAuditAuditRetentionGrowthModel>;
+export let ComplianceAuditAuditRetentionHistoricalEvidenceSchema: z.ZodType<ComplianceAuditAuditRetentionHistoricalEvidence>;
+export let ComplianceAuditAuditRetentionMonthForecastSchema: z.ZodType<ComplianceAuditAuditRetentionMonthForecast>;
+export let ComplianceAuditAuditRetentionObligationSchema: z.ZodType<ComplianceAuditAuditRetentionObligation>;
+export let ComplianceAuditAuditRetentionPolicySensitivityRuleSchema: z.ZodType<ComplianceAuditAuditRetentionPolicySensitivityRule>;
+export let ComplianceAuditAuditRetentionPolicyTemplateSchema: z.ZodType<ComplianceAuditAuditRetentionPolicyTemplate>;
+export let ComplianceAuditAuditRetentionRecommendationSchema: z.ZodType<ComplianceAuditAuditRetentionRecommendation>;
+export let ComplianceAuditAuditRetentionRiskSchema: z.ZodType<ComplianceAuditAuditRetentionRisk>;
+export let ComplianceAuditAuditRetentionScenarioSchema: z.ZodType<ComplianceAuditAuditRetentionScenario>;
+export let ComplianceAuditAuditRetentionScenarioResultSchema: z.ZodType<ComplianceAuditAuditRetentionScenarioResult>;
+export let ComplianceAuditAuditRetentionSimulationOutputSchema: z.ZodType<ComplianceAuditAuditRetentionSimulationOutput>;
+export let ComplianceAuditAuditRetentionSimulationReportSchema: z.ZodType<ComplianceAuditAuditRetentionSimulationReport>;
+export let ComplianceAuditAuditRetentionSimulationSummarySchema: z.ZodType<ComplianceAuditAuditRetentionSimulationSummary>;
+export let ComplianceAuditAuditRetentionTierForecastSchema: z.ZodType<ComplianceAuditAuditRetentionTierForecast>;
+export let ComplianceAuditAuditRetentionWeekdayFactorSchema: z.ZodType<ComplianceAuditAuditRetentionWeekdayFactor>;
+export let ComplianceAuditAuditRetentionYearForecastSchema: z.ZodType<ComplianceAuditAuditRetentionYearForecast>;
 export let ComplianceAuditAuditRiskLevelSchema: z.ZodType<ComplianceAuditAuditRiskLevel>;
 export let ComplianceAuditAuditStatisticsOutputSchema: z.ZodType<ComplianceAuditAuditStatisticsOutput>;
+export let ComplianceAuditAuditStorageDailyCohortSchema: z.ZodType<ComplianceAuditAuditStorageDailyCohort>;
+export let ComplianceAuditAuditStorageTierSchema: z.ZodType<ComplianceAuditAuditStorageTier>;
+export let ComplianceAuditAuditStorageTierPriceSchema: z.ZodType<ComplianceAuditAuditStorageTierPrice>;
 export let ComplianceAuditAuthenticationAuditEntrySchema: z.ZodType<ComplianceAuditAuthenticationAuditEntry>;
 export let ComplianceAuditAuthenticationAuditOutputSchema: z.ZodType<ComplianceAuditAuthenticationAuditOutput>;
+export let ComplianceAuditCaptureAuditReplayInputSchema: z.ZodType<ComplianceAuditCaptureAuditReplayInput>;
+export let ComplianceAuditComplianceArtifactEntrySchema: z.ZodType<ComplianceAuditComplianceArtifactEntry>;
+export let ComplianceAuditComplianceArtifactManifestSchema: z.ZodType<ComplianceAuditComplianceArtifactManifest>;
+export let ComplianceAuditComplianceArtifactSealSchema: z.ZodType<ComplianceAuditComplianceArtifactSeal>;
+export let ComplianceAuditComplianceArtifactVerificationSchema: z.ZodType<ComplianceAuditComplianceArtifactVerification>;
+export let ComplianceAuditComplianceControlEvidenceResultSchema: z.ZodType<ComplianceAuditComplianceControlEvidenceResult>;
+export let ComplianceAuditComplianceControlTemplateSchema: z.ZodType<ComplianceAuditComplianceControlTemplate>;
+export let ComplianceAuditComplianceDocumentOutputSchema: z.ZodType<ComplianceAuditComplianceDocumentOutput>;
+export let ComplianceAuditComplianceDocumentRequirementSchema: z.ZodType<ComplianceAuditComplianceDocumentRequirement>;
+export let ComplianceAuditComplianceDocumentReviewSchema: z.ZodType<ComplianceAuditComplianceDocumentReview>;
+export let ComplianceAuditComplianceEvidenceGapSchema: z.ZodType<ComplianceAuditComplianceEvidenceGap>;
+export let ComplianceAuditComplianceEvidenceKindSchema: z.ZodType<ComplianceAuditComplianceEvidenceKind>;
+export let ComplianceAuditComplianceEvidencePeriodModeSchema: z.ZodType<ComplianceAuditComplianceEvidencePeriodMode>;
+export let ComplianceAuditComplianceFrameworkSchema: z.ZodType<ComplianceAuditComplianceFramework>;
+export let ComplianceAuditComplianceFrameworkTemplateSchema: z.ZodType<ComplianceAuditComplianceFrameworkTemplate>;
+export let ComplianceAuditCompliancePackageOutputSchema: z.ZodType<ComplianceAuditCompliancePackageOutput>;
+export let ComplianceAuditCompliancePackageSummarySchema: z.ZodType<ComplianceAuditCompliancePackageSummary>;
+export let ComplianceAuditCompliancePackageValidationReportSchema: z.ZodType<ComplianceAuditCompliancePackageValidationReport>;
+export let ComplianceAuditComplianceScopeExclusionSchema: z.ZodType<ComplianceAuditComplianceScopeExclusion>;
+export let ComplianceAuditConfigureAuditRetentionInputSchema: z.ZodType<ComplianceAuditConfigureAuditRetentionInput>;
+export let ComplianceAuditConfigureSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditConfigureSecurityLogRetentionInput>;
+export let ComplianceAuditCreateCompliancePackageInputSchema: z.ZodType<ComplianceAuditCreateCompliancePackageInput>;
+export let ComplianceAuditCreateScheduledAuditExportInputSchema: z.ZodType<ComplianceAuditCreateScheduledAuditExportInput>;
 export let ComplianceAuditDailyActivityTrendSchema: z.ZodType<ComplianceAuditDailyActivityTrend>;
+export let ComplianceAuditEnforceSecurityLogRetentionInputSchema: z.ZodType<ComplianceAuditEnforceSecurityLogRetentionInput>;
+export let ComplianceAuditExportFormatSchema: z.ZodType<ComplianceAuditExportFormat>;
+export let ComplianceAuditExportStatusSchema: z.ZodType<ComplianceAuditExportStatus>;
 export let ComplianceAuditFailureReasonCountSchema: z.ZodType<ComplianceAuditFailureReasonCount>;
 export let ComplianceAuditPermissionAuditEntrySchema: z.ZodType<ComplianceAuditPermissionAuditEntry>;
 export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAuditPermissionAuditOutput>;
+export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
+export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
+export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
+export let ComplianceAuditScheduledAuditExportOutputSchema: z.ZodType<ComplianceAuditScheduledAuditExportOutput>;
+export let ComplianceAuditSecurityAlertOutputSchema: z.ZodType<ComplianceAuditSecurityAlertOutput>;
+export let ComplianceAuditSecurityAlertStatusSchema: z.ZodType<ComplianceAuditSecurityAlertStatus>;
 export let ComplianceAuditSecurityAuditDashboardSchema: z.ZodType<ComplianceAuditSecurityAuditDashboard>;
 export let ComplianceAuditSecurityAuditSourceTypeSchema: z.ZodType<ComplianceAuditSecurityAuditSourceType>;
+export let ComplianceAuditSecurityEventDeliveryStatusOutputSchema: z.ZodType<ComplianceAuditSecurityEventDeliveryStatusOutput>;
+export let ComplianceAuditSecurityEventKindSchema: z.ZodType<ComplianceAuditSecurityEventKind>;
+export let ComplianceAuditSecurityEventTaxonomyEntrySchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyEntry>;
+export let ComplianceAuditSecurityEventTaxonomyOutputSchema: z.ZodType<ComplianceAuditSecurityEventTaxonomyOutput>;
+export let ComplianceAuditSecurityLogRetentionExecutionOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionExecutionOutput>;
+export let ComplianceAuditSecurityLogRetentionPolicyOutputSchema: z.ZodType<ComplianceAuditSecurityLogRetentionPolicyOutput>;
+export let ComplianceAuditSensitivityLevelSchema: z.ZodType<ComplianceAuditSensitivityLevel>;
 export let ComplianceAuditTopIpActivitySchema: z.ZodType<ComplianceAuditTopIpActivity>;
 export let ComplianceAuditTopUserActivitySchema: z.ZodType<ComplianceAuditTopUserActivity>;
 export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditEntry>;
 export let ComplianceAuditUnifiedSecurityAuditInputSchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditInput>;
 export let ComplianceAuditUnifiedSecurityAuditOutputSchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditOutput>;
+export let ComplianceAuditUploadComplianceDocumentInputSchema: z.ZodType<ComplianceAuditUploadComplianceDocumentInput>;
 export let ComplianceConsentConsentPolicyDtoSchema: z.ZodType<ComplianceConsentConsentPolicyDto>;
 export let ComplianceConsentContentTypeSchema: z.ZodType<ComplianceConsentContentType>;
 export let ComplianceConsentCreateConsentPolicyCommandSchema: z.ZodType<ComplianceConsentCreateConsentPolicyCommand>;
@@ -18735,6 +22837,7 @@ export let GameJamsScoreJamSubmissionInputSchema: z.ZodType<GameJamsScoreJamSubm
 export let GameJamsSubmitJamEntryInputSchema: z.ZodType<GameJamsSubmitJamEntryInput>;
 export let IdentityAuthenticationApiKeyDtoSchema: z.ZodType<IdentityAuthenticationApiKeyDto>;
 export let IdentityAuthenticationAssignRoleToUserInputSchema: z.ZodType<IdentityAuthenticationAssignRoleToUserInput>;
+export let IdentityAuthenticationAuthenticationStepSchema: z.ZodType<IdentityAuthenticationAuthenticationStep>;
 export let IdentityAuthenticationBackupCodesOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesOutput>;
 export let IdentityAuthenticationBackupCodesStatusOutputSchema: z.ZodType<IdentityAuthenticationBackupCodesStatusOutput>;
 export let IdentityAuthenticationBeginWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationBeginWebAuthnAuthenticationInput>;
@@ -18747,15 +22850,18 @@ export let IdentityAuthenticationCleanupKeysInputSchema: z.ZodType<IdentityAuthe
 export let IdentityAuthenticationCleanupResultSchema: z.ZodType<IdentityAuthenticationCleanupResult>;
 export let IdentityAuthenticationClientCredentialsTokenOutputSchema: z.ZodType<IdentityAuthenticationClientCredentialsTokenOutput>;
 export let IdentityAuthenticationCompleteMfaSetupInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSetupInput>;
+export let IdentityAuthenticationCompleteMfaSignInInputSchema: z.ZodType<IdentityAuthenticationCompleteMfaSignInInput>;
 export let IdentityAuthenticationCompletePasswordResetInputSchema: z.ZodType<IdentityAuthenticationCompletePasswordResetInput>;
 export let IdentityAuthenticationCompleteWebAuthnAuthenticationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnAuthenticationInput>;
 export let IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema: z.ZodType<IdentityAuthenticationCompleteWebAuthnRegistrationInput>;
+export let IdentityAuthenticationConsumeEmailCodeInputSchema: z.ZodType<IdentityAuthenticationConsumeEmailCodeInput>;
 export let IdentityAuthenticationConsumeMagicLinkInputSchema: z.ZodType<IdentityAuthenticationConsumeMagicLinkInput>;
 export let IdentityAuthenticationCreateApiKeyCommandSchema: z.ZodType<IdentityAuthenticationCreateApiKeyCommand>;
 export let IdentityAuthenticationCreateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationCreateApiKeyOutput>;
 export let IdentityAuthenticationCreateRoleInputSchema: z.ZodType<IdentityAuthenticationCreateRoleInput>;
 export let IdentityAuthenticationCreateServiceAccountInputSchema: z.ZodType<IdentityAuthenticationCreateServiceAccountInput>;
 export let IdentityAuthenticationCreateStepUpChallengeInputSchema: z.ZodType<IdentityAuthenticationCreateStepUpChallengeInput>;
+export let IdentityAuthenticationCredentialTypeSchema: z.ZodType<IdentityAuthenticationCredentialType>;
 export let IdentityAuthenticationDeviceInfoSchema: z.ZodType<IdentityAuthenticationDeviceInfo>;
 export let IdentityAuthenticationDisableMfaInputSchema: z.ZodType<IdentityAuthenticationDisableMfaInput>;
 export let IdentityAuthenticationDiscordAuthorizeInputSchema: z.ZodType<IdentityAuthenticationDiscordAuthorizeInput>;
@@ -18764,10 +22870,14 @@ export let IdentityAuthenticationDiscordLinkAuthorizeInputSchema: z.ZodType<Iden
 export let IdentityAuthenticationDiscordLinkAuthorizeOutputSchema: z.ZodType<IdentityAuthenticationDiscordLinkAuthorizeOutput>;
 export let IdentityAuthenticationDiscordLinkCallbackInputSchema: z.ZodType<IdentityAuthenticationDiscordLinkCallbackInput>;
 export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAuthenticationDiscordSignInOutput>;
+export let IdentityAuthenticationEmailCodeRequestResultSchema: z.ZodType<IdentityAuthenticationEmailCodeRequestResult>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
+export let IdentityAuthenticationExternalLoginLinkPreviewOutputSchema: z.ZodType<IdentityAuthenticationExternalLoginLinkPreviewOutput>;
+export let IdentityAuthenticationGitHubCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationGitHubCallbackRequestDto>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenRequestDtoSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenRequestDto>;
+export let IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema: z.ZodType<IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto>;
 export let IdentityAuthenticationJwtKeyInfoDtoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfoDto>;
 export let IdentityAuthenticationLinkGoogleAccountInputSchema: z.ZodType<IdentityAuthenticationLinkGoogleAccountInput>;
 export let IdentityAuthenticationLocalSignInInputSchema: z.ZodType<IdentityAuthenticationLocalSignInInput>;
@@ -18781,21 +22891,36 @@ export let IdentityAuthenticationMfaMethodSchema: z.ZodType<IdentityAuthenticati
 export let IdentityAuthenticationMfaMethodInfoSchema: z.ZodType<IdentityAuthenticationMfaMethodInfo>;
 export let IdentityAuthenticationMfaMethodsOutputSchema: z.ZodType<IdentityAuthenticationMfaMethodsOutput>;
 export let IdentityAuthenticationMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationMfaSetupOutput>;
+export let IdentityAuthenticationMfaSignInEnrollmentOutputSchema: z.ZodType<IdentityAuthenticationMfaSignInEnrollmentOutput>;
 export let IdentityAuthenticationMfaSuccessOutputSchema: z.ZodType<IdentityAuthenticationMfaSuccessOutput>;
 export let IdentityAuthenticationMfaVerificationOutputSchema: z.ZodType<IdentityAuthenticationMfaVerificationOutput>;
 export let IdentityAuthenticationOAuth2ErrorOutputSchema: z.ZodType<IdentityAuthenticationOAuth2ErrorOutput>;
+export let IdentityAuthenticationOidcAuthorizeRequestDtoSchema: z.ZodType<IdentityAuthenticationOidcAuthorizeRequestDto>;
+export let IdentityAuthenticationOidcCallbackRequestDtoSchema: z.ZodType<IdentityAuthenticationOidcCallbackRequestDto>;
+export let IdentityAuthenticationOidcDiscoveredProviderSchema: z.ZodType<IdentityAuthenticationOidcDiscoveredProvider>;
+export let IdentityAuthenticationOidcDiscoverProviderOutputSchema: z.ZodType<IdentityAuthenticationOidcDiscoverProviderOutput>;
+export let IdentityAuthenticationOidcEndSessionUrlOutputSchema: z.ZodType<IdentityAuthenticationOidcEndSessionUrlOutput>;
+export let IdentityAuthenticationOidcSignInOutputSchema: z.ZodType<IdentityAuthenticationOidcSignInOutput>;
+export let IdentityAuthenticationOrchestratedFlowStateOutputSchema: z.ZodType<IdentityAuthenticationOrchestratedFlowStateOutput>;
 export let IdentityAuthenticationPasswordChangeInputSchema: z.ZodType<IdentityAuthenticationPasswordChangeInput>;
 export let IdentityAuthenticationPasswordChangeResultSchema: z.ZodType<IdentityAuthenticationPasswordChangeResult>;
 export let IdentityAuthenticationPasswordResetRequestResultSchema: z.ZodType<IdentityAuthenticationPasswordResetRequestResult>;
 export let IdentityAuthenticationPasswordResetResultSchema: z.ZodType<IdentityAuthenticationPasswordResetResult>;
 export let IdentityAuthenticationPatchServiceAccountInputSchema: z.ZodType<IdentityAuthenticationPatchServiceAccountInput>;
+export let IdentityAuthenticationPolymorphicSignInInputSchema: z.ZodType<IdentityAuthenticationPolymorphicSignInInput>;
+export let IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema: z.ZodType<IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto>;
 export let IdentityAuthenticationRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRefreshTokenInput>;
 export let IdentityAuthenticationRemoveRoleFromUserInputSchema: z.ZodType<IdentityAuthenticationRemoveRoleFromUserInput>;
+export let IdentityAuthenticationRequestEmailCodeInputSchema: z.ZodType<IdentityAuthenticationRequestEmailCodeInput>;
 export let IdentityAuthenticationRequestMagicLinkInputSchema: z.ZodType<IdentityAuthenticationRequestMagicLinkInput>;
 export let IdentityAuthenticationRequestPasswordResetInputSchema: z.ZodType<IdentityAuthenticationRequestPasswordResetInput>;
 export let IdentityAuthenticationRevokeApiKeyInputSchema: z.ZodType<IdentityAuthenticationRevokeApiKeyInput>;
+export let IdentityAuthenticationRevokeExternalLoginScopesInputSchema: z.ZodType<IdentityAuthenticationRevokeExternalLoginScopesInput>;
+export let IdentityAuthenticationRevokeExternalLoginScopesOutputSchema: z.ZodType<IdentityAuthenticationRevokeExternalLoginScopesOutput>;
 export let IdentityAuthenticationRevokeRefreshTokenInputSchema: z.ZodType<IdentityAuthenticationRevokeRefreshTokenInput>;
 export let IdentityAuthenticationRiskLevelSchema: z.ZodType<IdentityAuthenticationRiskLevel>;
+export let IdentityAuthenticationRotateApiKeyInputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyInput>;
+export let IdentityAuthenticationRotateApiKeyOutputSchema: z.ZodType<IdentityAuthenticationRotateApiKeyOutput>;
 export let IdentityAuthenticationRotateKeyInputSchema: z.ZodType<IdentityAuthenticationRotateKeyInput>;
 export let IdentityAuthenticationSecretRotationOutputSchema: z.ZodType<IdentityAuthenticationSecretRotationOutput>;
 export let IdentityAuthenticationSendEmailVerificationInputSchema: z.ZodType<IdentityAuthenticationSendEmailVerificationInput>;
@@ -18810,6 +22935,7 @@ export let IdentityAuthenticationSessionTerminationOutputSchema: z.ZodType<Ident
 export let IdentityAuthenticationSignInOutputSchema: z.ZodType<IdentityAuthenticationSignInOutput>;
 export let IdentityAuthenticationSmsMfaSetupInputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupInput>;
 export let IdentityAuthenticationSmsMfaSetupOutputSchema: z.ZodType<IdentityAuthenticationSmsMfaSetupOutput>;
+export let IdentityAuthenticationStartMfaSignInEnrollmentInputSchema: z.ZodType<IdentityAuthenticationStartMfaSignInEnrollmentInput>;
 export let IdentityAuthenticationStepUpChallengeOutputSchema: z.ZodType<IdentityAuthenticationStepUpChallengeOutput>;
 export let IdentityAuthenticationStepUpReceiptOutputSchema: z.ZodType<IdentityAuthenticationStepUpReceiptOutput>;
 export let IdentityAuthenticationTrustDeviceInputSchema: z.ZodType<IdentityAuthenticationTrustDeviceInput>;
@@ -18828,6 +22954,8 @@ export let IdentityAuthenticationWebAuthnAuthenticationOptionsResultSchema: z.Zo
 export let IdentityAuthenticationWebAuthnAuthenticationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticationResult>;
 export let IdentityAuthenticationWebAuthnAuthenticatorTypeSchema: z.ZodType<IdentityAuthenticationWebAuthnAuthenticatorType>;
 export let IdentityAuthenticationWebAuthnCredentialInfoSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialInfo>;
+export let IdentityAuthenticationWebAuthnCredentialStatusSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialStatus>;
+export let IdentityAuthenticationWebAuthnCredentialTransitionResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialTransitionResult>;
 export let IdentityAuthenticationWebAuthnCredentialVerifyResultSchema: z.ZodType<IdentityAuthenticationWebAuthnCredentialVerifyResult>;
 export let IdentityAuthenticationWebAuthnRegistrationOptionsResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationOptionsResult>;
 export let IdentityAuthenticationWebAuthnRegistrationResultSchema: z.ZodType<IdentityAuthenticationWebAuthnRegistrationResult>;
@@ -18860,18 +22988,41 @@ export let IdentityAuthorizationDenyTenantPermissionCommandSchema: z.ZodType<Ide
 export let IdentityAuthorizationEffectivePermissionDtoSchema: z.ZodType<IdentityAuthorizationEffectivePermissionDto>;
 export let IdentityAuthorizationEffectivePermissionsOutputSchema: z.ZodType<IdentityAuthorizationEffectivePermissionsOutput>;
 export let IdentityAuthorizationElevationRequestStatusSchema: z.ZodType<IdentityAuthorizationElevationRequestStatus>;
+export let IdentityAuthorizationExpiringTenantPermissionSchema: z.ZodType<IdentityAuthorizationExpiringTenantPermission>;
+export let IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationExtendTenantPermissionExpirationCommand>;
+export let IdentityAuthorizationExternalPermissionEntrySchema: z.ZodType<IdentityAuthorizationExternalPermissionEntry>;
+export let IdentityAuthorizationExternalPermissionSyncDocumentSchema: z.ZodType<IdentityAuthorizationExternalPermissionSyncDocument>;
+export let IdentityAuthorizationExternalRoleDefinitionSchema: z.ZodType<IdentityAuthorizationExternalRoleDefinition>;
+export let IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetExpiringTenantPermissionsOutput>;
 export let IdentityAuthorizationGetPendingResourceInvitationsOutputSchema: z.ZodType<IdentityAuthorizationGetPendingResourceInvitationsOutput>;
 export let IdentityAuthorizationGetResourceInvitationOutputSchema: z.ZodType<IdentityAuthorizationGetResourceInvitationOutput>;
 export let IdentityAuthorizationGetResourceUsersOutputSchema: z.ZodType<IdentityAuthorizationGetResourceUsersOutput>;
 export let IdentityAuthorizationGetTenantPermissionsOutputSchema: z.ZodType<IdentityAuthorizationGetTenantPermissionsOutput>;
 export let IdentityAuthorizationGrantTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationGrantTenantPermissionCommand>;
+export let IdentityAuthorizationGraphExportFormatSchema: z.ZodType<IdentityAuthorizationGraphExportFormat>;
 export let IdentityAuthorizationHasPermissionOutputSchema: z.ZodType<IdentityAuthorizationHasPermissionOutput>;
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
+export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
+export let IdentityAuthorizationModelsImpactedUserSchema: z.ZodType<IdentityAuthorizationModelsImpactedUser>;
+export let IdentityAuthorizationModelsPermissionGraphSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraph>;
+export let IdentityAuthorizationModelsPermissionGraphCycleSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphCycle>;
+export let IdentityAuthorizationModelsPermissionGraphEdgeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphEdge>;
+export let IdentityAuthorizationModelsPermissionGraphEdgeTypeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphEdgeType>;
+export let IdentityAuthorizationModelsPermissionGraphNodeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphNode>;
+export let IdentityAuthorizationModelsPermissionGraphNodeTypeSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphNodeType>;
+export let IdentityAuthorizationModelsPermissionGraphSummarySchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphSummary>;
+export let IdentityAuthorizationModelsPermissionRemovalImpactSchema: z.ZodType<IdentityAuthorizationModelsPermissionRemovalImpact>;
+export let IdentityAuthorizationModelsRoleDeletionImpactSchema: z.ZodType<IdentityAuthorizationModelsRoleDeletionImpact>;
 export let IdentityAuthorizationPermissionAnalyticsReportSchema: z.ZodType<IdentityAuthorizationPermissionAnalyticsReport>;
 export let IdentityAuthorizationPermissionAnomalySchema: z.ZodType<IdentityAuthorizationPermissionAnomaly>;
+export let IdentityAuthorizationPermissionComplianceBreakdownSchema: z.ZodType<IdentityAuthorizationPermissionComplianceBreakdown>;
+export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<IdentityAuthorizationPermissionComplianceReport>;
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
+export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
+export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -18884,6 +23035,7 @@ export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizat
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
+export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
@@ -18894,6 +23046,31 @@ export let IdentityAuthorizationSoDViolationSchema: z.ZodType<IdentityAuthorizat
 export let IdentityAuthorizationSoDViolationStatusSchema: z.ZodType<IdentityAuthorizationSoDViolationStatus>;
 export let IdentityAuthorizationUpdateUserPermissionsCommandSchema: z.ZodType<IdentityAuthorizationUpdateUserPermissionsCommand>;
 export let IdentityAuthorizationUserActivitySummarySchema: z.ZodType<IdentityAuthorizationUserActivitySummary>;
+export let IdentityProvisioningCreateScimProvisioningTokenInputSchema: z.ZodType<IdentityProvisioningCreateScimProvisioningTokenInput>;
+export let IdentityProvisioningCreateScimProvisioningTokenOutputSchema: z.ZodType<IdentityProvisioningCreateScimProvisioningTokenOutput>;
+export let IdentityProvisioningRevokeScimProvisioningTokenInputSchema: z.ZodType<IdentityProvisioningRevokeScimProvisioningTokenInput>;
+export let IdentityProvisioningRotateScimProvisioningTokenInputSchema: z.ZodType<IdentityProvisioningRotateScimProvisioningTokenInput>;
+export let IdentityProvisioningRotateScimProvisioningTokenOutputSchema: z.ZodType<IdentityProvisioningRotateScimProvisioningTokenOutput>;
+export let IdentityProvisioningScimErrorBodySchema: z.ZodType<IdentityProvisioningScimErrorBody>;
+export let IdentityProvisioningScimProvisioningTokenDtoSchema: z.ZodType<IdentityProvisioningScimProvisioningTokenDto>;
+export let IdentityProvisioningScimScimBulkInputSchema: z.ZodType<IdentityProvisioningScimScimBulkInput>;
+export let IdentityProvisioningScimScimBulkOperationSchema: z.ZodType<IdentityProvisioningScimScimBulkOperation>;
+export let IdentityProvisioningScimScimBulkOutputSchema: z.ZodType<IdentityProvisioningScimScimBulkOutput>;
+export let IdentityProvisioningScimScimBulkResponseOperationSchema: z.ZodType<IdentityProvisioningScimScimBulkResponseOperation>;
+export let IdentityProvisioningScimScimBulkStatusSchema: z.ZodType<IdentityProvisioningScimScimBulkStatus>;
+export let IdentityProvisioningScimScimEmailSchema: z.ZodType<IdentityProvisioningScimScimEmail>;
+export let IdentityProvisioningScimScimGroupInputSchema: z.ZodType<IdentityProvisioningScimScimGroupInput>;
+export let IdentityProvisioningScimScimGroupResourceSchema: z.ZodType<IdentityProvisioningScimScimGroupResource>;
+export let IdentityProvisioningScimScimListResponseScimGroupResourceSchema: z.ZodType<IdentityProvisioningScimScimListResponseScimGroupResource>;
+export let IdentityProvisioningScimScimListResponseScimUserResourceSchema: z.ZodType<IdentityProvisioningScimScimListResponseScimUserResource>;
+export let IdentityProvisioningScimScimMemberSchema: z.ZodType<IdentityProvisioningScimScimMember>;
+export let IdentityProvisioningScimScimMetaSchema: z.ZodType<IdentityProvisioningScimScimMeta>;
+export let IdentityProvisioningScimScimNameSchema: z.ZodType<IdentityProvisioningScimScimName>;
+export let IdentityProvisioningScimScimPatchInputSchema: z.ZodType<IdentityProvisioningScimScimPatchInput>;
+export let IdentityProvisioningScimScimPatchOperationSchema: z.ZodType<IdentityProvisioningScimScimPatchOperation>;
+export let IdentityProvisioningScimScimPhoneNumberSchema: z.ZodType<IdentityProvisioningScimScimPhoneNumber>;
+export let IdentityProvisioningScimScimUserInputSchema: z.ZodType<IdentityProvisioningScimScimUserInput>;
+export let IdentityProvisioningScimScimUserResourceSchema: z.ZodType<IdentityProvisioningScimScimUserResource>;
 export let IdentityTenantsAddTenantMemberOutputSchema: z.ZodType<IdentityTenantsAddTenantMemberOutput>;
 export let IdentityTenantsAddUserMembershipInputSchema: z.ZodType<IdentityTenantsAddUserMembershipInput>;
 export let IdentityTenantsArchiveInputSchema: z.ZodType<IdentityTenantsArchiveInput>;
@@ -19206,6 +23383,7 @@ export let LearningCoursesContentInteractionSummaryDtoSchema: z.ZodType<Learning
 export let LearningCoursesContentProgressDtoSchema: z.ZodType<LearningCoursesContentProgressDto>;
 export let LearningCoursesContentStatsDtoSchema: z.ZodType<LearningCoursesContentStatsDto>;
 export let LearningCoursesContentSummaryDtoSchema: z.ZodType<LearningCoursesContentSummaryDto>;
+export let LearningCoursesCourseAccessCapabilitiesSchema: z.ZodType<LearningCoursesCourseAccessCapabilities>;
 export let LearningCoursesCourseSupportTicketMessageInputSchema: z.ZodType<LearningCoursesCourseSupportTicketMessageInput>;
 export let LearningCoursesCreateActivityGradeDtoSchema: z.ZodType<LearningCoursesCreateActivityGradeDto>;
 export let LearningCoursesCreateCourseSupportTicketInputSchema: z.ZodType<LearningCoursesCreateCourseSupportTicketInput>;
@@ -19356,6 +23534,9 @@ export let MonitoringSLASloViolationDtoSchema: z.ZodType<MonitoringSLASloViolati
 export let MonitoringSLAUpdateSloCommandSchema: z.ZodType<MonitoringSLAUpdateSloCommand>;
 export let MonitoringSLAViolationSeveritySchema: z.ZodType<MonitoringSLAViolationSeverity>;
 export let MvcProblemDetailsSchema: z.ZodType<MvcProblemDetails>;
+export let MvcValidationProblemDetailsSchema: z.ZodType<MvcValidationProblemDetails>;
+export let NodesJsonNodeSchema: z.ZodType<NodesJsonNode>;
+export let NodesJsonNodeOptionsSchema: z.ZodType<NodesJsonNodeOptions>;
 export let NotificationsControllersDeadLetterDtoSchema: z.ZodType<NotificationsControllersDeadLetterDto>;
 export let NotificationsControllersDeletedCountOutputSchema: z.ZodType<NotificationsControllersDeletedCountOutput>;
 export let NotificationsControllersDigestFrequencyOutputSchema: z.ZodType<NotificationsControllersDigestFrequencyOutput>;
@@ -19391,11 +23572,21 @@ export let ObjectsPublicKeyCredentialHintSchema: z.ZodType<ObjectsPublicKeyCrede
 export let ObjectsPublicKeyCredentialTypeSchema: z.ZodType<ObjectsPublicKeyCredentialType>;
 export let ObjectsResidentKeyRequirementSchema: z.ZodType<ObjectsResidentKeyRequirement>;
 export let ObjectsUserVerificationRequirementSchema: z.ZodType<ObjectsUserVerificationRequirement>;
+export let PagedResultAccountCreditTransactionSchema: z.ZodType<PagedResultAccountCreditTransaction>;
+export let PagedResultBillingOutboxEventDtoSchema: z.ZodType<PagedResultBillingOutboxEventDto>;
+export let PagedResultBillingWebhookEventListItemDtoSchema: z.ZodType<PagedResultBillingWebhookEventListItemDto>;
 export let PagedResultDeadLetterDtoSchema: z.ZodType<PagedResultDeadLetterDto>;
 export let PagedResultEmailDeliveryEventDtoSchema: z.ZodType<PagedResultEmailDeliveryEventDto>;
 export let PagedResultEmailSuppressionDtoSchema: z.ZodType<PagedResultEmailSuppressionDto>;
+export let PagedResultGiftPublicViewSchema: z.ZodType<PagedResultGiftPublicView>;
+export let PagedResultPricingDecisionLedgerEntryDtoSchema: z.ZodType<PagedResultPricingDecisionLedgerEntryDto>;
+export let PagedResultPricingRuleDtoSchema: z.ZodType<PagedResultPricingRuleDto>;
 export let PagedResultProductDtoSchema: z.ZodType<PagedResultProductDto>;
 export let PagedResultPromoCodeDtoSchema: z.ZodType<PagedResultPromoCodeDto>;
+export let PagedResultReferralSchema: z.ZodType<PagedResultReferral>;
+export let PagedResultRevenueAnomalyAlertSchema: z.ZodType<PagedResultRevenueAnomalyAlert>;
+export let PagedResultRevenueReconciliationDiscrepancySchema: z.ZodType<PagedResultRevenueReconciliationDiscrepancy>;
+export let PagedResultRevenueReconciliationRunSchema: z.ZodType<PagedResultRevenueReconciliationRun>;
 export let PagedResultSubscriptionSchema: z.ZodType<PagedResultSubscription>;
 export let PagedResultSubscriptionNotificationDtoSchema: z.ZodType<PagedResultSubscriptionNotificationDto>;
 export let PagedResultSupportTicketDtoSchema: z.ZodType<PagedResultSupportTicketDto>;
@@ -21286,6 +25477,186 @@ BulkOperationOutputSchema = z.object({
   totalRequested: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceBillingBillingExternalProvidersControllerMigrationDryRunInput. Request body for the migration dry-run endpoint. */
+CommerceBillingBillingExternalProvidersControllerMigrationDryRunInputSchema = z.object({
+  sourceProvider: z.string().nullable().optional(),
+  targetProvider: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInput. Request body capping the credit tender of an invoice settlement. */
+CommerceBillingBillingInvoicesControllerApplyInvoiceCreditsInputSchema = z.object({
+  maxAmount: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingOutboxEventDto. Read model over a durable billing integration event published through the platform outbox. */
+CommerceBillingBillingOutboxEventDtoSchema = z.object({
+  aggregateId: z.string().nullable().optional(),
+  aggregateType: z.string().nullable().optional(),
+  correlationId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
+  eventName: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  schemaVersion: z.number().int().optional(),
+  status: z.lazy(() => CommerceBillingBillingOutboxEventStatusSchema).optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingOutboxEventStatus. Delivery status of a durable billing event in the platform outbox. */
+CommerceBillingBillingOutboxEventStatusSchema = z.enum(['Pending', 'Completed', 'DeadLettered']);
+
+/** Zod schema for CommerceBillingBillingProviderMigrationEntryClassification. Classification of a subscription row within a provider-migration dry-run report. */
+CommerceBillingBillingProviderMigrationEntryClassificationSchema = z.enum([
+  'BoundToSourceMissingTargetExternalId',
+  'AlreadyOnTargetProvider',
+  'UnattributedExternalId',
+  'NotExternallyBound',
+]);
+
+/** Zod schema for CommerceBillingBillingProviderMigrationReport. Report-only result of a provider-migration dry-run (issue #397). No state is
+mutated; executing the actual migration is explicitly out of scope and deferred
+(gateway routing/failover is tracked separately in #413). */
+CommerceBillingBillingProviderMigrationReportSchema = z.object({
+  alreadyOnTargetProviderCount: z.number().int(),
+  boundToSourceMissingTargetExternalIdCount: z.number().int(),
+  dryRun: z.boolean(),
+  entries: z
+    .array(z.lazy(() => CommerceBillingBillingProviderMigrationReportEntrySchema))
+    .nullable()
+    .optional(),
+  generatedAtUtc: z.string().datetime(),
+  mutationApplied: z.boolean(),
+  notExternallyBoundCount: z.number().int(),
+  sourceProvider: z.string().nullable(),
+  targetProvider: z.string().nullable(),
+  totalSubscriptionsScanned: z.number().int(),
+  unattributedExternalIdCount: z.number().int(),
+});
+
+/** Zod schema for CommerceBillingBillingProviderMigrationReportEntry. One subscription row of a GameGuild.Commerce.Billing.BillingProviderMigrationReport. */
+CommerceBillingBillingProviderMigrationReportEntrySchema = z.object({
+  classification: z.lazy(() => CommerceBillingBillingProviderMigrationEntryClassificationSchema),
+  externalId: z.string().nullable(),
+  status: z.string().nullable(),
+  subscriptionId: z.string().uuid(),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookAllowlistStatusDto. State of the CIDR source allowlist enforced on the provider callback endpoints. */
+CommerceBillingBillingWebhookAllowlistStatusDtoSchema = z.object({
+  configuredNetworkCount: z.number().int().optional(),
+  configuredNetworks: z.array(z.string()).nullable().optional(),
+  isEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookBlockedSourceDto. A webhook source currently blocked for suspicious activity. */
+CommerceBillingBillingWebhookBlockedSourceDtoSchema = z.object({
+  blockedUntilUtc: z.string().datetime().optional(),
+  failureCount: z.number().int().optional(),
+  sourceKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookEventDto. DTO for webhook event response */
+CommerceBillingBillingWebhookEventDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorMessage: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  externalEventId: z.string().nullable().optional(),
+  isFailed: z.boolean().optional(),
+  isProcessed: z.boolean().optional(),
+  processedAt: z.string().datetime().nullable().optional(),
+  processingAttempts: z.number().int().optional(),
+  provider: z.string().nullable().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookEventListItemDto. List item of the billing webhook inbox event feed (issue #396). Payloads are excluded. */
+CommerceBillingBillingWebhookEventListItemDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  errorMessage: z.string().nullable().optional(),
+  eventType: z.string().nullable().optional(),
+  externalEventId: z.string().nullable().optional(),
+  isFailed: z.boolean().optional(),
+  isProcessed: z.boolean().optional(),
+  processedAt: z.string().datetime().nullable().optional(),
+  processingAttempts: z.number().int().optional(),
+  provider: z.string().nullable().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSecurityAlertDto. A security alert surfaced from the Compliance.Audit pipeline. */
+CommerceBillingBillingWebhookSecurityAlertDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  kind: z.string().nullable().optional(),
+  raisedAtUtc: z.string().datetime().nullable().optional(),
+  ruleId: z.string().nullable().optional(),
+  severity: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSecuritySummaryDto. Admin-facing summary of the billing webhook security posture: allowlist state,
+suspicious-activity blocking, and the delivery health of the security event pipeline. */
+CommerceBillingBillingWebhookSecuritySummaryDtoSchema = z.object({
+  generatedAtUtc: z.string().datetime().optional(),
+  openSecurityAlerts: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookSecurityAlertDtoSchema))
+    .nullable()
+    .optional(),
+  securityEventPipeline: z.lazy(() => ComplianceAuditSecurityEventDeliveryStatusOutputSchema).optional(),
+  sourceIpAllowlist: z.lazy(() => CommerceBillingBillingWebhookAllowlistStatusDtoSchema).optional(),
+  suspiciousActivity: z.lazy(() => CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema).optional(),
+});
+
+/** Zod schema for CommerceBillingBillingWebhookSuspiciousActivityStatusDto. State of the suspicious-activity auto-blocking monitor. */
+CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema = z.object({
+  blockDurationSeconds: z.number().int().optional(),
+  blockedSources: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookBlockedSourceDtoSchema))
+    .nullable()
+    .optional(),
+  failureThreshold: z.number().int().optional(),
+  isEnabled: z.boolean().optional(),
+  windowSeconds: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingDriftOutcomeRow. Drift outcome count row. */
+CommerceBillingDriftOutcomeRowSchema = z.object({
+  driftStatus: z.string().nullable().optional(),
+  entries: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingExternalBillingProviderStatusDto. Read-only management and health snapshot of one configured external
+billing provider (issue #397 provider-management API). */
+CommerceBillingExternalBillingProviderStatusDtoSchema = z.object({
+  configurationErrors: z.array(z.string()).nullable().optional(),
+  configured: z.boolean(),
+  configValid: z.boolean(),
+  enabled: z.boolean(),
+  enabledStateChangedAt: z.string().datetime().nullable().optional(),
+  health: z.string().nullable(),
+  providerKey: z.string().nullable(),
+  webhookEndpointConfigured: z.boolean(),
+});
+
+/** Zod schema for CommerceBillingInvoiceAccountCreditSettlementResult. Outcome of the credit tender application. */
+CommerceBillingInvoiceAccountCreditSettlementResultSchema = z.object({
+  amountApplied: z.number().optional(),
+  amountRemaining: z.number().optional(),
+  consumedGrants: z
+    .array(z.lazy(() => CommercePaymentsAccountCreditConsumptionSchema))
+    .nullable()
+    .optional(),
+  currency: z.string().nullable().optional(),
+  idempotentReplay: z.boolean().optional(),
+  invoiceId: z.string().uuid().optional(),
+  invoiceNumber: z.string().nullable().optional(),
+  invoiceStatus: z.lazy(() => CommerceBillingInvoiceStatusSchema).optional(),
+});
+
 /** Zod schema for CommerceBillingInvoicePaymentRetryResult. Data model for Commerce Billing Invoice Payment Retry Result. */
 CommerceBillingInvoicePaymentRetryResultSchema = z.object({
   accepted: z.boolean().optional(),
@@ -21299,6 +25670,135 @@ CommerceBillingInvoicePaymentRetryResultSchema = z.object({
 
 /** Zod schema for CommerceBillingInvoiceStatus. Invoice status enumeration with monotonic transitions */
 CommerceBillingInvoiceStatusSchema = z.enum(['Draft', 'Open', 'Paid', 'Void', 'PastDue', 'Uncollectible']);
+
+/** Zod schema for CommerceBillingPricingDecisionLedgerEntryDetailDto. Ledger detail (issue #400): the list item plus the raw breakdown JSON document and
+the drift-validation outcome (recomputed amount, reason). */
+CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema = z.object({
+  actorIpAddress: z.string().nullable().optional(),
+  breakdownJson: z.string().nullable().optional(),
+  driftReason: z.string().nullable().optional(),
+  entry: z.lazy(() => CommerceBillingPricingDecisionLedgerEntryDtoSchema).optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  recomputedFinalAmount: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingDecisionLedgerEntryDto. Ledger list item (issue #400): one pricing decision with its correlation ids and
+headline amounts. The full breakdown document is returned on the detail read only. */
+CommerceBillingPricingDecisionLedgerEntryDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  actorUserId: z.string().uuid().nullable().optional(),
+  appliedPricingRuleId: z.string().uuid().nullable().optional(),
+  appliedPromoCodes: z.array(z.string()).nullable().optional(),
+  appliedStackingRuleName: z.string().nullable().optional(),
+  baseAmount: z.number().optional(),
+  billingCycleNumber: z.number().int().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  decidedAtUtc: z.string().datetime().optional(),
+  decisionType: z.string().nullable().optional(),
+  driftStatus: z.string().nullable().optional(),
+  finalAmount: z.number().optional(),
+  orderId: z.string().uuid().nullable().optional(),
+  orderLineItemId: z.string().uuid().nullable().optional(),
+  pricingEngineVersion: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  promoDiscountTotal: z.number().optional(),
+  quantity: z.number().int().optional(),
+  ruleAdjustmentTotal: z.number().optional(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  validatedAtUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerDriftOutcome. Result of one drift-validated ledger entry. */
+CommerceBillingPricingLedgerDriftOutcomeSchema = z.object({
+  drifted: z.boolean().optional(),
+  entryId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+  recomputedFinalAmount: z.number().optional(),
+  storedFinalAmount: z.number().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerDriftValidationResult. Drift-validation summary (issue #400). */
+CommerceBillingPricingLedgerDriftValidationResultSchema = z.object({
+  driftedCount: z.number().int().optional(),
+  outcomes: z
+    .array(z.lazy(() => CommerceBillingPricingLedgerDriftOutcomeSchema))
+    .nullable()
+    .optional(),
+  sampleSize: z.number().int().optional(),
+  skippedCount: z.number().int().optional(),
+  validated: z.number().int().optional(),
+  validatedAtUtc: z.string().datetime().optional(),
+  verifiedCount: z.number().int().optional(),
+  windowEnd: z.string().datetime().nullable().optional(),
+  windowStart: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerEffectivenessAggregate. Full effectiveness aggregation result. */
+CommerceBillingPricingLedgerEffectivenessAggregateSchema = z.object({
+  driftOutcomes: z
+    .array(z.lazy(() => CommerceBillingDriftOutcomeRowSchema))
+    .nullable()
+    .optional(),
+  fromUtc: z.string().datetime().nullable().optional(),
+  stackingOutcomes: z
+    .array(z.lazy(() => CommerceBillingStackingOutcomeRowSchema))
+    .nullable()
+    .optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  topPromoCodes: z
+    .array(z.lazy(() => CommerceBillingPromoCodeEffectivenessRowSchema))
+    .nullable()
+    .optional(),
+  topRules: z
+    .array(z.lazy(() => CommerceBillingPricingRuleImpactRowSchema))
+    .nullable()
+    .optional(),
+  totals: z.lazy(() => CommerceBillingPricingLedgerTotalsSchema).optional(),
+  toUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingLedgerTotals. Overall totals of the effectiveness aggregation. */
+CommerceBillingPricingLedgerTotalsSchema = z.object({
+  baselineRevenue: z.number().optional(),
+  discountGiven: z.number().optional(),
+  entriesWithPromo: z.number().int().optional(),
+  entriesWithRule: z.number().int().optional(),
+  entryCount: z.number().int().optional(),
+  finalRevenue: z.number().optional(),
+  promoRedemptions: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceBillingPricingRuleImpactRow. Per-pricing-rule impact row. */
+CommerceBillingPricingRuleImpactRowSchema = z.object({
+  adjustmentTotal: z.number().optional(),
+  baselineRevenue: z.number().optional(),
+  decisions: z.number().int().optional(),
+  finalRevenue: z.number().optional(),
+  ruleId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommerceBillingPromoCodeEffectivenessRow. Per-promo-code effectiveness row (discount ROI view). */
+CommerceBillingPromoCodeEffectivenessRowSchema = z.object({
+  baselineRevenue: z.number().optional(),
+  code: z.string().nullable().optional(),
+  discountGiven: z.number().optional(),
+  redemptions: z.number().int().optional(),
+  revenueInfluenced: z.number().optional(),
+});
+
+/** Zod schema for CommerceBillingStackingOutcomeRow. Stacking outcome count row. */
+CommerceBillingStackingOutcomeRowSchema = z.object({
+  decisions: z.number().int().optional(),
+  stackingRuleName: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceBillingValidatePricingLedgerDriftInput. Request body for the drift-validation endpoint. */
+CommerceBillingValidatePricingLedgerDriftInputSchema = z.object({
+  fromUtc: z.string().datetime().nullable().optional(),
+  sampleSize: z.number().int().optional(),
+  toUtc: z.string().datetime().nullable().optional(),
+});
 
 /** Zod schema for CommerceOrderChargeState. OpenAPI schema for Commerce Order Charge State. */
 CommerceOrderChargeStateSchema = z.enum(['Succeeded', 'Failed', 'Processing', 'RequiresAction', 'RequiresReconciliation']);
@@ -21499,6 +25999,129 @@ CommerceOrdersSetMarketplaceCartItemQuantityInputSchema = z.object({
   quantity: z.number().int().optional(),
 });
 
+/** Zod schema for CommercePaymentsAccountCreditBalance. Per-currency spendable credit balance of a user. */
+CommercePaymentsAccountCreditBalanceSchema = z.object({
+  available: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  earliestExpiry: z.string().datetime().nullable().optional(),
+  grantCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditConsumption. One grant's share of a consumption. */
+CommercePaymentsAccountCreditConsumptionSchema = z.object({
+  amount: z.number().optional(),
+  grantId: z.string().uuid().optional(),
+  remainingAfter: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditGrant. A grant of account credit issued to a user (issue #410 v1). Grants are separated by
+source, currency, credit type and expiry; consumption always drains grants FIFO by
+expiry (earliest GameGuild.Commerce.Payments.AccountCreditGrant.ExpiresAt first, non-expiring last). Creation is
+idempotent per GameGuild.Commerce.Payments.AccountCreditGrant.IdempotencyKey within a tenant. */
+CommercePaymentsAccountCreditGrantSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  createdAt: z.string().datetime(),
+  creditType: z.lazy(() => CommercePaymentsAccountCreditTypeSchema).optional(),
+  currency: z.string().min(1).max(3),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().min(1).max(500),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  fullyUsedAt: z.string().datetime().nullable().optional(),
+  idempotencyKey: z.string().max(200).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  isSpendable: z.boolean().optional(),
+  remainingAmount: z.number().optional(),
+  revocationReason: z.string().max(500).nullable().optional(),
+  source: z.lazy(() => CommercePaymentsAccountCreditSourceSchema).optional(),
+  sourceReferenceId: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsAccountCreditGrantStatusSchema).optional(),
+  tenantId: z.string().uuid(),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditGrantStatus. Lifecycle status of an account credit grant. */
+CommercePaymentsAccountCreditGrantStatusSchema = z.enum(['Active', 'FullyUsed', 'Expired', 'Revoked']);
+
+/** Zod schema for CommercePaymentsAccountCreditMetricsReport. Growth metrics report (issue #410): credit issuance/usage/expiry plus referral funnel and top referrers. */
+CommercePaymentsAccountCreditMetricsReportSchema = z.object({
+  credit: z.lazy(() => CommercePaymentsCreditMetricsSchema).optional(),
+  referralFunnel: z.lazy(() => CommercePaymentsReferralFunnelMetricsSchema).optional(),
+  topReferrers: z
+    .array(z.lazy(() => CommercePaymentsReferrerLeaderboardEntrySchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditsControllerIssueCreditInput. Request body for manual credit issuance. */
+CommercePaymentsAccountCreditsControllerIssueCreditInputSchema = z.object({
+  amount: z.number().optional(),
+  creditType: z.lazy(() => CommercePaymentsAccountCreditTypeSchema).optional(),
+  currency: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditsControllerRevokeCreditInput. Request body for credit revocation. */
+CommercePaymentsAccountCreditsControllerRevokeCreditInputSchema = z.object({
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditSource. Where an account credit grant came from. */
+CommercePaymentsAccountCreditSourceSchema = z.enum(['Manual', 'Gift', 'Referral', 'Refund']);
+
+/** Zod schema for CommercePaymentsAccountCreditTransaction. Immutable ledger row per account-credit lifecycle event (issue #410 v1): exactly one
+row is appended for every grant, consumption, revocation and expiry of an
+GameGuild.Commerce.Payments.AccountCreditGrant. */
+CommercePaymentsAccountCreditTransactionSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  createdAt: z.string().datetime(),
+  currency: z.string().min(1).max(3),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().min(1).max(500),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  grantId: z.string().uuid(),
+  idempotencyKey: z.string().max(200).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  referenceId: z.string().uuid().nullable().optional(),
+  remainingAfter: z.number().optional(),
+  tenantId: z.string().uuid(),
+  type: z.lazy(() => CommercePaymentsAccountCreditTransactionTypeSchema).optional(),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsAccountCreditTransactionType. Lifecycle event kinds recorded in the account credit ledger. */
+CommercePaymentsAccountCreditTransactionTypeSchema = z.enum(['Grant', 'Consume', 'Revoke', 'Expire']);
+
+/** Zod schema for CommercePaymentsAccountCreditType. What an account credit grant may be applied to. */
+CommercePaymentsAccountCreditTypeSchema = z.enum(['General', 'Subscription', 'Addon']);
+
 /** Zod schema for CommercePaymentsBillingChargesControllerCancelBillingChargeInput. Data model for Commerce Payments Billing Charges Controller+Cancel Billing Charge Request. */
 CommercePaymentsBillingChargesControllerCancelBillingChargeInputSchema = z.object({
   canceledBy: z.string().uuid().nullable().optional(),
@@ -21558,8 +26181,285 @@ CommercePaymentsCreateWalletInputSchema = z.object({
   currency: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommercePaymentsCreditCurrencyMetrics. Credit totals per currency for the metrics report. */
+CommercePaymentsCreditCurrencyMetricsSchema = z.object({
+  activeBalance: z.number().optional(),
+  activeGrantCount: z.number().int().optional(),
+  applied: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  expiredUnused: z.number().optional(),
+  issued: z.number().optional(),
+  revoked: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsCreditMetrics. Aggregate credit metrics across currencies (rates are global in v1). */
+CommercePaymentsCreditMetricsSchema = z.object({
+  expirationWasteRate: z.number().nullable().optional(),
+  perCurrency: z
+    .array(z.lazy(() => CommercePaymentsCreditCurrencyMetricsSchema))
+    .nullable()
+    .optional(),
+  usageRate: z.number().nullable().optional(),
+});
+
 /** Zod schema for CommercePaymentsCustomerType. Customer types */
 CommercePaymentsCustomerTypeSchema = z.enum(['B2C', 'B2B']);
+
+/** Zod schema for CommercePaymentsDisputeActionResult. Result of an accept or challenge action on a dispute. */
+CommercePaymentsDisputeActionResultSchema = z.object({
+  disputeId: z.string().uuid(),
+  failureReason: z.string().nullable().optional(),
+  refund: z.lazy(() => CommercePaymentsRefundRecordSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsDisputeEvidence. Entity representing dispute evidence */
+CommercePaymentsDisputeEvidenceSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().max(2000).nullable().optional(),
+  dispute: z.lazy(() => CommercePaymentsPaymentDisputeSchema).optional(),
+  disputeId: z.string().uuid(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  evidenceType: z.lazy(() => CommercePaymentsEvidenceTypeSchema).optional(),
+  fileName: z.string().max(255).nullable().optional(),
+  fileSize: z.number().int().nullable().optional(),
+  fileUrl: z.string().max(1000).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isFromMerchant: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  metadata: z.string().max(2000).nullable().optional(),
+  mimeType: z.string().max(100).nullable().optional(),
+  submittedAt: z.string().datetime().optional(),
+  submittedBy: z.string().uuid(),
+  tenantId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1).max(200),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputeListPage. Paged read model for dispute listings. */
+CommercePaymentsDisputeListPageSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsDisputeRecordSchema)).nullable(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsDisputeRecord. Read model for one dispute (issue #419). */
+CommercePaymentsDisputeRecordSchema = z.object({
+  amount: z.number(),
+  createdAt: z.string().datetime(),
+  description: z.string().nullable().optional(),
+  disputeId: z.string().uuid(),
+  dueDate: z.string().datetime().nullable().optional(),
+  evidenceCount: z.number().int(),
+  evidenceDueBy: z.string().datetime().nullable().optional(),
+  gatewayDisputeId: z.string().nullable().optional(),
+  gatewayName: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().nullable(),
+  resolution: z.lazy(() => CommercePaymentsDisputeResolutionSchema).optional(),
+  resolutionNotes: z.string().nullable().optional(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsDisputeStatusSchema),
+  type: z.lazy(() => CommercePaymentsDisputeTypeSchema),
+  userId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsDisputeResolution. Dispute resolution types */
+CommercePaymentsDisputeResolutionSchema = z.enum(['Won', 'Lost', 'PartialRefund', 'MerchantCredit', 'Replacement', 'MutualAgreement']);
+
+/** Zod schema for CommercePaymentsDisputesControllerAcceptDisputeInput. Request body for accepting a dispute. */
+CommercePaymentsDisputesControllerAcceptDisputeInputSchema = z.object({
+  issueRefund: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerAddDisputeEvidenceInput. Request body for attaching evidence. */
+CommercePaymentsDisputesControllerAddDisputeEvidenceInputSchema = z.object({
+  description: z.string().nullable().optional(),
+  evidenceType: z.lazy(() => CommercePaymentsEvidenceTypeSchema).optional(),
+  fileName: z.string().nullable().optional(),
+  fileSize: z.number().int().nullable().optional(),
+  fileUrl: z.string().nullable().optional(),
+  mimeType: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerCancelDisputeInput. Request body for cancelling a dispute. */
+CommercePaymentsDisputesControllerCancelDisputeInputSchema = z.object({
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerChallengeDisputeInput. Request body for challenging a dispute. */
+CommercePaymentsDisputesControllerChallengeDisputeInputSchema = z.object({
+  evidenceSummary: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerCreateDisputeInput. Request body for creating a dispute. */
+CommercePaymentsDisputesControllerCreateDisputeInputSchema = z.object({
+  amount: z.number().optional(),
+  description: z.string().nullable().optional(),
+  paymentId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+  type: z.lazy(() => CommercePaymentsDisputeTypeSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerResolveDisputeInput. Request body for resolving a dispute. */
+CommercePaymentsDisputesControllerResolveDisputeInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+  resolution: z.lazy(() => CommercePaymentsDisputeResolutionSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputesControllerRespondDisputeInput. Request body for responding to a dispute. */
+CommercePaymentsDisputesControllerRespondDisputeInputSchema = z.object({
+  dueDateUtc: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsDisputeStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsDisputeStatistics. Dispute statistics read model (issue #419). */
+CommercePaymentsDisputeStatisticsSchema = z.object({
+  averageResolutionHours: z.number().nullable().optional(),
+  countByStatus: z
+    .object({
+      Cancelled: z.number().int(),
+      Lost: z.number().int(),
+      PendingCustomerResponse: z.number().int(),
+      PendingMerchantResponse: z.number().int(),
+      Resolved: z.number().int(),
+      Submitted: z.number().int(),
+      UnderReview: z.number().int(),
+      Won: z.number().int(),
+    })
+    .nullable(),
+  fromUtc: z.string().datetime(),
+  lostCount: z.number().int(),
+  totalCount: z.number().int(),
+  totalDisputedAmount: z.number(),
+  toUtc: z.string().datetime(),
+  winLossRatio: z.number().nullable().optional(),
+  wonCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsDisputeStatus. Dispute status */
+CommercePaymentsDisputeStatusSchema = z.enum([
+  'Submitted',
+  'UnderReview',
+  'PendingCustomerResponse',
+  'PendingMerchantResponse',
+  'Resolved',
+  'Won',
+  'Lost',
+  'Cancelled',
+]);
+
+/** Zod schema for CommercePaymentsDisputeType. Dispute types */
+CommercePaymentsDisputeTypeSchema = z.enum([
+  'Fraudulent',
+  'ProductNotReceived',
+  'ProductNotAsDescribed',
+  'Duplicate',
+  'IncorrectAmount',
+  'ServiceNotProvided',
+  'CreditNotProcessed',
+  'Other',
+]);
+
+/** Zod schema for CommercePaymentsEvidenceType. Evidence types */
+CommercePaymentsEvidenceTypeSchema = z.enum([
+  'Receipt',
+  'Communication',
+  'Photo',
+  'Video',
+  'ShippingInfo',
+  'Contract',
+  'BankStatement',
+  'Documentation',
+  'Other',
+]);
+
+/** Zod schema for CommercePaymentsFraudReviewListItem. Read model for one pending fraud review. */
+CommercePaymentsFraudReviewListItemSchema = z.object({
+  amount: z.number(),
+  createdAt: z.string().datetime(),
+  currency: z.string().nullable(),
+  evidence: z.string().nullable().optional(),
+  externalCustomerId: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().nullable(),
+  riskLevel: z.lazy(() => CommercePaymentsFraudRiskLevelSchema),
+  score: z.number().int(),
+  subscriptionId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewResolutionResult. Result of resolving a fraud review. */
+CommercePaymentsFraudReviewResolutionResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  reviewedByUserId: z.string().uuid().nullable().optional(),
+  reviewStatus: z.lazy(() => CommercePaymentsFraudReviewStatusSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewsControllerResolveFraudReviewInput. Request body for resolving a fraud review. */
+CommercePaymentsFraudReviewsControllerResolveFraudReviewInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsFraudReviewStatus. Manual review state for a payment whose fraud decision was GameGuild.Commerce.Payments.FraudDecision.Review. */
+CommercePaymentsFraudReviewStatusSchema = z.enum(['PendingReview', 'Approved', 'Declined']);
+
+/** Zod schema for CommercePaymentsFraudRiskLevel. Risk band derived from the aggregate fraud score. */
+CommercePaymentsFraudRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for CommercePaymentsGiftPublicView. Public (non-secret) view of a gift for the redemption preview endpoint. */
+CommercePaymentsGiftPublicViewSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  deliveryDate: z.string().datetime().nullable().optional(),
+  durationMonths: z.number().int().optional(),
+  expiresAt: z.string().datetime().optional(),
+  giverDisplayName: z.string().nullable().optional(),
+  personalMessage: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  recipientName: z.string().nullable().optional(),
+  redemptionCodePrefix: z.string().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsGiftStatusSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsGiftPurchaseResult. Result of a gift purchase: the gift plus the full redemption code shown exactly once. */
+CommercePaymentsGiftPurchaseResultSchema = z.object({
+  gift: z.lazy(() => CommercePaymentsGiftPublicViewSchema).optional(),
+  redemptionCode: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsGiftsControllerPurchaseGiftRequestBody. Request body for gift purchase. */
+CommercePaymentsGiftsControllerPurchaseGiftRequestBodySchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  deliveryDate: z.string().datetime().nullable().optional(),
+  durationMonths: z.number().int().optional(),
+  personalMessage: z.string().nullable().optional(),
+  planId: z.string().uuid().nullable().optional(),
+  recipientEmail: z.string().nullable().optional(),
+  recipientName: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsGiftStatus. Gift subscription status machine (Purchased → Delivered → Redeemed / Expired, plus Refunded). */
+CommercePaymentsGiftStatusSchema = z.enum(['Purchased', 'Delivered', 'Redeemed', 'Expired', 'Refunded']);
 
 /** Zod schema for CommercePaymentsLockWalletInput. Data model for Commerce Payments Lock Wallet Request. */
 CommercePaymentsLockWalletInputSchema = z.object({
@@ -21595,6 +26495,14 @@ CommercePaymentsPatchTaxRuleInputSchema = z.object({
   rate: z.number().nullable().optional(),
 });
 
+/** Zod schema for CommercePaymentsPaymentAttemptMetrics. First-attempt outcome counters for payments created in the window. */
+CommercePaymentsPaymentAttemptMetricsSchema = z.object({
+  failedPayments: z.number().int().optional(),
+  succeededPayments: z.number().int().optional(),
+  successRate: z.number().optional(),
+  totalPayments: z.number().int().optional(),
+});
+
 /** Zod schema for CommercePaymentsPaymentCancellationResult. Result of a payment cancellation operation */
 CommercePaymentsPaymentCancellationResultSchema = z.object({
   canceledAt: z.string().datetime(),
@@ -21605,6 +26513,110 @@ CommercePaymentsPaymentCancellationResultSchema = z.object({
   refundAmount: z.number().nullable().optional(),
   refundProcessed: z.boolean().optional(),
   success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsPaymentCurrencyAmount. An amount total for one currency; currency totals are kept separate (issue #404 mixed-currency rule). */
+CommercePaymentsPaymentCurrencyAmountSchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  paymentCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentDispute. Entity representing a payment dispute */
+CommercePaymentsPaymentDisputeSchema = z.object({
+  id: z.string().uuid().optional(),
+  amount: z.number().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  description: z.string().max(2000).nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  dueDate: z.string().datetime().nullable().optional(),
+  evidence: z
+    .array(z.lazy(() => CommercePaymentsDisputeEvidenceSchema))
+    .nullable()
+    .optional(),
+  evidenceDueBy: z.string().datetime().nullable().optional(),
+  gatewayDisputeId: z.string().max(255).nullable().optional(),
+  gatewayName: z.string().max(50).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  paymentId: z.string().uuid(),
+  reason: z.string().min(1).max(100),
+  resolution: z.lazy(() => CommercePaymentsDisputeResolutionSchema).optional(),
+  resolutionNotes: z.string().max(2000).nullable().optional(),
+  resolvedAt: z.string().datetime().nullable().optional(),
+  resolvedBy: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsDisputeStatusSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  type: z.lazy(() => CommercePaymentsDisputeTypeSchema).optional(),
+  updatedAt: z.string().datetime(),
+  userId: z.string().uuid(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentDunningOutcomeMetrics. Dunning outcomes for failed payments in the window, as of the query execution time. */
+CommercePaymentsPaymentDunningOutcomeMetricsSchema = z.object({
+  dueForRetryPayments: z.number().int().optional(),
+  exhaustedPayments: z.number().int().optional(),
+  pendingRetryPayments: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodDto. Display-safe projection of a registered payment method. */
+CommercePaymentsPaymentMethodDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  billingAddress: z.string().nullable().optional(),
+  cardBrand: z.string().nullable().optional(),
+  cardExpMonth: z.number().int().nullable().optional(),
+  cardExpYear: z.number().int().nullable().optional(),
+  cardLast4: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  expiresInDays: z.number().int().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  gatewayProvider: z.string().nullable().optional(),
+  isDefault: z.boolean().optional(),
+  lastUsedAt: z.string().datetime().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  type: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBody. Request body for registering a payment method from a gateway token. */
+CommercePaymentsPaymentMethodsControllerCreatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  gatewayPaymentMethodId: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+  ownerUserId: z.string().uuid().nullable().optional(),
+  setAsDefault: z.boolean().optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBody. Request body for updating payment-method display fields. */
+CommercePaymentsPaymentMethodsControllerUpdatePaymentMethodRequestBodySchema = z.object({
+  billingAddress: z.string().nullable().optional(),
+  nickname: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRecoveryMetrics. Payment success and failed-payment recovery metrics for an inclusive window (issue #403).
+Powers `GET api/v{v}/payments/recovery-metrics`. */
+CommercePaymentsPaymentRecoveryMetricsSchema = z.object({
+  attempts: z.lazy(() => CommercePaymentsPaymentAttemptMetricsSchema).optional(),
+  dunning: z.lazy(() => CommercePaymentsPaymentDunningOutcomeMetricsSchema).optional(),
+  fromUtc: z.string().datetime().optional(),
+  retries: z.lazy(() => CommercePaymentsPaymentRetryRecoveryMetricsSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  toUtc: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentResult. Result of payment processing */
@@ -21619,6 +26631,31 @@ CommercePaymentsPaymentResultSchema = z.object({
   success: z.boolean().optional(),
   tenantId: z.string().uuid().optional(),
   transactionId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRetryAttemptDto. Read model for one persisted GameGuild.Commerce.Payments.PaymentRetryAttempt (issue #415). */
+CommercePaymentsPaymentRetryAttemptDtoSchema = z.object({
+  attemptNumber: z.number().int().optional(),
+  executedAtUtc: z.string().datetime().optional(),
+  failureCode: z.string().nullable().optional(),
+  failureMessage: z.string().nullable().optional(),
+  gateway: z.string().nullable().optional(),
+  gatewayTransactionId: z.string().nullable().optional(),
+  outcome: z.lazy(() => CommercePaymentsPaymentStatusSchema).optional(),
+  paymentId: z.string().uuid().optional(),
+  scheduledForUtc: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsPaymentRetryRecoveryMetrics. Retry-recovery counters for payments that failed at least once. */
+CommercePaymentsPaymentRetryRecoveryMetricsSchema = z.object({
+  everFailedPayments: z.number().int().optional(),
+  recoveredAmounts: z
+    .array(z.lazy(() => CommercePaymentsPaymentCurrencyAmountSchema))
+    .nullable()
+    .optional(),
+  recoveredPayments: z.number().int().optional(),
+  retriedPayments: z.number().int().optional(),
+  retryRecoveryRate: z.number().optional(),
 });
 
 /** Zod schema for CommercePaymentsPaymentRetryResult. Result of payment retry */
@@ -21676,7 +26713,17 @@ CommercePaymentsPaymentsControllerRefundInputSchema = z.object({
 });
 
 /** Zod schema for CommercePaymentsPaymentStatus. Payment processing status */
-CommercePaymentsPaymentStatusSchema = z.enum(['Pending', 'Processing', 'Succeeded', 'Failed', 'Cancelled', 'RequiresAction', 'Refunded', 'Disputed']);
+CommercePaymentsPaymentStatusSchema = z.enum([
+  'Pending',
+  'Processing',
+  'Succeeded',
+  'Failed',
+  'Cancelled',
+  'RequiresAction',
+  'Refunded',
+  'Disputed',
+  'PartiallyRefunded',
+]);
 
 /** Zod schema for CommercePaymentsProcessRefundResult. Result model for refund processing operations */
 CommercePaymentsProcessRefundResultSchema = z.object({
@@ -21693,6 +26740,434 @@ CommercePaymentsProcessRefundResultSchema = z.object({
   refundedAmount: z.number(),
   refundId: z.string().uuid(),
   status: z.lazy(() => CommercePaymentsTransactionStatusSchema),
+});
+
+/** Zod schema for CommercePaymentsReferral. Referral tracking record (issue #410 v1). One opaque referral code is generated per
+referrer (the first GameGuild.Commerce.Payments.ReferralStatus.Pending row anchors the code);
+every referee journey gets its own row carrying that shared code, so a referrer can
+accumulate referrals up to the configured cap. The fraud blocks (self-referral,
+same-IP repeat) reuse the velocity thinking of the payments fraud gate (issue #409). */
+CommercePaymentsReferralSchema = z.object({
+  id: z.string().uuid().optional(),
+  clickedAt: z.string().datetime().nullable().optional(),
+  conversionAt: z.string().datetime().nullable().optional(),
+  conversionInvoiceId: z.string().uuid().nullable().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  fraudReason: z.string().max(500).nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  refereeEmail: z.string().max(255).nullable().optional(),
+  refereeIpHash: z.string().max(64).nullable().optional(),
+  refereeRewardGrantId: z.string().uuid().nullable().optional(),
+  refereeSubscriptionId: z.string().uuid().nullable().optional(),
+  refereeUserId: z.string().uuid().nullable().optional(),
+  referralCode: z.string().min(1).max(32),
+  referralLink: z.string().max(500).nullable().optional(),
+  referrerIpHash: z.string().max(64).nullable().optional(),
+  referrerRewardGrantId: z.string().uuid().nullable().optional(),
+  referrerUserId: z.string().uuid(),
+  rewardIssuedAt: z.string().datetime().nullable().optional(),
+  sharedAt: z.string().datetime(),
+  signupAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => CommercePaymentsReferralStatusSchema).optional(),
+  tenantId: z.string().uuid(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralFunnelMetrics. Referral funnel counters (clicks → signups → conversions → rewards). */
+CommercePaymentsReferralFunnelMetricsSchema = z.object({
+  clicks: z.number().int().optional(),
+  codesShared: z.number().int().optional(),
+  conversions: z.number().int().optional(),
+  fraudulent: z.number().int().optional(),
+  rewardsIssued: z.number().int().optional(),
+  signups: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralsControllerReferralCodeOutput. Response body carrying the referral code and share link. */
+CommercePaymentsReferralsControllerReferralCodeOutputSchema = z.object({
+  code: z.string().nullable().optional(),
+  link: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralsControllerTrackReferralClickInput. Request body for click tracking. */
+CommercePaymentsReferralsControllerTrackReferralClickInputSchema = z.object({
+  refereeEmail: z.string().nullable().optional(),
+  referralCode: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralsControllerTrackReferralSignupInput. Request body for signup tracking. */
+CommercePaymentsReferralsControllerTrackReferralSignupInputSchema = z.object({
+  referralCode: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralSignupResult. Signup outcome for the referee applying a referral code. */
+CommercePaymentsReferralSignupResultSchema = z.object({
+  blocked: z.boolean().optional(),
+  reason: z.string().nullable().optional(),
+  referral: z.lazy(() => CommercePaymentsReferralSchema).optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralStats. Referral funnel counters of one referrer. */
+CommercePaymentsReferralStatsSchema = z.object({
+  clicked: z.number().int().optional(),
+  converted: z.number().int().optional(),
+  expired: z.number().int().optional(),
+  fraudulent: z.number().int().optional(),
+  referralCode: z.string().nullable().optional(),
+  referralLink: z.string().nullable().optional(),
+  referrerUserId: z.string().uuid().optional(),
+  rewardIssued: z.number().int().optional(),
+  shared: z.number().int().optional(),
+  signedUp: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsReferralStatus. Referral funnel status. */
+CommercePaymentsReferralStatusSchema = z.enum(['Pending', 'Clicked', 'SignedUp', 'Converted', 'RewardIssued', 'Expired', 'Fraudulent']);
+
+/** Zod schema for CommercePaymentsReferrerLeaderboardEntry. One leaderboard row: referrer by rewarded referrals. */
+CommercePaymentsReferrerLeaderboardEntrySchema = z.object({
+  fraudulentReferrals: z.number().int().optional(),
+  referrerUserId: z.string().uuid().optional(),
+  rewardedReferrals: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRefundApprovalQueuePage. Paged read model for the pending refund-approval queue. */
+CommercePaymentsRefundApprovalQueuePageSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundDecisionResult. Result of an approval or rejection decision on a refund request. */
+CommercePaymentsRefundDecisionResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  refund: z.lazy(() => CommercePaymentsRefundRecordSchema).optional(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsRefundListPage. Paged read model for refund listings. */
+CommercePaymentsRefundListPageSchema = z.object({
+  items: z.array(z.lazy(() => CommercePaymentsRefundRecordSchema)).nullable(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalCount: z.number().int(),
+});
+
+/** Zod schema for CommercePaymentsRefundRecord. Read model for a GameGuild.Commerce.Payments.Refund row (issue #419). */
+CommercePaymentsRefundRecordSchema = z.object({
+  amount: z.number(),
+  attemptCount: z.number().int().optional(),
+  currency: z.string().nullable(),
+  decidedAt: z.string().datetime().nullable().optional(),
+  decidedByUserId: z.string().uuid().nullable().optional(),
+  decisionNotes: z.string().nullable().optional(),
+  disputeId: z.string().uuid().nullable().optional(),
+  failedAt: z.string().datetime().nullable().optional(),
+  failureReason: z.string().nullable().optional(),
+  gatewayName: z.string().nullable().optional(),
+  gatewayRefundId: z.string().nullable().optional(),
+  paymentId: z.string().uuid(),
+  processedAt: z.string().datetime().nullable().optional(),
+  reason: z.string().nullable(),
+  reasonDetails: z.string().nullable().optional(),
+  refundId: z.string().uuid(),
+  requestedAt: z.string().datetime(),
+  requestedByUserId: z.string().uuid(),
+  requiresApproval: z.boolean(),
+  status: z.lazy(() => CommercePaymentsRefundStatusSchema),
+  tenantId: z.string().uuid(),
+});
+
+/** Zod schema for CommercePaymentsRefundsControllerRefundDecisionInput. Request body for approve/reject decisions. */
+CommercePaymentsRefundsControllerRefundDecisionInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRefundsControllerRequestRefundHttpInput. Request body for requesting a refund. */
+CommercePaymentsRefundsControllerRequestRefundHttpInputSchema = z.object({
+  amount: z.number().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  paymentId: z.string().uuid().optional(),
+  reason: z.string().nullable().optional(),
+  reasonDetails: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRefundStatistics. Refund statistics read model (issue #419). */
+CommercePaymentsRefundStatisticsSchema = z.object({
+  completedAmountByCurrency: z.record(z.string(), z.number()).nullable(),
+  completedCountByReason: z.record(z.string(), z.number().int()).nullable(),
+  countByStatus: z
+    .object({
+      Approved: z.number().int(),
+      Completed: z.number().int(),
+      Failed: z.number().int(),
+      Pending: z.number().int(),
+      Processing: z.number().int(),
+      Rejected: z.number().int(),
+    })
+    .nullable(),
+  fromUtc: z.string().datetime(),
+  totalCount: z.number().int(),
+  toUtc: z.string().datetime(),
+});
+
+/** Zod schema for CommercePaymentsRefundStatus. Lifecycle status of a refund request (issue #419). */
+CommercePaymentsRefundStatusSchema = z.enum(['Pending', 'Approved', 'Rejected', 'Processing', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRequestRefundResult. Result of creating a refund request. */
+CommercePaymentsRequestRefundResultSchema = z.object({
+  failureReason: z.string().nullable().optional(),
+  refund: z.lazy(() => CommercePaymentsRefundRecordSchema).optional(),
+  requiresApproval: z.boolean(),
+  success: z.boolean(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAnomalyAlert. Durable alert raised when daily net revenue deviates abnormally from its trailing
+baseline. Baselines are computed per currency; detection is idempotent per
+(kind, day, currency): re-running detection for the same day and currency never
+duplicates an alert. */
+CommercePaymentsRevenueAnomalyAlertSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().max(1000).nullable().optional(),
+  baselineDays: z.number().int().optional(),
+  createdAt: z.string().datetime(),
+  currency: z.string().min(1).max(3),
+  deletedAt: z.string().datetime().nullable().optional(),
+  detectedAtUtc: z.string().datetime().optional(),
+  detectedForDateUtc: z.string().datetime().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  expectedNetRevenue: z.number().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueAnomalyKindSchema).optional(),
+  observedNetRevenue: z.number().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueAnomalyStatusSchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+  zScore: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAnomalyKind. Kind of revenue anomaly detected by the statistical detector */
+CommercePaymentsRevenueAnomalyKindSchema = z.enum(['Spike', 'Drop']);
+
+/** Zod schema for CommercePaymentsRevenueAnomalyStatus. Lifecycle status of a revenue anomaly alert */
+CommercePaymentsRevenueAnomalyStatusSchema = z.enum(['Open', 'Acknowledged']);
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeAlert(System.Guid,GameGuild.Commerce.Payments.RevenueAuditingController.AcknowledgeRevenueAnomalyAlertRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerAcknowledgeRevenueAnomalyAlertInputSchema = z.object({
+  notes: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerAnomalyDetectionResult. Result of a manual anomaly detection pass. */
+CommercePaymentsRevenueAuditingControllerAnomalyDetectionResultSchema = z.object({
+  alertsCreated: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.DetectAnomalies(GameGuild.Commerce.Payments.RevenueAuditingController.DetectRevenueAnomaliesRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerDetectRevenueAnomaliesInputSchema = z.object({
+  evaluationDateUtc: z.string().datetime().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInput. Request body for M:GameGuild.Commerce.Payments.RevenueAuditingController.RunReconciliation(GameGuild.Commerce.Payments.RevenueAuditingController.RunRevenueReconciliationRequest,System.Threading.CancellationToken). */
+CommercePaymentsRevenueAuditingControllerRunRevenueReconciliationInputSchema = z.object({
+  externalStatementId: z.string().nullable().optional(),
+  lines: z
+    .array(z.lazy(() => CommercePaymentsRevenueAuditingControllerStatementLineInputSchema))
+    .nullable()
+    .optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueAuditingControllerStatementLineInput. One external statement line supplied inline. */
+CommercePaymentsRevenueAuditingControllerStatementLineInputSchema = z.object({
+  amount: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  occurredAtUtc: z.string().datetime().optional(),
+  referenceId: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueComplianceReport. Compliance-grade revenue summary for an inclusive period, broken down by currency. */
+CommercePaymentsRevenueComplianceReportSchema = z.object({
+  attestation: z.string().nullable().optional(),
+  fromUtc: z.string().datetime().optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  reconciliation: z.lazy(() => CommercePaymentsRevenueReconciliationCoverageSchema).optional(),
+  totalsByEventType: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsBySource: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  totalsByStatus: z
+    .array(z.lazy(() => CommercePaymentsRevenueEventGroupTotalSchema))
+    .nullable()
+    .optional(),
+  toUtc: z.string().datetime().optional(),
+  uncountedEventCount: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueDiscrepancyKind. Kind of mismatch detected between an external statement and internal revenue events */
+CommercePaymentsRevenueDiscrepancyKindSchema = z.enum([
+  'MissingInternal',
+  'MissingExternal',
+  'AmountMismatch',
+  'CurrencyMismatch',
+  'DuplicateExternalReference',
+]);
+
+/** Zod schema for CommercePaymentsRevenueEventGroupTotal. Grouped totals for one key of a grouping dimension (event type, source or status), in one currency. */
+CommercePaymentsRevenueEventGroupTotalSchema = z.object({
+  count: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationCoverage. Reconciliation coverage summary included in compliance reports. */
+CommercePaymentsRevenueReconciliationCoverageSchema = z.object({
+  discrepancies: z.number().int().optional(),
+  lastRunCompletedAtUtc: z.string().datetime().nullable().optional(),
+  matchedLines: z.number().int().optional(),
+  reconciliationRuns: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationDiscrepancy. One mismatch between an external statement line and internal revenue events,
+recorded by a GameGuild.Commerce.Payments.RevenueReconciliationRun. Discrepancies are immutable
+once written; corrections happen in new runs. */
+CommercePaymentsRevenueReconciliationDiscrepancySchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalAmount: z.number().nullable().optional(),
+  externalCurrency: z.string().max(3).nullable().optional(),
+  externalOccurredAtUtc: z.string().datetime().nullable().optional(),
+  externalReference: z.string().min(1).max(200),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  internalAmount: z.number().nullable().optional(),
+  internalCurrency: z.string().max(3).nullable().optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  kind: z.lazy(() => CommercePaymentsRevenueDiscrepancyKindSchema).optional(),
+  message: z.string().max(1000).nullable().optional(),
+  revenueEventId: z.string().uuid().nullable().optional(),
+  run: z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema).optional(),
+  runId: z.string().uuid().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationRun. One reconciliation run comparing an external accounting/ERP statement against
+internally recorded GameGuild.Commerce.Payments.RevenueEvent rows for an inclusive period.
+Runs are immutable audit records: counts and summary are set once at completion. */
+CommercePaymentsRevenueReconciliationRunSchema = z.object({
+  id: z.string().uuid().optional(),
+  completedAtUtc: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  deletedAt: z.string().datetime().nullable().optional(),
+  discrepancies: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  discrepancyCount: z.number().int().optional(),
+  domainEvents: z
+    .array(z.lazy(() => CQRSIDomainEventSchema))
+    .nullable()
+    .optional(),
+  externalStatementId: z.string().max(200).nullable().optional(),
+  failureReason: z.string().max(1000).nullable().optional(),
+  initiatedByUserId: z.string().uuid().nullable().optional(),
+  integrationEvents: z
+    .array(z.lazy(() => IDurableIntegrationEventSchema))
+    .nullable()
+    .optional(),
+  isDeleted: z.boolean().optional(),
+  isGlobal: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  matchedCount: z.number().int().optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  source: z.string().min(1).max(100),
+  startedAtUtc: z.string().datetime().optional(),
+  statementLineCount: z.number().int().optional(),
+  status: z.lazy(() => CommercePaymentsRevenueReconciliationStatusSchema).optional(),
+  summaryJson: z.string().max(2000).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueReconciliationStatus. Lifecycle status of a revenue reconciliation run */
+CommercePaymentsRevenueReconciliationStatusSchema = z.enum(['Running', 'Completed', 'Failed']);
+
+/** Zod schema for CommercePaymentsRevenueTrendCurrencyTotal. Range totals of a historical revenue trend for one currency. */
+CommercePaymentsRevenueTrendCurrencyTotalSchema = z.object({
+  currency: z.string().nullable().optional(),
+  totalCredit: z.number().optional(),
+  totalDebit: z.number().optional(),
+  totalNet: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueTrendPoint. One point of a historical revenue trend, for one currency. */
+CommercePaymentsRevenueTrendPointSchema = z.object({
+  creditTotal: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  dateUtc: z.string().datetime().optional(),
+  debitTotal: z.number().optional(),
+  eventCount: z.number().int().optional(),
+  netTotal: z.number().optional(),
+});
+
+/** Zod schema for CommercePaymentsRevenueTrendReport. Historical revenue trend over an inclusive date range, broken down by currency. */
+CommercePaymentsRevenueTrendReportSchema = z.object({
+  fromUtc: z.string().datetime().optional(),
+  points: z
+    .array(z.lazy(() => CommercePaymentsRevenueTrendPointSchema))
+    .nullable()
+    .optional(),
+  totalsByCurrency: z
+    .array(z.lazy(() => CommercePaymentsRevenueTrendCurrencyTotalSchema))
+    .nullable()
+    .optional(),
+  toUtc: z.string().datetime().optional(),
 });
 
 /** Zod schema for CommercePaymentsTaxBreakdown. Individual tax breakdown (for compound/multiple taxes) */
@@ -21959,6 +27434,21 @@ CommercePaymentsWalletTransactionSchema = z.object({
 /** Zod schema for CommercePaymentsWalletTransactionType. Wallet transaction types */
 CommercePaymentsWalletTransactionTypeSchema = z.enum(['Credit', 'Debit', 'TransferIn', 'TransferOut', 'Refund', 'Fee', 'Adjustment']);
 
+/** Zod schema for CommercePricingRuleType. Types of pricing rules - consolidated from Products and Payments modules */
+CommercePricingRuleTypeSchema = z.enum([
+  'VolumeDiscount',
+  'FixedPriceOverride',
+  'TimeBased',
+  'RegionBased',
+  'SegmentBased',
+  'MarketBased',
+  'Percentage',
+  'FixedAmount',
+  'BuyXGetY',
+  'TieredPricing',
+  'Bundle',
+]);
+
 /** Zod schema for CommerceProductsAddMySupportTicketMessageInput. Data model for Commerce Products Add My Support Ticket Message Request. */
 CommerceProductsAddMySupportTicketMessageInputSchema = z.object({
   body: z.string().nullable().optional(),
@@ -21975,11 +27465,16 @@ CommerceProductsAppliedPromoCodeSchema = z.object({
   code: z.string().nullable().optional(),
   discountAmount: z.number().optional(),
   discountPercentage: z.number().nullable().optional(),
+  freeMonthsGranted: z.number().int().nullable().optional(),
+  trialExtensionDays: z.number().int().nullable().optional(),
+  type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
 });
 
 /** Zod schema for CommerceProductsApplyPromoCodesInput. Request to apply promo codes */
 CommerceProductsApplyPromoCodesInputSchema = z.object({
+  idempotencyKey: z.string().nullable().optional(),
   orderAmount: z.number().optional(),
+  orderId: z.string().uuid().nullable().optional(),
   productId: z.string().uuid().nullable().optional(),
   promoCodes: z.array(z.string()).nullable().optional(),
 });
@@ -22012,6 +27507,52 @@ CommerceProductsBatchProductCreateItemSchema = z.object({
   type: z.lazy(() => CommerceProductsProductTypeSchema).optional(),
 });
 
+/** Zod schema for CommerceProductsCalculatePricingInput. Request to calculate a price through the pricing engine. */
+CommerceProductsCalculatePricingInputSchema = z.object({
+  customerSegment: z.string().nullable().optional(),
+  pricingId: z.string().uuid().nullable().optional(),
+  productId: z.string().uuid().optional(),
+  promoCodes: z.array(z.string()).nullable().optional(),
+  quantity: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceProductsCampaignExpiringCodeDto. A campaign code approaching expiry */
+CommerceProductsCampaignExpiringCodeDtoSchema = z.object({
+  code: z.string().nullable().optional(),
+  promoCodeId: z.string().uuid().optional(),
+  validUntil: z.string().datetime().optional(),
+});
+
+/** Zod schema for CommerceProductsCampaignPerformanceDto. Aggregated performance for a promo campaign within a window */
+CommerceProductsCampaignPerformanceDtoSchema = z.object({
+  activeCodes: z.number().int().optional(),
+  averageDiscountPerUse: z.number().optional(),
+  campaignId: z.string().nullable().optional(),
+  expiringCodes: z
+    .array(z.lazy(() => CommerceProductsCampaignExpiringCodeDtoSchema))
+    .nullable()
+    .optional(),
+  redemptionRate: z.number().nullable().optional(),
+  topCodes: z
+    .array(z.lazy(() => CommerceProductsCampaignTopCodeDtoSchema))
+    .nullable()
+    .optional(),
+  totalCodes: z.number().int().optional(),
+  totalDiscountGiven: z.number().optional(),
+  totalUses: z.number().int().optional(),
+  uniqueUsers: z.number().int().optional(),
+  windowEnd: z.string().datetime().nullable().optional(),
+  windowStart: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsCampaignTopCodeDto. A campaign code ranked by usage */
+CommerceProductsCampaignTopCodeDtoSchema = z.object({
+  code: z.string().nullable().optional(),
+  discountGiven: z.number().optional(),
+  promoCodeId: z.string().uuid().optional(),
+  uses: z.number().int().optional(),
+});
+
 /** Zod schema for CommerceProductsChangeSupportTicketPriorityInput. Data model for Commerce Products Change Support Ticket Priority Request. */
 CommerceProductsChangeSupportTicketPriorityInputSchema = z.object({
   priority: z.lazy(() => CommerceProductsSupportTicketPrioritySchema).optional(),
@@ -22027,12 +27568,43 @@ CommerceProductsCloseSupportTicketInputSchema = z.object({
   closingNotes: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsConflictResolutionStrategy. Conflict resolution strategies for stacked promo codes */
+CommerceProductsConflictResolutionStrategySchema = z.enum(['HighestDiscount', 'LowestDiscount', 'FirstCodeOnly', 'LastCodeOnly', 'Sequential', 'Additive']);
+
 /** Zod schema for CommerceProductsCreateMySupportTicketInput. Data model for Commerce Products Create My Support Ticket Request. */
 CommerceProductsCreateMySupportTicketInputSchema = z.object({
   body: z.string().nullable().optional(),
   category: z.string().nullable().optional(),
   priority: z.lazy(() => CommerceProductsSupportTicketPrioritySchema).optional(),
   subject: z.string().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsCreatePricingRuleInput. Request to create a pricing rule. */
+CommerceProductsCreatePricingRuleInputSchema = z.object({
+  buyQuantity: z.number().int().nullable().optional(),
+  customerSegment: z.string().nullable().optional(),
+  daysOfWeek: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  getQuantity: z.number().int().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  region: z.string().nullable().optional(),
+  ruleType: z.lazy(() => CommercePricingRuleTypeSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tiers: z
+    .array(z.lazy(() => CommerceProductsPricingRuleTierInputSchema))
+    .nullable()
+    .optional(),
+  timeEnd: z.string().nullable().optional(),
+  timeStart: z.string().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsCreateProductInput. Request model for creating a product */
@@ -22051,13 +27623,18 @@ CommerceProductsCreateProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsCreatePromoCodeInput. Request to create a promo code */
 CommerceProductsCreatePromoCodeInputSchema = z.object({
+  applyToRenewal: z.boolean().optional(),
+  campaignId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
   isExclusive: z.boolean().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -22067,6 +27644,19 @@ CommerceProductsCreatePromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsCreatePromoStackingRuleInput. Request to create a promo stacking rule */
+CommerceProductsCreatePromoStackingRuleInputSchema = z.object({
+  allowExclusiveStacking: z.boolean().optional(),
+  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxStackableCount: z.number().int().optional(),
+  maxTotalDiscountAmount: z.number().nullable().optional(),
+  maxTotalDiscountPercentage: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsCreateSupportTicketInput. Data model for Commerce Products Create Support Ticket Request. */
@@ -22098,6 +27688,30 @@ CommerceProductsEntitlementInfoDtoSchema = z.object({
   subscriptionStatus: z.string().nullable().optional(),
 });
 
+/** Zod schema for CommerceProductsGenerateBulkPromoCodesInput. Request to bulk-generate promo codes with a shared prefix and random suffixes */
+CommerceProductsGenerateBulkPromoCodesInputSchema = z.object({
+  applyToRenewal: z.boolean().optional(),
+  campaignId: z.string().nullable().optional(),
+  count: z.number().int().optional(),
+  currency: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
+  maxUses: z.number().int().nullable().optional(),
+  maxUsesPerUser: z.number().int().nullable().optional(),
+  minimumOrderAmount: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  prefix: z.string().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  stackingPriority: z.number().int().optional(),
+  type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
+  validFrom: z.string().datetime().nullable().optional(),
+  validUntil: z.string().datetime().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsGrantEntitlementInput. Request to grant an entitlement */
 CommerceProductsGrantEntitlementInputSchema = z.object({
   acquisitionType: z.lazy(() => CommerceProductsProductAcquisitionTypeSchema).optional(),
@@ -22125,12 +27739,17 @@ CommerceProductsPatchProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsPatchPromoCodeInput. Request to partially update a promo code (PATCH) */
 CommerceProductsPatchPromoCodeInputSchema = z.object({
+  applyToRenewal: z.boolean().nullable().optional(),
+  campaignId: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().nullable().optional(),
   isExclusive: z.boolean().nullable().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -22140,6 +27759,69 @@ CommerceProductsPatchPromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingCalculationResult. Result of pricing calculation */
+CommerceProductsPricingCalculationResultSchema = z.object({
+  appliedPromoCodes: z.array(z.string()).nullable().optional(),
+  appliedRuleId: z.string().uuid().nullable().optional(),
+  appliedRuleName: z.string().nullable().optional(),
+  basePrice: z.number().optional(),
+  currency: z.string().nullable().optional(),
+  finalPrice: z.number().optional(),
+  isSaleActive: z.boolean().optional(),
+  promoDiscount: z.number().optional(),
+  ruleDiscount: z.number().optional(),
+  salePrice: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingRuleDto. Read model for a pricing rule (issue #395 dynamic & tiered pricing engine). */
+CommerceProductsPricingRuleDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  buyQuantity: z.number().int().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  customerSegment: z.string().nullable().optional(),
+  daysOfWeek: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  getQuantity: z.number().int().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  region: z.string().nullable().optional(),
+  ruleType: z.lazy(() => CommercePricingRuleTypeSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tiers: z
+    .array(z.lazy(() => CommerceProductsPricingRuleTierDtoSchema))
+    .nullable()
+    .optional(),
+  timeEnd: z.string().nullable().optional(),
+  timeStart: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingRuleTierDto. Read model for a pricing rule tier (volume tier of a pricing rule). */
+CommerceProductsPricingRuleTierDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  price: z.number().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsPricingRuleTierInput. Write model for a pricing rule tier. */
+CommerceProductsPricingRuleTierInputSchema = z.object({
+  discountPercentage: z.number().nullable().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  price: z.number().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsProductAcquisitionType. Represents how a user acquired access to a product */
@@ -22214,20 +27896,28 @@ CommerceProductsPromoCodeApplicationResultSchema = z.object({
     .array(z.lazy(() => CommerceProductsRejectedPromoCodeSchema))
     .nullable()
     .optional(),
+  stackingRuleName: z.string().nullable().optional(),
   totalDiscount: z.number().optional(),
+  usageRecorded: z.boolean().optional(),
 });
 
 /** Zod schema for CommerceProductsPromoCodeDto. Promo code data transfer object */
 CommerceProductsPromoCodeDtoSchema = z.object({
   id: z.string().uuid().optional(),
+  applyToRenewal: z.boolean().optional(),
+  campaignId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
   createdAt: z.string().datetime().optional(),
   currency: z.string().nullable().optional(),
+  currentUses: z.number().int().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().optional(),
   isExclusive: z.boolean().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -22242,7 +27932,16 @@ CommerceProductsPromoCodeDtoSchema = z.object({
 });
 
 /** Zod schema for CommerceProductsPromoCodeType. Represents the type of promo code discount */
-CommerceProductsPromoCodeTypeSchema = z.enum(['PercentageOff', 'FixedAmountOff', 'FreeTrial', 'BuyOneGetOne', 'FreeShipping']);
+CommerceProductsPromoCodeTypeSchema = z.enum([
+  'PercentageOff',
+  'FixedAmountOff',
+  'FreeTrial',
+  'BuyOneGetOne',
+  'FreeShipping',
+  'FreeTrialExtension',
+  'FreeMonths',
+  'SetPrice',
+]);
 
 /** Zod schema for CommerceProductsPromoCodeUsageDto. Promo code usage statistics DTO */
 CommerceProductsPromoCodeUsageDtoSchema = z.object({
@@ -22265,6 +27964,20 @@ CommerceProductsPromoCodeValidationResultSchema = z.object({
   discountPercentage: z.number().nullable().optional(),
   errorMessage: z.string().nullable().optional(),
   isValid: z.boolean().optional(),
+});
+
+/** Zod schema for CommerceProductsPromoStackingRuleDto. Promo stacking rule DTO */
+CommerceProductsPromoStackingRuleDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  allowExclusiveStacking: z.boolean().optional(),
+  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxStackableCount: z.number().int().optional(),
+  maxTotalDiscountAmount: z.number().nullable().optional(),
+  maxTotalDiscountPercentage: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
 });
 
 /** Zod schema for CommerceProductsRejectedPromoCode. Details of a rejected promo code */
@@ -22364,6 +28077,34 @@ CommerceProductsSupportTicketSummaryDtoSchema = z.object({
   resolvedToday: z.number().int().optional(),
 });
 
+/** Zod schema for CommerceProductsUpdatePricingRuleInput. Request to update a pricing rule (full update; tiers are replaced when provided). */
+CommerceProductsUpdatePricingRuleInputSchema = z.object({
+  buyQuantity: z.number().int().nullable().optional(),
+  customerSegment: z.string().nullable().optional(),
+  daysOfWeek: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountAmount: z.number().nullable().optional(),
+  discountPercentage: z.number().nullable().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  fixedPrice: z.number().nullable().optional(),
+  getQuantity: z.number().int().nullable().optional(),
+  isActive: z.boolean().optional(),
+  maxQuantity: z.number().int().nullable().optional(),
+  minQuantity: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  priority: z.number().int().optional(),
+  productId: z.string().uuid().nullable().optional(),
+  region: z.string().nullable().optional(),
+  ruleType: z.lazy(() => CommercePricingRuleTypeSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tiers: z
+    .array(z.lazy(() => CommerceProductsPricingRuleTierInputSchema))
+    .nullable()
+    .optional(),
+  timeEnd: z.string().nullable().optional(),
+  timeStart: z.string().nullable().optional(),
+});
+
 /** Zod schema for CommerceProductsUpdateProductInput. Request model for updating a product */
 CommerceProductsUpdateProductInputSchema = z.object({
   affiliateCommissionPercentage: z.number().nullable().optional(),
@@ -22381,12 +28122,17 @@ CommerceProductsUpdateProductInputSchema = z.object({
 
 /** Zod schema for CommerceProductsUpdatePromoCodeInput. Request to update a promo code */
 CommerceProductsUpdatePromoCodeInputSchema = z.object({
+  applyToRenewal: z.boolean().nullable().optional(),
+  campaignId: z.string().nullable().optional(),
   currency: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   discountPercentage: z.number().nullable().optional(),
+  durationMonths: z.number().int().nullable().optional(),
+  freeTrialExtensionDays: z.number().int().nullable().optional(),
   isActive: z.boolean().nullable().optional(),
   isExclusive: z.boolean().nullable().optional(),
+  maxDiscountAmount: z.number().nullable().optional(),
   maxUses: z.number().int().nullable().optional(),
   maxUsesPerUser: z.number().int().nullable().optional(),
   minimumOrderAmount: z.number().nullable().optional(),
@@ -22396,6 +28142,18 @@ CommerceProductsUpdatePromoCodeInputSchema = z.object({
   type: z.lazy(() => CommerceProductsPromoCodeTypeSchema).optional(),
   validFrom: z.string().datetime().nullable().optional(),
   validUntil: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for CommerceProductsUpdatePromoStackingRuleInput. Request to update a promo stacking rule */
+CommerceProductsUpdatePromoStackingRuleInputSchema = z.object({
+  allowExclusiveStacking: z.boolean().nullable().optional(),
+  conflictStrategy: z.lazy(() => CommerceProductsConflictResolutionStrategySchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().nullable().optional(),
+  maxStackableCount: z.number().int().nullable().optional(),
+  maxTotalDiscountAmount: z.number().nullable().optional(),
+  maxTotalDiscountPercentage: z.number().nullable().optional(),
+  priority: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceProductsValidatePromoCodeInput. Request to validate a promo code */
@@ -22508,6 +28266,7 @@ CommerceSubscriptionsSubscriptionSchema = z.object({
   lockedPriceVersionId: z.string().uuid().nullable().optional(),
   metadata: z.string().max(2000).nullable().optional(),
   nextBillingDate: z.string().datetime().optional(),
+  paymentMethodId: z.string().uuid().nullable().optional(),
   plan: z.lazy(() => CommerceSubscriptionsSubscriptionPlanSchema).optional(),
   planId: z.string().uuid(),
   rowVersion: z.string().nullable().optional(),
@@ -22739,6 +28498,7 @@ CommerceSubscriptionsSubscriptionPlansCrudControllerPutSubscriptionPlanInputSche
   name: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
   sortOrder: z.number().int().nullable().optional(),
+  trialPeriodDays: z.number().int().nullable().optional(),
 });
 
 /** Zod schema for CommerceSubscriptionsSubscriptionsControllerCreateSubscriptionInput. Request to create a subscription */
@@ -22798,6 +28558,91 @@ CommerceSubscriptionsSubscriptionUsageDtoSchema = z.object({
   usersCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditAcknowledgeSecurityAlertInput. Data model for Compliance Audit Acknowledge Security Alert Request. */
+ComplianceAuditAcknowledgeSecurityAlertInputSchema = z.object({
+  notes: z.string().max(1000).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditAccessAgeBucket. Data model for Compliance Audit Audit Access Age Bucket. */
+ComplianceAuditAuditAccessAgeBucketSchema = z.object({
+  ageDays: z.number().int().optional(),
+  readCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActionTypeDescriptor. Data model for Compliance Audit Audit Action Type Descriptor. */
+ComplianceAuditAuditActionTypeDescriptorSchema = z.object({
+  actionType: z.string().nullable().optional(),
+  categoryPath: z.array(z.string()).nullable().optional(),
+  groups: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActionTypeFrequency. Data model for Compliance Audit Audit Action Type Frequency. */
+ComplianceAuditAuditActionTypeFrequencySchema = z.object({
+  actionType: z.string().nullable().optional(),
+  eventCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActionTypeGroupDescriptor. Data model for Compliance Audit Audit Action Type Group Descriptor. */
+ComplianceAuditAuditActionTypeGroupDescriptorSchema = z.object({
+  description: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActionTypeLogicalOperator. OpenAPI schema for Compliance Audit Audit Action Type Logical Operator. */
+ComplianceAuditAuditActionTypeLogicalOperatorSchema = z.enum(['Any', 'All', 'None']);
+
+/** Zod schema for ComplianceAuditAuditActionTypeSearchOutput. Data model for Compliance Audit Audit Action Type Search Response. */
+ComplianceAuditAuditActionTypeSearchOutputSchema = z.object({
+  frequency: z
+    .array(z.lazy(() => ComplianceAuditAuditActionTypeFrequencySchema))
+    .nullable()
+    .optional(),
+  relatedActions: z
+    .array(z.lazy(() => ComplianceAuditAuditRelatedActionSchema))
+    .nullable()
+    .optional(),
+  results: z.lazy(() => ComplianceAuditAuditLogOutputSchema).optional(),
+  trends: z
+    .array(z.lazy(() => ComplianceAuditAuditActionTypeTrendSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActionTypeSortDirection. OpenAPI schema for Compliance Audit Audit Action Type Sort Direction. */
+ComplianceAuditAuditActionTypeSortDirectionSchema = z.enum(['Ascending', 'Descending']);
+
+/** Zod schema for ComplianceAuditAuditActionTypeSortField. OpenAPI schema for Compliance Audit Audit Action Type Sort Field. */
+ComplianceAuditAuditActionTypeSortFieldSchema = z.enum(['CreatedAt', 'ActionType', 'ResourceType', 'UserId', 'RiskLevel']);
+
+/** Zod schema for ComplianceAuditAuditActionTypeTaxonomyOutput. Data model for Compliance Audit Audit Action Type Taxonomy Response. */
+ComplianceAuditAuditActionTypeTaxonomyOutputSchema = z.object({
+  actionTypes: z
+    .array(z.lazy(() => ComplianceAuditAuditActionTypeDescriptorSchema))
+    .nullable()
+    .optional(),
+  groups: z
+    .array(z.lazy(() => ComplianceAuditAuditActionTypeGroupDescriptorSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActionTypeTrend. Data model for Compliance Audit Audit Action Type Trend. */
+ComplianceAuditAuditActionTypeTrendSchema = z.object({
+  actionType: z.string().nullable().optional(),
+  eventCount: z.number().int().optional(),
+  startUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActivityBucketOutput. Data model for Compliance Audit Audit Activity Bucket Response. */
+ComplianceAuditAuditActivityBucketOutputSchema = z.object({
+  eventCount: z.number().int().optional(),
+  startLocal: z.string().datetime().optional(),
+  startUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditActivityBucketSize. Resolution used to group audit activity over a date range. */
+ComplianceAuditAuditActivityBucketSizeSchema = z.enum(['Hourly', 'Daily']);
+
 /** Zod schema for ComplianceAuditAuditActorContext. Data model for Compliance Audit Audit Actor Context. */
 ComplianceAuditAuditActorContextSchema = z.object({
   sessionId: z.string().uuid().nullable().optional(),
@@ -22820,11 +28665,38 @@ ComplianceAuditAuditCategorySchema = z.enum([
   'Privacy',
 ]);
 
+/** Zod schema for ComplianceAuditAuditDateRangeSearchOutput. Data model for Compliance Audit Audit Date Range Search Response. */
+ComplianceAuditAuditDateRangeSearchOutputSchema = z.object({
+  activity: z
+    .array(z.lazy(() => ComplianceAuditAuditActivityBucketOutputSchema))
+    .nullable()
+    .optional(),
+  bucketSize: z.lazy(() => ComplianceAuditAuditActivityBucketSizeSchema).optional(),
+  endDateUtc: z.string().datetime().optional(),
+  results: z.lazy(() => ComplianceAuditAuditLogOutputSchema).optional(),
+  startDateUtc: z.string().datetime().optional(),
+  timeZoneId: z.string().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditEventContext. Data model for Compliance Audit Audit Event Context. */
 ComplianceAuditAuditEventContextSchema = z.object({
   actionType: z.string().nullable().optional(),
   category: z.string().nullable().optional(),
   riskLevel: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditExportHistoryOutput. Data model for Compliance Audit Audit Export History Response. */
+ComplianceAuditAuditExportHistoryOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  errorMessage: z.string().nullable().optional(),
+  executedAt: z.string().datetime().optional(),
+  executionDuration: z.string().optional(),
+  fileAvailable: z.boolean().optional(),
+  fileName: z.string().nullable().optional(),
+  fileSizeBytes: z.number().int().optional(),
+  recordCount: z.number().int().optional(),
+  scheduledExportId: z.string().uuid().optional(),
+  status: z.lazy(() => ComplianceAuditExportStatusSchema).optional(),
 });
 
 /** Zod schema for ComplianceAuditAuditExportInput. Data model for Compliance Audit Audit Export Request. */
@@ -22842,6 +28714,7 @@ ComplianceAuditAuditExportInputSchema = z.object({
   success: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
+  webhookUrl: z.string().max(2048).nullable().optional(),
 });
 
 /** Zod schema for ComplianceAuditAuditExportProgressOutput. Data model for Compliance Audit Audit Export Progress Response. */
@@ -22931,10 +28804,277 @@ ComplianceAuditAuditOutcomeContextSchema = z.object({
   success: z.boolean().optional(),
 });
 
+/** Zod schema for ComplianceAuditAuditRelatedAction. Data model for Compliance Audit Audit Related Action. */
+ComplianceAuditAuditRelatedActionSchema = z.object({
+  actionType: z.string().nullable().optional(),
+  correlationCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySnapshotEvent. Safe event fields shared with the Web replay core. UserId may identify a subject;
+            it must not be presented as verified attribution without additional source evidence. */
+ComplianceAuditAuditReplaySnapshotEventSchema = z.object({
+  id: z.string().nullable().optional(),
+  actionType: z.string().nullable().optional(),
+  correlationId: z.string().nullable().optional(),
+  createdAt: z.string().nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  sessionId: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+  tenantId: z.string().nullable().optional(),
+  userId: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditReplaySnapshotOutput. Documents the exact canonical JSON response; its digest is delivered in a response header. */
+ComplianceAuditAuditReplaySnapshotOutputSchema = z.object({
+  capturedAtUtc: z.string().nullable().optional(),
+  endUtc: z.string().nullable().optional(),
+  events: z
+    .array(z.lazy(() => ComplianceAuditAuditReplaySnapshotEventSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.number().int().optional(),
+  startUtc: z.string().nullable().optional(),
+  tenantId: z.string().nullable().optional(),
+  totalCount: z.number().int().optional(),
+});
+
 /** Zod schema for ComplianceAuditAuditResourceContext. Data model for Compliance Audit Audit Resource Context. */
 ComplianceAuditAuditResourceContextSchema = z.object({
   resourceId: z.string().nullable().optional(),
   resourceType: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionComplianceViolation. Data model for Compliance Audit Audit Retention Compliance Violation. */
+ComplianceAuditAuditRetentionComplianceViolationSchema = z.object({
+  obligation: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  source: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionConfigurationOutput. The tenant retention policy configuration. When the tenant has no explicit configuration and inheritance
+was requested, the response carries the platform baseline template and GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId
+names it; otherwise GameGuild.Compliance.Audit.AuditRetentionConfigurationResponse.InheritedFromTemplateId is null. */
+ComplianceAuditAuditRetentionConfigurationOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  configuration: z.lazy(() => ComplianceAuditConfigureAuditRetentionInputSchema).optional(),
+  inheritedFromTemplateId: z.string().nullable().optional(),
+  revision: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  updatedAtUtc: z.string().datetime().optional(),
+  updatedByUserId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionGrowthModel. OpenAPI schema for Compliance Audit Audit Retention Growth Model. */
+ComplianceAuditAuditRetentionGrowthModelSchema = z.enum(['Constant', 'HistoricalTrend', 'CompoundAnnual']);
+
+/** Zod schema for ComplianceAuditAuditRetentionHistoricalEvidence. Data model for Compliance Audit Audit Retention Historical Evidence. */
+ComplianceAuditAuditRetentionHistoricalEvidenceSchema = z.object({
+  accessAges: z
+    .array(z.lazy(() => ComplianceAuditAuditAccessAgeBucketSchema))
+    .nullable()
+    .optional(),
+  asOfUtc: z.string().datetime().optional(),
+  availableHistoryDays: z.number().int().optional(),
+  averageDailyLogicalBytes: z.number().optional(),
+  averageDailyRecords: z.number().optional(),
+  cohorts: z
+    .array(z.lazy(() => ComplianceAuditAuditStorageDailyCohortSchema))
+    .nullable()
+    .optional(),
+  dailyLogicalBytesTrend: z.number().optional(),
+  dailyRecordsTrend: z.number().optional(),
+  daysWithRecords: z.number().int().optional(),
+  historicalDays: z.number().int().optional(),
+  measurementMethod: z.string().nullable().optional(),
+  observedAccessDays: z.number().int().optional(),
+  observedReadCount: z.number().optional(),
+  oldestObservedAccessAgeDays: z.number().int().nullable().optional(),
+  storedLogicalBytes: z.number().optional(),
+  storedRecordCount: z.number().optional(),
+  weeklySeasonality: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionWeekdayFactorSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionMonthForecast. Data model for Compliance Audit Audit Retention Month Forecast. */
+ComplianceAuditAuditRetentionMonthForecastSchema = z.object({
+  budget: z.number().nullable().optional(),
+  budgetVariance: z.number().nullable().optional(),
+  endBillableBytes: z.number().optional(),
+  endRecordCount: z.number().optional(),
+  endUtcDateExclusive: z.string().date().optional(),
+  month: z.number().int().optional(),
+  retrievalCost: z.number().optional(),
+  startUtcDate: z.string().date().optional(),
+  storageCost: z.number().optional(),
+  tiers: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionTierForecastSchema))
+    .nullable()
+    .optional(),
+  totalCost: z.number().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionObligation. A configured obligation, with an administrator-provided source; no regulatory minimum is assumed. */
+ComplianceAuditAuditRetentionObligationSchema = z.object({
+  maximumRetentionDays: z.number().int().min(1).max(36500).nullable().optional(),
+  minimumRetentionDays: z.number().int().min(1).max(36500).optional(),
+  name: z.string().min(1).max(100),
+  source: z.string().min(1).max(1000),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicySensitivityRule. Sensitivity-based retention floor for one GameGuild.Compliance.Audit.SensitivityLevel within a policy template.
+Data classified at a higher sensitivity never receives a shorter retention period. */
+ComplianceAuditAuditRetentionPolicySensitivityRuleSchema = z.object({
+  maximumRetentionDays: z.number().int().nullable(),
+  minimumRetentionDays: z.number().int(),
+  rationale: z.string().nullable(),
+  sensitivity: z.lazy(() => ComplianceAuditSensitivityLevelSchema),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionPolicyTemplate. Pre-built retention policy template for a common regulatory framework. Templates form an inheritance
+chain rooted at the platform baseline; tenants materialize a template into a
+GameGuild.Compliance.Audit.ConfigureAuditRetentionRequest and then adjust it through versioned configuration updates. */
+ComplianceAuditAuditRetentionPolicyTemplateSchema = z.object({
+  id: z.string().nullable(),
+  baselineScenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema),
+  baseTemplateId: z.string().nullable(),
+  description: z.string().nullable(),
+  displayName: z.string().nullable(),
+  framework: z.string().nullable(),
+  isBaseline: z.boolean(),
+  obligations: z.array(z.lazy(() => ComplianceAuditAuditRetentionObligationSchema)).nullable(),
+  publishedAtUtc: z.string().datetime(),
+  sensitivityRules: z.array(z.lazy(() => ComplianceAuditAuditRetentionPolicySensitivityRuleSchema)).nullable(),
+  tierPrices: z.array(z.lazy(() => ComplianceAuditAuditStorageTierPriceSchema)).nullable(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionRecommendation. Data model for Compliance Audit Audit Retention Recommendation. */
+ComplianceAuditAuditRetentionRecommendationSchema = z.object({
+  evaluatedCandidates: z.number().int().optional(),
+  reason: z.string().nullable().optional(),
+  savingsComparedWithBaseline: z.number().nullable().optional(),
+  suggestedScenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioResultSchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionRisk. Data model for Compliance Audit Audit Retention Risk. */
+ComplianceAuditAuditRetentionRiskSchema = z.object({
+  code: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  severity: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionScenario. Data model for Compliance Audit Audit Retention Scenario. */
+ComplianceAuditAuditRetentionScenarioSchema = z.object({
+  coldUntilDays: z.number().int().min(0).max(36500).optional(),
+  hotDays: z.number().int().min(0).max(36500).optional(),
+  name: z.string().min(1).max(80),
+  retentionDays: z.number().int().min(1).max(36500).optional(),
+  warmUntilDays: z.number().int().min(0).max(36500).optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionScenarioResult. Data model for Compliance Audit Audit Retention Scenario Result. */
+ComplianceAuditAuditRetentionScenarioResultSchema = z.object({
+  budgetVariance: z.number().nullable().optional(),
+  complianceStatus: z.string().nullable().optional(),
+  complianceViolations: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionComplianceViolationSchema))
+    .nullable()
+    .optional(),
+  differenceFromBaseline: z.number().optional(),
+  expectedReadLatencyMilliseconds: z.number().nullable().optional(),
+  initialExpiredLogicalBytes: z.number().optional(),
+  initialExpiredRecords: z.number().optional(),
+  months: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionMonthForecastSchema))
+    .nullable()
+    .optional(),
+  p95ReadLatencyMilliseconds: z.number().nullable().optional(),
+  risks: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionRiskSchema))
+    .nullable()
+    .optional(),
+  savingsPercent: z.number().nullable().optional(),
+  scenario: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema).optional(),
+  slowObservedReadsPercent: z.number().nullable().optional(),
+  totalCost: z.number().optional(),
+  totalRetrievalCost: z.number().optional(),
+  totalStorageCost: z.number().optional(),
+  unavailableObservedReadsPercent: z.number().nullable().optional(),
+  years: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionYearForecastSchema))
+    .nullable()
+    .optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionSimulationOutput. Data model for Compliance Audit Audit Retention Simulation Response. */
+ComplianceAuditAuditRetentionSimulationOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  configurationRevision: z.number().int().optional(),
+  configurationSnapshot: z.lazy(() => ComplianceAuditConfigureAuditRetentionInputSchema).optional(),
+  createdAtUtc: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  report: z.lazy(() => ComplianceAuditAuditRetentionSimulationReportSchema).optional(),
+  request: z.lazy(() => ComplianceAuditRunAuditRetentionSimulationInputSchema).optional(),
+  tenantId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionSimulationReport. Data model for Compliance Audit Audit Retention Simulation Report. */
+ComplianceAuditAuditRetentionSimulationReportSchema = z.object({
+  annualGrowthPercent: z.number().nullable().optional(),
+  assumptions: z.array(z.string()).nullable().optional(),
+  baseline: z.lazy(() => ComplianceAuditAuditRetentionScenarioResultSchema).optional(),
+  currency: z.string().nullable().optional(),
+  evidence: z.lazy(() => ComplianceAuditAuditRetentionHistoricalEvidenceSchema).optional(),
+  forecastMonths: z.number().int().optional(),
+  growthModel: z.lazy(() => ComplianceAuditAuditRetentionGrowthModelSchema).optional(),
+  modelVersion: z.string().nullable().optional(),
+  recommendation: z.lazy(() => ComplianceAuditAuditRetentionRecommendationSchema).optional(),
+  scenarios: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionScenarioResultSchema))
+    .nullable()
+    .optional(),
+  storageOverheadMultiplier: z.number().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionSimulationSummary. Data model for Compliance Audit Audit Retention Simulation Summary. */
+ComplianceAuditAuditRetentionSimulationSummarySchema = z.object({
+  id: z.string().uuid().optional(),
+  baselineTotalCost: z.number().optional(),
+  configurationRevision: z.number().int().optional(),
+  createdAtUtc: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  currency: z.string().nullable().optional(),
+  forecastMonths: z.number().int().optional(),
+  recommendedTotalCost: z.number().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionTierForecast. Data model for Compliance Audit Audit Retention Tier Forecast. */
+ComplianceAuditAuditRetentionTierForecastSchema = z.object({
+  endBillableBytes: z.number().optional(),
+  endRecordCount: z.number().optional(),
+  retrievalCost: z.number().optional(),
+  storageCost: z.number().optional(),
+  tier: z.lazy(() => ComplianceAuditAuditStorageTierSchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionWeekdayFactor. Data model for Compliance Audit Audit Retention Weekday Factor. */
+ComplianceAuditAuditRetentionWeekdayFactorSchema = z.object({
+  bytesMultiplier: z.number().optional(),
+  dayOfWeek: z.number().int().optional(),
+  recordsMultiplier: z.number().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditRetentionYearForecast. Data model for Compliance Audit Audit Retention Year Forecast. */
+ComplianceAuditAuditRetentionYearForecastSchema = z.object({
+  budget: z.number().nullable().optional(),
+  budgetVariance: z.number().nullable().optional(),
+  forecastYear: z.number().int().optional(),
+  months: z.number().int().optional(),
+  retrievalCost: z.number().optional(),
+  storageCost: z.number().optional(),
+  totalCost: z.number().optional(),
 });
 
 /** Zod schema for ComplianceAuditAuditRiskLevel. Risk level for audit events */
@@ -22950,6 +29090,24 @@ ComplianceAuditAuditStatisticsOutputSchema = z.object({
   securityEvents: z.number().int().optional(),
   startDate: z.string().datetime().optional(),
   totalEvents: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditStorageDailyCohort. Measured PostgreSQL logical row bytes; physical disk, compression and index costs are separate assumptions. */
+ComplianceAuditAuditStorageDailyCohortSchema = z.object({
+  dateUtc: z.string().date().optional(),
+  logicalBytes: z.number().optional(),
+  recordCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditAuditStorageTier. OpenAPI schema for Compliance Audit Audit Storage Tier. */
+ComplianceAuditAuditStorageTierSchema = z.enum(['Hot', 'Warm', 'Cold', 'Archive']);
+
+/** Zod schema for ComplianceAuditAuditStorageTierPrice. Data model for Compliance Audit Audit Storage Tier Price. */
+ComplianceAuditAuditStorageTierPriceSchema = z.object({
+  expectedReadLatencyMilliseconds: z.number().min(0).max(604800000).optional(),
+  monthlyCostPerGiB: z.number().min(0).max(100000).optional(),
+  retrievalCostPerGiB: z.number().min(0).max(100000).optional(),
+  tier: z.lazy(() => ComplianceAuditAuditStorageTierSchema).optional(),
 });
 
 /** Zod schema for ComplianceAuditAuthenticationAuditEntry. Authentication audit entry. */
@@ -22981,6 +29139,239 @@ ComplianceAuditAuthenticationAuditOutputSchema = z.object({
   uniqueIpAddresses: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditCaptureAuditReplayInput. Data model for Compliance Audit Capture Audit Replay Request. */
+ComplianceAuditCaptureAuditReplayInputSchema = z.object({
+  end: z.string().datetime(),
+  start: z.string().datetime(),
+});
+
+/** Zod schema for ComplianceAuditComplianceArtifactEntry. Data model for Compliance Audit Compliance Artifact Entry. */
+ComplianceAuditComplianceArtifactEntrySchema = z.object({
+  length: z.number().int().optional(),
+  mediaType: z.string().nullable().optional(),
+  path: z.string().nullable().optional(),
+  sha256: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceArtifactManifest. Data model for Compliance Audit Compliance Artifact Manifest. */
+ComplianceAuditComplianceArtifactManifestSchema = z.object({
+  capturedAtUtc: z.string().datetime().optional(),
+  entries: z
+    .array(z.lazy(() => ComplianceAuditComplianceArtifactEntrySchema))
+    .nullable()
+    .optional(),
+  formatVersion: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  packageId: z.string().uuid().optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  preparedByUserId: z.string().uuid().optional(),
+  template: z.lazy(() => ComplianceAuditComplianceFrameworkTemplateSchema).optional(),
+  templateSha256: z.string().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  validation: z.lazy(() => ComplianceAuditCompliancePackageValidationReportSchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceArtifactSeal. Data model for Compliance Audit Compliance Artifact Seal. */
+ComplianceAuditComplianceArtifactSealSchema = z.object({
+  algorithm: z.string().nullable().optional(),
+  keyId: z.string().nullable().optional(),
+  manifestSha256: z.string().nullable().optional(),
+  signature: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceArtifactVerification. Data model for Compliance Audit Compliance Artifact Verification. */
+ComplianceAuditComplianceArtifactVerificationSchema = z.object({
+  errors: z.array(z.string()).nullable().optional(),
+  isValid: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceControlEvidenceResult. Data model for Compliance Audit Compliance Control Evidence Result. */
+ComplianceAuditComplianceControlEvidenceResultSchema = z.object({
+  controlId: z.string().nullable().optional(),
+  documentIds: z.array(z.string().uuid()).nullable().optional(),
+  evidencePaths: z.array(z.string()).nullable().optional(),
+  gaps: z
+    .array(z.lazy(() => ComplianceAuditComplianceEvidenceGapSchema))
+    .nullable()
+    .optional(),
+  status: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceControlTemplate. References and collection mappings, not a reproduction of a licensed standard or a certification. */
+ComplianceAuditComplianceControlTemplateSchema = z.object({
+  id: z.string().nullable().optional(),
+  automaticEvidence: z
+    .array(z.lazy(() => ComplianceAuditComplianceEvidenceKindSchema))
+    .nullable()
+    .optional(),
+  requiredDocumentTypes: z.array(z.string()).nullable().optional(),
+  sourceUri: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceDocumentOutput. Document metadata only. Uploaded bytes are included in separately audited sealed package downloads. */
+ComplianceAuditComplianceDocumentOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  contentLength: z.number().int().optional(),
+  contentSha256: z.string().nullable().optional(),
+  controlIds: z.array(z.string()).nullable().optional(),
+  mediaType: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  review: z.lazy(() => ComplianceAuditComplianceDocumentReviewSchema).optional(),
+  reviewedAtUtc: z.string().datetime().nullable().optional(),
+  reviewedByUserId: z.string().uuid().nullable().optional(),
+  reviewNotes: z.string().nullable().optional(),
+  revision: z.number().int().optional(),
+  sourceUri: z.string().nullable().optional(),
+  templateId: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+  uploadedByUserId: z.string().uuid().optional(),
+  validFromUtc: z.string().datetime().optional(),
+  validUntilUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceDocumentRequirement. Data model for Compliance Audit Compliance Document Requirement. */
+ComplianceAuditComplianceDocumentRequirementSchema = z.object({
+  requiredFields: z.array(z.string()).nullable().optional(),
+  requiresControlAssessments: z.boolean().optional(),
+  requiresPeriodCoverage: z.boolean().optional(),
+  type: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceDocumentReview. OpenAPI schema for Compliance Audit Compliance Document Review. */
+ComplianceAuditComplianceDocumentReviewSchema = z.enum(['Pending', 'Approved', 'Rejected']);
+
+/** Zod schema for ComplianceAuditComplianceEvidenceGap. Data model for Compliance Audit Compliance Evidence Gap. */
+ComplianceAuditComplianceEvidenceGapSchema = z.object({
+  code: z.string().nullable().optional(),
+  controlId: z.string().nullable().optional(),
+  detail: z.string().nullable().optional(),
+  documentId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceEvidenceKind. OpenAPI schema for Compliance Audit Compliance Evidence Kind. */
+ComplianceAuditComplianceEvidenceKindSchema = z.enum(['Operations', 'Authentication', 'Authorization', 'Incidents', 'Integrity', 'Retention']);
+
+/** Zod schema for ComplianceAuditComplianceEvidencePeriodMode. OpenAPI schema for Compliance Audit Compliance Evidence Period Mode. */
+ComplianceAuditComplianceEvidencePeriodModeSchema = z.enum(['PointInTime', 'Period']);
+
+/** Zod schema for ComplianceAuditComplianceFramework. Compliance frameworks for audit and evidence packaging */
+ComplianceAuditComplianceFrameworkSchema = z.enum(['SOC2Type1', 'SOC2Type2', 'ISO27001', 'GDPR', 'HIPAA', 'PCI_DSS', 'CCPA', 'FedRAMP', 'NIST', 'Custom']);
+
+/** Zod schema for ComplianceAuditComplianceFrameworkTemplate. Data model for Compliance Audit Compliance Framework Template. */
+ComplianceAuditComplianceFrameworkTemplateSchema = z.object({
+  id: z.string().nullable().optional(),
+  controls: z
+    .array(z.lazy(() => ComplianceAuditComplianceControlTemplateSchema))
+    .nullable()
+    .optional(),
+  documents: z
+    .array(z.lazy(() => ComplianceAuditComplianceDocumentRequirementSchema))
+    .nullable()
+    .optional(),
+  framework: z.lazy(() => ComplianceAuditComplianceFrameworkSchema).optional(),
+  periodMode: z.lazy(() => ComplianceAuditComplianceEvidencePeriodModeSchema).optional(),
+  sources: z.array(z.string()).nullable().optional(),
+  version: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditCompliancePackageOutput. Data model for Compliance Audit Compliance Package Response. */
+ComplianceAuditCompliancePackageOutputSchema = z.object({
+  manifest: z.lazy(() => ComplianceAuditComplianceArtifactManifestSchema).optional(),
+  seal: z.lazy(() => ComplianceAuditComplianceArtifactSealSchema).optional(),
+  summary: z.lazy(() => ComplianceAuditCompliancePackageSummarySchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditCompliancePackageSummary. Data model for Compliance Audit Compliance Package Summary. */
+ComplianceAuditCompliancePackageSummarySchema = z.object({
+  id: z.string().uuid().optional(),
+  artifactLength: z.number().int().optional(),
+  artifactSha256: z.string().nullable().optional(),
+  capturedAtUtc: z.string().datetime().optional(),
+  gapCount: z.number().int().optional(),
+  name: z.string().nullable().optional(),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  preparedByUserId: z.string().uuid().optional(),
+  readyForAuditorReview: z.boolean().optional(),
+  signingKeyId: z.string().nullable().optional(),
+  templateId: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditCompliancePackageValidationReport. Data model for Compliance Audit Compliance Package Validation Report. */
+ComplianceAuditCompliancePackageValidationReportSchema = z.object({
+  assumptions: z.array(z.string()).nullable().optional(),
+  controls: z
+    .array(z.lazy(() => ComplianceAuditComplianceControlEvidenceResultSchema))
+    .nullable()
+    .optional(),
+  gaps: z
+    .array(z.lazy(() => ComplianceAuditComplianceEvidenceGapSchema))
+    .nullable()
+    .optional(),
+  readyForAuditorReview: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditComplianceScopeExclusion. Data model for Compliance Audit Compliance Scope Exclusion. */
+ComplianceAuditComplianceScopeExclusionSchema = z.object({
+  applicabilityDocumentId: z.string().uuid().optional(),
+  controlId: z.string().min(1).max(100),
+  rationale: z.string().min(1).max(2000),
+});
+
+/** Zod schema for ComplianceAuditConfigureAuditRetentionInput. Data model for Compliance Audit Configure Audit Retention Request. */
+ComplianceAuditConfigureAuditRetentionInputSchema = z.object({
+  baseline: z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema),
+  currency: z
+    .string()
+    .min(1)
+    .regex(/^[A-Z]{3}$/),
+  expectedRevision: z.number().int().min(0).max(2147483647).optional(),
+  maximumReadLatencyMilliseconds: z.number().min(0).max(604800000).optional(),
+  monthlyBudget: z.number().min(0).max(1000000000000000).nullable().optional(),
+  obligations: z.array(z.lazy(() => ComplianceAuditAuditRetentionObligationSchema)).max(50),
+  preserveAllRecordsThroughUtcDate: z.string().date().nullable().optional(),
+  storageOverheadMultiplier: z.number().min(1).max(10).optional(),
+  tierPrices: z
+    .array(z.lazy(() => ComplianceAuditAuditStorageTierPriceSchema))
+    .min(4)
+    .max(4),
+});
+
+/** Zod schema for ComplianceAuditConfigureSecurityLogRetentionInput. Configures the retention policy applied to a tenant's security audit log. */
+ComplianceAuditConfigureSecurityLogRetentionInputSchema = z.object({
+  categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  expectedRevision: z.number().int().min(0).max(2147483647).optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().min(30).max(3650).optional(),
+});
+
+/** Zod schema for ComplianceAuditCreateCompliancePackageInput. Data model for Compliance Audit Create Compliance Package Request. */
+ComplianceAuditCreateCompliancePackageInputSchema = z.object({
+  documentIds: z.array(z.string().uuid()).max(100),
+  exclusions: z.array(z.lazy(() => ComplianceAuditComplianceScopeExclusionSchema)).max(1500),
+  name: z.string().min(1).max(200),
+  periodEndUtc: z.string().datetime().optional(),
+  periodStartUtc: z.string().datetime().optional(),
+  templateId: z.string().min(1).max(100),
+});
+
+/** Zod schema for ComplianceAuditCreateScheduledAuditExportInput. Data model for Compliance Audit Create Scheduled Audit Export Request. */
+ComplianceAuditCreateScheduledAuditExportInputSchema = z.object({
+  actionType: z.string().min(0).max(100).nullable().optional(),
+  columns: z.array(z.string()).nullable().optional(),
+  cronExpression: z.string().min(0).max(100),
+  endDate: z.string().datetime().nullable().optional(),
+  exportFormat: z.lazy(() => ComplianceAuditExportFormatSchema).optional(),
+  jobName: z.string().min(1).max(100),
+  retentionDays: z.number().int().min(1).max(3650).optional(),
+  riskLevel: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  startDate: z.string().datetime().nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  timezone: z.string().min(0).max(80),
+  userId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditDailyActivityTrend. Data model for Compliance Audit Daily Activity Trend. */
 ComplianceAuditDailyActivityTrendSchema = z.object({
   authenticationEvents: z.number().int().optional(),
@@ -22989,6 +29380,17 @@ ComplianceAuditDailyActivityTrendSchema = z.object({
   securityViolations: z.number().int().optional(),
   totalEvents: z.number().int().optional(),
 });
+
+/** Zod schema for ComplianceAuditEnforceSecurityLogRetentionInput. Data model for Compliance Audit Enforce Security Log Retention Request. */
+ComplianceAuditEnforceSecurityLogRetentionInputSchema = z.object({
+  dryRun: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditExportFormat. OpenAPI schema for Compliance Audit Export Format. */
+ComplianceAuditExportFormatSchema = z.enum(['Json', 'Csv', 'Xml', 'Parquet']);
+
+/** Zod schema for ComplianceAuditExportStatus. OpenAPI schema for Compliance Audit Export Status. */
+ComplianceAuditExportStatusSchema = z.enum(['Pending', 'InProgress', 'Completed', 'Failed', 'Cancelled']);
 
 /** Zod schema for ComplianceAuditFailureReasonCount. Data model for Compliance Audit Failure Reason Count. */
 ComplianceAuditFailureReasonCountSchema = z.object({
@@ -23029,6 +29431,77 @@ ComplianceAuditPermissionAuditOutputSchema = z.object({
   totalCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditResolveSecurityAlertInput. Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
+ComplianceAuditResolveSecurityAlertInputSchema = z.object({
+  notes: z.string().max(1000).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditReviewComplianceDocumentInput. Data model for Compliance Audit Review Compliance Document Request. */
+ComplianceAuditReviewComplianceDocumentInputSchema = z.object({
+  decision: z.lazy(() => ComplianceAuditComplianceDocumentReviewSchema).optional(),
+  expectedRevision: z.number().int().min(1).max(2147483647).optional(),
+  notes: z.string().min(1).max(2000),
+});
+
+/** Zod schema for ComplianceAuditRunAuditRetentionSimulationInput. Data model for Compliance Audit Run Audit Retention Simulation Request. */
+ComplianceAuditRunAuditRetentionSimulationInputSchema = z.object({
+  annualGrowthPercent: z.number().min(-95).max(300).nullable().optional(),
+  forecastMonths: z.number().int().min(1).max(120).optional(),
+  growthModel: z.lazy(() => ComplianceAuditAuditRetentionGrowthModelSchema).optional(),
+  historicalDays: z.number().int().min(14).max(365).optional(),
+  scenarios: z
+    .array(z.lazy(() => ComplianceAuditAuditRetentionScenarioSchema))
+    .min(1)
+    .max(10),
+});
+
+/** Zod schema for ComplianceAuditScheduledAuditExportOutput. Data model for Compliance Audit Scheduled Audit Export Response. */
+ComplianceAuditScheduledAuditExportOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  cronExpression: z.string().nullable().optional(),
+  destination: z.string().nullable().optional(),
+  exportFormat: z.lazy(() => ComplianceAuditExportFormatSchema).optional(),
+  failureCount: z.number().int().optional(),
+  isEnabled: z.boolean().optional(),
+  jobName: z.string().nullable().optional(),
+  lastRunAt: z.string().datetime().nullable().optional(),
+  nextRunAt: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().optional(),
+  successCount: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  timezone: z.string().nullable().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityAlertOutput. Data model for Compliance Audit Security Alert Response. */
+ComplianceAuditSecurityAlertOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  acknowledgedAtUtc: z.string().datetime().nullable().optional(),
+  acknowledgedByUserId: z.string().uuid().nullable().optional(),
+  acknowledgementNotes: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  firstSeenAtUtc: z.string().datetime().optional(),
+  ipAddress: z.string().nullable().optional(),
+  kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
+  lastSeenAtUtc: z.string().datetime().optional(),
+  occurrenceCount: z.number().int().optional(),
+  resolutionNotes: z.string().nullable().optional(),
+  resolvedAtUtc: z.string().datetime().nullable().optional(),
+  resolvedByUserId: z.string().uuid().nullable().optional(),
+  ruleId: z.string().nullable().optional(),
+  severity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  sourceActionType: z.string().nullable().optional(),
+  sourceAuditLogId: z.string().uuid().nullable().optional(),
+  status: z.lazy(() => ComplianceAuditSecurityAlertStatusSchema).optional(),
+  subjectUserId: z.string().uuid().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  title: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityAlertStatus. Status of a security alert raised by the security event pipeline. */
+ComplianceAuditSecurityAlertStatusSchema = z.enum(['Open', 'Acknowledged', 'Resolved']);
+
 /** Zod schema for ComplianceAuditSecurityAuditDashboard. Security audit dashboard with aggregated statistics. */
 ComplianceAuditSecurityAuditDashboardSchema = z.object({
   crossTenantAttempts: z.number().int().optional(),
@@ -23067,6 +29540,79 @@ ComplianceAuditSecurityAuditDashboardSchema = z.object({
 
 /** Zod schema for ComplianceAuditSecurityAuditSourceType. Source type for security audit entries. */
 ComplianceAuditSecurityAuditSourceTypeSchema = z.enum(['Authentication', 'Permission', 'General', 'All']);
+
+/** Zod schema for ComplianceAuditSecurityEventDeliveryStatusOutput. Durable delivery status of the security event pipeline for the current instance. */
+ComplianceAuditSecurityEventDeliveryStatusOutputSchema = z.object({
+  databaseWriteAttemptsBeforeSpool: z.number().int().optional(),
+  lastDrainAttemptedAtUtc: z.string().datetime().nullable().optional(),
+  lastDrainError: z.string().nullable().optional(),
+  lastDrainSucceededAtUtc: z.string().datetime().nullable().optional(),
+  oldestSpooledEventUtc: z.string().datetime().nullable().optional(),
+  spooledEventCount: z.number().int().optional(),
+  spoolingEnabled: z.boolean().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityEventKind. Kinds of security-relevant events recognized by the security event pipeline.
+Every kind maps to a default severity, an escalation policy for failed outcomes,
+and a stable description used by the taxonomy endpoint. */
+ComplianceAuditSecurityEventKindSchema = z.enum([
+  'Authentication',
+  'Authorization',
+  'SessionManagement',
+  'AccountLifecycle',
+  'ThreatDetection',
+  'DataProtection',
+  'TenantIsolation',
+  'ConfigurationChange',
+  'DataMovement',
+  'Other',
+]);
+
+/** Zod schema for ComplianceAuditSecurityEventTaxonomyEntry. One entry of the published security event taxonomy. */
+ComplianceAuditSecurityEventTaxonomyEntrySchema = z.object({
+  actionType: z.string().nullable().optional(),
+  defaultSeverity: z.lazy(() => ComplianceAuditAuditRiskLevelSchema).optional(),
+  description: z.string().nullable().optional(),
+  escalateOnFailure: z.boolean().optional(),
+  kind: z.lazy(() => ComplianceAuditSecurityEventKindSchema).optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityEventTaxonomyOutput. Response of `GET /api/audit/security-events/taxonomy`: the complete security event taxonomy. */
+ComplianceAuditSecurityEventTaxonomyOutputSchema = z.object({
+  entries: z.array(z.lazy(() => ComplianceAuditSecurityEventTaxonomyEntrySchema)),
+  kinds: z.array(z.string()).nullable().optional(),
+  totalEntries: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogRetentionExecutionOutput. Data model for Compliance Audit Security Log Retention Execution Response. */
+ComplianceAuditSecurityLogRetentionExecutionOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  cutoffUtc: z.string().datetime().optional(),
+  deletedCount: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  evaluatedCount: z.number().int().optional(),
+  executedAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  policyRetentionDays: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  triggeredByUserId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditSecurityLogRetentionPolicyOutput. Data model for Compliance Audit Security Log Retention Policy Response. */
+ComplianceAuditSecurityLogRetentionPolicyOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  categoryOverrides: z.record(z.string(), z.number().int()).nullable().optional(),
+  configuredAtUtc: z.string().datetime().optional(),
+  legalHoldActive: z.boolean().optional(),
+  legalHoldUntilUtc: z.string().datetime().nullable().optional(),
+  retentionDays: z.number().int().optional(),
+  revision: z.number().int().optional(),
+  tenantId: z.string().uuid().optional(),
+  updatedByUserId: z.string().uuid().optional(),
+});
+
+/** Zod schema for ComplianceAuditSensitivityLevel. Defines sensitivity levels for data access auditing */
+ComplianceAuditSensitivityLevelSchema = z.enum(['Public', 'Internal', 'Confidential', 'Restricted', 'HighlyRestricted']);
 
 /** Zod schema for ComplianceAuditTopIpActivity. Data model for Compliance Audit Top Ip Activity. */
 ComplianceAuditTopIpActivitySchema = z.object({
@@ -23141,6 +29687,20 @@ ComplianceAuditUnifiedSecurityAuditOutputSchema = z.object({
     .optional(),
   take: z.number().int().optional(),
   totalCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditUploadComplianceDocumentInput. Data model for Compliance Audit Upload Compliance Document Request. */
+ComplianceAuditUploadComplianceDocumentInputSchema = z.object({
+  contentBase64: z.string().min(1).max(1500000),
+  controlIds: z.array(z.string()).max(1500),
+  mediaType: z.string().min(1).max(120),
+  name: z.string().min(1).max(200),
+  sourceUri: z.string().min(1).max(2048),
+  templateId: z.string().min(1).max(100),
+  type: z.string().min(1).max(80),
+  validationFields: z.record(z.string(), z.string()),
+  validFromUtc: z.string().datetime().optional(),
+  validUntilUtc: z.string().datetime().optional(),
 });
 
 /** Zod schema for ComplianceConsentConsentPolicyDto. Data model for Compliance Consent Consent Policy Dto. */
@@ -25849,6 +32409,8 @@ IdentityAuthenticationApiKeyDtoSchema = z.object({
   keyPrefix: z.string().nullable().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   name: z.string().nullable().optional(),
+  replacesKeyId: z.string().uuid().nullable().optional(),
+  rotationGraceEndsAt: z.string().datetime().nullable().optional(),
   scopes: z.array(z.string()).nullable().optional(),
   usageCount: z.number().int().optional(),
 });
@@ -25860,6 +32422,9 @@ IdentityAuthenticationAssignRoleToUserInputSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationAuthenticationStep. Multi-step authentication flow steps */
+IdentityAuthenticationAuthenticationStepSchema = z.enum(['PrimaryCredential', 'MfaVerification', 'DeviceTrust', 'RiskChallenge']);
+
 /** Zod schema for IdentityAuthenticationBackupCodesOutput. Backup codes response */
 IdentityAuthenticationBackupCodesOutputSchema = z.object({
   codes: z.array(z.string()).nullable().optional(),
@@ -25868,6 +32433,7 @@ IdentityAuthenticationBackupCodesOutputSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationBackupCodesStatusOutput. Response containing backup codes status */
 IdentityAuthenticationBackupCodesStatusOutputSchema = z.object({
+  areUsageCountsKnown: z.boolean().optional(),
   hasBackupCodes: z.boolean(),
   remainingCount: z.number().int(),
   totalCount: z.number().int(),
@@ -25943,6 +32509,14 @@ IdentityAuthenticationCompleteMfaSetupInputSchema = z.object({
   secretKey: z.string().min(1),
 });
 
+/** Zod schema for IdentityAuthenticationCompleteMfaSignInInput. Completes the bound, expiring sign-in challenge. The server supplies identity and tenant. */
+IdentityAuthenticationCompleteMfaSignInInputSchema = z.object({
+  code: z.string().min(0).max(64),
+  deviceFingerprint: z.string().min(0).max(64).nullable().optional(),
+  method: z.lazy(() => IdentityAuthenticationMfaMethodSchema).optional(),
+  mfaToken: z.string().min(43).max(43),
+});
+
 /** Zod schema for IdentityAuthenticationCompletePasswordResetInput. Request to complete password reset */
 IdentityAuthenticationCompletePasswordResetInputSchema = z.object({
   confirmPassword: z.string().min(1),
@@ -25961,6 +32535,17 @@ IdentityAuthenticationCompleteWebAuthnRegistrationInputSchema = z.object({
   attestationResponse: z.string().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isPasswordless: z.boolean().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationConsumeEmailCodeInput. Request to consume a one-time email sign-in code. */
+IdentityAuthenticationConsumeEmailCodeInputSchema = z.object({
+  code: z
+    .string()
+    .min(1)
+    .regex(/^[0-9]{6}$/),
+  deviceFingerprint: z.string().nullable().optional(),
+  email: z.string().email().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationConsumeMagicLinkInput. Request to consume a passwordless magic sign-in link. */
@@ -26014,6 +32599,9 @@ IdentityAuthenticationCreateStepUpChallengeInputSchema = z.object({
   targetReference: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationCredentialType. Credential type detection */
+IdentityAuthenticationCredentialTypeSchema = z.enum(['Email', 'Username', 'Phone', 'WalletAddress', 'Certificate']);
+
 /** Zod schema for IdentityAuthenticationDeviceInfo. Represents detailed device information for security tracking. */
 IdentityAuthenticationDeviceInfoSchema = z.object({
   browser: z.string().nullable().optional(),
@@ -26047,6 +32635,7 @@ IdentityAuthenticationDiscordAuthorizeInputSchema = z.object({
 IdentityAuthenticationDiscordCallbackRequestDtoSchema = z.object({
   code: z.string().min(1),
   redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   state: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
 });
@@ -26075,6 +32664,13 @@ IdentityAuthenticationDiscordSignInOutputSchema = z.object({
   state: z.string().nullable(),
 });
 
+/** Zod schema for IdentityAuthenticationEmailCodeRequestResult. Data model for Identity Authentication Email Code Request Result. */
+IdentityAuthenticationEmailCodeRequestResultSchema = z.object({
+  expiresInMinutes: z.number().int().optional(),
+  message: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationEmailVerificationOutput. Response for email verification request */
 IdentityAuthenticationEmailVerificationOutputSchema = z.object({
   message: z.string().nullable(),
@@ -26089,6 +32685,22 @@ IdentityAuthenticationEmailVerificationResultSchema = z.object({
   verifiedAt: z.string().datetime().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationExternalLoginLinkPreviewOutput. Authorization-time consent preview: the exact scopes a link flow will request from
+the provider, shown to the user before they continue (issue #250). */
+IdentityAuthenticationExternalLoginLinkPreviewOutputSchema = z.object({
+  provider: z.string().nullable(),
+  requestedScopes: z.array(z.string()).nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationGitHubCallbackRequestDto. Request body for the GitHub OAuth callback endpoint */
+IdentityAuthenticationGitHubCallbackRequestDtoSchema = z.object({
+  code: z.string().min(1),
+  redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
+  state: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationGitHubSignInOutput. Response for GitHub sign-in initiation */
 IdentityAuthenticationGitHubSignInOutputSchema = z.object({
   authUrl: z.string().nullable(),
@@ -26097,6 +32709,15 @@ IdentityAuthenticationGitHubSignInOutputSchema = z.object({
 /** Zod schema for IdentityAuthenticationGoogleIdTokenRequestDto. Request for Google ID token sign-in */
 IdentityAuthenticationGoogleIdTokenRequestDtoSchema = z.object({
   idToken: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto. Request body to initiate an orchestrated authentication flow. */
+IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema = z.object({
+  deviceFingerprint: z.string().nullable().optional(),
+  identifier: z.string().min(1),
+  password: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
 });
 
@@ -26123,6 +32744,7 @@ IdentityAuthenticationLocalSignInInputSchema = z.object({
   email: z.string().email().min(1),
   emailOrUsername: z.string().nullable().optional(),
   password: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   tenantId: z.string().uuid().nullable().optional(),
   username: z.string().nullable().optional(),
 });
@@ -26171,6 +32793,7 @@ IdentityAuthenticationMagicLinkRequestResultSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationMfaConfigurationOutput. MFA configuration response */
 IdentityAuthenticationMfaConfigurationOutputSchema = z.object({
+  backupCodesIssued: z.number().int().nullable().optional(),
   backupCodesRemaining: z.number().int().optional(),
   enabledAt: z.string().datetime().nullable().optional(),
   enabledMethods: z.array(z.string()).nullable().optional(),
@@ -26211,6 +32834,14 @@ IdentityAuthenticationMfaSetupOutputSchema = z.object({
   secretKey: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationMfaSignInEnrollmentOutput. Provisioning data only; this response never grants an authenticated session. */
+IdentityAuthenticationMfaSignInEnrollmentOutputSchema = z.object({
+  expiresAt: z.string().datetime().optional(),
+  qrCodeUri: z.string().nullable().optional(),
+  secretKey: z.string().nullable().optional(),
+  success: z.boolean().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationMfaSuccessOutput. Success response for MFA operations */
 IdentityAuthenticationMfaSuccessOutputSchema = z.object({
   message: z.string().nullable(),
@@ -26227,6 +32858,62 @@ IdentityAuthenticationMfaVerificationOutputSchema = z.object({
 IdentityAuthenticationOAuth2ErrorOutputSchema = z.object({
   error: z.string().nullable().optional(),
   errorDescription: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcAuthorizeRequestDto. Request to initiate an OIDC federation provider sign-in */
+IdentityAuthenticationOidcAuthorizeRequestDtoSchema = z.object({
+  redirectUri: z.string().min(1),
+});
+
+/** Zod schema for IdentityAuthenticationOidcCallbackRequestDto. Request body for the OIDC federation callback endpoint */
+IdentityAuthenticationOidcCallbackRequestDtoSchema = z.object({
+  code: z.string().min(1),
+  redirectUri: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
+  state: z.string().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcDiscoveredProvider. A discovered federation provider serving one email domain. */
+IdentityAuthenticationOidcDiscoveredProviderSchema = z.object({
+  displayName: z.string().nullable(),
+  slug: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcDiscoverProviderOutput. Response for domain-to-provider discovery */
+IdentityAuthenticationOidcDiscoverProviderOutputSchema = z.object({
+  providers: z.array(z.lazy(() => IdentityAuthenticationOidcDiscoveredProviderSchema)).nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcEndSessionUrlOutput. Response for OIDC logout forwarding */
+IdentityAuthenticationOidcEndSessionUrlOutputSchema = z.object({
+  endSessionUrl: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationOidcSignInOutput. Response for OIDC federation sign-in initiation */
+IdentityAuthenticationOidcSignInOutputSchema = z.object({
+  authUrl: z.string().nullable(),
+  state: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationOrchestratedFlowStateOutput. Response describing the state of an orchestrated authentication flow. */
+IdentityAuthenticationOrchestratedFlowStateOutputSchema = z.object({
+  completedSteps: z
+    .array(z.lazy(() => IdentityAuthenticationAuthenticationStepSchema))
+    .nullable()
+    .optional(),
+  currentStep: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema).optional(),
+  expiresAt: z.string().datetime().optional(),
+  flowId: z.string().uuid().optional(),
+  initiatedAt: z.string().datetime().optional(),
+  isComplete: z.boolean().optional(),
+  nextStep: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema).optional(),
+  requiredSteps: z
+    .array(z.lazy(() => IdentityAuthenticationAuthenticationStepSchema))
+    .nullable()
+    .optional(),
+  riskScore: z.number().nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationPasswordChangeInput. Request to change password for authenticated user */
@@ -26266,6 +32953,25 @@ IdentityAuthenticationPatchServiceAccountInputSchema = z.object({
   scopes: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationPolymorphicSignInInput. Password sign-in using one email, username or canonical international phone identifier. */
+IdentityAuthenticationPolymorphicSignInInputSchema = z.object({
+  credential: z.string().nullable().optional(),
+  credentialType: z.lazy(() => IdentityAuthenticationCredentialTypeSchema).optional(),
+  deviceFingerprint: z.string().nullable().optional(),
+  password: z.string().nullable().optional(),
+  rememberMe: z.boolean().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto. Request body to satisfy one challenge step of an orchestrated authentication flow.
+Exactly one proof field (TOTP code, backup code or WebAuthn assertion) is required. */
+IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema = z.object({
+  backupCode: z.string().nullable().optional(),
+  step: z.lazy(() => IdentityAuthenticationAuthenticationStepSchema),
+  totpCode: z.string().nullable().optional(),
+  webAuthnAssertion: z.string().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthenticationRefreshTokenInput. Request DTO for refreshing tokens */
 IdentityAuthenticationRefreshTokenInputSchema = z.object({
   refreshToken: z.string().min(1),
@@ -26276,6 +32982,12 @@ IdentityAuthenticationRefreshTokenInputSchema = z.object({
 IdentityAuthenticationRemoveRoleFromUserInputSchema = z.object({
   roleId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRequestEmailCodeInput. Request to send a one-time email sign-in code. */
+IdentityAuthenticationRequestEmailCodeInputSchema = z.object({
+  email: z.string().email().min(1),
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationRequestMagicLinkInput. Request to send a passwordless magic sign-in link. */
@@ -26295,6 +33007,21 @@ IdentityAuthenticationRevokeApiKeyInputSchema = z.object({
   reason: z.string().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthenticationRevokeExternalLoginScopesInput. Request to revoke individual OAuth scope grants on a linked provider.
+Revoking every remaining scope is allowed and leaves the link in place with an
+empty grant list; removing the whole provider remains the unlink endpoint's job. */
+IdentityAuthenticationRevokeExternalLoginScopesInputSchema = z.object({
+  scopes: z.array(z.string()).min(1),
+});
+
+/** Zod schema for IdentityAuthenticationRevokeExternalLoginScopesOutput. Post-revocation snapshot of the link's grant state. */
+IdentityAuthenticationRevokeExternalLoginScopesOutputSchema = z.object({
+  consentedAt: z.string().datetime().nullable().optional(),
+  consentVersion: z.number().int().optional(),
+  grantedScopes: z.array(z.string()).nullable(),
+  provider: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthenticationRevokeRefreshTokenInput. Request for revoking a refresh token */
 IdentityAuthenticationRevokeRefreshTokenInputSchema = z.object({
   ipAddress: z.string().nullable().optional(),
@@ -26304,6 +33031,22 @@ IdentityAuthenticationRevokeRefreshTokenInputSchema = z.object({
 
 /** Zod schema for IdentityAuthenticationRiskLevel. Risk level for session security and anomaly detection */
 IdentityAuthenticationRiskLevelSchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthenticationRotateApiKeyInput. Data model for Identity Authentication Rotate Api Key Request. */
+IdentityAuthenticationRotateApiKeyInputSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  gracePeriodMinutes: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthenticationRotateApiKeyOutput. Data model for Identity Authentication Rotate Api Key Response. */
+IdentityAuthenticationRotateApiKeyOutputSchema = z.object({
+  newKey: z.lazy(() => IdentityAuthenticationCreateApiKeyOutputSchema).optional(),
+  oldKeyGraceEndsAt: z.string().datetime().nullable().optional(),
+  oldKeyId: z.string().uuid().optional(),
+  oldKeyRevoked: z.boolean().optional(),
+});
 
 /** Zod schema for IdentityAuthenticationRotateKeyInput. Request to manually rotate signing key */
 IdentityAuthenticationRotateKeyInputSchema = z.object({
@@ -26420,6 +33163,8 @@ IdentityAuthenticationSessionTerminationOutputSchema = z.object({
 IdentityAuthenticationSignInOutputSchema = z.object({
   accessToken: z.string().nullable().optional(),
   accessTokenExpiresAt: z.string().datetime().optional(),
+  authenticationContextClassReference: z.string().nullable().optional(),
+  authenticationMethodReferences: z.array(z.string()).nullable().optional(),
   availableMethods: z.array(z.string()).nullable().optional(),
   availableTenants: z
     .array(z.lazy(() => TenantInfoSchema))
@@ -26429,8 +33174,10 @@ IdentityAuthenticationSignInOutputSchema = z.object({
   expiresAt: z.string().datetime().optional(),
   expiresIn: z.number().int().optional(),
   message: z.string().nullable().optional(),
+  mfaEnrollmentBackupCodes: z.array(z.string()).nullable().optional(),
   mfaSessionId: z.string().nullable().optional(),
   mfaToken: z.string().nullable().optional(),
+  mfaVerifiedByProvider: z.boolean().optional(),
   refreshToken: z.string().nullable().optional(),
   refreshTokenExpiresAt: z.string().datetime().optional(),
   requiresMfa: z.boolean().optional(),
@@ -26457,6 +33204,11 @@ IdentityAuthenticationSmsMfaSetupOutputSchema = z.object({
   expiresInSeconds: z.number().int(),
   message: z.string().nullable(),
   phoneNumberMasked: z.string().nullable(),
+});
+
+/** Zod schema for IdentityAuthenticationStartMfaSignInEnrollmentInput. Data model for Identity Authentication Start Mfa Sign In Enrollment Request. */
+IdentityAuthenticationStartMfaSignInEnrollmentInputSchema = z.object({
+  mfaToken: z.string().min(43).max(43),
 });
 
 /** Zod schema for IdentityAuthenticationStepUpChallengeOutput. Data model for Identity Authentication Step Up Challenge Response. */
@@ -26556,6 +33308,7 @@ IdentityAuthenticationWeb3VerifyInputSchema = z.object({
   challenge: z.string().min(1),
   deviceFingerprint: z.string().nullable().optional(),
   nonce: z.string().min(1),
+  rememberMe: z.boolean().nullable().optional(),
   signature: z.string().min(1),
   tenantId: z.string().uuid().nullable().optional(),
   walletAddress: z.string().min(1),
@@ -26594,20 +33347,36 @@ IdentityAuthenticationWebAuthnCredentialInfoSchema = z.object({
   authenticatorType: z.lazy(() => IdentityAuthenticationWebAuthnAuthenticatorTypeSchema).optional(),
   backedUp: z.boolean().optional(),
   createdAt: z.string().datetime().optional(),
+  deactivatedAt: z.string().datetime().nullable().optional(),
   friendlyName: z.string().nullable().optional(),
   isDefault: z.boolean().optional(),
   isPasswordless: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
+  revokedAt: z.string().datetime().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialStatus. Lifecycle status of a WebAuthn credential. */
+IdentityAuthenticationWebAuthnCredentialStatusSchema = z.enum(['Active', 'Deactivated', 'Revoked']);
+
+/** Zod schema for IdentityAuthenticationWebAuthnCredentialTransitionResult. Result of an explicit WebAuthn credential lifecycle transition (deactivate/activate). */
+IdentityAuthenticationWebAuthnCredentialTransitionResultSchema = z.object({
+  error: z.string().nullable().optional(),
+  errorDescription: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
+  success: z.boolean().optional(),
 });
 
 /** Zod schema for IdentityAuthenticationWebAuthnCredentialVerifyResult. Result of verifying a WebAuthn credential. */
 IdentityAuthenticationWebAuthnCredentialVerifyResultSchema = z.object({
   error: z.string().nullable().optional(),
+  isDeactivated: z.boolean().optional(),
   isExpired: z.boolean().optional(),
   isRevoked: z.boolean().optional(),
   isValid: z.boolean().optional(),
   lastUsedAt: z.string().datetime().nullable().optional(),
   signatureCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthenticationWebAuthnCredentialStatusSchema).optional(),
   success: z.boolean().optional(),
 });
 
@@ -26893,6 +33662,69 @@ IdentityAuthorizationEffectivePermissionsOutputSchema = z.object({
 /** Zod schema for IdentityAuthorizationElevationRequestStatus. Status of JIT elevation request */
 IdentityAuthorizationElevationRequestStatusSchema = z.enum(['None', 'Pending', 'Approved', 'Denied', 'Active', 'Expired', 'Revoked']);
 
+/** Zod schema for IdentityAuthorizationExpiringTenantPermission. A tenant permission grant that is about to expire. */
+IdentityAuthorizationExpiringTenantPermissionSchema = z.object({
+  expiresAt: z.string().datetime(),
+  permissionId: z.string().uuid(),
+  permissions: z.array(z.string()).nullable(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExtendTenantPermissionExpirationCommand. Command to bulk-extend the expiration of permission grants in one tenant by a
+positive time period. */
+IdentityAuthorizationExtendTenantPermissionExpirationCommandSchema = z.object({
+  extension: z.string(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionEntry. Permission entry in the sync contract (one TenantPermission row). */
+IdentityAuthorizationExternalPermissionEntrySchema = z.object({
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  isActive: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalPermissionSyncDocument. Import/export contract for external system permission synchronization (issue #358).
+DTOs are JSON-serializable and deliberately portable: roles reference their
+parents by name so a document produced by one environment can be imported into
+another. */
+IdentityAuthorizationExternalPermissionSyncDocumentSchema = z.object({
+  exportedAtUtc: z.string().datetime().optional(),
+  permissions: z
+    .array(z.lazy(() => IdentityAuthorizationExternalPermissionEntrySchema))
+    .nullable()
+    .optional(),
+  roles: z
+    .array(z.lazy(() => IdentityAuthorizationExternalRoleDefinitionSchema))
+    .nullable()
+    .optional(),
+  schemaVersion: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationExternalRoleDefinition. Role definition in the sync contract. */
+IdentityAuthorizationExternalRoleDefinitionSchema = z.object({
+  additionalParentRoleNames: z.array(z.string()).nullable().optional(),
+  blockedInheritedPermissions: z.array(z.string()).nullable().optional(),
+  denyPermissions: z.array(z.string()).nullable().optional(),
+  description: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  name: z.string().nullable().optional(),
+  parentRoleName: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  priority: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationGetExpiringTenantPermissionsOutput. Response containing grants that are about to expire in a tenant. */
+IdentityAuthorizationGetExpiringTenantPermissionsOutputSchema = z.object({
+  expiring: z.array(z.lazy(() => IdentityAuthorizationExpiringTenantPermissionSchema)).nullable(),
+  tenantId: z.string().uuid(),
+});
+
 /** Zod schema for IdentityAuthorizationGetPendingResourceInvitationsOutput. Response containing pending invitations for the current user. */
 IdentityAuthorizationGetPendingResourceInvitationsOutputSchema = z.object({
   invitations: z.array(z.lazy(() => IdentityAuthorizationResourceInvitationDtoSchema)).nullable(),
@@ -26932,6 +33764,9 @@ IdentityAuthorizationGrantTenantPermissionCommandSchema = z.object({
   userId: z.string().uuid(),
 });
 
+/** Zod schema for IdentityAuthorizationGraphExportFormat. Graph export formats */
+IdentityAuthorizationGraphExportFormatSchema = z.enum(['None', 'DOT', 'JSON', 'GraphML']);
+
 /** Zod schema for IdentityAuthorizationHasPermissionOutput. Response indicating whether the user has the requested permission. */
 IdentityAuthorizationHasPermissionOutputSchema = z.object({
   denialReason: z.string().nullable().optional(),
@@ -26944,6 +33779,13 @@ IdentityAuthorizationHasPermissionOutputSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationImpactSeverity. Impact severity level */
 IdentityAuthorizationImpactSeveritySchema = z.enum(['Low', 'Medium', 'High', 'Critical']);
+
+/** Zod schema for IdentityAuthorizationImportPermissionSyncInput. Request body for the permission sync import endpoint. */
+IdentityAuthorizationImportPermissionSyncInputSchema = z.object({
+  document: z.lazy(() => IdentityAuthorizationExternalPermissionSyncDocumentSchema).optional(),
+  dryRun: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
 
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
@@ -26981,6 +33823,123 @@ IdentityAuthorizationJitElevationInputSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationModelsImpactedUser. A user affected by a simulated permission change, with the reason. */
+IdentityAuthorizationModelsImpactedUserSchema = z.object({
+  lostPermissionKeys: z.array(z.string()).nullable().optional(),
+  reason: z.string().nullable().optional(),
+  retainedViaDirectGrant: z.boolean().optional(),
+  retainedViaRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraph. Snapshot of a tenant's permission structure rendered as a directed graph:
+users -> roles -> permissions, including inheritance, denies, and direct grants. */
+IdentityAuthorizationModelsPermissionGraphSchema = z.object({
+  edges: z
+    .array(z.lazy(() => IdentityAuthorizationModelsPermissionGraphEdgeSchema))
+    .nullable()
+    .optional(),
+  generatedAtUtc: z.string().datetime().optional(),
+  includesUsers: z.boolean().optional(),
+  nodes: z
+    .array(z.lazy(() => IdentityAuthorizationModelsPermissionGraphNodeSchema))
+    .nullable()
+    .optional(),
+  summary: z.lazy(() => IdentityAuthorizationModelsPermissionGraphSummarySchema).optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphCycle. A cycle detected in the role-inheritance graph. */
+IdentityAuthorizationModelsPermissionGraphCycleSchema = z.object({
+  roleIds: z.array(z.string().uuid()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphEdge. A directed edge of the permission graph. */
+IdentityAuthorizationModelsPermissionGraphEdgeSchema = z.object({
+  sourceId: z.string().nullable().optional(),
+  targetId: z.string().nullable().optional(),
+  type: z.lazy(() => IdentityAuthorizationModelsPermissionGraphEdgeTypeSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphEdgeType. Type of an edge in the permission graph. */
+IdentityAuthorizationModelsPermissionGraphEdgeTypeSchema = z.enum([
+  'RoleInheritsFrom',
+  'RoleGrantsPermission',
+  'RoleDeniesPermission',
+  'UserAssignedRole',
+  'UserDirectGrant',
+  'UserDirectDeny',
+]);
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphNode. A single node of the permission graph. */
+IdentityAuthorizationModelsPermissionGraphNodeSchema = z.object({
+  id: z.string().nullable().optional(),
+  isActive: z.boolean().nullable().optional(),
+  isRegistered: z.boolean().optional(),
+  isSystem: z.boolean().nullable().optional(),
+  label: z.string().nullable().optional(),
+  resource: z.string().nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  type: z.lazy(() => IdentityAuthorizationModelsPermissionGraphNodeTypeSchema).optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphNodeType. Type of a node in the permission graph. */
+IdentityAuthorizationModelsPermissionGraphNodeTypeSchema = z.enum(['Role', 'User', 'Permission']);
+
+/** Zod schema for IdentityAuthorizationModelsPermissionGraphSummary. Aggregated quality/statistics report for a permission graph. */
+IdentityAuthorizationModelsPermissionGraphSummarySchema = z.object({
+  directGrantCount: z.number().int().optional(),
+  edgeCount: z.number().int().optional(),
+  inheritanceCycles: z
+    .array(z.lazy(() => IdentityAuthorizationModelsPermissionGraphCycleSchema))
+    .nullable()
+    .optional(),
+  orphanedRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  permissionCount: z.number().int().optional(),
+  roleCount: z.number().int().optional(),
+  unregisteredPermissionKeys: z.array(z.string()).nullable().optional(),
+  userCount: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsPermissionRemovalImpact. Result of simulating the removal of a permission key from a role. */
+IdentityAuthorizationModelsPermissionRemovalImpactSchema = z.object({
+  downstreamRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  grantedViaInheritance: z.boolean().optional(),
+  isGranted: z.boolean().optional(),
+  permissionKey: z.string().nullable().optional(),
+  removableDirectly: z.boolean().optional(),
+  roleFound: z.boolean().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+  severity: z.lazy(() => IdentityAuthorizationImpactSeveritySchema).optional(),
+  usersLosingPermission: z
+    .array(z.lazy(() => IdentityAuthorizationModelsImpactedUserSchema))
+    .nullable()
+    .optional(),
+  usersRetainingPermission: z
+    .array(z.lazy(() => IdentityAuthorizationModelsImpactedUserSchema))
+    .nullable()
+    .optional(),
+  warnings: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationModelsRoleDeletionImpact. Result of simulating the deletion of a dynamic role. */
+IdentityAuthorizationModelsRoleDeletionImpactSchema = z.object({
+  assignedUserIds: z.array(z.string().uuid()).nullable().optional(),
+  childRoleIds: z.array(z.string().uuid()).nullable().optional(),
+  directAssignmentCount: z.number().int().optional(),
+  isSystemRole: z.boolean().optional(),
+  roleFound: z.boolean().optional(),
+  roleId: z.string().uuid().optional(),
+  roleName: z.string().nullable().optional(),
+  severity: z.lazy(() => IdentityAuthorizationImpactSeveritySchema).optional(),
+  usersLosingPermissions: z
+    .array(z.lazy(() => IdentityAuthorizationModelsImpactedUserSchema))
+    .nullable()
+    .optional(),
+  warnings: z.array(z.string()).nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionAnalyticsReport. Data model for Identity Authorization Permission Analytics Report. */
 IdentityAuthorizationPermissionAnalyticsReportSchema = z.object({
   activeUsers: z.number().int().optional(),
@@ -27012,6 +33971,43 @@ IdentityAuthorizationPermissionAnomalySchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionComplianceBreakdown. Allow/deny rates for one reporting dimension value. */
+IdentityAuthorizationPermissionComplianceBreakdownSchema = z.object({
+  allow: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  deny: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  error: z.number().int().optional(),
+  key: z.string().nullable().optional(),
+  total: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionComplianceReport. Compliance report over recorded permission evaluations. */
+IdentityAuthorizationPermissionComplianceReportSchema = z.object({
+  allowCount: z.number().int().optional(),
+  allowRate: z.number().optional(),
+  byOperation: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  byPermission: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  bySource: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionComplianceBreakdownSchema))
+    .nullable()
+    .optional(),
+  denyCount: z.number().int().optional(),
+  denyRate: z.number().optional(),
+  errorCount: z.number().int().optional(),
+  errorRate: z.number().optional(),
+  fromUtc: z.string().datetime().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalEvaluations: z.number().int().optional(),
+  toUtc: z.string().datetime().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationPermissionDelegation. Permission delegation allows users to delegate their permissions to other users */
 IdentityAuthorizationPermissionDelegationSchema = z.object({
   id: z.string().uuid().optional(),
@@ -27030,6 +34026,33 @@ IdentityAuthorizationPermissionDelegationSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
   usageCount: z.number().int().optional(),
   usageLimit: z.number().int().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionRestorationResult. Result of a permission restoration attempt. */
+IdentityAuthorizationPermissionRestorationResultSchema = z.object({
+  message: z.string().nullable().optional(),
+  restoredPermissionId: z.string().uuid().nullable().optional(),
+  succeeded: z.boolean().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
+IdentityAuthorizationPermissionSyncChangeSchema = z.object({
+  kind: z.string().nullable().optional(),
+  payload: z.record(z.string(), z.string()).nullable().optional(),
+  target: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSyncImportResult. Result of a synchronization import (or dry-run preview). */
+IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
+  applied: z.boolean().optional(),
+  changes: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionSyncChangeSchema))
+    .nullable()
+    .optional(),
+  dryRun: z.boolean().optional(),
+  isValid: z.boolean().optional(),
+  validationErrors: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
@@ -27243,6 +34266,15 @@ IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema = z.object({
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
 });
 
+/** Zod schema for IdentityAuthorizationSetTenantPermissionExpirationCommand. Command to bulk-set an absolute expiration for permission grants in one tenant.
+A `null`GameGuild.Identity.Authorization.SetTenantPermissionExpirationCommand.ExpiresAt clears the expiration. */
+IdentityAuthorizationSetTenantPermissionExpirationCommandSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  permissionIds: z.array(z.string().uuid()).nullable(),
+  reason: z.string().nullable().optional(),
+  tenantId: z.lazy(() => CQRSModelsTenantIdSchema),
+});
+
 /** Zod schema for IdentityAuthorizationShareResourceCommand. Command to share a resource with one or more users by granting them permissions. */
 IdentityAuthorizationShareResourceCommandSchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
@@ -27364,6 +34396,257 @@ IdentityAuthorizationUserActivitySummarySchema = z.object({
   permissionChanges: z.number().int().optional(),
   totalActions: z.number().int().optional(),
   userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityProvisioningCreateScimProvisioningTokenInput. Data model for Identity Provisioning Create Scim Provisioning Token Request. */
+IdentityProvisioningCreateScimProvisioningTokenInputSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  name: z.string().nullable(),
+  scopes: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningCreateScimProvisioningTokenOutput. Data model for Identity Provisioning Create Scim Provisioning Token Response. */
+IdentityProvisioningCreateScimProvisioningTokenOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  name: z.string().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+  tenantId: z.string().uuid().optional(),
+  token: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningRevokeScimProvisioningTokenInput. Data model for Identity Provisioning Revoke Scim Provisioning Token Request. */
+IdentityProvisioningRevokeScimProvisioningTokenInputSchema = z.object({
+  reason: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningRotateScimProvisioningTokenInput. Data model for Identity Provisioning Rotate Scim Provisioning Token Request. */
+IdentityProvisioningRotateScimProvisioningTokenInputSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+  gracePeriodMinutes: z.number().int().nullable().optional(),
+  name: z.string().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningRotateScimProvisioningTokenOutput. Data model for Identity Provisioning Rotate Scim Provisioning Token Response. */
+IdentityProvisioningRotateScimProvisioningTokenOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  oldTokenGraceEndsAt: z.string().datetime().nullable().optional(),
+  replacesTokenId: z.string().uuid().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+  token: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimErrorBody. RFC 7644 §3.12 error body: `{schemas, status, scimType?, detail}`. */
+IdentityProvisioningScimErrorBodySchema = z.object({
+  detail: z.string().nullable().optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+  scimType: z.string().nullable().optional(),
+  status: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimProvisioningTokenDto. Data model for Identity Provisioning Scim Provisioning Token Dto. */
+IdentityProvisioningScimProvisioningTokenDtoSchema = z.object({
+  id: z.string().uuid().optional(),
+  createdAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  isActive: z.boolean().optional(),
+  lastUsedAt: z.string().datetime().nullable().optional(),
+  name: z.string().nullable().optional(),
+  replacesTokenId: z.string().uuid().nullable().optional(),
+  rotationGraceEndsAt: z.string().datetime().nullable().optional(),
+  scopes: z.array(z.string()).nullable().optional(),
+  usageCount: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimBulkInput. RFC 7644 §3.7 BulkRequest body. */
+IdentityProvisioningScimScimBulkInputSchema = z.object({
+  failOnErrors: z.number().int().nullable().optional(),
+  Operations: z
+    .array(z.lazy(() => IdentityProvisioningScimScimBulkOperationSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimBulkOperation. One bulk operation. */
+IdentityProvisioningScimScimBulkOperationSchema = z.object({
+  bulkId: z.string().nullable().optional(),
+  data: z.lazy(() => NodesJsonNodeSchema).optional(),
+  method: z.string().nullable().optional(),
+  path: z.string().nullable().optional(),
+  version: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimBulkOutput. RFC 7644 §3.7 BulkResponse body. */
+IdentityProvisioningScimScimBulkOutputSchema = z.object({
+  Operations: z
+    .array(z.lazy(() => IdentityProvisioningScimScimBulkResponseOperationSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimBulkResponseOperation. One bulk response operation. */
+IdentityProvisioningScimScimBulkResponseOperationSchema = z.object({
+  bulkId: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  method: z.string().nullable().optional(),
+  status: z.lazy(() => IdentityProvisioningScimScimBulkStatusSchema).optional(),
+  version: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimBulkStatus. Bulk operation status envelope. */
+IdentityProvisioningScimScimBulkStatusSchema = z.object({
+  code: z.number().int().optional(),
+  detail: z.string().nullable().optional(),
+  scimType: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimEmail. RFC 7643 §8.2 email sub-attribute. The provider stores one primary e-mail. */
+IdentityProvisioningScimScimEmailSchema = z.object({
+  display: z.string().nullable().optional(),
+  primary: z.boolean().nullable().optional(),
+  type: z.string().nullable().optional(),
+  value: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimGroupInput. Inbound SCIM Group payload for POST (create) and PUT (replace). */
+IdentityProvisioningScimScimGroupInputSchema = z.object({
+  displayName: z.string().nullable().optional(),
+  externalId: z.string().nullable().optional(),
+  members: z
+    .array(z.lazy(() => IdentityProvisioningScimScimMemberSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimGroupResource. SCIM Group resource rendered by this provider (backed by a tenant role). */
+IdentityProvisioningScimScimGroupResourceSchema = z.object({
+  id: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  externalId: z.string().nullable().optional(),
+  members: z
+    .array(z.lazy(() => IdentityProvisioningScimScimMemberSchema))
+    .nullable()
+    .optional(),
+  meta: z.lazy(() => IdentityProvisioningScimScimMetaSchema).optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimListResponseScimGroupResource. RFC 7644 §3.4.2.3 ListResponse envelope. `startIndex` is 1-based. */
+IdentityProvisioningScimScimListResponseScimGroupResourceSchema = z.object({
+  itemsPerPage: z.number().int().optional(),
+  Resources: z
+    .array(z.lazy(() => IdentityProvisioningScimScimGroupResourceSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+  startIndex: z.number().int().optional(),
+  totalResults: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimListResponseScimUserResource. RFC 7644 §3.4.2.3 ListResponse envelope. `startIndex` is 1-based. */
+IdentityProvisioningScimScimListResponseScimUserResourceSchema = z.object({
+  itemsPerPage: z.number().int().optional(),
+  Resources: z
+    .array(z.lazy(() => IdentityProvisioningScimScimUserResourceSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+  startIndex: z.number().int().optional(),
+  totalResults: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimMember. RFC 7643 §8.4 group member reference. */
+IdentityProvisioningScimScimMemberSchema = z.object({
+  $ref: z.string().nullable().optional(),
+  display: z.string().nullable().optional(),
+  value: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimMeta. RFC 7643 §3.1 meta attribute. */
+IdentityProvisioningScimScimMetaSchema = z.object({
+  created: z.string().datetime().nullable().optional(),
+  lastModified: z.string().datetime().nullable().optional(),
+  location: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimName. RFC 7643 §8.1 name sub-attribute as represented by this provider. */
+IdentityProvisioningScimScimNameSchema = z.object({
+  familyName: z.string().nullable().optional(),
+  formatted: z.string().nullable().optional(),
+  givenName: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimPatchInput. RFC 7644 §3.5.2 PatchOp request body. */
+IdentityProvisioningScimScimPatchInputSchema = z.object({
+  Operations: z
+    .array(z.lazy(() => IdentityProvisioningScimScimPatchOperationSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimPatchOperation. One PATCH operation. `op` is add/remove/replace (case-insensitive);
+`value` is preserved as a raw JSON node because PATCH values are
+attribute-dependent. */
+IdentityProvisioningScimScimPatchOperationSchema = z.object({
+  op: z.string().nullable().optional(),
+  path: z.string().nullable().optional(),
+  value: z.lazy(() => NodesJsonNodeSchema).optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimPhoneNumber. RFC 7643 §8.3 phone number sub-attribute. The provider stores one number. */
+IdentityProvisioningScimScimPhoneNumberSchema = z.object({
+  type: z.string().nullable().optional(),
+  value: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimUserInput.     Inbound SCIM User payload for POST (create) and PUT (replace). Unknown
+attributes (including extension schemas) are ignored rather than rejected. */
+IdentityProvisioningScimScimUserInputSchema = z.object({
+  active: z.boolean().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  emails: z
+    .array(z.lazy(() => IdentityProvisioningScimScimEmailSchema))
+    .nullable()
+    .optional(),
+  externalId: z.string().nullable().optional(),
+  name: z.lazy(() => IdentityProvisioningScimScimNameSchema).optional(),
+  password: z.string().nullable().optional(),
+  phoneNumbers: z
+    .array(z.lazy(() => IdentityProvisioningScimScimPhoneNumberSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+  userName: z.string().nullable().optional(),
+});
+
+/** Zod schema for IdentityProvisioningScimScimUserResource. SCIM User resource rendered by this provider. Only implemented attributes are
+exposed; the full core schema advertisement lives in
+GameGuild.Identity.Provisioning.Scim.ScimDiscoveryDocuments. */
+IdentityProvisioningScimScimUserResourceSchema = z.object({
+  id: z.string().nullable().optional(),
+  active: z.boolean().optional(),
+  displayName: z.string().nullable().optional(),
+  emails: z
+    .array(z.lazy(() => IdentityProvisioningScimScimEmailSchema))
+    .nullable()
+    .optional(),
+  externalId: z.string().nullable().optional(),
+  meta: z.lazy(() => IdentityProvisioningScimScimMetaSchema).optional(),
+  name: z.lazy(() => IdentityProvisioningScimScimNameSchema).optional(),
+  phoneNumbers: z
+    .array(z.lazy(() => IdentityProvisioningScimScimPhoneNumberSchema))
+    .nullable()
+    .optional(),
+  schemas: z.array(z.string()).nullable().optional(),
+  userName: z.string().nullable().optional(),
 });
 
 /** Zod schema for IdentityTenantsAddTenantMemberOutput. Response for adding a tenant member */
@@ -29594,7 +36877,16 @@ LearningAssessmentsGradingRuntimeAssessmentExecutionViewV1Schema = z.object({
     .array(z.lazy(() => LearningAssessmentsGradingRuntimeGradeRoundViewV1Schema))
     .nullable()
     .optional(),
+  instructorVisibleContent: z.record(z.string(), z.unknown()).nullable().optional(),
   instructorVisibleResult: z.lazy(() => LearningAssessmentsGradingContractsGradeResultV1Schema).optional(),
+  instructorVisibleRubric: z.record(z.string(), z.unknown()).nullable().optional(),
+  instructorVisibleRubricScores: z
+    .record(
+      z.string(),
+      z.lazy(() => LearningGradingContractsScoreValueSchema),
+    )
+    .nullable()
+    .optional(),
   itemMaxScores: z
     .record(
       z.string(),
@@ -29706,6 +36998,13 @@ LearningAssessmentsGradingRuntimeInstructorReviewResolutionV1Schema = z.object({
     .nullable()
     .optional(),
   overrideReason: z.string().nullable().optional(),
+  rubricScores: z
+    .record(
+      z.string(),
+      z.lazy(() => LearningGradingContractsScoreValueSchema),
+    )
+    .nullable()
+    .optional(),
   schemaVersion: z.number().int().optional(),
 });
 
@@ -30783,6 +38082,20 @@ LearningCoursesContentSummaryDtoSchema = z.object({
   contentType: z.string().nullable().optional(),
   estimatedMinutes: z.number().int().nullable().optional(),
   title: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningCoursesCourseAccessCapabilities. Data model for Learning Courses Course Access Capabilities. */
+LearningCoursesCourseAccessCapabilitiesSchema = z.object({
+  canAccessWorkspace: z.boolean().optional(),
+  canEdit: z.boolean().optional(),
+  canLearn: z.boolean().optional(),
+  canPublish: z.boolean().optional(),
+  canReviewAsStaff: z.boolean().optional(),
+  courseExists: z.boolean().optional(),
+  courseId: z.string().uuid().optional(),
+  hasActiveEnrollment: z.boolean().optional(),
+  isOwner: z.boolean().optional(),
+  isTenantMember: z.boolean().optional(),
 });
 
 /** Zod schema for LearningCoursesCourseSupportTicketMessageInput. Data model for Learning Courses Course Support Ticket Message Request. */
@@ -32292,7 +39605,15 @@ LearningWorkspacesLearnerSearchResultDtoSchema = z.object({
   title: z.string().nullable().optional(),
 });
 
-/** Zod schema for Money. Represents a money value with currency */
+/** Zod schema for Money. Represents a money value with currency.
+Amounts are stored as a decimal in major units (e.g. dollars) rounded to the
+currency's ISO 4217 minor-unit exponent (see GameGuild.Iso4217CurrencyCatalog):
+JPY keeps zero decimals, USD two, KWD three. Minor-unit (integer) access is available
+through GameGuild.Money.MinorUnits and M:GameGuild.Money.FromMinorUnits(System.Int64,System.String) for provider
+integrations that speak the smallest currency unit.
+The persisted/serialized shape stays exactly { Amount, Currency } — the minor-unit
+members are computed and excluded from JSON and EF mappings, so existing invoices,
+payments, and API contracts are unaffected. */
 MoneySchema = z.object({
   amount: z.number().optional(),
   currency: z.string().nullable().optional(),
@@ -32442,6 +39763,30 @@ MvcProblemDetailsSchema = z
     type: z.string().nullable().optional(),
   })
   .catchall(z.record(z.string(), z.unknown()));
+
+/** Zod schema for MvcValidationProblemDetails. Data model for Mvc Validation Problem Details. */
+MvcValidationProblemDetailsSchema = z
+  .object({
+    detail: z.string().nullable().optional(),
+    errors: z.record(z.string(), z.array(z.string())).nullable().optional(),
+    instance: z.string().nullable().optional(),
+    status: z.number().int().nullable().optional(),
+    title: z.string().nullable().optional(),
+    type: z.string().nullable().optional(),
+  })
+  .catchall(z.record(z.string(), z.unknown()));
+
+/** Zod schema for NodesJsonNode. Data model for Nodes Json Node. */
+NodesJsonNodeSchema = z.object({
+  options: z.lazy(() => NodesJsonNodeOptionsSchema).optional(),
+  parent: z.lazy(() => NodesJsonNodeSchema).optional(),
+  root: z.lazy(() => NodesJsonNodeSchema).optional(),
+});
+
+/** Zod schema for NodesJsonNodeOptions. Data model for Nodes Json Node Options. */
+NodesJsonNodeOptionsSchema = z.object({
+  propertyNameCaseInsensitive: z.boolean().optional(),
+});
 
 /** Zod schema for NotificationsControllersDeadLetterDto. Data model for Notifications Controllers Dead Letter Dto. */
 NotificationsControllersDeadLetterDtoSchema = z.object({
@@ -32680,6 +40025,57 @@ ObjectsResidentKeyRequirementSchema = z.enum(['Required', 'Preferred', 'Discoura
 /** Zod schema for ObjectsUserVerificationRequirement. OpenAPI schema for Objects User Verification Requirement. */
 ObjectsUserVerificationRequirementSchema = z.enum(['Required', 'Preferred', 'Discouraged']);
 
+/** Zod schema for PagedResultAccountCreditTransaction. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultAccountCreditTransactionSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsAccountCreditTransactionSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultBillingOutboxEventDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultBillingOutboxEventDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingBillingOutboxEventDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultBillingWebhookEventListItemDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultBillingWebhookEventListItemDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingBillingWebhookEventListItemDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultDeadLetterDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultDeadLetterDtoSchema = z.object({
@@ -32731,6 +40127,57 @@ PagedResultEmailSuppressionDtoSchema = z.object({
   totalPages: z.number().int().optional(),
 });
 
+/** Zod schema for PagedResultGiftPublicView. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultGiftPublicViewSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsGiftPublicViewSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultPricingDecisionLedgerEntryDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultPricingDecisionLedgerEntryDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceBillingPricingDecisionLedgerEntryDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultPricingRuleDto. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultPricingRuleDtoSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommerceProductsPricingRuleDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
 /** Zod schema for PagedResultProductDto. Represents a paginated result set with full pagination metadata.
 This is the single canonical pagination type — use it everywhere. */
 PagedResultProductDtoSchema = z.object({
@@ -32755,6 +40202,74 @@ PagedResultPromoCodeDtoSchema = z.object({
   hasPreviousPage: z.boolean().optional(),
   items: z
     .array(z.lazy(() => CommerceProductsPromoCodeDtoSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultReferral. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultReferralSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsReferralSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueAnomalyAlert. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueAnomalyAlertSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueAnomalyAlertSchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationDiscrepancy. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationDiscrepancySchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationDiscrepancySchema))
+    .nullable()
+    .optional(),
+  pageNumber: z.number().int().optional(),
+  pageSize: z.number().int().optional(),
+  skip: z.number().int().optional(),
+  take: z.number().int().optional(),
+  totalCount: z.number().int().optional(),
+  totalPages: z.number().int().optional(),
+});
+
+/** Zod schema for PagedResultRevenueReconciliationRun. Represents a paginated result set with full pagination metadata.
+This is the single canonical pagination type — use it everywhere. */
+PagedResultRevenueReconciliationRunSchema = z.object({
+  hasNextPage: z.boolean().optional(),
+  hasPreviousPage: z.boolean().optional(),
+  items: z
+    .array(z.lazy(() => CommercePaymentsRevenueReconciliationRunSchema))
     .nullable()
     .optional(),
   pageNumber: z.number().int().optional(),
@@ -37001,6 +44516,28 @@ export type APITeamsTeamInvitation = APITeamsTeamInvitationDto;
 export { APITeamsTeamInvitationDtoSchema as APITeamsTeamInvitationSchema };
 export type APITeamsTeamMember = APITeamsTeamMemberDto;
 export { APITeamsTeamMemberDtoSchema as APITeamsTeamMemberSchema };
+export type CommerceBillingBillingOutboxEvent = CommerceBillingBillingOutboxEventDto;
+export { CommerceBillingBillingOutboxEventDtoSchema as CommerceBillingBillingOutboxEventSchema };
+export type CommerceBillingBillingWebhookAllowlistStatus = CommerceBillingBillingWebhookAllowlistStatusDto;
+export { CommerceBillingBillingWebhookAllowlistStatusDtoSchema as CommerceBillingBillingWebhookAllowlistStatusSchema };
+export type CommerceBillingBillingWebhookBlockedSource = CommerceBillingBillingWebhookBlockedSourceDto;
+export { CommerceBillingBillingWebhookBlockedSourceDtoSchema as CommerceBillingBillingWebhookBlockedSourceSchema };
+export type CommerceBillingBillingWebhookEvent = CommerceBillingBillingWebhookEventDto;
+export { CommerceBillingBillingWebhookEventDtoSchema as CommerceBillingBillingWebhookEventSchema };
+export type CommerceBillingBillingWebhookEventListItem = CommerceBillingBillingWebhookEventListItemDto;
+export { CommerceBillingBillingWebhookEventListItemDtoSchema as CommerceBillingBillingWebhookEventListItemSchema };
+export type CommerceBillingBillingWebhookSecurityAlert = CommerceBillingBillingWebhookSecurityAlertDto;
+export { CommerceBillingBillingWebhookSecurityAlertDtoSchema as CommerceBillingBillingWebhookSecurityAlertSchema };
+export type CommerceBillingBillingWebhookSecuritySummary = CommerceBillingBillingWebhookSecuritySummaryDto;
+export { CommerceBillingBillingWebhookSecuritySummaryDtoSchema as CommerceBillingBillingWebhookSecuritySummarySchema };
+export type CommerceBillingBillingWebhookSuspiciousActivityStatus = CommerceBillingBillingWebhookSuspiciousActivityStatusDto;
+export { CommerceBillingBillingWebhookSuspiciousActivityStatusDtoSchema as CommerceBillingBillingWebhookSuspiciousActivityStatusSchema };
+export type CommerceBillingExternalBillingProviderStatus = CommerceBillingExternalBillingProviderStatusDto;
+export { CommerceBillingExternalBillingProviderStatusDtoSchema as CommerceBillingExternalBillingProviderStatusSchema };
+export type CommerceBillingPricingDecisionLedgerEntryDetail = CommerceBillingPricingDecisionLedgerEntryDetailDto;
+export { CommerceBillingPricingDecisionLedgerEntryDetailDtoSchema as CommerceBillingPricingDecisionLedgerEntryDetailSchema };
+export type CommerceBillingPricingDecisionLedgerEntry = CommerceBillingPricingDecisionLedgerEntryDto;
+export { CommerceBillingPricingDecisionLedgerEntryDtoSchema as CommerceBillingPricingDecisionLedgerEntrySchema };
 export type CommerceOrdersMarketplaceCart = CommerceOrdersMarketplaceCartDto;
 export { CommerceOrdersMarketplaceCartDtoSchema as CommerceOrdersMarketplaceCartSchema };
 export type CommerceOrdersMarketplaceCartItem = CommerceOrdersMarketplaceCartItemDto;
@@ -37015,8 +44552,22 @@ export type CommerceOrdersOrder = CommerceOrdersOrderDto;
 export { CommerceOrdersOrderDtoSchema as CommerceOrdersOrderSchema };
 export type CommerceOrdersOrderLineItem = CommerceOrdersOrderLineItemDto;
 export { CommerceOrdersOrderLineItemDtoSchema as CommerceOrdersOrderLineItemSchema };
+export type CommercePaymentsPaymentMethod = CommercePaymentsPaymentMethodDto;
+export { CommercePaymentsPaymentMethodDtoSchema as CommercePaymentsPaymentMethodSchema };
+export type CommercePaymentsPaymentRetryAttempt = CommercePaymentsPaymentRetryAttemptDto;
+export { CommercePaymentsPaymentRetryAttemptDtoSchema as CommercePaymentsPaymentRetryAttemptSchema };
+export type CommerceProductsCampaignExpiringCode = CommerceProductsCampaignExpiringCodeDto;
+export { CommerceProductsCampaignExpiringCodeDtoSchema as CommerceProductsCampaignExpiringCodeSchema };
+export type CommerceProductsCampaignPerformance = CommerceProductsCampaignPerformanceDto;
+export { CommerceProductsCampaignPerformanceDtoSchema as CommerceProductsCampaignPerformanceSchema };
+export type CommerceProductsCampaignTopCode = CommerceProductsCampaignTopCodeDto;
+export { CommerceProductsCampaignTopCodeDtoSchema as CommerceProductsCampaignTopCodeSchema };
 export type CommerceProductsEntitlementInfo = CommerceProductsEntitlementInfoDto;
 export { CommerceProductsEntitlementInfoDtoSchema as CommerceProductsEntitlementInfoSchema };
+export type CommerceProductsPricingRule = CommerceProductsPricingRuleDto;
+export { CommerceProductsPricingRuleDtoSchema as CommerceProductsPricingRuleSchema };
+export type CommerceProductsPricingRuleTier = CommerceProductsPricingRuleTierDto;
+export { CommerceProductsPricingRuleTierDtoSchema as CommerceProductsPricingRuleTierSchema };
 export type CommerceProductsProduct = CommerceProductsProductDto;
 export { CommerceProductsProductDtoSchema as CommerceProductsProductSchema };
 export type CommerceProductsProductPricing = CommerceProductsProductPricingDto;
@@ -37025,6 +44576,8 @@ export type CommerceProductsPromoCode = CommerceProductsPromoCodeDto;
 export { CommerceProductsPromoCodeDtoSchema as CommerceProductsPromoCodeSchema };
 export type CommerceProductsPromoCodeUsage = CommerceProductsPromoCodeUsageDto;
 export { CommerceProductsPromoCodeUsageDtoSchema as CommerceProductsPromoCodeUsageSchema };
+export type CommerceProductsPromoStackingRule = CommerceProductsPromoStackingRuleDto;
+export { CommerceProductsPromoStackingRuleDtoSchema as CommerceProductsPromoStackingRuleSchema };
 export type CommerceProductsSupportAgent = CommerceProductsSupportAgentDto;
 export { CommerceProductsSupportAgentDtoSchema as CommerceProductsSupportAgentSchema };
 export type CommerceProductsSupportTicket = CommerceProductsSupportTicketDto;
@@ -37115,16 +44668,28 @@ export type IdentityAuthenticationApiKey = IdentityAuthenticationApiKeyDto;
 export { IdentityAuthenticationApiKeyDtoSchema as IdentityAuthenticationApiKeySchema };
 export type IdentityAuthenticationDiscordCallbackRequest = IdentityAuthenticationDiscordCallbackRequestDto;
 export { IdentityAuthenticationDiscordCallbackRequestDtoSchema as IdentityAuthenticationDiscordCallbackRequestSchema };
+export type IdentityAuthenticationGitHubCallbackRequest = IdentityAuthenticationGitHubCallbackRequestDto;
+export { IdentityAuthenticationGitHubCallbackRequestDtoSchema as IdentityAuthenticationGitHubCallbackRequestSchema };
 export type IdentityAuthenticationGoogleIdTokenRequest = IdentityAuthenticationGoogleIdTokenRequestDto;
 export { IdentityAuthenticationGoogleIdTokenRequestDtoSchema as IdentityAuthenticationGoogleIdTokenRequestSchema };
+export type IdentityAuthenticationInitiateOrchestratedAuthenticationRequest = IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDto;
+export { IdentityAuthenticationInitiateOrchestratedAuthenticationRequestDtoSchema as IdentityAuthenticationInitiateOrchestratedAuthenticationRequestSchema };
 export type IdentityAuthenticationJwtKeyInfo = IdentityAuthenticationJwtKeyInfoDto;
 export { IdentityAuthenticationJwtKeyInfoDtoSchema as IdentityAuthenticationJwtKeyInfoSchema };
+export type IdentityAuthenticationOidcAuthorizeRequest = IdentityAuthenticationOidcAuthorizeRequestDto;
+export { IdentityAuthenticationOidcAuthorizeRequestDtoSchema as IdentityAuthenticationOidcAuthorizeRequestSchema };
+export type IdentityAuthenticationOidcCallbackRequest = IdentityAuthenticationOidcCallbackRequestDto;
+export { IdentityAuthenticationOidcCallbackRequestDtoSchema as IdentityAuthenticationOidcCallbackRequestSchema };
+export type IdentityAuthenticationProcessOrchestratedAuthenticationStepRequest = IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDto;
+export { IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestDtoSchema as IdentityAuthenticationProcessOrchestratedAuthenticationStepRequestSchema };
 export type IdentityAuthenticationUser = IdentityAuthenticationUserDto;
 export { IdentityAuthenticationUserDtoSchema as IdentityAuthenticationUserSchema };
 export type IdentityAuthorizationEffectivePermission = IdentityAuthorizationEffectivePermissionDto;
 export { IdentityAuthorizationEffectivePermissionDtoSchema as IdentityAuthorizationEffectivePermissionSchema };
 export type IdentityAuthorizationResourceInvitation = IdentityAuthorizationResourceInvitationDto;
 export { IdentityAuthorizationResourceInvitationDtoSchema as IdentityAuthorizationResourceInvitationSchema };
+export type IdentityProvisioningScimProvisioningToken = IdentityProvisioningScimProvisioningTokenDto;
+export { IdentityProvisioningScimProvisioningTokenDtoSchema as IdentityProvisioningScimProvisioningTokenSchema };
 export type IdentityTenantsTenantAddress = IdentityTenantsTenantAddressDto;
 export { IdentityTenantsTenantAddressDtoSchema as IdentityTenantsTenantAddressSchema };
 export type IdentityTenantsTenantBranding = IdentityTenantsTenantBrandingDto;
@@ -37471,12 +45036,20 @@ export type NotificationsControllersNotificationPreference = NotificationsContro
 export { NotificationsControllersNotificationPreferenceDtoSchema as NotificationsControllersNotificationPreferenceSchema };
 export type NotificationsControllersNotificationTimeline = NotificationsControllersNotificationTimelineDto;
 export { NotificationsControllersNotificationTimelineDtoSchema as NotificationsControllersNotificationTimelineSchema };
+export type PagedResultBillingOutboxEvent = PagedResultBillingOutboxEventDto;
+export { PagedResultBillingOutboxEventDtoSchema as PagedResultBillingOutboxEventSchema };
+export type PagedResultBillingWebhookEventListItem = PagedResultBillingWebhookEventListItemDto;
+export { PagedResultBillingWebhookEventListItemDtoSchema as PagedResultBillingWebhookEventListItemSchema };
 export type PagedResultDeadLetter = PagedResultDeadLetterDto;
 export { PagedResultDeadLetterDtoSchema as PagedResultDeadLetterSchema };
 export type PagedResultEmailDeliveryEvent = PagedResultEmailDeliveryEventDto;
 export { PagedResultEmailDeliveryEventDtoSchema as PagedResultEmailDeliveryEventSchema };
 export type PagedResultEmailSuppression = PagedResultEmailSuppressionDto;
 export { PagedResultEmailSuppressionDtoSchema as PagedResultEmailSuppressionSchema };
+export type PagedResultPricingDecisionLedgerEntry = PagedResultPricingDecisionLedgerEntryDto;
+export { PagedResultPricingDecisionLedgerEntryDtoSchema as PagedResultPricingDecisionLedgerEntrySchema };
+export type PagedResultPricingRule = PagedResultPricingRuleDto;
+export { PagedResultPricingRuleDtoSchema as PagedResultPricingRuleSchema };
 export type PagedResultProduct = PagedResultProductDto;
 export { PagedResultProductDtoSchema as PagedResultProductSchema };
 export type PagedResultPromoCode = PagedResultPromoCodeDto;

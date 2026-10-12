@@ -12,11 +12,14 @@ internal static class PasswordHistoryPolicy
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(passwordHasher);
 
-        if (!string.IsNullOrWhiteSpace(user.PasswordHash) && passwordHasher.VerifyPassword(user.PasswordHash, candidatePassword))
+        bool Matches(string hash) => passwordHasher.VerifyPassword(hash, candidatePassword)
+            || PasswordHasher.MatchesLongLegacyHashForHistory(hash, candidatePassword);
+
+        if (!string.IsNullOrWhiteSpace(user.PasswordHash) && Matches(user.PasswordHash))
         {
             return true;
         }
 
-        return user.GetPasswordHistoryHashes().Any(hash => passwordHasher.VerifyPassword(hash, candidatePassword));
+        return user.GetPasswordHistoryHashes().Any(Matches);
     }
 }

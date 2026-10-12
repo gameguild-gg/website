@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using GameGuild.Email;
 using GameGuild.Identity.Users;
 using GameGuild.Notifications.Services.Email;
@@ -29,11 +30,19 @@ public sealed class EmailDispatcherServiceTests : IDisposable
         public override DateTimeOffset GetUtcNow() => new(Now, TimeSpan.Zero);
     }
 
-    private sealed class CapturingEmailSender : IEmailSender
+    private sealed class CapturingEmailSender : IConfirmedEmailSender
     {
         public List<EmailMessage> Sent { get; } = [];
 
         public bool ThrowOnSend { get; set; }
+        public bool AcceptDelivery { get; set; } = true;
+        public string? MessageId { get; set; } = "test-message-id";
+
+        public async Task<EmailDeliveryReceipt> SendWithReceiptAsync(EmailMessage message, CancellationToken cancellationToken = default)
+        {
+            if (!AcceptDelivery) { return new EmailDeliveryReceipt(false, null); }
+            return new EmailDeliveryReceipt(true, await SendAsync(message, cancellationToken));
+        }
 
         public Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
@@ -43,7 +52,7 @@ public sealed class EmailDispatcherServiceTests : IDisposable
             }
 
             Sent.Add(message);
-            return Task.FromResult<string?>("test-message-id");
+            return Task.FromResult(MessageId);
         }
     }
 
@@ -337,6 +346,96 @@ public sealed class EmailDispatcherServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SecuritySweep_NullRenderedMessageFailsWithoutMarkingSent()
+    {
+        var renderer = new StubRenderer(NotificationType.Security, _ => null);
+        var (subject, context, sender, _) = CreateSubject([renderer]);
+        var notification = Notification.Create(null, NotificationType.Security, NotificationChannel.Email,
+            "Synthetic replay alert", "Body", priority: NotificationPriority.Urgent, recipientEmail: "synthetic@example.test");
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
+        await subject.SweepOnceAsync();
+        notification.DeliveryStatus.Should().Be(NotificationDeliveryStatus.Pending);
+        notification.IsSent.Should().BeFalse();
+        notification.AttemptCount.Should().Be(1);
+        sender.Sent.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SecuritySweep_LegacySenderCannotAcknowledgeDelivery()
+    {
+        var legacySender = new Mock<IEmailSender>(MockBehavior.Strict);
+        var (subject, context, _, _) = CreateSubject([new StubRenderer(NotificationType.Security)],
+            overrideEmailSender: legacySender.Object);
+        var notification = Notification.Create(null, NotificationType.Security, NotificationChannel.Email,
+            "Synthetic replay alert", "Body", priority: NotificationPriority.Urgent, recipientEmail: "synthetic@example.test");
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
+
+        await subject.SweepOnceAsync();
+
+        notification.DeliveryStatus.Should().Be(NotificationDeliveryStatus.Pending);
+        notification.IsSent.Should().BeFalse();
+        notification.AttemptCount.Should().Be(1);
+        notification.ProviderMessageId.Should().BeNull();
+        legacySender.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task SecuritySweep_UnacceptedDeliveryRetriesWithoutMarkingSent()
+    {
+        var (subject, context, sender, _) = CreateSubject([new StubRenderer(NotificationType.Security)]);
+        sender.AcceptDelivery = false;
+        var notification = Notification.Create(null, NotificationType.Security, NotificationChannel.Email,
+            "Synthetic replay alert", "Body", priority: NotificationPriority.Urgent, recipientEmail: "synthetic@example.test");
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
+        await subject.SweepOnceAsync();
+        notification.DeliveryStatus.Should().Be(NotificationDeliveryStatus.Pending);
+        notification.IsSent.Should().BeFalse();
+        notification.AttemptCount.Should().Be(1);
+        notification.ProviderMessageId.Should().BeNull();
+        sender.Sent.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SecuritySweep_ExplicitAcceptanceWithoutMessageIdMarksSent()
+    {
+        var (subject, context, sender, _) = CreateSubject([new StubRenderer(NotificationType.Security)]);
+        sender.MessageId = null;
+        var notification = Notification.Create(null, NotificationType.Security, NotificationChannel.Email,
+            "Synthetic replay alert", "Body", priority: NotificationPriority.Urgent, recipientEmail: "synthetic@example.test");
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
+        await subject.SweepOnceAsync();
+        notification.DeliveryStatus.Should().Be(NotificationDeliveryStatus.Sent);
+        notification.IsSent.Should().BeTrue();
+        notification.ProviderMessageId.Should().BeNull();
+        sender.Sent.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task SecuritySweep_UnacceptedDeliveryEventuallyDeadLettersWithoutFalseSuccess()
+    {
+        var (subject, context, sender, options) = CreateSubject([new StubRenderer(NotificationType.Security)]);
+        sender.AcceptDelivery = false;
+        var notification = Notification.Create(null, NotificationType.Security, NotificationChannel.Email,
+            "Synthetic replay alert", "Body", priority: NotificationPriority.Urgent, recipientEmail: "synthetic@example.test");
+        context.Notifications.Add(notification);
+        await context.SaveChangesAsync();
+        for (var attempt = 0; attempt < options.MaxAttempts; attempt++)
+        {
+            context.Entry(notification).Property(value => value.NextAttemptAt).CurrentValue = null;
+            await context.SaveChangesAsync();
+            await subject.SweepOnceAsync();
+        }
+        notification.DeliveryStatus.Should().Be(NotificationDeliveryStatus.DeadLettered);
+        notification.IsSent.Should().BeFalse();
+        notification.SentAt.Should().BeNull();
+        sender.Sent.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task RecipientResolver_Prefers_RecipientEmail_Column()
     {
         var userRepository = new Mock<IUserRepository>();
@@ -367,7 +466,8 @@ public sealed class EmailDispatcherServiceTests : IDisposable
 
     private (EmailDispatcherService Subject, NotificationsTestDbContext Context, CapturingEmailSender Sender, EmailDispatcherOptions Options) CreateSubject(
         IEmailRenderer[] renderers,
-        bool shouldSend = true)
+        bool shouldSend = true,
+        IEmailSender? overrideEmailSender = null)
     {
         var options = new DbContextOptionsBuilder<NotificationsTestDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -385,9 +485,10 @@ public sealed class EmailDispatcherServiceTests : IDisposable
             new EmailRendererRegistry(renderers),
             new AlwaysResolvesResolver(),
             prefs.Object,
-            sender,
+            overrideEmailSender ?? sender,
             dispatcherOptions,
-            NullLogger<EmailDispatcherService>.Instance);
+            NullLogger<EmailDispatcherService>.Instance,
+            new NotificationMetadataProtector(new EphemeralDataProtectionProvider()));
         return (subject, context, sender, dispatcherOptions.Value);
     }
 

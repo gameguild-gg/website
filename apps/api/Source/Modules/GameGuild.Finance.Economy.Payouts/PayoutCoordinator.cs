@@ -77,7 +77,11 @@ public sealed class PayoutCoordinator
         Guid payeeId,
         CancellationToken cancellationToken = default)
     {
-        if (payeeId == Guid.Empty) throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        if (payeeId == Guid.Empty)
+        {
+            throw new ArgumentException("Payee ID is required.", nameof(payeeId));
+        }
+
         var result = await _provider.CreateOrRefreshAccountAsync(payeeId, cancellationToken).ConfigureAwait(false);
         ValidateAccountIdentity(result.Account, payeeId);
         return result;
@@ -91,7 +95,11 @@ public sealed class PayoutCoordinator
         ValidateRequest(request);
         var requestHash = RequestHash(request);
         var replay = _operations.FindReplay(request.TenantId, request.IdempotencyKey.Value, requestHash);
-        if (replay is not null) return replay;
+        if (replay is not null)
+        {
+            return replay;
+        }
+
         _execution.EnsureEnabled();
 
         var account = await _provider.GetAccountAsync(request.PayeeId, cancellationToken).ConfigureAwait(false);
@@ -108,10 +116,16 @@ public sealed class PayoutCoordinator
             [financialCrime.ToEvidence(), trustSafety.ToEvidence()], request.RequestedAt);
         var cooldown = _cooldowns.Evaluate(request.PayeeId, ProtectedChangeKind.PayoutDestination, request.RequestedAt);
         if (!cooldown.IsElapsed || !string.Equals(cooldown.Change.ValueHash, request.DestinationHash, StringComparison.Ordinal))
+        {
             throw new PayoutEligibilityException("Payout destination is still in protected-change review.");
+        }
+
         var cluster = _entityGraph.ClusterFor(request.AccountNode);
         if (!cluster.Nodes.Contains(request.DestinationNode))
+        {
             throw new PayoutEligibilityException("Payout destination is not bound to the current related-account graph.");
+        }
+
         var rolling = await _rollingReserve.ReadAsync(request.WalletId, request.RequestedAt, cancellationToken)
             .ConfigureAwait(false);
         ValidateRollingReserve(rolling, request.Amount, request.RequestedAt);
@@ -156,7 +170,11 @@ public sealed class PayoutCoordinator
         lock (_gate)
         {
             replay = _operations.FindReplay(request.TenantId, request.IdempotencyKey.Value, requestHash);
-            if (replay is not null) return replay;
+            if (replay is not null)
+            {
+                return replay;
+            }
+
             var roots = Roots(selection);
             var rootSnapshot = _rootFences.Capture(roots);
             return _rootFences.WithAllocationFence(rootSnapshot, roots, () =>
@@ -166,7 +184,10 @@ public sealed class PayoutCoordinator
                 {
                     transaction.EnsureWalletNotDebtRestricted(request.WalletId);
                     if (transaction.ActiveHoldUnits(request.WalletId, CurrencyCode.HardCoin) > 0)
+                    {
                         throw new PayoutEligibilityException("Active holds block payout reservation.");
+                    }
+
                     FragmentSelectionResult current;
                     try
                     {
@@ -177,14 +198,20 @@ public sealed class PayoutCoordinator
                         throw new PayoutStaleCommandException("Eligible payout fragments changed before reservation.");
                     }
                     if (!string.Equals(SelectionHash(current), SelectionHash(selection), StringComparison.Ordinal))
+                    {
                         throw new PayoutStaleCommandException("Eligible payout fragments changed before reservation.");
+                    }
+
                     var append = transaction.AppendJournal(ReservationPosting(request), request.RequestedAt);
                     foreach (var item in selection.Selections)
+                    {
                         transaction.AddFragmentReservation(new ValueFragmentReservation(
-                            Guid.NewGuid(), request.OperationId, FragmentReservationPurpose.Payout,
-                            item.ParentLotId, request.WalletId, item.Amount, item.SelectedRanges,
-                            1, fencingToken, _execution.Epoch, FragmentReservationStatus.Reserved,
-                            request.RequestedAt, null));
+                        Guid.NewGuid(), request.OperationId, FragmentReservationPurpose.Payout,
+                        item.ParentLotId, request.WalletId, item.Amount, item.SelectedRanges,
+                        1, fencingToken, _execution.Epoch, FragmentReservationStatus.Reserved,
+                        request.RequestedAt, null));
+                    }
+
                     transaction.AddProjectionUpdate(new WalletProjectionUpdate(
                         new PostingId(request.OperationId), request.WalletId, CurrencyCode.HardCoin,
                         -request.Amount.Units, append.Entry.Sequence));
@@ -218,15 +245,27 @@ public sealed class PayoutCoordinator
         EnsureCommandVersion(operation, expectedVersion, fencingToken, killSwitchEpoch);
         var reservations = _ledger.GetFragmentReservations(operationId);
         if (reservations.Count == 0)
+        {
             throw new PayoutStaleCommandException("Payout reservation fragments are missing.");
+        }
+
         if (reservations.All(item => item.Status == FragmentReservationStatus.Released))
+        {
             return _operations.Update(
-                operation.Transition(PayoutOperationState.Cancelled, requestedAt), operation.Version);
+            operation.Transition(PayoutOperationState.Cancelled, requestedAt), operation.Version);
+        }
+
         if (reservations.Any(item => item.Status != FragmentReservationStatus.Reserved))
+        {
             throw new PayoutStaleCommandException("Payout fragments are no longer reserved for dispatch.");
+        }
+
         if (_ledger.GetDebt(operation.WalletId).OutstandingHardUnits > 0 ||
             _ledger.GetActiveHolds(operation.WalletId).Any())
+        {
             throw new PayoutEligibilityException("Debt or an active hold blocks payout dispatch.");
+        }
+
         _reserveAuthority.Authorize(operation.ReserveVersion, operation.ReserveAuthorizationEpoch, requestedAt);
         var account = await _provider.GetAccountAsync(operation.PayeeId, cancellationToken).ConfigureAwait(false);
         ValidateDispatchAccount(account, operation, requestedAt);
@@ -243,7 +282,10 @@ public sealed class PayoutCoordinator
                 var anchor = _anchors.CreateOnDemand(snapshotHash, requestedAt);
                 if (!_anchorVerifier.Verify(anchor) ||
                     !string.Equals(anchor.DispatchSnapshotHash, snapshotHash, StringComparison.Ordinal))
+                {
                     throw new PayoutEvidenceException("Independent dispatch anchor verification failed.");
+                }
+
                 _ledger.Execute(transaction =>
                 {
                     transaction.TransitionFragmentReservations(
@@ -277,9 +319,16 @@ public sealed class PayoutCoordinator
         ArgumentNullException.ThrowIfNull(providerEvent);
         var eventHash = ProviderEventHash(providerEvent);
         var replay = _operations.FindProviderEvent(providerEvent.EventId, eventHash);
-        if (replay is not null) return ValueTask.FromResult(_operations.Get(replay.OperationId));
+        if (replay is not null)
+        {
+            return ValueTask.FromResult(_operations.Get(replay.OperationId));
+        }
+
         if (!_providerEvidence.Verify(providerEvent))
+        {
             throw new PayoutEvidenceException("Provider payout event signature is invalid.");
+        }
+
         var operation = _operations.Get(providerEvent.OperationId);
         ValidateProviderEventBinding(providerEvent, operation);
         return ValueTask.FromResult(CompleteFromProviderEvent(operation, providerEvent, eventHash));
@@ -291,7 +340,10 @@ public sealed class PayoutCoordinator
     {
         var operation = _operations.Get(operationId);
         if (string.IsNullOrWhiteSpace(operation.ProviderPayoutId))
+        {
             throw new PayoutStaleCommandException("A provider payout ID is required before reconciliation.");
+        }
+
         var providerEvent = await _provider.ReconcileAsync(
             operationId, operation.ProviderPayoutId, cancellationToken).ConfigureAwait(false);
         return await ApplyProviderEventAsync(providerEvent, cancellationToken).ConfigureAwait(false);
@@ -327,9 +379,15 @@ public sealed class PayoutCoordinator
         string eventHash)
     {
         if (operation.State is not (PayoutOperationState.Dispatching or PayoutOperationState.Ambiguous))
+        {
             throw new PayoutStaleCommandException("Provider terminal event is out of order.");
+        }
+
         if (providerEvent.Outcome is not (PayoutProviderOutcome.Succeeded or PayoutProviderOutcome.Failed))
+        {
             throw new PayoutEvidenceException("Only terminal provider events can complete a payout.");
+        }
+
         var expectedStatus = FragmentReservationStatus.Dispatching;
         var nextStatus = providerEvent.Outcome == PayoutProviderOutcome.Succeeded
             ? FragmentReservationStatus.Consumed
@@ -342,21 +400,30 @@ public sealed class PayoutCoordinator
             : PostingTemplateKind.PayoutFailure;
         var reservations = _ledger.GetFragmentReservations(operation.Id);
         if (reservations.Count == 0 || reservations.Any(item => item.Status != expectedStatus))
+        {
             throw new PayoutStaleCommandException("Payout fragments are not dispatching.");
+        }
 
         _ledger.Execute(transaction =>
         {
             var append = transaction.AppendJournal(
                 TerminalPosting(operation, postingKind, providerEvent.ObservedAt), providerEvent.ObservedAt);
             if (nextStatus == FragmentReservationStatus.Consumed)
+            {
                 foreach (var reservation in reservations)
+                {
                     transaction.AddConsumption(new FragmentConsumption(
-                        DeterministicPostingId(operation.Id, "success"), reservation.LotId,
-                        reservation.Amount, reservation.Ranges));
+                    DeterministicPostingId(operation.Id, "success"), reservation.LotId,
+                    reservation.Amount, reservation.Ranges));
+                }
+            }
             else
+            {
                 transaction.AddProjectionUpdate(new WalletProjectionUpdate(
-                    DeterministicPostingId(operation.Id, "failure"), operation.WalletId,
-                    CurrencyCode.HardCoin, operation.Amount.Units, append.Entry.Sequence));
+                DeterministicPostingId(operation.Id, "failure"), operation.WalletId,
+                CurrencyCode.HardCoin, operation.Amount.Units, append.Entry.Sequence));
+            }
+
             transaction.TransitionFragmentReservations(
                 operation.Id, expectedStatus, nextStatus, providerEvent.ObservedAt);
             transaction.AddOutbox(new ImmutableOutboxMessage(
@@ -458,21 +525,31 @@ public sealed class PayoutCoordinator
     {
         if (request.OperationId == Guid.Empty || request.TenantId == Guid.Empty ||
             request.ActorId == Guid.Empty || request.PayeeId == Guid.Empty)
+        {
             throw new ArgumentException("Operation, tenant, actor, and payee identities are required.", nameof(request));
+        }
+
         if (request.Amount.Currency != CurrencyCode.HardCoin || request.Amount.Units <= 0)
+        {
             throw new PayoutEligibilityException("Payouts require a positive hard-coin amount.");
+        }
+
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ExpectedProviderAccountId);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DestinationHash);
         if (request.AccountNode.Type != RiskEntityType.Account ||
             request.DestinationNode.Type != RiskEntityType.PayoutDestination)
+        {
             throw new ArgumentException("Payout risk nodes must identify the account and destination.", nameof(request));
+        }
     }
 
     private static void ValidateAccountIdentity(ConnectAccountSnapshot account, Guid payeeId)
     {
         ArgumentNullException.ThrowIfNull(account);
         if (account.PayeeId != payeeId)
+        {
             throw new PayoutProviderBindingException("Connect account is not bound to the requested payee.");
+        }
     }
 
     private static void ValidateReadyAccount(
@@ -484,10 +561,15 @@ public sealed class PayoutCoordinator
         if (account.State != ConnectAccountState.Ready || !account.ChargesEnabled || !account.PayoutsEnabled ||
             account.Version <= 0 || account.ObservedAt > now || account.ExpiresAt <= now ||
             string.IsNullOrWhiteSpace(account.EvidenceHash))
+        {
             throw new PayoutEligibilityException("Connect account is not ready for payout.");
+        }
+
         if (!string.Equals(account.ProviderAccountId, request.ExpectedProviderAccountId, StringComparison.Ordinal) ||
             !string.Equals(account.DestinationHash, request.DestinationHash, StringComparison.Ordinal))
+        {
             throw new PayoutProviderBindingException("Connect account or payout destination binding changed.");
+        }
     }
 
     private static void ValidateDispatchAccount(
@@ -499,14 +581,18 @@ public sealed class PayoutCoordinator
         if (account.State != ConnectAccountState.Ready || !account.PayoutsEnabled || account.ExpiresAt <= now ||
             !string.Equals(account.ProviderAccountId, operation.ProviderAccountId, StringComparison.Ordinal) ||
             !string.Equals(account.DestinationHash, operation.DestinationHash, StringComparison.Ordinal))
+        {
             throw new PayoutProviderBindingException("Connect payout binding is stale at dispatch.");
+        }
     }
 
     private static void ValidateKyc(PayoutKycSnapshot kyc, Guid payeeId, DateTimeOffset now)
     {
         if (kyc.PayeeId != payeeId || kyc.Version <= 0 || !kyc.IsApproved || kyc.ObservedAt > now ||
             kyc.ExpiresAt <= now || string.IsNullOrWhiteSpace(kyc.EvidenceHash))
+        {
             throw new PayoutEligibilityException("Fresh approved KYC evidence is required for payout.");
+        }
     }
 
     private static void ValidateRollingReserve(
@@ -517,9 +603,14 @@ public sealed class PayoutCoordinator
         if (reserve.Version <= 0 || reserve.EligibleHardUnits < 0 || reserve.ReservedHardUnits < 0 ||
             reserve.ReserveBasisPoints is < 0 or > 10_000 || reserve.ObservedAt > now || reserve.ExpiresAt <= now ||
             string.IsNullOrWhiteSpace(reserve.EvidenceHash))
+        {
             throw new PayoutEligibilityException("Rolling-reserve evidence is invalid or stale.");
+        }
+
         if (amount.Units > reserve.ReleasableHardUnits)
+        {
             throw new PayoutEligibilityException("Rolling-reserve policy blocks the requested payout amount.");
+        }
     }
 
     private static void EnsureCommandVersion(
@@ -530,7 +621,9 @@ public sealed class PayoutCoordinator
     {
         if (operation.State != PayoutOperationState.Reserved || operation.Version != expectedVersion ||
             operation.FencingToken != fencingToken || operation.KillSwitchEpoch != killSwitchEpoch)
+        {
             throw new PayoutStaleCommandException("Payout dispatch command is stale or fenced.");
+        }
     }
 
     private static void ValidateProviderEventBinding(PayoutProviderEvent providerEvent, PayoutOperation operation)
@@ -539,7 +632,9 @@ public sealed class PayoutCoordinator
             !string.Equals(providerEvent.DestinationHash, operation.DestinationHash, StringComparison.Ordinal) ||
             (!string.IsNullOrWhiteSpace(operation.ProviderPayoutId) &&
              !string.Equals(providerEvent.ProviderPayoutId, operation.ProviderPayoutId, StringComparison.Ordinal)))
+        {
             throw new PayoutProviderBindingException("Provider payout event is not bound to this operation.");
+        }
     }
 
     private static bool ReceiptMatches(PayoutDispatchReceipt receipt, PayoutOperation operation) =>

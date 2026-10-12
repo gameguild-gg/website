@@ -26,7 +26,10 @@ public static class WalletProjectionRebuilder
         var blockedLots = input.DisputedOrFrozenLots.ToHashSet();
         foreach (var lot in input.CreditLots.Where(lot => lot.WalletId == input.WalletId))
         {
-            if (lot.State is CreditLotState.Consumed or CreditLotState.Reversed) continue;
+            if (lot.State is CreditLotState.Consumed or CreditLotState.Reversed)
+            {
+                continue;
+            }
 
             var remaining = RemainingUnits(lot, input.Consumptions, input.Retirements);
             var reserved = ReservedUnits(lot, remaining, input.Reservations);
@@ -36,7 +39,11 @@ public static class WalletProjectionRebuilder
             if (lot.Amount.Currency == CurrencyCode.SoftCoin)
             {
                 soft = Add(soft, remaining);
-                if (blocked) lotHeldSoft = Add(lotHeldSoft, remaining);
+                if (blocked)
+                {
+                    lotHeldSoft = Add(lotHeldSoft, remaining);
+                }
+
                 availableSoft = Add(availableSoft, available);
                 continue;
             }
@@ -49,17 +56,26 @@ public static class WalletProjectionRebuilder
                 case ProvenanceKind.EarnedHard:
                     earnedHard = Add(earnedHard, remaining);
                     if (input.AsOf < lot.OriginalMaturesAt)
+                    {
                         immatureEarned = Add(immatureEarned, remaining);
+                    }
+
                     break;
                 default:
                     restrictedHard = Add(restrictedHard, remaining);
                     break;
             }
 
-            if (blocked) lotHeldHard = Add(lotHeldHard, remaining);
+            if (blocked)
+            {
+                lotHeldHard = Add(lotHeldHard, remaining);
+            }
+
             availableHard = Add(availableHard, available);
             if (!blocked && lot.Provenance == ProvenanceKind.EarnedHard && input.AsOf >= lot.OriginalMaturesAt)
+            {
                 withdrawableHard = Add(withdrawableHard, available);
+            }
         }
 
         var activeHoldHard = ActiveHoldUnits(input, CurrencyCode.HardCoin);
@@ -123,7 +139,10 @@ public static class WalletProjectionRebuilder
             });
         var unavailable = Add(consumed, retired);
         if (unavailable > lot.Amount.Units)
+        {
             throw new ProjectionCorruptionException("A credit lot is over-consumed or over-retired.");
+        }
+
         return lot.Amount.Units - unavailable;
     }
 
@@ -139,7 +158,10 @@ public static class WalletProjectionRebuilder
                 return Add(total, item.Amount.Units);
             });
         if (reserved > remaining)
+        {
             throw new ProjectionCorruptionException("A credit lot is over-reserved.");
+        }
+
         return reserved;
     }
 
@@ -152,7 +174,9 @@ public static class WalletProjectionRebuilder
     private static void EnsureCurrency(CreditLot lot, CurrencyCode currency)
     {
         if (lot.Amount.Currency != currency)
+        {
             throw new ProjectionCorruptionException("A lot allocation uses a different currency than its parent.");
+        }
     }
 
     private static long Add(long left, long right)

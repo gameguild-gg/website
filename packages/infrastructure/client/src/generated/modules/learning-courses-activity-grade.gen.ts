@@ -90,7 +90,7 @@ export class LearningCoursesActivityGradeModule {
   /**
    * Get all grades for a specific content item (Program-level Read permission required)
    */
-  async getCoursesActivityGradesContent(programId: string, contentId: string): Promise<Result<Array<Types.LearningCoursesActivityGradeDto>, ApiError>> {
+  async getCoursesActivityGradesContent(programId: string, contentId: string): Promise<Result<Types.LearningCoursesActivityGradeDto[], ApiError>> {
     const url = `/v1/courses/${programId}/activity-grades/content/${contentId}`;
 
     const result = await this.client.request({
@@ -99,16 +99,13 @@ export class LearningCoursesActivityGradeModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesActivityGradeDto>, ApiError>;
+    return result as Result<Types.LearningCoursesActivityGradeDto[], ApiError>;
   }
 
   /**
    * Get all grades given by a specific grader (Program-level Read permission required)
    */
-  async getCoursesActivityGradesGrader(
-    programId: string,
-    graderProgramUserId: string,
-  ): Promise<Result<Array<Types.LearningCoursesActivityGradeDto>, ApiError>> {
+  async getCoursesActivityGradesGrader(programId: string, graderProgramUserId: string): Promise<Result<Types.LearningCoursesActivityGradeDto[], ApiError>> {
     const url = `/v1/courses/${programId}/activity-grades/grader/${graderProgramUserId}`;
 
     const result = await this.client.request({
@@ -117,7 +114,7 @@ export class LearningCoursesActivityGradeModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesActivityGradeDto>, ApiError>;
+    return result as Result<Types.LearningCoursesActivityGradeDto[], ApiError>;
   }
 
   /**
@@ -144,7 +141,7 @@ export class LearningCoursesActivityGradeModule {
   /**
    * Get pending grades for a program (content interactions needing grading) (Program-level Read permission required)
    */
-  async getCoursesActivityGradesPending(programId: string): Promise<Result<Array<Types.LearningCoursesContentInteractionDto>, ApiError>> {
+  async getCoursesActivityGradesPending(programId: string): Promise<Result<Types.LearningCoursesContentInteractionDto[], ApiError>> {
     const url = `/v1/courses/${programId}/activity-grades/pending`;
 
     const result = await this.client.request({
@@ -153,7 +150,7 @@ export class LearningCoursesActivityGradeModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesContentInteractionDto>, ApiError>;
+    return result as Result<Types.LearningCoursesContentInteractionDto[], ApiError>;
   }
 
   /**
@@ -180,7 +177,7 @@ export class LearningCoursesActivityGradeModule {
   /**
    * Get all grades received by a specific student (Program-level Read permission required)
    */
-  async getCoursesActivityGradesStudent(programId: string, programUserId: string): Promise<Result<Array<Types.LearningCoursesActivityGradeDto>, ApiError>> {
+  async getCoursesActivityGradesStudent(programId: string, programUserId: string): Promise<Result<Types.LearningCoursesActivityGradeDto[], ApiError>> {
     const url = `/v1/courses/${programId}/activity-grades/student/${programUserId}`;
 
     const result = await this.client.request({
@@ -189,7 +186,7 @@ export class LearningCoursesActivityGradeModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesActivityGradeDto>, ApiError>;
+    return result as Result<Types.LearningCoursesActivityGradeDto[], ApiError>;
   }
 }
 

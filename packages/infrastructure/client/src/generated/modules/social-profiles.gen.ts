@@ -77,7 +77,7 @@ export class SocialProfilesModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -132,17 +132,17 @@ export class SocialProfilesModule {
 
   /**
    */
-  async getApiSocialProfilesSearch(query?: { query?: string; take?: number }): Promise<Result<Array<Types.SocialProfilesSocialProfileDto>, ApiError>> {
+  async getApiSocialProfilesSearch(query?: { query?: string; take?: number }): Promise<Result<Types.SocialProfilesSocialProfileDto[], ApiError>> {
     const url = '/api/social/profiles/search';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.SocialProfilesSocialProfileDto>, ApiError>;
+    return result as Result<Types.SocialProfilesSocialProfileDto[], ApiError>;
   }
 
   /**

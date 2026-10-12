@@ -609,8 +609,16 @@ public class CqrsMediatorCoverageCompletionTests
         };
         var sender = new MediatorSender(type =>
         {
-            if (type == typeof(IRequestHandler<PipelineRequest, string>)) return handler;
-            if (type == typeof(IEnumerable<IPipelineBehavior<PipelineRequest, string>>)) return behaviors;
+            if (type == typeof(IRequestHandler<PipelineRequest, string>))
+            {
+                return handler;
+            }
+
+            if (type == typeof(IEnumerable<IPipelineBehavior<PipelineRequest, string>>))
+            {
+                return behaviors;
+            }
+
             return null;
         });
 
@@ -666,8 +674,16 @@ public class CqrsMediatorCoverageCompletionTests
     {
         var sender = new MediatorSender(type =>
         {
-            if (type == typeof(IEnumerable<IPipelineBehavior<PipelineRequest, string>>)) return new object[] { new InvalidBehaviorWithoutHandle() };
-            if (type == typeof(IRequestHandler<PipelineRequest, string>)) return new PipelineRequestHandler();
+            if (type == typeof(IEnumerable<IPipelineBehavior<PipelineRequest, string>>))
+            {
+                return new object[] { new InvalidBehaviorWithoutHandle() };
+            }
+
+            if (type == typeof(IRequestHandler<PipelineRequest, string>))
+            {
+                return new PipelineRequestHandler();
+            }
+
             return null;
         });
 
@@ -684,8 +700,16 @@ public class CqrsMediatorCoverageCompletionTests
         var publisher = new CapturingNotificationPublisher();
         var mediator = new Mediator(type =>
         {
-            if (type == typeof(IRequestHandler<PipelineRequest, string>)) return handler;
-            if (type == typeof(IEnumerable<INotificationHandler<TestNotification>>)) return new[] { notificationHandler };
+            if (type == typeof(IRequestHandler<PipelineRequest, string>))
+            {
+                return handler;
+            }
+
+            if (type == typeof(IEnumerable<INotificationHandler<TestNotification>>))
+            {
+                return new[] { notificationHandler };
+            }
+
             return null;
         }, publisher);
 

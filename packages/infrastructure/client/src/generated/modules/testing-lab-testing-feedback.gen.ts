@@ -102,7 +102,7 @@ export class TestingLabTestingFeedbackModule {
 
   /**
    */
-  async getTestingFeedbackByUser(userId: string): Promise<Result<Array<Types.TestingLabTestingFeedback>, ApiError>> {
+  async getTestingFeedbackByUser(userId: string): Promise<Result<Types.TestingLabTestingFeedback[], ApiError>> {
     const url = `/v1/testing/feedback/by-user/${userId}`;
 
     const result = await this.client.request({
@@ -111,12 +111,12 @@ export class TestingLabTestingFeedbackModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingFeedback>, ApiError>;
+    return result as Result<Types.TestingLabTestingFeedback[], ApiError>;
   }
 
   /**
    */
-  async getTestingRequestsFeedback(requestId: string): Promise<Result<Array<Types.TestingLabTestingFeedback>, ApiError>> {
+  async getTestingRequestsFeedback(requestId: string): Promise<Result<Types.TestingLabTestingFeedback[], ApiError>> {
     const url = `/v1/testing/requests/${requestId}/feedback`;
 
     const result = await this.client.request({
@@ -125,7 +125,7 @@ export class TestingLabTestingFeedbackModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingFeedback>, ApiError>;
+    return result as Result<Types.TestingLabTestingFeedback[], ApiError>;
   }
 
   /**

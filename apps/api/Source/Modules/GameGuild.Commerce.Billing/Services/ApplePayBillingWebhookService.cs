@@ -12,7 +12,12 @@ public class ApplePayBillingWebhookService : BillingWebhookService
 {
     private readonly IBillingWebhookRepository _webhookRepository;
     private readonly IApplePayReceiptValidationService _receiptValidationService;
+    private readonly IWebhookSecurityEventPublisher? _securityEvents;
+    private readonly IBillingIntegrationEventPublisher? _billingEvents;
     private readonly ILogger<ApplePayBillingWebhookService> _logger;
+
+    /// <inheritdoc />
+    protected override string ProviderName => PaymentProviders.AppleAppStore;
 
     public ApplePayBillingWebhookService(
         IBillingWebhookRepository webhookRepository,
@@ -21,11 +26,15 @@ public class ApplePayBillingWebhookService : BillingWebhookService
         ISubscriptionLifecycleService lifecycleService,
         ISubscriptionQueryService queryService,
         ISubscriptionBillingService billingService,
-        ISubscriptionExternalIdService externalIdService)
-        : base(logger, lifecycleService, queryService, billingService, externalIdService)
+        ISubscriptionExternalIdService externalIdService,
+        IWebhookSecurityEventPublisher? securityEvents = null,
+        IBillingIntegrationEventPublisher? billingEvents = null)
+        : base(logger, lifecycleService, queryService, billingService, externalIdService, billingEvents)
     {
         _webhookRepository = webhookRepository;
         _receiptValidationService = receiptValidationService;
+        _securityEvents = securityEvents;
+        _billingEvents = billingEvents;
         _logger = logger;
     }
 
@@ -48,6 +57,12 @@ public class ApplePayBillingWebhookService : BillingWebhookService
         if (!validationResult.IsValid)
         {
             _logger.LogWarning("Apple notification validation failed: {Error}", validationResult.ErrorMessage);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.SignatureFailed,
+                    validationResult.ErrorMessage ?? "Validation failed",
+                    eventId: null,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return WebhookProcessingResult.Failed("unknown", validationResult.ErrorMessage ?? "Validation failed");
         }
 
@@ -61,6 +76,12 @@ public class ApplePayBillingWebhookService : BillingWebhookService
         if (existingEvent != null)
         {
             _logger.LogInformation("Duplicate Apple notification detected: {EventId}. Returning success.", eventId);
+            await PublishSecurityEventAsync(
+                    WebhookSecurityEventKind.ReplayDetected,
+                    "Duplicate Apple notification delivery acknowledged by the idempotent inbox.",
+                    eventId,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return WebhookProcessingResult.AlreadyProcessed(eventId, existingEvent.ProcessedAt);
         }
 
@@ -85,6 +106,7 @@ public class ApplePayBillingWebhookService : BillingWebhookService
             // Mark as processed
             webhookEvent.MarkAsProcessed();
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: true, cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation(
                 "Successfully processed Apple notification: {EventId} ({NotificationType}/{Subtype})",
@@ -97,9 +119,55 @@ public class ApplePayBillingWebhookService : BillingWebhookService
 
             webhookEvent.MarkAsFailed(ex.Message);
             await _webhookRepository.UpdateAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+            await PublishBillingEventAsync(webhookEvent, processed: false, cancellationToken).ConfigureAwait(false);
 
             return WebhookProcessingResult.Failed(eventId, ex.Message);
         }
+    }
+
+    /// <summary>
+    ///     Publishes the named inbox-transition event for the processed/failed outcome.
+    ///     Best-effort: a publication failure never changes the processing result.
+    /// </summary>
+    private async Task PublishBillingEventAsync(
+        BillingWebhookEvent webhookEvent,
+        bool processed,
+        CancellationToken cancellationToken)
+    {
+        if (_billingEvents is null)
+        {
+            return;
+        }
+
+        if (processed)
+        {
+            await _billingEvents.PublishWebhookProcessedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await _billingEvents.PublishWebhookFailedAsync(webhookEvent, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task PublishSecurityEventAsync(
+        WebhookSecurityEventKind kind,
+        string detail,
+        string? eventId,
+        CancellationToken cancellationToken)
+    {
+        if (_securityEvents is null)
+        {
+            return;
+        }
+
+        await _securityEvents.PublishAsync(
+                kind,
+                PaymentProviders.AppleAppStore,
+                sourceIpAddress: null,
+                detail,
+                eventId,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -207,7 +275,7 @@ public class ApplePayBillingWebhookService : BillingWebhookService
     /// <summary>
     ///     Routes an Apple Pay event to the appropriate handler based on event type.
     /// </summary>
-    private async Task RouteApplePayEventAsync(string eventType, string payload, CancellationToken cancellationToken)
+    private async Task RouteApplePayEventAsync(string eventType, string payload)
     {
         var webhookPayload = ParseApplePayPayloadData(payload);
 

@@ -81,6 +81,45 @@ writes a candidate lock under the disposable cache, builds the affected recipe
 graph, applies patches, and replaces the tracked lock atomically only after the
 verification succeeds.
 
+Changesets advances the seven public package versions together. The version
+preparation command then aligns internal runtime peer minimums with that release
+version before generating the pnpm lock. External peers and optional peer
+metadata retain their existing contracts. Inconsistent public package versions
+stop this synchronization before any manifest is written.
+
+### Reviewing an upstream archive checksum change
+
+GitHub source archives can change bytes for the same commit. Besides compression,
+Git `export-subst` can render a different abbreviated hash as the upstream
+repository grows. A digest absent from the committed lock still fails before
+extraction; builds never replace the lock or accept a checksum automatically.
+Review the complete contents against the pinned commit before updating the lock.
+For an immutable Git archive, a reviewed equivalent export may be recorded in
+`reviewedArchiveVariants`, with its exact SHA-256, Git tree and review evidence.
+Ordinary release archives do not support this field. Source receipts record the
+actual downloaded digest, including when it is a reviewed variant.
+Release `sourceProvenance` retains the primary lock hash and all reviewed variants;
+it describes the allowed source identities, while the materialized source receipt
+identifies which archive was actually used.
+See [GitHub's source archive documentation](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives).
+
+The 2026-10-06 LLVM review preserved commit
+`7b58716d96c3ae4c0c4e6f72e29b16137bb6224b`, version `23.0.0git`, and its EMSDK
+ownership. Comparing the previous archive with the archive downloaded by the CI
+verified 175,014 files. Only `clang/bindings/python/.git_archival.txt` differed:
+the describe suffix grew from `g7b58716d96c3a` to `g7b58716d96c3ae4`.
+Accounting for that declared export substitution and six CRLF test fixtures
+reconstructed the upstream Git tree `34cd378b6fba47d5bd42003cdaf9505179879004`.
+The primary reviewed archive SHA-256 is
+`0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5`.
+The subsequent CI run served the previous equivalent export instead, with SHA-256
+`0791c69319e1861e86ccb438d10b1b1816987f2d99b13d7e95ef08f88f0cedf8`.
+Both reviewed exports are pinned for this commit. Their comparison, original Git
+blobs and tree identity are recorded in
+[the LLVM archive review](../toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b.json).
+Any third digest requires a new review; it is rejected even if the URL still names
+the same commit.
+
 ## Directory ownership
 
 ```text

@@ -121,6 +121,31 @@ public sealed class SecurityServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public void SetupAuthentication_UsesCustomApiKeyResolverFromAuthenticationOptions()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        Func<HttpRequest, string?> resolver = static _ => "deployment-api-key";
+        var options = new AuthenticationOptions
+        {
+            JwtSecretKey = new string('s', 64),
+            JwtIssuer = "GameGuild",
+            JwtAudience = "GameGuild.Users",
+            EnableApiKeyAuthentication = true,
+            ApiKeyCustomKeyResolver = resolver
+        };
+
+        services.AddLogging();
+        services.SetupAuthentication(configuration, options);
+        using var serviceProvider = services.BuildServiceProvider();
+
+        var apiKeyOptions = serviceProvider.GetRequiredService<IOptionsMonitor<ApiKeyAuthenticationOptions>>()
+            .Get(ApiKeyAuthenticationOptions.SchemeName);
+
+        Assert.Same(resolver, apiKeyOptions.CustomKeyResolver);
+    }
+
+    [Fact]
     public async Task SetupAuthentication_RegistersConfiguredBasicSchemeWithoutChangingJwtDefault()
     {
         var services = new ServiceCollection();

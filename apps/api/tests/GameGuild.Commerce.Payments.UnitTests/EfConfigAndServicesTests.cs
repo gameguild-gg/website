@@ -51,15 +51,6 @@ public class EfConfigAndServicesTests
     }
 
     [Fact]
-    public void PromoStackingRuleConfiguration_CanConfigure()
-    {
-        var mb = new ModelBuilder(new ConventionSet());
-        var cfg = new PromoStackingRuleConfiguration();
-        cfg.Configure(mb.Entity<PromoStackingRule>());
-        mb.Model.Should().NotBeNull();
-    }
-
-    [Fact]
     public void RevenueEventConfiguration_CanConfigure()
     {
         var mb = new ModelBuilder(new ConventionSet());

@@ -30,7 +30,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .HasMaxLength(100);
 
         builder.Property(n => n.Metadata)
-            .HasMaxLength(4000);
+            .HasColumnType("text");
 
         builder.Property(n => n.Type)
             .HasConversion<string>()

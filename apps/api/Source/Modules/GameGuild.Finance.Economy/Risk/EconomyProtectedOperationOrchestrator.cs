@@ -18,8 +18,11 @@ public sealed class EconomyProtectedOperationOrchestrator(
         var actor = actorContextAccessor.ActorContext;
         if (!actor.IsAuthenticated || actor.TenantId is not { } tenantId ||
             actor.SubjectIdAsGuid is not { } actorId)
+        {
             throw new UnauthorizedAccessException(
                 "A protected Economy operation requires an authenticated tenant actor.");
+        }
+
         return await trustedAuthorizer.ExecuteAsync(
             tenantId,
             actorId,
@@ -68,16 +71,33 @@ public sealed class EconomyProtectedOperationOrchestrator(
     internal static void Validate(EconomyProtectedOperationIntent intent)
     {
         ArgumentNullException.ThrowIfNull(intent);
-        if (!Enum.IsDefined(intent.Capability)) throw new ArgumentOutOfRangeException(nameof(intent));
-        if (!Enum.IsDefined(intent.TemplateKind)) throw new ArgumentOutOfRangeException(nameof(intent));
+        if (!Enum.IsDefined(intent.Capability))
+        {
+            throw new ArgumentOutOfRangeException(nameof(intent));
+        }
+
+        if (!Enum.IsDefined(intent.TemplateKind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(intent));
+        }
+
         if (intent.SourceWalletId.Value == Guid.Empty || intent.DestinationWalletId.Value == Guid.Empty)
+        {
             throw new ArgumentException("Protected operation wallets are required.", nameof(intent));
+        }
+
         if (intent.ProtectedSubjectId == Guid.Empty)
+        {
             throw new ArgumentException("Protected operation subject IDs cannot be empty.", nameof(intent));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(intent.Amount.Units);
         ArgumentNullException.ThrowIfNull(intent.CurrencyLegs);
         if (intent.CurrencyLegs.Count == 0)
+        {
             throw new ArgumentException("Protected operation currency legs are required.", nameof(intent));
+        }
+
         ArgumentNullException.ThrowIfNull(intent.SourceRoots);
         ArgumentException.ThrowIfNullOrWhiteSpace(intent.ProviderReferenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(intent.DestinationHash);

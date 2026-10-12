@@ -20,7 +20,7 @@ export class AiPromptTemplatesModule {
   async getAiPromptTemplatesForGetAiPromptTemplates(query?: {
     category?: string;
     includeInactive?: boolean;
-  }): Promise<Result<Array<Types.AIAiPromptTemplateDto>, ApiError>> {
+  }): Promise<Result<Types.AIAiPromptTemplateDto[], ApiError>> {
     const url = '/v1/ai/prompt-templates';
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class AiPromptTemplatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AIAiPromptTemplateDto>, ApiError>;
+    return result as Result<Types.AIAiPromptTemplateDto[], ApiError>;
   }
 
   /**

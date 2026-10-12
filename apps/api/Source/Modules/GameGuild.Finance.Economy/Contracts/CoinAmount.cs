@@ -6,7 +6,11 @@ public readonly record struct CoinAmount
 {
     public CoinAmount(CurrencyCode currency, long units)
     {
-        if (!Enum.IsDefined(currency)) throw new ArgumentOutOfRangeException(nameof(currency));
+        if (!Enum.IsDefined(currency))
+        {
+            throw new ArgumentOutOfRangeException(nameof(currency));
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(units);
         Currency = currency;
         Units = units;

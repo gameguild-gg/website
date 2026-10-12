@@ -188,7 +188,7 @@ test.describe('SDL3 compile & canvas render', () => {
         const canvasSize = await Promise.race([sdlCanvas(page).boundingBox(), crash]);
         console.log(`Canvas bounding box: ${JSON.stringify(canvasSize)}`);
         expect(canvasSize).not.toBeNull();
-        expect(canvasSize!.width).toBeGreaterThan(100);
+        expect(canvasSize?.width).toBeGreaterThan(100);
         expect(canvasSize!.height).toBeGreaterThan(100);
 
         console.log('SDL canvas is visible and has non-zero dimensions!');

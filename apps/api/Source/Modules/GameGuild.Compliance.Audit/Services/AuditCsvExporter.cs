@@ -137,8 +137,25 @@ public static class AuditCsvExporter
     {
         if (string.IsNullOrEmpty(value)) { return value ?? string.Empty; }
 
+        // Spreadsheet consumers must treat formula-like audit text as a literal cell.
+        // JSON exports retain the original value for lossless machine consumption.
+        if (RequiresSpreadsheetLiteral(value)) { value = "'" + value; }
+
         if (value.IndexOfAny([',', '"', '\r', '\n']) < 0) { return value; }
 
         return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    private static bool RequiresSpreadsheetLiteral(string value)
+    {
+        foreach (var character in value)
+        {
+            if (character is '\t' or '\r' or '\n') { return true; }
+            if (char.IsWhiteSpace(character)) { continue; }
+
+            return character is '=' or '+' or '-' or '@' or '＝' or '＋' or '－' or '＠';
+        }
+
+        return false;
     }
 }

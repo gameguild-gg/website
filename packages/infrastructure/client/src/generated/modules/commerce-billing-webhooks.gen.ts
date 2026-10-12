@@ -29,7 +29,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;
@@ -61,7 +61,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;
@@ -81,10 +81,36 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;
+  }
+
+  /**
+   * Get the billing webhook security monitoring summary
+   *
+   * Admin-facing monitoring surface for the billing webhook security controls: the state of
+   * the source IP allowlist, the suspicious-activity threshold blocking (currently blocked
+   * sources), and the delivery health of the central security event pipeline that persists
+   * verification failures, allowlist rejections, and replay detections.
+   */
+  async getBillingWebhooksSecurity(): Promise<Result<Types.CommerceBillingBillingWebhookSecuritySummaryDto, ApiError>> {
+    const url = '/api/v1/billing/webhooks/security';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommerceBillingBillingWebhookSecuritySummaryDtoSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 
   /**
@@ -102,7 +128,7 @@ export class CommerceBillingWebhooksModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<Record<string, unknown>, ApiError>;

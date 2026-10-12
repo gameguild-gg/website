@@ -119,9 +119,20 @@ public class ServiceAccountOperationsController(
             return NotFound();
         }
 
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        if (page < 1)
+        {
+            page = 1;
+        }
+
+        if (pageSize < 1)
+        {
+            pageSize = 20;
+        }
+
+        if (pageSize > 100)
+        {
+            pageSize = 100;
+        }
 
         var auditLog = await serviceAccountService.GetAuditLogAsync(
             serviceAccountId,

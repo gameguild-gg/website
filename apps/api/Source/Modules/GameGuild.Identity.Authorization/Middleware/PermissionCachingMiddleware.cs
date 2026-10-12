@@ -25,7 +25,7 @@ public sealed class PermissionCachingMiddleware(
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        logger.LogTrace("Permission caching middleware invoked for {Path}", context.Request.Path);
+        logger.LogTrace("Permission caching middleware invoked for {Path}", LogRedaction.Sanitize(context.Request.Path));
         
         // Add permission caching headers for diagnostics
         context.Response.Headers.Append("X-Permission-Cache", "enabled");

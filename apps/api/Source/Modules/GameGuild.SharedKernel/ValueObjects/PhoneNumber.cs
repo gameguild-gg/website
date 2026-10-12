@@ -7,14 +7,20 @@ public record PhoneNumber
 {
     public PhoneNumber(string phoneNumber, string? countryCode = null)
     {
-        if (string.IsNullOrWhiteSpace(phoneNumber)) throw new ArgumentException("Phone number cannot be null or empty.", nameof(phoneNumber));
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            throw new ArgumentException("Phone number cannot be null or empty.", nameof(phoneNumber));
+        }
 
         var cleanNumber = CleanPhoneNumber(phoneNumber);
 
         if (cleanNumber.StartsWith("+"))
         {
             // International format
-            if (cleanNumber.Length < 8 || cleanNumber.Length > 15) throw new ArgumentException("Invalid phone number format.", nameof(phoneNumber));
+            if (cleanNumber.Length < 8 || cleanNumber.Length > 15)
+            {
+                throw new ArgumentException("Invalid phone number format.", nameof(phoneNumber));
+            }
 
             CountryCode = ExtractCountryCode(cleanNumber);
             NationalNumber = cleanNumber[CountryCode.Length..];
@@ -23,12 +29,17 @@ public record PhoneNumber
         {
             // National format — country code is required
             if (string.IsNullOrWhiteSpace(countryCode))
+            {
                 throw new ArgumentException("Country code is required for national phone number format.", nameof(countryCode));
+            }
 
             CountryCode = countryCode;
             NationalNumber = cleanNumber;
 
-            if (NationalNumber.Length < 7 || NationalNumber.Length > 12) throw new ArgumentException("Invalid phone number format.", nameof(phoneNumber));
+            if (NationalNumber.Length < 7 || NationalNumber.Length > 12)
+            {
+                throw new ArgumentException("Invalid phone number format.", nameof(phoneNumber));
+            }
         }
 
         Value = CountryCode + NationalNumber;
@@ -98,7 +109,9 @@ public record PhoneNumber
         foreach (var code in codes)
         {
             if (internationalNumber.StartsWith(code, StringComparison.Ordinal))
+            {
                 return code;
+            }
         }
 
         // Fallback: assume first 2–3 digits are the country code

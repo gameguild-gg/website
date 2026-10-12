@@ -29,6 +29,7 @@ public sealed class ScheduledAuditExport : EntityBase
     public string? ExportTemplate { get; private set; }
     public string[] IncludeEventTypes { get; private set; } = Array.Empty<string>();
     public string[] ExcludeEventTypes { get; private set; } = Array.Empty<string>();
+    public string[] CsvColumns { get; private set; } = Array.Empty<string>();
     public int RetentionDays { get; private set; } = 30;
 
     // Filtering
@@ -79,6 +80,34 @@ public sealed class ScheduledAuditExport : EntityBase
         };
     }
 
+    public void ConfigureFilters(
+        string timezone,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? actionTypeFilter,
+        string? riskLevelFilter,
+        string? userIdFilter,
+        string[]? csvColumns,
+        int retentionDays)
+    {
+        if (string.IsNullOrWhiteSpace(timezone)) { throw new ArgumentException("A timezone is required.", nameof(timezone)); }
+        if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+        {
+            throw new ArgumentException("StartDate must not be later than EndDate.");
+        }
+        if (retentionDays is < 1 or > 3650) { throw new ArgumentOutOfRangeException(nameof(retentionDays)); }
+
+        Timezone = timezone;
+        StartDate = startDate;
+        EndDate = endDate;
+        IncludeEventTypes = string.IsNullOrWhiteSpace(actionTypeFilter) ? Array.Empty<string>() : [actionTypeFilter.Trim()];
+        RiskLevelFilter = riskLevelFilter;
+        UserIdFilter = userIdFilter;
+        CsvColumns = csvColumns?.ToArray() ?? Array.Empty<string>();
+        RetentionDays = retentionDays;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
     public void Enable() { IsEnabled = true; UpdatedAt = SystemClock.UtcNow; }
     public void Disable() { IsEnabled = false; UpdatedAt = SystemClock.UtcNow; }
 
@@ -113,7 +142,8 @@ public enum ExportDestinationType
     AzureBlobStorage = 2,
     GoogleCloudStorage = 3,
     LocalFileSystem = 4,
-    Https = 5
+    Https = 5,
+    TenantStorage = 6
 }
 
 public enum ExportFormat
@@ -135,6 +165,7 @@ public sealed class AuditExportHistory : EntityBase
     public int RecordCount { get; private set; }
     public long FileSizeBytes { get; private set; }
     public string? ExportPath { get; private set; }
+    public string? FileName { get; private set; }
     public string? FileChecksum { get; private set; }
     public string? ErrorMessage { get; private set; }
     public TimeSpan ExecutionDuration { get; private set; }
@@ -153,14 +184,37 @@ public sealed class AuditExportHistory : EntityBase
         };
     }
 
-    public void Complete(int recordCount, long fileSizeBytes, string exportPath, string fileChecksum, TimeSpan duration)
+    public void Complete(
+        int recordCount,
+        long fileSizeBytes,
+        string exportPath,
+        string fileChecksum,
+        TimeSpan duration)
+    {
+        Complete(recordCount, fileSizeBytes, exportPath, fileChecksum, duration, null);
+    }
+
+    public void Complete(
+        int recordCount,
+        long fileSizeBytes,
+        string exportPath,
+        string fileChecksum,
+        TimeSpan duration,
+        string? fileName)
     {
         Status = ExportStatus.Completed;
         RecordCount = recordCount;
         FileSizeBytes = fileSizeBytes;
         ExportPath = exportPath;
+        FileName = fileName;
         FileChecksum = fileChecksum;
         ExecutionDuration = duration;
+        UpdatedAt = SystemClock.UtcNow;
+    }
+
+    public void ExpireFile()
+    {
+        ExportPath = null;
         UpdatedAt = SystemClock.UtcNow;
     }
 

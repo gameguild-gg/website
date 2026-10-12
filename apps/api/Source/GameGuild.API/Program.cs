@@ -35,6 +35,8 @@ builder.AddPresentationLayer();
 builder.Services.Configure<EmailDeliveryOptions>(builder.Configuration.GetSection("EmailDelivery"));
 builder.Services.Configure<SubscriptionNotificationLinkOptions>(
     builder.Configuration.GetSection("SubscriptionNotifications"));
+builder.Services.Configure<PaymentDunningOptions>(
+    builder.Configuration.GetSection(PaymentDunningOptions.SectionName));
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<SesEmailSender>();
 builder.Services.AddScoped<IMonthlyStatementDataProvider, MonthlyStatementDataProvider>();

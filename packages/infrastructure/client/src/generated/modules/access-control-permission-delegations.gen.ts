@@ -120,7 +120,7 @@ export class AccessControlPermissionDelegationsModule {
   async getPermissionDelegationsDelegate(
     delegateUserId: string,
     query?: { tenantId?: string },
-  ): Promise<Result<Array<Types.IdentityAuthorizationPermissionDelegation>, ApiError>> {
+  ): Promise<Result<Types.IdentityAuthorizationPermissionDelegation[], ApiError>> {
     const url = `/v1/permission-delegations/delegate/${delegateUserId}`;
 
     const result = await this.client.request({
@@ -130,7 +130,7 @@ export class AccessControlPermissionDelegationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationPermissionDelegation>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationPermissionDelegation[], ApiError>;
   }
 
   /**
@@ -139,7 +139,7 @@ export class AccessControlPermissionDelegationsModule {
   async getPermissionDelegationsDelegator(
     delegatorUserId: string,
     query?: { tenantId?: string },
-  ): Promise<Result<Array<Types.IdentityAuthorizationPermissionDelegation>, ApiError>> {
+  ): Promise<Result<Types.IdentityAuthorizationPermissionDelegation[], ApiError>> {
     const url = `/v1/permission-delegations/delegator/${delegatorUserId}`;
 
     const result = await this.client.request({
@@ -149,7 +149,7 @@ export class AccessControlPermissionDelegationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationPermissionDelegation>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationPermissionDelegation[], ApiError>;
   }
 }
 

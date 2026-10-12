@@ -40,11 +40,20 @@ public sealed class AuthorizationOptions : BaseOptions
     public Dictionary<string, List<string>> RoleHierarchy { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    ///     Explicit claim value mappings applied after authentication and before authorization.
+    ///     Only values listed in each mapping are copied to the target claim type.
+    /// </summary>
+    public List<AuthorizationClaimTransformationOptions> ClaimTransformations { get; set; } = [];
+
     public override void Validate()
     {
         base.Validate();
 
-        if (string.IsNullOrWhiteSpace(DefaultPolicy)) throw new InvalidOperationException("Default policy cannot be null or empty.");
+        if (string.IsNullOrWhiteSpace(DefaultPolicy))
+        {
+            throw new InvalidOperationException("Default policy cannot be null or empty.");
+        }
 
         if (FallbackPolicyName is not null && string.IsNullOrWhiteSpace(FallbackPolicyName))
         {
@@ -52,10 +61,13 @@ public sealed class AuthorizationOptions : BaseOptions
         }
         
         if (SystemAccountId == Guid.Empty)
+        {
             throw new InvalidOperationException("SystemAccountId cannot be empty GUID.");
+        }
 
         ValidatePolicies();
         ValidateRoleHierarchy();
+        ValidateClaimTransformations();
     }
 
     public static AuthorizationOptions CreateDefault() { return new AuthorizationOptions(); }
@@ -175,6 +187,29 @@ public sealed class AuthorizationOptions : BaseOptions
 
             visiting.Remove(role);
             visited.Add(role);
+        }
+    }
+
+    private void ValidateClaimTransformations()
+    {
+        if (ClaimTransformations is null)
+        {
+            throw new InvalidOperationException("Authorization claim transformations cannot be null.");
+        }
+
+        foreach (var transformation in ClaimTransformations)
+        {
+            if (transformation is null ||
+                string.IsNullOrWhiteSpace(transformation.SourceClaimType) ||
+                string.IsNullOrWhiteSpace(transformation.TargetClaimType) ||
+                transformation.ValueMappings is null ||
+                transformation.ValueMappings.Count == 0 ||
+                transformation.ValueMappings.Any(mapping =>
+                    string.IsNullOrWhiteSpace(mapping.Key) || string.IsNullOrWhiteSpace(mapping.Value)))
+            {
+                throw new InvalidOperationException(
+                    "Each authorization claim transformation must define source and target claim types and at least one non-empty value mapping.");
+            }
         }
     }
 }

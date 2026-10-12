@@ -20,36 +20,51 @@ internal static class EconomyProtectedRiskDecisionIssuerSupport
             evidence.Select(item => item.Source).Distinct().Count() != evidence.Count ||
             evidence.Any(item => !item.IsAuditable || string.IsNullOrWhiteSpace(item.EvidenceHash) ||
                                  item.Outcome is ExternalRiskOutcome.Unknown or ExternalRiskOutcome.Unavailable))
+        {
             return Denied(
                 RiskOutcome.Deny,
                 EconomyProtectedOperationState.ComplianceUnavailable,
                 "Current auditable compliance evidence is unavailable.",
                 now);
+        }
+
         if (evidence.Any(item => item.IssuedAt > now || item.ExpiresAt <= now))
+        {
             return Denied(
                 RiskOutcome.Deny,
                 EconomyProtectedOperationState.ComplianceStale,
                 "Compliance evidence is stale.",
                 now);
+        }
+
         var expiresAt = evidence.Min(item => item.ExpiresAt);
         if (evidence.Any(item => item.Outcome is ExternalRiskOutcome.Deny or ExternalRiskOutcome.Blocked))
+        {
             return Denied(
                 RiskOutcome.Hold,
                 EconomyProtectedOperationState.Hold,
                 "Compliance evidence requires a durable hold.",
                 expiresAt);
+        }
+
         if (evidence.Any(item => item.Outcome == ExternalRiskOutcome.Review))
+        {
             return Denied(
                 RiskOutcome.Review,
                 EconomyProtectedOperationState.ReviewRequired,
                 "A manual risk review is required.",
                 expiresAt);
+        }
+
         if (evidence.All(item => item.Outcome == ExternalRiskOutcome.Allow))
+        {
             return new EconomyExternalRiskAssessment(
                 RiskOutcome.Allow,
                 EconomyProtectedOperationState.Ready,
                 [],
                 expiresAt);
+        }
+
         return Denied(
             RiskOutcome.Deny,
             EconomyProtectedOperationState.Denied,
@@ -69,8 +84,11 @@ internal static class EconomyProtectedRiskDecisionIssuerSupport
                 rule.MaximumUnits,
                 rule.Window))).ToArray();
         if (limits.Length == 0 || limits.Select(limit => limit.Key).Distinct().Count() != limits.Length)
+        {
             throw new EconomyProtectedRiskPolicyException(
                 "The signed risk policy does not materialize unique limits for this operation.");
+        }
+
         return Array.AsReadOnly(limits);
     }
 

@@ -56,10 +56,14 @@ public sealed class ActorContextBuilder
         var builder = ForUser(actor.UserId);
 
         if (actor.Email is not null)
+        {
             builder.WithAttribute("email", actor.Email);
+        }
 
         if (actor.Name is not null)
+        {
             builder.WithAttribute("name", actor.Name);
+        }
 
         return builder;
     }

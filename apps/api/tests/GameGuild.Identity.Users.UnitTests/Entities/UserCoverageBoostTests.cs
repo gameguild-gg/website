@@ -487,11 +487,11 @@ public class UserCoverageBoostTests
     }
 
     [Fact]
-    public void CreateWithPassword_NoUsername_ShouldWork()
+    public void CreateWithPassword_NoUsername_ShouldGenerateHandle()
     {
         var user = User.CreateWithPassword("test@example.com", "Test User", "$2a$hash");
 
-        user.Username.Should().BeNull();
+        user.Username.Should().Be("test-user");
     }
 
     [Theory]

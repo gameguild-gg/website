@@ -4,7 +4,8 @@ namespace GameGuild.Notifications.Services.Email;
 
 /// <summary>
 /// Renders an email-channel <see cref="Notification"/> into an <see cref="EmailMessage"/> at send time.
-/// Rendering context comes from the row's <see cref="Notification.Metadata"/> JSON; renderers must not
+/// Rendering context comes from <see cref="Notification.Metadata"/>; identity credentials require
+/// <see cref="NotificationMetadataProtector"/> before JSON parsing. Renderers must not
 /// reach out to services other than their constructor-injected dependencies.
 /// </summary>
 /// <remarks>
@@ -21,7 +22,8 @@ public interface IEmailRenderer
 
     /// <summary>
     /// Renders the email for the given notification. Returning null means "nothing to send";
-    /// the dispatcher marks the row as Sent and logs the skip.
+    /// ordinary notifications are marked as Sent for that skip. Security notifications instead fail
+    /// and retry because their delivery requires both a rendered message and provider acceptance.
     /// </summary>
     Task<EmailMessage?> RenderAsync(Notification notification, CancellationToken cancellationToken = default);
 }

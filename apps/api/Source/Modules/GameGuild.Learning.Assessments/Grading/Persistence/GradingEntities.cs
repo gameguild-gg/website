@@ -98,9 +98,20 @@ public sealed class AssessmentDefinitionRevision
         string executionSnapshotCanonicalJson,
         Guid createdByUserId)
     {
-        if (assessmentId == Guid.Empty) throw new ArgumentException("Assessment ID is required.", nameof(assessmentId));
-        if (revisionNumber < 1) throw new ArgumentOutOfRangeException(nameof(revisionNumber));
-        if (createdByUserId == Guid.Empty) throw new ArgumentException("Creator ID is required.", nameof(createdByUserId));
+        if (assessmentId == Guid.Empty)
+        {
+            throw new ArgumentException("Assessment ID is required.", nameof(assessmentId));
+        }
+
+        if (revisionNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(revisionNumber));
+        }
+
+        if (createdByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Creator ID is required.", nameof(createdByUserId));
+        }
 
         return new AssessmentDefinitionRevision
         {
@@ -134,7 +145,9 @@ public sealed class AssessmentTestRun : EntityBase
     public static AssessmentTestRun Create(Guid? tenantId, Guid assessmentId, Guid revisionId, Guid actorId)
     {
         if (assessmentId == Guid.Empty || revisionId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new ArgumentException("Assessment, revision, and actor IDs are required.");
+        }
 
         var run = new AssessmentTestRun
         {
@@ -150,18 +163,32 @@ public sealed class AssessmentTestRun : EntityBase
 
     public void Start()
     {
-        if (Status == AssessmentTestRunStatus.Running) return;
+        if (Status == AssessmentTestRunStatus.Running)
+        {
+            return;
+        }
+
         if (Status != AssessmentTestRunStatus.Draft)
+        {
             throw new InvalidOperationException("Only a draft test run can be started.");
+        }
+
         Status = AssessmentTestRunStatus.Running;
         Touch();
     }
 
     public void Complete(DateTime completedAt)
     {
-        if (Status == AssessmentTestRunStatus.Completed) return;
+        if (Status == AssessmentTestRunStatus.Completed)
+        {
+            return;
+        }
+
         if (Status != AssessmentTestRunStatus.Running)
+        {
             throw new InvalidOperationException("Only a running test run can be completed.");
+        }
+
         Status = AssessmentTestRunStatus.Completed;
         CompletedAt = completedAt.ToUniversalTime();
         Touch();
@@ -169,9 +196,16 @@ public sealed class AssessmentTestRun : EntityBase
 
     public void Cancel(DateTime completedAt)
     {
-        if (Status == AssessmentTestRunStatus.Cancelled) return;
+        if (Status == AssessmentTestRunStatus.Cancelled)
+        {
+            return;
+        }
+
         if (Status == AssessmentTestRunStatus.Completed)
+        {
             throw new InvalidOperationException("A completed test run cannot be cancelled.");
+        }
+
         Status = AssessmentTestRunStatus.Cancelled;
         CompletedAt = completedAt.ToUniversalTime();
         Touch();
@@ -188,9 +222,20 @@ public sealed class AssessmentTestRunSubject : EntityBase
 
     public static AssessmentTestRunSubject Create(Guid? tenantId, Guid testRunId, string personaKey, string displayName)
     {
-        if (testRunId == Guid.Empty) throw new ArgumentException("Test run ID is required.", nameof(testRunId));
-        if (string.IsNullOrWhiteSpace(personaKey)) throw new ArgumentException("Persona key is required.", nameof(personaKey));
-        if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("Display name is required.", nameof(displayName));
+        if (testRunId == Guid.Empty)
+        {
+            throw new ArgumentException("Test run ID is required.", nameof(testRunId));
+        }
+
+        if (string.IsNullOrWhiteSpace(personaKey))
+        {
+            throw new ArgumentException("Persona key is required.", nameof(personaKey));
+        }
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            throw new ArgumentException("Display name is required.", nameof(displayName));
+        }
 
         var subject = new AssessmentTestRunSubject
         {
@@ -237,7 +282,9 @@ public sealed class GradingExecution : EntityBase
     {
         GradingContractValidator.Validate(delivery);
         if (delivery.DefinitionRevisionId != DefinitionRevisionId)
+        {
             throw new InvalidOperationException("Execution delivery must reference the execution definition revision.");
+        }
 
         var canonical = CanonicalPayload.Require(canonicalJson, 8 * 1024 * 1024, "execution delivery");
         CanonicalPayload.RequireMatchesContract(delivery, canonical, "execution delivery");
@@ -245,7 +292,10 @@ public sealed class GradingExecution : EntityBase
         if (DeliveryCanonicalJson is not null)
         {
             if (DeliveryCanonicalJson != canonical || DeliveryHash != hash)
+            {
                 throw new InvalidOperationException("Execution delivery is immutable once materialized.");
+            }
+
             return;
         }
 
@@ -258,7 +308,11 @@ public sealed class GradingExecution : EntityBase
 
     public void SaveResponseDraft(AssessmentResponseEnvelopeV1 response, string canonicalJson)
     {
-        if (SubmittedAt.HasValue) throw new InvalidOperationException("A submitted response is immutable.");
+        if (SubmittedAt.HasValue)
+        {
+            throw new InvalidOperationException("A submitted response is immutable.");
+        }
+
         GradingContractValidator.Validate(response);
         var canonical = CanonicalPayload.Require(canonicalJson, 8 * 1024 * 1024, "response envelope");
         CanonicalPayload.RequireMatchesContract(response, canonical, "response envelope");
@@ -273,8 +327,16 @@ public sealed class GradingExecution : EntityBase
 
     public void Submit(DateTime submittedAt)
     {
-        if (ResponseEnvelopeCanonicalJson is null) throw new InvalidOperationException("A response is required before submit.");
-        if (SubmittedAt.HasValue) return;
+        if (ResponseEnvelopeCanonicalJson is null)
+        {
+            throw new InvalidOperationException("A response is required before submit.");
+        }
+
+        if (SubmittedAt.HasValue)
+        {
+            return;
+        }
+
         SubmittedAt = submittedAt.ToUniversalTime();
         Status = PersistedGradingExecutionStatus.Running;
         Touch();
@@ -282,7 +344,11 @@ public sealed class GradingExecution : EntityBase
 
     public void SetActiveRound(Guid roundId)
     {
-        if (roundId == Guid.Empty) throw new ArgumentException("Round ID is required.", nameof(roundId));
+        if (roundId == Guid.Empty)
+        {
+            throw new ArgumentException("Round ID is required.", nameof(roundId));
+        }
+
         ActiveGradeRoundId = roundId;
         Touch();
     }
@@ -290,8 +356,15 @@ public sealed class GradingExecution : EntityBase
     public void BeginRegrade(Guid roundId)
     {
         if (!SubmittedAt.HasValue)
+        {
             throw new InvalidOperationException("An execution must be submitted before regrade.");
-        if (roundId == Guid.Empty) throw new ArgumentException("Round ID is required.", nameof(roundId));
+        }
+
+        if (roundId == Guid.Empty)
+        {
+            throw new ArgumentException("Round ID is required.", nameof(roundId));
+        }
+
         ActiveGradeRoundId = roundId;
         Status = PersistedGradingExecutionStatus.Running;
         FinalizedAt = null;
@@ -301,16 +374,26 @@ public sealed class GradingExecution : EntityBase
     public void AwaitReview()
     {
         if (Status == PersistedGradingExecutionStatus.Completed)
+        {
             throw new InvalidOperationException("A completed execution cannot await review.");
+        }
+
         Status = PersistedGradingExecutionStatus.AwaitingReview;
         Touch();
     }
 
     public void Complete(DateTime finalizedAt)
     {
-        if (Status == PersistedGradingExecutionStatus.Completed) return;
+        if (Status == PersistedGradingExecutionStatus.Completed)
+        {
+            return;
+        }
+
         if (!SubmittedAt.HasValue)
+        {
             throw new InvalidOperationException("An execution must be submitted before it can complete.");
+        }
+
         Status = PersistedGradingExecutionStatus.Completed;
         FinalizedAt = finalizedAt.ToUniversalTime();
         Touch();
@@ -319,9 +402,15 @@ public sealed class GradingExecution : EntityBase
     public void Fail(DateTime finalizedAt)
     {
         if (Status == PersistedGradingExecutionStatus.Completed)
+        {
             throw new InvalidOperationException("A completed execution cannot fail.");
+        }
+
         if (!SubmittedAt.HasValue)
+        {
             throw new InvalidOperationException("An execution must be submitted before it can fail.");
+        }
+
         Status = PersistedGradingExecutionStatus.Failed;
         FinalizedAt = finalizedAt.ToUniversalTime();
         Touch();
@@ -334,10 +423,16 @@ public sealed class GradingExecution : EntityBase
         Guid? testRunSubjectId,
         Guid? submissionId)
     {
-        if (revisionId == Guid.Empty) throw new ArgumentException("Definition revision ID is required.", nameof(revisionId));
+        if (revisionId == Guid.Empty)
+        {
+            throw new ArgumentException("Definition revision ID is required.", nameof(revisionId));
+        }
+
         var authorTest = context == ReviewExecutionContext.AuthorTest;
         if (authorTest != testRunSubjectId.HasValue || authorTest == submissionId.HasValue)
+        {
             throw new ArgumentException("Execution context must have exactly one matching owner.");
+        }
 
         var execution = new GradingExecution
         {
@@ -385,9 +480,20 @@ public sealed class GradeRound : EntityBase
         Guid? initiatedByActorId = null,
         string? reasonDetail = null)
     {
-        if (executionId == Guid.Empty) throw new ArgumentException("Execution ID is required.", nameof(executionId));
-        if (number < 1) throw new ArgumentOutOfRangeException(nameof(number));
-        if (string.IsNullOrWhiteSpace(reason)) throw new ArgumentException("Reason is required.", nameof(reason));
+        if (executionId == Guid.Empty)
+        {
+            throw new ArgumentException("Execution ID is required.", nameof(executionId));
+        }
+
+        if (number < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(number));
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("Reason is required.", nameof(reason));
+        }
 
         var round = new GradeRound
         {
@@ -409,9 +515,16 @@ public sealed class GradeRound : EntityBase
 
     public void Start()
     {
-        if (Status == PersistedGradeRoundStatus.Running) return;
+        if (Status == PersistedGradeRoundStatus.Running)
+        {
+            return;
+        }
+
         if (Status != PersistedGradeRoundStatus.Pending)
+        {
             throw new InvalidOperationException("Only a pending grade round can be started.");
+        }
+
         Status = PersistedGradeRoundStatus.Running;
         Touch();
     }
@@ -419,7 +532,10 @@ public sealed class GradeRound : EntityBase
     public void AwaitInstructorResolution()
     {
         if (Status is PersistedGradeRoundStatus.Finalized or PersistedGradeRoundStatus.Failed)
+        {
             throw new InvalidOperationException("A terminal grade round cannot await instructor resolution.");
+        }
+
         Status = PersistedGradeRoundStatus.AwaitingInstructorResolution;
         ResultState = "partial";
         Score = null;
@@ -429,7 +545,10 @@ public sealed class GradeRound : EntityBase
     public void AwaitEvidence()
     {
         if (Status is PersistedGradeRoundStatus.Finalized or PersistedGradeRoundStatus.Failed)
+        {
             throw new InvalidOperationException("A terminal grade round cannot await evidence.");
+        }
+
         Status = PersistedGradeRoundStatus.AwaitingEvidence;
         ResultState = "partial";
         Score = null;
@@ -440,13 +559,22 @@ public sealed class GradeRound : EntityBase
     {
         GradingContractValidator.Validate(result);
         if (!string.Equals(result.State, "final", StringComparison.Ordinal) || !result.Score.HasValue)
+        {
             throw new InvalidOperationException("Only a final grade result can finalize a round.");
+        }
+
         if (result.MaxScore != MaxScore)
+        {
             throw new InvalidOperationException("The final result maximum score must match the round snapshot.");
+        }
+
         if (Status == PersistedGradeRoundStatus.Finalized)
         {
             if (Score != result.Score || !string.Equals(Feedback, result.Feedback, StringComparison.Ordinal))
+            {
                 throw new InvalidOperationException("A finalized grade round is immutable.");
+            }
+
             return;
         }
 
@@ -476,8 +604,16 @@ public sealed class ReviewStage : EntityBase
 
     public static ReviewStage Create(Guid? tenantId, Guid roundId, int sequence, AssessmentReviewStageManifestV1 manifest)
     {
-        if (roundId == Guid.Empty) throw new ArgumentException("Round ID is required.", nameof(roundId));
-        if (sequence < 1) throw new ArgumentOutOfRangeException(nameof(sequence));
+        if (roundId == Guid.Empty)
+        {
+            throw new ArgumentException("Round ID is required.", nameof(roundId));
+        }
+
+        if (sequence < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sequence));
+        }
+
         var stage = new ReviewStage
         {
             Id = Guid.NewGuid(),
@@ -496,9 +632,16 @@ public sealed class ReviewStage : EntityBase
 
     public void Start(DateTime startedAt)
     {
-        if (Status == PersistedReviewStageStatus.Running) return;
+        if (Status == PersistedReviewStageStatus.Running)
+        {
+            return;
+        }
+
         if (Status != PersistedReviewStageStatus.Pending)
+        {
             throw new InvalidOperationException("Only a pending review stage can be started.");
+        }
+
         Status = PersistedReviewStageStatus.Running;
         StartedAt = startedAt.ToUniversalTime();
         Touch();
@@ -507,7 +650,10 @@ public sealed class ReviewStage : EntityBase
     public void AwaitInstructorResolution()
     {
         if (Status is PersistedReviewStageStatus.Completed or PersistedReviewStageStatus.Failed)
+        {
             throw new InvalidOperationException("A terminal review stage cannot await instructor resolution.");
+        }
+
         StartedAt ??= SystemClock.UtcNow;
         Status = PersistedReviewStageStatus.AwaitingInstructorResolution;
         Touch();
@@ -516,7 +662,10 @@ public sealed class ReviewStage : EntityBase
     public void AwaitEvidence()
     {
         if (Status is PersistedReviewStageStatus.Completed or PersistedReviewStageStatus.Failed)
+        {
             throw new InvalidOperationException("A terminal review stage cannot await evidence.");
+        }
+
         StartedAt ??= SystemClock.UtcNow;
         Status = PersistedReviewStageStatus.AwaitingEvidence;
         Touch();
@@ -524,9 +673,16 @@ public sealed class ReviewStage : EntityBase
 
     public void Complete(DateTime completedAt)
     {
-        if (Status == PersistedReviewStageStatus.Completed) return;
+        if (Status == PersistedReviewStageStatus.Completed)
+        {
+            return;
+        }
+
         if (Status == PersistedReviewStageStatus.Failed)
+        {
             throw new InvalidOperationException("A failed review stage cannot complete.");
+        }
+
         StartedAt ??= completedAt.ToUniversalTime();
         Status = PersistedReviewStageStatus.Completed;
         CompletedAt = completedAt.ToUniversalTime();
@@ -536,7 +692,10 @@ public sealed class ReviewStage : EntityBase
     public void Fail(DateTime completedAt)
     {
         if (Status == PersistedReviewStageStatus.Completed)
+        {
             throw new InvalidOperationException("A completed review stage cannot fail.");
+        }
+
         StartedAt ??= completedAt.ToUniversalTime();
         Status = PersistedReviewStageStatus.Failed;
         CompletedAt = completedAt.ToUniversalTime();
@@ -560,8 +719,16 @@ public sealed class GradeItemResult
 
     public static GradeItemResult Create(Guid? tenantId, Guid stageId, GradeItemResultV1 result)
     {
-        if (stageId == Guid.Empty) throw new ArgumentException("Review stage ID is required.", nameof(stageId));
-        if (string.IsNullOrWhiteSpace(result.ItemId)) throw new ArgumentException("Item ID is required.", nameof(result));
+        if (stageId == Guid.Empty)
+        {
+            throw new ArgumentException("Review stage ID is required.", nameof(stageId));
+        }
+
+        if (string.IsNullOrWhiteSpace(result.ItemId))
+        {
+            throw new ArgumentException("Item ID is required.", nameof(result));
+        }
+
         return new GradeItemResult
         {
             Id = Guid.NewGuid(),
@@ -611,7 +778,11 @@ public sealed class ReviewEvidence
         Guid actorId,
         string? itemId = null)
     {
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
         return Create(tenantId, stageId, evidenceKey, evidenceType, schemaVersion, canonicalJson, itemId, actorId, null);
     }
 
@@ -625,7 +796,11 @@ public sealed class ReviewEvidence
         string service,
         string? itemId = null)
     {
-        if (string.IsNullOrWhiteSpace(service)) throw new ArgumentException("Service is required.", nameof(service));
+        if (string.IsNullOrWhiteSpace(service))
+        {
+            throw new ArgumentException("Service is required.", nameof(service));
+        }
+
         return Create(tenantId, stageId, evidenceKey, evidenceType, schemaVersion, canonicalJson, itemId, null, service.Trim());
     }
 
@@ -640,7 +815,11 @@ public sealed class ReviewEvidence
         Guid? actorId,
         string? service)
     {
-        if (stageId == Guid.Empty) throw new ArgumentException("Review stage ID is required.", nameof(stageId));
+        if (stageId == Guid.Empty)
+        {
+            throw new ArgumentException("Review stage ID is required.", nameof(stageId));
+        }
+
         var canonical = CanonicalPayload.Require(canonicalJson, 1024 * 1024, "review evidence");
         return new ReviewEvidence
         {
@@ -687,7 +866,11 @@ public sealed class GradeResultRelease
         Guid actorId,
         string? reason = null)
     {
-        if (actorId == Guid.Empty) throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        if (actorId == Guid.Empty)
+        {
+            throw new ArgumentException("Actor ID is required.", nameof(actorId));
+        }
+
         return Create(tenantId, roundId, executionId, actorId, null, reason);
     }
 
@@ -698,7 +881,11 @@ public sealed class GradeResultRelease
         string service,
         string? reason = null)
     {
-        if (string.IsNullOrWhiteSpace(service)) throw new ArgumentException("Service is required.", nameof(service));
+        if (string.IsNullOrWhiteSpace(service))
+        {
+            throw new ArgumentException("Service is required.", nameof(service));
+        }
+
         return Create(tenantId, roundId, executionId, null, service.Trim(), reason);
     }
 
@@ -711,7 +898,10 @@ public sealed class GradeResultRelease
         string? reason)
     {
         if (tenantId == Guid.Empty || roundId == Guid.Empty || executionId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, grade round, and execution IDs are required.");
+        }
+
         return new GradeResultRelease
         {
             Id = Guid.NewGuid(),
@@ -747,7 +937,10 @@ public sealed class AssessmentSubmissionParticipant
         Guid userId)
     {
         if (submissionId == Guid.Empty || enrollmentId == Guid.Empty || userId == Guid.Empty)
+        {
             throw new ArgumentException("Submission, enrollment, and user IDs are required.");
+        }
+
         return new AssessmentSubmissionParticipant
         {
             Id = Guid.NewGuid(),
@@ -787,9 +980,15 @@ public sealed class CollectiveAttemptDraftChange
         string responseHash)
     {
         if (tenantId == Guid.Empty || submissionId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, submission, and actor IDs are required.");
+        }
+
         if (previousVersion < 0 || newVersion != previousVersion + 1)
+        {
             throw new ArgumentOutOfRangeException(nameof(newVersion), "Draft version must advance exactly once.");
+        }
+
         return new CollectiveAttemptDraftChange
         {
             Id = Guid.NewGuid(),
@@ -868,11 +1067,17 @@ public sealed class AssessmentGradebookEntry : EntityBase
     {
         if (courseId == Guid.Empty || enrollmentId == Guid.Empty || assessmentId == Guid.Empty ||
             submissionId == Guid.Empty || roundId == Guid.Empty)
+        {
             throw new ArgumentException("Gradebook projection identifiers are required.");
+        }
+
         if (maxScore.CompareTo(ScoreValue.Zero) <= 0 ||
             score.CompareTo(ScoreValue.Zero) < 0 ||
             score.CompareTo(maxScore) > 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(score), "Gradebook score is outside its captured bounds.");
+        }
+
         CourseId = courseId;
         EnrollmentId = enrollmentId;
         AssessmentId = assessmentId;
@@ -908,8 +1113,15 @@ public sealed class AssessmentContentCompletionProjection : EntityBase
         string transition)
     {
         if (assessmentId == Guid.Empty || contentId == Guid.Empty || enrollmentId == Guid.Empty || submissionId == Guid.Empty)
+        {
             throw new ArgumentException("Completion projection identifiers are required.");
-        if (string.IsNullOrWhiteSpace(transition)) throw new ArgumentException("Transition is required.", nameof(transition));
+        }
+
+        if (string.IsNullOrWhiteSpace(transition))
+        {
+            throw new ArgumentException("Transition is required.", nameof(transition));
+        }
+
         var projection = new AssessmentContentCompletionProjection
         {
             Id = Guid.NewGuid(),
@@ -954,11 +1166,17 @@ public sealed class GradingCommandReceipt
         DateTime expiresAt)
     {
         if (tenantId == Guid.Empty || resourceId == Guid.Empty || actorId == Guid.Empty)
+        {
             throw new ArgumentException("Tenant, resource, and actor IDs are required.");
+        }
+
         var createdAt = SystemClock.UtcNow;
         var normalizedExpiry = expiresAt.ToUniversalTime();
         if (normalizedExpiry <= createdAt)
+        {
             throw new ArgumentOutOfRangeException(nameof(expiresAt), "Receipt expiry must be later than creation.");
+        }
+
         return new GradingCommandReceipt
         {
             Id = Guid.NewGuid(),
@@ -1006,7 +1224,11 @@ public sealed class AcademicOutboxMessage
         string eventSchemaVersion,
         string payloadCanonicalJson)
     {
-        if (tenantId == Guid.Empty) throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        if (tenantId == Guid.Empty)
+        {
+            throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         var canonical = CanonicalPayload.Require(payloadCanonicalJson, 1024 * 1024, "academic event");
         return new AcademicOutboxMessage
         {
@@ -1024,7 +1246,9 @@ public sealed class AcademicOutboxMessage
     public void MarkProcessing()
     {
         if (Status == AcademicOutboxStatus.Pending)
+        {
             Status = AcademicOutboxStatus.Processing;
+        }
     }
 
     public void MarkCompleted(DateTime completedAt)
@@ -1035,7 +1259,11 @@ public sealed class AcademicOutboxMessage
 
     public void MarkFailed()
     {
-        if (Status == AcademicOutboxStatus.Completed) return;
+        if (Status == AcademicOutboxStatus.Completed)
+        {
+            return;
+        }
+
         Status = AcademicOutboxStatus.Failed;
     }
 
@@ -1067,8 +1295,16 @@ public sealed class AcademicOutboxDelivery
 
     public static AcademicOutboxDelivery Create(Guid messageId, string consumerKey)
     {
-        if (messageId == Guid.Empty) throw new ArgumentException("Message ID is required.", nameof(messageId));
-        if (string.IsNullOrWhiteSpace(consumerKey)) throw new ArgumentException("Consumer key is required.", nameof(consumerKey));
+        if (messageId == Guid.Empty)
+        {
+            throw new ArgumentException("Message ID is required.", nameof(messageId));
+        }
+
+        if (string.IsNullOrWhiteSpace(consumerKey))
+        {
+            throw new ArgumentException("Consumer key is required.", nameof(consumerKey));
+        }
+
         return new AcademicOutboxDelivery
         {
             Id = Guid.NewGuid(),
@@ -1083,8 +1319,15 @@ public sealed class AcademicOutboxDelivery
     public void Claim(string workerId, DateTime claimedAt)
     {
         if (Status == AcademicOutboxDeliveryStatus.Confirmed)
+        {
             throw new InvalidOperationException("A confirmed delivery cannot be claimed again.");
-        if (string.IsNullOrWhiteSpace(workerId)) throw new ArgumentException("Worker ID is required.", nameof(workerId));
+        }
+
+        if (string.IsNullOrWhiteSpace(workerId))
+        {
+            throw new ArgumentException("Worker ID is required.", nameof(workerId));
+        }
+
         Status = AcademicOutboxDeliveryStatus.Processing;
         AttemptCount++;
         ClaimedAt = claimedAt.ToUniversalTime();
@@ -1095,9 +1338,16 @@ public sealed class AcademicOutboxDelivery
 
     public void Confirm(DateTime confirmedAt)
     {
-        if (Status == AcademicOutboxDeliveryStatus.Confirmed) return;
+        if (Status == AcademicOutboxDeliveryStatus.Confirmed)
+        {
+            return;
+        }
+
         if (Status != AcademicOutboxDeliveryStatus.Processing)
+        {
             throw new InvalidOperationException("Only a claimed delivery can be confirmed.");
+        }
+
         Status = AcademicOutboxDeliveryStatus.Confirmed;
         ConfirmedAt = confirmedAt.ToUniversalTime();
         ClaimedAt = null;
@@ -1108,7 +1358,11 @@ public sealed class AcademicOutboxDelivery
 
     public void Fail(string error, DateTime nextAttemptAt)
     {
-        if (Status == AcademicOutboxDeliveryStatus.Confirmed) return;
+        if (Status == AcademicOutboxDeliveryStatus.Confirmed)
+        {
+            return;
+        }
+
         Status = AcademicOutboxDeliveryStatus.Failed;
         LastError = TruncateUtf8(
             string.IsNullOrWhiteSpace(error) ? "Academic outbox consumer failed." : error,
@@ -1120,9 +1374,17 @@ public sealed class AcademicOutboxDelivery
 
     private static string TruncateUtf8(string value, int maximumBytes)
     {
-        if (Encoding.UTF8.GetByteCount(value) <= maximumBytes) return value;
+        if (Encoding.UTF8.GetByteCount(value) <= maximumBytes)
+        {
+            return value;
+        }
+
         var length = Math.Min(value.Length, maximumBytes);
-        while (length > 0 && Encoding.UTF8.GetByteCount(value.AsSpan(0, length)) > maximumBytes) length--;
+        while (length > 0 && Encoding.UTF8.GetByteCount(value.AsSpan(0, length)) > maximumBytes)
+        {
+            length--;
+        }
+
         return value[..length];
     }
 }
@@ -1131,12 +1393,23 @@ internal static class CanonicalPayload
 {
     public static string Require(string value, int maximumUtf8Bytes, string label)
     {
-        if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException($"Canonical {label} is required.");
-        if (Encoding.UTF8.GetByteCount(value) > maximumUtf8Bytes) throw new ArgumentException($"Canonical {label} exceeds its size limit.");
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException($"Canonical {label} is required.");
+        }
+
+        if (Encoding.UTF8.GetByteCount(value) > maximumUtf8Bytes)
+        {
+            throw new ArgumentException($"Canonical {label} exceeds its size limit.");
+        }
+
         using var document = JsonDocument.Parse(value);
         var canonical = CanonicalJson.Serialize(document.RootElement);
         if (!string.Equals(value, canonical, StringComparison.Ordinal))
+        {
             throw new ArgumentException($"Canonical {label} must use the canonical JSON representation.");
+        }
+
         return value;
     }
 
@@ -1147,13 +1420,18 @@ internal static class CanonicalPayload
     {
         var serialized = JsonSerializer.SerializeToElement(value, GradingJson.Options);
         if (!string.Equals(CanonicalJson.Serialize(serialized), canonicalJson, StringComparison.Ordinal))
+        {
             throw new ArgumentException($"Canonical {label} does not match the validated contract.");
+        }
     }
 
     public static string RequireHash(string value, string parameterName)
     {
         if (value.Length != 64 || value.Any(character => character is not (>= '0' and <= '9' or >= 'a' and <= 'f')))
+        {
             throw new ArgumentException("Hash must be a lowercase SHA-256 value.", parameterName);
+        }
+
         return value;
     }
 }

@@ -107,7 +107,7 @@ export class LearningCoursesPrerequisitesModule {
   /**
    * Get all prerequisites for a course
    */
-  async getApiPrerequisitesCourse(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>> {
+  async getApiPrerequisitesCourse(courseId: string): Promise<Result<Types.LearningCoursesPrerequisiteDto[], ApiError>> {
     const url = `/api/prerequisites/course/${courseId}`;
 
     const result = await this.client.request({
@@ -116,13 +116,13 @@ export class LearningCoursesPrerequisitesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>;
+    return result as Result<Types.LearningCoursesPrerequisiteDto[], ApiError>;
   }
 
   /**
    * Get the full prerequisite chain for a course (all nested prerequisites)
    */
-  async getApiPrerequisitesCourseChain(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>> {
+  async getApiPrerequisitesCourseChain(courseId: string): Promise<Result<Types.LearningCoursesPrerequisiteDto[], ApiError>> {
     const url = `/api/prerequisites/course/${courseId}/chain`;
 
     const result = await this.client.request({
@@ -131,7 +131,7 @@ export class LearningCoursesPrerequisitesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>;
+    return result as Result<Types.LearningCoursesPrerequisiteDto[], ApiError>;
   }
 
   /**
@@ -227,7 +227,7 @@ export class LearningCoursesPrerequisitesModule {
   /**
    * Get courses that depend on a specific course as a prerequisite
    */
-  async getApiPrerequisitesDependents(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>> {
+  async getApiPrerequisitesDependents(courseId: string): Promise<Result<Types.LearningCoursesPrerequisiteDto[], ApiError>> {
     const url = `/api/prerequisites/dependents/${courseId}`;
 
     const result = await this.client.request({
@@ -236,7 +236,7 @@ export class LearningCoursesPrerequisitesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>;
+    return result as Result<Types.LearningCoursesPrerequisiteDto[], ApiError>;
   }
 }
 

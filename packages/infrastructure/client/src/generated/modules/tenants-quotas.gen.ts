@@ -20,7 +20,7 @@ export class TenantsQuotasModule {
    *
    * Retrieves all configured resource quotas for a specific tenant organization.
    */
-  async getTenantsQuotasForGetTenantsByTenantIdQuotas(tenantId: string): Promise<Result<Array<Types.ResourcesResourceQuotaOutput>, ApiError>> {
+  async getTenantsQuotasForGetTenantsByTenantIdQuotas(tenantId: string): Promise<Result<Types.ResourcesResourceQuotaOutput[], ApiError>> {
     const url = `/v1/tenants/${tenantId}/quotas`;
 
     const result = await this.client.request({
@@ -29,7 +29,7 @@ export class TenantsQuotasModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesResourceQuotaOutput>, ApiError>;
+    return result as Result<Types.ResourcesResourceQuotaOutput[], ApiError>;
   }
 
   /**

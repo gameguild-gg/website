@@ -54,6 +54,7 @@ export function createJWTPayload(result: ProviderResult, config: ResolvedAuthCon
     sessionId: result.sessionId,
     tenantId: result.tenantId,
     availableTenants: result.availableTenants,
+    rememberMe: result.rememberMe,
     iat: Math.floor(now / 1000),
     exp: Math.floor(now / 1000) + config.maxAge,
   };
@@ -137,7 +138,7 @@ async function executeRefreshAccessToken(token: JWTPayload, config: ResolvedAuth
     });
 
     if (!response.ok) {
-      throw new TokenRefreshError(`Token refresh failed with status ${response.status}`);
+      throw new TokenRefreshError(`Token refresh failed with status ${response.status}`, undefined, response.status);
     }
 
     const data = (await response.json()) as Record<string, unknown>;
@@ -246,14 +247,15 @@ export async function processSession(
     try {
       currentToken = await refreshAccessToken(currentToken, config);
       tokenUpdated = true;
-    } catch {
-      // If the access token is already expired (not just near-expiry) and
-      // refresh failed, the session is unusable — force re-authentication.
+    } catch (error) {
+      // A denied refresh cannot keep an authenticated session. A transient
+      // failure may retain a still-valid access token until its deadline.
+      const refreshDenied = error instanceof TokenRefreshError && (error.responseStatus === 401 || error.responseStatus === 403);
       const accessExpired = currentToken.accessTokenExpires != null && Date.now() >= currentToken.accessTokenExpires;
-      if (accessExpired) {
+      if (refreshDenied || accessExpired) {
         /* v8 ignore start */
         if (config.debug) {
-          console.warn('[auth] Access token expired and refresh failed, invalidating session');
+          console.warn('[auth] Session cannot be refreshed, requiring authentication');
         }
         /* v8 ignore stop */
         return { session: null, token: null, updated: false };

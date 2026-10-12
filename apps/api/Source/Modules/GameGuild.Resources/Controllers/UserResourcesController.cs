@@ -33,12 +33,16 @@ public sealed class UserResourcesController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass ownership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // User can only access their own resources
         return actor.SubjectIdAsGuid.Value == userId;
     }
@@ -63,8 +67,10 @@ public sealed class UserResourcesController(
     public async Task<IActionResult> GetUsageRecords(Guid userId, [FromQuery] ResourceUsageType? usageType, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await sender.Send(new GetUserResourceUsageRecordsQuery(userId, usageType, startDate, endDate), ct).ConfigureAwait(false));
     }
 
@@ -83,8 +89,10 @@ public sealed class UserResourcesController(
     public async Task<IActionResult> GetCurrentUsageSummary(Guid userId, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await sender.Send(new GetCurrentUserResourceUsageSummaryQuery(userId), ct).ConfigureAwait(false));
     }
 
@@ -104,8 +112,10 @@ public sealed class UserResourcesController(
     public async Task<IActionResult> CheckLimits(Guid userId, [FromQuery] ResourceUsageType? usageType, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         return Ok(await sender.Send(new CheckUserResourceUsageLimitsQuery(userId, usageType), ct).ConfigureAwait(false));
     }
 
@@ -129,8 +139,10 @@ public sealed class UserResourcesController(
     public async Task<IActionResult> Record(Guid userId, [FromBody] RecordUserResourceUsageRequest body, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var metadata = body.Metadata != null ? System.Text.Json.JsonSerializer.Serialize(body.Metadata) : null;
@@ -156,8 +168,10 @@ public sealed class UserResourcesController(
     public async Task<IActionResult> RecordWithQuotaCheck(Guid userId, [FromBody] RecordUserResourceUsageRequest body, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         // Check quota before recording
@@ -189,8 +203,10 @@ public sealed class UserResourcesController(
     public async Task<IActionResult> Reset(Guid userId, [FromQuery] ResourceUsageType usageType, CancellationToken ct)
     {
         if (!ValidateUserOwnership(userId))
+        {
             return Forbid();
-        
+        }
+
         await sender.Send(new ResetUserResourceUsageCommand(userId, usageType), ct).ConfigureAwait(false);
 
         return NoContent();

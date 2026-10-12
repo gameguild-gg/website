@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 144" role="img" aria-labelledby="title">
+  <title id="title">GameGuild logo</title>
+  <g aria-hidden="true">
+    <circle cx="72" cy="25" r="22" fill="#FFBF46" />
+    <circle cx="25" cy="72" r="22" fill="#3B97D3" />
+    <circle cx="119" cy="72" r="22" fill="#E6473C" />
+    <circle cx="72" cy="119" r="22" fill="#3AC03A" />
+  </g>
+  <text x="172" y="97" fill="#020617" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="64" font-weight="650" letter-spacing="-2">GameGuild</text>
+</svg>

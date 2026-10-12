@@ -27,7 +27,7 @@ public sealed class DiscordCallbackCommandHandler(
             throw new RequestValidationException(errors);
         }
 
-        var signInRequest = new DiscordSignInRequest { Code = command.Code, State = command.State, RedirectUri = command.RedirectUri, TenantId = command.TenantId };
+        var signInRequest = new DiscordSignInRequest { Code = command.Code, State = command.State, RedirectUri = command.RedirectUri, TenantId = command.TenantId, RememberMe = command.RememberMe };
 
         var domainResult = await oAuthAuthService.DiscordSignInAsync(signInRequest, cancellationToken).ConfigureAwait(false);
 

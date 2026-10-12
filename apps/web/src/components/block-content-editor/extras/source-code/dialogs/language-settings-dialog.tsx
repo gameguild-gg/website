@@ -126,7 +126,7 @@ export function LanguageSettingsDialog({
   // Helper function to check if at least one language would remain enabled
   const wouldAtLeastOneLanguageRemainEnabled = useCallback(
     (languageToToggle: string, newState: boolean) => {
-      if (newState === true) return true
+      if (newState) return true
       if (!allowedLanguages) return false
 
       return Object.entries(allowedLanguages).some(([lang, isEnabled]) => lang !== languageToToggle && isEnabled)

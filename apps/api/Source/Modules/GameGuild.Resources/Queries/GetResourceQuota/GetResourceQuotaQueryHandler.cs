@@ -13,7 +13,10 @@ public sealed class GetResourceQuotaQueryHandler(IResourceQuotaRepository resour
 
         var quota = await resourceQuotaRepository.GetByTenantAndTypeAsync(request.TenantId, request.Type, cancellationToken).ConfigureAwait(false);
 
-        if (quota == null) return null;
+        if (quota == null)
+        {
+            return null;
+        }
 
         return new ResourceQuotaResponse
         {

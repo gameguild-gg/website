@@ -55,7 +55,7 @@ async function assertRendered(page, label, route, heading) {
 async function assertProtected(page, route) {
   await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
   await page.waitForURL(/\/sign-in(?:\?|$)/, { timeout: 20_000 });
-  await page.getByRole('heading', { name: /Welcome back to GameGuild/i }).waitFor({ timeout: 20_000 });
+  await page.getByRole('heading', { name: /^Welcome back$/i }).waitFor({ timeout: 20_000 });
 }
 
 async function main() {

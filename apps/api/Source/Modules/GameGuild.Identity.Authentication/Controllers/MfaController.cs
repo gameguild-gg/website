@@ -145,9 +145,11 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
 
         return Ok(new BackupCodesStatusResponse
         {
-            TotalCount = 10, // Standard backup code count
+            TotalCount = configuration.BackupCodesIssued ?? configuration.BackupCodesRemaining,
             RemainingCount = configuration.BackupCodesRemaining,
-            UsedCount = 10 - configuration.BackupCodesRemaining,
+            UsedCount = configuration.BackupCodesIssued is { } issued
+                ? Math.Max(0, issued - configuration.BackupCodesRemaining) : 0,
+            AreUsageCountsKnown = configuration.BackupCodesIssued.HasValue,
             HasBackupCodes = configuration.BackupCodesRemaining > 0
         });
     }
@@ -303,7 +305,9 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
     private static string MaskPhoneNumber(string phoneNumber)
     {
         if (string.IsNullOrEmpty(phoneNumber) || phoneNumber.Length < 4)
+        {
             return "****";
+        }
 
         return $"***-***-{phoneNumber[^4..]}";
     }
@@ -367,7 +371,7 @@ public sealed record MfaErrorResponse
 public sealed record BackupCodesStatusResponse
 {
     /// <summary>
-    ///     Total number of backup codes generated
+    ///     Original number generated when known; otherwise the remaining count is a lower bound
     /// </summary>
     public required int TotalCount { get; init; }
 
@@ -377,9 +381,12 @@ public sealed record BackupCodesStatusResponse
     public required int RemainingCount { get; init; }
 
     /// <summary>
-    ///     Number of codes that have been used
+    ///     Number used when known; otherwise zero is a lower bound, not historical proof
     /// </summary>
     public required int UsedCount { get; init; }
+
+    /// <summary>False for legacy sets whose original issued/used counts cannot be reconstructed.</summary>
+    public bool AreUsageCountsKnown { get; init; }
 
     /// <summary>
     ///     Whether the user has any backup codes

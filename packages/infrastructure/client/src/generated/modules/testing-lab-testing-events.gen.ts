@@ -21,7 +21,7 @@ export class TestingLabTestingEventsModule {
     status?: Types.TestingLabTestingEventStatus;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.TestingLabTestingEventProjection>, ApiError>> {
+  }): Promise<Result<Types.TestingLabTestingEventProjection[], ApiError>> {
     const url = '/v1/testing/events';
 
     const result = await this.client.request({
@@ -31,7 +31,7 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingEventProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingEventProjection[], ApiError>;
   }
 
   /**
@@ -276,7 +276,7 @@ export class TestingLabTestingEventsModule {
   async getTestingEventsApplicationsForGetTestingEventsByEventIdApplications(
     eventId: string,
     query?: { status?: Types.TestingLabTestingApplicationStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.TestingLabTestingProjectApplicationProjection>, ApiError>> {
+  ): Promise<Result<Types.TestingLabTestingProjectApplicationProjection[], ApiError>> {
     const url = `/v1/testing/events/${eventId}/applications`;
 
     const result = await this.client.request({
@@ -286,7 +286,7 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingProjectApplicationProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingProjectApplicationProjection[], ApiError>;
   }
 
   /**
@@ -367,8 +367,8 @@ export class TestingLabTestingEventsModule {
    */
   async getTestingEventsApplicationsTesterEligibility(
     eventId: string,
-    query?: { testerUserIds?: Array<string> },
-  ): Promise<Result<Array<Types.TestingLabTestingApplicationTesterEligibilityProjection>, ApiError>> {
+    query?: { testerUserIds?: string[] },
+  ): Promise<Result<Types.TestingLabTestingApplicationTesterEligibilityProjection[], ApiError>> {
     const url = `/v1/testing/events/${eventId}/applications/tester-eligibility`;
 
     const result = await this.client.request({
@@ -378,12 +378,12 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingApplicationTesterEligibilityProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingApplicationTesterEligibilityProjection[], ApiError>;
   }
 
   /**
    */
-  async getTestingEventsCommittee(eventId: string): Promise<Result<Array<Types.TestingLabTestingEventCommitteeMemberProjection>, ApiError>> {
+  async getTestingEventsCommittee(eventId: string): Promise<Result<Types.TestingLabTestingEventCommitteeMemberProjection[], ApiError>> {
     const url = `/v1/testing/events/${eventId}/committee`;
 
     const result = await this.client.request({
@@ -392,7 +392,7 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingEventCommitteeMemberProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingEventCommitteeMemberProjection[], ApiError>;
   }
 
   /**
@@ -492,7 +492,7 @@ export class TestingLabTestingEventsModule {
 
   /**
    */
-  async getTestingEventsSlots(eventId: string): Promise<Result<Array<Types.TestingLabTestingEventSlotProjection>, ApiError>> {
+  async getTestingEventsSlots(eventId: string): Promise<Result<Types.TestingLabTestingEventSlotProjection[], ApiError>> {
     const url = `/v1/testing/events/${eventId}/slots`;
 
     const result = await this.client.request({
@@ -501,7 +501,7 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingEventSlotProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingEventSlotProjection[], ApiError>;
   }
 
   /**
@@ -578,7 +578,7 @@ export class TestingLabTestingEventsModule {
   async postTestingEventsSlotsBatch(
     eventId: string,
     body: Types.TestingLabCreateTestingEventSlotsInput,
-  ): Promise<Result<Array<Types.TestingLabTestingEventSlotProjection>, ApiError>> {
+  ): Promise<Result<Types.TestingLabTestingEventSlotProjection[], ApiError>> {
     const url = `/v1/testing/events/${eventId}/slots/batch`;
 
     // Validate request body
@@ -591,7 +591,7 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingEventSlotProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingEventSlotProjection[], ApiError>;
   }
 
   /**
@@ -887,7 +887,7 @@ export class TestingLabTestingEventsModule {
 
   /**
    */
-  async getTestingEventsApplicationsMe(query?: { eventId?: string }): Promise<Result<Array<Types.TestingLabTestingProjectApplicationProjection>, ApiError>> {
+  async getTestingEventsApplicationsMe(query?: { eventId?: string }): Promise<Result<Types.TestingLabTestingProjectApplicationProjection[], ApiError>> {
     const url = '/v1/testing/events/applications/me';
 
     const result = await this.client.request({
@@ -897,12 +897,12 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingProjectApplicationProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingProjectApplicationProjection[], ApiError>;
   }
 
   /**
    */
-  async getTestingEventsArchived(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.TestingLabTestingEventProjection>, ApiError>> {
+  async getTestingEventsArchived(query?: { skip?: number; take?: number }): Promise<Result<Types.TestingLabTestingEventProjection[], ApiError>> {
     const url = '/v1/testing/events/archived';
 
     const result = await this.client.request({
@@ -912,7 +912,7 @@ export class TestingLabTestingEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingEventProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingEventProjection[], ApiError>;
   }
 
   /**
@@ -920,17 +920,17 @@ export class TestingLabTestingEventsModule {
   async getTestingEventsPublicForGetTestingEventsPublic(query?: {
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.TestingLabPublicTestingEventProjection>, ApiError>> {
+  }): Promise<Result<Types.TestingLabPublicTestingEventProjection[], ApiError>> {
     const url = '/v1/testing/events/public';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.TestingLabPublicTestingEventProjection>, ApiError>;
+    return result as Result<Types.TestingLabPublicTestingEventProjection[], ApiError>;
   }
 
   /**
@@ -941,7 +941,7 @@ export class TestingLabTestingEventsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

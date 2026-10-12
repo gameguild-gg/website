@@ -53,17 +53,17 @@ export class LearningExperienceRecommendationsModule {
   async getRecommendationsCoursesSimilar(
     courseId: string,
     query?: { tenantId?: string; maxResults?: number },
-  ): Promise<Result<Array<Types.LearningExperienceRecommendationsSimilarCourseDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceRecommendationsSimilarCourseDto[], ApiError>> {
     const url = `/v1/recommendations/courses/${courseId}/similar`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsSimilarCourseDto>, ApiError>;
+    return result as Result<Types.LearningExperienceRecommendationsSimilarCourseDto[], ApiError>;
   }
 
   /**
@@ -75,7 +75,7 @@ export class LearningExperienceRecommendationsModule {
     includeViewed?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceRecommendationsRecommendationDto[], ApiError>> {
     const url = '/v1/recommendations/me';
 
     const result = await this.client.request({
@@ -85,7 +85,7 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>;
+    return result as Result<Types.LearningExperienceRecommendationsRecommendationDto[], ApiError>;
   }
 
   /**
@@ -94,7 +94,7 @@ export class LearningExperienceRecommendationsModule {
   async postRecommendationsMeGenerate(query?: {
     tenantId?: string;
     maxResults?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceRecommendationsRecommendationDto[], ApiError>> {
     const url = '/v1/recommendations/me/generate';
 
     const result = await this.client.request({
@@ -104,7 +104,7 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>;
+    return result as Result<Types.LearningExperienceRecommendationsRecommendationDto[], ApiError>;
   }
 
   /**
@@ -251,17 +251,17 @@ export class LearningExperienceRecommendationsModule {
     category?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsPopularCourseDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceRecommendationsPopularCourseDto[], ApiError>> {
     const url = '/v1/recommendations/popular';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsPopularCourseDto>, ApiError>;
+    return result as Result<Types.LearningExperienceRecommendationsPopularCourseDto[], ApiError>;
   }
 
   /**
@@ -274,17 +274,17 @@ export class LearningExperienceRecommendationsModule {
     daysWindow?: number;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsTrendingCourseDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceRecommendationsTrendingCourseDto[], ApiError>> {
     const url = '/v1/recommendations/trending';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsTrendingCourseDto>, ApiError>;
+    return result as Result<Types.LearningExperienceRecommendationsTrendingCourseDto[], ApiError>;
   }
 }
 

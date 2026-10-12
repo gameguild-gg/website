@@ -16,10 +16,14 @@
 # next.js
 /.next/
 /.next-e2e-coding-cycle/
+/.next-fast/
 /out/
 
 # emception CDN payload (copied from tools/emception by sync:emception at build)
 /public/emception/
+
+# Derived from the installed quickjs-emscripten package during predev/prebuild.
+/public/langs/quickjs-asyncify.wasm.gz
 
 # production
 /build

@@ -31,19 +31,54 @@ namespace GameGuild.Identity.Authentication.UnitTests;
 public sealed class EncryptionServiceErrorTests
 {
     [Fact]
-    public void EncryptionKey_Fallback_WhenNoConfigKey()
+    public void EncryptionKey_MissingConfigKey_FailsClosed()
     {
-        // No Encryption:Key in config → uses fallback key and logs warning
+        // No Encryption key in config → service must fail closed (no fallback key)
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>()).Build();
         var sut = new EncryptionService(
             Mock.Of<ILogger<EncryptionService>>(), config);
 
-        // Should still work with fallback key
-        var encrypted = sut.Encrypt("test data");
-        encrypted.Should().NotBeEmpty();
-        var decrypted = sut.Decrypt(encrypted);
-        decrypted.Should().Be("test data");
+        // Encrypt refuses to run without a configured key.
+        var encryptAct = () => sut.Encrypt("test data");
+        encryptAct.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Encryption*");
+
+        // Decrypt refuses too — the ciphertext is format-valid so it reaches key resolution.
+        var decryptAct = () => sut.Decrypt(Convert.ToBase64String(new byte[40]));
+        decryptAct.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Encryption*");
+    }
+
+    [Fact]
+    public void EncryptionKey_WhitespaceConfigKey_FailsClosed()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Encryption:Key"] = "   "
+            }).Build();
+        var sut = new EncryptionService(
+            Mock.Of<ILogger<EncryptionService>>(), config);
+
+        var act = () => sut.Encrypt("test data");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void EncryptionKey_ShorterThan32Bytes_FailsClosed()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Encryption:Key"] = "too-short-key"
+            }).Build();
+        var sut = new EncryptionService(
+            Mock.Of<ILogger<EncryptionService>>(), config);
+
+        var act = () => sut.Encrypt("test data");
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*32*");
     }
 
     [Fact]
@@ -351,33 +386,35 @@ public sealed class AuthAttemptIpExtractionTests
     }
 
     [Fact]
-    public void GetClientIp_XRealIp_ReturnsIt()
+    public void GetClientIp_IgnoresUntrustedForwardingHeaders()
     {
         var ctx = new DefaultHttpContext();
         ctx.Request.Headers["X-Real-IP"] = "192.168.1.100";
-
-        var ip = _sut.GetClientIpAddress(ctx);
-        ip.Should().Be("192.168.1.100");
-    }
-
-    [Fact]
-    public void GetClientIp_XForwardedFor_ReturnsFirstIp()
-    {
-        var ctx = new DefaultHttpContext();
-        ctx.Request.Headers["X-Forwarded-For"] = "10.0.0.1, 192.168.1.1";
+        ctx.Request.Headers["X-Forwarded-For"] = "203.0.113.50, 192.168.1.1";
+        ctx.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("10.0.0.1");
 
         var ip = _sut.GetClientIpAddress(ctx);
         ip.Should().Be("10.0.0.1");
     }
 
     [Fact]
-    public void GetClientIp_XForwardedFor_SingleIp()
+    public void GetClientIp_DoesNotTrustForwardingHeaderWithoutConnectionAddress()
     {
         var ctx = new DefaultHttpContext();
-        ctx.Request.Headers["X-Forwarded-For"] = "203.0.113.50";
+        ctx.Request.Headers["X-Forwarded-For"] = System.Net.IPAddress.Loopback.ToString();
 
         var ip = _sut.GetClientIpAddress(ctx);
-        ip.Should().Be("203.0.113.50");
+        ip.Should().Be("Unknown");
+    }
+
+    [Fact]
+    public void GetClientIp_CanonicalizesIpv4MappedIpv6Addresses()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Connection.RemoteIpAddress = System.Net.IPAddress.Loopback.MapToIPv6();
+
+        var ip = _sut.GetClientIpAddress(ctx);
+        ip.Should().Be(System.Net.IPAddress.Loopback.ToString());
     }
 
     [Fact]

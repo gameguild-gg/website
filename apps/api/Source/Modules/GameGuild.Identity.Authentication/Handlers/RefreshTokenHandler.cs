@@ -40,6 +40,12 @@ public sealed class RefreshTokenHandler(IAuthService authService, IUserRepositor
         {
             var domainResponse = await _authService.RefreshTokenAsync(refreshRequest, cancellationToken).ConfigureAwait(false);
 
+            // Keep the server-only transaction outcome and avoid fetching a profile for a denial.
+            if (domainResponse is RefreshTokenContainmentDenial)
+            {
+                return domainResponse;
+            }
+
             _logger.LogInformation("Refresh token processed successfully");
 
             // Map from Domain response to Application DTO

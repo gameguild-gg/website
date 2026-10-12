@@ -145,7 +145,7 @@ export class AccessControlAccessReviewsModule {
   /**
    * Get active campaigns
    */
-  async getAccessReviewsCampaignsActive(query?: { tenantId?: string }): Promise<Result<Array<Types.IdentityAuthorizationAccessReviewCampaign>, ApiError>> {
+  async getAccessReviewsCampaignsActive(query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationAccessReviewCampaign[], ApiError>> {
     const url = '/v1/access-reviews/campaigns/active';
 
     const result = await this.client.request({
@@ -155,7 +155,7 @@ export class AccessControlAccessReviewsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationAccessReviewCampaign>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationAccessReviewCampaign[], ApiError>;
   }
 
   /**
@@ -220,7 +220,7 @@ export class AccessControlAccessReviewsModule {
   async getAccessReviewsItemsPending(query?: {
     reviewerId?: string;
     tenantId?: string;
-  }): Promise<Result<Array<Types.IdentityAuthorizationAccessReviewItem>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthorizationAccessReviewItem[], ApiError>> {
     const url = '/v1/access-reviews/items/pending';
 
     const result = await this.client.request({
@@ -230,7 +230,7 @@ export class AccessControlAccessReviewsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationAccessReviewItem>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationAccessReviewItem[], ApiError>;
   }
 }
 

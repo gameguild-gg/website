@@ -87,7 +87,7 @@ export function VegaLiteEditor({
   const initial = {
     ...EMPTY_VEGA_DATA,
     ...initialData,
-    spec: initialData?.spec || DEFAULT_SPEC,
+    spec: initialData?.spec ?? DEFAULT_SPEC,
   };
   const [data, setData] = useState<VegaLiteData>(initial);
   const dataRef = useRef(data);

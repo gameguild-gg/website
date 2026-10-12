@@ -35,6 +35,45 @@ public sealed class CommandOutcomeTests
         CommandOutcome.IsFailure(new NestedResponse(new StatusResponse(409))).Should().BeTrue();
     }
 
+    [Fact]
+    public void CommittedDenialRemainsBusinessFailureButDoesNotRequestRollback()
+    {
+        var result = new CommittedDenial(false);
+        CommandOutcome.IsFailure(result).Should().BeTrue();
+        CommandOutcome.ShouldRollback(result).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void OrdinarySuccessFlagKeepsExistingRollbackDecision(bool success, bool rollback)
+    {
+        CommandOutcome.ShouldRollback(new OrdinaryResponse(success)).Should().Be(rollback);
+    }
+
+    [Fact]
+    public void SameNamedPublicFlagCannotOptIntoCommittedFailure()
+    {
+        CommandOutcome.ShouldRollback(new UntrustedResponse(false, true)).Should().BeTrue();
+    }
+
+    [Fact]
+    public void NestedCommittedDenialDoesNotGrantItsWrapperCommitAuthority()
+    {
+        CommandOutcome.ShouldRollback(new NestedResponse(new CommittedDenial(false))).Should().BeTrue();
+    }
+
+    [Fact]
+    public void NullAndFalseStillRequestRollback()
+    {
+        CommandOutcome.ShouldRollback(null).Should().BeTrue();
+        CommandOutcome.ShouldRollback(false).Should().BeTrue();
+    }
+
+    private sealed record CommittedDenial(bool Success) : ICommitOnFailureOutcome;
+    private sealed record OrdinaryResponse(bool Success);
+    private sealed record UntrustedResponse(bool Success, bool CommitOnFailure);
+
     private sealed record FailureResponse(bool IsFailure);
     private sealed record SuccessResponse(bool IsSuccess);
     private sealed record StatusResponse(int StatusCode);

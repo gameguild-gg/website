@@ -33,6 +33,8 @@ public static class AuditActionTypes
 
     public const string PermissionRevoked = "PermissionRevoked";
 
+    public const string PermissionChanged = "PermissionChanged";
+
     public const string RoleAssigned = "RoleAssigned";
 
     public const string RoleRevoked = "RoleRevoked";
@@ -75,11 +77,31 @@ public static class AuditActionTypes
     // Security Events
     public const string SecurityViolation = "SecurityViolation";
 
+    public const string SecurityAlertResolved = "SecurityAlertResolved";
+
     public const string RateLimitExceeded = "RateLimitExceeded";
 
     public const string SuspiciousActivity = "SuspiciousActivity";
 
     public const string PolicyViolation = "PolicyViolation";
+
+    // Webhook Security Events (provider callback verification pipeline)
+    public const string WebhookSignatureFailed = "WebhookSignatureFailed";
+
+    public const string WebhookSourceIpRejected = "WebhookSourceIpRejected";
+
+    public const string WebhookReplayDetected = "WebhookReplayDetected";
+
+    public const string WebhookRateLimitExceeded = "WebhookRateLimitExceeded";
+
+    public const string WebhookSourceBlocked = "WebhookSourceBlocked";
+
+    // External Billing Provider Management (issue #397 provider-management API)
+    public const string BillingProviderEnabled = "BillingProviderEnabled";
+
+    public const string BillingProviderDisabled = "BillingProviderDisabled";
+
+    public const string BillingProviderMigrationDryRun = "BillingProviderMigrationDryRun";
 
     // Tenant Operations
     public const string TenantCreated = "TenantCreated";

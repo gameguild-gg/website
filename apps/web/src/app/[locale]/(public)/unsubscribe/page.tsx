@@ -56,7 +56,7 @@ interface UnsubscribeApiResponse {
 // Server-side only: the DataProtection token is sent to the API and never
 // rendered, logged, or shipped to the browser bundle.
 async function viewFromToken(token: string): Promise<UnsubscribeView> {
-  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const apiUrl = (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL) || 'http://localhost:8080';
   const endpoint = `${apiUrl}/api/v1/notifications/unsubscribe?token=${encodeURIComponent(token)}`;
   try {
     const response = await fetch(endpoint, {

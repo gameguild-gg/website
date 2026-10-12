@@ -72,7 +72,7 @@ export class SocialFeedModule {
   async getApiSocialFeedUsers(
     userId: string,
     query?: { skip?: number; take?: number; includeRead?: boolean },
-  ): Promise<Result<Array<Types.SocialFeedFeedItemDto>, ApiError>> {
+  ): Promise<Result<Types.SocialFeedFeedItemDto[], ApiError>> {
     const url = `/api/social/feed/users/${userId}`;
 
     const result = await this.client.request({
@@ -82,7 +82,7 @@ export class SocialFeedModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialFeedFeedItemDto>, ApiError>;
+    return result as Result<Types.SocialFeedFeedItemDto[], ApiError>;
   }
 }
 

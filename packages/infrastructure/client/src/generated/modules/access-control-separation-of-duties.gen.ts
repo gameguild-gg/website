@@ -18,7 +18,7 @@ export class AccessControlSeparationOfDutiesModule {
   /**
    * Get all SoD rules for a tenant
    */
-  async getSodRulesForGetSodRules(query?: { tenantId?: string; activeOnly?: boolean }): Promise<Result<Array<Types.IdentityAuthorizationSoDRule>, ApiError>> {
+  async getSodRulesForGetSodRules(query?: { tenantId?: string; activeOnly?: boolean }): Promise<Result<Types.IdentityAuthorizationSoDRule[], ApiError>> {
     const url = '/v1/sod/rules';
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class AccessControlSeparationOfDutiesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationSoDRule>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationSoDRule[], ApiError>;
   }
 
   /**
@@ -192,7 +192,7 @@ export class AccessControlSeparationOfDutiesModule {
   /**
    * Get active SoD violations
    */
-  async getSodViolationsActive(query?: { tenantId?: string }): Promise<Result<Array<Types.IdentityAuthorizationSoDViolation>, ApiError>> {
+  async getSodViolationsActive(query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationSoDViolation[], ApiError>> {
     const url = '/v1/sod/violations/active';
 
     const result = await this.client.request({
@@ -202,13 +202,13 @@ export class AccessControlSeparationOfDutiesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationSoDViolation>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationSoDViolation[], ApiError>;
   }
 
   /**
    * Detect SoD violations for a user
    */
-  async getSodViolationsDetect(userId: string, query?: { tenantId?: string }): Promise<Result<Array<Types.IdentityAuthorizationSoDViolation>, ApiError>> {
+  async getSodViolationsDetect(userId: string, query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationSoDViolation[], ApiError>> {
     const url = `/v1/sod/violations/detect/${userId}`;
 
     const result = await this.client.request({
@@ -218,13 +218,13 @@ export class AccessControlSeparationOfDutiesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationSoDViolation>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationSoDViolation[], ApiError>;
   }
 
   /**
    * Get SoD violations for a user
    */
-  async getSodViolationsUser(userId: string, query?: { tenantId?: string }): Promise<Result<Array<Types.IdentityAuthorizationSoDViolation>, ApiError>> {
+  async getSodViolationsUser(userId: string, query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationSoDViolation[], ApiError>> {
     const url = `/v1/sod/violations/user/${userId}`;
 
     const result = await this.client.request({
@@ -234,7 +234,7 @@ export class AccessControlSeparationOfDutiesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationSoDViolation>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationSoDViolation[], ApiError>;
   }
 }
 

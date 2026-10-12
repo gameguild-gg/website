@@ -2,14 +2,23 @@ name: PR Verify
 
 on:
   pull_request:
-    branches: [main, develop, 'feature/**']
+    branches: [main, develop, "feature/**"]
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
 
+# Official PostgreSQL indexes; see scripts/ci/postgres-test-images.md.
+env:
+  GAMEGUILD_TEST_POSTGRES_17_IMAGE: "public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+  GAMEGUILD_TEST_POSTGRES_16_IMAGE: "public.ecr.aws/docker/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
+
 concurrency:
-  group: pr-verify-${{ github.event.pull_request.number }}
+  # Suffixed during PR #773 repair: synchronize events stopped creating runs for
+  # this PR (dropped/stuck pending in the original group). Distinct group + manual
+  # dispatch unblocks verification; revert together with the repair.
+  group: pr-verify-${{ github.event.pull_request.number }}-repair773
   cancel-in-progress: true
 
 jobs:
@@ -30,40 +39,51 @@ jobs:
       serviceMatrix: ${{ steps.changes.outputs.serviceMatrix }}
       runtimeServiceMatrix: ${{ steps.changes.outputs.runtimeServiceMatrix }}
       treeSha: ${{ steps.identity.outputs.treeSha }}
+      baseSha: ${{ steps.revs.outputs.base }}
+      headSha: ${{ steps.revs.outputs.head }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
-          version: 10.0.0
-      - uses: actions/setup-node@v7
+          version: 10.34.6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
+      - name: Resolve PR base and head commits
+        id: revs
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$base" ]; then base=$(git merge-base HEAD origin/develop); fi
+          head="${{ github.event.pull_request.head.sha }}"
+          if [ -z "$head" ]; then head=$(git rev-parse HEAD); fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
       - name: Classify changed paths
         id: changes
         run: >-
           node scripts/ci/classify-release-changes.mjs
-          --base "${{ github.event.pull_request.base.sha }}"
-          --head "${{ github.event.pull_request.head.sha }}"
+          --base "${{ steps.revs.outputs.base }}"
+          --head "${{ steps.revs.outputs.head }}"
       - name: Resolve merge-ref tree
         id: identity
         run: echo "treeSha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
       - name: Test classifier contract
-        run: node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs
+        run: node --test scripts/ci/tests/classify-release-changes.test.mjs scripts/ci/tests/select-affected-dotnet-tests.test.mjs scripts/ci/tests/postgres-images.test.mjs scripts/ci/tests/pull-ci-image.test.mjs
 
   repository-policy:
     name: Repository policy
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
       - name: Verify repository policy
         run: bash scripts/ci/verify-repository-policy.sh
       - name: Upload policy evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: repository-policy-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results
@@ -76,16 +96,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
       - name: Build generated client
         run: pnpm --filter @game-guild/client build
+      - name: Test credentials and MFA client integration
+        run: pnpm --filter @game-guild/client exec vitest run tests/auth/providers/credentials.test.ts --maxWorkers=1
       - name: Build Web runtime dependencies
         run: pnpm --filter @game-guild/web run build:emception-dependencies
       - name: Generate Web route types
         run: pnpm --filter @game-guild/web exec next typegen
       - name: Lint Web
+        env:
+          NODE_OPTIONS: --max-old-space-size=12288
         run: pnpm --filter @game-guild/web lint
+      - name: Lint suppression budget ratchet
+        run: node scripts/lint-budget.mjs
       - name: Typecheck Web
         run: pnpm --filter @game-guild/web exec tsc --noEmit
       - name: Test Web
@@ -100,9 +126,12 @@ jobs:
     needs: classify
     if: needs.classify.outputs.api == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Broad API changes select the full suite of affected test projects.
+    # Keep the per-test hang limit and allow the sequential suite to finish.
+    # Full host regression takes about 30 minutes before additional affected module suites.
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-dotnet
@@ -112,16 +141,41 @@ jobs:
           -c Release --nologo -p:TreatWarningsAsErrors=true
       - name: Run affected API tests
         shell: bash
-        run: |
-          mapfile -t projects < <(node scripts/ci/select-affected-dotnet-tests.mjs \
-            --base "${{ github.event.pull_request.base.sha }}" \
-            --head "${{ github.event.pull_request.head.sha }}")
-          if ((${#projects[@]} == 0)); then
-            projects=(apps/api/tests/GameGuild.API.UnitTests/GameGuild.API.UnitTests.csproj)
-          fi
-          for project in "${projects[@]}"; do
-            dotnet test "$project" -c Release --nologo --blame-hang-timeout 5m
-          done
+        run: >-
+          bash scripts/ci/run-affected-dotnet-tests.sh
+          --base "${{ needs.classify.outputs.baseSha }}"
+          --head "${{ needs.classify.outputs.headSha }}"
+      - name: Upload affected API test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: affected-api-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/affected-api
+          if-no-files-found: warn
+      - name: Build full-application OpenAPI HTTP tests
+        run: >-
+          dotnet build apps/api/tests/GameGuild.API.IntegrationTests/GameGuild.API.IntegrationTests.csproj
+          -c Release --nologo -p:TreatWarningsAsErrors=true
+      - name: Release build servers before HTTP verification
+        run: dotnet build-server shutdown
+      - name: Verify full-application OpenAPI over HTTP
+        env:
+          DOTNET_GCHeapHardLimit: "100000000"
+          DOTNET_GCConserveMemory: "5"
+          DOTNET_gcServer: "0"
+          DOTNET_PROCESSOR_COUNT: "4"
+        run: >-
+          dotnet test apps/api/tests/GameGuild.API.IntegrationTests/GameGuild.API.IntegrationTests.csproj
+          -c Release --no-build --no-restore --nologo --filter FullyQualifiedName~OpenApi
+          --blame-hang-timeout 5m --logger "trx;LogFileName=full-application-openapi.trx"
+          --results-directory artifacts/test-results/full-application-openapi
+      - name: Upload full-application OpenAPI HTTP evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: full-application-openapi-${{ github.event.pull_request.head.sha }}
+          path: artifacts/test-results/full-application-openapi
+          if-no-files-found: warn
 
   testing-lab:
     name: Testing Lab critical flow
@@ -134,19 +188,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - uses: ./.github/actions/setup-playwright
       - name: Run Testing Lab browser workflow
+        env:
+          TESTING_LAB_E2E_ARTIFACTS: ${{ github.workspace }}/artifacts/test-results/testing-lab
         run: pnpm --filter @game-guild/web test:browser:testing-lab
       - name: Upload Testing Lab evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: testing-lab-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results
-          if-no-files-found: warn
+          if-no-files-found: error
 
   openapi:
     name: OpenAPI client consistency
@@ -156,7 +212,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17-alpine
+        image: public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
         env:
           POSTGRES_DB: gameguild
           POSTGRES_USER: postgres
@@ -172,14 +228,14 @@ jobs:
       ConnectionStrings__AuthenticationDb: Host=localhost;Port=5432;Database=gameguild;Username=postgres;Password=postgres
       ConnectionStrings__MigrationConnection: Host=localhost;Port=5432;Database=gameguild;Username=postgres;Password=postgres
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - name: Verify generated OpenAPI client
         run: bash scripts/ci/verify-openapi-surface.sh
       - name: Upload OpenAPI evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: openapi-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results/openapi
@@ -193,7 +249,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17-alpine
+        image: public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
         env:
           POSTGRES_DB: gameguild
           POSTGRES_USER: postgres
@@ -211,7 +267,7 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-node-workspace
       - uses: ./.github/actions/setup-dotnet
       - run: dotnet tool restore
@@ -231,7 +287,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node-workspace
@@ -245,7 +301,7 @@ jobs:
         run: bash scripts/ci/verify-economy.sh
       - name: Upload Economy evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: economy-${{ github.event.pull_request.head.sha }}
           path: artifacts/test-results
@@ -268,14 +324,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Require every selected gate
+        # toJSON(needs) embeds classify's changedFiles list; on large PRs that
+        # env var exceeds the kernel execve limit and bash cannot even start
+        # ("Argument list too long"). Pass each job's result string instead.
         env:
-          GATE_RESULTS: ${{ toJSON(needs) }}
+          CLASSIFY: ${{ needs.classify.result }}
+          REPOSITORY_POLICY: ${{ needs.repository-policy.result }}
+          WEB: ${{ needs.web.result }}
+          API: ${{ needs.api.result }}
+          TESTING_LAB: ${{ needs.testing-lab.result }}
+          OPENAPI: ${{ needs.openapi.result }}
+          MIGRATION: ${{ needs.migration.result }}
+          ECONOMY: ${{ needs.economy.result }}
         run: |
           node - <<'NODE'
-          const gates = JSON.parse(process.env.GATE_RESULTS);
+          const gates = {
+            classify: process.env.CLASSIFY,
+            'repository-policy': process.env.REPOSITORY_POLICY,
+            web: process.env.WEB,
+            api: process.env.API,
+            'testing-lab': process.env.TESTING_LAB,
+            openapi: process.env.OPENAPI,
+            migration: process.env.MIGRATION,
+            economy: process.env.ECONOMY,
+          };
           const failed = Object.entries(gates)
-            .filter(([, gate]) => gate.result === 'failure' || gate.result === 'cancelled')
-            .map(([name, gate]) => `${name}=${gate.result}`);
+            .filter(([, result]) => result === 'failure' || result === 'cancelled')
+            .map(([name, result]) => `${name}=${result}`);
           if (failed.length) {
             console.error(`Required PR gates failed: ${failed.join(', ')}`);
             process.exit(1);

@@ -45,7 +45,7 @@
     },
     "curlLite": {
       "source": {
-        "contentHash": "d40829ec28a06101842a528c68ff0433c5847e873e40b3934b0b007772a34fae",
+        "contentHash": "4897f285d45c27549c8527fbaa3e9fc86ea86c54abbb96c1ae3f0506dfa0a5c4",
         "kind": "workspace",
         "path": "toolchain/overlays/libcurl-lite"
       },
@@ -77,7 +77,19 @@
         "commit": "7b58716d96c3ae4c0c4e6f72e29b16137bb6224b",
         "kind": "git-archive",
         "repository": "llvm/llvm-project",
-        "sha256": "0791c69319e1861e86ccb438d10b1b1816987f2d99b13d7e95ef08f88f0cedf8",
+        "reviewedArchiveVariants": [
+          {
+            "gitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
+            "review": "toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b.json: all 175014 entries reviewed; only the declared Git describe abbreviation differs",
+            "sha256": "0791c69319e1861e86ccb438d10b1b1816987f2d99b13d7e95ef08f88f0cedf8"
+          },
+          {
+            "gitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
+            "review": "toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b-96cf1ae6.json; summary in toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b.json: all 175014 files and 191207 archive headers compared; only the declared Git describe abbreviation and its file size differ",
+            "sha256": "96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce"
+          }
+        ],
+        "sha256": "0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5",
         "url": "https://codeload.github.com/llvm/llvm-project/tar.gz/7b58716d96c3ae4c0c4e6f72e29b16137bb6224b"
       },
       "version": "23.0.0git"

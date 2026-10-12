@@ -23,7 +23,7 @@ export class LearningExperienceDiscoveryModule {
     type?: Types.LearningExperienceDiscoveryCollectionType;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceDiscoveryCourseCollectionDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceDiscoveryCourseCollectionDto[], ApiError>> {
     const url = '/v1/discovery/collections';
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoveryCourseCollectionDto>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoveryCourseCollectionDto[], ApiError>;
   }
 
   /**
@@ -177,7 +177,7 @@ export class LearningExperienceDiscoveryModule {
   async getDiscoveryCollectionsCurator(
     curatorId: string,
     query?: { includeUnpublished?: boolean; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceDiscoveryCourseCollectionDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceDiscoveryCourseCollectionDto[], ApiError>> {
     const url = `/v1/discovery/collections/curator/${curatorId}`;
 
     const result = await this.client.request({
@@ -187,7 +187,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoveryCourseCollectionDto>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoveryCourseCollectionDto[], ApiError>;
   }
 
   /**
@@ -196,7 +196,7 @@ export class LearningExperienceDiscoveryModule {
   async getDiscoveryCollectionsFeatured(query?: {
     tenantId?: string;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceDiscoveryCourseCollectionDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceDiscoveryCourseCollectionDto[], ApiError>> {
     const url = '/v1/discovery/collections/featured';
 
     const result = await this.client.request({
@@ -206,7 +206,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoveryCourseCollectionDto>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoveryCourseCollectionDto[], ApiError>;
   }
 
   /**
@@ -241,7 +241,7 @@ export class LearningExperienceDiscoveryModule {
     tenantId?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceDiscoveryFeaturedContentDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceDiscoveryFeaturedContentDto[], ApiError>> {
     const url = '/v1/discovery/featured';
 
     const result = await this.client.request({
@@ -251,7 +251,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoveryFeaturedContentDto>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoveryFeaturedContentDto[], ApiError>;
   }
 
   /**
@@ -378,7 +378,7 @@ export class LearningExperienceDiscoveryModule {
   async getDiscoveryFeaturedType(
     type: Types.LearningExperienceDiscoveryFeaturedContentType,
     query?: { tenantId?: string; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceDiscoveryFeaturedContentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceDiscoveryFeaturedContentDto[], ApiError>> {
     const url = `/v1/discovery/featured/type/${type}`;
 
     const result = await this.client.request({
@@ -388,7 +388,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoveryFeaturedContentDto>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoveryFeaturedContentDto[], ApiError>;
   }
 
   /**
@@ -413,10 +413,7 @@ export class LearningExperienceDiscoveryModule {
   /**
    * Get search history for a user
    */
-  async getDiscoverySearchHistory(
-    userId: string,
-    query?: { take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceDiscoverySearchHistoryDto>, ApiError>> {
+  async getDiscoverySearchHistory(userId: string, query?: { take?: number }): Promise<Result<Types.LearningExperienceDiscoverySearchHistoryDto[], ApiError>> {
     const url = `/v1/discovery/search/history/${userId}`;
 
     const result = await this.client.request({
@@ -426,7 +423,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoverySearchHistoryDto>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoverySearchHistoryDto[], ApiError>;
   }
 
   /**
@@ -435,7 +432,7 @@ export class LearningExperienceDiscoveryModule {
   async getDiscoverySearchPopular(query?: {
     daysBack?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceDiscoveryPopularSearchResult>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceDiscoveryPopularSearchResult[], ApiError>> {
     const url = '/v1/discovery/search/popular';
 
     const result = await this.client.request({
@@ -445,7 +442,7 @@ export class LearningExperienceDiscoveryModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceDiscoveryPopularSearchResult>, ApiError>;
+    return result as Result<Types.LearningExperienceDiscoveryPopularSearchResult[], ApiError>;
   }
 
   /**

@@ -232,7 +232,7 @@ public class TasksAggregationTests
             .ReturnsAsync([
                 "Program.not-a-guid.Edit",
                 $"Program.{Guid.NewGuid()}.Review",
-                $"Program.{courseId}.Edit"
+                $"Program.{courseId}.Review"
             ]);
         var service = new TasksService(db, permissions.Object, NullLogger<TasksService>.Instance);
 
@@ -254,7 +254,7 @@ public class TasksAggregationTests
         db.Add(new TenantPermission
         {
             UserId = grantedManager,
-            Permissions = [$"Program.{courseId}.{PermissionType.Edit}"]
+            Permissions = [$"Program.{courseId}.{PermissionType.Review}"]
         });
 
         var assessment = await SeedAssessmentAsync(db, courseId, "Group Project");
@@ -264,7 +264,10 @@ public class TasksAggregationTests
         {
             db.Add(Enrollment.Create(courseId, userId));
             var row = await SeedUserRowAsync(db, assessment.Id, userId, "member", 1, SubmissionStatus.InProgress, groupId: group.GroupId);
-            if (aliceRow == null) aliceRow = row.Row;
+            if (aliceRow == null)
+            {
+                aliceRow = row.Row;
+            }
         }
 
         await db.SaveChangesAsync();
@@ -302,7 +305,7 @@ public class TasksAggregationTests
     }
 
     [Fact]
-    public async Task SubmitReview_NotifiesAllGroupMemberRowOwners_Anonymously()
+    public async Task LegacyPeerReviewSubmit_FailsClosedWithoutMutatingTheReview()
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
@@ -322,19 +325,15 @@ public class TasksAggregationTests
         db.Add(review);
         await db.SaveChangesAsync();
 
-        var notifier = new RecordingNotifier();
-        var service = new PeerReviewAssignmentService(db, NullLogger<PeerReviewAssignmentService>.Instance, notifier);
+        var service = new PeerReviewAssignmentService(db, NullLogger<PeerReviewAssignmentService>.Instance);
         var result = await service.SubmitReviewAsync(review, Score(85), "clear thesis, tight argument", null);
 
-        result.IsSuccess.Should().BeTrue();
-        notifier.Sent.Should().HaveCount(3, "every owner of a row sharing the reviewed (CourseGroupId, AttemptNumber) is notified");
-        notifier.Sent.Select(s => s.Recipient).Should().BeEquivalentTo(group.Members.Select(m => m.UserId));
-        notifier.Sent.Should().OnlyContain(s =>
-            s.Message.Contains("peer feedback", StringComparison.OrdinalIgnoreCase) &&
-            s.Message.Contains(assessment.Title));
-        notifier.Sent.Should().OnlyContain(s =>
-            !s.Title.Contains("Eve") && !s.Message.Contains("Eve"),
-            "reviewer identity must never appear in student-facing notification payloads");
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("PeerReview.CanonicalRuntimeRequired");
+        var persisted = await db.Set<AssessmentPeerReview>().SingleAsync(value => value.Id == review.Id);
+        persisted.Status.Should().Be(PeerReviewStatus.Assigned);
+        persisted.Score.Should().BeNull();
+        persisted.Feedback.Should().BeNull();
     }
 
     [Fact]
@@ -388,7 +387,11 @@ public class TasksAggregationTests
             string? referenceEntityType = null, string? metadata = null, string? recipientEmail = null,
             CancellationToken cancellationToken = default)
         {
-            if (ThrowOnSend) throw new InvalidOperationException("notification sink down");
+            if (ThrowOnSend)
+            {
+                throw new InvalidOperationException("notification sink down");
+            }
+
             Sent.Add((recipientId!.Value, type, title, message));
             return Task.FromResult(Result.Success<Notification>(null!));
         }
@@ -417,7 +420,7 @@ public class TasksAggregationTests
 
     private static async Task SeedCourseAsync(TestTasksDbContext db, Guid courseId, string title, Guid creatorId)
     {
-        db.Add(new Program { Id = courseId, Title = title, CreatorId = creatorId, TenantId = null });
+        db.Add(new Program { Id = courseId, Title = title, CreatorId = creatorId, TenantId = TenantId });
         await db.SaveChangesAsync();
     }
 

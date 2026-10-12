@@ -83,7 +83,7 @@ export class EmceptionRunElement extends HTMLElement {
             root.innerHTML = TEMPLATE;
         }
         const root = this.shadowRoot!;
-        this.outputEl = root.querySelector('[part="output"]') as HTMLDivElement;
+        this.outputEl = root.querySelector('[part="output"]')!;
         this.canvasSlotEl = root.querySelector('[part="canvas-slot"]') as HTMLDivElement;
         this.stdinSlotEl = root.querySelector('[part="stdin-slot"]') as HTMLDivElement;
         this.refreshSlotVisibility();

@@ -21,11 +21,13 @@ public static class NotificationsModule
         services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
         services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
         services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();
+        services.AddScoped<NotificationMetadataProtector>();
 
         // Email dispatch pipeline
         services.AddOptions<EmailDispatcherOptions>()
             .BindConfiguration("Notifications:EmailDispatcher");
         services.AddScoped<IEmailRendererRegistry, EmailRendererRegistry>();
+        services.AddScoped<IEmailRenderer, SecurityEmailRenderer>();
         services.AddScoped<IRecipientEmailResolver, RecipientEmailResolver>();
         services.AddScoped<EmailDispatcherService>();
         services.AddHostedService<EmailDispatcherBackgroundService>();

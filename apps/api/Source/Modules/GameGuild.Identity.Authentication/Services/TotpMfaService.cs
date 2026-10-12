@@ -16,9 +16,12 @@ public sealed class TotpMfaService(
     IUserMfaConfigurationRepository mfaConfigRepository,
     IMfaAttemptTrackingService attemptTrackingService,
     IEncryptionService encryptionService,
-    MfaOptions? mfaOptions = null) : ITotpMfaService
+    ITotpReplayStore replayStore,
+    MfaOptions? mfaOptions = null,
+    TimeProvider? timeProvider = null) : ITotpMfaService
 {
     private readonly MfaOptions _mfaOptions = mfaOptions ?? new MfaOptions();
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     /// <summary>
     ///     Sets up TOTP-based MFA for a user. Returns QR code URI and secret key.
@@ -56,7 +59,9 @@ public sealed class TotpMfaService(
             mfaConfig.PreferredMethod = MfaMethod.Totp;
             mfaConfig.TotpSecretKey = encryptedSecret;
             mfaConfig.IsEnabled = false; // Enabled after first successful verification
-            mfaConfig.UpdatedAt = SystemClock.UtcNow;
+            mfaConfig.IsSetupComplete = false;
+            mfaConfig.SetupExpiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddMinutes(_mfaOptions.SetupSessionDurationMinutes);
+            mfaConfig.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
 
             if (existingConfig == null) { await mfaConfigRepository.CreateAsync(mfaConfig, cancellationToken).ConfigureAwait(false); }
             else { await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false); }
@@ -101,11 +106,14 @@ public sealed class TotpMfaService(
                 return false;
             }
 
-            if (!mfaConfig.IsEnabled && SystemClock.UtcNow - mfaConfig.UpdatedAt > TimeSpan.FromMinutes(_mfaOptions.SetupSessionDurationMinutes))
+            var setupExpiresAt = mfaConfig.SetupExpiresAt
+                ?? mfaConfig.UpdatedAt.AddMinutes(_mfaOptions.SetupSessionDurationMinutes);
+            if (!mfaConfig.IsEnabled && _timeProvider.GetUtcNow().UtcDateTime >= setupExpiresAt)
             {
                 mfaConfig.TotpSecretKey = null;
                 mfaConfig.BackupCodes = null;
-                mfaConfig.UpdatedAt = SystemClock.UtcNow;
+                mfaConfig.SetupExpiresAt = null;
+                mfaConfig.UpdatedAt = _timeProvider.GetUtcNow().UtcDateTime;
                 await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
                 await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.Totp, false, "Setup expired", deviceId, cancellationToken).ConfigureAwait(false);
 
@@ -124,41 +132,43 @@ public sealed class TotpMfaService(
             // Decrypt secret key
             var secretKey = encryptionService.Decrypt(mfaConfig.TotpSecretKey);
 
-            // Verify TOTP code
-            var isValid = VerifyTotpCode(secretKey, totpCode, _mfaOptions.TotpClockSkew, _mfaOptions.TotpTimeStepSeconds);
-
-            if (isValid)
+            var now = _timeProvider.GetUtcNow();
+            var matchedStep = FindMatchingTotpStep(secretKey, totpCode, _mfaOptions.TotpClockSkew,
+                _mfaOptions.TotpTimeStepSeconds, now);
+            if (matchedStep is not null)
             {
-                // Enable MFA if first successful verification
-                if (!mfaConfig.IsEnabled)
+                // Hash the canonical secret, not its randomized encrypted representation.
+                var canonicalSecret = secretKey.ToUpperInvariant().Replace(" ", "").Replace("-", "");
+                var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.ASCII.GetBytes(canonicalSecret))).ToLowerInvariant();
+                var accepted = await replayStore.TryAcceptAsync(mfaConfig.Id, fingerprint, matchedStep.Value, now,
+                    async acceptedCancellation =>
+                    {
+                        if (!mfaConfig.IsEnabled)
+                        {
+                            mfaConfig.IsEnabled = true;
+                            mfaConfig.IsSetupComplete = true;
+                            mfaConfig.SetupExpiresAt = null;
+                            mfaConfig.QrCodeSetupData = null;
+                            mfaConfig.EnabledAt = now.UtcDateTime;
+                        }
+                        mfaConfig.FailedAttempts = 0;
+                        mfaConfig.LockedOutUntil = null;
+                        mfaConfig.LastUsedAt = now.UtcDateTime;
+                        await mfaConfigRepository.UpdateAsync(mfaConfig, acceptedCancellation).ConfigureAwait(false);
+                        await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.Totp, true, null, deviceId,
+                            acceptedCancellation).ConfigureAwait(false);
+                    }, cancellationToken).ConfigureAwait(false);
+                if (accepted)
                 {
-                    mfaConfig.IsEnabled = true;
-                    mfaConfig.EnabledAt = SystemClock.UtcNow;
-                    mfaConfig.UpdatedAt = SystemClock.UtcNow;
-                    await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
-
-                    logger.LogInformation("MFA enabled for user: {UserId}", userId);
+                    logger.LogInformation("TOTP verification successful for user: {UserId}", userId);
+                    return true;
                 }
-
-                // Reset failed attempts
-                if (mfaConfig.FailedAttempts > 0)
-                {
-                    mfaConfig.FailedAttempts = 0;
-                    mfaConfig.LockedOutUntil = null;
-                    await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
-                }
-
-                await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.Totp, true, null, deviceId, cancellationToken).ConfigureAwait(false);
-
-                logger.LogInformation("TOTP verification successful for user: {UserId}", userId);
-
-                return true;
             }
 
             await attemptTrackingService.RecordFailedMfaAttemptAsync(
                 mfaConfig,
                 MfaMethod.Totp,
-                "Invalid code",
+                "Invalid or previously used code",
                 deviceId,
                 cancellationToken).ConfigureAwait(false);
 
@@ -166,6 +176,7 @@ public sealed class TotpMfaService(
 
             return false;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error verifying TOTP for user: {UserId}", userId);
@@ -208,7 +219,7 @@ public sealed class TotpMfaService(
     /// <summary>
     ///     Generates TOTP URI for QR code (otpauth://totp/...).
     /// </summary>
-    private static string GenerateTotpUri(string userEmail, string secretKey, string issuer, int timeStepSeconds)
+    internal static string GenerateTotpUri(string userEmail, string secretKey, string issuer, int timeStepSeconds)
     {
         var encodedIssuer = Uri.EscapeDataString(issuer);
         var encodedEmail = Uri.EscapeDataString(userEmail);
@@ -219,27 +230,21 @@ public sealed class TotpMfaService(
     /// <summary>
     ///     Verifies TOTP code using time-based algorithm (RFC 6238).
     /// </summary>
-    private static bool VerifyTotpCode(string secretKey, string totpCode, int window, int timeStepSeconds)
+    private static long? FindMatchingTotpStep(string secretKey, string totpCode, int window, int timeStepSeconds,
+        DateTimeOffset now)
     {
-        var currentTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var timeStep = currentTimestamp / timeStepSeconds;
-
-        // Check current time step and window steps before/after
-        for (var i = -window; i <= window; i++)
+        if (totpCode is not { Length: 6 } || !totpCode.All(char.IsAsciiDigit)) { return null; }
+        var timeStep = now.ToUnixTimeSeconds() / timeStepSeconds;
+        var supplied = Encoding.ASCII.GetBytes(totpCode);
+        long? matchedStep = null;
+        for (var offset = -window; offset <= window; offset++)
         {
-            var testStep = timeStep + i;
-            var expectedCode = GenerateTotpCode(secretKey, testStep);
-
-            if (totpCode.Length == 6 && totpCode.All(char.IsAsciiDigit) &&
-                CryptographicOperations.FixedTimeEquals(
-                    Encoding.ASCII.GetBytes(expectedCode),
-                    Encoding.ASCII.GetBytes(totpCode)))
-            {
-                return true;
-            }
+            var candidateStep = timeStep + offset;
+            if (candidateStep < 0) { continue; }
+            var expected = Encoding.ASCII.GetBytes(GenerateTotpCode(secretKey, candidateStep));
+            if (CryptographicOperations.FixedTimeEquals(expected, supplied)) { matchedStep = candidateStep; }
         }
-
-        return false;
+        return matchedStep;
     }
 
     /// <summary>

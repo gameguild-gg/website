@@ -1,8 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using FluentAssertions;using GameGuild.Learning.Assessments;
 using GameGuild.Learning.Grading.Contracts;
 using GameGuild.Learning.Lti;
@@ -61,11 +63,11 @@ public class AgsScoreServiceTests
     private AgsScoreService CreateService() =>
         new(_db, new StubHttpClientFactory(new HttpClient(_handler)), NullLogger<AgsScoreService>.Instance);
 
-    private void SeedMapping(int maxScore = 100)
+    private void SeedMapping(int maxScoreUnits = 10_000)
     {
         _db.Set<LtiLineItemMapping>().Add(LtiLineItemMapping.Create(
             _assessmentId, _deployment.Id, "line-1",
-            "https://canvas.test/api/lti/courses/1/line_items/9", ScoreValue.FromUnits(maxScore)));
+            "https://canvas.test/api/lti/courses/1/line_items/9", ScoreValue.FromUnits(maxScoreUnits)));
         _db.Set<LtiUserMapping>().Add(LtiUserMapping.Create(_deployment.Id, _userId, _sub));
         _db.SaveChanges();
     }
@@ -91,12 +93,17 @@ public class AgsScoreServiceTests
         _handler.Requests.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task PostScore_WithMapping_PostsTokenRequestThenSpecShapedScore()
+    [Theory]
+    [InlineData(1800, 2500, "18", "25")]
+    [InlineData(1837, 2550, "18.37", "25.5")]
+    [InlineData(1, 3, "0.01", "0.03")]
+    public async Task PostScore_WithMapping_PostsTokenRequestThenSpecShapedScore(
+        int scoreUnits, int maximumUnits, string expectedScore, string expectedMaximum)
     {
-        SeedMapping(maxScore: 25);
+        SeedMapping(maxScoreUnits: maximumUnits);
 
-        await CreateService().PostScoreIfMappedAsync(_assessmentId, _userId, ScoreValue.FromUnits(18), ScoreValue.FromUnits(25));
+        await CreateService().PostScoreIfMappedAsync(
+            _assessmentId, _userId, ScoreValue.FromUnits(scoreUnits), ScoreValue.FromUnits(maximumUnits));
 
         _handler.Requests.Should().HaveCount(2);
 
@@ -126,8 +133,10 @@ public class AgsScoreServiceTests
         scoreRequest.Content!.Headers.ContentType!.MediaType.Should().Be("application/json");
         var body = System.Text.Json.JsonDocument.Parse(_handler.Bodies[1]).RootElement;
         body.GetProperty("userId").GetString().Should().Be(_sub);
-        body.GetProperty("scoreGiven").GetInt32().Should().Be(18);
-        body.GetProperty("scoreMaximum").GetInt32().Should().Be(25);
+        body.GetProperty("scoreGiven").ValueKind.Should().Be(JsonValueKind.Number);
+        body.GetProperty("scoreGiven").GetDecimal().Should().Be(decimal.Parse(expectedScore, CultureInfo.InvariantCulture));
+        body.GetProperty("scoreMaximum").ValueKind.Should().Be(JsonValueKind.Number);
+        body.GetProperty("scoreMaximum").GetDecimal().Should().Be(decimal.Parse(expectedMaximum, CultureInfo.InvariantCulture));
         body.GetProperty("activityProgress").GetString().Should().Be("Completed");
         body.GetProperty("gradingProgress").GetString().Should().Be("FullyGraded");
         body.EnumerateObject().Should().HaveCount(5);

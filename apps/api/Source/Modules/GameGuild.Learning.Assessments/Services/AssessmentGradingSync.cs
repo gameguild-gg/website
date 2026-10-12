@@ -20,7 +20,10 @@ public sealed class AssessmentGradingSync(IApplicationDbContext context) : IAsse
                 .AsNoTracking()
                 .FirstOrDefaultAsync(value => value.Id == contentId && value.DeletedAt == null, ct)
                 .ConfigureAwait(false);
-            if (content is null || content.Type != ProgramContentType.Code) return;
+            if (content is null || content.Type != ProgramContentType.Code)
+            {
+                return;
+            }
 
             assessment = Assessment.Create(
                 content.ProgramId,
@@ -36,6 +39,10 @@ public sealed class AssessmentGradingSync(IApplicationDbContext context) : IAsse
             assessment.SetDeliveryContract(
                 SubmissionModality.Code,
                 AssessmentPresentationMode.SingleStep);
+            assessment.SetReviewPolicy(assessment.ReviewMethods,
+                "{\"schemaVersion\":1,\"instructor\":{\"requireOverrideReason\":false}}",
+                assessment.AttemptContributionMode, assessment.ContentCompletionMode,
+                assessment.ResultReleaseMode, assessment.ResultReleaseScheduledFor);
             context.Set<Assessment>().Add(assessment);
             await context.SaveChangesAsync(ct).ConfigureAwait(false);
             return;

@@ -486,7 +486,7 @@ export class ToolRunner {
     // dispatching subprocesses via system(). Instead of running ninja.wasm,
     // we parse build.ninja in JS and execute each build command directly.
     if (toolBasename === 'ninja') {
-      const isInfoQuery = options.isInfoQuery || argv.some((a) => a === '--version' || a === '-v');
+      const isInfoQuery = options.isInfoQuery ?? argv.some((a) => a === '--version' || a === '-v');
       const isToolQuery = argv.some((a) => a === '-t');
       if (isInfoQuery) {
         console.log(`${LOG_PREFIX}   [ninja] info query → fake version 1.12.1`);

@@ -25,7 +25,8 @@ public sealed record UpdateServiceAccountScopesCommand(Guid ServiceAccountId, st
 public sealed record IssueServiceAccountTokenCommand(
     string ClientId,
     string ClientSecret,
-    string? IpAddress) : ICommand<ServiceAccountTokenCommandResult>;
+    string? IpAddress,
+    System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate = null) : ICommand<ServiceAccountTokenCommandResult>;
 public sealed record ServiceAccountTokenCommandResult(
     ServiceAccount? Account,
     string? AccessToken,
@@ -62,19 +63,33 @@ public sealed class ServiceAccountMutationCommandHandler(
         var account = await serviceAccountService.GetByIdAsync(command.ServiceAccountId, cancellationToken)
             .ConfigureAwait(false);
         if (account is null)
+        {
             return false;
+        }
 
         if (!string.IsNullOrEmpty(command.Name))
+        {
             account.Name = command.Name;
+        }
+
         if (command.Description is not null)
+        {
             account.Description = command.Description;
+        }
+
         if (!string.IsNullOrEmpty(command.Scopes))
+        {
             await serviceAccountService.UpdateScopesAsync(
                 command.ServiceAccountId,
                 command.Scopes,
                 cancellationToken).ConfigureAwait(false);
+        }
+
         if (command.ExpiresAt.HasValue)
+        {
             account.ExpiresAt = command.ExpiresAt.Value;
+        }
+
         return true;
     }
 
@@ -118,13 +133,23 @@ public sealed class ServiceAccountMutationCommandHandler(
         IssueServiceAccountTokenCommand command,
         CancellationToken cancellationToken)
     {
-        var account = await serviceAccountService.AuthenticateAsync(
-            command.ClientId,
-            command.ClientSecret,
-            command.IpAddress,
-            cancellationToken).ConfigureAwait(false);
+        // A negotiated client certificate authenticates in lieu of the client secret
+        // when bound to the service account; otherwise the secret path applies.
+        var account = command.ClientCertificate is null
+            ? await serviceAccountService.AuthenticateAsync(
+                command.ClientId,
+                command.ClientSecret,
+                command.IpAddress,
+                cancellationToken).ConfigureAwait(false)
+            : await serviceAccountService.AuthenticateWithCertificateAsync(
+                command.ClientId,
+                command.ClientCertificate,
+                command.IpAddress,
+                cancellationToken).ConfigureAwait(false);
         if (account is null)
+        {
             return new(null, null, null);
+        }
 
         var (token, expiresAt) = await jwtTokenService.GenerateServiceAccountTokenAsync(
             account.Id.ToString(),

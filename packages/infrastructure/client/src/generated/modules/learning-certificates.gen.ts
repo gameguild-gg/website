@@ -58,7 +58,7 @@ export class LearningCertificatesModule {
   /**
    * Get certificates for a specific course
    */
-  async getApiCertificatesCourse(courseId: string): Promise<Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>> {
+  async getApiCertificatesCourse(courseId: string): Promise<Result<Types.LearningCertificatesCertificateDto[], ApiError>> {
     const url = `/api/certificates/course/${courseId}`;
 
     const result = await this.client.request({
@@ -67,13 +67,13 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>;
+    return result as Result<Types.LearningCertificatesCertificateDto[], ApiError>;
   }
 
   /**
    * Get certificates expiring within the specified days
    */
-  async getApiCertificatesExpiring(query?: { days?: number }): Promise<Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>> {
+  async getApiCertificatesExpiring(query?: { days?: number }): Promise<Result<Types.LearningCertificatesCertificateDto[], ApiError>> {
     const url = '/api/certificates/expiring';
 
     const result = await this.client.request({
@@ -83,7 +83,7 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>;
+    return result as Result<Types.LearningCertificatesCertificateDto[], ApiError>;
   }
 
   /**
@@ -114,7 +114,7 @@ export class LearningCertificatesModule {
   /**
    * Get certificates for the current user
    */
-  async getApiCertificatesMy(): Promise<Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>> {
+  async getApiCertificatesMy(): Promise<Result<Types.LearningCertificatesCertificateDto[], ApiError>> {
     const url = '/api/certificates/my';
 
     const result = await this.client.request({
@@ -123,7 +123,7 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>;
+    return result as Result<Types.LearningCertificatesCertificateDto[], ApiError>;
   }
 
   /**
@@ -220,7 +220,7 @@ export class LearningCertificatesModule {
   /**
    * Get certificate templates for a specific course
    */
-  async getApiCertificatesTemplatesCourse(courseId: string): Promise<Result<Array<Types.LearningCertificatesCertificateTemplateDto>, ApiError>> {
+  async getApiCertificatesTemplatesCourse(courseId: string): Promise<Result<Types.LearningCertificatesCertificateTemplateDto[], ApiError>> {
     const url = `/api/certificates/templates/course/${courseId}`;
 
     const result = await this.client.request({
@@ -229,7 +229,7 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificateTemplateDto>, ApiError>;
+    return result as Result<Types.LearningCertificatesCertificateTemplateDto[], ApiError>;
   }
 
   /**
@@ -241,7 +241,7 @@ export class LearningCertificatesModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

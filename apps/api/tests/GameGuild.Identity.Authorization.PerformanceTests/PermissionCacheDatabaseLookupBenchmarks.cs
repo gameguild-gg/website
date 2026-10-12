@@ -41,7 +41,14 @@ public class PermissionCacheDatabaseLookupBenchmarks
     {
         _database = await EconomyPostgreSqlTestDatabase.CreateAsync("authorization_benchmarks").ConfigureAwait(false);
 
-        _dataSource = NpgsqlDataSource.Create(_database.ConnectionString);
+        // The shared test database helper disables pooling for test isolation. Keep the
+        // benchmark representative of request traffic and avoid TCP socket churn.
+        var benchmarkConnectionString = new NpgsqlConnectionStringBuilder(_database.ConnectionString)
+        {
+            Pooling = true,
+            MaxPoolSize = 128
+        }.ConnectionString;
+        _dataSource = NpgsqlDataSource.Create(benchmarkConnectionString);
         await SeedDatabaseAsync().ConfigureAwait(false);
 
         var aclRepository = new Mock<IAccessControlListEntryRepository>();

@@ -25,7 +25,7 @@ export class SocialPostsCommentsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -93,7 +93,7 @@ export class SocialPostsCommentsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -109,7 +109,7 @@ export class SocialPostsCommentsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -118,14 +118,14 @@ export class SocialPostsCommentsModule {
   /**
    * Search posts by tags
    */
-  async getPostsTagsSearch(query?: { tags?: Array<string>; skip?: number; take?: number }): Promise<Result<void, ApiError>> {
+  async getPostsTagsSearch(query?: { tags?: string[]; skip?: number; take?: number }): Promise<Result<void, ApiError>> {
     const url = '/api/v1/posts/tags/search';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;

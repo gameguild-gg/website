@@ -1,8 +1,35 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { addDays, format } from "date-fns";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DateTimeRangePicker } from "./date-time-range-picker";
+
+/**
+ * The picker's calendar only offers clickable day buttons from the current
+ * Sao Paulo wall-clock day onward, so these integration tests must derive
+ * their dates from "now" instead of hard-coding calendar days (the original
+ * hard-coded October 2026 days turned into the past and stopped rendering
+ * as buttons). Anchoring on Sao Paulo's civil date keeps the chosen days
+ * in the future in both the runner clock and the component time zone.
+ */
+function saoPauloToday(): Date {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((part) => part.type === type)!.value);
+  // Civil (local-midnight) construction: date-fns v4 formats in the runtime's
+  // local zone and ignores the `timeZone` format option, so the anchor must
+  // already be a civil date for day arithmetic and formatting to agree.
+  return new Date(get("year"), get("month") - 1, get("day"));
+}
+
+const calendarDayLabel = (date: Date) => format(date, "EEEE, MMMM do, yyyy");
+const summaryDay = (date: Date) => format(date, "dd/MM/yyyy");
+const isoDay = (date: Date) => format(date, "yyyy-MM-dd");
 
 function RangeForm() {
   return (
@@ -23,6 +50,14 @@ function RangeForm() {
 }
 
 describe("DateTimeRangePicker", () => {
+  beforeEach(() => {
+    // Keep fixture dates stable while event, delay, and timeout timers remain real.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-07T15:00:00Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
   it("shows both full endpoints even when a compact interval starts and ends on the same day", () => {
     render(<DateTimeRangePicker
       id="compact-session" label="Testing session" startLabel="Session starts" endLabel="Session ends"
@@ -84,9 +119,39 @@ describe("DateTimeRangePicker", () => {
   });
 
   it.each([
-    { endDate: "Friday, October 9th, 2026", end: "2026-10-09T01:15", summary: "09/10/2026 · 01:15" },
-    { endDate: "Sunday, October 11th, 2026", end: "2026-10-11T01:15", summary: "11/10/2026 · 01:15" },
-  ])("keeps a full calendar interval ending on $endDate", async ({ endDate, end, summary }) => {
+    { description: "the next day", startOffset: 1, endOffset: 2 },
+    { description: "three days ahead", startOffset: 1, endOffset: 4 },
+  ])("keeps a full calendar interval ending $description", async ({ startOffset, endOffset }) => {
+    const user = userEvent.setup();
+    const today = saoPauloToday();
+    const startDay = addDays(today, startOffset);
+    const endDay = addDays(today, endOffset);
+    render(<form aria-label="Compact session"><DateTimeRangePicker
+      id="compact-session" label="Testing session" startLabel="Session starts" endLabel="Session ends"
+      startName="startsAt" endName="endsAt" timeZoneId="America/Sao_Paulo" compact
+      defaultValue={{ start: `${isoDay(startDay)}T18:00`, end: `${isoDay(endDay)}T21:00` }}
+    /></form>);
+    await user.click(screen.getByRole("button", { name: "Testing session" }));
+    // react-day-picker appends ", selected" to the aria-label of days inside the
+    // default range, so match the base label with an optional suffix.
+    const dayButton = (day: Date) =>
+      new RegExp(`^${calendarDayLabel(day).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(, selected)?$`);
+    await user.click(await screen.findByRole("button", { name: dayButton(startDay) }));
+    expect(screen.getAllByText(summaryDay(startDay))).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: dayButton(endDay) }));
+    fireEvent.change(screen.getByLabelText("Session starts time"), { target: { value: "23:30" } });
+    fireEvent.change(screen.getByLabelText("Session ends time"), { target: { value: "01:15" } });
+    await user.click(screen.getByRole("button", { name: "Apply testing session" }));
+    const data = new FormData(screen.getByRole("form", { name: "Compact session" }) as HTMLFormElement);
+    expect(data.get("startsAt")).toBe(`${isoDay(startDay)}T23:30`);
+    expect(data.get("endsAt")).toBe(`${isoDay(endDay)}T01:15`);
+    expect(screen.getByRole("button", { name: "Testing session" })).toHaveTextContent(
+      `${summaryDay(startDay)} · 23:30 → ${summaryDay(endDay)} · 01:15`,
+    );
+  });
+
+  it("preserves the full interval when the selected start date is today", async () => {
+    vi.setSystemTime(new Date("2026-10-08T15:00:00Z"));
     const user = userEvent.setup();
     render(<form aria-label="Compact session"><DateTimeRangePicker
       id="compact-session" label="Testing session" startLabel="Session starts" endLabel="Session ends"
@@ -94,16 +159,16 @@ describe("DateTimeRangePicker", () => {
       defaultValue={{ start: "2026-10-02T18:00", end: "2026-10-03T21:00" }}
     /></form>);
     await user.click(screen.getByRole("button", { name: "Testing session" }));
-    await user.click(await screen.findByRole("button", { name: "Thursday, October 8th, 2026", exact: true }));
+    await user.click(await screen.findByRole("button", { name: "Today, Thursday, October 8th, 2026", exact: true }));
     expect(screen.getAllByText("08/10/2026")).toHaveLength(2);
-    await user.click(screen.getByRole("button", { name: endDate, exact: true }));
+    await user.click(screen.getByRole("button", { name: "Friday, October 9th, 2026", exact: true }));
     fireEvent.change(screen.getByLabelText("Session starts time"), { target: { value: "23:30" } });
     fireEvent.change(screen.getByLabelText("Session ends time"), { target: { value: "01:15" } });
     await user.click(screen.getByRole("button", { name: "Apply testing session" }));
     const data = new FormData(screen.getByRole("form", { name: "Compact session" }) as HTMLFormElement);
     expect(data.get("startsAt")).toBe("2026-10-08T23:30");
-    expect(data.get("endsAt")).toBe(end);
-    expect(screen.getByRole("button", { name: "Testing session" })).toHaveTextContent(`08/10/2026 · 23:30 → ${summary}`);
+    expect(data.get("endsAt")).toBe("2026-10-09T01:15");
+    expect(screen.getByRole("button", { name: "Testing session" })).toHaveTextContent("08/10/2026 · 23:30 → 09/10/2026 · 01:15");
   });
 
   it("does not apply invalid 24-hour times, reversed intervals, or nonexistent DST times", async () => {

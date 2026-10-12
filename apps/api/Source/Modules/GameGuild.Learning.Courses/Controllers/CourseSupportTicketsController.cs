@@ -21,19 +21,26 @@ public sealed class CourseSupportTicketsController(
     IApplicationDbContext db) : BaseApiController
 {
     [HttpPost]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> Create(
         Guid courseId,
         [FromBody] CreateCourseSupportTicketRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail)) return Unauthorized();
+        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail))
+        {
+            return Unauthorized();
+        }
+
         var tenantId = actorContextAccessor.ActorContext.TenantId;
         var courseTitle = await db.Set<Program>().AsNoTracking()
             .Where(program => program.Id == courseId && program.DeletedAt == null)
             .Select(program => program.Title)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-        if (tenantId is not Guid resolvedTenantId || courseTitle is null) return NotFound();
+        if (tenantId is not Guid resolvedTenantId || courseTitle is null)
+        {
+            return NotFound();
+        }
 
         var result = await sender.Send(new CreateSupportTicketCommand(
             resolvedTenantId,
@@ -51,7 +58,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpGet]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<PagedResult<SupportTicketDto>>> List(
         Guid courseId,
         [FromQuery] int skip = 0,
@@ -65,7 +72,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpGet("{ticketId:guid}")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> GetById(
         Guid courseId,
         Guid ticketId,
@@ -76,7 +83,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpPost("{ticketId:guid}/messages")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> AddMessage(
         Guid courseId,
         Guid ticketId,
@@ -84,8 +91,15 @@ public sealed class CourseSupportTicketsController(
         CancellationToken cancellationToken = default)
     {
         var ticket = await GetOwnedTicketAsync(courseId, ticketId, cancellationToken).ConfigureAwait(false);
-        if (ticket?.TenantId is not Guid tenantId) return NotFound();
-        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail)) return Unauthorized();
+        if (ticket?.TenantId is not Guid tenantId)
+        {
+            return NotFound();
+        }
+
+        if (!TryGetActor(out var actorId, out var actorName, out var actorEmail))
+        {
+            return Unauthorized();
+        }
 
         var result = await sender.Send(new AddSupportTicketMessageCommand(
             ticketId,
@@ -101,7 +115,7 @@ public sealed class CourseSupportTicketsController(
     }
 
     [HttpPost("{ticketId:guid}:resolve")]
-    [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
+    [RequireCourseCapability(CourseCapability.Edit, "courseId")]
     public async Task<ActionResult<SupportTicketDto>> Resolve(
         Guid courseId,
         Guid ticketId,
@@ -109,8 +123,15 @@ public sealed class CourseSupportTicketsController(
         CancellationToken cancellationToken = default)
     {
         var ticket = await GetOwnedTicketAsync(courseId, ticketId, cancellationToken).ConfigureAwait(false);
-        if (ticket?.TenantId is not Guid tenantId) return NotFound();
-        if (!TryGetActor(out var actorId, out var actorName, out _)) return Unauthorized();
+        if (ticket?.TenantId is not Guid tenantId)
+        {
+            return NotFound();
+        }
+
+        if (!TryGetActor(out var actorId, out var actorName, out _))
+        {
+            return Unauthorized();
+        }
 
         var result = await sender.Send(new ResolveSupportTicketCommand(
             ticketId,

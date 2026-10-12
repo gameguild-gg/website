@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.CQRS;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using GameGuild.Identity.Tenants;
@@ -9,6 +10,119 @@ namespace GameGuild.Identity.Users.UnitTests.Repositories;
 
 public class UserRepositoryTests
 {
+    [Fact]
+    public async Task GeneratedUsername_UsesReadableBaseWhenAvailable()
+    {
+        await using var context = CreateContext();
+        var repository = new UserRepository(context);
+        var user = User.CreateOAuthUser("new@example.test", "MátHeus Martíns");
+        await repository.AddAsync(user);
+        await repository.SaveChangesAsync();
+        (await repository.GetByIdAsync(user.Id))!.Username.Should().Be("matheus-martins");
+        context.Model.FindEntityType(typeof(User))!.FindProperty("HasGeneratedUsername").Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GeneratedUsername_ReservesExistingCaseVariantsAndDeletedUsers(bool deleted)
+    {
+        await using var context = CreateContext();
+        await SeedUsersAsync(context, CreateUser("legacy@example.test", "Legacy", "Alpha-User", deleted: deleted));
+        var user = User.Create("new@example.test", "Alpha User");
+        var repository = new UserRepository(context);
+        await repository.AddAsync(user);
+        await repository.SaveChangesAsync();
+        user.Username.Should().Be($"alpha-user-{user.Id:N}");
+        context.Users.Single(existing => existing.Email == "legacy@example.test").Username.Should().Be("Alpha-User");
+    }
+
+    [Fact]
+    public async Task AddRange_ReservesUnsavedBatchHandles()
+    {
+        await using var context = CreateContext();
+        var users = Enumerable.Range(0, 3).Select(index => User.Create($"batch{index}@example.test", "Same Name")).ToArray();
+        var repository = new UserRepository(context);
+        await repository.AddRangeAsync(users);
+        await repository.SaveChangesAsync();
+        users[0].Username.Should().Be("same-name");
+        users[1].Username.Should().Be($"same-name-{users[1].Id:N}");
+        users[2].Username.Should().Be($"same-name-{users[2].Id:N}");
+        users.Select(user => user.Username).Should().OnlyHaveUniqueItems();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExplicitUsernameCollision_ReturnsValidationWithoutRenaming(bool deleted)
+    {
+        await using var context = CreateContext();
+        await SeedUsersAsync(context, CreateUser("legacy@example.test", "Legacy", "Alpha-User", deleted: deleted));
+        var user = User.CreateWithPassword("new@example.test", "Display Name", "hash", "ALPHA USER");
+        var repository = new UserRepository(context);
+        var exception = await Assert.ThrowsAsync<RequestValidationException>(() => repository.AddAsync(user));
+        exception.Errors.Should().ContainSingle().Which.PropertyName.Should().Be(nameof(User.Username));
+        user.Username.Should().Be("alpha-user");
+        context.Entry(user).State.Should().Be(EntityState.Detached);
+    }
+
+    [Fact]
+    public async Task ObjectInitializedUserWithoutHandle_GetsGeneratedHandle()
+    {
+        await using var context = CreateContext();
+        var user = new User { Email = "new@example.test", Name = "New User" };
+        await new UserRepository(context).AddAsync(user);
+        user.Username.Should().Be("new-user");
+    }
+
+    [Fact]
+    public async Task UpdateExistingDisplayName_PreservesLegacyHandleAndNull()
+    {
+        await using var context = CreateContext();
+        var legacy = CreateUser("legacy@example.test", "Legacy", "Legacy.Mixed_Handle");
+        var withoutHandle = CreateUser("without@example.test", "Without");
+        await SeedUsersAsync(context, legacy, withoutHandle);
+        var repository = new UserRepository(context);
+        legacy.UpdateName("Updated Legacy");
+        withoutHandle.UpdateName("Updated Without");
+        await repository.UpdateRangeAsync([legacy, withoutHandle]);
+        await repository.SaveChangesAsync();
+        legacy.Username.Should().Be("Legacy.Mixed_Handle");
+        withoutHandle.Username.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GeneratedCollision_BoundsStoredHandleLength()
+    {
+        await using var context = CreateContext();
+        var user = User.Create("new@example.test", new string('a', 300));
+        await SeedUsersAsync(context, CreateUser("legacy@example.test", "Legacy", new string('a', 256)));
+        await new UserRepository(context).AddAsync(user);
+        user.Username.Should().HaveLength(256).And.EndWith($"-{user.Id:N}");
+    }
+
+    [Fact]
+    public async Task GeneratedCollision_WhenAllBoundedCandidatesAreReserved_Rejects()
+    {
+        await using var context = CreateContext();
+        var user = User.Create("new@example.test", "Same Name");
+        var reserved = new List<User> { CreateUser("base@example.test", "Legacy", "same-name") };
+        reserved.AddRange(Enumerable.Range(1, 8).Select(attempt => CreateUser($"suffix{attempt}@example.test", "Legacy",
+            $"same-name-{user.Id:N}" + (attempt == 1 ? string.Empty : $"-{attempt}"))));
+        await SeedUsersAsync(context, reserved.ToArray());
+        await Assert.ThrowsAsync<RequestValidationException>(() => new UserRepository(context).AddAsync(user));
+        context.Entry(user).State.Should().Be(EntityState.Detached);
+    }
+
+    [Fact]
+    public async Task AddCanceledRequest_DoesNotTrackUser()
+    {
+        await using var context = CreateContext();
+        var user = User.Create("new@example.test", "New User");
+        await Assert.ThrowsAsync<OperationCanceledException>(() => new UserRepository(context).AddAsync(user, new CancellationToken(true)));
+        context.Entry(user).State.Should().Be(EntityState.Detached);
+    }
+
     [Fact]
     public async Task GetByIdEmailAllAndExists_ShouldExcludeDeletedUsers()
     {

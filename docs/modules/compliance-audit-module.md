@@ -2,7 +2,16 @@
 
 ## Overview
 
-The `GameGuild.Compliance.Audit` module is a comprehensive compliance and regulatory audit system designed to meet the requirements of multiple regulatory frameworks including SOC2, ISO 27001, GDPR, HIPAA, FERPA, and PCI-DSS.
+The `GameGuild.Compliance.Audit` module provides audit logging, tamper evidence,
+retention and structured evidence packaging for accountable reviewer assessment.
+Framework enum values do not establish full regulatory coverage or certification.
+
+The packaging catalog currently includes the legacy ISO Annex A profile, ISO
+ISMS/SoA, GDPR/DPIA and six explicit 2026 FedRAMP Rev5 class/path profiles. FedRAMP
+uses tailored baseline identifiers, bundled official JSON schemas and signed
+native JSON/text/CSV reviewer exports. Additional framework coverage and controlled
+auditor delivery remain open in #178. See the [packaging architecture and verified
+scope](../architecture/compliance-evidence-packaging.md).
 
 **Namespace:** `GameGuild.Compliance.Audit`  
 **Location:** `apps/api/Source/Modules/GameGuild.Compliance.Audit/`

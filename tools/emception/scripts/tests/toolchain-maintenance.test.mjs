@@ -492,6 +492,186 @@ test('workspace source hashes ignore checkout line-ending representation', async
   assert.equal(hashDirectory(lf), hashDirectory(crlf));
 });
 
+async function lockedGitExportFixture(context, useReviewedHash) {
+  const { createHash } = await import('node:crypto');
+  const { gzipSync } = await import('node:zlib');
+  const { createDeterministicTar } = await import('../lib/deterministic-tar.ts');
+  const root = await temporaryRoot(context);
+  const commit = '0123456789abcdef0123456789abcdef01234567';
+  const exports = (abbreviation) => gzipSync(createDeterministicTar([
+    { path: `/llvm-project-${commit}/CMakeLists.txt`, data: new TextEncoder().encode('project(unchanged)\n') },
+    { path: `/llvm-project-${commit}/.git_archival.txt`, data: new TextEncoder().encode(`node: ${commit}\ndescribe-name: v1-1-g${abbreviation}\n`) },
+  ]));
+  const original = exports(commit.slice(0, 7));
+  const reviewed = exports(commit.slice(0, 9));
+  const oldHash = createHash('sha256').update(original).digest('hex');
+  const reviewedHash = createHash('sha256').update(reviewed).digest('hex');
+  assert.notEqual(oldHash, reviewedHash);
+  const expectedHash = useReviewedHash ? reviewedHash : oldHash;
+  const lock = {
+    schemaVersion: 1,
+    configHash: 'a'.repeat(64),
+    tools: {
+      llvm: {
+        version: '23.0.0git',
+        source: {
+          kind: 'git-archive', repository: 'llvm/llvm-project', commit,
+          url: `https://example.invalid/llvm-project/${commit}.tar.gz`, sha256: expectedHash,
+        },
+      },
+    },
+  };
+  const download = path.join(root, '.cache', 'toolchain', 'downloads', `llvm-${expectedHash}.archive`);
+  await mkdir(path.dirname(download), { recursive: true });
+  await writeFile(download, reviewed);
+  return { root, lock, commit, expectedHash, oldHash, reviewedHash, destination: path.join(root, '.cache', 'toolchain', 'sources', 'llvm') };
+}
+
+test('a fixed Git commit does not waive a changed archive checksum', async (context) => {
+  const { ensureLockedSource } = await import('../toolchain/sources.ts');
+  const { root, lock, destination } = await lockedGitExportFixture(context, false);
+  const before = JSON.stringify(lock);
+
+  assert.throws(() => ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), /Checksum mismatch/);
+  await assert.rejects(readFile(path.join(destination, 'CMakeLists.txt')));
+  await assert.rejects(readFile(path.join(destination, '.emception-source.json')));
+  assert.equal(JSON.stringify(lock), before);
+});
+
+test('a reviewed archive checksum materializes the fixed commit and records its identity', async (context) => {
+  const { ensureLockedSource } = await import('../toolchain/sources.ts');
+  const { root, lock, commit, expectedHash, destination } = await lockedGitExportFixture(context, true);
+
+  assert.equal(ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), destination);
+  assert.equal(await readFile(path.join(destination, 'CMakeLists.txt'), 'utf8'), 'project(unchanged)\n');
+  assert.equal(await readFile(path.join(destination, '.git_archival.txt'), 'utf8'),
+    `node: ${commit}\ndescribe-name: v1-1-g${commit.slice(0, 9)}\n`);
+  assert.deepEqual(JSON.parse(await readFile(path.join(destination, '.emception-source.json'), 'utf8')),
+    { name: 'llvm', version: '23.0.0git', sha256: expectedHash });
+  assert.equal(lock.tools.llvm.source.commit, commit);
+});
+
+test('reviewed Git archive variants retain the downloaded hash in the source receipt', async (context) => {
+  const { ensureLockedSource } = await import('../toolchain/sources.ts');
+  const { root, lock, reviewedHash, destination } = await lockedGitExportFixture(context, false);
+  lock.tools.llvm.source.reviewedArchiveVariants = [{ sha256: reviewedHash, gitTree: '1'.repeat(40), review: 'Compared all entries to the pinned Git tree.' }];
+  const before = JSON.stringify(lock);
+  assert.equal(ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), destination);
+  assert.deepEqual(JSON.parse(await readFile(path.join(destination, '.emception-source.json'), 'utf8')),
+    { name: 'llvm', version: '23.0.0git', sha256: reviewedHash });
+  assert.equal(ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), destination);
+  assert.equal(JSON.stringify(lock), before);
+  delete lock.tools.llvm.source.reviewedArchiveVariants;
+  assert.throws(() => ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), /Checksum mismatch/);
+});
+
+test('Git archive variant review rejects malformed, duplicate and unsupported identities', async () => {
+  const { calculateConfigHash, validateToolchainState } = await import('../toolchain/lock.ts');
+  const config = { schemaVersion: 1, runtimeAbi: 'test', constraints: { cmake: '<4' }, emsdkGroup: [] };
+  const source = { kind: 'git-archive', repository: 'llvm/llvm-project', commit: '1'.repeat(40),
+    url: 'https://example.invalid/llvm', sha256: 'a'.repeat(64) };
+  const variant = { sha256: 'b'.repeat(64), gitTree: '2'.repeat(40), review: 'Complete archive comparison.' };
+  const makeLock = (variants) => ({ schemaVersion: 1, configHash: calculateConfigHash(config), tools: {
+    cmake: { version: '3.31.12', source: { kind: 'archive', url: 'https://example.invalid/cmake', sha256: 'c'.repeat(64) } },
+    llvm: { version: '23', source: { ...source, reviewedArchiveVariants: variants } },
+  } });
+  validateToolchainState(config, makeLock([variant]));
+  for (const variants of [[], null, 'unreviewed', [{ ...variant, sha256: 'bad' }], [{ ...variant, sha256: source.sha256 }],
+    [variant, variant], [{ ...variant, gitTree: 'bad' }], [{ ...variant, review: '' }], [null]]) {
+    assert.throws(() => validateToolchainState(config, makeLock(variants)), /reviewedArchiveVariants/);
+  }
+  const unsupported = makeLock([variant]);
+  unsupported.tools.cmake.source.reviewedArchiveVariants = [variant];
+  assert.throws(() => validateToolchainState(config, unsupported), /reviewedArchiveVariants.*git-archive/);
+});
+
+test('reviewed Git archive variants still reject every unlisted archive before extraction', async (context) => {
+  const { ensureLockedSource } = await import('../toolchain/sources.ts');
+  const { root, lock, expectedHash, destination } = await lockedGitExportFixture(context, false);
+  lock.tools.llvm.source.reviewedArchiveVariants = [{ sha256: 'f'.repeat(64), gitTree: '1'.repeat(40), review: 'A different reviewed variant.' }];
+  assert.throws(() => ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), /Checksum mismatch/);
+  await assert.rejects(readFile(path.join(destination, '.emception-source.json')));
+  assert.equal(lock.tools.llvm.source.sha256, expectedHash);
+});
+
+test('the committed LLVM CI archive variant is bound to the fully reviewed immutable tree', async () => {
+  const { lockedArchiveHashes } = await import('../toolchain/lock.ts');
+  const lock = JSON.parse(await readFile(new URL('../../toolchain/toolchain.lock.json', import.meta.url), 'utf8'));
+  const source = lock.tools.llvm.source;
+  const digest = '96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce';
+  const proof = JSON.parse(await readFile(new URL('../../toolchain/reviews/llvm-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b-96cf1ae6.json', import.meta.url), 'utf8'));
+  assert.equal(source.commit, '7b58716d96c3ae4c0c4e6f72e29b16137bb6224b');
+  assert.equal(source.url, `https://codeload.github.com/llvm/llvm-project/tar.gz/${source.commit}`);
+  assert.equal(source.sha256, '0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5');
+  assert.equal(proof.archiveSha256, digest);
+  assert.equal(proof.commit, source.commit);
+  assert.equal(proof.normalizedArchiveGitTree, proof.upstreamGitTree);
+  assert.equal(proof.upstreamGitTree, '34cd378b6fba47d5bd42003cdaf9505179879004');
+  assert.equal(proof.verifiedFileAndSymlinkEntries, 175014);
+  assert.equal(proof.allPathsModesBlobsMatchPinnedTreeAfterReviewedExportTransforms, true);
+  assert.equal(proof.unverifiedDifferences, 0);
+  assert.equal(proof.extraMissingOrDuplicateFiles, false);
+  assert.equal(proof.onlyContentDifference, 'clang/bindings/python/.git_archival.txt');
+  assert.equal(proof.describeName, `llvmorg-23-init-13463-g${source.commit.slice(0, 14)}`);
+  assert(lockedArchiveHashes(source).includes(digest));
+  const variant = source.reviewedArchiveVariants.find(entry => entry.sha256 === digest);
+  assert.equal(variant.gitTree, proof.upstreamGitTree);
+  assert(variant.review.includes('96cf1ae6.json'));
+});
+
+test('release lock provenance retains reviewed variants without mutating the lock', async (context) => {
+  const { lockedSourceProvenance } = await import('../toolchain/lock.ts');
+  const { lock, oldHash, reviewedHash, commit } = await lockedGitExportFixture(context, false);
+  const variant = { sha256: reviewedHash, gitTree: '1'.repeat(40), review: 'Complete archive comparison.' };
+  lock.tools.llvm.source.reviewedArchiveVariants = [variant];
+  const provenance = lockedSourceProvenance(lock);
+  assert.deepEqual(provenance.llvm, { version: '23.0.0git', revision: commit, sha256: oldHash, reviewedArchiveVariants: [variant] });
+  provenance.llvm.reviewedArchiveVariants[0].review = 'changed consumer copy';
+  assert.equal(lock.tools.llvm.source.reviewedArchiveVariants[0].review, variant.review);
+});
+
+test('committed LLVM archive identities have matching immutable review evidence', async () => {
+  const { lockedArchiveHashes } = await import('../toolchain/lock.ts');
+  const lock = JSON.parse(await readFile(new URL('../../toolchain/toolchain.lock.json', import.meta.url), 'utf8'));
+  const source = lock.tools.llvm.source;
+  const reviewPath = `../../toolchain/reviews/llvm-${source.commit}.json`;
+  const review = JSON.parse(await readFile(new URL(reviewPath, import.meta.url), 'utf8'));
+
+  assert.equal(source.repository, review.repository);
+  assert.equal(source.commit, review.commit);
+  assert.deepEqual([...lockedArchiveHashes(source)].sort(), review.archives.map((archive) => archive.sha256).sort());
+  for (const variant of source.reviewedArchiveVariants) {
+    assert.equal(variant.gitTree, review.upstreamGitTree);
+  }
+  for (const additional of review.additionalArchiveReviews) {
+    assert.ok(source.reviewedArchiveVariants.some((variant) => variant.sha256 === additional.sha256));
+    assert.equal(additional.upstreamGitTree, review.upstreamGitTree);
+    assert.equal(additional.verifiedFiles, review.verifiedFiles);
+    assert.equal(additional.reconstructedTreeMatchesPinnedCommit, true);
+    assert.equal(additional.originalExportTransformsVerifiedAgainstUpstreamGitBlobs, true);
+    assert.equal(additional.archiveDifferences.length, 1);
+    assert.equal(additional.archiveDifferences[0].path, 'clang/bindings/python/.git_archival.txt');
+    assert.equal(additional.headerDifferences.length, 1);
+    assert.match(additional.verificationEvidenceSHA256, /^[0-9a-f]{64}$/);
+    assert.match(additional.headerComparisonEvidenceSHA256, /^[0-9a-f]{64}$/);
+  }
+});
+
+test('multiple reviewed Git variants retain the exact downloaded identity', async (context) => {
+  const { ensureLockedSource } = await import('../toolchain/sources.ts');
+  const { root, lock, reviewedHash, destination } = await lockedGitExportFixture(context, false);
+  lock.tools.llvm.source.reviewedArchiveVariants = [
+    { sha256: 'f'.repeat(64), gitTree: '1'.repeat(40), review: 'A separate independently reviewed variant.' },
+    { sha256: reviewedHash, gitTree: '1'.repeat(40), review: 'All archive entries compared to the pinned Git tree.' },
+  ];
+  const before = JSON.stringify(lock);
+  assert.equal(ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), destination);
+  assert.equal(JSON.parse(await readFile(path.join(destination, '.emception-source.json'), 'utf8')).sha256, reviewedHash);
+  assert.equal(JSON.stringify(lock), before);
+  lock.tools.llvm.source.reviewedArchiveVariants.pop();
+  assert.throws(() => ensureLockedSource(root, lock, 'llvm', destination, 'CMakeLists.txt'), /Checksum mismatch/);
+});
+
 test('locked archives extract through the cross-platform Node implementation', async (context) => {
   const { gzipSync } = await import('node:zlib');
   const { createDeterministicTar } = await import('../lib/deterministic-tar.ts');

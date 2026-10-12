@@ -380,23 +380,22 @@ public class PermissionServiceTests
 public class Web3ServiceTests
 {
     private readonly Web3Service _service;
-    private readonly IMemoryCache _memoryCache;
 
     public Web3ServiceTests()
     {
-        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        IMemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions());
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Authentication:Web3:Siwe:Origin"] = "https://localhost"
             })
             .Build();
-        _service = new Web3Service(NullLogger<Web3Service>.Instance, _memoryCache, configuration);
+        _service = new Web3Service(NullLogger<Web3Service>.Instance, memoryCache, configuration);
     }
 
     [Theory]
-    [InlineData("0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28", true)]
-    [InlineData("0xABCDEF1234567890abcdef1234567890ABCDEF12", true)]
+    [InlineData("0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28", false)] // invalid mixed-case checksum
+    [InlineData("0xABCDEF1234567890abcdef1234567890ABCDEF12", false)] // invalid mixed-case checksum
     [InlineData("0x0000000000000000000000000000000000000000", true)]
     [InlineData("", false)]
     [InlineData(null, false)]
@@ -412,7 +411,7 @@ public class Web3ServiceTests
     [Fact]
     public async Task GenerateChallengeAsync_WithValidAddress_ShouldReturnChallenge()
     {
-        var address = "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28";
+        var address = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
         var challenge = await _service.GenerateChallengeAsync(address);
 
         challenge.Should().NotBeNull();
@@ -427,7 +426,7 @@ public class Web3ServiceTests
     public async Task GenerateChallengeAsync_WithTenantId_ShouldIncludeTenantId()
     {
         var tenantId = Guid.NewGuid();
-        var challenge = await _service.GenerateChallengeAsync("0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28", tenantId);
+        var challenge = await _service.GenerateChallengeAsync("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", tenantId);
 
         challenge.TenantId.Should().Be(tenantId);
     }
@@ -450,7 +449,7 @@ public class Web3ServiceTests
     public async Task VerifySignatureAsync_WithNoChallenge_ShouldReturnFalse()
     {
         var result = await _service.VerifySignatureAsync(
-            "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28",
+            "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed",
             "0x" + new string('a', 130),
             "message");
         result.Should().BeFalse();
@@ -459,7 +458,7 @@ public class Web3ServiceTests
     [Fact]
     public async Task VerifySignatureAsync_WithMismatchedMessage_ShouldReturnFalse()
     {
-        var address = "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28";
+        var address = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
         var challenge = await _service.GenerateChallengeAsync(address);
 
         var result = await _service.VerifySignatureAsync(
@@ -472,7 +471,7 @@ public class Web3ServiceTests
     [Fact]
     public async Task VerifySignatureAsync_WithInvalidEip191Signature_ShouldReturnFalse()
     {
-        var address = "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD28";
+        var address = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
         var challenge = await _service.GenerateChallengeAsync(address);
 
         var result = await _service.VerifySignatureAsync(
@@ -499,9 +498,16 @@ public class UserEnumerationProtectionServiceTests
     public UserEnumerationProtectionServiceTests()
     {
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var policy = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["PresentationLayer:Authentication:PasswordPolicy:BCryptWorkFactor"] = "10"
+            })
+            .Build();
         _service = new UserEnumerationProtectionService(
             NullLogger<UserEnumerationProtectionService>.Instance,
-            _memoryCache);
+            _memoryCache,
+            new PasswordHasher(NullLogger<PasswordHasher>.Instance, policy));
     }
 
     [Theory]

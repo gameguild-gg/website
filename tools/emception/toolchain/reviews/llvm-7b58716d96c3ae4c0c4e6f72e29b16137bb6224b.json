@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-06",
+  "repository": "llvm/llvm-project",
+  "commit": "7b58716d96c3ae4c0c4e6f72e29b16137bb6224b",
+  "upstreamCommit": "https://github.com/llvm/llvm-project/commit/7b58716d96c3ae4c0c4e6f72e29b16137bb6224b",
+  "upstreamGitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
+  "verifiedFiles": 175014,
+  "ordinaryFilesIdenticalBetweenArchives": 175013,
+  "archiveDifferences": [
+    {
+      "path": "clang/bindings/python/.git_archival.txt",
+      "curl": {
+        "mode": "100644",
+        "sha": "6b17adece00f2585fceca6623560229677b5f51a",
+        "bytes": 138
+      },
+      "fetch": {
+        "mode": "100644",
+        "sha": "314eb0f4b6b02dba7046dfed7e7bcc88495a6fed",
+        "bytes": 136
+      }
+    }
+  ],
+  "archives": [
+    {
+      "sha256": "0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5",
+      "bytes": 270492403,
+      "describeName": "llvmorg-23-init-13463-g7b58716d96c3ae4"
+    },
+    {
+      "sha256": "0791c69319e1861e86ccb438d10b1b1816987f2d99b13d7e95ef08f88f0cedf8",
+      "bytes": 270491732,
+      "describeName": "llvmorg-23-init-13463-g7b58716d96c3a"
+    },
+    {
+      "sha256": "96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce",
+      "bytes": 270492404,
+      "describeName": "llvmorg-23-init-13463-g7b58716d96c3ae"
+    }
+  ],
+  "verifiedExportTransforms": [
+    {
+      "path": "clang/bindings/python/.git_archival.txt",
+      "originalGitBlob": "7876d4af4c6206b1c34332bdc75a715691897748",
+      "exportBytes": 138,
+      "gitBytes": 110,
+      "reason": "Git export-subst renders the same full commit, date and describe identity with a longer unambiguous abbreviation"
+    },
+    {
+      "path": "lld/test/wasm/Inputs/libstub.so",
+      "originalGitBlob": "70f6648c60eeea02540b18e0d6accc54c5b677bb",
+      "exportBytes": 110,
+      "gitBytes": 104,
+      "reason": "Git export preserves the test fixture CRLF representation of the same blob"
+    },
+    {
+      "path": "llvm/test/MC/AsmParser/preserve-comments-crlf.s",
+      "originalGitBlob": "27c5b2e070719e34eaba9eadc007ed1ed54376a0",
+      "exportBytes": 308,
+      "gitBytes": 295,
+      "reason": "Git export preserves the test fixture CRLF representation of the same blob"
+    },
+    {
+      "path": "llvm/test/tools/llvm-mca/X86/directives-handle-crlf.s",
+      "originalGitBlob": "db797a75c2617e4152cd8d06a45a8d69a1c91270",
+      "exportBytes": 120,
+      "gitBytes": 116,
+      "reason": "Git export preserves the test fixture CRLF representation of the same blob"
+    },
+    {
+      "path": "llvm/test/tools/split-file/Inputs/basic-aa.crlf",
+      "originalGitBlob": "0b9ddeb2fc12a1405569a5269f37d4c41f4b4654",
+      "exportBytes": 6,
+      "gitBytes": 4,
+      "reason": "Git export preserves the test fixture CRLF representation of the same blob"
+    },
+    {
+      "path": "llvm/test/tools/split-file/Inputs/basic-bb.crlf",
+      "originalGitBlob": "b6c3c808ec62fd7b693e657312037160695bbfda",
+      "exportBytes": 10,
+      "gitBytes": 6,
+      "reason": "Git export preserves the test fixture CRLF representation of the same blob"
+    },
+    {
+      "path": "llvm/test/tools/split-file/basic.crlf.test",
+      "originalGitBlob": "f01074a87963028ea5fe008ea6452c06b8dd644b",
+      "exportBytes": 183,
+      "gitBytes": 173,
+      "reason": "Git export preserves the test fixture CRLF representation of the same blob"
+    }
+  ],
+  "validation": "After verifying the declared export substitution and six CRLF fixtures against their original Git blobs, the reconstructed tree matches the pinned upstream tree. The two downloaded archives differ only in the describe abbreviation for the same full commit.",
+  "observedCiRuns": [
+    {
+      "runId": 37406138023,
+      "downloadedSha256": "0d7fb3e45c6d2916d4ad4613fc3ee099076d088c13e5ca4b9562bab83319a4a5"
+    },
+    {
+      "runId": 37410092890,
+      "downloadedSha256": "0791c69319e1861e86ccb438d10b1b1816987f2d99b13d7e95ef08f88f0cedf8"
+    },
+    {
+      "runId": 37505435692,
+      "downloadedSha256": "96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce"
+    }
+  ],
+  "policy": "Only the committed primary SHA-256 and explicitly reviewed variants are accepted. Unknown digests fail before extraction. Downloads never update the lock.",
+  "executionEvidenceSHA256": {
+    "archive-comparison.json": "bacd615db599ad756c6a91104e8b2a8aa2030eea02cadf2414e5482973418fea",
+    "git-tree-export-validation.json": "0375052cd4951fd418fa60acbbe2608a8ede3acb679ada89e0cc4369342fb616",
+    "upstream-commit.json": "3859c0c43def9963c764434ba6270cf78595d2e100cef62136ca4513e5db24ef"
+  },
+  "additionalArchiveReviews": [
+    {
+      "reviewedAt": "2026-10-06T18:28:18.378715+00:00",
+      "sha256": "96cf1ae663d1ede1f76ea2ef9bada1c942b8fdfc861792e972fabf5c554e17ce",
+      "upstreamGitTree": "34cd378b6fba47d5bd42003cdaf9505179879004",
+      "verifiedFiles": 175014,
+      "ordinaryFilesIdenticalToPrimaryArchive": 175013,
+      "archiveEntriesIncludingDirectories": 191207,
+      "archiveDifferences": [
+        {
+          "path": "clang/bindings/python/.git_archival.txt",
+          "prior": {
+            "mode": "100644",
+            "sha": "6b17adece00f2585fceca6623560229677b5f51a",
+            "bytes": 138
+          },
+          "current": {
+            "mode": "100644",
+            "sha": "21ab4ec263228a68696e4ce58f953d8e1b6edeba",
+            "bytes": 137
+          }
+        }
+      ],
+      "headerDifferences": [
+        {
+          "path": "llvm-project-7b58716d96c3ae4c0c4e6f72e29b16137bb6224b/clang/bindings/python/.git_archival.txt",
+          "prior": {
+            "type": "0",
+            "mode": 436,
+            "uid": 0,
+            "gid": 0,
+            "uname": "root",
+            "gname": "root",
+            "mtime": 1777459165,
+            "linkname": "",
+            "size": 138,
+            "paxHeaders": {
+              "comment": "7b58716d96c3ae4c0c4e6f72e29b16137bb6224b"
+            }
+          },
+          "current": {
+            "type": "0",
+            "mode": 436,
+            "uid": 0,
+            "gid": 0,
+            "uname": "root",
+            "gname": "root",
+            "mtime": 1777459165,
+            "linkname": "",
+            "size": 137,
+            "paxHeaders": {
+              "comment": "7b58716d96c3ae4c0c4e6f72e29b16137bb6224b"
+            }
+          }
+        }
+      ],
+      "originalExportTransformsVerifiedAgainstUpstreamGitBlobs": true,
+      "reconstructedTreeMatchesPinnedCommit": true,
+      "upstreamCommitSignatureVerified": true,
+      "verificationEvidenceSHA256": "89c8f737a9640f35b64aef98c4d0cd23e16f2f57255a1432221fe033342189c3",
+      "headerComparisonEvidenceSHA256": "199b3d68f3892094877841150eb763d5cd47484c8dcb03268b93e6ad5c5fd9fc",
+      "currentFileManifestSHA256": "0128a990e50128d7843e9265a37ed1e4f3236d1644873944a8e6f0a459d73e72",
+      "upstreamCommitEvidenceSHA256": "3859c0c43def9963c764434ba6270cf78595d2e100cef62136ca4513e5db24ef"
+    }
+  ]
+}

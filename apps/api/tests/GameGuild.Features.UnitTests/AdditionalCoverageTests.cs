@@ -1368,7 +1368,8 @@ public class FeatureControllerConstructorTests
     public void CapabilitiesController_CanBeConstructed()
     {
         var service = new Mock<ICapabilityService>();
-        var controller = new CapabilitiesController(service.Object);
+        var controller = new CapabilitiesController(service.Object, Mock.Of<GameGuild.CQRS.ISender>(),
+            Mock.Of<GameGuild.Identity.Context.Actors.IActorContextAccessor>());
         controller.Should().NotBeNull();
     }
 
@@ -1385,7 +1386,8 @@ public class FeatureControllerConstructorTests
     {
         var evalService = new Mock<IFeatureFlagEvaluationService>();
         var logger = NullLogger<FeatureFlagsController>.Instance;
-        var controller = new FeatureFlagsController(evalService.Object, logger);
+        var controller = new FeatureFlagsController(evalService.Object, logger,
+            Mock.Of<GameGuild.Identity.Context.Actors.IActorContextAccessor>(), Mock.Of<GameGuild.CQRS.ISender>());
         controller.Should().NotBeNull();
     }
 }

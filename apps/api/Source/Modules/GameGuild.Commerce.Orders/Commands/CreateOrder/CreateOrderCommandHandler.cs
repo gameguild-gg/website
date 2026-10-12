@@ -16,7 +16,9 @@ public sealed class CreateOrderCommandHandler(
         CancellationToken cancellationToken)
     {
         if (!OrderActorContext.TryResolve(actorContextAccessor, out var actor, out var actorError))
+        {
             return Result.Failure<OrderOperationResult>(actorError);
+        }
 
         // Check for existing order with same idempotency key
         var existingOrder = await orderRepository.GetByIdempotencyKeyAsync(

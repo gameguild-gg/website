@@ -35,7 +35,7 @@ public sealed class DataMaskingPostgreSqlIntegrationTests(ApiPostgreSqlFixture f
         var userAId = Guid.NewGuid();
         var userBId = Guid.NewGuid();
 
-        using var factory = fixture.Factory.WithWebHostBuilder(builder =>
+        using var factory = fixture.CreateFactory(builder =>
             builder.ConfigureTestServices(services =>
             {
                 services.AddAuthentication(options =>
@@ -60,8 +60,9 @@ public sealed class DataMaskingPostgreSqlIntegrationTests(ApiPostgreSqlFixture f
         using var tenantAClient = CreateClient(factory, tenantAId, userAId);
         using var tenantBClient = CreateClient(factory, tenantBId, userBId);
 
-        var tenantAPageResponse = await tenantAClient.GetAsync("/v1/users?limit=20");
-        var tenantBPageResponse = await tenantBClient.GetAsync("/v1/users?limit=20");
+        // The collection shares a migrated database. Locate this fixture's rows regardless of earlier tests.
+        var tenantAPageResponse = await tenantAClient.GetAsync($"/v1/users?limit=20&q=masking-{userAId:N}");
+        var tenantBPageResponse = await tenantBClient.GetAsync($"/v1/users?limit=20&q=masking-{userBId:N}");
 
         Assert.True(
             tenantAPageResponse.StatusCode == HttpStatusCode.OK,
@@ -73,13 +74,15 @@ public sealed class DataMaskingPostgreSqlIntegrationTests(ApiPostgreSqlFixture f
         using var tenantAPage = await System.Text.Json.JsonDocument.ParseAsync(await tenantAPageResponse.Content.ReadAsStreamAsync());
         var tenantAListedUser = tenantAPage.RootElement.GetProperty("items")
             .EnumerateArray()
-            .Single(user => user.GetProperty("id").GetGuid() == userAId);
+            .Single();
+        Assert.Equal(userAId, tenantAListedUser.GetProperty("id").GetGuid());
         Assert.Equal("[REDACTED]", tenantAListedUser.GetProperty("email").GetString());
 
         using var tenantBPage = await System.Text.Json.JsonDocument.ParseAsync(await tenantBPageResponse.Content.ReadAsStreamAsync());
         var tenantBListedUser = tenantBPage.RootElement.GetProperty("items")
             .EnumerateArray()
-            .Single(user => user.GetProperty("id").GetGuid() == userBId);
+            .Single();
+        Assert.Equal(userBId, tenantBListedUser.GetProperty("id").GetGuid());
         Assert.Equal($"masking-{userBId:N}@example.test", tenantBListedUser.GetProperty("email").GetString());
     }
 

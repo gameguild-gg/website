@@ -89,7 +89,10 @@ public class Assessment : EntityBase
     {
         ValidateMaxScore(maxScore);
         if (PassingScore.CompareTo(maxScore) > 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxScore), "Maximum score cannot be lower than passing score.");
+        }
+
         MaxScore = maxScore;
         UpdatedAt = SystemClock.UtcNow;
     }
@@ -97,7 +100,10 @@ public class Assessment : EntityBase
     public void SetPassingScore(ScoreValue passingScore)
     {
         if (passingScore.CompareTo(MaxScore) > 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(passingScore), "Passing score cannot exceed maximum score.");
+        }
+
         PassingScore = passingScore;
         UpdatedAt = SystemClock.UtcNow;
     }
@@ -218,9 +224,14 @@ public class Assessment : EntityBase
     {
         ReviewMethods = reviewMethods.EnsureValid(allowDraft: true);
         if (resultReleaseMode == ResultReleaseMode.Scheduled && !resultReleaseScheduledFor.HasValue)
+        {
             throw new ArgumentException("Scheduled release requires a UTC instant.", nameof(resultReleaseScheduledFor));
+        }
+
         if (resultReleaseMode != ResultReleaseMode.Scheduled && resultReleaseScheduledFor.HasValue)
+        {
             throw new ArgumentException("A release instant is only valid for scheduled release.", nameof(resultReleaseScheduledFor));
+        }
 
         ReviewConfigurationCanonicalJson = GradingContractValidator.NormalizeReviewConfiguration(
             ReviewMethods,
@@ -234,8 +245,16 @@ public class Assessment : EntityBase
 
     public int GetRequiredPeerReviewCount()
     {
-        if (!ReviewMethods.HasFlag(ReviewMethods.PeerReview)) return 0;
-        if (string.IsNullOrWhiteSpace(ReviewConfigurationCanonicalJson)) return 1;
+        if (!ReviewMethods.HasFlag(ReviewMethods.PeerReview))
+        {
+            return 0;
+        }
+
+        if (string.IsNullOrWhiteSpace(ReviewConfigurationCanonicalJson))
+        {
+            return 1;
+        }
+
         using var document = JsonDocument.Parse(ReviewConfigurationCanonicalJson);
         return document.RootElement.TryGetProperty("peer", out var peer) &&
                peer.TryGetProperty("reviewsRequiredPerSubmission", out var count) &&
@@ -246,19 +265,37 @@ public class Assessment : EntityBase
 
     public void PublishRevision(Guid revisionId, int expectedVersion)
     {
-        if (Version != expectedVersion) throw new InvalidOperationException("Assessment version is stale.");
-        if (revisionId == Guid.Empty) throw new ArgumentException("Revision ID is required.", nameof(revisionId));
+        if (Version != expectedVersion)
+        {
+            throw new InvalidOperationException("Assessment version is stale.");
+        }
+
+        if (revisionId == Guid.Empty)
+        {
+            throw new ArgumentException("Revision ID is required.", nameof(revisionId));
+        }
+
         PublishedDefinitionRevisionId = revisionId;
         UpdatedAt = SystemClock.UtcNow;
     }
 
     public void UnpublishRevision(Guid expectedRevisionId, int expectedVersion)
     {
-        if (Version != expectedVersion) throw new InvalidOperationException("Assessment version is stale.");
+        if (Version != expectedVersion)
+        {
+            throw new InvalidOperationException("Assessment version is stale.");
+        }
+
         if (PublishedDefinitionRevisionId is null)
+        {
             throw new InvalidOperationException("Assessment does not have an active revision.");
+        }
+
         if (PublishedDefinitionRevisionId != expectedRevisionId)
+        {
             throw new InvalidOperationException("The active revision changed before unpublish.");
+        }
+
         PublishedDefinitionRevisionId = null;
         UpdatedAt = SystemClock.UtcNow;
     }
@@ -298,20 +335,53 @@ public class Assessment : EntityBase
         DateTime? resultReleaseScheduledFor = null,
         string? slug = null)
     {
-        if (title != null) Title = title;
-        if (!string.IsNullOrWhiteSpace(slug)) Slug = slug;
-        if (clearDescription) Description = null;
-        else if (description is not null) Description = description;
+        if (title != null)
+        {
+            Title = title;
+        }
+
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            Slug = slug;
+        }
+
+        if (clearDescription)
+        {
+            Description = null;
+        }
+        else if (description is not null)
+        {
+            Description = description;
+        }
+
         var nextMaxScore = maxScore ?? MaxScore;
         ValidateMaxScore(nextMaxScore);
         MaxScore = nextMaxScore;
         PassingScore = passingScore ?? PassingScore;
         if (PassingScore.CompareTo(MaxScore) > 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(passingScore), "Passing score cannot exceed maximum score.");
-        if (clearTimeLimitMinutes) TimeLimitMinutes = null;
-        else if (timeLimitMinutes.HasValue) TimeLimitMinutes = timeLimitMinutes;
-        if (maxAttempts.HasValue) SetMaxAttempts(maxAttempts.Value);
-        if (isRequired.HasValue) IsRequired = isRequired.Value;
+        }
+
+        if (clearTimeLimitMinutes)
+        {
+            TimeLimitMinutes = null;
+        }
+        else if (timeLimitMinutes.HasValue)
+        {
+            TimeLimitMinutes = timeLimitMinutes;
+        }
+
+        if (maxAttempts.HasValue)
+        {
+            SetMaxAttempts(maxAttempts.Value);
+        }
+
+        if (isRequired.HasValue)
+        {
+            IsRequired = isRequired.Value;
+        }
+
         var nextDueAt = clearDueAt ? null : dueAt ?? DueAt;
         var nextLateSubmissionDeadline = clearLateSubmissionDeadline
             ? null
@@ -330,10 +400,24 @@ public class Assessment : EntityBase
             throw new ArgumentException(
                 "Assessment cannot be unlinked from its content. Content link is permanent once set.");
         }
-        if (clearContentId) ContentId = null;
-        else if (contentId.HasValue) ContentId = contentId.Value;
-        if (clearAssessmentGroupId) AssessmentGroupId = null;
-        else if (assessmentGroupId.HasValue) AssessmentGroupId = assessmentGroupId.Value;
+        if (clearContentId)
+        {
+            ContentId = null;
+        }
+        else if (contentId.HasValue)
+        {
+            ContentId = contentId.Value;
+        }
+
+        if (clearAssessmentGroupId)
+        {
+            AssessmentGroupId = null;
+        }
+        else if (assessmentGroupId.HasValue)
+        {
+            AssessmentGroupId = assessmentGroupId.Value;
+        }
+
         if (submissionModalities.HasValue || presentationMode.HasValue)
         {
             SetDeliveryContract(
@@ -342,6 +426,7 @@ public class Assessment : EntityBase
         }
         if (reviewMethods.HasValue || reviewConfigurationCanonicalJson is not null || attemptContributionMode.HasValue ||
             contentCompletionMode.HasValue || resultReleaseMode.HasValue || resultReleaseScheduledFor.HasValue)
+        {
             SetReviewPolicy(
                 reviewMethods ?? ReviewMethods,
                 reviewConfigurationCanonicalJson ?? ReviewConfigurationCanonicalJson,
@@ -349,8 +434,17 @@ public class Assessment : EntityBase
                 contentCompletionMode ?? ContentCompletionMode,
                 resultReleaseMode ?? ResultReleaseMode,
                 resultReleaseScheduledFor ?? ResultReleaseScheduledFor);
-        if (clearGroupSetId) GroupSetId = null;
-        else if (groupSetId.HasValue) GroupSetId = groupSetId.Value;
+        }
+
+        if (clearGroupSetId)
+        {
+            GroupSetId = null;
+        }
+        else if (groupSetId.HasValue)
+        {
+            GroupSetId = groupSetId.Value;
+        }
+
         UpdatedAt = SystemClock.UtcNow;
     }
 
@@ -547,8 +641,15 @@ public class AssessmentSubmission : EntityBase
     public static AssessmentSubmission Start(Guid assessmentId, Guid enrollmentId, Guid userId, int attemptNumber)
     {
         if (assessmentId == Guid.Empty || enrollmentId == Guid.Empty || userId == Guid.Empty)
+        {
             throw new ArgumentException("Assessment, enrollment, and user IDs are required.");
-        if (attemptNumber < 1) throw new ArgumentOutOfRangeException(nameof(attemptNumber));
+        }
+
+        if (attemptNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(attemptNumber));
+        }
+
         return new AssessmentSubmission
         {
             Id = Guid.NewGuid(),
@@ -572,8 +673,15 @@ public class AssessmentSubmission : EntityBase
     {
         if (assessmentId == Guid.Empty || definitionRevisionId == Guid.Empty ||
             enrollmentId == Guid.Empty || userId == Guid.Empty)
+        {
             throw new ArgumentException("Assessment, revision, enrollment, and user IDs are required.");
-        if (attemptNumber < 1) throw new ArgumentOutOfRangeException(nameof(attemptNumber));
+        }
+
+        if (attemptNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(attemptNumber));
+        }
+
         return new AssessmentSubmission
         {
             Id = Guid.NewGuid(),
@@ -599,8 +707,15 @@ public class AssessmentSubmission : EntityBase
     {
         if (assessmentId == Guid.Empty || definitionRevisionId == Guid.Empty ||
             courseGroupId == Guid.Empty || startedByUserId == Guid.Empty)
+        {
             throw new ArgumentException("Assessment, revision, group, and starter IDs are required.");
-        if (attemptNumber < 1) throw new ArgumentOutOfRangeException(nameof(attemptNumber));
+        }
+
+        if (attemptNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(attemptNumber));
+        }
+
         return new AssessmentSubmission
         {
             Id = Guid.NewGuid(),
@@ -619,7 +734,11 @@ public class AssessmentSubmission : EntityBase
 
     public void StampCourseGroup(Guid courseGroupId)
     {
-        if (courseGroupId == Guid.Empty) throw new ArgumentException("Course group ID is required.", nameof(courseGroupId));
+        if (courseGroupId == Guid.Empty)
+        {
+            throw new ArgumentException("Course group ID is required.", nameof(courseGroupId));
+        }
+
         CourseGroupId = courseGroupId;
         UpdatedAt = SystemClock.UtcNow;
     }
@@ -688,11 +807,21 @@ public class AssessmentSubmission : EntityBase
 
     public long AdvanceCollectiveDraft(long expectedVersion)
     {
-        if (!IsCollective) throw new InvalidOperationException("Only collective submissions have a shared draft version.");
+        if (!IsCollective)
+        {
+            throw new InvalidOperationException("Only collective submissions have a shared draft version.");
+        }
+
         if (Status != SubmissionStatus.InProgress)
+        {
             throw new InvalidOperationException("A finalized collective draft cannot be changed.");
+        }
+
         if (DraftVersion != expectedVersion)
+        {
             throw new InvalidOperationException("The collective draft version is stale.");
+        }
+
         DraftVersion = checked(DraftVersion + 1);
         UpdatedAt = SystemClock.UtcNow;
         return DraftVersion;
@@ -726,6 +855,16 @@ public class AssessmentSubmission : EntityBase
         }
 
         GradeCore(score, passingScore, null, feedback, allowRegrade: true);
+    }
+
+    internal void SetRuntimeRubricScores(string scores)
+    {
+        if (Status != SubmissionStatus.Graded)
+        {
+            throw new InvalidOperationException("Runtime rubric scores require a finalized grade.");
+        }
+        RubricScoresPayload = scores;
+        UpdatedAt = SystemClock.UtcNow;
     }
 
     public void Grade(ScoreValue score, ScoreValue passingScore, ScoreValue maxScore, Guid? gradedBy, string? feedback, string? rubricScores)

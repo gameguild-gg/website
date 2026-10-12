@@ -5,6 +5,7 @@ import {
   type SettingsBanner,
 } from '@/components/connected-accounts-card';
 import { PasswordCard } from '@/components/password-card';
+import { parseGrantedScopesHeader } from '@/lib/auth/external-login-consent';
 import { redirect } from '@/i18n/navigation';
 import { createServerClient } from '@game-guild/client';
 import { getTranslations } from 'next-intl/server';
@@ -26,7 +27,9 @@ const ERROR_BANNER_KEYS: Record<
  * unlink. Authentication is guarded here (mirroring the dashboard layout) and
  * the linked-provider metadata is fetched server-side with the session's
  * bearer via HEAD /v1/auth/external-logins (no body; providers arrive in the
- * X-Linked-Providers header as 'provider=iso-timestamp' pairs).
+ * X-Linked-Providers header as 'provider=iso-timestamp' pairs). The recorded
+ * OAuth scope consents (issue #250) arrive in the X-Granted-Scopes header as
+ * 'provider=iso-consent-timestamp|consent-version|url-encoded-scopes' entries.
  */
 function parseLinkedProviders(header: string): LinkedAccount[] {
   return header
@@ -67,9 +70,25 @@ export default async function AccountSettingsPage({
     requiresAuth: true,
   });
   if (result.ok) {
+    const consentsByProvider = new Map(
+      parseGrantedScopesHeader(result.data.headers.get('x-granted-scopes')).map((consent) => [
+        consent.provider,
+        consent,
+      ]),
+    );
     linkedAccounts = parseLinkedProviders(
       result.data.headers.get('x-linked-providers') ?? '',
-    ).filter((row) => row.provider === 'google' || row.provider === 'discord');
+    )
+      .filter((row) => row.provider === 'google' || row.provider === 'discord')
+      .map((row) => {
+        const consent = consentsByProvider.get(row.provider);
+        return {
+          ...row,
+          grantedScopes: consent?.grantedScopes ?? [],
+          consentedAt: consent?.consentedAt ?? null,
+          consentVersion: consent?.consentVersion ?? 0,
+        };
+      });
   }
 
   let banner: SettingsBanner = null;

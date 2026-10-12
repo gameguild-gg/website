@@ -6,15 +6,22 @@ import { COI_LEARN_RULES } from "./src/lib/emception/coi-headers";
 const configuredDevOrigins = process.env.NEXT_ALLOWED_DEV_ORIGINS?.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+const fastDev =
+  process.env.GAMEGUILD_FAST_DEV === "1" ||
+  process.env.npm_lifecycle_event === "dev:fast";
+const isolatedDistDir =
+  process.env.CODING_CYCLE_E2E === "1"
+    ? ".next-e2e-coding-cycle"
+    : fastDev
+      ? ".next-fast"
+      : undefined;
 
 const nextConfig: NextConfig = {
   // ponytail: isolated E2E boots a second `next dev` on a dedicated port
   // alongside the user's running dev server; without a separate distDir the
   // two fight over the .next/ dev-server lock. Gated by env so production
   // builds are unaffected.
-  ...(process.env.CODING_CYCLE_E2E === "1"
-    ? { distDir: ".next-e2e-coding-cycle" }
-    : {}),
+  ...(isolatedDistDir ? { distDir: isolatedDistDir } : {}),
   allowedDevOrigins: configuredDevOrigins ?? [
     "gameguild.localhost",
     "gameguild.127.0.0.1.sslip.io",
@@ -22,6 +29,8 @@ const nextConfig: NextConfig = {
     "127.0.0.1",
   ],
   reactCompiler: true,
+  // Locale routing must see RSC headers to preserve internal navigation.
+  skipProxyUrlNormalize: true,
   output: "standalone",
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
   transpilePackages: [
@@ -75,6 +84,16 @@ const nextConfig: NextConfig = {
       },
     },
     resolveAlias: {
+      ...(fastDev
+        ? {
+            "@game-guild/client/react":
+              "../../packages/infrastructure/client/dist-fast/react.js",
+            "@game-guild/client/next":
+              "../../packages/infrastructure/client/dist-fast/next.js",
+            "@game-guild/client":
+              "../../packages/infrastructure/client/dist-fast/index.js",
+          }
+        : {}),
       module: {
         browser: "./src/lib/browser-node-module-stub.ts",
       },

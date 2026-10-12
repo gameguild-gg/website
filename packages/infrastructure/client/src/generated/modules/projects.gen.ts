@@ -40,17 +40,17 @@ export class ProjectsModule {
     take?: number;
     sortBy?: string;
     sortDirection?: string;
-  }): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  }): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = '/v1/projects';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
@@ -91,7 +91,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -256,7 +256,7 @@ export class ProjectsModule {
   /**
    * Get project collaborators
    */
-  async getProjectsCollaborators(id: string): Promise<Result<Array<Types.ProjectsCollaboratorDto>, ApiError>> {
+  async getProjectsCollaborators(id: string): Promise<Result<Types.ProjectsCollaboratorDto[], ApiError>> {
     const url = `/v1/projects/${id}/collaborators`;
 
     const result = await this.client.request({
@@ -265,7 +265,7 @@ export class ProjectsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsCollaboratorDto>, ApiError>;
+    return result as Result<Types.ProjectsCollaboratorDto[], ApiError>;
   }
 
   /**
@@ -372,7 +372,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -386,7 +386,7 @@ export class ProjectsModule {
 
   /**
    */
-  async getProjectsVersions(id: string): Promise<Result<Array<Types.ProjectsProjectVersionApiOutput>, ApiError>> {
+  async getProjectsVersions(id: string): Promise<Result<Types.ProjectsProjectVersionApiOutput[], ApiError>> {
     const url = `/v1/projects/${id}/versions`;
 
     const result = await this.client.request({
@@ -395,7 +395,7 @@ export class ProjectsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsProjectVersionApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectVersionApiOutput[], ApiError>;
   }
 
   /**
@@ -512,7 +512,7 @@ export class ProjectsModule {
 
   /**
    */
-  async getProjectsAccessibleVersions(query?: { take?: number }): Promise<Result<Array<Types.ProjectsProjectVersionOptionProjection>, ApiError>> {
+  async getProjectsAccessibleVersions(query?: { take?: number }): Promise<Result<Types.ProjectsProjectVersionOptionProjection[], ApiError>> {
     const url = '/v1/projects/accessible-versions';
 
     const result = await this.client.request({
@@ -522,7 +522,7 @@ export class ProjectsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsProjectVersionOptionProjection>, ApiError>;
+    return result as Result<Types.ProjectsProjectVersionOptionProjection[], ApiError>;
   }
 
   /**
@@ -531,17 +531,17 @@ export class ProjectsModule {
   async getProjectsCategory(
     categoryId: string,
     query?: { status?: Types.ContentStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  ): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = `/v1/projects/category/${categoryId}`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
@@ -550,33 +550,33 @@ export class ProjectsModule {
   async getProjectsCreator(
     creatorId: string,
     query?: { status?: Types.ContentStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  ): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = `/v1/projects/creator/${creatorId}`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
    * Get featured projects
    */
-  async getProjectsFeatured(query?: { type?: Types.ProjectsProjectType; take?: number }): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  async getProjectsFeatured(query?: { type?: Types.ProjectsProjectType; take?: number }): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = '/v1/projects/featured';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
@@ -625,7 +625,7 @@ export class ProjectsModule {
    * Gets the Projects that belong to the authenticated user's actual workspace relationship.
    * This scope intentionally does not expand for tenant or system administrators.
    */
-  async getProjectsMine(query?: { includeArchived?: boolean; skip?: number; take?: number }): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  async getProjectsMine(query?: { includeArchived?: boolean; skip?: number; take?: number }): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = '/v1/projects/mine';
 
     const result = await this.client.request({
@@ -635,13 +635,13 @@ export class ProjectsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
    * Get current user's project invitations
    */
-  async getProjectsMyInvitations(): Promise<Result<Array<Types.ProjectsProjectInvitationDto>, ApiError>> {
+  async getProjectsMyInvitations(): Promise<Result<Types.ProjectsProjectInvitationDto[], ApiError>> {
     const url = '/v1/projects/my-invitations';
 
     const result = await this.client.request({
@@ -650,69 +650,69 @@ export class ProjectsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsProjectInvitationDto>, ApiError>;
+    return result as Result<Types.ProjectsProjectInvitationDto[], ApiError>;
   }
 
   /**
    * Get popular projects
    */
-  async getProjectsPopular(query?: { type?: Types.ProjectsProjectType; take?: number }): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  async getProjectsPopular(query?: { type?: Types.ProjectsProjectType; take?: number }): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = '/v1/projects/popular';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
    * Get recent projects
    */
-  async getProjectsRecent(query?: { type?: Types.ProjectsProjectType; take?: number }): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  async getProjectsRecent(query?: { type?: Types.ProjectsProjectType; take?: number }): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = '/v1/projects/recent';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
    * Get available role templates for projects
    */
-  async getProjectsRoleTemplates(): Promise<Result<Array<Record<string, unknown>>, ApiError>> {
+  async getProjectsRoleTemplates(): Promise<Result<Record<string, unknown>[], ApiError>> {
     const url = '/v1/projects/role-templates';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Record<string, unknown>>, ApiError>;
+    return result as Result<Record<string, unknown>[], ApiError>;
   }
 
   /**
    * Get permissions for a specific role
    */
-  async getProjectsRolesPermissions(roleName: string): Promise<Result<Array<Types.IdentityAuthorizationPermissionType>, ApiError>> {
+  async getProjectsRolesPermissions(roleName: string): Promise<Result<Types.IdentityAuthorizationPermissionType[], ApiError>> {
     const url = `/v1/projects/roles/${roleName}/permissions`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationPermissionType>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationPermissionType[], ApiError>;
   }
 
   /**
@@ -728,17 +728,17 @@ export class ProjectsModule {
     take?: number;
     sortBy?: string;
     sortDirection?: string;
-  }): Promise<Result<Array<Types.ProjectsProjectApiOutput>, ApiError>> {
+  }): Promise<Result<Types.ProjectsProjectApiOutput[], ApiError>> {
     const url = '/v1/projects/search';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ProjectsProjectApiOutput>, ApiError>;
+    return result as Result<Types.ProjectsProjectApiOutput[], ApiError>;
   }
 
   /**
@@ -754,7 +754,7 @@ export class ProjectsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

@@ -32,7 +32,12 @@ public sealed class AuditExportCommandHandler(
             command.AdminUserId,
             "ExportAuditLogs",
             "Admin exported audit logs",
-            new { ExportRequest = command.Request, RequestedBy = command.AdminUserId }).ConfigureAwait(false);
+            new
+            {
+                ExportId = command.ExportId,
+                RequestedBy = command.AdminUserId,
+                HasCompletionWebhook = !string.IsNullOrWhiteSpace(command.Request.WebhookUrl)
+            }).ConfigureAwait(false);
 
         var query = new AuditLogQuery
         {

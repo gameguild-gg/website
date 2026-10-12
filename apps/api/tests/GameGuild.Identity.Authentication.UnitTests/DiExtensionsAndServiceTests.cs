@@ -79,7 +79,7 @@ public class DiExtensionsAndServiceTests
             NullLogger<TotpMfaService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptTrackingService>(),
-            Mock.Of<IEncryptionService>());
+            Mock.Of<IEncryptionService>(), NativeTotpReplayStub.Create());
 
         svc.Should().NotBeNull();
     }
@@ -93,6 +93,8 @@ public class DiExtensionsAndServiceTests
             Mock.Of<IRefreshTokenHasher>(),
             Mock.Of<IOAuthService>(),
             Mock.Of<IGoogleIdTokenVerifier>(),
+            Mock.Of<IOidcFederationService>(),
+            Mock.Of<IMfaService>(),
             Mock.Of<IExternalLoginRepository>(),
             EmptyConfig(),
             Mock.Of<IAuthAttemptService>(),

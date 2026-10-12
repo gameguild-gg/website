@@ -6,6 +6,7 @@
 
 import { ok, err } from '../result/helpers.js';
 import { createApiError, createNetworkError } from '../errors/transform.js';
+import { assertSafeServiceUrl } from '../security/safe-remote-url.js';
 import type { Result } from '../result/types.js';
 import type { ApiError } from '../errors/types.js';
 import type { ApiResponse, RequestConfig, Transport, TransportConfig, Interceptor } from './types.js';
@@ -129,6 +130,8 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
   // Build request options
   const options: RequestInit = {
     method: requestConfig.method,
+    // Origin validation applies to this request, not an unvalidated redirect target.
+    redirect: 'error',
     cache: requestConfig.cache ?? transportConfig.cache,
     headers,
     signal: requestConfig.signal,
@@ -151,7 +154,7 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
   }
 
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(assertSafeServiceUrl(url, transportConfig.baseUrl), options);
 
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -174,6 +177,8 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
     if (response.status === 204 || response.headers.get('Content-Length') === '0') {
       // No content
       data = undefined as T;
+    } else if (requestConfig.responseType === 'blob') {
+      data = (await response.blob()) as T;
     } else {
       const contentType = response.headers.get('Content-Type');
       if (contentType?.includes('application/json')) {
@@ -199,7 +204,9 @@ async function executeRequest<T>(transportConfig: TransportConfig, requestConfig
       } else {
         // Non-JSON response
         const contentDisposition = response.headers.get('Content-Disposition');
-        data = contentDisposition?.toLowerCase().includes('attachment') ? ((await response.blob()) as T) : ((await response.text()) as T);
+        const mediaType = contentType?.split(';')[0].trim().toLowerCase();
+        const binary = mediaType === 'application/zip' || mediaType === 'application/octet-stream';
+        data = binary || contentDisposition?.toLowerCase().includes('attachment') ? ((await response.blob()) as T) : ((await response.text()) as T);
       }
     }
 

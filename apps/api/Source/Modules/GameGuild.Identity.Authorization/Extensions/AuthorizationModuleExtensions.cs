@@ -37,6 +37,40 @@ public static class AuthorizationModuleExtensions
         services.Configure<AuthorizationTokenOptions>(
             configuration.GetSection(AuthorizationTokenOptions.SectionName));
 
+        services.Configure<PolicyBundleSigningOptions>(
+            configuration.GetSection(PolicyBundleSigningOptions.SectionName));
+
+        services.Configure<PermissionExpirationOptions>(
+            configuration.GetSection(PermissionExpirationOptions.SectionName));
+
+        // Permission evaluation engine options (issue #358): inheritance rules, webhooks,
+        // evaluation throttle, restoration retention, external sync limits.
+        services.AddOptions<PermissionEngineOptions>()
+            .Bind(configuration.GetSection(PermissionEngineOptions.SectionName))
+            .Validate(options =>
+            {
+                options.Inheritance.Validate();
+                options.EvaluationThrottle.Validate();
+                options.Restoration.Validate();
+                options.ExternalSync.Validate();
+                return true;
+            })
+            .ValidateOnStart();
+
+        // External authorization-decision integration (issue #146): OAuth2
+        // client-credentials decision provider under Authorization:ExternalDecision.
+        // Disabled by default; enabling requires complete HTTPS endpoints and client
+        // credentials (validation fails host startup otherwise, so a half-configured
+        // provider can never silently run).
+        services.AddOptions<ExternalAuthorizationOptions>()
+            .Bind(configuration.GetSection(ExternalAuthorizationOptions.SectionName))
+            .Validate(options =>
+            {
+                options.Validate();
+                return true;
+            })
+            .ValidateOnStart();
+
         return services;
     }
 
@@ -191,8 +225,11 @@ public static class AuthorizationModuleExtensions
         services.AddResourcePermissionAuthorization();
 
         // Dynamic policy provider (Singleton - required by ASP.NET Core MVC infrastructure)
-        // Uses IServiceScopeFactory to resolve scoped services when needed
-        services.AddSingleton<IAuthorizationPolicyProvider, DbAuthorizationPolicyProvider>();
+        // Uses IServiceScopeFactory to resolve scoped services when needed.
+        // Also registered as its concrete type so composition roots can wrap it
+        // (e.g. with the API-key scope policy provider) without a second instance.
+        services.AddSingleton<DbAuthorizationPolicyProvider>();
+        services.AddSingleton<IAuthorizationPolicyProvider>(sp => sp.GetRequiredService<DbAuthorizationPolicyProvider>());
 
         // Register TimeProvider for environment handler
         services.AddSingleton(TimeProvider.System);
@@ -262,7 +299,12 @@ public static class AuthorizationModuleExtensions
         services.AddScoped<IPermissionGrantService, PermissionGrantService>();
         services.AddScoped<IPermissionQueryService, PermissionQueryService>();
         services.AddScoped<IPermissionBulkService, PermissionBulkService>();
-        
+
+        // Permission expiration lifecycle (issue #331): automatic expirations,
+        // upcoming-expiration notifications, and bulk administrative management.
+        services.AddScoped<IPermissionExpirationService, PermissionExpirationService>();
+        services.AddHostedService<PermissionExpirationWorker>();
+
         // Tenant membership checker - default fail-closed implementation
         // The Tenants module should override this with an actual implementation
         // Using TryAddScoped so the actual implementation from Tenants module takes precedence
@@ -273,6 +315,10 @@ public static class AuthorizationModuleExtensions
         
         // Policy evaluation debugging service
         services.AddScoped<IPolicyEvaluationLogger, PolicyEvaluationLogger>();
+
+        // Permission evaluation logging (user, tenant, resource, outcome) for allow and
+        // deny decisions; durable sinks are contributed by the host.
+        services.TryAddScoped<IPermissionEvaluationLogService, PermissionEvaluationLogService>();
         
         // Repositories
         services.AddScoped<ITenantPermissionRepository, TenantPermissionRepository>();
@@ -335,13 +381,18 @@ public static class AuthorizationModuleExtensions
         services.AddScoped<IPermissionTemplateMigrationRepository, PermissionTemplateMigrationRepository>();
         services.AddScoped<IPolicyRegistryAuditLogRepository, PolicyRegistryAuditLogRepository>();
 
+        // Central policy registry: signed policy bundles (fail-closed verification)
+        services.AddScoped<IPolicyBundleSignatureService, PolicyBundleSignatureService>();
+        services.AddScoped<ISignedPolicyBundleStore, SignedPolicyBundleStore>();
+        services.AddScoped<IPolicyBundlePolicyMaterializer, PolicyBundlePolicyMaterializer>();
+
         return services;
     }
 
     /// <summary>
     ///     Registers the unified 3-layer authorization architecture services.
     ///     Layer 1: Policy Gates (DENY-WINS) - Conditional, ABAC, Environment
-    ///     Layer 2: Permission Resolution (ALLOW-WINS) - RBAC, Global, Tenant, Direct
+    ///     Layer 2: Permission Resolution (DENY-WINS, deny-by-default) - RBAC, Global, Tenant, Direct, Resource
     ///     Layer 3: Permission Check (binary allow/deny)
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -362,55 +413,78 @@ public static class AuthorizationModuleExtensions
         // Layer 2: Permission resolvers
         services.AddScoped<IRbacPermissionResolver, RbacPermissionResolver>();
 
-        // Layer 2: Permission stores (interfaces defined in EffectivePermissionResolverService)
-        // These are adapters to existing stores
-        services.AddScoped<ITenantPermissionStore>(sp =>
+        // Multi-parent role inheritance engine (issue #358): cycle detection, selective
+        // blocking and configurable traversal rules for RBAC hierarchy resolution.
+        services.AddScoped<IRoleInheritanceEngine, RoleInheritanceEngine>();
+
+        // Layer 2: Unified effective-permission resolver (DENY-WINS, fail-closed).
+        // Single resolution contract for authorization entry points and permission-query
+        // callers (issue #330): docs/effective-permission-resolution.md
+        services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
+
+        // External authorization-decision provider (issue #146): consulted by the
+        // effective-permission resolver after every local layer. The built-in HTTP
+        // implementation is disabled by default (Authorization:ExternalDecision:Enabled
+        // = false) and then returns no decision for any query, preserving purely local
+        // resolution with zero outbound calls. No real outbound traffic happens in
+        // tests: the HTTP pipeline is injectable via the typed client's handler.
+        services.AddHttpClient<IExternalAuthorizationDecisionProvider, HttpExternalAuthorizationDecisionProvider>((sp, client) =>
         {
-            // Adapt existing TenantPermissionRepository
-            var repo = sp.GetRequiredService<ITenantPermissionRepository>();
-            return new TenantPermissionStoreAdapter(repo);
-        });
-        services.AddScoped<IResourcePermissionStore>(sp =>
-        {
-            // Adapt existing ResourcePermissionService
-            var resourcePermissionService = sp.GetRequiredService<IResourcePermissionService>();
-            return new ResourcePermissionStoreAdapter(resourcePermissionService);
+            var externalOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExternalAuthorizationOptions>>().Value;
+            client.Timeout = externalOptions.Timeout;
         });
 
-        // Layer 2: Unified Permission Resolver (ALLOW-WINS)
-        services.AddScoped<IEffectivePermissionResolver, EffectivePermissionResolverService>();
+        // Read-only graph visualization and impact analysis over the same
+        // RBAC/defaults data as the effective resolver (issue #334).
+        services.AddScoped<IPermissionGraphService, PermissionGraphService>();
+        services.AddScoped<IPermissionImpactAnalysisService, PermissionImpactAnalysisService>();
+
+        // Layer 2: Centralized DAC permission resolution (issue #339). Single entry
+        // point for the 3-layer DAC model (tenant / content-type / resource) that
+        // delegates every decision to the canonical effective-permission resolver.
+        services.AddScoped<IDacPermissionResolver, DacPermissionResolver>();
 
         return services;
     }
-}
 
-/// <summary>
-///     Adapter to bridge ITenantPermissionRepository to ITenantPermissionStore.
-/// </summary>
-internal class TenantPermissionStoreAdapter(ITenantPermissionRepository repository) : ITenantPermissionStore
-{
-    public async Task<TenantPermission?> GetPermissionAsync(Guid tenantId, CancellationToken ct = default)
-        => await repository.GetByUserAndTenantAsync(null, tenantId, ct).ConfigureAwait(false);
+    /// <summary>
+    ///     Registers the permission evaluation engine capabilities (issue #358):
+    ///     evaluation-layer throttling, permission-change webhooks, external system
+    ///     synchronization, permission restoration and compliance reporting.
+    ///     Every capability is config-gated and fails closed.
+    /// </summary>
+    public static IServiceCollection AddPermissionEngineServices(this IServiceCollection services)
+    {
+        // Evaluation-layer rate limiting / enumeration protection (per user+tenant).
+        services.AddSingleton<IEvaluationDenialThrottleService, EvaluationDenialThrottleService>();
 
-    public async Task<IReadOnlyList<TenantPermission>> GetAllPermissionsAsync(Guid tenantId, CancellationToken ct = default)
-        => await repository.GetByTenantAsync(tenantId, ct).ConfigureAwait(false);
-}
+        // Durable evaluation log: sink (written by IPermissionEvaluationLogService fan-out)
+        // and range reader (used by the compliance report).
+        services.AddScoped<PermissionEvaluationLogEntryRepository>();
+        services.AddScoped<IPermissionEvaluationLogSink>(sp => sp.GetRequiredService<PermissionEvaluationLogEntryRepository>());
+        services.AddScoped<IPermissionEvaluationLogEntryRepository>(sp => sp.GetRequiredService<PermissionEvaluationLogEntryRepository>());
+        services.AddScoped<IPermissionComplianceReportService, PermissionComplianceReportService>();
 
-/// <summary>
-///     Adapter to bridge IResourcePermissionService to IResourcePermissionStore.
-/// </summary>
-internal class ResourcePermissionStoreAdapter(IResourcePermissionService service) : IResourcePermissionStore
-{
-    public async Task<IReadOnlyList<ResourceUserPermission>> GetUserPermissionsAsync(
-        Guid userId,
-        Guid tenantId,
-        CancellationToken ct = default)
-        => await service.GetUserResourcesAsync(new CQRS.Models.TenantId(tenantId), userId, null, ct).ConfigureAwait(false);
+        // Permission-change webhooks (issue #358): HMAC-signed payloads with retry. The
+        // notifier is a no-op unless PermissionEngine:Webhooks is enabled with an endpoint
+        // and secret. No outbound calls happen in tests (the HTTP pipeline is injectable).
+        services.AddHttpClient<WebhookPermissionChangeNotifier>();
+        services.AddScoped<IPermissionChangeNotifier>(sp => sp.GetRequiredService<WebhookPermissionChangeNotifier>());
 
-    public Task<IReadOnlyList<ResourceUserPermission>> GetResourcePermissionsAsync(
-        Guid resourceId,
-        CancellationToken ct = default)
-        // Note: IResourcePermissionService doesn't have a direct "by resource id" method
-        // This adapter returns empty - implementations should use GetResourceUsersAsync instead
-        => Task.FromResult<IReadOnlyList<ResourceUserPermission>>([]);
+        // External system permission synchronization (issue #358).
+        services.AddScoped<IPermissionSyncService, PermissionSyncService>();
+
+        // Permission restoration (issue #358).
+        services.AddScoped<IPermissionRestorationService, PermissionRestorationService>();
+
+        // Shared tenant-scope guard for the engine's admin surfaces.
+        services.AddScoped<PermissionEngineTenantGuard>();
+
+        // NOTE: IPermissionEvaluationExtension plugins are NOT registered here by design:
+        // hosts/plugins register their own implementations against the
+        // IPermissionEvaluationExtension service type; the resolver picks up every
+        // registered implementation and orders them by Order, then DI registration order.
+
+        return services;
+    }
 }

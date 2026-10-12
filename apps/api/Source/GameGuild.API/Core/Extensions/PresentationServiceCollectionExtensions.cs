@@ -47,6 +47,7 @@ public static class PresentationServiceCollectionExtensions
         }
 
         services.AddSingleton(authenticationSecurityOptions);
+        services.AddScoped<global::GameGuild.Identity.Authentication.IPasswordSignInAdmissionService, PasswordSignInAdmissionService>();
         services.AddScoped<AuthenticationLockoutActionFilter>();
 
         var moduleConfiguration = new ModuleConfiguration();

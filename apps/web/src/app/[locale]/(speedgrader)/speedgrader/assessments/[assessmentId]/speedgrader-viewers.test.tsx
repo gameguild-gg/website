@@ -9,6 +9,14 @@ import {
 import { QuizEntryType } from "@game-guild/quiz";
 
 const actions = vi.hoisted(() => ({ get: vi.fn() }));
+const codeGrader = vi.hoisted(() => vi.fn());
+
+vi.mock('@/components/learning/assessment-grading/assessment-grader', () => ({
+  AssessmentGrader: (props: unknown) => {
+    codeGrader(props);
+    return <div data-testid="code-grader" />;
+  },
+}));
 
 vi.mock("@/lib/learning/grading-runtime-actions", () => ({
   getRuntimeSubmission: actions.get,
@@ -186,5 +194,37 @@ describe("runtime SubmissionViewer", () => {
     render(<SubmissionViewer submissionId="submission-1" />);
 
     expect(await screen.findByTestId("viewer-error")).toHaveTextContent("boom");
+  });
+
+  it.each([true, false])('restores the Code response using only the private frozen definition (available=%s)', async (available) => {
+    const value = runtimeSubmission();
+    const privateDefinition = {
+      Type: 'coding-assignment', Version: 1, Environment: { Language: 'cpp' },
+      Data: { Files: {} }, Tests: { Public: [], Private: [{ Name: 'Frozen private test' }] },
+      Grading: { MaxScore: 100 },
+    };
+    value.execution.delivery.itemOrder = ['code'];
+    value.execution.delivery.items = { code: {
+      adapterKey: 'code-assessment-type', adapterVersion: '1',
+      learnerPayload: { definition: { ...privateDefinition, Tests: { Public: [], Private: [] } } },
+    } };
+    value.execution.submittedResponse = {
+      schemaVersion: 1, contentType: 'coding-assignment', payloadSchema: 'code-files/v1',
+      payload: { files: { '/home/user/main.cpp': { content: '// immutable response', encoding: 'text' } } },
+    };
+    value.execution.instructorVisibleContent = available ? privateDefinition : null;
+    actions.get.mockResolvedValue({ success: true, data: value });
+    render(<SubmissionViewer submissionId="submission-1" />);
+    if (available) {
+      await screen.findByTestId('code-grader');
+      expect(codeGrader).toHaveBeenLastCalledWith(expect.objectContaining({
+        assignment: privateDefinition,
+        submittedFiles: [{ path: '/home/user/main.cpp', content: '// immutable response' }],
+        maxScore: 100, submissionId: 'submission-1',
+      }));
+    } else {
+      expect(await screen.findByRole('alert')).toHaveTextContent('The frozen Code definition is unavailable');
+      expect(codeGrader).not.toHaveBeenCalled();
+    }
   });
 });

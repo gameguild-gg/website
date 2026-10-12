@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -121,7 +120,7 @@ public sealed class AuthenticationCoverageCompletionTests
             options.Object,
             loggerFactory,
             UrlEncoder.Default,
-            Mock.Of<IApplicationDbContext>());
+            Mock.Of<IApiKeyRepository>());
         handler.Should().NotBeNull();
 
         var services = new ServiceCollection();
@@ -147,7 +146,7 @@ public sealed class AuthenticationCoverageCompletionTests
             options.Object,
             loggerFactory,
             UrlEncoder.Default,
-            Mock.Of<IApplicationDbContext>());
+            Mock.Of<IApiKeyRepository>());
         var context = new DefaultHttpContext();
         context.Request.Scheme = "http";
         context.Request.QueryString = new QueryString("?access_key=secret");
@@ -163,6 +162,73 @@ public sealed class AuthenticationCoverageCompletionTests
 
         result.Failure.Should().NotBeNull();
         result.Failure!.Message.Should().Contain("HTTPS");
+    }
+
+    [Fact]
+    public async Task ApiKeyAuthentication_AuditsSuccessfulUseWithoutRecordingTheKey()
+    {
+        var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var (apiKey, plaintextKey) = ApiKey.Create(userId, tenantId, "integration-key", ["read"]);
+        await using var dbContext = new InMemoryApiKeyDbContext(
+            new DbContextOptionsBuilder<InMemoryApiKeyDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+                .Options);
+        dbContext.ApiKeys.Add(apiKey);
+        await dbContext.SaveChangesAsync();
+
+        var auditSink = new Mock<IAuthenticationAuditEventSink>();
+        var handler = CreateApiKeyHandler(dbContext, auditSink.Object);
+        var context = new DefaultHttpContext();
+        context.Request.Headers["X-API-Key"] = plaintextKey;
+        context.Request.Headers.UserAgent = "ApiClient/1.0";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("192.0.2.20");
+        await InitializeApiKeyHandlerAsync(handler, context);
+
+        var result = await handler.AuthenticateAsync();
+
+        result.Succeeded.Should().BeTrue();
+        auditSink.Verify(sink => sink.RecordAsync(
+                It.Is<AuthenticationAuditEvent>(auditEvent =>
+                    auditEvent.ActionType == "Authentication.Succeeded" &&
+                    auditEvent.UserId == userId &&
+                    auditEvent.TenantId == tenantId &&
+                    auditEvent.Success &&
+                    auditEvent.Method == "ApiKey" &&
+                    auditEvent.IpAddress == "192.0.2.20" &&
+                    auditEvent.UserAgent == "ApiClient/1.0" &&
+                    auditEvent.ErrorMessage == null &&
+                    auditEvent.Metadata == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ApiKeyAuthentication_AuditsRejectedKeyWithoutRecordingTheKey()
+    {
+        await using var dbContext = new InMemoryApiKeyDbContext(
+            new DbContextOptionsBuilder<InMemoryApiKeyDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+                .Options);
+        var auditSink = new Mock<IAuthenticationAuditEventSink>();
+        var handler = CreateApiKeyHandler(dbContext, auditSink.Object);
+        var context = new DefaultHttpContext();
+        context.Request.Headers["X-API-Key"] = "never-store-this-secret";
+        await InitializeApiKeyHandlerAsync(handler, context);
+
+        var result = await handler.AuthenticateAsync();
+
+        result.Failure.Should().NotBeNull();
+        auditSink.Verify(sink => sink.RecordAsync(
+                It.Is<AuthenticationAuditEvent>(auditEvent =>
+                    auditEvent.ActionType == "Authentication.Failed" &&
+                    auditEvent.UserId == null &&
+                    !auditEvent.Success &&
+                    auditEvent.Method == "ApiKey" &&
+                    auditEvent.ErrorMessage == "InvalidApiKey" &&
+                    auditEvent.Metadata == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -214,16 +280,24 @@ public sealed class AuthenticationCoverageCompletionTests
 
         await service.RevokeTokenAsync("expired", SystemClock.UtcNow.AddMinutes(-5));
 
-        var field = typeof(InMemoryTokenRevocationService).GetField(
-            "_userRevocationTimes",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        var userRevocations = (ConcurrentDictionary<Guid, DateTime>)field!.GetValue(service)!;
         var staleUserId = Guid.NewGuid();
-        userRevocations[staleUserId] = SystemClock.UtcNow.AddDays(-2);
+        var now = DateTimeOffset.UtcNow;
+        var earlierToken = now.AddDays(-3).UtcDateTime;
+        SystemClock.SetProvider(new CleanupClock(now.AddDays(-2)));
+        try
+        {
+            await service.RevokeAllUserTokensAsync(staleUserId);
+            (await service.IsUserTokenRevokedAsync(staleUserId, earlierToken)).Should().BeTrue();
+        }
+        finally
+        {
+            SystemClock.Reset();
+        }
 
         var cleaned = await service.CleanupExpiredAsync();
         cleaned.Should().Be(1);
-        userRevocations.ContainsKey(staleUserId).Should().BeFalse();
+        (await service.IsRevokedAsync("expired")).Should().BeFalse();
+        (await service.IsUserTokenRevokedAsync(staleUserId, earlierToken)).Should().BeFalse();
     }
 
     [Fact]
@@ -556,6 +630,15 @@ public sealed class AuthenticationCoverageCompletionTests
     }
 
     [Fact]
+    public void LocalSignInPeerAddressDoesNotReadAnUntrustedForwardedHeader()
+    {
+        var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("192.0.2.10");
+        context.Request.Headers["X-Forwarded-For"] = "198.51.100.77, untrusted-client-value";
+        InvokePrivateStatic<string?>(typeof(LocalSignInHandler), "GetClientIpAddress", context).Should().Be("192.0.2.10");
+    }
+
+    [Fact]
     public void PolymorphicCredentialConverter_CoversNullTypeBranch()
     {
         var options = new JsonSerializerOptions();
@@ -717,10 +800,11 @@ public sealed class AuthenticationCoverageCompletionTests
             new[] { "openid", "email", "calendar.read" }).Should().Contain("calendar.read");
 
         const string secret = "JBSWY3DPEHPK3PXP";
-        var timeStep = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 30;
+        var totpInstant = DateTimeOffset.UtcNow;
+        var timeStep = totpInstant.ToUnixTimeSeconds() / 30;
         var code = InvokePrivateStatic<string>(typeof(TotpMfaService), "GenerateTotpCode", secret, timeStep);
 
-        InvokePrivateStatic<bool>(typeof(TotpMfaService), "VerifyTotpCode", secret, code, 0, 30).Should().BeTrue();
+        InvokePrivateStatic<long?>(typeof(TotpMfaService), "FindMatchingTotpStep", secret, code, 0, 30, totpInstant).Should().Be(timeStep);
 
         var act = () => InvokePrivateStatic<byte[]>(typeof(TotpMfaService), "Base32Decode", "INVALID!");
         act.Should().Throw<TargetInvocationException>()
@@ -762,10 +846,19 @@ public sealed class AuthenticationCoverageCompletionTests
         Assert.Throws<ArgumentNullException>(() =>
             new RefreshTokenHandler(authService, users, null!, validator));
 
+        var actor = Mock.Of<GameGuild.Identity.Context.Actors.IActorContextAccessor>();
+        var tokens = Mock.Of<IRefreshTokenRepository>();
+        var hasher = Mock.Of<IRefreshTokenHasher>();
         Assert.Throws<ArgumentNullException>(() =>
-            new RevokeTokenHandler(null!, NullLogger<RevokeTokenHandler>.Instance));
+            new RevokeTokenHandler(null!, NullLogger<RevokeTokenHandler>.Instance, actor, tokens, hasher));
         Assert.Throws<ArgumentNullException>(() =>
-            new RevokeTokenHandler(authService, null!));
+            new RevokeTokenHandler(authService, null!, actor, tokens, hasher));
+        Assert.Throws<ArgumentNullException>(() =>
+            new RevokeTokenHandler(authService, NullLogger<RevokeTokenHandler>.Instance, null!, tokens, hasher));
+        Assert.Throws<ArgumentNullException>(() =>
+            new RevokeTokenHandler(authService, NullLogger<RevokeTokenHandler>.Instance, actor, null!, hasher));
+        Assert.Throws<ArgumentNullException>(() =>
+            new RevokeTokenHandler(authService, NullLogger<RevokeTokenHandler>.Instance, actor, tokens, null!));
     }
 
     [Fact]
@@ -805,6 +898,7 @@ public sealed class AuthenticationCoverageCompletionTests
     [Fact]
     public void RepositoryConstructorsAndPrivateSetProperties_AreCovered()
     {
+        AssertRepositoryProperty(new ApiKeyRepository(ContextWithSet<ApiKey>()), "ApiKeys");
         AssertRepositoryProperty(new MfaAttemptRepository(ContextWithSet<MfaAttempt>()), "MfaAttempts");
         AssertRepositoryProperty(new RefreshTokenRepository(ContextWithSet<RefreshToken>()), "RefreshTokens");
         AssertRepositoryProperty(new ServiceAccountRepository(ContextWithSet<ServiceAccount>()), "ServiceAccounts");
@@ -881,6 +975,7 @@ public sealed class AuthenticationCoverageCompletionTests
         new LocalSignUpHandler(
             Mock.Of<IAuthService>(),
             Mock.Of<IUserRepository>(),
+            Mock.Of<GameGuild.CQRS.ISender>(),
             NullLogger<LocalSignUpHandler>.Instance).Should().NotBeNull();
         new GoogleIdTokenSignInHandler(
             Mock.Of<IAuthService>(),
@@ -984,7 +1079,7 @@ public sealed class AuthenticationCoverageCompletionTests
         tokenInfoType.GetProperty("Type")!.SetValue(tokenInfo, type);
         tokenInfoType.GetProperty("ExpiresAt")!.SetValue(tokenInfo, expiresAt);
 
-        cache.Set("emailverify:token:" + token, tokenInfo);
+        cache.Set("emailverify:token:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token))), tokenInfo);
     }
 
     private static IApplicationDbContext ContextWithSet<TEntity>()
@@ -994,6 +1089,38 @@ public sealed class AuthenticationCoverageCompletionTests
         var context = new Mock<IApplicationDbContext>();
         context.Setup(x => x.Set<TEntity>()).Returns(set.Object);
         return context.Object;
+    }
+
+    private static ApiKeyAuthenticationHandler CreateApiKeyHandler(
+        IApplicationDbContext dbContext,
+        IAuthenticationAuditEventSink auditSink)
+    {
+        var options = new Mock<IOptionsMonitor<ApiKeyAuthenticationOptions>>();
+        options.Setup(x => x.Get(It.IsAny<string>())).Returns(new ApiKeyAuthenticationOptions());
+        options.SetupGet(x => x.CurrentValue).Returns(new ApiKeyAuthenticationOptions());
+        return new ApiKeyAuthenticationHandler(
+            options.Object,
+            NullLoggerFactory.Instance,
+            UrlEncoder.Default,
+            new ApiKeyRepository(dbContext),
+            auditSink);
+    }
+
+    private static Task InitializeApiKeyHandlerAsync(ApiKeyAuthenticationHandler handler, HttpContext context) =>
+        handler.InitializeAsync(
+            new AuthenticationScheme(
+                ApiKeyAuthenticationOptions.SchemeName,
+                ApiKeyAuthenticationOptions.SchemeName,
+                typeof(ApiKeyAuthenticationHandler)),
+            context);
+
+    private sealed class InMemoryApiKeyDbContext(DbContextOptions<InMemoryApiKeyDbContext> options)
+        : DbContext(options), IApplicationDbContext
+    {
+        public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+
+        public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(
+            CancellationToken cancellationToken = default) => Database.BeginTransactionAsync(cancellationToken);
     }
 
     private static void AssertRepositoryProperty(object repository, string propertyName)
@@ -1016,6 +1143,11 @@ public sealed class AuthenticationCoverageCompletionTests
         return (T)instance.GetType()
             .GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(instance, args)!;
+    }
+
+    private sealed class CleanupClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     private sealed class TestAbacEvaluationResult : AbacEvaluationResult;

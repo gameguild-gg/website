@@ -8,6 +8,7 @@ namespace GameGuild.Identity.Authorization;
 public class JitElevationService(
     IJitElevationRequestRepository repository,
     IPermissionAuditService auditService,
+    ITenantSecurityVersionStore securityVersionStore,
     ILogger<JitElevationService> logger
 ) : IJitElevationService
 {
@@ -19,6 +20,9 @@ public class JitElevationService(
 
     private readonly IJitElevationRequestRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
+
+    private readonly ITenantSecurityVersionStore _securityVersionStore =
+        securityVersionStore ?? throw new ArgumentNullException(nameof(securityVersionStore));
 
     public async Task<JitElevationRequest> RequestElevationAsync(
         Guid requesterId,
@@ -86,10 +90,35 @@ public class JitElevationService(
         var request = await _repository.GetByIdAsync(requestId, cancellationToken).ConfigureAwait(false);
 
         if (request == null)
+        {
             throw new InvalidOperationException($"Elevation request {requestId} not found");
+        }
 
+        // Self-approval is rejected by the entity (reviewer must differ from requester).
         request.Approve(reviewerId, comments);
         await _repository.UpdateAsync(request, cancellationToken).ConfigureAwait(false);
+
+        // Approval may activate the grant (permission mutation): bump the tenant
+        // security version so cached permission views invalidate, and audit the review.
+        await InvalidateTenantCacheAsync(request.TenantId?.Value, cancellationToken).ConfigureAwait(false);
+
+        await _auditService.LogPermissionChangeAsync(
+            PermissionOperationType.Review,
+            request.RequesterId,
+            reviewerId,
+            request.TenantId?.Value,
+            request.Permission,
+            request.ResourceId,
+            request.ResourceType,
+            ElevationRequestStatus.Pending.ToString(),
+            request.Status.ToString(),
+            comments ?? "JIT elevation approved",
+            true,
+            null,
+            null,
+            null,
+            cancellationToken
+        );
 
         _logger.LogInformation(
             "Reviewer {ReviewerId} approved elevation request {RequestId}",
@@ -110,10 +139,30 @@ public class JitElevationService(
         var request = await _repository.GetByIdAsync(requestId, cancellationToken).ConfigureAwait(false);
 
         if (request == null)
+        {
             throw new InvalidOperationException($"Elevation request {requestId} not found");
+        }
 
         request.Deny(reviewerId, comments);
         await _repository.UpdateAsync(request, cancellationToken).ConfigureAwait(false);
+
+        await _auditService.LogPermissionChangeAsync(
+            PermissionOperationType.Deny,
+            request.RequesterId,
+            reviewerId,
+            request.TenantId?.Value,
+            request.Permission,
+            request.ResourceId,
+            request.ResourceType,
+            ElevationRequestStatus.Pending.ToString(),
+            request.Status.ToString(),
+            comments,
+            true,
+            null,
+            null,
+            null,
+            cancellationToken
+        );
 
         _logger.LogInformation(
             "Reviewer {ReviewerId} denied elevation request {RequestId}",
@@ -133,10 +182,36 @@ public class JitElevationService(
     {
         var request = await _repository.GetByIdAsync(requestId, cancellationToken).ConfigureAwait(false);
 
-        if (request == null) return false;
+        if (request == null)
+        {
+            return false;
+        }
 
+        var previousStatus = request.Status.ToString();
         request.Revoke(revokedBy, reason);
         await _repository.UpdateAsync(request, cancellationToken).ConfigureAwait(false);
+
+        // Revocation removes an in-force grant (permission mutation): bump the tenant
+        // security version so cached permission views invalidate, and audit the revoke.
+        await InvalidateTenantCacheAsync(request.TenantId?.Value, cancellationToken).ConfigureAwait(false);
+
+        await _auditService.LogPermissionChangeAsync(
+            PermissionOperationType.Revoke,
+            request.RequesterId,
+            revokedBy,
+            request.TenantId?.Value,
+            request.Permission,
+            request.ResourceId,
+            request.ResourceType,
+            previousStatus,
+            ElevationRequestStatus.Revoked.ToString(),
+            reason,
+            true,
+            null,
+            null,
+            null,
+            cancellationToken
+        );
 
         _logger.LogInformation(
             "Elevation {RequestId} revoked by {RevokedBy}",
@@ -182,7 +257,7 @@ public class JitElevationService(
         return activeElevations.Any(e =>
             e.Permission == permission &&
             e.ResourceId == resourceId &&
-            e.IsActive()
+            e.IsGrantInForce()
         );
     }
 
@@ -199,5 +274,34 @@ public class JitElevationService(
         _logger.LogInformation("Marked {Count} elevations as expired", expiredRequests.Count);
 
         return expiredRequests.Count;
+    }
+
+    /// <summary>
+    ///     Increments the tenant security version so cached permission views that may
+    ///     reflect the previous JIT elevation state are invalidated. Failures are logged
+    ///     and non-fatal (the mutation itself has already been persisted).
+    /// </summary>
+    private async Task InvalidateTenantCacheAsync(Guid? tenantId, CancellationToken cancellationToken)
+    {
+        var tenantKey = tenantId?.ToString() ?? Guid.Empty.ToString();
+
+        try
+        {
+            var newVersion = await _securityVersionStore
+                .IncrementVersionAsync(tenantKey, cancellationToken)
+                .ConfigureAwait(false);
+
+            _logger.LogDebug(
+                "Incremented security version for tenant {TenantId} to {Version}",
+                tenantKey,
+                newVersion
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to increment security version for tenant {TenantId}. Cache may be stale.",
+                tenantKey);
+        }
     }
 }

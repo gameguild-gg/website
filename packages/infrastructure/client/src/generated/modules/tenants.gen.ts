@@ -579,7 +579,7 @@ export class TenantsModule {
   async getTenantsPayments(
     tenantId: string,
     query?: { startDate?: string; endDate?: string },
-  ): Promise<Result<Array<Types.CommercePaymentsPaymentResult>, ApiError>> {
+  ): Promise<Result<Types.CommercePaymentsPaymentResult[], ApiError>> {
     const url = `/v1/tenants/${tenantId}/payments`;
 
     const result = await this.client.request({
@@ -589,7 +589,7 @@ export class TenantsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommercePaymentsPaymentResult>, ApiError>;
+    return result as Result<Types.CommercePaymentsPaymentResult[], ApiError>;
   }
 }
 

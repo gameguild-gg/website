@@ -18,7 +18,7 @@ export class CommercePaymentsTaxJurisdictionsModule {
   /**
    * Get all tax jurisdictions
    */
-  async getTaxJurisdictionsForGetTaxJurisdictions(): Promise<Result<Array<Types.CommercePaymentsTaxRate>, ApiError>> {
+  async getTaxJurisdictionsForGetTaxJurisdictions(): Promise<Result<Types.CommercePaymentsTaxRate[], ApiError>> {
     const url = '/api/v1/tax-jurisdictions';
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class CommercePaymentsTaxJurisdictionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommercePaymentsTaxRate>, ApiError>;
+    return result as Result<Types.CommercePaymentsTaxRate[], ApiError>;
   }
 
   /**

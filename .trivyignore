@@ -1,0 +1,3 @@
+# Keep dependency advisories visible in version-based scanner results.
+# Installed local patches are verified separately by the dependency CI gate.
+# A verified local mitigation does not certify external scanner closure.

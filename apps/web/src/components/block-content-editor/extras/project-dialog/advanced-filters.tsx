@@ -125,7 +125,7 @@ export function AdvancedFilters({
             <Input
               type="date"
               value={dateToFilter}
-              onChange={(e) => onDateToFilterChange(e.target.value)}
+              onChange={(e) => { onDateToFilterChange(e.target.value); }}
               className="w-full"
             />
           </div>

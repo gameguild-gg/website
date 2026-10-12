@@ -5,6 +5,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Users;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -63,7 +64,7 @@ public class PeerReviewAnonymityTests
     // ===== (b) POST peer-reviews/{reviewId}/submit =====
 
     [Fact]
-    public async Task SubmitReview_WithFeedback_PersistsScoreAndFeedback()
+    public async Task SubmitReview_WithValidPayload_FailsClosedWithoutPersistence()
     {
         await using var db = CreateContext();
         var assessment = await SeedAssessmentAsync(db, dueAt: SystemClock.UtcNow.AddDays(2));
@@ -73,11 +74,14 @@ public class PeerReviewAnonymityTests
 
         var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(Score(80), "Strong thesis", null));
 
-        result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(200);
+        var conflict = result.Should().BeAssignableTo<ObjectResult>().Which;
+        conflict.StatusCode.Should().Be(409);
+        conflict.Value.Should().BeOfType<ProblemDetails>()
+            .Which.Detail.Should().Be("Peer review submission is unavailable until the canonical grading runtime is enabled");
         var saved = await db.Set<AssessmentPeerReview>().SingleAsync(r => r.Id == review.Id);
-        saved.Status.Should().Be(PeerReviewStatus.Submitted);
-        saved.Score.Should().Be(Score(80));
-        saved.Feedback.Should().Be("Strong thesis");
+        saved.Status.Should().Be(PeerReviewStatus.Assigned);
+        saved.Score.Should().BeNull();
+        saved.Feedback.Should().BeNull();
     }
 
     [Fact]
@@ -150,7 +154,7 @@ public class PeerReviewAnonymityTests
     }
 
     [Fact]
-    public async Task SubmitReview_WithValidRubricScores_SubmitsWithPayload()
+    public async Task SubmitReview_WithValidRubricScores_FailsClosedWithoutPayload()
     {
         await using var db = CreateContext();
         var assessment = await SeedAssessmentAsync(db, dueAt: SystemClock.UtcNow.AddDays(2));
@@ -163,10 +167,10 @@ public class PeerReviewAnonymityTests
         var result = await controller.SubmitReview(
             review.Id, new PeerReviewSubmitRequest(Score(100), "Great essay", scores));
 
-        result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(200);
+        result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(409);
         var saved = await db.Set<AssessmentPeerReview>().SingleAsync(r => r.Id == review.Id);
-        saved.Status.Should().Be(PeerReviewStatus.Submitted);
-        saved.RubricScoresPayload.Should().Be(scores);
+        saved.Status.Should().Be(PeerReviewStatus.Assigned);
+        saved.RubricScoresPayload.Should().BeNull();
     }
 
     [Fact]
@@ -185,7 +189,7 @@ public class PeerReviewAnonymityTests
         var conflict = result.Should().BeAssignableTo<ObjectResult>().Which;
         conflict.StatusCode.Should().Be(409);
         conflict.Value.Should().BeOfType<ProblemDetails>()
-            .Which.Detail.Should().Be("Peer review already submitted");
+            .Which.Detail.Should().Be("Peer review submission is unavailable until the canonical grading runtime is enabled");
     }
 
     // ===== (c) GET submissions/{submissionId}/received-peer-reviews — owner-only anonymized =====
@@ -230,24 +234,28 @@ public class PeerReviewAnonymityTests
     }
 
     [Fact]
-    public async Task GetReceivedReviews_GroupSiblingRowReview_VisibleToOwnerAnonymized()
+    public async Task GetReceivedReviews_CollectiveSubmission_VisibleToFrozenParticipantAnonymized()
     {
         await using var db = CreateContext();
         var assessment = await SeedAssessmentAsync(db, dueAt: SystemClock.UtcNow.AddDays(2));
         var owner = Guid.NewGuid();
         var groupId = Guid.NewGuid();
-        var ownRow = await SeedSubmittedRowAsync(db, assessment.Id, owner, groupId: groupId);
-        var siblingRow = await SeedSubmittedRowAsync(db, assessment.Id, Guid.NewGuid(), groupId: groupId);
-        var review = await SeedReviewAsync(db, assessment.Id, siblingRow.Id, Guid.NewGuid());
+        var submission = await SeedCollectiveSubmittedRowAsync(
+            db,
+            assessment.Id,
+            groupId,
+            owner,
+            Guid.NewGuid());
+        var review = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
         review.SubmitReview(Score(90), "solid team effort", null);
         await db.SaveChangesAsync();
         var controller = CreateController(db, owner);
 
-        var result = await controller.GetReceivedPeerReviews(ownRow.Id);
+        var result = await controller.GetReceivedPeerReviews(submission.Id);
 
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var list = ok.Value.Should().BeAssignableTo<IEnumerable<ReceivedPeerReviewDto>>().Subject.ToList();
-        list.Should().ContainSingle("reviews on any row of the same group-attempt are visible to every member, on their own row");
+        list.Should().ContainSingle("the review belongs to the one collective submission");
         list[0].ReviewId.Should().Be(review.Id);
         var keys = CollectPropertyNames(JsonSerializer.SerializeToElement(list));
         keys.Should().NotContain(k => k.ToLowerInvariant().Contains("reviewer"));
@@ -299,20 +307,32 @@ public class PeerReviewAnonymityTests
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
+    private readonly Mock<ICourseEnrollmentAccessReader> _courseEnrollments = new();
     private readonly Mock<Microsoft.Extensions.Logging.ILogger<PeerReviewsController>> _log = new();
 
     private PeerReviewsController CreateController(
         TestPeerReviewAnonymityDbContext db, Guid userId, Guid? programCreatorId = null)
     {
+        var tenantId = Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = userId.ToString(),
-            TenantId = Guid.NewGuid(),
+            TenantId = tenantId,
             IsAuthenticated = true,
             Roles = new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                userId,
+                tenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                It.IsAny<Guid>(),
+                userId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _assessments.Setup(s => s.GetAssessmentByIdAsync(It.IsAny<Guid>()))
             .Returns(async (Guid id) => await db.Set<Assessment>()
                 .FirstOrDefaultAsync(a => a.Id == id && a.DeletedAt == null));
@@ -320,7 +340,10 @@ public class PeerReviewAnonymityTests
             .Returns(async (Guid id) => await db.Set<AssessmentSubmission>()
                 .FirstOrDefaultAsync(s => s.Id == id && s.DeletedAt == null));
         _programs.Setup(p => p.GetProgramByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync((Guid id) => new Program { Id = id, CreatorId = programCreatorId ?? Guid.NewGuid(), TenantId = null });
+            .ReturnsAsync((Guid id) => new Program { Id = id, CreatorId = programCreatorId ?? Guid.NewGuid(), TenantId = tenantId });
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
         var peerReviewService = new PeerReviewAssignmentService(
             db,
             NullLogger<PeerReviewAssignmentService>.Instance);
@@ -329,10 +352,19 @@ public class PeerReviewAnonymityTests
             _assessments.Object,
             new RubricService(db, NullLogger<RubricService>.Instance),
             _actor.Object,
-            _programs.Object,
-            _permissions.Object,
+            new CourseAccessEvaluator(
+                programReads.Object,
+                _courseEnrollments.Object,
+                _actor.Object,
+                _permissions.Object),
             _log.Object,
-            new AssessmentEndpointTestSender(peerReviewService: peerReviewService));
+            new AssessmentEndpointTestSender(peerReviewService: peerReviewService))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     /// <summary>Builds a rubric-scores JSON payload keyed by criterion id (same shape the web client sends).</summary>
@@ -404,6 +436,31 @@ public class PeerReviewAnonymityTests
         return row;
     }
 
+    private static async Task<AssessmentSubmission> SeedCollectiveSubmittedRowAsync(
+        TestPeerReviewAnonymityDbContext db,
+        Guid assessmentId,
+        Guid groupId,
+        params Guid[] participantIds)
+    {
+        var row = AssessmentSubmission.StartCollective(
+            null,
+            assessmentId,
+            Guid.NewGuid(),
+            groupId,
+            participantIds[0],
+            1);
+        row.SetPayload(new SubmitAssessmentRequest(TextPayload: "peer work"), SubmissionModality.Text);
+        row.Submit();
+        db.Add(row);
+        db.AddRange(participantIds.Select(userId => AssessmentSubmissionParticipant.Create(
+            null,
+            row.Id,
+            Guid.NewGuid(),
+            userId)));
+        await db.SaveChangesAsync();
+        return row;
+    }
+
     private static async Task<AssessmentPeerReview> SeedReviewAsync(
         TestPeerReviewAnonymityDbContext db, Guid assessmentId, Guid submissionId, Guid reviewerUserId)
     {
@@ -444,6 +501,7 @@ public class PeerReviewAnonymityTests
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             new AssessmentsModelConfiguration().Configure(modelBuilder);
+            new GradingPersistenceModelConfiguration().Configure(modelBuilder);
             // ponytail: minimal cross-module mapping for reviewer display names; full mapping lives in ApplicationDbContext.
             modelBuilder.Entity<User>(b =>
             {

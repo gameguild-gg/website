@@ -17,7 +17,7 @@ export class TestingLabTestingRequestsModule {
 
   /**
    */
-  async getTestingAvailableForTesting(): Promise<Result<Array<Types.TestingLabTestingInput>, ApiError>> {
+  async getTestingAvailableForTesting(): Promise<Result<Types.TestingLabTestingInput[], ApiError>> {
     const url = '/v1/testing/available-for-testing';
 
     const result = await this.client.request({
@@ -26,12 +26,12 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingInput>, ApiError>;
+    return result as Result<Types.TestingLabTestingInput[], ApiError>;
   }
 
   /**
    */
-  async getTestingMyRequests(): Promise<Result<Array<Types.TestingLabTestingInput>, ApiError>> {
+  async getTestingMyRequests(): Promise<Result<Types.TestingLabTestingInput[], ApiError>> {
     const url = '/v1/testing/my-requests';
 
     const result = await this.client.request({
@@ -40,7 +40,7 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingInput>, ApiError>;
+    return result as Result<Types.TestingLabTestingInput[], ApiError>;
   }
 
   /**
@@ -49,7 +49,7 @@ export class TestingLabTestingRequestsModule {
     skip?: number;
     take?: number;
     includeArchived?: boolean;
-  }): Promise<Result<Array<Types.TestingLabTestingRequestDetailProjection>, ApiError>> {
+  }): Promise<Result<Types.TestingLabTestingRequestDetailProjection[], ApiError>> {
     const url = '/v1/testing/requests';
 
     const result = await this.client.request({
@@ -59,7 +59,7 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingRequestDetailProjection>, ApiError>;
+    return result as Result<Types.TestingLabTestingRequestDetailProjection[], ApiError>;
   }
 
   /**
@@ -197,7 +197,7 @@ export class TestingLabTestingRequestsModule {
 
   /**
    */
-  async getTestingRequestsByCreator(creatorId: string): Promise<Result<Array<Types.TestingLabTestingInput>, ApiError>> {
+  async getTestingRequestsByCreator(creatorId: string): Promise<Result<Types.TestingLabTestingInput[], ApiError>> {
     const url = `/v1/testing/requests/by-creator/${creatorId}`;
 
     const result = await this.client.request({
@@ -206,12 +206,12 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingInput>, ApiError>;
+    return result as Result<Types.TestingLabTestingInput[], ApiError>;
   }
 
   /**
    */
-  async getTestingRequestsByProjectVersion(projectVersionId: string): Promise<Result<Array<Types.TestingLabTestingInput>, ApiError>> {
+  async getTestingRequestsByProjectVersion(projectVersionId: string): Promise<Result<Types.TestingLabTestingInput[], ApiError>> {
     const url = `/v1/testing/requests/by-project-version/${projectVersionId}`;
 
     const result = await this.client.request({
@@ -220,12 +220,12 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingInput>, ApiError>;
+    return result as Result<Types.TestingLabTestingInput[], ApiError>;
   }
 
   /**
    */
-  async getTestingRequestsByStatus(status: Types.TestingLabTestingRequestStatus): Promise<Result<Array<Types.TestingLabTestingInput>, ApiError>> {
+  async getTestingRequestsByStatus(status: Types.TestingLabTestingRequestStatus): Promise<Result<Types.TestingLabTestingInput[], ApiError>> {
     const url = `/v1/testing/requests/by-status/${status}`;
 
     const result = await this.client.request({
@@ -234,12 +234,12 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingInput>, ApiError>;
+    return result as Result<Types.TestingLabTestingInput[], ApiError>;
   }
 
   /**
    */
-  async getTestingRequestsSearch(query?: { searchTerm?: string }): Promise<Result<Array<Types.TestingLabTestingInput>, ApiError>> {
+  async getTestingRequestsSearch(query?: { searchTerm?: string }): Promise<Result<Types.TestingLabTestingInput[], ApiError>> {
     const url = '/v1/testing/requests/search';
 
     const result = await this.client.request({
@@ -249,7 +249,7 @@ export class TestingLabTestingRequestsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TestingLabTestingInput>, ApiError>;
+    return result as Result<Types.TestingLabTestingInput[], ApiError>;
   }
 
   /**

@@ -10,7 +10,8 @@
   },
   "signIn": {
     "continueWithDiscord": "Continuar com o Discord",
-    "magicLink": "Entrar com link por e-mail"
+    "magicLink": "Entrar com link por e-mail",
+    "emailCode": "Entrar com um código por e-mail"
   },
   "magicLink": {
     "request": {
@@ -33,6 +34,31 @@
     },
     "backToSignIn": "Voltar para o login",
     "requestAnother": "Solicitar outro link de acesso"
+  },
+  "emailCode": {
+    "request": {
+      "title": "Entrar com um código por e-mail",
+      "description": "Informe o e-mail da sua conta GameGuild. Enviaremos um código de acesso único de seis dígitos se houver uma conta correspondente.",
+      "emailLabel": "Endereço de e-mail",
+      "emailPlaceholder": "nome@exemplo.com",
+      "submit": "Enviar código de acesso",
+      "pending": "Enviando...",
+      "successTitle": "Verifique seu e-mail",
+      "successDescription": "Se houver uma conta com esse e-mail, um código de acesso está a caminho.",
+      "error": "Não conseguimos enviar o código de acesso agora. Tente novamente."
+    },
+    "consume": {
+      "title": "Digite seu código de acesso",
+      "description": "Digite o código de seis dígitos enviado para",
+      "codeLabel": "Código de acesso",
+      "codePlaceholder": "123456",
+      "submit": "Entrar",
+      "pending": "Verificando...",
+      "useDifferentEmail": "Usar outro e-mail",
+      "errorTitle": "Este código de acesso não pode ser usado",
+      "error": "Ele pode ter expirado ou já ter sido usado. Solicite um novo código e tente novamente."
+    },
+    "backToSignIn": "Voltar para o login"
   },
   "settings": {
     "accountTitle": "Configurações da conta",
@@ -188,6 +214,14 @@
         "stateMismatch": "A solicitação de vínculo expirou ou foi adulterada. Tente novamente.",
         "generic": "Não conseguimos concluir a solicitação. Tente novamente."
       }
+    },
+    "scopes": {
+      "consentedOn": "Consentido em {date} (termos v{version})",
+      "grantedList": "Escopos OAuth concedidos",
+      "noneGranted": "Nenhum escopo concedido atualmente neste vínculo.",
+      "revokeSuccess": "Escopo {scope} revogado.",
+      "revokeAriaLabel": "Revogar escopo {scope}",
+      "unlinkRevokesAll": "Desvincular remove a conexão e revoga todos os escopos concedidos deste provedor."
     }
   },
   "passwordChange": {

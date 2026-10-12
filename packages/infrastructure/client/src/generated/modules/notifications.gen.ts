@@ -22,7 +22,7 @@ export class NotificationsModule {
     skip?: number;
     take?: number;
     isRead?: boolean;
-  }): Promise<Result<Array<Types.NotificationsControllersNotificationDto>, ApiError>> {
+  }): Promise<Result<Types.NotificationsControllersNotificationDto[], ApiError>> {
     const url = '/api/notifications';
 
     const result = await this.client.request({
@@ -32,7 +32,7 @@ export class NotificationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.NotificationsControllersNotificationDto>, ApiError>;
+    return result as Result<Types.NotificationsControllersNotificationDto[], ApiError>;
   }
 
   /**
@@ -261,7 +261,7 @@ export class NotificationsModule {
   /**
    * Gets the catalog of notification types with category and suppressibility classification (drives the preferences UI)
    */
-  async getApiNotificationsTypesCatalog(): Promise<Result<Array<Types.NotificationsControllersNotificationTypeCatalogEntry>, ApiError>> {
+  async getApiNotificationsTypesCatalog(): Promise<Result<Types.NotificationsControllersNotificationTypeCatalogEntry[], ApiError>> {
     const url = '/api/notifications/types-catalog';
 
     const result = await this.client.request({
@@ -270,7 +270,7 @@ export class NotificationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.NotificationsControllersNotificationTypeCatalogEntry>, ApiError>;
+    return result as Result<Types.NotificationsControllersNotificationTypeCatalogEntry[], ApiError>;
   }
 
   /**
@@ -447,7 +447,7 @@ export class NotificationsModule {
     const result = await this.client.request({
       method: 'POST',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     return result as Result<void, ApiError>;
@@ -463,7 +463,7 @@ export class NotificationsModule {
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

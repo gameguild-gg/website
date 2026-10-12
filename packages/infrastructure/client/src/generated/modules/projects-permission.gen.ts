@@ -46,7 +46,7 @@ export class ProjectsPermissionModule {
   /**
    * Get all collaborators on the project
    */
-  async getProjectsPermissionsCollaborators(projectId: string): Promise<Result<Array<Types.ProjectsProjectCollaboratorDto>, ApiError>> {
+  async getProjectsPermissionsCollaborators(projectId: string): Promise<Result<Types.ProjectsProjectCollaboratorDto[], ApiError>> {
     const url = `/v1/projects/${projectId}/permissions/collaborators`;
 
     const result = await this.client.request({
@@ -55,7 +55,7 @@ export class ProjectsPermissionModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsProjectCollaboratorDto>, ApiError>;
+    return result as Result<Types.ProjectsProjectCollaboratorDto[], ApiError>;
   }
 
   /**
@@ -139,7 +139,7 @@ export class ProjectsPermissionModule {
   /**
    * Get current user's permissions on the project
    */
-  async getProjectsPermissionsMyPermissions(projectId: string): Promise<Result<Array<Types.ProjectsEffectivePermission>, ApiError>> {
+  async getProjectsPermissionsMyPermissions(projectId: string): Promise<Result<Types.ProjectsEffectivePermission[], ApiError>> {
     const url = `/v1/projects/${projectId}/permissions/my-permissions`;
 
     const result = await this.client.request({
@@ -148,13 +148,13 @@ export class ProjectsPermissionModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsEffectivePermission>, ApiError>;
+    return result as Result<Types.ProjectsEffectivePermission[], ApiError>;
   }
 
   /**
    * Get project permission templates for common roles
    */
-  async getProjectsPermissionsRoleTemplates(projectId: string): Promise<Result<Array<Types.ProjectsProjectRoleTemplate>, ApiError>> {
+  async getProjectsPermissionsRoleTemplates(projectId: string): Promise<Result<Types.ProjectsProjectRoleTemplate[], ApiError>> {
     const url = `/v1/projects/${projectId}/permissions/role-templates`;
 
     const result = await this.client.request({
@@ -163,7 +163,7 @@ export class ProjectsPermissionModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ProjectsProjectRoleTemplate>, ApiError>;
+    return result as Result<Types.ProjectsProjectRoleTemplate[], ApiError>;
   }
 }
 

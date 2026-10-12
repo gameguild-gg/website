@@ -97,8 +97,11 @@ public sealed class StripeEconomyTopUpProviderTests
             valid with { IdempotencyKey = "" }
         ];
         foreach (var request in invalid)
+        {
             FluentActions.Invoking(() => StripeEconomyTopUpProvider.Validate(request))
-                .Should().Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
+        }
+
         _ = new EconomyTopUpProviderUnavailableException("unavailable", new Exception());
         _ = new EconomyTopUpProviderAmbiguousException("ambiguous", new Exception());
     }
@@ -218,6 +221,10 @@ public sealed class StripeEconomyTopUpProviderTests
             string externalTransactionId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<GatewayRefundResult> ProcessRefundAsync(
             GatewayRefundRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+            GatewayDisputeActionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+            GatewayDisputeChallengeRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> ValidateWebhookSignatureAsync(string payload, string signature, string secret) =>
             throw new NotSupportedException();
     }

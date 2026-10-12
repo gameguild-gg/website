@@ -49,7 +49,9 @@ public sealed class PostgreSqlAdRewardIssuanceGateway : IAdRewardIssuanceGateway
         ArgumentException.ThrowIfNullOrWhiteSpace(request.EvidenceHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.CapabilityReceiptHash);
         if (request.CapabilityReceiptHash.Length > 128)
+        {
             throw new ArgumentException("Capability receipt hashes cannot exceed 128 characters.", nameof(request));
+        }
 
         try
         {

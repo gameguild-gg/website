@@ -44,7 +44,9 @@ public class PostCommentsController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new AddPostCommentEndpointCommand(postId, userId, request.Content, request.ParentCommentId),
@@ -60,7 +62,9 @@ public class PostCommentsController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new UpdatePostCommentEndpointCommand(commentId, userId, request.Content),
@@ -76,7 +80,9 @@ public class PostCommentsController(
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty)
+        {
             return Unauthorized();
+        }
 
         var result = await sender.Send(
             new DeletePostCommentEndpointCommand(commentId, userId),

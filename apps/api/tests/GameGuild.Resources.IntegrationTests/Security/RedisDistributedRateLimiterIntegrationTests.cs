@@ -97,6 +97,25 @@ public sealed class RedisDistributedRateLimiterIntegrationTests(
     private const string ProbeHostAssemblyFileName = "GameGuild.RateLimitingProbeHost.dll";
 
     [Fact]
+    public void ProbeCertificateStaysWithinShortAuthorityValidityWindow()
+    {
+        var now = DateTimeOffset.UtcNow;
+        using var authority = CreateProbeCertificateAuthority(now.AddDays(-2), now.AddMinutes(5));
+        using var certificate = CreateProbeServerCertificate(authority);
+
+        Assert.Equal(authority.NotBefore.ToUniversalTime(), certificate.NotBefore.ToUniversalTime());
+        Assert.Equal(authority.NotAfter.ToUniversalTime(), certificate.NotAfter.ToUniversalTime());
+        Assert.True(certificate.HasPrivateKey);
+        using var chain = new X509Chain();
+        chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+        chain.ChainPolicy.CustomTrustStore.Add(authority);
+        chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        chain.ChainPolicy.DisableCertificateDownloads = true;
+        chain.ChainPolicy.ApplicationPolicy.Add(new Oid("1.3.6.1.5.5.7.3.1"));
+        Assert.True(chain.Build(certificate), string.Join(", ", chain.ChainStatus.Select(status => status.Status)));
+    }
+
+    [Fact]
     public async Task SeparateApiHostsShareRedisLimitUnderConcurrentLoad()
     {
         const int requestLimit = 20;
@@ -269,7 +288,9 @@ public sealed class RedisDistributedRateLimiterIntegrationTests(
         };
     }
 
-    private static X509Certificate2 CreateProbeCertificateAuthority()
+    private static X509Certificate2 CreateProbeCertificateAuthority(
+        DateTimeOffset? notBefore = null,
+        DateTimeOffset? notAfter = null)
     {
         using var key = RSA.Create(2048);
         var request = new CertificateRequest("CN=GameGuild rate-limit probe root", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -279,7 +300,30 @@ public sealed class RedisDistributedRateLimiterIntegrationTests(
             critical: true));
 
         var now = DateTimeOffset.UtcNow;
-        return request.CreateSelfSigned(now.AddMinutes(-1), now.AddHours(1));
+        return request.CreateSelfSigned(notBefore ?? now.AddMinutes(-1), notAfter ?? now.AddHours(1));
+    }
+
+    [Fact]
+    public void ProbeServerCertificate_UsesIssuerValidityWindow()
+    {
+        using var key = RSA.Create(2048);
+        var request = new CertificateRequest("CN=Short-lived probe root", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, critical: true));
+        request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign, critical: true));
+        var now = DateTimeOffset.UtcNow;
+        using var certificateAuthority = request.CreateSelfSigned(now.AddMinutes(-1), now.AddMinutes(5));
+
+        using var certificate = CreateProbeServerCertificate(certificateAuthority);
+
+        certificate.NotBefore.Should().Be(certificateAuthority.NotBefore);
+        certificate.NotAfter.Should().Be(certificateAuthority.NotAfter);
+        certificate.HasPrivateKey.Should().BeTrue();
+        using var chain = new X509Chain();
+        chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+        chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        chain.ChainPolicy.CustomTrustStore.Add(certificateAuthority);
+        chain.ChainPolicy.ApplicationPolicy.Add(new Oid("1.3.6.1.5.5.7.3.1"));
+        chain.Build(certificate).Should().BeTrue();
     }
 
     private static X509Certificate2 CreateProbeServerCertificate(X509Certificate2 certificateAuthority)
@@ -298,11 +342,10 @@ public sealed class RedisDistributedRateLimiterIntegrationTests(
         var serverAuthentication = new OidCollection { new("1.3.6.1.5.5.7.3.1") };
         request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(serverAuthentication, critical: false));
 
-        var now = DateTimeOffset.UtcNow;
         using var publicCertificate = request.Create(
             certificateAuthority,
-            now.AddMinutes(-1),
-            now.AddHours(1),
+            new DateTimeOffset(certificateAuthority.NotBefore.ToUniversalTime()),
+            new DateTimeOffset(certificateAuthority.NotAfter.ToUniversalTime()),
             RandomNumberGenerator.GetBytes(16));
         return publicCertificate.CopyWithPrivateKey(key);
     }
@@ -590,7 +633,7 @@ public sealed class RedisDistributedRateLimiterIntegrationTests(
     {
         const int capacity = 6;
         const int refillTokens = 2;
-        var period = TimeSpan.FromMilliseconds(250);
+        var period = TimeSpan.FromMinutes(1);
         var log = new CapturingLogger<RedisDistributedRateLimiter>();
         var limiters = fixture.Connections
             .Select(connection => new RedisDistributedRateLimiter(connection, log))
@@ -606,7 +649,25 @@ public sealed class RedisDistributedRateLimiterIntegrationTests(
         initial.Count(decision => decision.IsAllowed).Should().Be(capacity);
         initial.Where(decision => !decision.IsAllowed).Should().OnlyContain(decision => decision.RetryAfter > TimeSpan.Zero);
 
-        await Task.Delay(TimeSpan.FromMilliseconds(300));
+        var database = fixture.Connections[0].GetDatabase();
+        const string bucketKey = "ratelimit:token-bucket:integration:shared-token-bucket";
+        (await database.HashGetAsync(bucketKey, "tokens")).ToString().Should().Be("0");
+
+        // Position the fixture one period behind Redis's own clock. A short
+        // wall-clock delay can cross multiple periods on a busy CI runner.
+        var positioned = await database.ScriptEvaluateAsync(
+            """
+            local now = redis.call('TIME')
+            local nowMs = tonumber(now[1]) * 1000 + math.floor(tonumber(now[2]) / 1000)
+            if redis.call('HEXISTS', KEYS[1], 'lastRefill') ~= 1 then
+                return 0
+            end
+            redis.call('HSET', KEYS[1], 'lastRefill', nowMs - tonumber(ARGV[1]))
+            return 1
+            """,
+            [bucketKey],
+            [(long)period.TotalMilliseconds]);
+        ((int)positioned).Should().Be(1);
         var refilled = await Task.WhenAll(Enumerable.Range(0, 3).Select(index =>
             limiters[index % limiters.Length].TryAcquireTokenBucketAsync(
                 "integration:shared-token-bucket",

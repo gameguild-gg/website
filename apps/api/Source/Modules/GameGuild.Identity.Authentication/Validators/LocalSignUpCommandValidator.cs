@@ -1,4 +1,5 @@
 using FluentValidation;
+using GameGuild.Identity.Users;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -50,8 +51,8 @@ public sealed class LocalSignUpCommandValidator : AbstractValidator<LocalSignUpC
             .WithMessage("Username must be at least 3 characters long")
             .MaximumLength(50)
             .WithMessage("Username is too long")
-            .Matches(@"^[a-zA-Z0-9._-]+$")
-            .WithMessage("Username can only contain letters, numbers, dots, hyphens, and underscores");
+            .Must(username => UsernameSlug.Normalize(username) is { Length: >= 3 and <= 50 })
+            .WithMessage("Username must produce a handle of 3 to 50 letters, numbers, dots, hyphens, or underscores");
 
         RuleFor(x => x.TenantId).Must(tenantId => !tenantId.HasValue || tenantId.Value != Guid.Empty).WithMessage("Tenant ID must be a valid GUID when provided");
     }

@@ -25,7 +25,7 @@ export class ContentPagesModule {
     parentId?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.ContentPagesPageDto>, ApiError>> {
+  }): Promise<Result<Types.ContentPagesPageDto[], ApiError>> {
     const url = '/v1/pages';
 
     const result = await this.client.request({
@@ -35,7 +35,7 @@ export class ContentPagesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ContentPagesPageDto>, ApiError>;
+    return result as Result<Types.ContentPagesPageDto[], ApiError>;
   }
 
   /**
@@ -169,7 +169,7 @@ export class ContentPagesModule {
   /**
    * List sections for a page.
    */
-  async getPagesSectionsForGetPagesByPageIdSections(pageId: string): Promise<Result<Array<Types.ContentPagesPageSectionDto>, ApiError>> {
+  async getPagesSectionsForGetPagesByPageIdSections(pageId: string): Promise<Result<Types.ContentPagesPageSectionDto[], ApiError>> {
     const url = `/v1/pages/${pageId}/sections`;
 
     const result = await this.client.request({
@@ -178,7 +178,7 @@ export class ContentPagesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ContentPagesPageSectionDto>, ApiError>;
+    return result as Result<Types.ContentPagesPageSectionDto[], ApiError>;
   }
 
   /**
@@ -274,7 +274,7 @@ export class ContentPagesModule {
   /**
    * Reorder sections within a page.
    */
-  async postPagesSectionsReorder(pageId: string, body: Array<string>): Promise<Result<void, ApiError>> {
+  async postPagesSectionsReorder(pageId: string, body: string[]): Promise<Result<void, ApiError>> {
     const url = `/v1/pages/${pageId}/sections/reorder`;
 
     const result = await this.client.request({
@@ -296,7 +296,7 @@ export class ContentPagesModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -312,17 +312,17 @@ export class ContentPagesModule {
    * Public sitemap feed of published pages — slug + last-modified — for
    * SEO crawlers and the marketing site's `sitemap.xml`.
    */
-  async getPagesSitemap(query?: { locale?: string }): Promise<Result<Array<Types.ContentPagesSitemapEntryDto>, ApiError>> {
+  async getPagesSitemap(query?: { locale?: string }): Promise<Result<Types.ContentPagesSitemapEntryDto[], ApiError>> {
     const url = '/v1/pages/sitemap';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.ContentPagesSitemapEntryDto>, ApiError>;
+    return result as Result<Types.ContentPagesSitemapEntryDto[], ApiError>;
   }
 }
 

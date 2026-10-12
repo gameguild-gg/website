@@ -20,6 +20,7 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUserMfaConfigurationRepository _mfaConfigurationRepository;
+    private readonly IAuthenticationAuditEventSink? _auditEventSink;
 
     public BasicAuthenticationHandler(
         IOptionsMonitor<BasicAuthenticationSchemeOptions> options,
@@ -28,11 +29,24 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IUserMfaConfigurationRepository mfaConfigurationRepository)
+        : this(options, logger, encoder, userRepository, passwordHasher, mfaConfigurationRepository, null)
+    {
+    }
+
+    public BasicAuthenticationHandler(
+        IOptionsMonitor<BasicAuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
+        IUserMfaConfigurationRepository mfaConfigurationRepository,
+        IAuthenticationAuditEventSink? auditEventSink)
         : base(options, logger, encoder)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _mfaConfigurationRepository = mfaConfigurationRepository;
+        _auditEventSink = auditEventSink;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -45,7 +59,7 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
 
         if (authorizationHeaders.Count != 1)
         {
-            return AuthenticateResult.Fail("Invalid authorization header.");
+            return await FailAsync("Invalid authorization header.").ConfigureAwait(false);
         }
 
         var authorization = authorizationHeaders[0];
@@ -56,18 +70,21 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
 
         if (authorization.Length <= 6 || authorization[5] != ' ')
         {
-            return AuthenticateResult.Fail("Invalid Basic authorization header.");
+            return await FailAsync("Invalid Basic authorization header.").ConfigureAwait(false);
         }
 
-        if (!Request.IsHttps)
+        // Request.IsHttps comes from direct TLS or trusted forwarded-header
+        // middleware. Forwarded HTTPS schemes are accepted only from explicitly configured trusted proxies.
+        // Forwarded-header processing is disabled when the trusted-proxy list is empty.
+        if (!Request.IsHttps) // codeql[cs/user-controlled-bypass] X-Forwarded-Proto honored only from explicitly configured trusted proxies; processing disabled entirely when the trusted-proxy list is empty
         {
-            return AuthenticateResult.Fail("Basic authentication requires HTTPS.");
+            return await FailAsync("Basic authentication requires HTTPS.").ConfigureAwait(false);
         }
 
         var encodedCredentials = authorization[6..];
         if (encodedCredentials.Length == 0 || encodedCredentials.Any(char.IsWhiteSpace))
         {
-            return AuthenticateResult.Fail("Invalid Basic credentials.");
+            return await FailAsync("Invalid Basic credentials.").ConfigureAwait(false);
         }
 
         string decodedCredentials;
@@ -77,17 +94,17 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
         }
         catch (FormatException)
         {
-            return AuthenticateResult.Fail("Invalid Basic credentials.");
+            return await FailAsync("Invalid Basic credentials.").ConfigureAwait(false);
         }
         catch (DecoderFallbackException)
         {
-            return AuthenticateResult.Fail("Invalid Basic credentials.");
+            return await FailAsync("Invalid Basic credentials.").ConfigureAwait(false);
         }
 
         var separatorIndex = decodedCredentials.IndexOf(':');
         if (separatorIndex <= 0)
         {
-            return AuthenticateResult.Fail("Invalid Basic credentials.");
+            return await FailAsync("Invalid Basic credentials.").ConfigureAwait(false);
         }
 
         var username = decodedCredentials[..separatorIndex];
@@ -102,13 +119,13 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
             if (user is null || !user.IsActive || user.IsSuspended || !user.HasPassword ||
                 !_passwordHasher.VerifyPassword(user.PasswordHash!, password))
             {
-                return AuthenticateResult.Fail("Invalid username or password.");
+                return await FailAsync("Invalid username or password.", user?.Id).ConfigureAwait(false);
             }
 
             // Basic auth has no challenge flow to complete a second factor. Never let it bypass MFA.
             if (await _mfaConfigurationRepository.IsMfaEnabledAsync(user.Id, cancellationToken).ConfigureAwait(false))
             {
-                return AuthenticateResult.Fail("Invalid username or password.");
+                return await FailAsync("Invalid username or password.", user.Id, "MfaRequired").ConfigureAwait(false);
             }
 
             var claims = new List<Claim>
@@ -124,6 +141,8 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, Scheme.Name);
 
+            await RecordAuthenticationAuditEventAsync(success: true, user.Id).ConfigureAwait(false);
+
             return AuthenticateResult.Success(ticket);
         }
         catch (OperationCanceledException) when (Context.RequestAborted.IsCancellationRequested)
@@ -133,7 +152,38 @@ public sealed class BasicAuthenticationHandler : AuthenticationHandler<BasicAuth
         catch (Exception exception)
         {
             Logger.LogError(exception, "An unexpected error occurred while processing Basic authentication.");
-            return AuthenticateResult.Fail("Basic authentication is unavailable.");
+            return await FailAsync("Basic authentication is unavailable.").ConfigureAwait(false);
+        }
+    }
+
+    private async Task<AuthenticateResult> FailAsync(string message, Guid? userId = null, string? auditReason = null)
+    {
+        await RecordAuthenticationAuditEventAsync(success: false, userId, auditReason ?? message).ConfigureAwait(false);
+        return AuthenticateResult.Fail(message);
+    }
+
+    private async Task RecordAuthenticationAuditEventAsync(bool success, Guid? userId, string? errorMessage = null)
+    {
+        if (_auditEventSink is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _auditEventSink.RecordAsync(new AuthenticationAuditEvent(
+                success ? "Authentication.Succeeded" : "Authentication.Failed",
+                userId,
+                success,
+                "Basic",
+                Context.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString(),
+                ErrorMessage: errorMessage),
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Could not record Basic authentication audit event");
         }
     }
 

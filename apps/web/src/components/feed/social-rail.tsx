@@ -196,7 +196,7 @@ export function SocialRail({
             {tags.map((tag) => (
               <Link
                 key={tag.name}
-                href={`${activeTab === "foryou" ? "/?" : `/?tab=${activeTab}&`}tag=${encodeURIComponent(tag.name)}`}
+                href={`${activeTab === "foryou" ? "/feed?" : `/feed?tab=${activeTab}&`}tag=${encodeURIComponent(tag.name)}`}
                 className="rounded-lg bg-accent/50 px-3 py-2 text-xs transition hover:bg-accent"
               >
                 <span className="block truncate font-medium text-foreground">#{tag.name}</span>

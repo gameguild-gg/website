@@ -18,7 +18,7 @@ export class AuthApiKeysModule {
   /**
    * List all API keys for the current user
    */
-  async getAuthApiKeys(): Promise<Result<Array<Types.IdentityAuthenticationApiKeyDto>, ApiError>> {
+  async getAuthApiKeys(): Promise<Result<Types.IdentityAuthenticationApiKeyDto[], ApiError>> {
     const url = '/v1/auth/api-keys';
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class AuthApiKeysModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthenticationApiKeyDto>, ApiError>;
+    return result as Result<Types.IdentityAuthenticationApiKeyDto[], ApiError>;
   }
 
   /**
@@ -72,6 +72,35 @@ export class AuthApiKeysModule {
     });
 
     return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Rotate an API key: issues a replacement key and starts the old key's
+   * overlap (grace) window, after which the old key is revoked.
+   */
+  async postAuthApiKeysRotate(
+    keyId: string,
+    body: Types.IdentityAuthenticationRotateApiKeyInput,
+  ): Promise<Result<Types.IdentityAuthenticationRotateApiKeyOutput, ApiError>> {
+    const url = `/v1/auth/api-keys/${keyId}:rotate`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.IdentityAuthenticationRotateApiKeyInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.IdentityAuthenticationRotateApiKeyOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 }
 

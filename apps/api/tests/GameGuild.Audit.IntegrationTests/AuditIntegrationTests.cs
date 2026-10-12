@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.API.Database;
 using GameGuild.Compliance.Audit;
+using GameGuild.CQRS;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -87,6 +88,22 @@ public class AuditIntegrationTests : IClassFixture<WebApplicationFactory<GameGui
         auditLog.Success.Should().Be(request.Success);
         auditLog.RiskLevel.Should().Be(request.RiskLevel);
         auditLog.Category.Should().Be(request.Category);
+    }
+
+    [Fact]
+    public async Task ActionTypeSearch_ShouldBeRegisteredAndReachableThroughCqrs()
+    {
+        var sender = _scope.ServiceProvider.GetRequiredService<ISender>();
+        var request = new AuditActionTypeSearchRequest
+        {
+            ActionTypes = ["NoSuchAuditAction"],
+            IncludeTrends = false
+        };
+
+        var result = await sender.Send(new SearchAuditActionTypesQuery(request), CancellationToken.None);
+
+        result.TotalCount.Should().Be(0);
+        result.Logs.Should().BeEmpty();
     }
 
     [Fact]

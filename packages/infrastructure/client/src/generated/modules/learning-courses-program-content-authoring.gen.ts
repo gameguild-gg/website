@@ -68,7 +68,7 @@ export class LearningCoursesProgramContentAuthoringModule {
   async getCoursesContentAuthoringAiConversations(
     programId: string,
     contentId: string,
-  ): Promise<Result<Array<Types.LearningCoursesAiAuthoringConversationDto>, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesAiAuthoringConversationDto[], ApiError>> {
     const url = `/v1/courses/${programId}/content/${contentId}/authoring/ai/conversations`;
 
     const result = await this.client.request({
@@ -77,7 +77,7 @@ export class LearningCoursesProgramContentAuthoringModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesAiAuthoringConversationDto>, ApiError>;
+    return result as Result<Types.LearningCoursesAiAuthoringConversationDto[], ApiError>;
   }
 
   /**

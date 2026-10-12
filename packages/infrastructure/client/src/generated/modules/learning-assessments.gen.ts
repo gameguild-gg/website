@@ -91,7 +91,7 @@ export class LearningAssessmentsModule {
     assessmentId: string,
     contentId: string,
     enrollmentId: string,
-  ): Promise<Result<Array<Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto>, ApiError>> {
+  ): Promise<Result<Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto[], ApiError>> {
     const url = `/v1/assessments/${assessmentId}/interactive-video-cues/content/${contentId}/enrollments/${enrollmentId}`;
 
     const result = await this.client.request({
@@ -100,7 +100,7 @@ export class LearningAssessmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsLearnerInteractiveVideoAssessmentCueDto[], ApiError>;
   }
 
   /**
@@ -108,7 +108,7 @@ export class LearningAssessmentsModule {
    */
   async getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissions(
     assessmentId: string,
-  ): Promise<Result<Array<Types.LearningAssessmentsAssessmentSubmissionDto>, ApiError>> {
+  ): Promise<Result<Types.LearningAssessmentsAssessmentSubmissionDto[], ApiError>> {
     const url = `/v1/assessments/${assessmentId}/submissions`;
 
     const result = await this.client.request({
@@ -117,7 +117,7 @@ export class LearningAssessmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsAssessmentSubmissionDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsAssessmentSubmissionDto[], ApiError>;
   }
 
   /**
@@ -261,7 +261,7 @@ export class LearningAssessmentsModule {
   /**
    * Gets the interactive-video cue links for this assessment.
    */
-  async getAssessmentsInteractiveVideoCues(id: string): Promise<Result<Array<Types.LearningAssessmentsInteractiveVideoAssessmentCueDto>, ApiError>> {
+  async getAssessmentsInteractiveVideoCues(id: string): Promise<Result<Types.LearningAssessmentsInteractiveVideoAssessmentCueDto[], ApiError>> {
     const url = `/v1/assessments/${id}/interactive-video-cues`;
 
     const result = await this.client.request({
@@ -270,7 +270,7 @@ export class LearningAssessmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsInteractiveVideoAssessmentCueDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsInteractiveVideoAssessmentCueDto[], ApiError>;
   }
 
   /**
@@ -522,7 +522,7 @@ export class LearningAssessmentsModule {
   /**
    * Get all assessments for a course
    */
-  async getAssessmentsCourse(courseId: string): Promise<Result<Array<Types.LearningAssessmentsAssessmentDto>, ApiError>> {
+  async getAssessmentsCourse(courseId: string): Promise<Result<Types.LearningAssessmentsAssessmentDto[], ApiError>> {
     const url = `/v1/assessments/course/${courseId}`;
 
     const result = await this.client.request({
@@ -531,7 +531,7 @@ export class LearningAssessmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsAssessmentDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsAssessmentDto[], ApiError>;
   }
 
   /**
@@ -611,7 +611,7 @@ export class LearningAssessmentsModule {
   /**
    * Get weighted assessment groups for a course.
    */
-  async getAssessmentsCourseGroups(courseId: string): Promise<Result<Array<Types.LearningAssessmentsAssessmentGroupDto>, ApiError>> {
+  async getAssessmentsCourseGroups(courseId: string): Promise<Result<Types.LearningAssessmentsAssessmentGroupDto[], ApiError>> {
     const url = `/v1/assessments/course/${courseId}/groups`;
 
     const result = await this.client.request({
@@ -620,7 +620,7 @@ export class LearningAssessmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsAssessmentGroupDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsAssessmentGroupDto[], ApiError>;
   }
 
   /**
@@ -696,7 +696,7 @@ export class LearningAssessmentsModule {
   /**
    * Get my submissions for an enrollment
    */
-  async getAssessmentsMySubmissions(enrollmentId: string): Promise<Result<Array<Types.LearningAssessmentsLearnerAssessmentSubmissionDto>, ApiError>> {
+  async getAssessmentsMySubmissions(enrollmentId: string): Promise<Result<Types.LearningAssessmentsLearnerAssessmentSubmissionDto[], ApiError>> {
     const url = `/v1/assessments/my-submissions/${enrollmentId}`;
 
     const result = await this.client.request({
@@ -705,7 +705,7 @@ export class LearningAssessmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsLearnerAssessmentSubmissionDto>, ApiError>;
+    return result as Result<Types.LearningAssessmentsLearnerAssessmentSubmissionDto[], ApiError>;
   }
 
   /**

@@ -1,0 +1,9 @@
+route:
+  receiver: local-observability
+  group_by: [alertname, service_name]
+  group_wait: 0s
+  group_interval: 30s
+  repeat_interval: 4h
+
+receivers:
+  - name: local-observability

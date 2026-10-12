@@ -233,7 +233,7 @@ export class SocialBlogAuthoringModule {
   /**
    * Lists the acting user's posts (authored + co-authored), newest edit first.
    */
-  async getApiSocialBlogPostsMine(query?: { page?: number }): Promise<Result<Array<Types.SocialBlogBlogPost>, ApiError>> {
+  async getApiSocialBlogPostsMine(query?: { page?: number }): Promise<Result<Types.SocialBlogBlogPost[], ApiError>> {
     const url = '/api/social/blog/posts/mine';
 
     const result = await this.client.request({
@@ -243,7 +243,7 @@ export class SocialBlogAuthoringModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialBlogBlogPost>, ApiError>;
+    return result as Result<Types.SocialBlogBlogPost[], ApiError>;
   }
 }
 

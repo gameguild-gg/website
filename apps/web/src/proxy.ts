@@ -15,7 +15,9 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 }
 
 function rewriteWithLocale(request: NextRequest, pathname: string, locale: string): NextResponse {
-  const url = request.nextUrl.clone();
+  // NextURL normalizes numeric loopback hosts to localhost. Keep the actual
+  // request origin so redirects and rewrites retain host-only session cookies.
+  const url = new URL(request.url);
   url.pathname = pathname;
 
   const requestHeaders = new Headers(request.headers);
@@ -26,7 +28,7 @@ function rewriteWithLocale(request: NextRequest, pathname: string, locale: strin
 }
 
 function redirectToPath(request: NextRequest, pathname: string): NextResponse {
-  const url = request.nextUrl.clone();
+  const url = new URL(request.url);
   url.pathname = pathname;
   return NextResponse.redirect(url);
 }
@@ -51,7 +53,15 @@ export function routeRequest(request: NextRequest): NextResponse {
 
   if (matchesPrefix(pathname, DEFAULT_LOCALE_PREFIX)) {
     const unprefixedPath = pathname.slice(DEFAULT_LOCALE_PREFIX.length) || "/";
-    return redirectToPath(request, unprefixedPath === "/social" ? "/feed" : unprefixedPath);
+    if (unprefixedPath === "/social") {
+      return redirectToPath(request, "/feed");
+    }
+    // RSC navigation targets the internal locale tree. A canonical browser
+    // redirect makes Next request that internal tree again and creates a loop.
+    if (request.headers.get("rsc") === "1") {
+      return rewriteWithLocale(request, pathname, routing.defaultLocale);
+    }
+    return redirectToPath(request, unprefixedPath);
   }
 
   const nonDefaultPrefix = NON_DEFAULT_LOCALE_PREFIXES.find((prefix) => matchesPrefix(pathname, prefix));

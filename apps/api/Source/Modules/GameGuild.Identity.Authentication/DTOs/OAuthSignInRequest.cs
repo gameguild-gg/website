@@ -33,4 +33,9 @@ public class OAuthSignInRequest
     ///     Optional tenant ID to use for the sign-in. If not provided, will use the first available tenant for the user
     /// </summary>
     public Guid? TenantId { get; set; }
+
+    /// <summary>
+    ///     When true, issues a persistent ("remember me") refresh token using the persistent lifetime.
+    /// </summary>
+    public bool? RememberMe { get; set; }
 }

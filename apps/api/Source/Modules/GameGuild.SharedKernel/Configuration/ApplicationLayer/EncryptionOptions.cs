@@ -75,7 +75,9 @@ public sealed class EncryptionOptions : BaseOptions
                 {
                     // Hexadecimal format
                     if (EncryptionKey.Length < 64) // 256 bits = 64 hex characters
+                    {
                         errors.Add("EncryptionKey in hexadecimal format must be at least 64 characters (256 bits)");
+                    }
                 }
                 else
                 {
@@ -89,10 +91,15 @@ public sealed class EncryptionOptions : BaseOptions
             }
         }
 
-        if (string.IsNullOrWhiteSpace(Algorithm)) errors.Add("Algorithm is required");
+        if (string.IsNullOrWhiteSpace(Algorithm))
+        {
+            errors.Add("Algorithm is required");
+        }
 
         if (EnableKeyRotation && (KeyRotationIntervalDays < 1 || KeyRotationIntervalDays > 365))
+        {
             errors.Add("KeyRotationIntervalDays must be between 1 and 365");
+        }
 
         return (errors.Count == 0, errors.ToArray());
     }

@@ -22,7 +22,7 @@ export class CommercePaymentsTaxRulesModule {
     jurisdictionCode?: string;
     customerType?: string;
     effectiveDate?: string;
-  }): Promise<Result<Array<Types.CommercePaymentsTaxRate>, ApiError>> {
+  }): Promise<Result<Types.CommercePaymentsTaxRate[], ApiError>> {
     const url = '/api/v1/tax-rules';
 
     const result = await this.client.request({
@@ -32,7 +32,7 @@ export class CommercePaymentsTaxRulesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommercePaymentsTaxRate>, ApiError>;
+    return result as Result<Types.CommercePaymentsTaxRate[], ApiError>;
   }
 
   /**

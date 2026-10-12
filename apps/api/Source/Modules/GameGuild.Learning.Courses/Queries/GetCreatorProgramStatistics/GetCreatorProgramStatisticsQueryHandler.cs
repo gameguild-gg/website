@@ -26,9 +26,14 @@ public sealed class GetCreatorProgramStatisticsQueryHandler(
 
         // Apply date filters if provided
         if (request.FromDate.HasValue)
+        {
             programsQuery = programsQuery.Where(p => p.CreatedAt >= request.FromDate.Value);
+        }
+
         if (request.ToDate.HasValue)
+        {
             programsQuery = programsQuery.Where(p => p.CreatedAt <= request.ToDate.Value);
+        }
 
         var programIds = await programsQuery.Select(p => p.Id).ToListAsync(cancellationToken);
 

@@ -302,6 +302,59 @@ public sealed class EmailSenderTests
         return new Response(statusCode, new StringContent(string.Empty), response.Headers);
     }
 
+    [Fact]
+    public async Task SendWithReceipt_WhenDisabled_DoesNotClaimProviderAcceptance()
+    {
+        var sender = CreateSender(new EmailDeliveryOptions { Enabled = false });
+        var receipt = await sender.SendWithReceiptAsync(CreateMessage());
+        receipt.Accepted.Should().BeFalse();
+        receipt.ProviderMessageId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SendWithReceipt_WhenSendGridAcceptsWithoutMessageId_ReportsAcceptance()
+    {
+        var client = new Mock<ISendGridClient>(MockBehavior.Strict);
+        client.Setup(value => value.SendEmailAsync(It.IsAny<SendGridMessage>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateSendGridResponse(HttpStatusCode.Accepted));
+        var sender = CreateSender(CreateSendGridOptions(), _ => client.Object);
+        var receipt = await sender.SendWithReceiptAsync(CreateMessage());
+        receipt.Accepted.Should().BeTrue();
+        receipt.ProviderMessageId.Should().BeNull();
+        client.VerifyAll();
+    }
+
+    [Fact]
+    public async Task SendWithReceipt_WhenSmtpAccepts_RequiresActualLoopbackMailboxReceipt()
+    {
+        await using var server = new MiniSmtpServer();
+        var sender = CreateSender(new EmailDeliveryOptions
+        {
+            Enabled = true, Provider = "Smtp", FromEmail = "synthetic-sender@example.test",
+            SmtpHost = "127.0.0.1", SmtpPort = server.Port
+        });
+        var receipt = await sender.SendWithReceiptAsync(new EmailMessage(
+            "synthetic-owner@example.test", "Synthetic replay alert", "Synthetic replay containment", "<p>Synthetic replay containment</p>"));
+        var transcript = await server.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+        receipt.Accepted.Should().BeTrue();
+        receipt.ProviderMessageId.Should().NotBeNullOrWhiteSpace();
+        transcript.Should().Contain("RCPT TO:<synthetic-owner@example.test>");
+        transcript.Should().Contain("Subject: Synthetic replay alert");
+        transcript.Should().Contain("Message-ID: " + receipt.ProviderMessageId);
+        var bodies = System.Text.RegularExpressions.Regex.Matches(transcript,
+                @"Content-Type: text/(?<type>plain|html);[^\r\n]*\r?\nContent-Transfer-Encoding: base64\r?\n\r?\n(?<body>[A-Za-z0-9+/=\r\n]+?)(?=\r?\n--)",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            .Select(part => new
+            {
+                Type = part.Groups["type"].Value,
+                Content = Encoding.UTF8.GetString(Convert.FromBase64String(part.Groups["body"].Value))
+            }).ToList();
+        bodies.Where(part => part.Type == "plain").Select(part => part.Content)
+            .Should().Contain("Synthetic replay containment");
+        bodies.Where(part => part.Type == "html").Select(part => part.Content)
+            .Should().Contain("<p>Synthetic replay containment</p>");
+    }
+
     private sealed class MiniSmtpServer : IAsyncDisposable
     {
         private readonly TcpListener listener = new(IPAddress.Loopback, 0);

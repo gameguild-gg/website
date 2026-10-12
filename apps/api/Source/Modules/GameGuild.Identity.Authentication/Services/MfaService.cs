@@ -67,6 +67,7 @@ public sealed class MfaService(
 
             return new MfaVerificationResult { Success = isValid, RequiresAdditionalVerification = false, Message = isValid ? "MFA verification successful" : "Invalid MFA code" };
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to verify MFA for user: {UserId}", userId);

@@ -23,7 +23,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
     difficulty?: Types.LearningExperienceLearningPathsLearningPathDifficulty;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>> {
     const url = '/v1/learning-paths';
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>;
   }
 
   /**
@@ -308,7 +308,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
   async getLearningPathsEnrollments(
     id: string,
     query?: { status?: Types.LearningExperienceLearningPathsLearningPathEnrollmentStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[], ApiError>> {
     const url = `/v1/learning-paths/${id}/enrollments`;
 
     const result = await this.client.request({
@@ -318,7 +318,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[], ApiError>;
   }
 
   /**
@@ -436,7 +436,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
   async getLearningPathsCreator(
     creatorId: string,
     query?: { includeUnpublished?: boolean; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>> {
     const url = `/v1/learning-paths/creator/${creatorId}`;
 
     const result = await this.client.request({
@@ -446,7 +446,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>;
   }
 
   /**
@@ -455,7 +455,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
   async getLearningPathsFeatured(query?: {
     tenantId?: string;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>> {
     const url = '/v1/learning-paths/featured';
 
     const result = await this.client.request({
@@ -465,7 +465,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>;
   }
 
   /**
@@ -475,7 +475,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
     tenantId?: string;
     daysBack?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>> {
     const url = '/v1/learning-paths/popular';
 
     const result = await this.client.request({
@@ -485,7 +485,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>;
   }
 
   /**
@@ -497,7 +497,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
     difficulty?: Types.LearningExperienceLearningPathsLearningPathDifficulty;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>> {
+  }): Promise<Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>> {
     const url = '/v1/learning-paths/search';
 
     const result = await this.client.request({
@@ -507,7 +507,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathDto[], ApiError>;
   }
 
   /**
@@ -541,7 +541,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
   async getLearningPathsUserCompleted(
     userId: string,
     query?: { skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[], ApiError>> {
     const url = `/v1/learning-paths/user/${userId}/completed`;
 
     const result = await this.client.request({
@@ -551,7 +551,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[], ApiError>;
   }
 
   /**
@@ -560,7 +560,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
   async getLearningPathsUserEnrollments(
     userId: string,
     query?: { status?: Types.LearningExperienceLearningPathsLearningPathEnrollmentStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[], ApiError>> {
     const url = `/v1/learning-paths/user/${userId}/enrollments`;
 
     const result = await this.client.request({
@@ -570,7 +570,7 @@ export class LearningExperienceLearningPathsLearningPathModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto>, ApiError>;
+    return result as Result<Types.LearningExperienceLearningPathsLearningPathEnrollmentDto[], ApiError>;
   }
 }
 

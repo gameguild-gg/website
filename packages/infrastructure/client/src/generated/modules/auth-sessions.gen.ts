@@ -20,7 +20,7 @@ export class AuthSessionsModule {
    *
    * Retrieves a list of all active sessions for the current user, including device and location information.
    */
-  async getAuthSessions(): Promise<Result<Array<Types.IdentityAuthenticationSessionOutput>, ApiError>> {
+  async getAuthSessions(): Promise<Result<Types.IdentityAuthenticationSessionOutput[], ApiError>> {
     const url = '/v1/auth/sessions';
 
     const result = await this.client.request({
@@ -29,7 +29,7 @@ export class AuthSessionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthenticationSessionOutput>, ApiError>;
+    return result as Result<Types.IdentityAuthenticationSessionOutput[], ApiError>;
   }
 
   /**

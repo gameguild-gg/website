@@ -13,6 +13,71 @@ namespace GameGuild.Identity.Authentication.UnitTests.Services;
 public sealed class Web3ServiceSiweTests
 {
     [Fact]
+    public async Task BoundedHostCacheStoresUsableWalletChallengeWithFiveMinuteLifetime()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 10_000 });
+        var service = CreateService(cache, "https://wallet.example.test", "1");
+        var key = CreateTestKey();
+        var challenge = await service.GenerateChallengeAsync(key.GetPublicAddress());
+        Assert.Equal(TimeSpan.FromMinutes(5), challenge.ExpiresAt - challenge.IssuedAt);
+        Assert.Same(challenge, cache.Get<Web3Challenge>("web3:challenge:" + challenge.Nonce));
+        Assert.Equal(challenge.Nonce, cache.Get<string>("web3:challenge:wallet:" + key.GetPublicAddress().ToLowerInvariant()));
+        Assert.True(await service.VerifySignatureAsync(key.GetPublicAddress(), Sign(challenge.Message, key), challenge.Message, "1", challenge.Nonce));
+        Assert.False(await service.VerifySignatureAsync(key.GetPublicAddress(), Sign(challenge.Message, key), challenge.Message, "1", challenge.Nonce));
+    }
+
+    [Fact]
+    public async Task CacheCapacityCannotReturnAnUnstoredChallenge()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 1 });
+        var service = CreateService(cache, "https://wallet.example.test", "1");
+        var key = CreateTestKey();
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.GenerateChallengeAsync(key.GetPublicAddress()));
+        Assert.Equal("SIWE challenge storage is unavailable.", error.Message);
+        Assert.Null(cache.Get<string>("web3:challenge:wallet:" + key.GetPublicAddress().ToLowerInvariant()));
+    }
+
+    [Fact]
+    public async Task EvictedChallengeRejectsAnOtherwiseValidRealSignature()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 10_000 });
+        var service = CreateService(cache, "https://wallet.example.test", "1");
+        var key = CreateTestKey();
+        var challenge = await service.GenerateChallengeAsync(key.GetPublicAddress());
+        cache.Remove("web3:challenge:" + challenge.Nonce);
+        Assert.False(await service.VerifySignatureAsync(key.GetPublicAddress(), Sign(challenge.Message, key), challenge.Message, "1", challenge.Nonce));
+    }
+
+    [Theory]
+    [InlineData("walletAddress", "WalletAddress")]
+    [InlineData("chainId", "ChainId")]
+    public async Task ChallengeHandlerMapsOnlyKnownInvalidInputsToRequestValidation(string parameter, string field)
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache, "https://wallet.example.test", "1");
+        var command = new GenerateWeb3ChallengeCommand
+        {
+            WalletAddress = parameter == "walletAddress" ? "invalid-wallet" : CreateTestKey().GetPublicAddress(),
+            ChainId = parameter == "chainId" ? "0" : "1"
+        };
+        var error = await Assert.ThrowsAsync<GameGuild.CQRS.RequestValidationException>(() => new GenerateWeb3ChallengeHandler(service).Handle(command, CancellationToken.None));
+        Assert.Equal(field, Assert.Single(error.Errors).PropertyName);
+    }
+
+    [Theory]
+    [InlineData("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", true)]
+    [InlineData("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD", false)]
+    [InlineData("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed", true)]
+    [InlineData("0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED", true)]
+    [InlineData("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeg", false)]
+    public void MixedCaseAddressesRequireTheEip55ChecksumAndUniformCaseRemainsCompatible(string address, bool expected)
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = CreateService(cache, "https://wallet.example.test", "1");
+        Assert.Equal(expected, service.IsValidWalletAddress(address));
+    }
+
+    [Fact]
     public async Task GenerateChallengeAsync_ShouldReturnCanonicalSiweMessageBoundToConfiguredOriginAndChain()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());

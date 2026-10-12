@@ -5,6 +5,7 @@
  */
 
 import type { TokenProvider, TokenPair } from './types.js';
+import { TokenRefreshError } from './errors.js';
 
 export interface TokenRefreshConfig {
   /**
@@ -129,6 +130,11 @@ export class TokenRefreshManager {
         return tokens;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        if (error instanceof TokenRefreshError && (error.responseStatus === 401 || error.responseStatus === 403)) {
+          this.tokenExpiry = null;
+          await this.provider.onAuthenticationRequired?.();
+          return null;
+        }
 
         // Exponential backoff
         if (attempt < this.config.maxRetries - 1) {
@@ -157,7 +163,7 @@ export class TokenRefreshManager {
     });
 
     if (!response.ok) {
-      throw new Error(`Refresh failed: ${response.status} ${response.statusText}`);
+      throw new TokenRefreshError(`Refresh failed: ${response.status} ${response.statusText}`, undefined, response.status);
     }
 
     const data = await response.json();

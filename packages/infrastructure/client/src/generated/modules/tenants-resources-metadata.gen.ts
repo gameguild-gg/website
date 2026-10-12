@@ -23,7 +23,7 @@ export class TenantsResourcesMetadataModule {
   async getTenantsResourcesMetadataForGetTenantsByTenantIdResourcesMetadata(
     tenantId: string,
     query?: { category?: string },
-  ): Promise<Result<Array<Types.ResourcesResourceMetadata>, ApiError>> {
+  ): Promise<Result<Types.ResourcesResourceMetadata[], ApiError>> {
     const url = `/v1/tenants/${tenantId}/resources/metadata`;
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class TenantsResourcesMetadataModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesResourceMetadata>, ApiError>;
+    return result as Result<Types.ResourcesResourceMetadata[], ApiError>;
   }
 
   /**

@@ -23,7 +23,7 @@ export class TenantsResourcesSettingsModule {
   async getTenantsResourcesSettingsForGetTenantsByTenantIdResourcesSettings(
     tenantId: string,
     query?: { category?: string },
-  ): Promise<Result<Array<Types.ResourcesResourceSettings>, ApiError>> {
+  ): Promise<Result<Types.ResourcesResourceSettings[], ApiError>> {
     const url = `/v1/tenants/${tenantId}/resources/settings`;
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class TenantsResourcesSettingsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesResourceSettings>, ApiError>;
+    return result as Result<Types.ResourcesResourceSettings[], ApiError>;
   }
 
   /**

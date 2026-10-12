@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using FluentAssertions;
 using GameGuild.API.Database;
 using GameGuild.Identity.Authentication;
@@ -575,6 +578,8 @@ public class SessionManagementIntegrationTests : IClassFixture<AuthenticationApi
     }
 
     #endregion
+    */
+    #endregion
 
     #region Session Timeout and Renewal Edge Cases
 
@@ -607,6 +612,64 @@ public class SessionManagementIntegrationTests : IClassFixture<AuthenticationApi
         activeSessions.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task GetSessionsEndpoint_ExpiredSession_ShouldBeOmittedFromListing()
+    {
+        // Arrange - ensure a default tenant exists so sign-up provisions a tenant membership
+        if (!await _dbContext.Set<GameGuild.Identity.Tenants.Tenant>().AnyAsync(tenant => tenant.IsDefault))
+        {
+            _dbContext.Add(new GameGuild.Identity.Tenants.Tenant
+            {
+                Name = "Sessions listing tenant",
+                Slug = $"sessions-{Guid.NewGuid():N}",
+                AdminEmail = $"admin-{Guid.NewGuid():N}@example.test",
+                IsDefault = true,
+                IsActive = true
+            });
+            await _dbContext.SaveChangesAsync();
+        }
+
+        // Arrange - sign up through the auth service so the bearer maps to a live session
+        var signUp = await _authService.LocalSignUpAsync(new LocalSignUpRequest
+        {
+            Email = $"sessions.http.{Guid.NewGuid():N}@example.com",
+            Username = $"sessionshttp{Guid.NewGuid():N}",
+            Password = "SessionsHttp123!"
+        });
+
+        var expiredSession = new UserSession
+        {
+            Id = Guid.NewGuid(),
+            UserId = signUp.UserId,
+            RefreshToken = $"expired-{Guid.NewGuid():N}",
+            DeviceFingerprint = "expired-device",
+            UserAgent = "Chrome",
+            IpAddress = "192.168.1.100",
+            CreatedAt = DateTime.UtcNow.AddHours(-25),
+            LastUsedAt = DateTime.UtcNow.AddHours(-2),
+            ExpiresAt = DateTime.UtcNow.AddHours(-1), // Expired but still flagged active
+            IsActive = true
+        };
+
+        await _dbContext.Set<UserSession>().AddAsync(expiredSession);
+        await _dbContext.SaveChangesAsync();
+
+        // Act - list sessions over HTTP with the signed-in user's bearer
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", signUp.AccessToken);
+        using var response = await client.GetAsync("/v1/auth/sessions");
+
+        // Assert - the listing omits the expired row and still returns the caller's live session
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var sessions = await response.Content.ReadFromJsonAsync<List<SessionResponse>>();
+        sessions.Should().NotBeNull();
+        sessions.Should().NotContain(s => s.Id == expiredSession.Id);
+        sessions.Should().ContainSingle(s => s.Id == signUp.SessionId && s.IsCurrent);
+    }
+
+    // SessionRenewal/IdleSession/Timeline tests below stay disabled pending the anomaly-detection
+    // handlers noted in the Session Security region above.
+    /*
     [Fact]
     public async Task SessionRenewal_BeforeExpiry_ShouldExtendSession()
     {

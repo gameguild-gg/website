@@ -12,7 +12,7 @@ import { decodeJWT } from '../../runtime/auth/jwt.js';
 import { SessionStore, resolveCookieOptions, type CookieSerializeOptions } from '../../runtime/auth/cookies.js';
 import { createJWTPayload, processSession, encodeSession, refreshAccessToken, toSession } from '../../runtime/auth/session.js';
 import { CredentialsSignInError, ProviderNotFoundError, SignUpError } from '../../runtime/auth/errors.js';
-import { parseBackendAuthResponse, serializeCookie } from './handlers.js';
+import { applyResponseCookies, parseBackendAuthResponse } from './handlers.js';
 import { type OAuthProviderWithMethods, getOAuthExchangeToken } from './oauth-helpers.js';
 
 /**
@@ -124,7 +124,11 @@ export function createAuthFunction(config: ResolvedAuthConfig) {
           responseCookies.push({
             name,
             value: '',
-            options: { ...cookieOptions, maxAge: 0 },
+            options: {
+              httpOnly: cookieOptions.httpOnly, secure: cookieOptions.secure,
+              sameSite: cookieOptions.sameSite, path: cookieOptions.path,
+              domain: cookieOptions.domain, maxAge: 0,
+            },
           });
         },
       };
@@ -136,11 +140,7 @@ export function createAuthFunction(config: ResolvedAuthConfig) {
       augmentedRequest.auth = session;
 
       const response = await handler(augmentedRequest);
-      for (const cookie of responseCookies) {
-        response.headers.append('Set-Cookie', serializeCookie(cookie.name, cookie.value, cookie.options));
-      }
-
-      return response;
+      return applyResponseCookies(response, responseCookies);
     };
   }
 
@@ -420,8 +420,12 @@ async function finalizeServerAction(
   const adapter = await getNextCookies();
   /* v8 ignore start */
   if (adapter) {
+    // Storage policy: an explicit non-remember sign-in gets a browser-session cookie;
+    // remember-me (or the configured default) keeps the durable Max-Age cookie.
     sessionStore.write(encrypted, (name, value, opts) => {
       adapter.set(name, value, opts);
+    }, {
+      storage: token.rememberMe === false ? 'session' : 'persistent',
     });
   }
   /* v8 ignore stop */

@@ -5,7 +5,7 @@ namespace GameGuild.Learning.Assessments;
 
 /// <summary>
 /// Assigns anonymous peer reviews by claiming the least-reviewed eligible submission,
-/// submits them, and reads them back with role-appropriate identity stripping.
+/// preserves legacy claims and reads while canonical grading owns review writes.
 /// </summary>
 public interface IPeerReviewAssignmentService
 {
@@ -21,17 +21,21 @@ public interface IPeerReviewAssignmentService
     Task<AssessmentPeerReview?> GetReviewAsync(Guid reviewId);
 
     /// <summary>
-    /// Submits an already-validated review (feedback/score/rubric rules live in the controller).
-    /// Fails with Conflict when the review was already submitted.
+    /// Legacy write boundary. It remains fail-closed until peer review is implemented as a
+    /// canonical grading stage.
     /// </summary>
     Task<Result<AssessmentPeerReview>> SubmitReviewAsync(
         AssessmentPeerReview review, ScoreValue score, string feedback, string? rubricScores);
 
     /// <summary>
-    /// Submitted reviews visible on a submission: its own rows, plus — for a group submission —
-    /// the union of reviews on any row sharing (CourseGroupId, AttemptNumber).
+    /// Submitted reviews attached to the single supplied submission.
     /// </summary>
     Task<IReadOnlyList<AssessmentPeerReview>> GetReviewsForSubmissionAsync(Guid submissionId);
+
+    /// <summary>
+    /// Checks the individual owner or frozen participant snapshot of a collective submission.
+    /// </summary>
+    Task<bool> IsSubmissionOwnerOrParticipantAsync(Guid submissionId, Guid userId);
 
     /// <summary>
     /// Display names (User.Name) for reviewer ids, missing names excluded.

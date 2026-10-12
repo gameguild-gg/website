@@ -25,8 +25,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '10.0.0'
+  GAMEGUILD_TEST_POSTGRES_17_IMAGE: "public.ecr.aws/docker/library/postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+  GAMEGUILD_TEST_POSTGRES_16_IMAGE: "public.ecr.aws/docker/library/postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.34.6"
 
 jobs:
   detect-emception-changes:
@@ -37,7 +39,7 @@ jobs:
       heavy: ${{ steps.changes.outputs.heavy }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -83,38 +85,40 @@ jobs:
     if: needs.detect-emception-changes.outputs.required == 'true'
     timeout-minutes: 360
     env:
-      CI: 'true'
+      CI: "true"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 1
           lfs: false
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v6 # v6.0.10
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7 # v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: bash scripts/ci/install-and-audit-pnpm.sh
 
       - name: Cache immutable Toolchain downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: toolchain-download-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tools/emception/.cache/toolchain/downloads
           key: emception-downloads-linux-${{ hashFiles('tools/emception/toolchain/toolchain.lock.json') }}
 
       - name: Cache verified Toolchain builds
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: toolchain-build-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             tools/emception/.cache/toolchain/sources
@@ -123,8 +127,9 @@ jobs:
             tools/emception/artifacts/toolchain/tools
             tools/emception/artifacts/toolchain/sysroot
             tools/emception/artifacts/toolchain/receipts
-          key: emception-builds-linux-${{ hashFiles('tools/emception/toolchain/toolchain.lock.json', 'tools/emception/toolchain/overlays/**', 'tools/emception/scripts/toolchain/**', 'tools/emception/scripts/build-*.ts', 'tools/emception/scripts/setup-emsdk.ts', 'tools/emception/scripts/populate-sysroot.ts') }}
+          key: emception-builds-linux-v2-${{ hashFiles('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', '.npmrc', 'tools/emception/package.json', 'tools/emception/toolchain/**', 'tools/emception/scripts/*', 'tools/emception/scripts/toolchain/**', '.github/workflows/emception.yml') }}
           restore-keys: |
+            emception-builds-linux-v2-
             emception-builds-linux-
 
       - name: Install native Toolchain dependencies
@@ -152,13 +157,36 @@ jobs:
       - name: Build and validate Toolchain receipts
         shell: bash
         env:
-          HEAVY_REBUILD: ${{ needs.detect-emception-changes.outputs.heavy }}
+          VERIFIED_BUILD_CACHE_HIT: ${{ steps.toolchain-build-cache.outputs.cache-hit }}
         run: |
-          if [[ "$HEAVY_REBUILD" == "true" ]]; then
-            pnpm --dir tools/emception toolchain build all --force
-          else
+          if [[ "$VERIFIED_BUILD_CACHE_HIT" == "true" ]]; then
             pnpm --dir tools/emception toolchain build all
+          else
+            pnpm --dir tools/emception toolchain build all --force
           fi
+
+      - name: Verify native and WASM curl adapter security regressions
+        run: pnpm --dir tools/emception run test:curl-lite
+
+      - name: Save verified Toolchain downloads
+        if: success() && steps.toolchain-download-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tools/emception/.cache/toolchain/downloads
+          key: ${{ steps.toolchain-download-cache.outputs.cache-primary-key }}
+
+      - name: Save verified Toolchain builds
+        if: success() && steps.toolchain-build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            tools/emception/.cache/toolchain/sources
+            tools/emception/.cache/toolchain/builds
+            tools/emception/.cache/toolchain/emsdk
+            tools/emception/artifacts/toolchain/tools
+            tools/emception/artifacts/toolchain/sysroot
+            tools/emception/artifacts/toolchain/receipts
+          key: ${{ steps.toolchain-build-cache.outputs.cache-primary-key }}
 
       - name: Build all Emception packages
         run: pnpm run build:emception
@@ -192,6 +220,9 @@ jobs:
       - name: Stage CDN into demos
         run: node scripts/sync-emception-cdn.mjs
 
+      - name: Prepare certificate for disposable API test storage
+        run: bash scripts/ci/prepare-data-protection-test-certificate.sh
+
       - name: Run instructor and learner coding assessment cycle
         run: pnpm --dir apps/web run test:browser:coding-cycle
 
@@ -220,7 +251,7 @@ jobs:
           done
 
       - name: Upload Emception release artifacts
-        uses: actions/upload-artifact@v7 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: emception-${{ github.sha }}
           path: |
@@ -241,12 +272,13 @@ jobs:
 
       - name: Upload browser diagnostics on failure
         if: failure()
-        uses: actions/upload-artifact@v7 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: emception-browser-diagnostics-${{ github.sha }}
           path: |
             tools/emception/playwright-report
             tools/emception/test-results
+            apps/web/test-results/coding-cycle
           if-no-files-found: ignore
           retention-days: 7
 
@@ -265,7 +297,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Download Emception release artifacts
-        uses: actions/download-artifact@v8 # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: emception-${{ github.sha }}
           path: _artifacts/emception
@@ -284,10 +316,10 @@ jobs:
           find .pages -name '.gitignore' -delete
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6 # v6.0.0
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5 # v5.0.0
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: .pages
 
@@ -307,30 +339,30 @@ jobs:
       id-token: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           fetch-tags: true
           lfs: false
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v6 # v6.0.10
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
 
       - name: Configure npm registry
-        uses: actions/setup-node@v7 # v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: bash scripts/ci/install-and-audit-pnpm.sh
 
       - name: Download validated release artifacts
-        uses: actions/download-artifact@v8 # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: emception-${{ github.sha }}
           path: _artifacts/emception
@@ -342,12 +374,12 @@ jobs:
 
       - name: Create or update the Emception version PR
         id: changesets
-        uses: changesets/action@v2
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version-script: pnpm run version:emception
-          commit-message: 'chore(release): version Emception packages'
-          pr-title: 'chore(release): version Emception packages'
+          commit-message: "chore(release): version Emception packages"
+          pr-title: "chore(release): version Emception packages"
 
       - name: Publish validated packages
         if: steps.changesets.outputs.hasChangesets == 'false'

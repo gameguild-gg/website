@@ -82,7 +82,10 @@ public sealed class GradeReleaseService(
         CancellationToken cancellationToken)
     {
         if (submissionId == Guid.Empty || expectedRoundId == Guid.Empty || receiptActorId == Guid.Empty)
+        {
             throw new ArgumentException("Submission, round, and actor IDs are required.");
+        }
+
         var key = RequireIdempotencyKey(idempotencyKey);
         await using var transaction = await GradingRuntimeDatabaseLock.AcquireAsync(
             context,
@@ -94,7 +97,10 @@ public sealed class GradeReleaseService(
             .ConfigureAwait(false)
             ?? throw new KeyNotFoundException("Assessment submission was not found.");
         if (!submission.TenantId.HasValue)
+        {
             throw new InvalidOperationException("Grade release requires a tenant-scoped submission.");
+        }
+
         var request = new
         {
             schemaVersion = 1,
@@ -119,7 +125,10 @@ public sealed class GradeReleaseService(
         if (receipt is not null)
         {
             if (!string.Equals(receipt.RequestHash, requestHash, StringComparison.Ordinal))
+            {
                 throw new InvalidOperationException("The idempotency key was used with a different release request.");
+            }
+
             var replayOutcome = JsonSerializer.Deserialize<ReleaseOutcome>(receipt.OutcomeCanonicalJson, GradingJson.Options)
                 ?? throw new InvalidOperationException("Stored release outcome is invalid.");
             var replay = await context.Set<GradeResultRelease>()
@@ -130,19 +139,26 @@ public sealed class GradeReleaseService(
         }
 
         if (expectedSubmissionVersion.HasValue && submission.Version != expectedSubmissionVersion.Value)
+        {
             throw new InvalidOperationException("The submission version is stale.");
+        }
 
         var execution = await context.Set<GradingExecution>()
             .SingleOrDefaultAsync(value => value.AssessmentSubmissionId == submissionId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException("Submission does not have a grading execution.");
         if (execution.ExecutionContext != ReviewExecutionContext.OfficialSubmission || execution.ActiveGradeRoundId != expectedRoundId)
+        {
             throw new InvalidOperationException("The expected round is not the active official result.");
+        }
+
         var round = await context.Set<GradeRound>()
             .SingleAsync(value => value.Id == expectedRoundId && value.GradingExecutionId == execution.Id, cancellationToken)
             .ConfigureAwait(false);
         if (round.Status != PersistedGradeRoundStatus.Finalized)
+        {
             throw new InvalidOperationException("Only a finalized grade round can be released.");
+        }
 
         var existing = await context.Set<GradeResultRelease>()
             .SingleOrDefaultAsync(value => value.GradeRoundId == round.Id, cancellationToken)
@@ -160,7 +176,10 @@ public sealed class GradeReleaseService(
                 execution.Id,
                 service,
                 reason));
-        if (existing is null) context.Set<GradeResultRelease>().Add(release);
+        if (existing is null)
+        {
+            context.Set<GradeResultRelease>().Add(release);
+        }
 
         var revision = await context.Set<AssessmentDefinitionRevision>()
             .AsNoTracking()
@@ -259,7 +278,11 @@ public sealed class ImmediateGradeReleaseConsumer(
     {
         var payload = JsonSerializer.Deserialize<ImmediateReleasePayload>(message.PayloadCanonicalJson, GradingJson.Options)
             ?? throw new JsonException("Immediate release request is invalid.");
-        if (payload.SchemaVersion != 1) throw new JsonException("Immediate release request version is unsupported.");
+        if (payload.SchemaVersion != 1)
+        {
+            throw new JsonException("Immediate release request version is unsupported.");
+        }
+
         await using var scope = scopeFactory.CreateAsyncScope();
         var releaseService = scope.ServiceProvider.GetRequiredService<IGradeReleaseService>();
         await releaseService.ReleaseByServiceAsync(

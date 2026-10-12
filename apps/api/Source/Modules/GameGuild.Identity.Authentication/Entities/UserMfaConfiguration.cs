@@ -23,7 +23,7 @@ public class UserMfaConfiguration
     public string? TotpSecretKey { get; set; }
 
     /// <summary>
-    ///     Backup codes for MFA recovery (encrypted, JSON array)
+    ///     Versioned issued-set metadata and salted hashes; legacy SHA-256 lists remain readable
     /// </summary>
     [MaxLength(2000)]
     public string? BackupCodes { get; set; }
@@ -63,6 +63,9 @@ public class UserMfaConfiguration
     ///     Indicates if the user has completed MFA setup
     /// </summary>
     public bool IsSetupComplete { get; set; }
+
+    /// <summary>Fixed deadline for a new enrollment; failed attempts cannot extend it.</summary>
+    public DateTime? SetupExpiresAt { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

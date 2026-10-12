@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using GameGuild.CQRS;
+using GameGuild.Identity.Context.Actors;
 
 namespace GameGuild.Features;
 
@@ -16,12 +17,14 @@ namespace GameGuild.Features;
 public sealed class CapabilitiesController : BaseApiController
 {
     private readonly ICapabilityService _capabilityService;
-    private readonly ISender? _sender;
+    private readonly ISender _sender;
+    private readonly IActorContextAccessor _actorContextAccessor;
 
-    public CapabilitiesController(ICapabilityService capabilityService, ISender? sender = null)
+    public CapabilitiesController(ICapabilityService capabilityService, ISender sender, IActorContextAccessor actorContextAccessor)
     {
         _capabilityService = capabilityService;
         _sender = sender;
+        _actorContextAccessor = actorContextAccessor;
     }
 
     /// <summary>
@@ -54,6 +57,10 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetCapabilities(Guid tenantId, CancellationToken ct)
     {
+        if (ValidateTenantAccess(tenantId, false) is { } failure)
+        {
+            return failure;
+        }
         var capabilities = await _capabilityService.GetTenantCapabilitiesAsync(tenantId, ct).ConfigureAwait(false);
         return Ok(capabilities);
     }
@@ -71,6 +78,7 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CheckCapability(Guid tenantId, string capability, CancellationToken ct)
     {
+        if (ValidateTenantAccess(tenantId, false) is { } failure) return failure;
         var isEnabled = await _capabilityService.IsCapabilityEnabledAsync(tenantId, capability, ct).ConfigureAwait(false);
         return Ok(new CapabilityCheckResponse(capability, isEnabled));
     }
@@ -92,11 +100,10 @@ public sealed class CapabilitiesController : BaseApiController
         [FromBody] SetCapabilityOverrideRequest request,
         CancellationToken ct)
     {
-        // Get current user ID from claims (fail-closed if not available)
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
-        Guid? userId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : null;
+        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
+        var userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
 
-        await _sender!.Send(new SetCapabilityOverrideCommand(
+        await _sender.Send(new SetCapabilityOverrideCommand(
             tenantId,
             request.Capability,
             request.IsEnabled,
@@ -126,10 +133,13 @@ public sealed class CapabilitiesController : BaseApiController
         [FromQuery] string? reason,
         CancellationToken ct)
     {
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
-        Guid? userId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : null;
+        if (ValidateTenantAccess(tenantId, true) is { } failure)
+        {
+            return failure;
+        }
+        var userId = CapabilityAccessGuard.RequireAdministrator(_actorContextAccessor.ActorContext, tenantId);
 
-        await _sender!.Send(
+        await _sender.Send(
             new RemoveCapabilityOverrideCommand(tenantId, capability, userId, reason),
             ct).ConfigureAwait(false);
         return NoContent();
@@ -147,7 +157,8 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SyncFromPlan(Guid tenantId, CancellationToken ct)
     {
-        await _sender!.Send(new SyncCapabilitiesFromPlanCommand(tenantId), ct).ConfigureAwait(false);
+        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
+        await _sender.Send(new SyncCapabilitiesFromPlanCommand(tenantId), ct).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -170,6 +181,7 @@ public sealed class CapabilitiesController : BaseApiController
         [FromQuery] DateTimeOffset? toDate,
         CancellationToken ct)
     {
+        if (ValidateTenantAccess(tenantId, true) is { } failure) return failure;
         var logs = await _capabilityService.GetAuditLogAsync(tenantId, capability, fromDate, toDate, ct).ConfigureAwait(false);
         var dtos = logs.Select(log => new CapabilityAuditLogDto(
             log.Id,
@@ -185,6 +197,12 @@ public sealed class CapabilitiesController : BaseApiController
             log.ChangedAt));
 
         return Ok(dtos);
+    }
+
+    private IActionResult? ValidateTenantAccess(Guid tenantId, bool requireAdministrator)
+    {
+        var failureStatus = CapabilityAccessGuard.GetFailureStatus(_actorContextAccessor.ActorContext, tenantId, requireAdministrator);
+        return failureStatus.HasValue ? StatusCode(failureStatus.Value) : null;
     }
 }
 

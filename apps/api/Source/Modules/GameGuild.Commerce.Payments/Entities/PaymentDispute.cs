@@ -12,6 +12,7 @@ namespace GameGuild.Commerce.Payments;
 [Index(nameof(Type))]
 [Index(nameof(CreatedAt))]
 [Index(nameof(DueDate))]
+[Index(nameof(GatewayDisputeId), IsUnique = true)]
 public class PaymentDispute : EntityBase
 {
     /// <summary>Default constructor</summary>
@@ -64,6 +65,20 @@ public class PaymentDispute : EntityBase
     /// <summary>Due date for response</summary>
     public DateTime? DueDate { get; set; }
 
+    /// <summary>
+    ///     Gateway dispute identifier (e.g. the Stripe <c>dp_...</c> id) when this dispute was
+    ///     reconciled from a gateway webhook (issue #419). Unique per gateway dispute.
+    /// </summary>
+    [MaxLength(255)]
+    public string? GatewayDisputeId { get; set; }
+
+    /// <summary>Gateway that owns <see cref="GatewayDisputeId"/> (e.g. stripe).</summary>
+    [MaxLength(50)]
+    public string? GatewayName { get; set; }
+
+    /// <summary>Deadline by which evidence must be submitted to the gateway, when provided.</summary>
+    public DateTime? EvidenceDueBy { get; set; }
+
     /// <summary>Navigation property to dispute evidence</summary>
     public virtual ICollection<DisputeEvidence> Evidence { get; } = new List<DisputeEvidence>();
 
@@ -72,6 +87,61 @@ public class PaymentDispute : EntityBase
     {
         Status = DisputeStatus.Submitted;
         DueDate = dueDate;
+    }
+
+    /// <summary>
+    ///     Binds the gateway identity (dispute id + evidence deadline) for a dispute reconciled
+    ///     from a gateway webhook (issue #419). Idempotent: rebinding the same id is a no-op.
+    /// </summary>
+    public void BindGatewayIdentity(string gatewayName, string gatewayDisputeId, DateTime? evidenceDueBy = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayDisputeId);
+
+        if (GatewayDisputeId is not null &&
+            !string.Equals(GatewayDisputeId, gatewayDisputeId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("A dispute cannot be rebound to a different gateway dispute.");
+        }
+
+        GatewayName = gatewayName;
+        GatewayDisputeId = gatewayDisputeId;
+        if (evidenceDueBy.HasValue)
+        {
+            EvidenceDueBy = evidenceDueBy.Value;
+            if (DueDate is null)
+            {
+                DueDate = evidenceDueBy.Value;
+            }
+        }
+
+        Touch();
+    }
+
+    /// <summary>
+    ///     Applies a gateway-reported dispute status (issue #419 webhook reconciliation).
+    ///     Terminal local states are never reopened by a late gateway update.
+    /// </summary>
+    public void ApplyGatewayStatus(DisputeStatus gatewayStatus, DateTime? evidenceDueBy = null)
+    {
+        if (Status is DisputeStatus.Resolved or DisputeStatus.Won or DisputeStatus.Lost or DisputeStatus.Cancelled)
+        {
+            return;
+        }
+
+        Status = gatewayStatus;
+        if (evidenceDueBy.HasValue)
+        {
+            EvidenceDueBy = evidenceDueBy.Value;
+            DueDate = evidenceDueBy.Value;
+        }
+
+        if (gatewayStatus is DisputeStatus.Won or DisputeStatus.Lost)
+        {
+            ResolvedAt ??= SystemClock.UtcNow;
+        }
+
+        Touch();
     }
 
     /// <summary>Move dispute to review</summary>

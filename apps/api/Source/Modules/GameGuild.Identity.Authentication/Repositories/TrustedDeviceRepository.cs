@@ -55,7 +55,10 @@ public class TrustedDeviceRepository(IApplicationDbContext context) : ITrustedDe
     {
         var device = await GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
 
-        if (device == null) return;
+        if (device == null)
+        {
+            return;
+        }
 
         device.IsActive = false;
         device.UpdatedAt = SystemClock.UtcNow;
@@ -67,7 +70,10 @@ public class TrustedDeviceRepository(IApplicationDbContext context) : ITrustedDe
     {
         var userDevices = await TrustedDevices.Where(d => d.UserId == userId && d.IsActive).ToListAsync(cancellationToken);
 
-        if (userDevices.Count == 0) return;
+        if (userDevices.Count == 0)
+        {
+            return;
+        }
 
         var now = SystemClock.UtcNow;
 
@@ -85,7 +91,10 @@ public class TrustedDeviceRepository(IApplicationDbContext context) : ITrustedDe
     {
         var expiredDevices = await TrustedDevices.Where(d => d.ExpiresAt.HasValue && d.ExpiresAt.Value < now || !d.IsActive && d.UpdatedAt < now.AddDays(-90)).ToListAsync(cancellationToken);
 
-        if (expiredDevices.Count == 0) return;
+        if (expiredDevices.Count == 0)
+        {
+            return;
+        }
 
         TrustedDevices.RemoveRange(expiredDevices);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -103,7 +112,10 @@ public class TrustedDeviceRepository(IApplicationDbContext context) : ITrustedDe
     {
         var device = await GetByUserAndFingerprintAsync(userId, deviceFingerprint, cancellationToken).ConfigureAwait(false);
 
-        if (device == null) return false;
+        if (device == null)
+        {
+            return false;
+        }
 
         var now = SystemClock.UtcNow;
 

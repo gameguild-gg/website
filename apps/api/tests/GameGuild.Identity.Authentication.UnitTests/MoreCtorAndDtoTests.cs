@@ -36,7 +36,7 @@ public class MoreCtorAndDtoTests
         var svc = new PolymorphicSignInHandler(
             Mock.Of<IAuthService>(),
             Mock.Of<IUserRepository>(),
-            NullLogger<PolymorphicSignInHandler>.Instance,
+            NullLogger<PolymorphicSignInHandler>.Instance, new PasswordSignInAdmissionStub(),
             null);
         svc.Should().NotBeNull();
     }

@@ -46,6 +46,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Staging}
       - ASPNETCORE_HTTP_PORTS=8080
+      - OpenTelemetry__Enabled=${OPENTELEMETRY_ENABLED:-false}
+      - OpenTelemetry__ServiceName=${OPENTELEMETRY_SERVICE_NAME:-GameGuild.API}
+      - OpenTelemetry__ServiceInstanceId=${OPENTELEMETRY_SERVICE_INSTANCE_ID:-}
+      - OpenTelemetry__OtlpEndpoint=${OPENTELEMETRY_OTLP_ENDPOINT:-}
+      - OpenTelemetry__OtlpProtocol=${OPENTELEMETRY_OTLP_PROTOCOL:-http/protobuf}
+      - OpenTelemetry__ConsoleExporterEnabled=${OPENTELEMETRY_CONSOLE_EXPORTER_ENABLED:-false}
+      - OpenTelemetry__IncludeSqlStatements=${OPENTELEMETRY_INCLUDE_SQL_STATEMENTS:-false}
       - Authentication__Web3__Siwe__Origin=${WEB_PUBLIC_URL:?set WEB_PUBLIC_URL}
       - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
       - DATAPROTECTION_KEYS_PATH=/app/.aspnet/DataProtection-Keys

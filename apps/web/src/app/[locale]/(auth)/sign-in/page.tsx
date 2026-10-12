@@ -34,6 +34,7 @@ export default async function Page({
       <AuthErrorNotice errorCode={errorCode} />
       <SignInForm
         magicLinkLabel={t('magicLink')}
+        emailCodeLabel={t('emailCode')}
         providers={
           <div className="flex flex-col gap-3">
             <GoogleSignInButton redirectTo={redirectTo} />

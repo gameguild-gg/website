@@ -3,6 +3,7 @@ using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -77,15 +78,13 @@ public class PeerReviewClaimTests
         await using var db = CreateContext();
         var (assessment, ownGroupId, targetGroupId) = await SeedGroupAssessmentAsync(db);
         var actorId = Guid.NewGuid();
-        await SeedGroupMembershipAsync(db, ownGroupId, actorId);
-        await SeedSubmittedRowAsync(db, assessment.Id, actorId, groupId: ownGroupId);
-        var targetRows = new List<AssessmentSubmission>();
-        for (var i = 0; i < 2; i++)
-        {
-            var memberId = Guid.NewGuid();
-            await SeedGroupMembershipAsync(db, targetGroupId, memberId);
-            targetRows.Add(await SeedSubmittedRowAsync(db, assessment.Id, memberId, groupId: targetGroupId));
-        }
+        await SeedCollectiveSubmittedRowAsync(db, assessment.Id, ownGroupId, actorId, Guid.NewGuid());
+        var target = await SeedCollectiveSubmittedRowAsync(
+            db,
+            assessment.Id,
+            targetGroupId,
+            Guid.NewGuid(),
+            Guid.NewGuid());
         var service = CreateService(db);
 
         var result = await service.ClaimAsync(assessment.Id, actorId);
@@ -93,9 +92,7 @@ public class PeerReviewClaimTests
         result.IsSuccess.Should().BeTrue();
         var claimedSubmissionId = (await db.Set<AssessmentPeerReview>()
             .SingleAsync(r => r.ReviewerUserId == actorId)).SubmissionId;
-        claimedSubmissionId.Should().Be(
-            targetRows.OrderBy(r => r.Id).First().Id,
-            "a group target is represented by its canonical Min(Id) row of the latest attempt");
+        claimedSubmissionId.Should().Be(target.Id, "a group target has one collective submission");
     }
 
     [Fact]
@@ -199,30 +196,20 @@ public class PeerReviewClaimTests
     }
 
     [Fact]
-    public async Task Claim_GroupAttemptWithThreeMemberRows_AppearsOnceInEligibility()
+    public async Task Claim_CollectiveAttempt_AppearsOnceInEligibility()
     {
-        // Lone target group G (3 member rows) + one individual target; two reviewers in their own
-        // group H. Dedup means G counts as ONE least-reviewed target: the two consecutive claims can
-        // never land on two different rows of the same group attempt (nor both on G).
         await using var db = CreateContext();
         var (assessment, ownGroupId, targetGroupId) = await SeedGroupAssessmentAsync(db);
-        var targetRows = new List<AssessmentSubmission>();
-        for (var i = 0; i < 3; i++)
-        {
-            var memberId = Guid.NewGuid();
-            await SeedGroupMembershipAsync(db, targetGroupId, memberId);
-            targetRows.Add(await SeedSubmittedRowAsync(db, assessment.Id, memberId, groupId: targetGroupId));
-        }
+        var target = await SeedCollectiveSubmittedRowAsync(
+            db,
+            assessment.Id,
+            targetGroupId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid());
         var individualRow = await SeedSubmittedRowAsync(db, assessment.Id, Guid.NewGuid());
-        var reviewerIds = new List<Guid>();
-        for (var i = 0; i < 2; i++)
-        {
-            var reviewerId = Guid.NewGuid();
-            reviewerIds.Add(reviewerId);
-            await SeedGroupMembershipAsync(db, ownGroupId, reviewerId);
-            await SeedSubmittedRowAsync(db, assessment.Id, reviewerId, groupId: ownGroupId);
-        }
-        var canonical = targetRows.OrderBy(r => r.Id).First().Id;
+        var reviewerIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        await SeedCollectiveSubmittedRowAsync(db, assessment.Id, ownGroupId, reviewerIds);
         var service = CreateService(db);
 
         var first = await service.ClaimAsync(assessment.Id, reviewerIds[0]);
@@ -233,13 +220,8 @@ public class PeerReviewClaimTests
         var firstClaimed = await db.Set<AssessmentPeerReview>().SingleAsync(r => r.ReviewerUserId == reviewerIds[0]);
         var secondClaimed = await db.Set<AssessmentPeerReview>().SingleAsync(r => r.ReviewerUserId == reviewerIds[1]);
         firstClaimed.SubmissionId.Should().NotBe(secondClaimed.SubmissionId);
-        foreach (var claimed in new[] { firstClaimed, secondClaimed })
-        {
-            if (targetRows.Select(r => r.Id).Contains(claimed.SubmissionId))
-            {
-                claimed.SubmissionId.Should().Be(canonical, "a group target is only ever its canonical row");
-            }
-        }
+        new[] { firstClaimed.SubmissionId, secondClaimed.SubmissionId }
+            .Should().BeEquivalentTo([target.Id, individualRow.Id]);
     }
 
     [Fact]
@@ -285,29 +267,53 @@ public class PeerReviewClaimTests
     private readonly Mock<IActorContextAccessor> _actor = new();
     private readonly Mock<IProgramCrudService> _programs = new();
     private readonly Mock<IPermissionQueryService> _permissions = new();
+    private readonly Mock<ICourseEnrollmentAccessReader> _courseEnrollments = new();
     private readonly Mock<ILogger<PeerReviewsController>> _log = new();
 
     private PeerReviewsController CreateController(Guid? userId = null, Guid? tenantId = null, Guid? programTenantId = null)
     {
         var uid = userId ?? Guid.NewGuid();
+        var effectiveTenantId = tenantId ?? Guid.NewGuid();
         _actor.Setup(a => a.ActorContext).Returns(new ActorContext
         {
             ActorKind = ActorKind.User,
             SubjectId = uid.ToString(),
-            TenantId = tenantId ?? Guid.NewGuid(),
+            TenantId = effectiveTenantId,
             IsAuthenticated = true,
             Roles = new HashSet<string>(),
             Permissions = new HashSet<string>()
         });
+        _permissions.Setup(service => service.IsUserInTenantAsync(
+                uid,
+                effectiveTenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _courseEnrollments.Setup(service => service.HasActiveEnrollmentAsync(
+                It.IsAny<Guid>(),
+                uid,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var programReads = new Mock<IProgramReadService>();
+        programReads.Setup(service => service.GetProgramByIdAsync(It.IsAny<Guid>()))
+            .Returns<Guid>(courseId => _programs.Object.GetProgramByIdAsync(courseId));
         return new PeerReviewsController(
             _svc.Object,
             _assessments.Object,
             _rubrics.Object,
             _actor.Object,
-            _programs.Object,
-            _permissions.Object,
+            new CourseAccessEvaluator(
+                programReads.Object,
+                _courseEnrollments.Object,
+                _actor.Object,
+                _permissions.Object),
             _log.Object,
-            new AssessmentEndpointTestSender(peerReviewService: _svc.Object));
+            new AssessmentEndpointTestSender(peerReviewService: _svc.Object))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+            }
+        };
     }
 
     private void SetupAssessment(Guid assessmentId, Guid courseId, Guid? programTenantId = null)
@@ -331,7 +337,7 @@ public class PeerReviewClaimTests
         });
         var controller = new PeerReviewsController(
             _svc.Object, _assessments.Object, _rubrics.Object, _actor.Object,
-            _programs.Object, _permissions.Object, _log.Object,
+            Mock.Of<ICourseAccessEvaluator>(), _log.Object,
             new AssessmentEndpointTestSender(peerReviewService: _svc.Object));
 
         var result = await controller.ClaimPeerReview(Guid.NewGuid());
@@ -469,6 +475,31 @@ public class PeerReviewClaimTests
         return row;
     }
 
+    private static async Task<AssessmentSubmission> SeedCollectiveSubmittedRowAsync(
+        TestPeerReviewDbContext db,
+        Guid assessmentId,
+        Guid groupId,
+        params Guid[] participantIds)
+    {
+        var row = AssessmentSubmission.StartCollective(
+            null,
+            assessmentId,
+            Guid.NewGuid(),
+            groupId,
+            participantIds[0],
+            1);
+        row.SetPayload(new SubmitAssessmentRequest(TextPayload: "peer work"), SubmissionModality.Text);
+        row.Submit();
+        db.Add(row);
+        db.AddRange(participantIds.Select(userId => AssessmentSubmissionParticipant.Create(
+            null,
+            row.Id,
+            Guid.NewGuid(),
+            userId)));
+        await db.SaveChangesAsync();
+        return row;
+    }
+
     private static async Task SeedReviewAsync(
         TestPeerReviewDbContext db, Guid assessmentId, Guid submissionId, Guid reviewerUserId)
     {
@@ -495,13 +526,6 @@ public class PeerReviewClaimTests
         return (assessment, ownGroupId, targetGroupId);
     }
 
-    private static async Task SeedGroupMembershipAsync(
-        TestPeerReviewDbContext db, Guid groupId, Guid userId)
-    {
-        db.Add(CourseGroupMember.Create(groupId, userId));
-        await db.SaveChangesAsync();
-    }
-
     private static TestPeerReviewDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<TestPeerReviewDbContext>()
@@ -516,6 +540,7 @@ public class PeerReviewClaimTests
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             new AssessmentsModelConfiguration().Configure(modelBuilder);
+            new GradingPersistenceModelConfiguration().Configure(modelBuilder);
         }
 
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

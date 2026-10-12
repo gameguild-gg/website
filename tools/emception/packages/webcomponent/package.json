@@ -40,7 +40,7 @@
     "emception": "4.4.0"
   },
   "peerDependencies": {
-    "@gameguild/emception-xterm": "^4.3.0"
+    "@gameguild/emception-xterm": "^4.4.0"
   },
   "peerDependenciesMeta": {
     "@gameguild/emception-xterm": {

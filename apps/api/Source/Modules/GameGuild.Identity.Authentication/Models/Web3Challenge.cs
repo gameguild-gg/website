@@ -45,7 +45,12 @@ public class Web3Challenge
     /// <summary>
     ///     Gets whether the challenge is still valid (not expired).
     /// </summary>
-    public bool IsValid { get => Volatile.Read(ref _isConsumed) == 0 && SystemClock.UtcNow < ExpiresAt; }
+    public bool IsValid { get => IsValidAt(SystemClock.UtcNow); }
+
+    /// <summary>
+    ///     Validates expiry and consumption against the verifier's trusted clock.
+    /// </summary>
+    public bool IsValidAt(DateTime utcNow) => Volatile.Read(ref _isConsumed) == 0 && utcNow < ExpiresAt;
 
     /// <summary>
     ///     Atomically claims this challenge for one successful verification.

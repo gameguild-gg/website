@@ -36,16 +36,22 @@ public sealed class TenantResourceSettingsController(
         
         // Fail-closed: No actor means no access
         if (actor is null || !actor.IsAuthenticated || !actor.SubjectIdAsGuid.HasValue)
+        {
             return false;
-        
+        }
+
         // System admins bypass tenant membership check
         if (actor.IsSystemAdmin)
+        {
             return true;
-        
+        }
+
         // If actor's current tenant matches, allow access
         if (actor.TenantId.HasValue && actor.TenantId.Value == tenantId)
+        {
             return true;
-        
+        }
+
         // Check actual tenant membership in database
         return await tenantMembershipChecker.IsUserMemberOfTenantAsync(
             actor.SubjectIdAsGuid.Value, 
@@ -68,8 +74,10 @@ public sealed class TenantResourceSettingsController(
     public async Task<IActionResult> GetTenantSettings(Guid tenantId, [FromQuery] string? category, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         if (!string.IsNullOrEmpty(category)) { return Ok(await settingsRepository.GetByCategoryAsync(tenantId, category, ct).ConfigureAwait(false)); }
 
         return Ok(await settingsRepository.GetByTenantAsync(tenantId, ct).ConfigureAwait(false));
@@ -91,11 +99,16 @@ public sealed class TenantResourceSettingsController(
     public async Task<IActionResult> GetTenantSettingByKey(Guid tenantId, string key, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         var setting = await settingsRepository.GetByKeyAsync(tenantId, key, ct).ConfigureAwait(false);
 
-        if (setting == null) return NotFound($"Setting not found for key: {key}");
+        if (setting == null)
+        {
+            return NotFound($"Setting not found for key: {key}");
+        }
 
         return Ok(setting);
     }
@@ -117,11 +130,16 @@ public sealed class TenantResourceSettingsController(
     public async Task<IActionResult> GetEffectiveValue(Guid tenantId, string key, [FromQuery] Guid? userId, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         var value = await settingsRepository.GetEffectiveValueAsync(tenantId, key, userId, ct).ConfigureAwait(false);
 
-        if (value == null) return NotFound($"Setting not found for key: {key}");
+        if (value == null)
+        {
+            return NotFound($"Setting not found for key: {key}");
+        }
 
         return Ok(new EffectiveSettingResponse(key, value, userId.HasValue));
     }
@@ -143,8 +161,10 @@ public sealed class TenantResourceSettingsController(
     public async Task<IActionResult> SetTenantSetting(Guid tenantId, string key, [FromBody] SetResourceSettingsRequest body, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         ArgumentNullException.ThrowIfNull(body);
 
         var setting = await sender.Send(new SetTenantResourceSettingCommand(tenantId, key, body), ct)
@@ -168,12 +188,17 @@ public sealed class TenantResourceSettingsController(
     public async Task<IActionResult> DeleteTenantSetting(Guid tenantId, string key, CancellationToken ct)
     {
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
+        {
             return Forbid();
-        
+        }
+
         var deleted = await sender.Send(new DeleteTenantResourceSettingCommand(tenantId, key), ct)
             .ConfigureAwait(false);
 
-        if (!deleted) return NotFound($"Setting not found for key: {key}");
+        if (!deleted)
+        {
+            return NotFound($"Setting not found for key: {key}");
+        }
 
         return NoContent();
     }

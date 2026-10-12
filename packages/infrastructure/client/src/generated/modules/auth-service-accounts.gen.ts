@@ -20,7 +20,7 @@ export class AuthServiceAccountsModule {
    */
   async getAuthServiceAccountsForGetAuthServiceAccounts(query?: {
     tenantId?: string;
-  }): Promise<Result<Array<Types.IdentityAuthenticationServiceAccountOutput>, ApiError>> {
+  }): Promise<Result<Types.IdentityAuthenticationServiceAccountOutput[], ApiError>> {
     const url = '/v1/auth/service-accounts';
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class AuthServiceAccountsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthenticationServiceAccountOutput>, ApiError>;
+    return result as Result<Types.IdentityAuthenticationServiceAccountOutput[], ApiError>;
   }
 
   /**

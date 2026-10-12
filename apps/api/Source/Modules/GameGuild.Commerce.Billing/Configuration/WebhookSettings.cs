@@ -29,6 +29,47 @@ public class WebhookSettings
     ///     Retry policy configuration for failed webhook processing.
     /// </summary>
     public WebhookRetryPolicy RetryPolicy { get; set; } = new WebhookRetryPolicy();
+
+    /// <summary>
+    ///     Security hardening for webhook callback endpoints (source IP allowlist,
+    ///     suspicious-activity auto-blocking). See <see cref="WebhookSecuritySettings"/>.
+    /// </summary>
+    public WebhookSecuritySettings Security { get; set; } = new WebhookSecuritySettings();
+
+    /// <summary>
+    ///     Asynchronous retry worker for failed webhook inbox events (issue #396).
+    /// </summary>
+    public WebhookRetryWorkerSettings RetryWorker { get; set; } = new WebhookRetryWorkerSettings();
+}
+
+/// <summary>
+///     Configuration for the hosted billing webhook retry worker that requeues failed
+///     inbox events with exponential backoff.
+/// </summary>
+public class WebhookRetryWorkerSettings
+{
+    /// <summary>
+    ///     Whether the retry worker runs. When disabled, retries stay manual
+    ///     (POST /api/v{v}/billing/webhooks/webhook-events/{id}:retry).
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    ///     Delay between worker polling cycles in seconds.
+    /// </summary>
+    public int PollIntervalSeconds { get; set; } = 30;
+
+    /// <summary>
+    ///     Maximum number of due events processed per polling cycle.
+    /// </summary>
+    public int BatchSize { get; set; } = 20;
+
+    /// <summary>
+    ///     Hard ceiling on retry attempts honored by the worker, matching the
+    ///     manual retry path (RetryWebhookEventHandler). Events at or beyond this
+    ///     count are left for dead-letter inspection instead of being requeued.
+    /// </summary>
+    public int MaxRetryAttempts { get; set; } = 5;
 }
 
 /// <summary>
@@ -74,7 +115,9 @@ public class WebhookRetryPolicy
     public int CalculateDelaySeconds(int attemptNumber)
     {
         if (attemptNumber <= 0)
+        {
             return 0;
+        }
 
         var baseDelay = InitialDelaySeconds * Math.Pow(BackoffMultiplier, attemptNumber - 1);
         var delay = Math.Min(baseDelay, MaxDelaySeconds);

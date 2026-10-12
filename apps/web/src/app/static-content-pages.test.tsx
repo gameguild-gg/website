@@ -1,6 +1,13 @@
 import { render, screen, within } from '@testing-library/react';
+import { cookies } from 'next/headers';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+
+// These pages render directly outside Next's request runtime. Model an
+// anonymous request while keeping the real server authentication reader.
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({ get: () => undefined })),
+}));
 
 vi.mock('@/i18n', () => ({
   Link: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; children: ReactNode }) => (
@@ -41,6 +48,7 @@ describe('static legal and project pages', () => {
   it('renders the public home page with a website header and footer', async () => {
     const homeContent = await HomePage({ params: Promise.resolve({ locale: 'en-US' }) } as PageProps<'/[locale]'>);
     render(await HomeLayout({ children: homeContent }));
+    expect(cookies).toHaveBeenCalled();
 
     const banner = screen.getByRole('banner');
     const mainNavigation = within(banner).getByRole('navigation', { name: /main navigation/i });

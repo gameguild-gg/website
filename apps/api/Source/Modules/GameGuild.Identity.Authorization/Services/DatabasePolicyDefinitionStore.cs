@@ -22,11 +22,15 @@ public sealed class DatabasePolicyDefinitionStore(IPolicyDefinitionRepository re
         Guid? tenantGuid = string.IsNullOrEmpty(tenantId) ? null : Guid.TryParse(tenantId, out var g) ? g : null;
         
         if (!string.IsNullOrEmpty(tenantId) && !tenantGuid.HasValue)
+        {
             return null;
+        }
 
         var entity = await repository.GetByNameAsync(policyName, tenantGuid, cancellationToken).ConfigureAwait(false);
         if (tenantGuid.HasValue && entity?.TenantId != tenantGuid)
+        {
             return null;
+        }
 
         return entity == null ? null : MapToDefinition(entity);
     }
@@ -37,7 +41,9 @@ public sealed class DatabasePolicyDefinitionStore(IPolicyDefinitionRepository re
         CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(tenantId, out var tenantGuid))
+        {
             return [];
+        }
 
         var entities = await repository.GetByTenantAsync(tenantGuid, includeGlobal: true, cancellationToken).ConfigureAwait(false);
         
@@ -50,7 +56,9 @@ public sealed class DatabasePolicyDefinitionStore(IPolicyDefinitionRepository re
         CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(tenantId, out var tenantGuid))
+        {
             return 0;
+        }
 
         var policies = await repository.GetByTenantAsync(tenantGuid, includeGlobal: false, cancellationToken).ConfigureAwait(false);
         
@@ -92,7 +100,9 @@ public sealed class DatabasePolicyDefinitionStore(IPolicyDefinitionRepository re
     private static (IReadOnlyList<string> Values, bool IsValid) DeserializeList(string? json)
     {
         if (string.IsNullOrEmpty(json) || json == "[]")
+        {
             return ([], true);
+        }
 
         try
         {
@@ -108,7 +118,9 @@ public sealed class DatabasePolicyDefinitionStore(IPolicyDefinitionRepository re
     private static (IReadOnlyList<PolicyRule>? Values, bool IsValid) DeserializeRules(string? json)
     {
         if (string.IsNullOrEmpty(json))
+        {
             return (null, true);
+        }
 
         try
         {

@@ -21,17 +21,17 @@ export class LearningExperienceSocialRepliesModule {
   async getApiSocialDiscussionsReplies(
     discussionId: string,
     query?: { skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceSocialServicesDiscussionReplyDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReplyDto[], ApiError>> {
     const url = `/api/social/discussions/${discussionId}/replies`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesDiscussionReplyDto>, ApiError>;
+    return result as Result<Types.LearningExperienceSocialServicesDiscussionReplyDto[], ApiError>;
   }
 
   /**

@@ -124,7 +124,7 @@ export function removeLeaf(root: LayoutNode, leafId: string): LayoutNode | null 
   }
 
   if (newChildren.length === 0) return null
-  if (newChildren.length === 1) return newChildren[0]!
+  if (newChildren.length === 1) return newChildren[0]
 
   // Re-normalize sizes to sum to 100.
   const total = keptSizes.reduce((acc, s) => acc + s, 0)

@@ -76,10 +76,76 @@ public sealed class AuthController(ISender sender) : BaseApiController
         {
             Email = body.Email,
             Password = body.Password,
-            TenantId = body.TenantId
+            TenantId = body.TenantId,
+            DeviceFingerprint = body.DeviceFingerprint,
+            RememberMe = body.RememberMe
         };
 
         return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Provision the first TOTP factor using only the limited first-factor challenge.</summary>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/sign-in/enrollment")]
+    [EndpointSummary("Start limited MFA enrollment")]
+    [EndpointDescription("Returns TOTP provisioning data for the server-bound unenrolled account. The expiring challenge grants no session or ordinary credentials. Recovery codes are returned only after TOTP confirmation at the completion endpoint.")]
+    [ProducesResponseType<MfaSignInEnrollmentResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> StartMfaSignInEnrollment([FromBody] StartMfaSignInEnrollmentRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var response = await sender.Send(new StartMfaSignInEnrollmentCommand { MfaToken = body.MfaToken }, ct).ConfigureAwait(false);
+        return response.Success ? Ok(response) : Unauthorized(new ProblemDetails
+        {
+            Status = StatusCodes.Status401Unauthorized, Title = "Unauthorized", Detail = "Additional verification failed"
+        });
+    }
+
+    /// <summary>Complete a verified first factor with the account's enrolled or newly provisioned MFA method.</summary>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/mfa/sign-in/complete")]
+    [EndpointSummary("Complete MFA sign-in")]
+    [EndpointDescription("Consumes the expiring first-factor challenge and verifies TOTP or a backup code. Identity, tenant, policy and token version come from the server-side challenge. A successful response contains MFA-bound credentials.")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CompleteMfaSignIn([FromBody] CompleteMfaSignInRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var result = await ExecuteAuthCommandAsync(new CompleteMfaSignInCommand
+        {
+            MfaToken = body.MfaToken, Code = body.Code, Method = body.Method,
+            DeviceFingerprint = body.DeviceFingerprint
+        }, ct).ConfigureAwait(false);
+        return result is OkObjectResult { Value: SignInResponse { Success: false } }
+            ? Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized, Title = "Unauthorized", Detail = "Additional verification failed"
+            })
+            : result;
+    }
+
+    /// <summary>Authenticate using email, username or international phone and a password.</summary>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/polymorphic")]
+    [EndpointSummary("Sign in with email, username or phone")]
+    [EndpointDescription("Resolves one unique account and applies the existing password, risk, tenant and session flow. Phone identifiers use a leading plus and up to 15 digits. Missing, ambiguous or invalid identifiers receive the generic authentication failure.")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public Task<IActionResult> PolymorphicSignIn([FromBody] PolymorphicSignInRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        return ExecuteAuthCommandAsync(new PolymorphicSignInCommand
+        {
+            Credential = body.Credential,
+            CredentialType = body.CredentialType,
+            Password = body.Password,
+            TenantId = body.TenantId,
+            DeviceFingerprint = body.DeviceFingerprint,
+            RememberMe = body.RememberMe
+        }, ct);
     }
 
     /// <summary>
@@ -101,7 +167,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
         var command = new GoogleIdTokenSignInCommand
         {
             IdToken = body.IdToken,
-            TenantId = body.TenantId
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
         };
 
         return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
@@ -183,6 +250,63 @@ public sealed class AuthController(ISender sender) : BaseApiController
         return Ok(result);
     }
 
+    /// <summary>
+    ///     Request a one-time email sign-in code.
+    /// </summary>
+    /// <param name="body">Email-code request with email and optional tenant context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Generic confirmation; does not reveal whether the account exists</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/email-code:request")]
+    [EndpointSummary("Request a one-time email sign-in code")]
+    [EndpointDescription("Generates a short-lived six-digit one-time code and dispatches the email-code notification. Always returns a generic success response to prevent user enumeration.")]
+    [ProducesResponseType<EmailCodeRequestResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RequestEmailCode([FromBody] RequestEmailCodeRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new RequestEmailCodeCommand
+        {
+            Email = body.Email,
+            TenantId = body.TenantId,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = Request.Headers.UserAgent.ToString()
+        };
+
+        var result = await sender.Send(command, ct).ConfigureAwait(false);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Consume a one-time email sign-in code.
+    /// </summary>
+    /// <param name="body">Email, six-digit code, and optional tenant/device context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Authentication response with access and refresh tokens</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/email-code:consume")]
+    [EndpointSummary("Consume a one-time email sign-in code")]
+    [EndpointDescription("Consumes a short-lived single-use six-digit email code and returns access and refresh tokens using the same session issuance path as the magic link.")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ConsumeEmailCode([FromBody] ConsumeEmailCodeRequest body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new ConsumeEmailCodeCommand
+        {
+            Email = body.Email,
+            Code = body.Code,
+            TenantId = body.TenantId,
+            DeviceFingerprint = body.DeviceFingerprint,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = Request.Headers.UserAgent.ToString()
+        };
+
+        return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
+    }
+
     #endregion
 
     #region Discord OAuth sign-in - /v1/auth/discord
@@ -239,7 +363,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
             Code = body.Code,
             State = body.State,
             RedirectUri = body.RedirectUri,
-            TenantId = body.TenantId
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
         };
 
         try
@@ -272,6 +397,143 @@ public sealed class AuthController(ISender sender) : BaseApiController
 
     #endregion
 
+    #region OIDC federation sign-in - /v1/auth/oidc
+
+    /// <summary>
+    ///     Initiate OIDC federation provider sign-in
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="body">Redirect URI registered with the federation provider</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Provider authorization URL and CSRF state parameter</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/oidc/{slug}:sign-in-authorize")]
+    [EndpointSummary("Initiate OIDC federation sign-in")]
+    [EndpointDescription("Initiates the authorization-code sign-in flow with a configured enterprise OIDC federation provider (Authentication:ExternalProviders:Oidc:<slug>), returning the discovered authorization URL with the CSRF state parameter.")]
+    [ProducesResponseType<OidcSignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> OidcSignIn([FromRoute] string slug, [FromBody] OidcAuthorizeRequestDto body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new OidcSignInCommand { Slug = slug, RedirectUri = body.RedirectUri };
+
+        try
+        {
+            var result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return OidcNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Handle OIDC federation provider callback
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="body">Callback with authorization code, state, redirect URI, and optional tenant context</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Authentication tokens on success</returns>
+    [AllowAnonymous]
+    [HttpPost("v{version:apiVersion}/auth/oidc/{slug}:sign-in-callback")]
+    [EndpointSummary("OIDC federation sign-in callback")]
+    [EndpointDescription("Exchanges the OIDC authorization code at the provider's discovered token endpoint, validates the returned ID token (issuer, audience, lifetime, RS256 signature via JWKS), and applies the same account matching and auto-link policy as the social providers. Fail closed when the platform MFA policy is not attested by the provider (amr).")]
+    [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> OidcCallback([FromRoute] string slug, [FromBody] OidcCallbackRequestDto body, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var command = new OidcCallbackCommand
+        {
+            Slug = slug,
+            Code = body.Code,
+            State = body.State,
+            RedirectUri = body.RedirectUri,
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
+        };
+
+        try
+        {
+            SignInResponse result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return OidcNotConfigured(ex);
+        }
+    }
+
+    /// <summary>
+    ///     Discover federation providers for an email domain
+    /// </summary>
+    /// <param name="email">Email address (or bare domain) to route to its federation providers</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>Federation providers whose configured email domains match</returns>
+    [AllowAnonymous]
+    [HttpGet("v{version:apiVersion}/auth/oidc:discover-provider")]
+    [EndpointSummary("Discover OIDC federation providers by email domain")]
+    [EndpointDescription("Lists the enabled enterprise OIDC federation providers whose configured EmailDomains include the requested address's domain, so the login page can route users before any session exists.")]
+    [ProducesResponseType<OidcDiscoverProviderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> OidcDiscoverProvider([FromQuery] string email, CancellationToken ct)
+    {
+        var query = new DiscoverOidcProvidersQuery { Email = email };
+        var result = await sender.Send(query, ct).ConfigureAwait(false);
+        return Ok(result);
+    }
+
+    /// <summary>
+    ///     Resolve the provider's front-channel logout URL
+    /// </summary>
+    /// <param name="slug">Configured federation provider slug</param>
+    /// <param name="postLogoutRedirectUri">Where the provider should return the browser after its logout</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The end-session URL, or null when the provider does not advertise one</returns>
+    [Authorize]
+    [HttpGet("v{version:apiVersion}/auth/oidc/{slug}:end-session-url")]
+    [EndpointSummary("Resolve OIDC logout forwarding URL")]
+    [EndpointDescription("Returns the provider's discovered end_session_endpoint with the post-logout redirect applied, for front-channel logout forwarding. Local refresh-token revocation is unchanged and remains the caller's responsibility.")]
+    [ProducesResponseType<OidcEndSessionUrlResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> OidcEndSessionUrl([FromRoute] string slug, [FromQuery] string? postLogoutRedirectUri, CancellationToken ct)
+    {
+        var query = new GetOidcEndSessionUrlQuery { Slug = slug, PostLogoutRedirectUri = postLogoutRedirectUri };
+
+        try
+        {
+            var result = await sender.Send(query, ct).ConfigureAwait(false);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return OidcNotConfigured(ex);
+        }
+    }
+
+    private ObjectResult OidcNotConfigured(InvalidOperationException ex)
+    {
+        return Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "OIDC federation provider is not configured",
+            detail: ex.Message);
+    }
+
+    #endregion
+
     #region Token Operations - /v1/auth/tokens
 
     /// <summary>
@@ -296,7 +558,15 @@ public sealed class AuthController(ISender sender) : BaseApiController
             TenantId = body.TenantId
         };
 
-        return await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
+        var result = await ExecuteAuthCommandAsync(command, ct).ConfigureAwait(false);
+        return result is OkObjectResult { Value: SignInResponse { Success: false } }
+            ? Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = "Invalid refresh token"
+            })
+            : result;
     }
 
     /// <summary>
@@ -312,6 +582,7 @@ public sealed class AuthController(ISender sender) : BaseApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> RevokeToken([FromBody] RevokeRefreshTokenRequest body, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(body);
@@ -549,38 +820,55 @@ public sealed class AuthController(ISender sender) : BaseApiController
     /// <summary>
     ///     Handle GitHub OAuth callback
     /// </summary>
-    /// <param name="code">OAuth authorization code</param>
-    /// <param name="state">State parameter for CSRF protection</param>
+    /// <param name="body">GitHub callback with authorization code, state, redirect URI, and optional tenant context</param>
     /// <param name="ct">Cancellation token</param>
     /// <returns>Authentication tokens on success</returns>
     [AllowAnonymous]
-    [HttpGet("v{version:apiVersion}/auth/github:callback")]
-    [EndpointSummary("GitHub OAuth callback")]
-    [EndpointDescription("Handles the GitHub OAuth callback, exchanging the authorization code for tokens.")]
+    [HttpPost("v{version:apiVersion}/auth/github:callback")]
+    [EndpointSummary("GitHub OAuth sign-in callback")]
+    [EndpointDescription("Exchanges the GitHub OAuth authorization code for access and refresh tokens, applying the same account matching, scope-grant consent recording and auto-link policy as Google/Discord sign-in.")]
     [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GitHubCallback([FromQuery] string code, [FromQuery] string state, CancellationToken ct)
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GitHubCallback([FromBody] GitHubCallbackRequestDto body, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(code))
-        {
-            return BadRequest("Authorization code is required");
-        }
-
+        ArgumentNullException.ThrowIfNull(body);
         var command = new GitHubCallbackCommand
         {
-            Code = code,
-            State = state ?? string.Empty
+            Code = body.Code,
+            State = body.State,
+            RedirectUri = body.RedirectUri,
+            TenantId = body.TenantId,
+            RememberMe = body.RememberMe
         };
 
-        var result = await sender.Send(command, ct).ConfigureAwait(false);
-
-        if (!result.Success)
+        try
         {
-            return Unauthorized(result);
+            SignInResponse result = await sender.Send(command, ct).ConfigureAwait(false);
+            return Ok(result);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return GitHubNotConfigured(ex);
+        }
+    }
 
-        return Ok(result);
+    private ObjectResult GitHubNotConfigured(InvalidOperationException ex)
+    {
+        return Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "GitHub OAuth is not configured",
+            detail: ex.Message);
     }
 
     #endregion
@@ -611,7 +899,8 @@ public sealed class AuthController(ISender sender) : BaseApiController
             Nonce = body.Nonce,
             ChainId = body.ChainId,
             TenantId = body.TenantId,
-            DeviceFingerprint = body.DeviceFingerprint
+            DeviceFingerprint = body.DeviceFingerprint,
+            RememberMe = body.RememberMe
         };
 
         var result = await sender.Send(command, ct).ConfigureAwait(false);

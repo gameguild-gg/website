@@ -308,7 +308,7 @@ export function MermaidViewer({
     };
     rafId = requestAnimationFrame(tryCalc);
 
-    const ro = new ResizeObserver(() => calculateFullscreenBaseScale());
+    const ro = new ResizeObserver(() => { calculateFullscreenBaseScale(); });
     ro.observe(container);
 
     return () => {

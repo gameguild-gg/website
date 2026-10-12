@@ -24,7 +24,7 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ initialData, onSave, onCancel }: RichTextEditorProps) {
-  const [title, setTitle] = useState(initialData?.title || "")
+  const [title, setTitle] = useState(initialData?.title ?? "")
   const editorStateRef = useRef<SerializedEditorState | null>(initialData?.content ?? null)
   const settings = useEditorSettings("rich-text")
 

@@ -17,7 +17,7 @@ export class FeaturesModule {
 
   /**
    */
-  async getFeatures(query?: { isEnabled?: boolean }): Promise<Result<Array<Types.FeaturesFeatureFlagDto>, ApiError>> {
+  async getFeatures(query?: { isEnabled?: boolean }): Promise<Result<Types.FeaturesFeatureFlagDto[], ApiError>> {
     const url = '/v1/features';
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class FeaturesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FeaturesFeatureFlagDto>, ApiError>;
+    return result as Result<Types.FeaturesFeatureFlagDto[], ApiError>;
   }
 
   /**

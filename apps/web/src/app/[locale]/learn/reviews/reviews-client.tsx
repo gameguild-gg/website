@@ -26,7 +26,7 @@ function RubricScoresSummary({ payload }: { payload: string }) {
     const parsed: unknown = JSON.parse(payload);
     if (parsed && typeof parsed === 'object') {
       entries = Object.values(parsed as Record<string, { points?: number; comment?: string }>).map((entry) => ({
-        points: scoreUnitsToPoints(entry?.points ?? 0),
+        points: scoreUnitsToPoints(entry.points ?? 0),
         comment: entry?.comment,
       }));
     }

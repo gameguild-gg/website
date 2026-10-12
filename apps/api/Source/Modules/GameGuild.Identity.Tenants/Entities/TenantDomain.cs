@@ -81,7 +81,10 @@ public class TenantDomain : EntityBase, ITenantable
     /// <returns>True if the email's domain matches this tenant domain</returns>
     public bool MatchesEmail(string email)
     {
-        if (string.IsNullOrEmpty(email) || !email.Contains('@')) return false;
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+        {
+            return false;
+        }
 
         var emailDomain = email.Split('@')[1].ToLowerInvariant();
 

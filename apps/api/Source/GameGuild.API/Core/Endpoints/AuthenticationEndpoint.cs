@@ -2,10 +2,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using GameGuild.API.Database;
+using GameGuild.Configuration.ApplicationLayer;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Users;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,7 +34,7 @@ public static class AuthenticationEndpoint
         authGroup.MapPost("/google", GoogleSignIn).WithName("GoogleSignIn").Produces<SignInResponseDto>().Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
     }
 
-    private static async Task<IResult> SignUp(SignUpRequest request, IAuthService authService, HttpContext httpContext, ILogger<Program> logger, CancellationToken cancellationToken = default)
+    private static async Task<IResult> SignUp(SignUpRequest request, IAuthService authService, ILogger<Program> logger, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -60,7 +60,7 @@ public static class AuthenticationEndpoint
             // Call the Authentication module's service
             var response = await authService.LocalSignUpAsync(signUpRequest, cancellationToken).ConfigureAwait(false);
 
-            logger.LogInformation("User signed up successfully: {Email}, Response.Email: {ResponseEmail}, Response.UserId: {UserId}", request.Email, response.Email, response.UserId);
+            logger.LogInformation("User signed up successfully: {UserId}", LogRedaction.RedactId(response.UserId, "uid"));
 
             // Map to the API's response DTO
             return Results.Created(
@@ -70,7 +70,9 @@ public static class AuthenticationEndpoint
                     AccessToken = response.AccessToken,
                     RefreshToken = response.RefreshToken,
                     AccessTokenExpiresAt = response.ExpiresAt,
-                    RefreshTokenExpiresAt = response.ExpiresAt.AddDays(7), // Assuming 7 day refresh token
+                    // The module already resolved the policy-aware refresh deadline (standard
+                    // vs persistent lifetime); surface it instead of assuming one here.
+                    RefreshTokenExpiresAt = response.RefreshTokenExpiresAt,
                     ExpiresAt = response.ExpiresAt,
                     User = new AuthUserDto
                     {
@@ -97,7 +99,7 @@ public static class AuthenticationEndpoint
         }
     }
 
-    private static async Task<IResult> SignIn(SignInRequest request, ApplicationDbContext dbContext, IPasswordHasher<User> passwordHasher, IConfiguration configuration, ILogger<Program> logger)
+    private static async Task<IResult> SignIn(SignInRequest request, ApplicationDbContext dbContext, IConfiguration configuration, ILogger<Program> logger)
     {
         try
         {
@@ -114,9 +116,9 @@ public static class AuthenticationEndpoint
             await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
             // Generate tokens
-            var tokens = GenerateTokens(user, configuration);
+            var tokens = GenerateTokens(user, configuration, request.RememberMe == true);
 
-            logger.LogInformation("User signed in successfully: {Email}", request.Email);
+            logger.LogInformation("User signed in successfully: {UserId}", LogRedaction.RedactId(user.Id, "uid"));
 
             return Results.Ok(
                 new SignInResponseDto
@@ -164,7 +166,7 @@ public static class AuthenticationEndpoint
         );
     }
 
-    private static TokenResponse GenerateTokens(User user, IConfiguration configuration)
+    private static TokenResponse GenerateTokens(User user, IConfiguration configuration, bool persistent)
     {
         var jwtSecret = configuration["Jwt:Secret"]
             ?? configuration["Jwt:SecretKey"]
@@ -178,7 +180,7 @@ public static class AuthenticationEndpoint
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)) { KeyId = "GameGuild-jwt-key" };
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var accessTokenExpiry = SystemClock.UtcNow.AddMinutes(expirationMinutes);
-        var refreshTokenExpiry = SystemClock.UtcNow.AddDays(7);
+        var refreshTokenExpiry = SystemClock.UtcNow.AddDays(RefreshTokenLifetimeResolver.ResolveExpirationDays(null, configuration, persistent));
 
         var claims = new[ ]
         {
@@ -200,7 +202,7 @@ public static class AuthenticationEndpoint
 // Request/Response DTOs
 public sealed record SignUpRequest(string Email, string Password, string? Username);
 
-public sealed record SignInRequest(string Email, string Password);
+public sealed record SignInRequest(string Email, string Password, bool? RememberMe = null);
 
 public sealed record RefreshTokenRequest(string RefreshToken);
 

@@ -18,7 +18,7 @@ export class SocialBlogAiModule {
   /**
    * Lists the author's copilot conversations for the post.
    */
-  async getApiSocialBlogPostsAiConversations(postId: string): Promise<Result<Array<Types.SocialBlogAuthoringBlogAiConversationDto>, ApiError>> {
+  async getApiSocialBlogPostsAiConversations(postId: string): Promise<Result<Types.SocialBlogAuthoringBlogAiConversationDto[], ApiError>> {
     const url = `/api/social/blog/posts/${postId}/ai/conversations`;
 
     const result = await this.client.request({
@@ -27,7 +27,7 @@ export class SocialBlogAiModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialBlogAuthoringBlogAiConversationDto>, ApiError>;
+    return result as Result<Types.SocialBlogAuthoringBlogAiConversationDto[], ApiError>;
   }
 
   /**

@@ -18,7 +18,7 @@ export class CommerceProductsEntitlementsModule {
   /**
    * List entitlements with optional status filter
    */
-  async getEntitlements(query?: { status?: string; days?: number }): Promise<Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>> {
+  async getEntitlements(query?: { status?: string; days?: number }): Promise<Result<Types.CommerceProductsEntitlementInfoDto[], ApiError>> {
     const url = '/v1/entitlements';
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class CommerceProductsEntitlementsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>;
+    return result as Result<Types.CommerceProductsEntitlementInfoDto[], ApiError>;
   }
 
   /**

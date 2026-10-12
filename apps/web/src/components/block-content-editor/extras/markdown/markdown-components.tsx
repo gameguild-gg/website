@@ -27,7 +27,7 @@ export function useMarkdownComponents(): Components {
 
       return !inline && language ? (
         <SyntaxHighlighter
-          style={isDarkMode ? (vscDarkPlus as any) : (vs as any)}
+          style={isDarkMode ? (vscDarkPlus) : (vs as any)}
           language={language}
           PreTag="div"
           className="mt-4! mb-4! rounded-lg! text-sm!"

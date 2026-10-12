@@ -1,0 +1,62 @@
+services:
+  api:
+    environment:
+      - OpenTelemetry__Enabled=true
+      - OpenTelemetry__OtlpEndpoint=http://otel-collector:4318
+      - OpenTelemetry__OtlpProtocol=http/protobuf
+      - OpenTelemetry__ServiceName=GameGuild.API
+      - OpenTelemetry__IncludeSqlStatements=false
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./deploy/monitoring/otel-collector-authorization-cache.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "127.0.0.1:${AUTHORIZATION_OTLP_HTTP_PORT:-14318}:4318"
+    expose:
+      - "4318"
+      - "8889"
+    networks:
+      - internal
+    restart: unless-stopped
+    profiles:
+      - authorization-observability
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./deploy/monitoring/prometheus/authorization-cache.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docs/api/authorization-cache-alerts.yml:/etc/prometheus/rules/authorization-cache-alerts.yml:ro
+      - authorization-cache-prometheus:/prometheus
+    ports:
+      - "127.0.0.1:${AUTHORIZATION_PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - internal
+    depends_on:
+      - otel-collector
+      - alertmanager
+    restart: unless-stopped
+    profiles:
+      - authorization-observability
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    volumes:
+      - ./deploy/monitoring/alertmanager/authorization-cache.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "127.0.0.1:${AUTHORIZATION_ALERTMANAGER_PORT:-9093}:9093"
+    networks:
+      - internal
+    restart: unless-stopped
+    profiles:
+      - authorization-observability
+
+volumes:
+  authorization-cache-prometheus:

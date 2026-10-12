@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 144" role="img" aria-labelledby="title">
+  <title id="title">Monochrome GameGuild logo</title>
+  <g fill="#020617" aria-hidden="true">
+    <circle cx="72" cy="25" r="22" />
+    <circle cx="25" cy="72" r="22" />
+    <circle cx="119" cy="72" r="22" />
+    <circle cx="72" cy="119" r="22" />
+  </g>
+  <text x="172" y="97" fill="#020617" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="64" font-weight="650" letter-spacing="-2">GameGuild</text>
+</svg>

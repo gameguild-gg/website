@@ -29,7 +29,7 @@ export function ConfirmDialog({
           each programming language.
         </p>
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+          <Button variant="outline" onClick={() => { setShowConfirmDialog(false); }}>
             Cancel
           </Button>
           <Button

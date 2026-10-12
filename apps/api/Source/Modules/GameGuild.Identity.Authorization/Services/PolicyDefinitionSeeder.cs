@@ -621,6 +621,35 @@ public sealed class PolicyDefinitionSeeder
             PolicyVersion = 1
         };
 
+        yield return new PolicyDefinitionEntity
+        {
+            Id = Guid.NewGuid(),
+            PolicyName = "Provisioning.ManageTokens",
+            Description = "Issue, rotate and revoke SCIM provisioning tokens",
+            RequireAuthentication = true,
+            IsTenantScoped = true,
+            UseRuleBasedEvaluation = true,
+            RulesJson = """
+            [
+                {
+                    "Type": "TenantMatch",
+                    "Description": "Ensure the administrator belongs to the request tenant",
+                    "Enabled": true
+                },
+                {
+                    "Type": "RequireAllPermissions",
+                    "Description": "Require the provisioning token management permission",
+                    "Params": {
+                        "permissions": ["provisioning:manage-tokens"]
+                    },
+                    "Enabled": true
+                }
+            ]
+            """,
+            IsActive = true,
+            PolicyVersion = 1
+        };
+
         // ========================
         // GRANULAR USER POLICIES (Users Module)
         // ========================

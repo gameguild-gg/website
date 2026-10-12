@@ -37,7 +37,7 @@ export interface MonoRuntime {
     printErr: (text: string) => void
     onRuntimeInitialized?: () => void
     preRun?: Array<() => void>
-    postRun?: Array<() => void>
+    postRun?: (() => void)[]
     FS: MonoFS
   }
   config?: MonoConfig

@@ -120,7 +120,7 @@ export function ProjectSearchFilters({
               <Input
                 placeholder="Search projects by name..."
                 value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e) => { onSearchChange(e.target.value); }}
                 className="w-full"
               />
             </div>

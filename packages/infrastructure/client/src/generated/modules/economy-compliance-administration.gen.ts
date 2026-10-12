@@ -20,7 +20,7 @@ export class EconomyComplianceAdministrationModule {
   async getAdminEconomyComplianceFinancialCrimeCasesForGetAdminEconomyComplianceFinancialCrimeCases(query?: {
     state?: Types.ComplianceFinancialCrimeFinancialCrimeCaseState;
     take?: number;
-  }): Promise<Result<Array<Types.ComplianceFinancialCrimeFinancialCrimeCase>, ApiError>> {
+  }): Promise<Result<Types.ComplianceFinancialCrimeFinancialCrimeCase[], ApiError>> {
     const url = '/api/v1/admin/economy/compliance/financial-crime/cases';
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class EconomyComplianceAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFinancialCrimeFinancialCrimeCase>, ApiError>;
+    return result as Result<Types.ComplianceFinancialCrimeFinancialCrimeCase[], ApiError>;
   }
 
   /**
@@ -135,7 +135,7 @@ export class EconomyComplianceAdministrationModule {
   async getAdminEconomyComplianceTrustSafetyAppeals(query?: {
     state?: Types.TrustSafetyTrustSafetyAppealState;
     take?: number;
-  }): Promise<Result<Array<Types.TrustSafetyTrustSafetyAppeal>, ApiError>> {
+  }): Promise<Result<Types.TrustSafetyTrustSafetyAppeal[], ApiError>> {
     const url = '/api/v1/admin/economy/compliance/trust-safety/appeals';
 
     const result = await this.client.request({
@@ -145,7 +145,7 @@ export class EconomyComplianceAdministrationModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.TrustSafetyTrustSafetyAppeal>, ApiError>;
+    return result as Result<Types.TrustSafetyTrustSafetyAppeal[], ApiError>;
   }
 
   /**

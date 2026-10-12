@@ -84,8 +84,8 @@ export function VegaLiteLexicalComponent({
               targetEl.closest("button") ||
               targetEl.closest("input") ||
               targetEl.closest(".fixed") ||
-              targetEl.closest("[role='dialog']") ||
-              targetEl.closest(".z-50") ||
+              (targetEl.closest("[role='dialog']") ??
+                targetEl.closest(".z-50")) ||
               targetEl.closest(".z-60")
             ) {
               // Let the viewer controls handle the event, do not intercept or select

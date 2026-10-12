@@ -4,7 +4,11 @@ using System.Text.Encodings.Web;
 using GameGuild.Configuration.PresentationLayer.Authentication;
 using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -29,7 +33,10 @@ public sealed class BasicAuthenticationHandlerTests
         mfaRepository.Setup(repository => repository.IsMfaEnabledAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var context = CreateContext("https", "person@example.com:correct:pässword");
-        var handler = CreateHandler(userRepository.Object, passwordHasher.Object, mfaRepository.Object);
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("192.0.2.10");
+        context.Request.Headers.UserAgent = "TestAgent/1.0";
+        var auditSink = new Mock<IAuthenticationAuditEventSink>();
+        var handler = CreateHandler(userRepository.Object, passwordHasher.Object, mfaRepository.Object, auditEventSink: auditSink.Object);
         await InitializeAsync(handler, context);
 
         var result = await handler.AuthenticateAsync();
@@ -42,6 +49,17 @@ public sealed class BasicAuthenticationHandlerTests
         Assert.Equal("person@example.com", result.Principal.FindFirstValue(ClaimTypes.Email));
         Assert.Equal("basic", result.Principal.FindFirstValue("auth_method"));
         userRepository.Verify(repository => repository.GetByUsernameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        auditSink.Verify(sink => sink.RecordAsync(
+                It.Is<AuthenticationAuditEvent>(auditEvent =>
+                    auditEvent.ActionType == "Authentication.Succeeded" &&
+                    auditEvent.UserId == user.Id &&
+                    auditEvent.Success &&
+                    auditEvent.Method == "Basic" &&
+                    auditEvent.IpAddress == "192.0.2.10" &&
+                    auditEvent.UserAgent == "TestAgent/1.0" &&
+                    auditEvent.ErrorMessage == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -76,6 +94,43 @@ public sealed class BasicAuthenticationHandlerTests
         var userRepository = new Mock<IUserRepository>();
         var context = CreateContext("http", "person@example.com:password");
         var handler = CreateHandler(userRepository.Object, Mock.Of<IPasswordHasher>(), Mock.Of<IUserMfaConfigurationRepository>());
+        await InitializeAsync(handler, context);
+
+        var result = await handler.AuthenticateAsync();
+
+        Assert.NotNull(result.Failure);
+        Assert.Contains("HTTPS", result.Failure.Message, StringComparison.Ordinal);
+        userRepository.Verify(repository => repository.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AuthenticateAsync_UntrustedForwardedHttpsHeaderOverHttp_FailsBeforeCredentialLookup()
+    {
+        var userRepository = new Mock<IUserRepository>();
+        var context = CreateContext("http", "person@example.com:password");
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("203.0.113.9");
+        context.Request.Headers["X-Forwarded-Proto"] = "https";
+
+        var forwardedOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedProto,
+            ForwardLimit = 1
+        };
+        forwardedOptions.KnownProxies.Add(System.Net.IPAddress.Parse("192.0.2.50"));
+
+        using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var forwardedHeaders = new ForwardedHeadersMiddleware(
+            _ => Task.CompletedTask,
+            services.GetRequiredService<ILoggerFactory>(),
+            Options.Create(forwardedOptions));
+        await forwardedHeaders.Invoke(context);
+
+        Assert.False(context.Request.IsHttps);
+
+        var handler = CreateHandler(
+            userRepository.Object,
+            Mock.Of<IPasswordHasher>(),
+            Mock.Of<IUserMfaConfigurationRepository>());
         await InitializeAsync(handler, context);
 
         var result = await handler.AuthenticateAsync();
@@ -133,13 +188,23 @@ public sealed class BasicAuthenticationHandlerTests
         mfaRepository.Setup(repository => repository.IsMfaEnabledAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var context = CreateContext("https", "person@example.com:password");
-        var handler = CreateHandler(userRepository.Object, passwordHasher.Object, mfaRepository.Object);
+        var auditSink = new Mock<IAuthenticationAuditEventSink>();
+        var handler = CreateHandler(userRepository.Object, passwordHasher.Object, mfaRepository.Object, auditEventSink: auditSink.Object);
         await InitializeAsync(handler, context);
 
         var result = await handler.AuthenticateAsync();
 
         Assert.NotNull(result.Failure);
         Assert.Contains("Invalid username or password", result.Failure.Message, StringComparison.Ordinal);
+        auditSink.Verify(sink => sink.RecordAsync(
+                It.Is<AuthenticationAuditEvent>(auditEvent =>
+                    auditEvent.ActionType == "Authentication.Failed" &&
+                    auditEvent.UserId == user.Id &&
+                    !auditEvent.Success &&
+                    auditEvent.Method == "Basic" &&
+                    auditEvent.ErrorMessage == "MfaRequired"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -210,7 +275,8 @@ public sealed class BasicAuthenticationHandlerTests
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IUserMfaConfigurationRepository mfaRepository,
-        string realm = "GameGuild API")
+        string realm = "GameGuild API",
+        IAuthenticationAuditEventSink? auditEventSink = null)
     {
         var options = new Mock<IOptionsMonitor<BasicAuthenticationSchemeOptions>>();
         options.Setup(monitor => monitor.Get(It.IsAny<string>()))
@@ -222,7 +288,8 @@ public sealed class BasicAuthenticationHandlerTests
             UrlEncoder.Default,
             userRepository,
             passwordHasher,
-            mfaRepository);
+            mfaRepository,
+            auditEventSink);
     }
 
     private static Task InitializeAsync(BasicAuthenticationHandler handler, HttpContext context) =>

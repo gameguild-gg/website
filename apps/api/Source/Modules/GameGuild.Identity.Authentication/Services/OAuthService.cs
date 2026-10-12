@@ -44,6 +44,20 @@ public class OAuthService(
 
     private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, PropertyNameCaseInsensitive = true };
 
+    /// <summary>
+    ///     Safe application defaults per provider, used when neither the caller nor the
+    ///     typed provider configuration supplies scopes. These are the exact scope tokens
+    ///     the authorization URL builders used to inline — single source of truth for both
+    ///     URL construction and the granted-scope record persisted at callback/link time.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> ProviderDefaultScopes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["github"] = ["read:user", "user:email"],
+        ["google"] = ["openid", "email", "profile"],
+        ["discord"] = ["identify", "email"],
+        ["microsoft"] = ["openid", "email", "profile"]
+    };
+
     public Task<string> GetAuthorizationUrlAsync(string provider, string redirectUri, string state, string[]? scopes = null)
     {
         EnsureProviderEnabled(provider);
@@ -51,7 +65,7 @@ public class OAuthService(
 
         if (string.IsNullOrEmpty(clientId)) { throw new InvalidOperationException($"OAuth client ID not configured for provider: {provider}"); }
 
-        var configuredScopes = ResolveScopes(provider, scopes);
+        var configuredScopes = ResolveAuthorizationScopes(provider, scopes);
 
         var url = provider.ToLower(CultureInfo.InvariantCulture) switch
         {
@@ -63,6 +77,51 @@ public class OAuthService(
         };
 
         return Task.FromResult(url);
+    }
+
+    /// <inheritdoc />
+    public string[] ResolveAuthorizationScopes(string provider, string[]? requestedScopes = null)
+    {
+        var key = provider.ToLower(CultureInfo.InvariantCulture);
+        if (!ProviderDefaultScopes.ContainsKey(key))
+        {
+            throw new NotSupportedException($"OAuth provider not supported: {provider}");
+        }
+
+        if (requestedScopes is { Length: > 0 })
+        {
+            return NormalizeScopes(key, requestedScopes);
+        }
+
+        var configuredScopes = FindProviderSettings(provider)?.Scopes;
+        return configuredScopes is { Count: > 0 }
+            ? NormalizeScopes(key, configuredScopes.ToArray())
+            : [.. ProviderDefaultScopes[key]];
+    }
+
+    /// <summary>
+    ///     Deduplicates scope tokens preserving first-seen order and — for Microsoft —
+    ///     unions the OIDC scopes the identity platform requires on every request
+    ///     (mirrors the previous inline behavior of <c>BuildMicrosoftAuthUrl</c>).
+    /// </summary>
+    private static string[] NormalizeScopes(string providerKey, string[] scopes)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var normalized = scopes.Where(scope => seen.Add(scope)).ToList();
+
+        if (providerKey.Equals("microsoft", StringComparison.Ordinal))
+        {
+            foreach (var requiredScope in new[] { "openid", "email", "profile" })
+            {
+                if (!seen.Contains(requiredScope))
+                {
+                    seen.Add(requiredScope);
+                    normalized.Add(requiredScope);
+                }
+            }
+        }
+
+        return [.. normalized];
     }
 
     public async Task<OAuthUserProfile> HandleCallbackAsync(string provider, string code, string state, string redirectUri)
@@ -187,17 +246,6 @@ public class OAuthService(
         };
     }
 
-    private string[]? ResolveScopes(string provider, string[]? requestedScopes)
-    {
-        if (requestedScopes is { Length: > 0 })
-        {
-            return requestedScopes;
-        }
-
-        var configuredScopes = FindProviderSettings(provider)?.Scopes;
-        return configuredScopes is { Count: > 0 } ? configuredScopes.ToArray() : null;
-    }
-
     private async Task<HttpResponseMessage> SendBearerRequestAsync(string uri, string accessToken, bool isGitHub = false)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(uri));
@@ -214,9 +262,9 @@ public class OAuthService(
 
     #region GitHub OAuth
 
-    private string BuildGitHubAuthUrl(string clientId, string redirectUri, string state, string[]? scopes)
+    private string BuildGitHubAuthUrl(string clientId, string redirectUri, string state, string[] scopes)
     {
-        var scopeString = scopes != null && scopes.Length > 0 ? string.Join(" ", scopes) : "read:user user:email";
+        var scopeString = scopes is { Length: > 0 } ? string.Join(" ", scopes) : string.Join(" ", ProviderDefaultScopes["github"]);
 
         return $"{GetEndpoint("github", "authorization", GitHubAuthUrl)}?client_id={Uri.EscapeDataString(clientId)}" +
                $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
@@ -320,9 +368,9 @@ public class OAuthService(
 
     #region Google OAuth
 
-    private string BuildGoogleAuthUrl(string clientId, string redirectUri, string state, string[]? scopes)
+    private string BuildGoogleAuthUrl(string clientId, string redirectUri, string state, string[] scopes)
     {
-        var scopeString = scopes != null && scopes.Length > 0 ? string.Join(" ", scopes) : "openid email profile";
+        var scopeString = scopes is { Length: > 0 } ? string.Join(" ", scopes) : string.Join(" ", ProviderDefaultScopes["google"]);
 
         return $"{GetEndpoint("google", "authorization", GoogleAuthUrl)}?client_id={Uri.EscapeDataString(clientId)}" +
                $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
@@ -380,9 +428,9 @@ public class OAuthService(
 
     #region Discord OAuth
 
-    private string BuildDiscordAuthUrl(string clientId, string redirectUri, string state, string[]? scopes)
+    private string BuildDiscordAuthUrl(string clientId, string redirectUri, string state, string[] scopes)
     {
-        var scopeString = scopes is { Length: > 0 } ? string.Join(" ", scopes) : "identify email";
+        var scopeString = scopes is { Length: > 0 } ? string.Join(" ", scopes) : string.Join(" ", ProviderDefaultScopes["discord"]);
 
         return $"{GetEndpoint("discord", "authorization", DiscordAuthUrl)}?client_id={Uri.EscapeDataString(clientId)}" +
                $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
@@ -448,7 +496,7 @@ public class OAuthService(
 
     #region Microsoft OAuth
 
-    private string BuildMicrosoftAuthUrl(string clientId, string redirectUri, string state, string[]? scopes)
+    private string BuildMicrosoftAuthUrl(string clientId, string redirectUri, string state, string[] scopes)
     {
         var settings = FindProviderSettings("microsoft");
         var tenant = string.IsNullOrWhiteSpace(settings?.Tenant) ? "common" : settings.Tenant;
@@ -456,18 +504,9 @@ public class OAuthService(
             "microsoft",
             "authorization",
             $"https://login.microsoftonline.com/{Uri.EscapeDataString(tenant)}/oauth2/v2.0/authorize");
-        var scopeTokens = scopes is { Length: > 0 }
-            ? scopes.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-            : [];
-        foreach (var requiredScope in new[] { "openid", "email", "profile" })
-        {
-            if (!scopeTokens.Contains(requiredScope, StringComparer.OrdinalIgnoreCase))
-            {
-                scopeTokens.Add(requiredScope);
-            }
-        }
-
-        var scopeString = string.Join(" ", scopeTokens);
+        // openid/email/profile are unioned into the resolved list by ResolveAuthorizationScopes,
+        // so the URL and the persisted grant record stay identical.
+        var scopeString = string.Join(" ", scopes);
 
         return $"{endpoint}?client_id={Uri.EscapeDataString(clientId)}" +
                $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +

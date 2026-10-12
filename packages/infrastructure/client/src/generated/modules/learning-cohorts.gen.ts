@@ -188,7 +188,7 @@ export class LearningCohortsModule {
   /**
    * Get all cohorts for a course
    */
-  async getApiCohortsCourse(courseId: string): Promise<Result<Array<Types.LearningCohortsCohortDto>, ApiError>> {
+  async getApiCohortsCourse(courseId: string): Promise<Result<Types.LearningCohortsCohortDto[], ApiError>> {
     const url = `/api/cohorts/course/${courseId}`;
 
     const result = await this.client.request({
@@ -197,13 +197,13 @@ export class LearningCohortsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCohortsCohortDto>, ApiError>;
+    return result as Result<Types.LearningCohortsCohortDto[], ApiError>;
   }
 
   /**
    * Get active cohorts for a course
    */
-  async getApiCohortsCourseActive(courseId: string): Promise<Result<Array<Types.LearningCohortsCohortDto>, ApiError>> {
+  async getApiCohortsCourseActive(courseId: string): Promise<Result<Types.LearningCohortsCohortDto[], ApiError>> {
     const url = `/api/cohorts/course/${courseId}/active`;
 
     const result = await this.client.request({
@@ -212,13 +212,13 @@ export class LearningCohortsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCohortsCohortDto>, ApiError>;
+    return result as Result<Types.LearningCohortsCohortDto[], ApiError>;
   }
 
   /**
    * Get enrollable cohorts for a course (open with capacity)
    */
-  async getApiCohortsCourseEnrollable(courseId: string): Promise<Result<Array<Types.LearningCohortsCohortDto>, ApiError>> {
+  async getApiCohortsCourseEnrollable(courseId: string): Promise<Result<Types.LearningCohortsCohortDto[], ApiError>> {
     const url = `/api/cohorts/course/${courseId}/enrollable`;
 
     const result = await this.client.request({
@@ -227,7 +227,7 @@ export class LearningCohortsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCohortsCohortDto>, ApiError>;
+    return result as Result<Types.LearningCohortsCohortDto[], ApiError>;
   }
 }
 

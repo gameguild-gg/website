@@ -1,9 +1,14 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using GameGuild.Identity.Authorization;
+using GameGuild.Identity.Authorization.Caching;
 using GameGuild.Identity.Context.Actors;
 
 namespace GameGuild.Identity.Authentication;
@@ -25,7 +30,8 @@ public class PermissionService(
     IApplicationDbContext context,
     ITenantSecurityVersionStore? securityVersionStore = null,
     IPermissionAuditService? auditService = null,
-    IActorContextAccessor? actorContextAccessor = null) : IPermissionService
+    IActorContextAccessor? actorContextAccessor = null,
+    IHybridPermissionCache? hybridPermissionCache = null) : IPermissionService
 {
     private static readonly Meter BulkPermissionCheckMeter = new("GameGuild.Identity.Authentication.PermissionBulkCheck", "1.0.0");
     private static readonly Counter<long> BulkPermissionCheckBatchCounter = BulkPermissionCheckMeter.CreateCounter<long>(
@@ -48,10 +54,13 @@ public class PermissionService(
     private const int MaximumBulkPermissionCheckBatchSize = 256;
     private const int MinimumParallelBulkPermissionCheckBatchSize = 32;
     private const int MaximumParallelBulkPermissionChecks = 4;
+    private const int MaximumBulkPermissionCacheVersionRetries = 3;
+    private const string BulkPermissionCacheType = "permission";
 
     public async Task<TenantPermission> GrantTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             grant = new TenantPermission
@@ -73,7 +82,9 @@ public class PermissionService(
             PermissionOperationType.Grant,
             userId,
             tenantId,
-            ToPermissionNames(permissions)).ConfigureAwait(false);
+            ToPermissionNames(permissions),
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
 
         return grant;
     }
@@ -119,7 +130,11 @@ public class PermissionService(
     public async Task RevokeTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
-        if (grant == null) return;
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
+        if (grant == null)
+        {
+            return;
+        }
 
         grant.RemovePermissions(ToPermissionNames(permissions));
         if (grant.Permissions.Length == 0)
@@ -134,7 +149,9 @@ public class PermissionService(
             PermissionOperationType.Revoke,
             userId,
             tenantId,
-            ToPermissionNames(permissions)).ConfigureAwait(false);
+            ToPermissionNames(permissions),
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
     public async Task<TenantPermission> JoinTenantAsync(Guid userId, Guid tenantId)
@@ -196,6 +213,7 @@ public class PermissionService(
         ArgumentException.ThrowIfNullOrWhiteSpace(contentTypeName);
 
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             grant = new ContentTypePermission(userId, tenantId, contentTypeName);
@@ -213,7 +231,9 @@ public class PermissionService(
             userId,
             tenantId,
             permissions.Select(p => p.ToString()),
-            contentTypeName).ConfigureAwait(false);
+            contentTypeName,
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
 
         return grant;
     }
@@ -232,10 +252,15 @@ public class PermissionService(
     public async Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
     {
         var grant = await GetContentTypeGrantAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
-        if (grant == null) return;
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
+        if (grant == null)
+        {
+            return;
+        }
 
         grant.RemovePermissions(permissions);
-        if (!grant.GetPermissionsAsEnum().Any())
+        var removed = !grant.GetPermissionsAsEnum().Any();
+        if (removed)
         {
             context.Set<ContentTypePermission>().Remove(grant);
         }
@@ -247,7 +272,9 @@ public class PermissionService(
             userId,
             tenantId,
             permissions.Select(p => p.ToString()),
-            contentTypeName).ConfigureAwait(false);
+            contentTypeName,
+            oldValue: oldValue,
+            newValue: removed ? null : CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<PermissionType>> GetEffectiveContentTypePermissionsAsync(Guid? userId, Guid? tenantId, string contentTypeName)
@@ -269,10 +296,15 @@ public class PermissionService(
         return permissions;
     }
 
-    public async Task<TPermission> GrantResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions)
+    public Task<TPermission> GrantResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions)
+        where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
+        => GrantResourcePermissionCoreAsync<TPermission, TResource>(userId, tenantId, resourceId, permissions, null);
+
+    private async Task<TPermission> GrantResourcePermissionCoreAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions, DateTime? expiresAt)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId);
         if (grant == null)
         {
             grant = new TPermission
@@ -288,7 +320,7 @@ public class PermissionService(
 
         grant.AddPermissions(permissions);
         grant.IsActive = true;
-        grant.ExpiresAt = null;
+        grant.ExpiresAt = expiresAt;
 
         await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -298,7 +330,9 @@ public class PermissionService(
             tenantId,
             permissions.Select(p => p.ToString()),
             resourceTypeName: typeof(TResource).Name,
-            resourceId: resourceId).ConfigureAwait(false);
+            resourceId: resourceId,
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId)).ConfigureAwait(false);
 
         return grant;
     }
@@ -345,16 +379,18 @@ public class PermissionService(
     public async Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt = null)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
-        var grant = await GrantResourcePermissionAsync<TPermission, TResource>(targetUserId, tenantId, resourceId, permissions).ConfigureAwait(false);
-        grant.ExpiresAt = expiresAt;
-        await context.SaveChangesAsync().ConfigureAwait(false);
+        await GrantResourcePermissionCoreAsync<TPermission, TResource>(targetUserId, tenantId, resourceId, permissions, expiresAt).ConfigureAwait(false);
     }
 
     public async Task RevokeResourceAccessAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId)
         where TPermission : ResourcePermission<TResource>, new() where TResource : EntityBase
     {
         var grant = await GetResourceGrantAsync<TPermission, TResource>(userId, tenantId, resourceId).ConfigureAwait(false);
-        if (grant == null) return;
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId);
+        if (grant == null)
+        {
+            return;
+        }
 
         context.Set<TPermission>().Remove(grant);
         await context.SaveChangesAsync().ConfigureAwait(false);
@@ -365,7 +401,9 @@ public class PermissionService(
             tenantId,
             [],
             resourceTypeName: typeof(TResource).Name,
-            resourceId: resourceId).ConfigureAwait(false);
+            resourceId: resourceId,
+            oldValue: oldValue,
+            newValue: null).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<PermissionType>> GetEffectiveResourcePermissionsAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId, string? contentTypeName = null)
@@ -425,22 +463,34 @@ public class PermissionService(
         if (userId.HasValue && resourceId.HasValue)
         {
             var resourcePermissions = await GetResourcePermissionsAsync<GenericResourcePermission, EntityBase>(userId, tenantId, resourceId.Value).ConfigureAwait(false);
-            if (resourcePermissions.Contains(permission)) return "Resource";
+            if (resourcePermissions.Contains(permission))
+            {
+                return "Resource";
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(contentTypeName))
         {
             var contentPermissions = await GetContentTypePermissionsAsync(userId, tenantId, contentTypeName).ConfigureAwait(false);
-            if (contentPermissions.Contains(permission)) return "ContentType";
+            if (contentPermissions.Contains(permission))
+            {
+                return "ContentType";
+            }
         }
 
         var tenantPermissions = await GetTenantPermissionsAsync(userId, tenantId).ConfigureAwait(false);
-        if (tenantPermissions.Contains(permission)) return "Tenant";
+        if (tenantPermissions.Contains(permission))
+        {
+            return "Tenant";
+        }
 
         if (tenantId.HasValue)
         {
             var tenantDefaults = await GetTenantDefaultPermissionsAsync(tenantId.Value).ConfigureAwait(false);
-            if (tenantDefaults.Contains(permission)) return "TenantDefault";
+            if (tenantDefaults.Contains(permission))
+            {
+                return "TenantDefault";
+            }
         }
 
         var globalDefaults = await GetGlobalDefaultPermissionsAsync().ConfigureAwait(false);
@@ -493,6 +543,18 @@ public class PermissionService(
 
         if (distinctUserIds.Length == 0 || distinctPermissions.Length == 0)
         {
+            return results;
+        }
+
+        if (securityVersionStore is not null && hybridPermissionCache is not null)
+        {
+            await foreach (var result in StreamBulkCheckPermissionsAsync(
+                               EnumerateBulkPermissionRequests(distinctUserIds, tenantId, distinctPermissions, CancellationToken.None),
+                               cancellationToken: CancellationToken.None).ConfigureAwait(false))
+            {
+                results[result.Request.UserId][result.Request.Permission] = result.IsGranted;
+            }
+
             return results;
         }
 
@@ -641,6 +703,234 @@ public class PermissionService(
     {
         var startedAt = Stopwatch.GetTimestamp();
 
+        IReadOnlyList<BulkPermissionCheckResult> result;
+        if (securityVersionStore is not null && hybridPermissionCache is not null)
+        {
+            result = await EvaluateBulkPermissionCheckBatchWithCacheAsync(requests, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            var databaseEvaluations = await EvaluateBulkPermissionCheckBatchFromDatabaseAsync(requests, cancellationToken)
+                .ConfigureAwait(false);
+            result = MapToBulkPermissionCheckResults(databaseEvaluations);
+        }
+
+        if (recordMetrics)
+        {
+            BulkPermissionCheckBatchCounter.Add(1);
+            BulkPermissionCheckRequestCounter.Add(requests.Count);
+            BulkPermissionCheckUniqueRequestCounter.Add(requests.Distinct().Count());
+            BulkPermissionCheckDuration.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyList<BulkPermissionCheckResult> MapToBulkPermissionCheckResults(
+        IReadOnlyList<BulkPermissionDatabaseResult> evaluations)
+    {
+        var results = new List<BulkPermissionCheckResult>(evaluations.Count);
+        foreach (var evaluation in evaluations)
+        {
+            results.Add(new BulkPermissionCheckResult(evaluation.Request, evaluation.IsGranted));
+        }
+
+        return results;
+    }
+
+    private async Task<IReadOnlyList<BulkPermissionCheckResult>> EvaluateBulkPermissionCheckBatchWithCacheAsync(
+        IReadOnlyList<BulkPermissionCheckRequest> requests,
+        CancellationToken cancellationToken)
+    {
+        var distinctRequests = requests.Distinct().ToArray();
+        var tenantIds = distinctRequests
+            .Select(request => request.TenantId ?? Guid.Empty)
+            .Distinct()
+            .ToArray();
+
+        for (var attempt = 0; attempt < MaximumBulkPermissionCacheVersionRetries; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var versionSnapshot = await securityVersionStore!
+                .GetTenantAndGlobalVersionsAsync(tenantIds, cancellationToken)
+                .ConfigureAwait(false);
+            var cacheKeys = new Dictionary<BulkPermissionCheckRequest, string>(distinctRequests.Length);
+            foreach (var request in distinctRequests)
+            {
+                var scopeId = request.TenantId ?? Guid.Empty;
+                var versions = versionSnapshot.GetValueOrDefault(scopeId);
+                cacheKeys.Add(request, BuildBulkPermissionCacheKey(request, versions));
+            }
+
+            var cacheResults = await hybridPermissionCache!
+                .GetManyValuesAsync<CachedPermissionDecision>(cacheKeys.Values.ToArray(), BulkPermissionCacheType, cancellationToken)
+                .ConfigureAwait(false);
+            var decisions = new Dictionary<BulkPermissionCheckRequest, bool>(distinctRequests.Length);
+            var cacheMisses = new List<BulkPermissionCheckRequest>();
+
+            foreach (var request in distinctRequests)
+            {
+                var cacheKey = cacheKeys[request];
+                if (cacheResults.TryGetValue(cacheKey, out var cached) && cached.Found &&
+                    IsBulkPermissionDecisionServable(cached.Value))
+                {
+                    decisions[request] = cached.Value.IsGranted;
+                }
+                else
+                {
+                    cacheMisses.Add(request);
+                }
+            }
+
+            IReadOnlyList<BulkPermissionDatabaseResult> databaseResults = [];
+            if (cacheMisses.Count > 0)
+            {
+                databaseResults = await EvaluateBulkPermissionCheckBatchFromDatabaseAsync(cacheMisses, cancellationToken)
+                    .ConfigureAwait(false);
+                foreach (var result in databaseResults)
+                {
+                    decisions[result.Request] = result.IsGranted;
+                }
+            }
+
+            var currentVersions = await securityVersionStore
+                .GetTenantAndGlobalVersionsAsync(tenantIds, cancellationToken)
+                .ConfigureAwait(false);
+            if (!AreBulkPermissionVersionsCurrent(tenantIds, versionSnapshot, currentVersions))
+            {
+                continue;
+            }
+
+            if (databaseResults.Count > 0)
+            {
+                var valuesToCache = new Dictionary<string, CachedPermissionDecision>(databaseResults.Count, StringComparer.Ordinal);
+                var clampedTtlSeconds = new Dictionary<string, int>(databaseResults.Count, StringComparer.Ordinal);
+                foreach (var result in databaseResults)
+                {
+                    if (!TryComputeBulkPermissionCacheTtlSeconds(result.EarliestExpiryUtc, out var ttlSeconds))
+                    {
+                        // The shortest-lived grant participating in this decision already lapsed while the
+                        // batch was being evaluated; a stale decision is cached under no TTL (fail closed).
+                        continue;
+                    }
+
+                    var cacheKey = cacheKeys[result.Request];
+                    valuesToCache[cacheKey] = new CachedPermissionDecision(result.IsGranted, result.EarliestExpiryUtc);
+                    if (ttlSeconds is { } clampedTtl)
+                    {
+                        clampedTtlSeconds[cacheKey] = clampedTtl;
+                    }
+                }
+
+                if (valuesToCache.Count > 0)
+                {
+                    await hybridPermissionCache.SetManyValuesAsync(valuesToCache, BulkPermissionCacheType, clampedTtlSeconds, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
+
+            return requests
+                .Select(request => new BulkPermissionCheckResult(request, decisions[request]))
+                .ToArray();
+        }
+
+        throw new InvalidOperationException(
+            $"Could not obtain stable permission versions for a bulk authorization batch after {MaximumBulkPermissionCacheVersionRetries} attempts.");
+    }
+
+    /// <summary>
+    ///     Returns true when the cached bulk decision may still be served; false once its earliest
+    ///     participating grant expiration has passed. Time-based grant expiration advances no security
+    ///     version, so the cached copy has to police its own boundary: a lapsed entry is treated as a
+    ///     miss (fail closed) and re-evaluated from the authoritative grants instead of being served.
+    /// </summary>
+    private static bool IsBulkPermissionDecisionServable(CachedPermissionDecision decision) =>
+        decision.EffectiveUntilUtc is not { } effectiveUntil || effectiveUntil > SystemClock.UtcNow;
+
+    /// <summary>
+    ///     Computes the write TTL for a cached bulk decision. Returns <c>false</c> when the decision
+    ///     must not be cached at all because its shortest-lived participating grant already lapsed.
+    ///     Returns <c>true</c> with the seconds remaining before the earliest participating grant
+    ///     expiration (the cache layers clamp this to the configured TTLs, so it never extends them),
+    ///     or <c>null</c> to use the configured TTL when the decision is not time-bound.
+    /// </summary>
+    private static bool TryComputeBulkPermissionCacheTtlSeconds(DateTime? earliestExpiryUtc, out int? ttlSeconds)
+    {
+        if (earliestExpiryUtc is not { } expiresAt)
+        {
+            ttlSeconds = null;
+            return true;
+        }
+
+        // Floor the remaining time so the cached copy never outlives the grant, and treat anything
+        // already at or past the boundary as uncacheable.
+        var remainingSeconds = Math.Floor((expiresAt - SystemClock.UtcNow).TotalSeconds);
+        if (remainingSeconds <= 0)
+        {
+            ttlSeconds = null;
+            return false;
+        }
+
+        ttlSeconds = (int)Math.Min(remainingSeconds, int.MaxValue);
+        return true;
+    }
+
+    private static bool AreBulkPermissionVersionsCurrent(
+        IReadOnlyCollection<Guid> tenantIds,
+        IReadOnlyDictionary<Guid, (long TenantVersion, long GlobalVersion)> expectedVersions,
+        IReadOnlyDictionary<Guid, (long TenantVersion, long GlobalVersion)> currentVersions)
+    {
+        foreach (var tenantId in tenantIds)
+        {
+            if (expectedVersions.GetValueOrDefault(tenantId) != currentVersions.GetValueOrDefault(tenantId))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string BuildBulkPermissionCacheKey(
+        BulkPermissionCheckRequest request,
+        (long TenantVersion, long GlobalVersion) versions)
+    {
+        var tenantKey = request.TenantId?.ToString("D") ?? "global";
+        var resourceKey = request.ResourceId?.ToString("D") ?? "none";
+        var tenantVersion = versions.TenantVersion.ToString(CultureInfo.InvariantCulture);
+        var globalVersion = versions.GlobalVersion.ToString(CultureInfo.InvariantCulture);
+        var permission = ((int)request.Permission).ToString(CultureInfo.InvariantCulture);
+
+        // v2: cached values moved from raw booleans to expiry-enveloped CachedPermissionDecision
+        // records, so v1 entries (which carry no grant-expiration boundary) are never read again.
+        return $"perm:{tenantKey}:{request.UserId:D}:bulk:v2:{tenantVersion}:{globalVersion}:{permission}:{FingerprintCacheKeyPart(request.ContentTypeName)}:{resourceKey}:{FingerprintCacheKeyPart(request.ResourceTypeName)}";
+    }
+
+    private static string FingerprintCacheKeyPart(string? value) =>
+        value is null ? "none" : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+
+    private static async IAsyncEnumerable<BulkPermissionCheckRequest> EnumerateBulkPermissionRequests(
+        IReadOnlyList<Guid> userIds,
+        Guid? tenantId,
+        IReadOnlyList<PermissionType> permissions,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        foreach (var userId in userIds)
+        {
+            foreach (var permission in permissions)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return new BulkPermissionCheckRequest(userId, tenantId, permission);
+                await Task.CompletedTask.ConfigureAwait(false);
+            }
+        }
+    }
+
+    private async Task<IReadOnlyList<BulkPermissionDatabaseResult>> EvaluateBulkPermissionCheckBatchFromDatabaseAsync(
+        IReadOnlyList<BulkPermissionCheckRequest> requests,
+        CancellationToken cancellationToken)
+    {
         var tenantGrants = await context.Set<TenantPermission>()
             .AsNoTracking()
             .Where(BuildPermissionGrantScopePredicate<TenantPermission>(requests))
@@ -688,7 +978,7 @@ public class PermissionService(
             resultIndexes[index] = distinctIndex;
         }
 
-        var decisions = new bool[distinctRequests.Count];
+        var decisions = new BulkPermissionEvaluation[distinctRequests.Count];
         void EvaluateAt(int index)
         {
             decisions[index] = EvaluateBulkPermissionDecision(
@@ -719,18 +1009,11 @@ public class PermissionService(
             }
         }
 
-        var result = new List<BulkPermissionCheckResult>(requests.Count);
+        var result = new List<BulkPermissionDatabaseResult>(requests.Count);
         for (var index = 0; index < requests.Count; index++)
         {
-            result.Add(new BulkPermissionCheckResult(requests[index], decisions[resultIndexes[index]]));
-        }
-
-        if (recordMetrics)
-        {
-            BulkPermissionCheckBatchCounter.Add(1);
-            BulkPermissionCheckRequestCounter.Add(requests.Count);
-            BulkPermissionCheckUniqueRequestCounter.Add(distinctRequests.Count);
-            BulkPermissionCheckDuration.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+            var evaluation = decisions[resultIndexes[index]];
+            result.Add(new BulkPermissionDatabaseResult(requests[index], evaluation.IsGranted, evaluation.EarliestExpiryUtc));
         }
 
         return result;
@@ -895,7 +1178,7 @@ public class PermissionService(
         return Expression.Lambda<Func<GenericResourcePermission, bool>>(predicate ?? Expression.Constant(false), grant);
     }
 
-    private static bool EvaluateBulkPermissionDecision(
+    private static BulkPermissionEvaluation EvaluateBulkPermissionDecision(
         BulkPermissionCheckRequest request,
         IReadOnlyList<TenantPermission> tenantGrants,
         IReadOnlyList<ContentTypePermission> contentTypeGrants,
@@ -903,6 +1186,17 @@ public class PermissionService(
     {
         var allowed = new HashSet<PermissionType>();
         var denied = new HashSet<PermissionType>();
+        var earliestExpiryUtc = default(DateTime?);
+
+        void TrackParticipatingGrantExpiry(DateTime? expiresAt, bool participatesInDecision)
+        {
+            if (expiresAt is not { } boundary || !participatesInDecision)
+            {
+                return;
+            }
+
+            earliestExpiryUtc = earliestExpiryUtc is { } current && current <= boundary ? current : boundary;
+        }
 
         foreach (var grant in tenantGrants)
         {
@@ -911,8 +1205,13 @@ public class PermissionService(
                 continue;
             }
 
-            allowed.UnionWith(ToPermissionTypes(grant.Permissions));
-            denied.UnionWith(ToPermissionTypes(grant.DenyPermissions));
+            var grantAllows = ToPermissionTypes(grant.Permissions).ToArray();
+            var grantDenies = ToPermissionTypes(grant.DenyPermissions).ToArray();
+            allowed.UnionWith(grantAllows);
+            denied.UnionWith(grantDenies);
+            TrackParticipatingGrantExpiry(
+                grant.ExpiresAt,
+                grantAllows.Contains(request.Permission) || grantDenies.Contains(request.Permission));
         }
 
         if (!string.IsNullOrWhiteSpace(request.ContentTypeName))
@@ -926,7 +1225,9 @@ public class PermissionService(
                     continue;
                 }
 
-                allowed.UnionWith(grant.GetPermissionsAsEnum());
+                var grantAllows = grant.GetPermissionsAsEnum().ToArray();
+                allowed.UnionWith(grantAllows);
+                TrackParticipatingGrantExpiry(grant.ExpiresAt, grantAllows.Contains(request.Permission));
             }
         }
 
@@ -945,12 +1246,31 @@ public class PermissionService(
                     continue;
                 }
 
-                allowed.UnionWith(grant.GetPermissionsAsEnum());
+                var grantAllows = grant.GetPermissionsAsEnum().ToArray();
+                allowed.UnionWith(grantAllows);
+                TrackParticipatingGrantExpiry(grant.ExpiresAt, grantAllows.Contains(request.Permission));
             }
         }
 
-        return allowed.Contains(request.Permission) && !denied.Contains(request.Permission);
+        var isGranted = allowed.Contains(request.Permission) && !denied.Contains(request.Permission);
+        return new BulkPermissionEvaluation(isGranted, earliestExpiryUtc);
     }
+
+    /// <summary>
+    ///     An evaluated bulk permission decision together with the earliest expiration among the
+    ///     grants that participated in the decision (grants conveying or denying the requested
+    ///     permission), or <c>null</c> when no participating grant is time-bound.
+    /// </summary>
+    private readonly record struct BulkPermissionEvaluation(bool IsGranted, DateTime? EarliestExpiryUtc);
+
+    /// <summary>
+    ///     A database evaluation of a bulk permission request, carrying the request alongside its
+    ///     decision and grant-expiry envelope so the cache layer can store both.
+    /// </summary>
+    private readonly record struct BulkPermissionDatabaseResult(
+        BulkPermissionCheckRequest Request,
+        bool IsGranted,
+        DateTime? EarliestExpiryUtc);
 
     private static bool TenantGrantApplies(TenantPermission grant, BulkPermissionCheckRequest request)
         => (grant.UserId == null && grant.TenantId == null) ||
@@ -990,28 +1310,38 @@ public class PermissionService(
 
     public async Task CleanupExpiredPermissionsAsync()
     {
+        var cutoff = SystemClock.UtcNow;
         var tenantPermissions = await context.Set<TenantPermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= SystemClock.UtcNow)
+            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
+        var tenantSnapshots = tenantPermissions
+            .Select(grant => (Grant: grant, OldValue: CapturePermissionSnapshot(grant)))
+            .ToArray();
         foreach (var grant in tenantPermissions)
         {
             grant.IsActive = false;
         }
 
         var contentPermissions = await context.Set<ContentTypePermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= SystemClock.UtcNow)
+            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
+        var contentSnapshots = contentPermissions
+            .Select(grant => (Grant: grant, OldValue: CapturePermissionSnapshot(grant)))
+            .ToArray();
         foreach (var grant in contentPermissions)
         {
             grant.Expire();
         }
 
         var resourcePermissions = await context.Set<GenericResourcePermission>()
-            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= SystemClock.UtcNow)
+            .Where(p => p.IsActive && p.ExpiresAt != null && p.ExpiresAt <= cutoff)
             .ToListAsync()
             .ConfigureAwait(false);
+        var resourceSnapshots = resourcePermissions
+            .Select(grant => (Grant: grant, OldValue: CapturePermissionSnapshot(grant, grant.ResourceType, grant.ResourceId)))
+            .ToArray();
         foreach (var grant in resourcePermissions)
         {
             grant.Expire();
@@ -1019,31 +1349,64 @@ public class PermissionService(
 
         await context.SaveChangesAsync().ConfigureAwait(false);
 
-        // Expiring grants changes effective permissions: bump every affected tenant's
-        // security version so stale caches are discarded, then audit the cleanup.
-        var affectedTenants = tenantPermissions
-            .Select(p => p.TenantId)
-            .Concat(contentPermissions.Select(p => (Guid?)p.TenantId))
-            .Concat(resourcePermissions.Select(p => (Guid?)p.TenantId))
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToArray();
+        // Invalidate every affected scope, including global defaults, before writing
+        // one audit entry per changed grant. Multiple grants share one version bump.
+        var affectedScopes = tenantPermissions.Select(grant => grant.PermissionTenantId)
+            .Concat(contentPermissions.Select(grant => grant.PermissionTenantId))
+            .Concat(resourcePermissions.Select(grant => grant.PermissionTenantId))
+            .Distinct();
+        foreach (var tenantId in affectedScopes)
+        {
+            await InvalidateMutationScopeAsync(tenantId).ConfigureAwait(false);
+        }
 
-        foreach (var tenantId in affectedTenants)
+        foreach (var snapshot in tenantSnapshots)
         {
             await TrackMutationAsync(
                 PermissionOperationType.Update,
-                userId: null,
-                tenantId: tenantId,
-                permissionNames: [],
-                reason: "Expired permissions cleanup").ConfigureAwait(false);
+                snapshot.Grant.UserId,
+                snapshot.Grant.PermissionTenantId,
+                snapshot.Grant.Permissions,
+                reason: "Expired permissions cleanup",
+                oldValue: snapshot.OldValue,
+                newValue: CapturePermissionSnapshot(snapshot.Grant),
+                invalidateScope: false).ConfigureAwait(false);
+        }
+
+        foreach (var snapshot in contentSnapshots)
+        {
+            await TrackMutationAsync(
+                PermissionOperationType.Update,
+                snapshot.Grant.UserId,
+                snapshot.Grant.PermissionTenantId,
+                snapshot.Grant.GetPermissionsAsEnum().Select(permission => permission.ToString()),
+                contentTypeName: snapshot.Grant.ContentTypeName,
+                reason: "Expired permissions cleanup",
+                oldValue: snapshot.OldValue,
+                newValue: CapturePermissionSnapshot(snapshot.Grant),
+                invalidateScope: false).ConfigureAwait(false);
+        }
+
+        foreach (var snapshot in resourceSnapshots)
+        {
+            await TrackMutationAsync(
+                PermissionOperationType.Update,
+                snapshot.Grant.UserId,
+                snapshot.Grant.PermissionTenantId,
+                snapshot.Grant.GetPermissionsAsEnum().Select(permission => permission.ToString()),
+                resourceTypeName: snapshot.Grant.ResourceType,
+                resourceId: snapshot.Grant.ResourceId,
+                reason: "Expired permissions cleanup",
+                oldValue: snapshot.OldValue,
+                newValue: CapturePermissionSnapshot(snapshot.Grant, snapshot.Grant.ResourceType, snapshot.Grant.ResourceId),
+                invalidateScope: false).ConfigureAwait(false);
         }
     }
 
     private async Task SetTenantGrantAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions, string reason)
     {
         var grant = await GetTenantGrantAsync(userId, tenantId).ConfigureAwait(false);
+        var oldValue = grant == null ? null : CapturePermissionSnapshot(grant);
         if (grant == null)
         {
             grant = new TenantPermission
@@ -1066,7 +1429,9 @@ public class PermissionService(
             userId,
             tenantId,
             permissions.Select(p => p.ToString()),
-            reason: reason).ConfigureAwait(false);
+            reason: reason,
+            oldValue: oldValue,
+            newValue: CapturePermissionSnapshot(grant)).ConfigureAwait(false);
     }
 
     private Task<TenantPermission?> GetTenantGrantAsync(Guid? userId, Guid? tenantId)
@@ -1102,15 +1467,17 @@ public class PermissionService(
         string? contentTypeName = null,
         string? resourceTypeName = null,
         Guid? resourceId = null,
-        string? reason = null)
+        string? reason = null,
+        string? oldValue = null,
+        string? newValue = null,
+        bool invalidateScope = true)
     {
         var permissionList = permissionNames as string[] ?? permissionNames.ToArray();
         var performedBy = actorContextAccessor?.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
 
-        if (securityVersionStore is not null)
+        if (invalidateScope)
         {
-            var tenantKey = tenantId?.ToString() ?? Guid.Empty.ToString();
-            await securityVersionStore.IncrementVersionAsync(tenantKey).ConfigureAwait(false);
+            await InvalidateMutationScopeAsync(tenantId).ConfigureAwait(false);
         }
 
         if (auditService is not null)
@@ -1123,8 +1490,57 @@ public class PermissionService(
                 permissionType: permissionList.Length > 0 ? string.Join(",", permissionList) : contentTypeName ?? resourceTypeName,
                 resourceId: resourceId,
                 resourceType: resourceTypeName ?? contentTypeName,
+                oldValue: oldValue,
+                newValue: newValue,
                 reason: reason ?? $"{operation} via legacy permission facade").ConfigureAwait(false);
         }
+    }
+
+    private async Task InvalidateMutationScopeAsync(Guid? tenantId)
+    {
+        if (securityVersionStore is not null)
+        {
+            var tenantKey = tenantId?.ToString() ?? Guid.Empty.ToString();
+            await securityVersionStore.IncrementVersionAsync(tenantKey).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    ///     Captures an immutable, versioned permission-state projection before mutation.
+    ///     Arbitrary metadata, notes, descriptions and entity navigation properties are
+    ///     deliberately excluded; only grant identity and access-control state are recorded.
+    /// </summary>
+    private static string CapturePermissionSnapshot(PermissionBase grant, string? resourceType = null, Guid? resourceId = null)
+    {
+        var tenantGrant = grant as TenantPermission;
+        var contentGrant = grant as ContentTypePermission;
+        var storedPermissions = grant switch
+        {
+            TenantPermission tenant => tenant.Permissions.ToArray(),
+            WithPermissions permission => permission.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            _ => throw new ArgumentException("Unsupported legacy permission grant.", nameof(grant))
+        };
+
+        return JsonSerializer.Serialize(new
+        {
+            schemaVersion = 1,
+            grantId = grant.Id,
+            layer = tenantGrant != null ? "Tenant" : contentGrant != null ? "ContentType" : "Resource",
+            userId = grant.UserId,
+            tenantId = grant.PermissionTenantId,
+            permissionEncoding = tenantGrant != null ? "name" : "enumValue",
+            permissions = storedPermissions,
+            deniedPermissions = tenantGrant?.DenyPermissions.ToArray() ?? [],
+            isActive = grant.IsActive,
+            expiresAt = grant.ExpiresAt,
+            grantedAt = grant.GrantedAt,
+            grantedBy = grant.CreatedBy,
+            isDeleted = grant.IsDeleted,
+            deletedAt = grant.DeletedAt,
+            contentTypeName = contentGrant?.ContentTypeName,
+            resourceType,
+            resourceId
+        });
     }
 
     private static string[] ToPermissionNames(IEnumerable<PermissionType> permissions)

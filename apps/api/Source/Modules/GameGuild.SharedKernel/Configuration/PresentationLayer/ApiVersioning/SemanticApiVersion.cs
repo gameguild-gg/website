@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Asp.Versioning;
 
 namespace GameGuild.Configuration.PresentationLayer.ApiVersioning;
@@ -8,6 +9,8 @@ namespace GameGuild.Configuration.PresentationLayer.ApiVersioning;
 /// </summary>
 public sealed class SemanticApiVersion : ApiVersion
 {
+    private static readonly SemanticVersionFormatProvider FormatProvider = new();
+
     public SemanticApiVersion(int major, int minor, int patch)
         : this(major, minor, patch, null, null)
     {
@@ -19,7 +22,7 @@ public sealed class SemanticApiVersion : ApiVersion
     }
 
     public SemanticApiVersion(int major, int minor, int patch, string? prerelease, string? metadata)
-        : base(major, minor, GetNativeStatus(patch, prerelease))
+        : base(null, major, minor, GetNativeStatus(patch, prerelease), IsValidSemanticStatus)
     {
         if (major < 0)
         {
@@ -114,11 +117,25 @@ public sealed class SemanticApiVersion : ApiVersion
         return Patch == 0 ? base.GetHashCode() : HashCode.Combine(base.GetHashCode(), Patch);
     }
 
-    public override string ToString() => ToSemanticString();
+    public override string ToString() => ToString(null, CultureInfo.InvariantCulture);
 
-    public override string ToString(string? format) => ToSemanticString(format);
+    public override string ToString(string? format) => ToString(format, CultureInfo.InvariantCulture);
 
-    public override string ToString(string? format, IFormatProvider? formatProvider) => ToSemanticString(format);
+    public override string ToString(string? format, IFormatProvider? formatProvider) => FormatProvider.Format(format, this, formatProvider);
+
+    public override bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        // Interpolated strings use ISpanFormattable instead of the ToString overrides.
+        var formatted = ToString(format.IsEmpty ? null : format.ToString(), provider);
+        if (!formatted.AsSpan().TryCopyTo(destination))
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        charsWritten = formatted.Length;
+        return true;
+    }
 
     private static string? GetNativeStatus(int patch, string? prerelease)
     {
@@ -133,7 +150,10 @@ public sealed class SemanticApiVersion : ApiVersion
         return prerelease is null ? patchStatus : patchStatus + "." + prerelease;
     }
 
-    private string ToSemanticString(string? format = null)
+    private static bool IsValidSemanticStatus(string? status) => status is null || status.Split('.').All(
+        identifier => identifier.Length > 0 && identifier.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'));
+
+    private string ToSemanticString()
     {
         var version = string.Create(CultureInfo.InvariantCulture, $"{MajorVersion}.{MinorVersion}.{Patch}");
         var semanticVersion = Prerelease is null ? version : version + "-" + Prerelease;
@@ -142,26 +162,52 @@ public sealed class SemanticApiVersion : ApiVersion
             semanticVersion += "+" + Metadata;
         }
 
-        if (string.IsNullOrEmpty(format))
+        return semanticVersion;
+    }
+
+    private sealed class SemanticVersionFormatProvider : ApiVersionFormatProvider
+    {
+        protected override void FormatAllParts(StringBuilder text, ApiVersion apiVersion,
+            in ReadOnlySpan<char> format, IFormatProvider? formatProvider)
         {
-            return semanticVersion;
+            _ = format;
+            _ = formatProvider;
+            // Keep semantic patch, prerelease and build metadata for default/F/FF formatting.
+            text.Append(((SemanticApiVersion)apiVersion).ToSemanticString());
         }
 
-        var tokenIndex = format.IndexOf('V');
-        if (tokenIndex < 0)
+        protected override void FormatVersionPart(StringBuilder text, ApiVersion apiVersion,
+            ReadOnlySpan<char> format, IFormatProvider formatProvider)
         {
-            return semanticVersion;
+            var semanticVersion = (SemanticApiVersion)apiVersion;
+            if (format[0] == 'V' && format.Length >= 3)
+            {
+                text.Append(semanticVersion.ToSemanticString());
+                return;
+            }
+
+            // The native tokenizer handles quoted literals and every occurrence of a token.
+            // Component/padded projections use the real prerelease rather than encoded patch identity.
+            var projectedVersion = new SemanticComponentVersion(semanticVersion);
+            text.Append(projectedVersion.ToString(format.ToString(), formatProvider));
         }
 
-        var tokenEnd = tokenIndex;
-        while (tokenEnd < format.Length && format[tokenEnd] == 'V')
+        protected override void FormatStatusPart(StringBuilder text, ApiVersion apiVersion,
+            ReadOnlySpan<char> format, IFormatProvider formatProvider)
         {
-            tokenEnd++;
+            _ = format;
+            _ = formatProvider;
+            text.Append(((SemanticApiVersion)apiVersion).Prerelease);
         }
+    }
 
-        var prefix = format[..tokenIndex].Replace("'", string.Empty, StringComparison.Ordinal);
-        var suffix = format[tokenEnd..].Replace("'", string.Empty, StringComparison.Ordinal);
-        return prefix + semanticVersion + suffix;
+    private sealed class SemanticComponentVersion : ApiVersion
+    {
+        public SemanticComponentVersion(SemanticApiVersion version)
+            : base(null, version.MajorVersion, version.MinorVersion, version.Prerelease, IsValidSemanticStatus)
+        {
+            // SemVer permits numeric and hyphenated labels that the native status grammar rejects.
+        }
     }
 
     private static int ComparePrerelease(string? left, string? right)

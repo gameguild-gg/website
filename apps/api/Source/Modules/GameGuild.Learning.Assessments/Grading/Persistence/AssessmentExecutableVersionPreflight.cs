@@ -57,7 +57,11 @@ public sealed class AssessmentExecutableVersionPreflight(
             AddRequirement(requirements, execution.DefinitionRevisionId, execution.ExecutionContext);
         }
 
-        if (requirements.Count == 0) return;
+        if (requirements.Count == 0)
+        {
+            return;
+        }
+
         var revisionIds = requirements.Keys.ToArray();
         var revisions = await context.Set<AssessmentDefinitionRevision>()
             .AsNoTracking()
@@ -68,7 +72,10 @@ public sealed class AssessmentExecutableVersionPreflight(
         foreach (var requirement in requirements)
         {
             if (!revisions.TryGetValue(requirement.Key, out var revision))
+            {
                 throw new InvalidOperationException($"Executable assessment revision {requirement.Key} is missing.");
+            }
+
             var snapshot = AssessmentDefinitionRevisionReader.ReadValidated(revision);
             foreach (var contextKind in requirement.Value)
             {

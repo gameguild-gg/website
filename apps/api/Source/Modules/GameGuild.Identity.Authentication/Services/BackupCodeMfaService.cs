@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using GameGuild.Configuration.ApplicationLayer;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -40,10 +41,13 @@ public sealed class BackupCodeMfaService(
                 throw new InvalidOperationException("MFA must be enabled to generate backup codes");
             }
 
-            // Generate backup codes (8 characters, alphanumeric)
-            var backupCodes = new List<string>();
+            var backupCodes = new HashSet<string>(StringComparer.Ordinal);
 
-            for (var i = 0; i < _mfaOptions.BackupCodesCount; i++) { backupCodes.Add(GenerateBackupCode()); }
+            while (backupCodes.Count < _mfaOptions.BackupCodesCount)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                backupCodes.Add(GenerateBackupCode());
+            }
 
             // Hash backup codes before storing (like passwords)
             var hashedCodes = new List<string>();
@@ -55,7 +59,7 @@ public sealed class BackupCodeMfaService(
             }
 
             // Store hashed codes
-            mfaConfig.BackupCodes = string.Join(",", hashedCodes);
+            mfaConfig.BackupCodes = new BackupCodeSet(hashedCodes.Count, hashedCodes).Serialize();
             mfaConfig.UpdatedAt = SystemClock.UtcNow;
 
             await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
@@ -87,74 +91,92 @@ public sealed class BackupCodeMfaService(
 
         try
         {
-            var mfaConfig = await mfaConfigRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
-
-            if (mfaConfig == null || string.IsNullOrEmpty(mfaConfig.BackupCodes))
+            for (var retry = 0; retry < 16; retry++)
             {
-                logger.LogWarning("No backup codes found for user: {UserId}", userId);
-                await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, false, "No backup codes", deviceId, cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                var mfaConfig = await mfaConfigRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
-                return false;
-            }
-
-            // Check lockout
-            if (attemptTrackingService.IsLockedOut(mfaConfig))
-            {
-                logger.LogWarning("User is locked out due to failed MFA attempts: {UserId}", userId);
-                await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, false, "Account locked", deviceId, cancellationToken).ConfigureAwait(false);
-
-                return false;
-            }
-
-            // Get all backup codes
-            var hashedCodes = mfaConfig.BackupCodes.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-
-            // Check if code matches any stored hashed code
-            var codeFound = false;
-            string? matchedHashedCode = null;
-
-            foreach (var hashedCode in hashedCodes)
-            {
-                if (await VerifyBackupCodeHashAsync(backupCode, hashedCode, cancellationToken))
+                if (mfaConfig is not { IsEnabled: true } || string.IsNullOrEmpty(mfaConfig.BackupCodes))
                 {
-                    codeFound = true;
-                    matchedHashedCode = hashedCode;
+                    logger.LogWarning("No backup codes found for user: {UserId}", userId);
+                    await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, false, "No backup codes", deviceId, cancellationToken).ConfigureAwait(false);
 
-                    break;
+                    return false;
                 }
+
+                // Check lockout
+                if (attemptTrackingService.IsLockedOut(mfaConfig))
+                {
+                    logger.LogWarning("User is locked out due to failed MFA attempts: {UserId}", userId);
+                    await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, false, "Account locked", deviceId, cancellationToken).ConfigureAwait(false);
+
+                    return false;
+                }
+
+                // Get all backup codes
+                var codeSet = BackupCodeSet.Read(mfaConfig.BackupCodes);
+                var hashedCodes = codeSet.Hashes;
+
+                // Check if code matches any stored hashed code
+                var codeFound = false;
+                string? matchedHashedCode = null;
+
+                foreach (var hashedCode in hashedCodes)
+                {
+                    if (await VerifyBackupCodeHashAsync(backupCode, hashedCode, cancellationToken))
+                    {
+                        codeFound = true;
+                        matchedHashedCode = hashedCode;
+
+                        break;
+                    }
+                }
+
+                if (codeFound && matchedHashedCode != null)
+                {
+                    // Remove used code
+                    hashedCodes.Remove(matchedHashedCode);
+                    mfaConfig.BackupCodes = codeSet.Serialize();
+                    mfaConfig.UpdatedAt = SystemClock.UtcNow;
+
+                    // Reset failed attempts
+                    mfaConfig.FailedAttempts = 0;
+                    mfaConfig.LockedOutUntil = null;
+                    mfaConfig.LastUsedAt = SystemClock.UtcNow;
+
+                    try
+                    {
+                        await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        // Repository reloads the security state. Recheck the code and lockout before retrying.
+                        continue;
+                    }
+
+                    await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, true, null, deviceId, cancellationToken).ConfigureAwait(false);
+
+                    logger.LogInformation("Backup code verification successful for user: {UserId}, Remaining codes: {RemainingCodes}", userId, hashedCodes.Count);
+
+                    return true;
+                }
+
+                await attemptTrackingService.RecordFailedMfaAttemptAsync(
+                    mfaConfig,
+                    MfaMethod.BackupCode,
+                    "Invalid code",
+                    deviceId,
+                    cancellationToken).ConfigureAwait(false);
+
+                logger.LogWarning("Invalid backup code for user: {UserId}, Failed attempts: {FailedAttempts}", userId, mfaConfig.FailedAttempts);
+
+                return false;
             }
 
-            if (codeFound && matchedHashedCode != null)
-            {
-                // Remove used code
-                hashedCodes.Remove(matchedHashedCode);
-                mfaConfig.BackupCodes = string.Join(",", hashedCodes);
-                mfaConfig.UpdatedAt = SystemClock.UtcNow;
-
-                // Reset failed attempts
-                mfaConfig.FailedAttempts = 0;
-                mfaConfig.LockedOutUntil = null;
-
-                await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
-
-                await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, true, null, deviceId, cancellationToken).ConfigureAwait(false);
-
-                logger.LogInformation("Backup code verification successful for user: {UserId}, Remaining codes: {RemainingCodes}", userId, hashedCodes.Count);
-
-                return true;
-            }
-
-            await attemptTrackingService.RecordFailedMfaAttemptAsync(
-                mfaConfig,
-                MfaMethod.BackupCode,
-                "Invalid code",
-                deviceId,
-                cancellationToken).ConfigureAwait(false);
-
-            logger.LogWarning("Invalid backup code for user: {UserId}, Failed attempts: {FailedAttempts}", userId, mfaConfig.FailedAttempts);
-
+            await attemptTrackingService.RecordMfaAttemptAsync(userId, MfaMethod.BackupCode, false, "Concurrent update limit", deviceId, cancellationToken).ConfigureAwait(false);
             return false;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error verifying backup code for user: {UserId}", userId);
@@ -182,21 +204,45 @@ public sealed class BackupCodeMfaService(
     /// </summary>
     public Task<string> HashBackupCodeAsync(string code, CancellationToken cancellationToken = default)
     {
-        // Use simple SHA256 for backup codes (not as critical as passwords)
-        using var sha256 = SHA256.Create();
-        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(code));
-
-        return Task.FromResult(Convert.ToBase64String(hashBytes));
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        cancellationToken.ThrowIfCancellationRequested();
+        var salt = RandomNumberGenerator.GetBytes(16);
+        var hash = Rfc2898DeriveBytes.Pbkdf2(code, salt, 600000, HashAlgorithmName.SHA256, 32);
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult($"pbkdf2-sha256$600000${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}");
     }
 
     /// <summary>
     ///     Verifies a backup code against its hash.
     /// </summary>
-    private async Task<bool> VerifyBackupCodeHashAsync(string code, string hash, CancellationToken cancellationToken)
+    private static Task<bool> VerifyBackupCodeHashAsync(string code, string hash, CancellationToken cancellationToken)
     {
-        var computedHash = await HashBackupCodeAsync(code, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrEmpty(code) || code.Length > 64) { return Task.FromResult(false); }
+        try
+        {
+            byte[] expected;
+            byte[] computed;
+            if (hash.StartsWith("pbkdf2-sha256$", StringComparison.Ordinal))
+            {
+                var parts = hash.Split('$');
+                if (parts.Length != 4 || parts[1] != "600000") { return Task.FromResult(false); }
+                var salt = Convert.FromBase64String(parts[2]);
+                expected = Convert.FromBase64String(parts[3]);
+                if (salt.Length != 16 || expected.Length != 32) { return Task.FromResult(false); }
+                computed = Rfc2898DeriveBytes.Pbkdf2(code, salt, 600000, HashAlgorithmName.SHA256, 32);
+            }
+            else
+            {
+                expected = Convert.FromBase64String(hash);
+                if (expected.Length != 32) { return Task.FromResult(false); }
+                computed = SHA256.HashData(Encoding.UTF8.GetBytes(code));
+            }
 
-        return computedHash == hash;
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(CryptographicOperations.FixedTimeEquals(expected, computed));
+        }
+        catch (FormatException) { return Task.FromResult(false); }
     }
 
     /// <summary>
@@ -216,7 +262,7 @@ public sealed class BackupCodeMfaService(
             hashedCodes.Add(hashedCode);
         }
 
-        mfaConfig.BackupCodes = string.Join(",", hashedCodes);
+        mfaConfig.BackupCodes = new BackupCodeSet(hashedCodes.Count, hashedCodes).Serialize();
         mfaConfig.UpdatedAt = SystemClock.UtcNow;
         await mfaConfigRepository.UpdateAsync(mfaConfig, cancellationToken).ConfigureAwait(false);
     }

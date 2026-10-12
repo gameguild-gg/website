@@ -31,24 +31,23 @@ public sealed class LocalSignInHandler(
         var httpContext = httpContextAccessor.HttpContext;
         var ipAddress = GetClientIpAddress(httpContext);
 
-        var signInRequest = new LocalSignInRequest { Email = command.Email, Password = command.Password, TenantId = command.TenantId, DeviceFingerprint = command.DeviceFingerprint };
+        var signInRequest = new LocalSignInRequest { Email = command.Email, Password = command.Password, TenantId = command.TenantId, DeviceFingerprint = command.DeviceFingerprint, RememberMe = command.RememberMe };
 
         var domainResult = await authService.LocalSignInAsync(signInRequest, cancellationToken).ConfigureAwait(false);
 
-        logger.LogInformation("User successfully signed in via local authentication from IP {IpAddress}", ipAddress);
+        if (domainResult.Success)
+        {
+            logger.LogInformation("User successfully signed in via local authentication from IP {IpAddress}", LogRedaction.Sanitize(ipAddress));
+        }
+        else if (domainResult.RequiresMfa || domainResult.RequiresStepUp)
+        {
+            logger.LogInformation("Local authentication requires additional verification from IP {IpAddress}", LogRedaction.Sanitize(ipAddress));
+        }
 
         // Map from Domain response to Application DTO
         return await domainResult.ToDto(userRepository, cancellationToken).ConfigureAwait(false);
     }
 
-    private static string? GetClientIpAddress(HttpContext? httpContext)
-    {
-        if (httpContext == null) return null;
-
-        var forwarded = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-        if (!string.IsNullOrEmpty(forwarded)) { return forwarded.Split(',')[0].Trim(); }
-
-        return httpContext.Connection.RemoteIpAddress?.ToString();
-    }
+    // Forwarded headers are interpreted by the configured trusted-proxy middleware.
+    private static string? GetClientIpAddress(HttpContext? context) => context?.Connection.RemoteIpAddress?.ToString();
 }

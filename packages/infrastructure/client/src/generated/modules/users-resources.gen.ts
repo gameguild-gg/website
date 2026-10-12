@@ -174,7 +174,7 @@ export class UsersResourcesModule {
   async getUsersResourcesUsageRecords(
     userId: string,
     query?: { usageType?: Types.ResourcesResourceUsageType; startDate?: string; endDate?: string },
-  ): Promise<Result<Array<Types.ResourcesUsageRecord>, ApiError>> {
+  ): Promise<Result<Types.ResourcesUsageRecord[], ApiError>> {
     const url = `/v1/users/${userId}/resources/usage-records`;
 
     const result = await this.client.request({
@@ -184,7 +184,7 @@ export class UsersResourcesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesUsageRecord>, ApiError>;
+    return result as Result<Types.ResourcesUsageRecord[], ApiError>;
   }
 
   /**

@@ -12,14 +12,20 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Callout } from '@/components/ui/callout';
-import { unlinkProvider } from '@/lib/auth/external-logins-actions';
+import { revokeProviderScopes, unlinkProvider } from '@/lib/auth/external-logins-actions';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Loader2, Unlink } from 'lucide-react';
+import { CheckCircle2, Loader2, ShieldCheck, Unlink, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 
 export interface LinkedAccount {
   provider: string;
   linkedAt: string;
+  /** OAuth scope tokens currently granted on this link (issue #250). */
+  grantedScopes?: string[];
+  /** ISO timestamp of the recorded scope consent, when one exists. */
+  consentedAt?: string | null;
+  /** Version of the consent terms agreed to; 0 = legacy row. */
+  consentVersion?: number;
 }
 
 export type SettingsBanner =
@@ -84,20 +90,137 @@ function UnlinkButton({ provider }: { provider: 'google' | 'discord' }) {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleUnlink} disabled={pending}>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        void handleUnlink();
+      }}
+      disabled={pending}
+      title={t('scopes.unlinkRevokesAll')}
+    >
       {pending ? <Loader2 className="size-4 animate-spin" /> : <Unlink className="size-4" />}
       {t('unlink')}
     </Button>
   );
 }
 
+/**
+ * Per-scope revoke button (issue #250): removes a single scope grant without
+ * unlinking the provider. The parent card re-renders from the revalidated
+ * page after the server action completes.
+ */
+function ScopeRevokeButton({
+  provider,
+  scope,
+}: {
+  provider: 'google' | 'discord';
+  scope: string;
+}) {
+  const t = useTranslations('connectedAccounts');
+  const [pending, setPending] = useState(false);
+
+  async function handleRevoke() {
+    setPending(true);
+    try {
+      const result = await revokeProviderScopes(provider, [scope]);
+      if (result.success) {
+        toast.success(t('scopes.revokeSuccess', { scope }));
+      } else if (result.status === 'notLinked') {
+        toast.error(t('errors.notLinked'));
+      } else {
+        toast.error(t('errors.generic'));
+      }
+    } catch {
+      toast.error(t('errors.generic'));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void handleRevoke();
+      }}
+      disabled={pending}
+      aria-label={t('scopes.revokeAriaLabel', { scope })}
+      data-testid={`scope-revoke-${provider}-${scope}`}
+      className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+    >
+      {pending ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+    </button>
+  );
+}
+
+/**
+ * Consent record for one provider link (issue #250): when the consent was
+ * recorded, under which terms version, and the individual scope grants — each
+ * revocable on its own. Whole-provider revocation stays on the Unlink button.
+ */
+function ConsentSection({
+  provider,
+  grantedScopes,
+  consentedAt,
+  consentVersion,
+  locale,
+}: {
+  provider: 'google' | 'discord';
+  grantedScopes: string[];
+  consentedAt: string | null;
+  consentVersion: number;
+  locale: string;
+}) {
+  const t = useTranslations('connectedAccounts');
+
+  if (!consentedAt) {
+    return null;
+  }
+
+  return (
+    <div className="mt-2.5 space-y-1.5" data-testid={`connected-account-consent-${provider}`}>
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        <ShieldCheck className="size-3.5" />
+        {t('scopes.consentedOn', {
+          date: new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+            new Date(consentedAt),
+          ),
+          version: consentVersion,
+        })}
+      </p>
+      {grantedScopes.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5" aria-label={t('scopes.grantedList')}>
+          {grantedScopes.map((scope) => (
+            <li
+              key={scope}
+              className="flex items-center gap-1 rounded-md border bg-muted/40 px-2 py-0.5 font-mono text-xs"
+            >
+              <span>{scope}</span>
+              <ScopeRevokeButton provider={provider} scope={scope} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted-foreground">{t('scopes.noneGranted')}</p>
+      )}
+    </div>
+  );
+}
+
 function ProviderRow({
   provider,
   linkedAt,
+  grantedScopes,
+  consentedAt,
+  consentVersion,
   locale,
 }: {
   provider: 'google' | 'discord';
   linkedAt: string | null;
+  grantedScopes: string[];
+  consentedAt: string | null;
+  consentVersion: number;
   locale: string;
 }) {
   const t = useTranslations('connectedAccounts');
@@ -123,6 +246,15 @@ function ProviderRow({
             </p>
           ) : (
             <p className="mt-1.5 text-sm text-muted-foreground">{t('notLinked')}</p>
+          )}
+          {linkedAt && (
+            <ConsentSection
+              provider={provider}
+              grantedScopes={grantedScopes}
+              consentedAt={consentedAt}
+              consentVersion={consentVersion}
+              locale={locale}
+            />
           )}
         </div>
       </div>
@@ -173,8 +305,22 @@ export function ConnectedAccountsCard({
             {t(`banner.errors.${banner.code}`)}
           </Callout>
         )}
-        <ProviderRow provider="google" linkedAt={google?.linkedAt ?? null} locale={locale} />
-        <ProviderRow provider="discord" linkedAt={discord?.linkedAt ?? null} locale={locale} />
+        <ProviderRow
+          provider="google"
+          linkedAt={google?.linkedAt ?? null}
+          grantedScopes={google?.grantedScopes ?? []}
+          consentedAt={google?.consentedAt ?? null}
+          consentVersion={google?.consentVersion ?? 0}
+          locale={locale}
+        />
+        <ProviderRow
+          provider="discord"
+          linkedAt={discord?.linkedAt ?? null}
+          grantedScopes={discord?.grantedScopes ?? []}
+          consentedAt={discord?.consentedAt ?? null}
+          consentVersion={discord?.consentVersion ?? 0}
+          locale={locale}
+        />
       </CardContent>
     </Card>
   );

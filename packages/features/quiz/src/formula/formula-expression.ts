@@ -53,7 +53,7 @@ function tokenize(expr: string, variables: Record<string, number>): Token[] {
   let i = 0
 
   while (i < expr.length) {
-    const ch = expr[i]!
+    const ch = expr.charAt(i)
 
     // Skip whitespace
     if (/\s/.test(ch)) {

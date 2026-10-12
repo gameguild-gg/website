@@ -27,6 +27,19 @@ public class LocalSignInRequest
     public string? DeviceFingerprint { get; set; }
 
     /// <summary>
+    ///     When true, the session is persistent ("remember me"): the refresh token uses the
+    ///     configurable persistent lifetime (<c>Jwt:PersistentRefreshTokenExpirationDays</c>)
+    ///     instead of the standard one. Null or false keeps the standard lifetime.
+    /// </summary>
+    public bool? RememberMe { get; set; }
+
+    // Server-only account resolution. These internal properties cannot be bound from JSON or advertised in OpenAPI.
+    internal bool CredentialResolutionFailed { get; init; }
+    internal Guid? ResolvedUserId { get; init; }
+    internal AuthenticationTimingOrigin? TimingOrigin { get; init; }
+    internal AuthenticationTimingScope? TimingWindow { get; init; }
+
+    /// <summary>
     ///     Alias for Email to support polymorphic sign-in scenarios
     /// </summary>
     public string EmailOrUsername { get => Email; }

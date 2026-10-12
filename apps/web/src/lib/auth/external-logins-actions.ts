@@ -84,3 +84,21 @@ export async function unlinkProvider(provider: 'google' | 'discord'): Promise<Ex
   revalidatePath(SETTINGS_ACCOUNT_PATH);
   return { success: true, status: 'success' };
 }
+
+/**
+ * Revoke individual OAuth scope grants on a linked provider without
+ * unlinking it (issue #250). Whole-provider revocation stays on
+ * {@link unlinkProvider}. Idempotent for scopes that are not granted.
+ */
+export async function revokeProviderScopes(
+  provider: 'google' | 'discord',
+  scopes: string[],
+): Promise<ExternalLoginActionResult> {
+  const authModule = new GeneratedApi.AuthModule(getApiClient());
+  const result = await authModule.postAuthExternalLoginsScopesRevoke(provider, { scopes });
+  if (!result.ok) {
+    return { success: false, status: statusFromHttpError(result.error?.status) };
+  }
+  revalidatePath(SETTINGS_ACCOUNT_PATH);
+  return { success: true, status: 'success' };
+}

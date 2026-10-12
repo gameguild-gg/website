@@ -1,8 +1,8 @@
 import { Link } from "@/i18n/navigation";
-import { GraduationCap } from "lucide-react";
+import Image from "next/image";
 
 /**
- * The GameGuild brand lockup: white tile, graduation-cap mark, and wordmark,
+ * The GameGuild brand lockup: white tile, four-color mark, and wordmark,
  * linking home. Reusable across the auth screens, public site, and shells.
  */
 export function GameGuildLogo({
@@ -20,7 +20,14 @@ export function GameGuildLogo({
       className={`flex items-center gap-3 font-semibold ${className}`}
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-950">
-        <GraduationCap className="size-5" aria-hidden="true" />
+        <Image
+          src="/assets/brand/gameguild-mark.svg"
+          alt=""
+          width={36}
+          height={36}
+          unoptimized
+          className="size-6"
+        />
       </span>
       GameGuild
     </Link>

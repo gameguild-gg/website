@@ -22,17 +22,17 @@ export class LearningExperienceSocialDiscussionsModule {
     courseId: string,
     contentId: string,
     query?: { skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto[], ApiError>> {
     const url = `/api/social/courses/${courseId}/content/${contentId}/discussions`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>;
+    return result as Result<Types.LearningExperienceSocialServicesCourseDiscussionDto[], ApiError>;
   }
 
   /**
@@ -41,17 +41,17 @@ export class LearningExperienceSocialDiscussionsModule {
   async getApiSocialCoursesDiscussions(
     courseId: string,
     query?: { skip?: number; take?: number; pinnedFirst?: boolean },
-  ): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto[], ApiError>> {
     const url = `/api/social/courses/${courseId}/discussions`;
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
       params: query,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>;
+    return result as Result<Types.LearningExperienceSocialServicesCourseDiscussionDto[], ApiError>;
   }
 
   /**
@@ -90,7 +90,7 @@ export class LearningExperienceSocialDiscussionsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response

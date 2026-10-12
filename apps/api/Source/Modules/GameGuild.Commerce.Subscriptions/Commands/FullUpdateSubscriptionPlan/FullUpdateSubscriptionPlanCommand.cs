@@ -1,14 +1,18 @@
 using GameGuild.CQRS;
+using GameGuild.Identity.Authorization;
 
 namespace GameGuild.Commerce.Subscriptions;
 
 /// <summary>
-///     Command to perform a full update on a subscription plan
+///     Command to perform a full update on a subscription plan. Subscription plan
+///     configuration changes monetization settings (tiers, pricing, limits, lifecycle)
+///     and requires the monetization configure permission (issue #346).
 /// </summary>
+[AuthorizeRequest(MonetizationPermission.Keys.Configure)]
 public sealed record FullUpdateSubscriptionPlanCommand(
     Guid PlanId,
     string Name,
-    string Slug,
+    string? Slug,
     string? Description,
     long MonthlyPriceInCents,
     long? AnnualPriceInCents,
@@ -19,4 +23,5 @@ public sealed record FullUpdateSubscriptionPlanCommand(
     bool? HasAdvancedAnalytics,
     bool? HasCustomBranding,
     string? Features,
-    int? SortOrder) : ICommand;
+    int? SortOrder,
+    int? TrialPeriodDays = null) : ICommand;

@@ -68,7 +68,7 @@ export class LaunchPadEventsModule {
 
   /**
    */
-  async getLaunchPadEventsApplicationsManagement(eventId: string): Promise<Result<Array<Types.LaunchPadLaunchPadApplicationProjection>, ApiError>> {
+  async getLaunchPadEventsApplicationsManagement(eventId: string): Promise<Result<Types.LaunchPadLaunchPadApplicationProjection[], ApiError>> {
     const url = `/v1/launch-pad/events/${eventId}/applications/management`;
 
     const result = await this.client.request({
@@ -77,12 +77,12 @@ export class LaunchPadEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPadApplicationProjection>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPadApplicationProjection[], ApiError>;
   }
 
   /**
    */
-  async getLaunchPadEventsRegistrationsManagement(eventId: string): Promise<Result<Array<Types.LaunchPadLaunchPadRegistrationProjection>, ApiError>> {
+  async getLaunchPadEventsRegistrationsManagement(eventId: string): Promise<Result<Types.LaunchPadLaunchPadRegistrationProjection[], ApiError>> {
     const url = `/v1/launch-pad/events/${eventId}/registrations/management`;
 
     const result = await this.client.request({
@@ -91,7 +91,7 @@ export class LaunchPadEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPadRegistrationProjection>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPadRegistrationProjection[], ApiError>;
   }
 
   /**
@@ -288,7 +288,7 @@ export class LaunchPadEventsModule {
 
   /**
    */
-  async getLaunchPadEventsApplicationsMe(): Promise<Result<Array<Types.LaunchPadLaunchPadApplicationProjection>, ApiError>> {
+  async getLaunchPadEventsApplicationsMe(): Promise<Result<Types.LaunchPadLaunchPadApplicationProjection[], ApiError>> {
     const url = '/v1/launch-pad/events/applications/me';
 
     const result = await this.client.request({
@@ -297,12 +297,12 @@ export class LaunchPadEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPadApplicationProjection>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPadApplicationProjection[], ApiError>;
   }
 
   /**
    */
-  async getLaunchPadEventsManagementForGetLaunchPadEventsManagement(): Promise<Result<Array<Types.LaunchPadLaunchPadEventProjection>, ApiError>> {
+  async getLaunchPadEventsManagementForGetLaunchPadEventsManagement(): Promise<Result<Types.LaunchPadLaunchPadEventProjection[], ApiError>> {
     const url = '/v1/launch-pad/events/management';
 
     const result = await this.client.request({
@@ -311,21 +311,21 @@ export class LaunchPadEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPadEventProjection>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPadEventProjection[], ApiError>;
   }
 
   /**
    */
-  async getLaunchPadEventsPublicForGetLaunchPadEventsPublic(): Promise<Result<Array<Types.LaunchPadLaunchPadEventProjection>, ApiError>> {
+  async getLaunchPadEventsPublicForGetLaunchPadEventsPublic(): Promise<Result<Types.LaunchPadLaunchPadEventProjection[], ApiError>> {
     const url = '/v1/launch-pad/events/public';
 
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPadEventProjection>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPadEventProjection[], ApiError>;
   }
 
   /**
@@ -336,7 +336,7 @@ export class LaunchPadEventsModule {
     const result = await this.client.request({
       method: 'GET',
       path: url,
-      requiresAuth: true,
+      requiresAuth: false,
     });
 
     // Validate response
@@ -397,7 +397,7 @@ export class LaunchPadEventsModule {
 
   /**
    */
-  async getLaunchPadEventsRegistrationsMe(): Promise<Result<Array<Types.LaunchPadLaunchPadRegistrationProjection>, ApiError>> {
+  async getLaunchPadEventsRegistrationsMe(): Promise<Result<Types.LaunchPadLaunchPadRegistrationProjection[], ApiError>> {
     const url = '/v1/launch-pad/events/registrations/me';
 
     const result = await this.client.request({
@@ -406,7 +406,7 @@ export class LaunchPadEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LaunchPadLaunchPadRegistrationProjection>, ApiError>;
+    return result as Result<Types.LaunchPadLaunchPadRegistrationProjection[], ApiError>;
   }
 
   /**

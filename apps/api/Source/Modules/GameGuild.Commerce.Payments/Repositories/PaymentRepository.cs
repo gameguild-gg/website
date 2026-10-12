@@ -21,7 +21,7 @@ public class PaymentRepository(
 
     public async Task<Payment?> GetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default)
     {
-        logger.LogDebug("Getting payment by idempotency key: {IdempotencyKey}", idempotencyKey);
+        logger.LogDebug("Getting payment by idempotency key: {IdempotencyKey}", LogRedaction.Sanitize(idempotencyKey));
         return await Query
             .FirstOrDefaultAsync(p => p.IdempotencyKey == idempotencyKey, cancellationToken)
             .ConfigureAwait(false);
@@ -29,7 +29,7 @@ public class PaymentRepository(
 
     public async Task<Payment?> GetByExternalPaymentIdAsync(string externalPaymentId, CancellationToken cancellationToken = default)
     {
-        logger.LogDebug("Getting payment by external payment ID: {ExternalPaymentId}", externalPaymentId);
+        logger.LogDebug("Getting payment by external payment ID: {ExternalPaymentId}", LogRedaction.Sanitize(externalPaymentId));
         return await Query
             .FirstOrDefaultAsync(p => p.ExternalPaymentId == externalPaymentId, cancellationToken)
             .ConfigureAwait(false);
@@ -46,12 +46,12 @@ public class PaymentRepository(
     {
         logger.LogDebug(
             "Getting payment by provider mapping: {Provider}/{ProviderEnvironment}/{ProviderAccountId}/{ProviderObjectType}/{ProviderObjectId}/{ProviderMonetaryLeg}",
-            provider,
-            providerEnvironment,
-            providerAccountId,
-            providerObjectType,
-            providerObjectId,
-            providerMonetaryLeg);
+            LogRedaction.Sanitize(provider),
+            LogRedaction.Sanitize(providerEnvironment),
+            LogRedaction.RedactId(providerAccountId, "provider"),
+            LogRedaction.Sanitize(providerObjectType),
+            LogRedaction.Sanitize(providerObjectId),
+            LogRedaction.Sanitize(providerMonetaryLeg));
 
         return await Query
             .FirstOrDefaultAsync(
@@ -115,19 +115,56 @@ public class PaymentRepository(
             .ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<Payment>> GetDueForRetryAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Payment>> GetDueForRetryAsync(CancellationToken cancellationToken = default, int? take = null)
     {
         var now = SystemClock.UtcNow;
         logger.LogDebug("Getting payments due for retry at: {Now}", now);
 
-        return await Query
+        var query = Query
             .Where(p => p.Status == PaymentStatus.Failed
                         && p.NextRetryAt != null
                         && p.NextRetryAt <= now
-                        && !p.MaxRetriesReached)
-            .OrderBy(p => p.NextRetryAt)
+                        && !p.MaxRetriesReached
+                        && p.IsRetriable)
+            .OrderBy(p => p.NextRetryAt);
+
+        if (take.HasValue)
+        {
+            return await query
+                .Take(take.Value)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return await query.ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<PaymentRetryAttempt>> GetRetryAttemptsAsync(
+        Guid paymentId,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogDebug("Getting retry attempts for payment: {PaymentId}", paymentId);
+
+        var attempts = await Context.Set<PaymentRetryAttempt>()
+            .Where(attempt => attempt.PaymentId == paymentId)
+            .OrderBy(attempt => attempt.AttemptNumber)
             .ToListAsync(cancellationToken)
-            ;
+            .ConfigureAwait(false);
+
+        return attempts;
+    }
+
+    /// <inheritdoc />
+    public async Task AddRetryAttemptAsync(
+        PaymentRetryAttempt attempt,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(attempt);
+
+        await Context.Set<PaymentRetryAttempt>().AddAsync(attempt, cancellationToken).ConfigureAwait(false);
+        await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IEnumerable<Payment>> GetByDateRangeAsync(
@@ -198,14 +235,14 @@ public class PaymentRepository(
 
     public async Task<Payment> AddAsync(Payment payment, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Adding new payment with idempotency key: {IdempotencyKey}", payment.IdempotencyKey);
+        logger.LogInformation("Adding new payment with idempotency key: {IdempotencyKey}", LogRedaction.Sanitize(payment.IdempotencyKey));
 
         // Check for existing payment with same idempotency key
         var existing = await GetByIdempotencyKeyAsync(payment.IdempotencyKey, cancellationToken).ConfigureAwait(false);
         if (existing != null)
         {
             logger.LogWarning("Payment with idempotency key {IdempotencyKey} already exists, returning existing",
-                payment.IdempotencyKey);
+                LogRedaction.Sanitize(payment.IdempotencyKey));
             return existing;
         }
 
@@ -224,7 +261,7 @@ public class PaymentRepository(
 
             logger.LogInformation(
                 "Concurrent payment reservation won idempotency key {IdempotencyKey}; replaying payment {PaymentId}",
-                payment.IdempotencyKey,
+                LogRedaction.Sanitize(payment.IdempotencyKey),
                 concurrentWinner.Id);
             return concurrentWinner;
         }
@@ -246,7 +283,7 @@ public class PaymentRepository(
 
     public async Task<bool> ExistsByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default)
     {
-        logger.LogDebug("Checking if payment exists with idempotency key: {IdempotencyKey}", idempotencyKey);
+        logger.LogDebug("Checking if payment exists with idempotency key: {IdempotencyKey}", LogRedaction.Sanitize(idempotencyKey));
         return await Query
             .AnyAsync(p => p.IdempotencyKey == idempotencyKey, cancellationToken)
             .ConfigureAwait(false);

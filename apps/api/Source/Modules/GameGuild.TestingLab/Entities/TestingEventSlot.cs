@@ -51,15 +51,36 @@ public sealed class TestingEventSlot : EntityBase
         Guid? tenantId,
         Guid? locationId = null)
     {
-        if (eventId == Guid.Empty) throw new ArgumentException("Event is required.", nameof(eventId));
-        if (endsAt <= startsAt) throw new ArgumentException("Slot must end after it starts.");
-        if (maxTesters is <= 0) throw new ArgumentOutOfRangeException(nameof(maxTesters));
-        if (maxProjects is <= 0) throw new ArgumentOutOfRangeException(nameof(maxProjects));
+        if (eventId == Guid.Empty)
+        {
+            throw new ArgumentException("Event is required.", nameof(eventId));
+        }
+
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Slot must end after it starts.");
+        }
+
+        if (maxTesters is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxTesters));
+        }
+
+        if (maxProjects is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxProjects));
+        }
+
         if (mode == TestingEventMode.InPerson &&
             (string.IsNullOrWhiteSpace(campusName) || string.IsNullOrWhiteSpace(roomName)))
+        {
             throw new ArgumentException("In-person slots require campus and room.");
+        }
+
         if (mode == TestingEventMode.Online && string.IsNullOrWhiteSpace(meetingUrl))
+        {
             throw new ArgumentException("Online slots require a meeting URL.", nameof(meetingUrl));
+        }
 
         return new TestingEventSlot
         {
@@ -89,14 +110,31 @@ public sealed class TestingEventSlot : EntityBase
         string? meetingUrl,
         Guid? locationId)
     {
-        if (endsAt <= startsAt) throw new ArgumentException("Slot must end after it starts.");
-        if (maxTesters is <= 0) throw new ArgumentOutOfRangeException(nameof(maxTesters));
-        if (maxProjects is <= 0) throw new ArgumentOutOfRangeException(nameof(maxProjects));
+        if (endsAt <= startsAt)
+        {
+            throw new ArgumentException("Slot must end after it starts.");
+        }
+
+        if (maxTesters is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxTesters));
+        }
+
+        if (maxProjects is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxProjects));
+        }
+
         if (mode == TestingEventMode.InPerson &&
             (string.IsNullOrWhiteSpace(campusName) || string.IsNullOrWhiteSpace(roomName)))
+        {
             throw new ArgumentException("In-person slots require campus and room.");
+        }
+
         if (mode == TestingEventMode.Online && string.IsNullOrWhiteSpace(meetingUrl))
+        {
             throw new ArgumentException("Online slots require a meeting URL.", nameof(meetingUrl));
+        }
 
         Mode = mode;
         StartsAt = startsAt;

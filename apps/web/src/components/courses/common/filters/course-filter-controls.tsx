@@ -71,7 +71,7 @@ export function CourseFilterControls({
       <div className="xl:hidden space-y-4">
         {/* First Row - Period Selector and View Mode Toggle */}
         <div className="flex items-center justify-between gap-4">
-          <div className={`${hideViewToggle ? 'flex-1' : 'flex-1 max-w-xs'}`}>
+          <div className={hideViewToggle ? 'flex-1' : 'flex-1 max-w-xs'}>
             <PeriodSelector selectedPeriod={selectedPeriod} onPeriodChange={onPeriodChange} />
           </div>
           {!hideViewToggle && <ViewModeToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />}

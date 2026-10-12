@@ -156,7 +156,7 @@ export class AccessControlJitElevationsModule {
   /**
    * Get pending JIT elevation requests
    */
-  async getJitElevationsPending(query?: { tenantId?: string }): Promise<Result<Array<Types.IdentityAuthorizationJitElevationInput>, ApiError>> {
+  async getJitElevationsPending(query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationJitElevationInput[], ApiError>> {
     const url = '/v1/jit-elevations/pending';
 
     const result = await this.client.request({
@@ -166,13 +166,13 @@ export class AccessControlJitElevationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationJitElevationInput>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationJitElevationInput[], ApiError>;
   }
 
   /**
    * Get JIT elevation requests for a user
    */
-  async getJitElevationsUser(userId: string, query?: { tenantId?: string }): Promise<Result<Array<Types.IdentityAuthorizationJitElevationInput>, ApiError>> {
+  async getJitElevationsUser(userId: string, query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationJitElevationInput[], ApiError>> {
     const url = `/v1/jit-elevations/user/${userId}`;
 
     const result = await this.client.request({
@@ -182,16 +182,13 @@ export class AccessControlJitElevationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationJitElevationInput>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationJitElevationInput[], ApiError>;
   }
 
   /**
    * Get active JIT elevations for a user
    */
-  async getJitElevationsUserActive(
-    userId: string,
-    query?: { tenantId?: string },
-  ): Promise<Result<Array<Types.IdentityAuthorizationJitElevationInput>, ApiError>> {
+  async getJitElevationsUserActive(userId: string, query?: { tenantId?: string }): Promise<Result<Types.IdentityAuthorizationJitElevationInput[], ApiError>> {
     const url = `/v1/jit-elevations/user/${userId}/active`;
 
     const result = await this.client.request({
@@ -201,7 +198,7 @@ export class AccessControlJitElevationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthorizationJitElevationInput>, ApiError>;
+    return result as Result<Types.IdentityAuthorizationJitElevationInput[], ApiError>;
   }
 
   /**

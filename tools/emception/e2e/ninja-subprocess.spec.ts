@@ -4,12 +4,13 @@
  * Unlike build-tools.spec.ts, these tests FAIL HARD on errors rather than
  * skipping — they exist to pinpoint exactly where the toolchain breaks.
  *
- * The tests use the WorkerClient API exposed on window.__emception_client__
+ * The tests use the public API exposed on window.__emception_api__
  * to get structured {exitCode, stdout, stderr} results, avoiding terminal
  * scraping ambiguity.
  */
 
 import { expect, test, type Page } from '@playwright/test';
+import type { BrowserEmceptionAPI } from '@gameguild/emception-browser';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -87,7 +88,7 @@ async function bootToolchain(page: Page) {
 }
 
 /**
- * Call WorkerClient.run() directly from the browser context.
+ * Call the public API's run() directly from the browser context.
  * Returns structured { exitCode, stdout, stderr }.
  */
 async function runTool(
@@ -98,11 +99,10 @@ async function runTool(
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
     return page.evaluate(
         async ({ tool, argv, options }) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const client = (window as any).__emception_client__;
-            if (!client) throw new Error('__emception_client__ not exposed on window');
+            const api = (window as Window & { __emception_api__?: BrowserEmceptionAPI }).__emception_api__;
+            if (!api) throw new Error('__emception_api__ not exposed on window');
 
-            const result = await client.run(tool, argv, {
+            const result = await api.run(tool, argv, {
                 cwd: options?.cwd ?? '/home/user',
                 env: options?.env,
             });
@@ -129,7 +129,7 @@ test.describe('Ninja subprocess dispatch (strict)', () => {
 
         await bootToolchain(page);
 
-        console.log('Calling ninja --version via WorkerClient.run()...');
+        console.log('Calling ninja --version via the public API...');
         const result = await runTool(page, 'ninja', ['ninja', '--version']);
 
         console.log('ninja --version result:', JSON.stringify(result, null, 2));
@@ -150,7 +150,7 @@ test.describe('Ninja subprocess dispatch (strict)', () => {
 
         await bootToolchain(page);
 
-        console.log('Calling ninja (no args) via WorkerClient.run()...');
+        console.log('Calling ninja (no args) via the public API...');
         const result = await runTool(page, 'ninja', ['ninja']);
 
         console.log('ninja (no args) result:', JSON.stringify(result, null, 2));
@@ -177,7 +177,7 @@ test.describe('CMake subprocess dispatch (strict)', () => {
 
         await bootToolchain(page);
 
-        console.log('Calling cmake --version via WorkerClient.run()...');
+        console.log('Calling cmake --version via the public API...');
         const result = await runTool(page, 'cmake', ['cmake', '--version']);
 
         console.log('cmake --version result:', JSON.stringify(result, null, 2));
@@ -199,12 +199,11 @@ test.describe('CMake subprocess dispatch (strict)', () => {
         // Create a minimal CMake project in VFS
         console.log('Writing minimal CMake project to VFS...');
         await page.evaluate(async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const client = (window as any).__emception_client__;
-            if (!client) throw new Error('__emception_client__ not exposed');
+            const api = (window as Window & { __emception_api__?: BrowserEmceptionAPI }).__emception_api__;
+            if (!api) throw new Error('__emception_api__ not exposed');
 
             const enc = new TextEncoder();
-            await client.writeFile(
+            await api.workspace.writeFile(
                 '/tmp/test-cmake/CMakeLists.txt',
                 enc.encode(
                     [
@@ -214,7 +213,7 @@ test.describe('CMake subprocess dispatch (strict)', () => {
                     ].join('\n'),
                 ),
             );
-            await client.writeFile(
+            await api.workspace.writeFile(
                 '/tmp/test-cmake/main.c',
                 enc.encode(
                     [

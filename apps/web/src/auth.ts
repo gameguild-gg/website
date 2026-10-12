@@ -4,14 +4,17 @@ import {
   CredentialsProvider,
   GoogleProvider,
   DiscordProvider,
+  GitHubProvider,
   processSession,
   encodeSession,
   SessionStore,
   resolveCookieOptions,
+  type Session,
 } from "@game-guild/client";
 import { cookies } from "next/headers";
 import { createSharedAuthCookieConfig } from "@/lib/auth/cross-domain-auth";
 import { createMagicLinkCredentialsAuthorize } from "@/lib/auth/magic-link-credentials";
+import { createEmailCodeCredentialsAuthorize } from "@/lib/auth/email-code-credentials";
 
 const passwordCredentials = CredentialsProvider();
 const apiUrl =
@@ -23,7 +26,7 @@ const result = GameGuildAuth({
   providers: [
     CredentialsProvider({
       authorize: createMagicLinkCredentialsAuthorize(
-        passwordCredentials.authorize,
+        createEmailCodeCredentialsAuthorize(passwordCredentials.authorize, apiUrl),
         apiUrl,
       ),
     }),
@@ -40,6 +43,14 @@ const result = GameGuildAuth({
           DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [
+          GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
           }),
         ]
       : []),
@@ -64,8 +75,18 @@ const result = GameGuildAuth({
   }),
 });
 
-export const { handlers, auth, signIn, signOut, signUp, update } = result;
+export const { handlers, signIn, signOut, signUp, update } = result;
 export const authConfig = result.config;
+
+type AuthProxyHandler = Parameters<typeof result.auth>[0];
+
+// All server readers use the same request-bound Next cookie context. The
+// explicit-request proxy wrapper still belongs to the shared auth library.
+export function auth(): Promise<Session | null>;
+export function auth(handler: AuthProxyHandler): ReturnType<typeof result.auth>;
+export function auth(handler?: AuthProxyHandler) {
+  return handler ? result.auth(handler) : getSession();
+}
 
 async function readCurrentSession() {
   const cookieStore = await cookies();
@@ -94,6 +115,14 @@ async function readCurrentSession() {
     } catch {
       // Server Components can read a valid refreshed session even when the
       // response context cannot persist its rotated cookie.
+    }
+  }
+
+  if (!session) {
+    try {
+      sessionStore.delete((name, value, options) => cookieStore.set(name, value, options));
+    } catch {
+      // Read-only Server Components still return an anonymous authentication state.
     }
   }
 

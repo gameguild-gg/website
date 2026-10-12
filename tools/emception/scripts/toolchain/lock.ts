@@ -20,9 +20,15 @@ export type ToolName =
   | 'zstdWindows'
   | 'msys2Make';
 
+export interface ReviewedArchiveVariant {
+  sha256: string;
+  gitTree: string;
+  review: string;
+}
+
 export type LockedSource =
   | { kind: 'archive'; url: string; sha256: string }
-  | { kind: 'git-archive'; repository: string; commit: string; url: string; sha256: string }
+  | { kind: 'git-archive'; repository: string; commit: string; url: string; sha256: string; reviewedArchiveVariants?: ReviewedArchiveVariant[] }
   | { kind: 'emsdk-component'; emsdkVersion: string; revision: string; contentHash: string }
   | { kind: 'workspace'; path: string; contentHash: string };
 
@@ -81,6 +87,9 @@ function validateSource(name: string, source: LockedSource): void {
   if (!source || typeof source !== 'object' || typeof source.kind !== 'string') {
     throw new Error(`${name}.source is missing`);
   }
+  if ('reviewedArchiveVariants' in source && source.kind !== 'git-archive') {
+    throw new Error(`${name}.source.reviewedArchiveVariants requires a pinned git-archive`);
+  }
   if (source.kind === 'archive') {
     if (!source.url) throw new Error(`${name}.source.url is missing`);
     assertHash(source.sha256, `${name}.source.sha256`);
@@ -90,6 +99,25 @@ function validateSource(name: string, source: LockedSource): void {
     if (!source.repository || !source.url) throw new Error(`${name}.source repository or URL is missing`);
     if (!/^[0-9a-f]{40}$/.test(source.commit)) throw new Error(`${name}.source.commit must be immutable`);
     assertHash(source.sha256, `${name}.source.sha256`);
+    if ('reviewedArchiveVariants' in source) {
+      const variants = source.reviewedArchiveVariants;
+      const label = `${name}.source.reviewedArchiveVariants`;
+      if (!Array.isArray(variants) || variants.length === 0) throw new Error(`${label} must be a nonempty reviewed list`);
+      const hashes = new Set([source.sha256]);
+      const trees = new Set<string>();
+      for (const variant of variants) {
+        if (!variant || typeof variant !== 'object') throw new Error(`${label} entries must contain review evidence`);
+        assertHash(variant.sha256, `${label}.sha256`);
+        if (hashes.has(variant.sha256)) throw new Error(`${label} hashes must be unique`);
+        if (typeof variant.gitTree !== 'string' || !/^[0-9a-f]{40}$/.test(variant.gitTree)) {
+          throw new Error(`${label}.gitTree must identify the reviewed immutable Git tree`);
+        }
+        if (typeof variant.review !== 'string' || !variant.review.trim()) throw new Error(`${label}.review is missing`);
+        hashes.add(variant.sha256);
+        trees.add(variant.gitTree);
+      }
+      if (trees.size !== 1) throw new Error(`${label} must refer to the same reviewed Git tree`);
+    }
     return;
   }
   if (source.kind === 'emsdk-component') {
@@ -103,6 +131,24 @@ function validateSource(name: string, source: LockedSource): void {
     return;
   }
   throw new Error(`${name}.source.kind is unsupported`);
+}
+
+export function lockedArchiveHashes(source: Extract<LockedSource, { kind: 'archive' | 'git-archive' }>): readonly string[] {
+  validateSource('locked archive', source);
+  return [source.sha256, ...(source.kind === 'git-archive' ? source.reviewedArchiveVariants?.map((variant) => variant.sha256) ?? [] : [])];
+}
+
+/** Release provenance describes every reviewed lock identity, rather than labelling a variant as the primary archive. */
+export function lockedSourceProvenance(lock: ToolchainLock) {
+  return Object.fromEntries(Object.entries(lock.tools).map(([name, tool]) => {
+    validateSource(name, tool.source);
+    const source = tool.source;
+    const sha256 = source.kind === 'archive' || source.kind === 'git-archive' ? source.sha256 : source.contentHash;
+    const revision = source.kind === 'git-archive' ? source.commit : source.kind === 'emsdk-component' ? source.revision : undefined;
+    return [name, { version: tool.version, ...(revision ? { revision } : {}), sha256,
+      ...(source.kind === 'git-archive' && source.reviewedArchiveVariants
+        ? { reviewedArchiveVariants: source.reviewedArchiveVariants.map((variant) => ({ ...variant })) } : {}) }];
+  }));
 }
 
 export function validateToolchainState(config: ToolchainConfig, lock: ToolchainLock): void {

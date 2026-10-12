@@ -159,7 +159,7 @@ export interface TestCase {
   type: "simple" | "function" | "custom"
   input?: string
   expectedOutput?: string
-  args?: any[]
+  args?: unknown[]
   expectedReturn?: any
   customCode?: string
   enabled: boolean

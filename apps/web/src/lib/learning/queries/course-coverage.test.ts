@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   getToken: vi.fn(),
   createServerClient: vi.fn(),
+  clientRequest: vi.fn(),
   getCourseById: vi.fn(),
   getCourseBySlug: vi.fn(),
   getAnalytics: vi.fn(),
@@ -47,6 +48,7 @@ vi.mock('@game-guild/client', () => ({
 import {
   canEditCourse,
   canManageCourse,
+  getCourseAccessCapabilities,
   getContentItem,
   getCourse,
   getCourseAnalytics,
@@ -58,14 +60,30 @@ import {
 const courseId = '08691da8-245e-4d9e-b729-83c9023ba061';
 const contentId = '18691da8-245e-4d9e-b729-83c9023ba062';
 
+function accessProjection(overrides: Record<string, boolean> = {}) {
+  return {
+    courseId,
+    courseExists: false,
+    isTenantMember: false,
+    isOwner: false,
+    hasActiveEnrollment: false,
+    canLearn: false,
+    canEdit: false,
+    canPublish: false,
+    canReviewAsStaff: false,
+    canAccessWorkspace: false,
+    ...overrides,
+  };
+}
+
 describe('course query coverage', () => {
   beforeEach(() => {
     Object.values(mocks).forEach((mock) => mock.mockReset());
     vi.stubEnv('API_URL', '');
     vi.stubEnv('NEXT_PUBLIC_API_URL', '');
-    mocks.createServerClient.mockReturnValue({});
+    mocks.createServerClient.mockReturnValue({ request: mocks.clientRequest });
     mocks.getToken.mockResolvedValue('token');
-    mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
+    mocks.auth.mockResolvedValue({ user: { id: 'user-1' }, tenantId: 'tenant-1' });
     mocks.readGrading.mockReturnValue({ maxScore: 10 });
   });
 
@@ -87,7 +105,10 @@ describe('course query coverage', () => {
 
     vi.stubEnv('NEXT_PUBLIC_API_URL', '');
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' }, tenantId: 'tenant-1' });
-    mocks.hasPermission.mockResolvedValue({ ok: true, data: { hasPermission: true } });
+    mocks.clientRequest.mockResolvedValue({
+      ok: true,
+      data: accessProjection({ canEdit: true, canAccessWorkspace: true }),
+    });
     await canEditCourse(courseId);
     options = mocks.createServerClient.mock.calls.at(-1)?.[0];
     expect(options.baseUrl).toBe('http://localhost:8080');
@@ -191,15 +212,16 @@ describe('course query coverage', () => {
     await expect(resolveCourseId('unknown')).resolves.toBe('unknown');
   });
 
-  it('checks course ownership and safely handles missing identities and failures', async () => {
-    mocks.getCourseById.mockResolvedValue({ ok: true, data: { id: courseId, creatorId: 'user-1' } });
+  it('uses the API projection for management and fails closed on missing context', async () => {
+    mocks.clientRequest.mockResolvedValue({
+      ok: true,
+      data: accessProjection({ isOwner: true, canEdit: true, canPublish: true, canReviewAsStaff: true, canAccessWorkspace: true }),
+    });
     await expect(canManageCourse(courseId)).resolves.toBe(true);
 
     mocks.auth.mockResolvedValueOnce({ user: { id: 'other' } });
     await expect(canManageCourse(courseId)).resolves.toBe(false);
     mocks.auth.mockResolvedValueOnce({ user: {} });
-    await expect(canManageCourse(courseId)).resolves.toBe(false);
-    mocks.getCourseById.mockResolvedValueOnce({ ok: true, data: { id: courseId, creatorId: null } });
     await expect(canManageCourse(courseId)).resolves.toBe(false);
     mocks.auth.mockRejectedValueOnce(new Error('auth failed'));
     await expect(canManageCourse(courseId)).resolves.toBe(false);
@@ -209,20 +231,30 @@ describe('course query coverage', () => {
     mocks.auth.mockResolvedValueOnce(null);
     await expect(canEditCourse(courseId)).resolves.toBe(false);
 
-    mocks.auth.mockResolvedValueOnce({ user: { id: 'admin', roles: ['SystemAdmin'] } });
+    mocks.auth.mockResolvedValueOnce({ user: { id: 'admin', roles: ['SystemAdmin'] }, tenantId: 'tenant-1' });
+    mocks.clientRequest.mockResolvedValueOnce({
+      ok: true,
+      data: accessProjection({ canEdit: true, canPublish: true, canReviewAsStaff: true, canAccessWorkspace: true }),
+    });
     await expect(canEditCourse(courseId)).resolves.toBe(true);
 
     mocks.auth.mockResolvedValueOnce({ user: { id: 'user-1' }, tenantId: 'tenant-1' });
-    mocks.hasPermission.mockResolvedValueOnce({ ok: true, data: { hasPermission: true } });
+    mocks.clientRequest.mockResolvedValueOnce({
+      ok: true,
+      data: accessProjection({ canEdit: true, canAccessWorkspace: true }),
+    });
     await expect(canEditCourse(courseId)).resolves.toBe(true);
 
     mocks.auth.mockResolvedValueOnce({ user: { id: 'user-1' }, tenantId: 'tenant-1' });
-    mocks.hasPermission.mockResolvedValueOnce({ ok: false, error: {} });
-    mocks.getCourseById.mockResolvedValueOnce({ ok: true, data: { id: courseId, creatorId: 'other' } });
+    mocks.clientRequest.mockResolvedValueOnce({ ok: false, error: {} });
     await expect(canEditCourse(courseId)).resolves.toBe(false);
 
     mocks.auth.mockRejectedValueOnce(new Error('auth failed'));
     await expect(canEditCourse(courseId)).resolves.toBe(false);
+
+    mocks.auth.mockResolvedValueOnce({ user: { id: 'user-1' }, tenantId: 'tenant-1' });
+    mocks.clientRequest.mockRejectedValueOnce(new Error('offline'));
+    await expect(getCourseAccessCapabilities(courseId)).resolves.toEqual(accessProjection());
   });
 
   it('maps, derives, clamps, and defaults analytics', async () => {

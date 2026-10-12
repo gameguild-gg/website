@@ -26,7 +26,7 @@ export class SocialGroupsSocialGroupsModule {
     search?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.SocialGroupsSocialGroupDto>, ApiError>> {
+  }): Promise<Result<Types.SocialGroupsSocialGroupDto[], ApiError>> {
     const url = '/api/social/groups';
 
     const result = await this.client.request({
@@ -36,7 +36,7 @@ export class SocialGroupsSocialGroupsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialGroupsSocialGroupDto>, ApiError>;
+    return result as Result<Types.SocialGroupsSocialGroupDto[], ApiError>;
   }
 
   /**
@@ -140,7 +140,7 @@ export class SocialGroupsSocialGroupsModule {
   async getApiSocialGroupsMembers(
     id: string,
     query?: { status?: Types.SocialGroupsSocialGroupMembershipStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.SocialGroupsSocialGroupMemberDto>, ApiError>> {
+  ): Promise<Result<Types.SocialGroupsSocialGroupMemberDto[], ApiError>> {
     const url = `/api/social/groups/${id}/members`;
 
     const result = await this.client.request({
@@ -150,7 +150,7 @@ export class SocialGroupsSocialGroupsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialGroupsSocialGroupMemberDto>, ApiError>;
+    return result as Result<Types.SocialGroupsSocialGroupMemberDto[], ApiError>;
   }
 
   /**

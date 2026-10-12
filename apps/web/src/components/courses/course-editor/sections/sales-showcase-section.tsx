@@ -157,7 +157,7 @@ export function SalesShowcaseSection() {
           <Label htmlFor="estimatedHours" className="text-sm">
             Estimated Hours to Complete
           </Label>
-          <Input id="estimatedHours" type="number" min="1" max="200" value={state.estimatedHours} onChange={(e) => setEstimatedHours(parseInt(e.target.value) || 1)} />
+          <Input id="estimatedHours" type="number" min="1" max="200" value={state.estimatedHours} onChange={(e) => { setEstimatedHours(parseInt(e.target.value) || 1); }} />
         </div>
 
         {/* Publishing Status */}

@@ -17,7 +17,7 @@ export class SocialStoriesModule {
 
   /**
    */
-  async getApiSocialStories(): Promise<Result<Array<Types.SocialFeedStoryDto>, ApiError>> {
+  async getApiSocialStories(): Promise<Result<Types.SocialFeedStoryDto[], ApiError>> {
     const url = '/api/social/stories';
 
     const result = await this.client.request({
@@ -26,7 +26,7 @@ export class SocialStoriesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialFeedStoryDto>, ApiError>;
+    return result as Result<Types.SocialFeedStoryDto[], ApiError>;
   }
 
   /**

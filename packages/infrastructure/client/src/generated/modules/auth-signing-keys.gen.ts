@@ -20,7 +20,7 @@ export class AuthSigningKeysModule {
    *
    * Retrieves signing keys with optional status filtering. Use status=active for current signing key, status=valid for all keys usable for validation.
    */
-  async getAuthSigningKeys(query?: { status?: string }): Promise<Result<Array<Types.IdentityAuthenticationJwtKeyInfoDto>, ApiError>> {
+  async getAuthSigningKeys(query?: { status?: string }): Promise<Result<Types.IdentityAuthenticationJwtKeyInfoDto[], ApiError>> {
     const url = '/v1/auth/signing-keys';
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class AuthSigningKeysModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthenticationJwtKeyInfoDto>, ApiError>;
+    return result as Result<Types.IdentityAuthenticationJwtKeyInfoDto[], ApiError>;
   }
 
   /**

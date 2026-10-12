@@ -17,7 +17,7 @@ export class ApiTeamsProjectsModule {
 
   /**
    */
-  async getTeamsProjects(teamId: string): Promise<Result<Array<Types.APITeamsTeamProjectSummary>, ApiError>> {
+  async getTeamsProjects(teamId: string): Promise<Result<Types.APITeamsTeamProjectSummary[], ApiError>> {
     const url = `/v1/teams/${teamId}/projects`;
 
     const result = await this.client.request({
@@ -26,7 +26,7 @@ export class ApiTeamsProjectsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APITeamsTeamProjectSummary>, ApiError>;
+    return result as Result<Types.APITeamsTeamProjectSummary[], ApiError>;
   }
 }
 

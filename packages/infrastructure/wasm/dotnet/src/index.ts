@@ -1,5 +1,10 @@
 import { RuntimeLoader } from './csharp/runtime-loader'
 
+interface CSharpCompilerExports {
+  compileAndRun(code: string): string
+  compileAndRunMultiple(mainCode: string, filesJson: string): string
+}
+
 export interface CSharpResult {
   output?: string
   error?: string
@@ -45,7 +50,7 @@ export class CSharpCompiler {
     
     try {
       // Call the C# function exposed via JSExport
-      const result = (window as any).CSharpCompiler.compileAndRun(code)
+      const result = (window as unknown as { CSharpCompiler: CSharpCompilerExports }).CSharpCompiler.compileAndRun(code)
       const executionTime = performance.now() - startTime
 
       return this.parseResult(result, executionTime)
@@ -79,7 +84,7 @@ export class CSharpCompiler {
       const filesJson = JSON.stringify(filesMap)
 
       // Call the C# function exposed via JSExport
-      const result = (window as any).CSharpCompiler.compileAndRunMultiple(mainCode, filesJson)
+      const result = (window as unknown as { CSharpCompiler: CSharpCompilerExports }).CSharpCompiler.compileAndRunMultiple(mainCode, filesJson)
       const executionTime = performance.now() - startTime
 
       return this.parseResult(result, executionTime)

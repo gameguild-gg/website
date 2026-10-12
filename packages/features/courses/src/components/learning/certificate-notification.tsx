@@ -25,7 +25,7 @@ export function CertificateNotification({ courseId, courseTitle, completionDate,
     setIsGenerating(true);
     try {
       if (onGenerateCertificate) {
-        await onGenerateCertificate();
+         onGenerateCertificate();
       }
     } finally {
       setIsGenerating(false);

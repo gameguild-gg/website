@@ -111,7 +111,7 @@ function FloatingLinkEditor({
     middleware: [
       inline(),
       offset(10),
-      flip({ boundary: scrollerElem || undefined, padding: 10 }),
+      flip({ boundary: scrollerElem ?? undefined, padding: 10 }),
       shift({
         boundary: scrollerElem || undefined,
         crossAxis: true,

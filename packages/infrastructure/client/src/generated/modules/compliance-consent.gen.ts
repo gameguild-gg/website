@@ -70,7 +70,7 @@ export class ComplianceConsentModule {
 
   /**
    */
-  async getApiComplianceConsentDataSubjectRequestsPending(): Promise<Result<Array<Types.ComplianceConsentDataSubjectRequestDto>, ApiError>> {
+  async getApiComplianceConsentDataSubjectRequestsPending(): Promise<Result<Types.ComplianceConsentDataSubjectRequestDto[], ApiError>> {
     const url = '/api/compliance/consent/data-subject-requests/pending';
 
     const result = await this.client.request({
@@ -79,7 +79,7 @@ export class ComplianceConsentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceConsentDataSubjectRequestDto>, ApiError>;
+    return result as Result<Types.ComplianceConsentDataSubjectRequestDto[], ApiError>;
   }
 
   /**
@@ -108,7 +108,7 @@ export class ComplianceConsentModule {
 
   /**
    */
-  async getApiComplianceConsentPolicies(query?: { tenantId?: string }): Promise<Result<Array<Types.ComplianceConsentConsentPolicyDto>, ApiError>> {
+  async getApiComplianceConsentPolicies(query?: { tenantId?: string }): Promise<Result<Types.ComplianceConsentConsentPolicyDto[], ApiError>> {
     const url = '/api/compliance/consent/policies';
 
     const result = await this.client.request({
@@ -118,7 +118,7 @@ export class ComplianceConsentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceConsentConsentPolicyDto>, ApiError>;
+    return result as Result<Types.ComplianceConsentConsentPolicyDto[], ApiError>;
   }
 
   /**
@@ -186,7 +186,7 @@ export class ComplianceConsentModule {
 
   /**
    */
-  async getApiComplianceConsentUsers(userId: string): Promise<Result<Array<Types.ComplianceConsentUserConsentDto>, ApiError>> {
+  async getApiComplianceConsentUsers(userId: string): Promise<Result<Types.ComplianceConsentUserConsentDto[], ApiError>> {
     const url = `/api/compliance/consent/users/${userId}`;
 
     const result = await this.client.request({
@@ -195,7 +195,7 @@ export class ComplianceConsentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceConsentUserConsentDto>, ApiError>;
+    return result as Result<Types.ComplianceConsentUserConsentDto[], ApiError>;
   }
 }
 

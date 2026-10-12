@@ -19,7 +19,9 @@ public sealed class TestAuthHandler(
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.ContainsKey("Authorization"))
+        {
             return Task.FromResult(AuthenticateResult.NoResult());
+        }
 
         var subject = Request.Headers.TryGetValue("X-Test-Subject", out var subjectValues)
             ? subjectValues.ToString()
