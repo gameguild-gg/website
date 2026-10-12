@@ -159,14 +159,19 @@ public class ApplyInvoiceAccountCreditsHandlerTests
     [Fact]
     public async Task Handle_Is_Idempotent_Per_Key_Returning_The_Recorded_Settlement()
     {
-        var (context, handler, _, ownerId, invoice) = await ArrangeOpenInvoiceAsync(invoiceTotal: 100m, creditAmount: 70m);
+        // Grant 150 so the 70 tender is a PARTIAL consumption — the replay must not touch
+        // the surviving 80 (with the 70 default the grant would be fully used and the
+        // "balance moved exactly once" assertion could not distinguish a replay from a
+        // double application).
+        var (context, handler, _, ownerId, invoice) = await ArrangeOpenInvoiceAsync(invoiceTotal: 100m, creditAmount: 150m);
 
         var first = await handler.Handle(
-            new ApplyInvoiceAccountCreditsCommand(invoice.Id, "idem-replay"), CancellationToken.None);
+            new ApplyInvoiceAccountCreditsCommand(invoice.Id, "idem-replay", MaxAmount: 70m), CancellationToken.None);
         var second = await handler.Handle(
-            new ApplyInvoiceAccountCreditsCommand(invoice.Id, "idem-replay"), CancellationToken.None);
+            new ApplyInvoiceAccountCreditsCommand(invoice.Id, "idem-replay", MaxAmount: 70m), CancellationToken.None);
 
         first.IsSuccess.Should().BeTrue();
+        first.Value.AmountApplied.Should().Be(70m);
         second.IsSuccess.Should().BeTrue();
         second.Value.IdempotentReplay.Should().BeTrue();
         second.Value.AmountApplied.Should().Be(first.Value.AmountApplied);
