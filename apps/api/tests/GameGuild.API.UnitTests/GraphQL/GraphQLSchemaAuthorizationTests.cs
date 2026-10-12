@@ -97,7 +97,7 @@ public sealed class GraphQLSchemaAuthorizationTests
         document.RootElement.GetProperty("data").GetProperty("publicData")
             .GetString().Should().Be("public");
         document.RootElement.GetProperty("data").GetProperty("__typename")
-            .GetString().Should().Be("Query");
+            .GetString().Should().Be(nameof(GraphQLSchemaProbe));
     }
 
     [Fact]
