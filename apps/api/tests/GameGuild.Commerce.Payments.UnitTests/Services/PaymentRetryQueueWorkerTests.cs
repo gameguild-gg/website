@@ -138,6 +138,30 @@ public class PaymentRetryQueueWorkerTests
         public void SetActorContext(ActorContext context) => _current = context;
 
         public void ClearActorContext() => _current = ActorContext.Anonymous;
+
+        public IActorContextScope BeginActorContextScope(ActorContext context)
+        {
+            var previous = _current;
+            SetActorContext(context);
+            return new RestoreScope(this, previous);
+        }
+
+        private sealed class RestoreScope(MutableActorContextAccessor accessor, ActorContext previous) : IActorContextScope
+        {
+            private bool disposed;
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                accessor._current = previous;
+            }
+        }
+
     }
 
     private PaymentRetryQueueWorker CreateWorker(bool enabled, int maxBatchSize = 100) =>
