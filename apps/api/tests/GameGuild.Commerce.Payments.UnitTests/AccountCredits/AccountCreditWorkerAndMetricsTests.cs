@@ -106,7 +106,10 @@ public class AccountCreditWorkerAndMetricsTests
         var eur = report.Credit.PerCurrency.Single(row => row.Currency == "EUR");
         eur.Issued.Should().Be(40m);
         eur.Applied.Should().Be(40m);
-        report.Credit.UsageRate.Should().Be(0.4m);
+
+        // Issued across currencies = 100 USD + 40 EUR + 10 USD referrer reward = 150;
+        // applied 40 EUR → 40/150 = 0.2667.
+        report.Credit.UsageRate.Should().Be(0.2667m);
 
         report.ReferralFunnel.Clicks.Should().Be(0);
         report.ReferralFunnel.Signups.Should().Be(1);
