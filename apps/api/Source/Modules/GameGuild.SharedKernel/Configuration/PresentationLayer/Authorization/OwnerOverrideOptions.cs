@@ -80,9 +80,20 @@ public sealed class OwnerOverrideOptions
     public OwnerOverrideMode ResolveMode() => TryResolveMode(out var mode) ? mode : OwnerOverrideMode.Off;
 
     /// <summary>
-    ///     Attempts to parse the configured mode name (case-insensitive).
+    ///     Attempts to parse the configured mode name (case-insensitive). Values padded
+    ///     with leading/trailing whitespace are treated as unknown (fail closed):
+    ///     <c>Enum.TryParse</c> silently trims its input, and a typo'd configuration
+    ///     value must never be silently normalized into a permission-widening mode.
     /// </summary>
-    public bool TryResolveMode(out OwnerOverrideMode mode) =>
-        Enum.TryParse(Mode, ignoreCase: true, out mode)
-        && mode is OwnerOverrideMode.Off or OwnerOverrideMode.AllowUnlessDenied or OwnerOverrideMode.AlwaysAllow;
+    public bool TryResolveMode(out OwnerOverrideMode mode)
+    {
+        if (string.IsNullOrEmpty(Mode) || Mode.AsSpan().Trim().Length != Mode.Length)
+        {
+            mode = OwnerOverrideMode.Unknown;
+            return false;
+        }
+
+        return Enum.TryParse(Mode, ignoreCase: true, out mode)
+            && mode is OwnerOverrideMode.Off or OwnerOverrideMode.AllowUnlessDenied or OwnerOverrideMode.AlwaysAllow;
+    }
 }

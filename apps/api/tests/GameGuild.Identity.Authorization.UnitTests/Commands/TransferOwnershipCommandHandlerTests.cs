@@ -39,7 +39,10 @@ public class TransferOwnershipCommandHandlerTests
             ResourceType = "Project",
             ResourceId = "p-1",
             Permissions = ["read", "write", "share"],
-            GrantedByUserId = _ownerId
+            GrantedByUserId = _ownerId,
+            // The handler only considers IsOwner rows — an owner fixture without the
+            // flag is invisible to the transfer flow entirely.
+            IsOwner = true
         };
     }
 

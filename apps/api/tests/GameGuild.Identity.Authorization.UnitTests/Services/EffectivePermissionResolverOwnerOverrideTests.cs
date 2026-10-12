@@ -266,16 +266,22 @@ public class EffectivePermissionResolverOwnerOverrideTests
     [Fact]
     public async Task ResolveAsync_OwnerPermissions_NeverMintWildcards()
     {
+        // The wildcard-bearing permission set is exposed ONLY through the ownership
+        // designation: routing it through a resource-grant row as well would make the
+        // pre-existing resource-grant layer mint the wildcards, which is not the
+        // behavior under test (the owner-override layer must never mint them).
         SetupNoData();
-        var owner = OwnerRow(["read", "admin:*", "*"]);
-        owner.UserId = _userId;
-        SetupOwnerRow(owner);
+        _ownershipProvider
+            .Setup(p => p.GetOwnerAsync(_tenantId, _userId, ResourceType, ResourceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResourceOwnership(
+                _userId, _tenantId, ResourceType, ResourceId, ["read", "admin:*", "*"], null, Guid.NewGuid()));
 
         var result = await CreateSut("AlwaysAllow").ResolveAsync(
             EffectivePermissionContext.ForResource(_userId, _tenantId, ResourceType, ResourceId));
 
         result.Permissions.Should().NotContain("admin:*").And.NotContain("*");
-        result.OwnerOverride!.GrantedPermissions.Should().NotContain("admin:*");
+        result.Permissions.Should().Contain("read");
+        result.OwnerOverride!.GrantedPermissions.Should().NotContain("admin:*").And.NotContain("*");
     }
 
     // ── Temporal precedence (#363): more restrictive expiry wins ───────────
