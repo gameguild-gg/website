@@ -29,7 +29,6 @@ internal sealed record GraphQLIntrospectionDecision(bool Allowed, string? Reason
 ///     is restricted to schema administrators (config-gated).
 /// </summary>
 internal sealed class GraphQLSchemaVisibilityEvaluator(
-    IEffectivePermissionResolver permissionResolver,
     IAuthorizationService authorizationService,
     IActorContextAccessor actorContextAccessor,
     IHostEnvironment hostEnvironment,
