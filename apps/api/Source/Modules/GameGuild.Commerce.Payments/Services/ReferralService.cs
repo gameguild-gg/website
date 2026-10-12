@@ -334,7 +334,17 @@ public sealed class ReferralService(
     }
 
     private string BuildLink(string code)
-        => $"{options.Value.ReferralLinkBaseUrl.TrimEnd('/')}?ref={code}";
+    {
+        // Normalize to a path-terminated base (…/signup or …/signup/) so the query
+        // string never glues onto the host segment.
+        var baseUrl = options.Value.ReferralLinkBaseUrl.Trim();
+        if (!baseUrl.EndsWith("/", StringComparison.Ordinal))
+        {
+            baseUrl += "/";
+        }
+
+        return $"{baseUrl}?ref={code}";
+    }
 
     private static string GenerateCode()
     {

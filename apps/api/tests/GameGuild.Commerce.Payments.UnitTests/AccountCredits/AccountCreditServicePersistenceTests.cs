@@ -123,6 +123,11 @@ public class AccountCreditServicePersistenceTests
         application.ConsumedGrants[1].Amount.Should().Be(10m);
         application.ConsumedGrants[2].Amount.Should().Be(5m);
 
+        // ConsumeAsync deliberately enqueues its ledger rows without saving (the invoice
+        // settlement joins the same SaveChanges batch in production); persist here so
+        // the ledger assertions observe the enqueued rows.
+        await context.SaveChangesAsync();
+
         var consumeRows = await context.Set<AccountCreditTransaction>()
             .Where(transaction => transaction.Type == AccountCreditTransactionType.Consume)
             .ToListAsync();
@@ -185,10 +190,12 @@ public class AccountCreditServicePersistenceTests
     public async Task ExpireDueAsync_Flips_Due_Grants_And_Unredeemed_Gifts_Bounded()
     {
         await using var context = await CreateContextAsync();
-        var now = SystemClock.UtcNow;
+        var now = SystemClock.UtcNow.AddHours(2); // the sweep clock runs after both grants were issued
         var tenantId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
+        // Grants are created with FUTURE expiries (the entity ctor rejects expired
+        // grants by design); the first is due at the sweep clock, the second is not.
         context.Set<AccountCreditGrant>().AddRange(
             new AccountCreditGrant(tenantId, userId, 10m, "USD", AccountCreditSource.Manual,
                 AccountCreditType.General, "due", expiresAt: now.AddHours(-1)),
@@ -198,7 +205,7 @@ public class AccountCreditServicePersistenceTests
         var giftCode = GiftRedemptionCodeGenerator.HashCode(GiftRedemptionCodeGenerator.GenerateCode());
         context.Set<GiftSubscription>().Add(new GiftSubscription(
             tenantId, Guid.NewGuid(), "late@example.test", 20m, "USD", 6, giftCode, "PREFIX",
-            purchasedAt: now.AddYears(-2))); // way past the 1-year window
+            purchasedAt: SystemClock.UtcNow.AddYears(-2))); // way past the 1-year window
         await context.SaveChangesAsync();
 
         var service = new AccountCreditService(context);

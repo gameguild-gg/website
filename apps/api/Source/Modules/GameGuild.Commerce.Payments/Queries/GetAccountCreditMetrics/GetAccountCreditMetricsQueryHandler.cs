@@ -151,10 +151,12 @@ public sealed class GetAccountCreditMetricsQueryHandler(IApplicationDbContext co
             .AsNoTracking()
             .Where(referral => tenantId == null || referral.TenantId == tenantId)
             .GroupBy(referral => referral.ReferrerUserId)
+            // Conditional sums translate (CASE WHEN) where Count(predicate) over a
+            // grouping does not on this provider.
             .Select(grouping => new ReferrerLeaderboardEntry(
                 grouping.Key,
-                grouping.Count(referral => referral.Status == ReferralStatus.RewardIssued),
-                grouping.Count(referral => referral.Status == ReferralStatus.Fraudulent)))
+                grouping.Sum(referral => referral.Status == ReferralStatus.RewardIssued ? 1 : 0),
+                grouping.Sum(referral => referral.Status == ReferralStatus.Fraudulent ? 1 : 0)))
             .OrderByDescending(entry => entry.RewardedReferrals)
             .ThenBy(entry => entry.ReferrerUserId)
             .Take(LeaderboardSize)

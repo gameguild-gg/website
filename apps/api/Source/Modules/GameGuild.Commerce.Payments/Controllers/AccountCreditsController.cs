@@ -95,7 +95,7 @@ public sealed class AccountCreditsController(
             ct).ConfigureAwait(false);
 
         return result.IsSuccess
-            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            ? Created(string.Empty, result.Value)
             : ProblemFrom(result.Error);
     }
 
