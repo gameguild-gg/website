@@ -18,6 +18,13 @@ public static class DependencyInjection
     /// <returns>The configured service collection</returns>
     public static IServiceCollection AddSubscriptionsModule(this IServiceCollection services)
     {
+        // Issue #416 plan-management services: slug generation (create/full-update when the
+        // client omits the slug) and the 5-minute public plan-list cache. Both are
+        // stateless (the cache state lives in IMemoryCache), so singletons are safe and
+        // keep cache entries shared across scopes.
+        services.AddSingleton<ISubscriptionPlanSlugGenerator, SubscriptionPlanSlugGenerator>();
+        services.AddSingleton<ISubscriptionPlanListCache, SubscriptionPlanListCache>();
+
         // Register Subscription Plan Service (required by sub-services)
         services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 

@@ -150,6 +150,20 @@ public static class PaymentsModule
         services.AddScoped<IGatewayMetricsService, GatewayMetricsService>();
         services.AddScoped<IPaymentGateway, FailoverPaymentGateway>();
 
+        // Account credits, gifting and referrals (issue #410 v1): the credit ledger with
+        // FIFO-by-expiry consumption and idempotent grants, the gift status machine with
+        // hashed redemption codes, referral tracking with fraud blocks and credit rewards,
+        // plus the config-gated daily expiry worker (OpenTelemetry metrics included).
+        services.AddHttpContextAccessor(); // referral fraud blocks hash the caller IP
+        services.AddScoped<IAccountCreditService, AccountCreditService>();
+        services.AddScoped<IGiftService, GiftService>();
+        services.AddScoped<IReferralService, ReferralService>();
+        services.AddSingleton<IValidateOptions<AccountCreditOptions>, AccountCreditOptionsValidator>();
+        services.AddOptions<AccountCreditOptions>()
+            .Bind(configuration.GetSection(AccountCreditOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<AccountCreditExpiryBackgroundService>();
+
         // Register controllers
         services.AddControllers().AddApplicationPart(typeof(PaymentsModule).Assembly);
 
