@@ -130,6 +130,10 @@ public class PermissionApprovalServiceTests
             new PermissionApprovalStageDefinition("Security")
         ], _requester);
         SetupLoad(repository, workflow);
+        grants.Setup(g => g.GrantTenantPermissionAsync(
+                It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<string[]>(), It.IsAny<Guid?>(),
+                It.IsAny<DateTime?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TenantPermission());
 
         await service.DecideAsync(workflow.Id, approve: true, "first");
         await service.DecideAsync(workflow.Id, approve: true, "second");

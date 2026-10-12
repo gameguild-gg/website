@@ -14,8 +14,9 @@ public class PolicyVersionSnapshotServiceTests
     private static (PolicyVersionSnapshotService Service, Mock<IPolicyVersionHistoryRepository> History) Sut(params int[] existingVersions)
     {
         var history = new Mock<IPolicyVersionHistoryRepository>(MockBehavior.Strict);
-        var setup = history.SetupSequence(h => h.GetLatestVersionAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()));
-        foreach (var existing in existingVersions)
+        var setup = history.SetupSequence(h => h.GetLatestVersionAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingVersions.Length > 0 ? existingVersions[0] : 0);
+        foreach (var existing in existingVersions.Skip(1))
         {
             setup = setup.ReturnsAsync(existing);
         }
