@@ -528,6 +528,30 @@ public sealed class GraphQLAuthorizeDirectiveTests
         public void SetActorContext(ActorContext context) => _actorContext = context;
 
         public void ClearActorContext() => _actorContext = ActorContext.Anonymous;
+
+        public IActorContextScope BeginActorContextScope(ActorContext context)
+        {
+            ArgumentNullException.ThrowIfNull(context);
+            var previous = _actorContext;
+            _actorContext = context;
+            return new RestoreScope(this, previous);
+        }
+
+        private sealed class RestoreScope(GraphQLAuthorizeTestActorContextAccessor owner, ActorContext previous) : IActorContextScope
+        {
+            private bool _disposed;
+
+            public void Dispose()
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                owner.SetActorContext(previous);
+            }
+        }
     }
 
     /// <summary>

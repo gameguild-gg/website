@@ -10,12 +10,21 @@ namespace GameGuild.API.Database;
 ///     <see cref="IRoleHierarchyAuditService"/>.
 /// </summary>
 /// <remarks>
-///     The hook runs after the permission mutation has committed. Any failure is logged
-///     and swallowed by the caller-side contract (audit isolation): it can never fail or
-///     roll back the audited mutation.
+///     <para>
+///         The audit service is resolved lazily from the scoped provider on purpose: the
+///         hook is injected into <see cref="ApplicationDbContext"/> construction, and
+///         eager injection would create a scoped resolution cycle
+///         (DbContext → hook → IRoleHierarchyAuditService → role repositories →
+///         IApplicationDbContext).
+///     </para>
+///     <para>
+///         The hook runs after the permission mutation has committed. Any failure is
+///         logged and swallowed (audit isolation): it can never fail or roll back the
+///         audited mutation.
+///     </para>
 /// </remarks>
 public sealed class PermissionGovernanceAuditHook(
-    IRoleHierarchyAuditService roleHierarchyAuditService,
+    IServiceProvider serviceProvider,
     ILogger<PermissionGovernanceAuditHook> logger) : IPermissionAuditHook
 {
     private static readonly HashSet<string> GovernanceEntityTypes =
@@ -53,6 +62,7 @@ public sealed class PermissionGovernanceAuditHook(
 
         try
         {
+            var roleHierarchyAuditService = serviceProvider.GetRequiredService<IRoleHierarchyAuditService>();
             await roleHierarchyAuditService
                 .WriteGovernanceAuditEntriesAsync(governanceChanges, cancellationToken)
                 .ConfigureAwait(false);
