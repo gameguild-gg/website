@@ -66,9 +66,19 @@ public abstract class AuthenticationFlowState
     public Dictionary<string, object>? StepData { get; set; }
 
     /// <summary>
-    ///     Gets the next step to complete.
+    ///     Gets the next step to complete, or <see langword="null"/> when every required
+    ///     step is already satisfied. (<see cref="Enumerable.FirstOrDefault{TSource}"/>
+    ///     over a non-nullable enum would return the default value <c>0</c> instead of
+    ///     null, so an empty remainder must be handled explicitly.)
     /// </summary>
-    public AuthenticationStep? NextStep { get => RequiredSteps.Except(CompletedSteps).FirstOrDefault(); }
+    public AuthenticationStep? NextStep
+    {
+        get
+        {
+            var remaining = RequiredSteps.Except(CompletedSteps).ToList();
+            return remaining.Count > 0 ? remaining[0] : null;
+        }
+    }
 
     /// <summary>
     ///     Gets whether the flow has expired.
