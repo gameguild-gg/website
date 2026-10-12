@@ -230,7 +230,7 @@ public sealed class SubscriptionsCoverageCompletionTests
         var planRepository = new Mock<ISubscriptionPlanRepository>();
         planRepository.Setup(repo => repo.GetByIdAsync(planWithAnnual.Id, It.IsAny<CancellationToken>())).ReturnsAsync(planWithAnnual);
         planRepository.Setup(repo => repo.UpdateAsync(planWithAnnual, It.IsAny<CancellationToken>())).ReturnsAsync(planWithAnnual);
-        await new TestPlanCommandHandler(planRepository.Object)
+        await new TestPlanCommandHandler(planRepository.Object, new Mock<ISubscriptionPlanListCache>().Object)
             .Handle(new ActivateSubscriptionPlanCommand(planWithAnnual.Id), CancellationToken.None);
     }
 
@@ -735,8 +735,8 @@ public sealed class SubscriptionsCoverageCompletionTests
         public override string ToString() => null!;
     }
 
-    private sealed class TestPlanCommandHandler(ISubscriptionPlanRepository repository)
-        : SubscriptionPlanCommandHandlerBase<ActivateSubscriptionPlanCommand>(repository)
+    private sealed class TestPlanCommandHandler(ISubscriptionPlanRepository repository, ISubscriptionPlanListCache planListCache)
+        : SubscriptionPlanCommandHandlerBase<ActivateSubscriptionPlanCommand>(repository, planListCache)
     {
         protected override Guid GetPlanId(ActivateSubscriptionPlanCommand request) => request.Id;
 

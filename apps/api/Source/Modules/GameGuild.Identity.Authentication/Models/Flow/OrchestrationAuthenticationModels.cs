@@ -9,3 +9,9 @@ public sealed class OrchestrationAuthenticationFlowState : AuthenticationFlowSta
 ///     Concrete <see cref="AuthenticationResult"/> returned by the authentication orchestration service.
 /// </summary>
 public sealed class OrchestrationAuthenticationResult : AuthenticationResult;
+
+/// <summary>
+///     Concrete <see cref="InitiateAuthenticationRequest"/> for a local (email + password)
+///     primary credential carried into an orchestrated authentication flow.
+/// </summary>
+public sealed class LocalAuthenticationInitiationRequest : InitiateAuthenticationRequest;

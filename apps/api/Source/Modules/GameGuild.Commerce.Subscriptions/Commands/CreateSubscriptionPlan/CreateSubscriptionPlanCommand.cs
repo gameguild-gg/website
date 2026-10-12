@@ -11,4 +11,4 @@ namespace GameGuild.Commerce.Subscriptions;
 /// </summary>
 [RequiresQuota(ResourceUsageType.SubscriptionPlans, Source = "CreateSubscriptionPlan")]
 [AuthorizeRequest(MonetizationPermission.Keys.Configure)]
-public sealed record CreateSubscriptionPlanCommand(string Name, string Slug, long MonthlyPriceInCents, string Currency = "USD", string? Description = null) : ICommand<Guid>;
+public sealed record CreateSubscriptionPlanCommand(string Name, string? Slug = null, long MonthlyPriceInCents = 0, string Currency = "USD", string? Description = null) : ICommand<Guid>;
