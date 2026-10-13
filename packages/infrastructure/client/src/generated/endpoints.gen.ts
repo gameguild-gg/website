@@ -6039,6 +6039,198 @@ export const getAuthorizationPermissionPoliciesVersionsEndpoint = {
 } as const;
 
 /**
+ * Lists permission templates with their role keys and current version.
+ */
+export interface GetAuthorizationPermissionTemplatesInput {
+  query?: {
+    includeInactive?: boolean;
+    category?: string;
+  };
+}
+export type GetAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateSummary[];
+export const getAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplates' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a permission template. The initial permission/role set is snapshotted
+ * as version 1 and the creation is audited.
+ */
+export interface PostAuthorizationPermissionTemplatesInput {
+  body?: Types.IdentityAuthorizationCreatePermissionTemplateCommand;
+}
+export type PostAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateMutationResult;
+export const postAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplates' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a permission template. Every accepted update appends a new version
+ * snapshot with the computed diff and bumps the security version of every
+ * tenant holding an active instantiation.
+ */
+export interface PutAuthorizationPermissionTemplatesInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationUpdatePermissionTemplateCommand;
+}
+export type PutAuthorizationPermissionTemplatesOutput = Types.IdentityAuthorizationPermissionTemplateMutationResult;
+export const putAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'putAuthorizationPermissionTemplates' as const,
+  method: 'PUT' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a permission template. Templates with active instantiations are
+ * pinned (fail closed) and must be migrated away first.
+ */
+export interface DeleteAuthorizationPermissionTemplatesInput {
+  templateId: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type DeleteAuthorizationPermissionTemplatesOutput = void;
+export const deleteAuthorizationPermissionTemplatesEndpoint = {
+  operationId: 'deleteAuthorizationPermissionTemplates' as const,
+  method: 'DELETE' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Instantiates a template into a tenant: grants the template permissions to the
+ * target users and assigns the template's roles (role templates). Use
+ * `dryRun` for the preview-only form.
+ */
+export interface PostAuthorizationPermissionTemplatesInstantiateInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationInstantiateTemplateInput;
+}
+export type PostAuthorizationPermissionTemplatesInstantiateOutput = Types.IdentityAuthorizationPermissionTemplateInstantiationResult;
+export const postAuthorizationPermissionTemplatesInstantiateEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesInstantiate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}:instantiate' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Dry-run preview of instantiating a template into a tenant: per-target
+ *     permission grants and role assignments that would apply, without mutating
+ * anything.
+ */
+export interface PostAuthorizationPermissionTemplatesInstantiatePreviewInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationPreviewInstantiationInput;
+}
+export type PostAuthorizationPermissionTemplatesInstantiatePreviewOutput = Types.IdentityAuthorizationPermissionTemplateInstantiationResult;
+export const postAuthorizationPermissionTemplatesInstantiatePreviewEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesInstantiatePreview' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}:instantiate-preview' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Migrates a template's instantiated targets to a target version (issue #370):
+ * applies the version delta across the tenants that instantiated the template,
+ * batched, with durable per-batch progress. Supports dry-run.
+ */
+export interface PostAuthorizationPermissionTemplatesMigrationsInput {
+  templateId: string;
+  body?: Types.IdentityAuthorizationMigrateTemplateInput;
+}
+export type PostAuthorizationPermissionTemplatesMigrationsOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const postAuthorizationPermissionTemplatesMigrationsEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesMigrations' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Reads the durable progress of one migration (issue #370).
+ */
+export interface GetAuthorizationPermissionTemplatesMigrationsInput {
+  templateId: string;
+  migrationId: string;
+}
+export type GetAuthorizationPermissionTemplatesMigrationsOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const getAuthorizationPermissionTemplatesMigrationsEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplatesMigrations' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations/{migrationId}' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Rolls back a completed template migration (issue #370): restores every
+ * affected target to its recorded pre-migration state.
+ */
+export interface PostAuthorizationPermissionTemplatesMigrationsRollbackInput {
+  templateId: string;
+  migrationId: string;
+  body?: Types.IdentityAuthorizationRollbackMigrationInput;
+}
+export type PostAuthorizationPermissionTemplatesMigrationsRollbackOutput = Types.IdentityAuthorizationPermissionTemplateMigrationResult;
+export const postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint = {
+  operationId: 'postAuthorizationPermissionTemplatesMigrationsRollback' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/migrations/{migrationId}:rollback' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the append-only version history of a template (issue #370), newest first.
+ */
+export interface GetAuthorizationPermissionTemplatesVersionsInput {
+  templateId: string;
+}
+export type GetAuthorizationPermissionTemplatesVersionsOutput = Types.IdentityAuthorizationPermissionTemplateVersionSummary[];
+export const getAuthorizationPermissionTemplatesVersionsEndpoint = {
+  operationId: 'getAuthorizationPermissionTemplatesVersions' as const,
+  method: 'GET' as const,
+  path: '/api/v1/authorization/permission-templates/{templateId}/versions' as const,
+  tags: ['AccessControlPermissionTemplates'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ *     Simulates a permission change (issue #374): given a subject (user, role or
+ * tenant), a grant/revoke delta and an optional resource scope, returns the
+ * before/after effective permission diff. Nothing is applied — no grants are
+ * written, no security version is bumped, no audit entry is recorded.
+ */
+export interface PostAuthorizationPermissionsSimulateInput {
+  body?: Types.IdentityAuthorizationSimulatePermissionChangeCommand;
+}
+export type PostAuthorizationPermissionsSimulateOutput = Types.IdentityAuthorizationPermissionSimulationResult;
+export const postAuthorizationPermissionsSimulateEndpoint = {
+  operationId: 'postAuthorizationPermissionsSimulate' as const,
+  method: 'POST' as const,
+  path: '/api/v1/authorization/permissions:simulate' as const,
+  tags: ['AccessControlPermissionSimulation'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Reconstructs a subject's effective permission state at a past instant
  * (issue #189: access rights at any point in time).
  */
@@ -29177,6 +29369,17 @@ export const endpoints = {
   getAuthorizationPermissionGraphRolesDeletionImpact: getAuthorizationPermissionGraphRolesDeletionImpactEndpoint,
   getAuthorizationPermissionGraphRolesPermissionRemovalImpact: getAuthorizationPermissionGraphRolesPermissionRemovalImpactEndpoint,
   getAuthorizationPermissionPoliciesVersions: getAuthorizationPermissionPoliciesVersionsEndpoint,
+  getAuthorizationPermissionTemplates: getAuthorizationPermissionTemplatesEndpoint,
+  postAuthorizationPermissionTemplates: postAuthorizationPermissionTemplatesEndpoint,
+  putAuthorizationPermissionTemplates: putAuthorizationPermissionTemplatesEndpoint,
+  deleteAuthorizationPermissionTemplates: deleteAuthorizationPermissionTemplatesEndpoint,
+  postAuthorizationPermissionTemplatesInstantiate: postAuthorizationPermissionTemplatesInstantiateEndpoint,
+  postAuthorizationPermissionTemplatesInstantiatePreview: postAuthorizationPermissionTemplatesInstantiatePreviewEndpoint,
+  postAuthorizationPermissionTemplatesMigrations: postAuthorizationPermissionTemplatesMigrationsEndpoint,
+  getAuthorizationPermissionTemplatesMigrations: getAuthorizationPermissionTemplatesMigrationsEndpoint,
+  postAuthorizationPermissionTemplatesMigrationsRollback: postAuthorizationPermissionTemplatesMigrationsRollbackEndpoint,
+  getAuthorizationPermissionTemplatesVersions: getAuthorizationPermissionTemplatesVersionsEndpoint,
+  postAuthorizationPermissionsSimulate: postAuthorizationPermissionsSimulateEndpoint,
   getAuthorizationPermissionsHistoryAt: getAuthorizationPermissionsHistoryAtEndpoint,
   getAuthorizationPermissionsHistoryInheritance: getAuthorizationPermissionsHistoryInheritanceEndpoint,
   getAuthorizationResourcesHasPermission: getAuthorizationResourcesHasPermissionEndpoint,
