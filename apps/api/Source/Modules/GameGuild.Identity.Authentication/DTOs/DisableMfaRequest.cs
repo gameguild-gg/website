@@ -7,6 +7,9 @@ namespace GameGuild.Identity.Authentication;
 /// </summary>
 public class DisableMfaRequest
 {
+    /// <summary>
+    ///     TOTP confirmation code
+    /// </summary>
     [Required]
-    public string Password { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
 }
