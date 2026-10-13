@@ -338,7 +338,8 @@ public sealed class AssetAuthorizationAndScopedAccessCoverageTests : IDisposable
             _context,
             [],
             Mock.Of<IAssetAccessService>(),
-            Mock.Of<IAssetFolderAuthorizationService>());
+            Mock.Of<IAssetFolderAuthorizationService>(),
+            Mock.Of<IAssetContentRepository>());
 
         var read = await service.GetAsync("Unknown", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         var create = await service.CreateFolderAsync(
@@ -360,7 +361,8 @@ public sealed class AssetAuthorizationAndScopedAccessCoverageTests : IDisposable
             _context,
             [resolver.Object],
             Mock.Of<IAssetAccessService>(),
-            Mock.Of<IAssetFolderAuthorizationService>());
+            Mock.Of<IAssetFolderAuthorizationService>(),
+            Mock.Of<IAssetContentRepository>());
 
         var result = await service.GetAsync("Project", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 

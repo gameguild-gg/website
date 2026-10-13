@@ -119,6 +119,7 @@ public class AssetUploadService : IAssetUploadService
             assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, userId, options.TenantId));
 
             assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
+            await _contentRepository.IncrementReferenceCountAsync(assetContent.Id, ct).ConfigureAwait(false);
         }
 
         // Create reference
@@ -268,19 +269,33 @@ public class AssetUploadService : IAssetUploadService
 
         var contentHash = await ComputeHashAsync(stream, ct).ConfigureAwait(false);
 
-        // Create content record
-        var assetContent = new AssetContent(
-            storageResult.BucketName,
-            storageResult.ObjectKey,
-            contentHash,
-            session.MimeType,
-            session.TotalSize,
-            null, null);
+        // Check for existing content (deduplication), mirroring UploadAsync
+        var existingContent = await _contentRepository.GetByContentHashAsync(contentHash, ct).ConfigureAwait(false);
+        AssetContent assetContent;
 
-        assetContent.TenantId = options.TenantId;
-        assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, session.UserId, options.TenantId));
+        if (existingContent != null)
+        {
+            _logger.LogInformation("Chunked content already exists with hash {ContentHash}, reusing", contentHash);
+            assetContent = existingContent;
+            await _contentRepository.IncrementReferenceCountAsync(existingContent.Id, ct).ConfigureAwait(false);
+        }
+        else
+        {
+            // Create content record
+            assetContent = new AssetContent(
+                storageResult.BucketName,
+                storageResult.ObjectKey,
+                contentHash,
+                session.MimeType,
+                session.TotalSize,
+                null, null);
 
-        assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
+            assetContent.TenantId = options.TenantId;
+            assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, session.UserId, options.TenantId));
+
+            assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
+            await _contentRepository.IncrementReferenceCountAsync(assetContent.Id, ct).ConfigureAwait(false);
+        }
 
         // Create reference
         var reference = new AssetReference(
