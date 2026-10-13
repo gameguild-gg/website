@@ -98,6 +98,7 @@ public sealed class ArchiveProductHandler(IProductRepository repository) : IComm
 /// <param name="MaxAffiliateDiscount">Optional max affiliate discount</param>
 /// <param name="AffiliateCommissionPercentage">Optional affiliate commission</param>
 /// <param name="ExpectedVersion">Expected version for optimistic concurrency</param>
+/// <param name="CategoryId">Catalog category assignment (single category, v1; null = leave unchanged)</param>
 public sealed record PatchProductCommand(
     Guid ProductId,
     string? Name = null,
@@ -110,13 +111,14 @@ public sealed record PatchProductCommand(
     decimal? ReferralCommissionPercentage = null,
     decimal? MaxAffiliateDiscount = null,
     decimal? AffiliateCommissionPercentage = null,
-    long? ExpectedVersion = null
+    long? ExpectedVersion = null,
+    Guid? CategoryId = null
 ) : ICommand<ProductDto>;
 
 /// <summary>
 /// Handler for PatchProductCommand
 /// </summary>
-public sealed class PatchProductHandler(IProductRepository repository) : ICommandHandler<PatchProductCommand, ProductDto>
+public sealed class PatchProductHandler(IProductRepository repository, IProductCategoryRepository categoryRepository) : ICommandHandler<PatchProductCommand, ProductDto>
 {
     public async Task<ProductDto> Handle(PatchProductCommand request, CancellationToken cancellationToken)
     {
@@ -132,6 +134,10 @@ public sealed class PatchProductHandler(IProductRepository repository) : IComman
             throw new InvalidOperationException($"Product version mismatch. Expected {request.ExpectedVersion}, actual {product.Version}");
         }
 
+        // Category assignment (issue #401): validated against the tenant's catalog first.
+        if (request.CategoryId.HasValue)
+            await ProductCategoryAssignment.ValidateAsync(categoryRepository, product, request.CategoryId.Value, cancellationToken).ConfigureAwait(false);
+
         // Apply only non-null values (partial update)
         if (request.Name != null) product.Name = request.Name;
         if (request.Description != null) product.Description = request.Description;
@@ -139,6 +145,7 @@ public sealed class PatchProductHandler(IProductRepository repository) : IComman
         if (request.ImageUrl != null) product.ImageUrl = request.ImageUrl;
         if (request.Type.HasValue) product.Type = request.Type.Value;
         if (request.IsBundle.HasValue) product.IsBundle = request.IsBundle.Value;
+        if (request.CategoryId.HasValue) product.CategoryId = request.CategoryId.Value;
 
         product.Touch();
 

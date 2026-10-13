@@ -486,7 +486,9 @@ public sealed class OrderCommandHandlerTests
     public async Task CancelOrderCommandHandler_CancelsPendingOrder()
     {
         var order = OrderTestFactory.CreatePendingOrder();
-        var repository = CreateRepositoryWithOrder(order);
+        // The cancel handler loads the order with its line items so pending reservations can
+        // be released (issue #401) — the fixture must mock that load path.
+        var repository = CreateRepositoryWithOrder(order, includeLineItems: true);
         var handler = new CancelOrderCommandHandler(repository.Object);
 
         var result = await handler.Handle(new CancelOrderCommand(order.Id, "customer request"), CancellationToken.None);
@@ -516,7 +518,8 @@ public sealed class OrderCommandHandlerTests
     {
         var order = OrderTestFactory.CreatePendingOrder();
         order.MarkAsPaid("provider-ref", "card", "ext-102");
-        var repository = CreateRepositoryWithOrder(order);
+        // Same line-items load path as the happy-path cancel (issue #401).
+        var repository = CreateRepositoryWithOrder(order, includeLineItems: true);
         var handler = new CancelOrderCommandHandler(repository.Object);
 
         var result = await handler.Handle(new CancelOrderCommand(order.Id, "reason"), CancellationToken.None);

@@ -20596,6 +20596,86 @@ export const getPermissionDelegationsDelegatorEndpoint = {
 } as const;
 
 /**
+ * List catalog categories (optionally filtered to a subtree or the roots)
+ */
+export interface GetProductCategoriesForGetProductCategoriesInput {
+  query?: {
+    parentCategoryId?: string;
+    rootsOnly?: boolean;
+    includeProductCounts?: boolean;
+  };
+}
+export type GetProductCategoriesForGetProductCategoriesOutput = Types.CommerceProductsProductCategoryDto[];
+export const getProductCategoriesForGetProductCategoriesEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategories' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create a category
+ */
+export interface PostProductCategoriesInput {
+  body?: Types.CommerceProductsCreateProductCategoryInput;
+}
+export type PostProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const postProductCategoriesEndpoint = {
+  operationId: 'postProductCategories' as const,
+  method: 'POST' as const,
+  path: '/v1/product-categories' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Get a category by ID
+ */
+export interface GetProductCategoriesForGetProductCategoriesByCategoryIdInput {
+  categoryId: string;
+}
+export type GetProductCategoriesForGetProductCategoriesByCategoryIdOutput = Types.CommerceProductsProductCategoryDto;
+export const getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint = {
+  operationId: 'getProductCategoriesForGetProductCategoriesByCategoryId' as const,
+  method: 'GET' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Update a category (rename, re-slug, reparent, attributes)
+ */
+export interface PutProductCategoriesInput {
+  categoryId: string;
+  body?: Types.CommerceProductsUpdateProductCategoryInput;
+}
+export type PutProductCategoriesOutput = Types.CommerceProductsProductCategoryDto;
+export const putProductCategoriesEndpoint = {
+  operationId: 'putProductCategories' as const,
+  method: 'PUT' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Delete a category (soft). Rejected while children or assigned products exist.
+ */
+export interface DeleteProductCategoriesInput {
+  categoryId: string;
+}
+export type DeleteProductCategoriesOutput = void;
+export const deleteProductCategoriesEndpoint = {
+  operationId: 'deleteProductCategories' as const,
+  method: 'DELETE' as const,
+  path: '/v1/product-categories/{categoryId}' as const,
+  tags: ['CommerceProductsCategories'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get paginated list of products
  */
 export interface GetProductsForGetProductsInput {
@@ -20604,6 +20684,8 @@ export interface GetProductsForGetProductsInput {
     creatorId?: string;
     searchTerm?: string;
     isBundle?: boolean;
+    categoryId?: string;
+    inStock?: boolean;
     includeUnpublished?: boolean;
     skip?: number;
     take?: number;
@@ -20784,6 +20866,37 @@ export const postProductsDeactivateEndpoint = {
 } as const;
 
 /**
+ * Get a product's real-time availability (issue #401)
+ */
+export interface GetProductsAvailabilityInput {
+  productId: string;
+}
+export type GetProductsAvailabilityOutput = Types.CommerceProductsProductAvailabilityDto;
+export const getProductsAvailabilityEndpoint = {
+  operationId: 'getProductsAvailability' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/availability' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: false,
+} as const;
+
+/**
+ * Create or replace a product's inventory configuration (issue #401)
+ */
+export interface PutProductsInventoryInput {
+  productId: string;
+  body?: Types.CommerceProductsSetProductInventoryInput;
+}
+export type PutProductsInventoryOutput = Types.CommerceProductsProductInventoryDto;
+export const putProductsInventoryEndpoint = {
+  operationId: 'putProductsInventory' as const,
+  method: 'PUT' as const,
+  path: '/v1/products/{productId}/inventory' as const,
+  tags: ['CommerceProducts'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Get pricing options for a product
  */
 export interface GetProductsPricingInput {
@@ -20812,6 +20925,24 @@ export const putProductsPricingEndpoint = {
   path: '/v1/products/{productId}/pricing' as const,
   tags: ['CommerceProducts'] as const,
   requiresAuth: true,
+} as const;
+
+/**
+ * Get rule-based recommendations for a product
+ */
+export interface GetProductsRecommendationsInput {
+  productId: string;
+  query?: {
+    take?: number;
+  };
+}
+export type GetProductsRecommendationsOutput = Types.CommerceOrdersProductRecommendationsDto;
+export const getProductsRecommendationsEndpoint = {
+  operationId: 'getProductsRecommendations' as const,
+  method: 'GET' as const,
+  path: '/v1/products/{productId}/recommendations' as const,
+  tags: ['CommerceOrdersProducts'] as const,
+  requiresAuth: false,
 } as const;
 
 /**
@@ -29561,6 +29692,11 @@ export const endpoints = {
   getPermissionDelegationsCheck: getPermissionDelegationsCheckEndpoint,
   getPermissionDelegationsDelegate: getPermissionDelegationsDelegateEndpoint,
   getPermissionDelegationsDelegator: getPermissionDelegationsDelegatorEndpoint,
+  getProductCategoriesForGetProductCategories: getProductCategoriesForGetProductCategoriesEndpoint,
+  postProductCategories: postProductCategoriesEndpoint,
+  getProductCategoriesForGetProductCategoriesByCategoryId: getProductCategoriesForGetProductCategoriesByCategoryIdEndpoint,
+  putProductCategories: putProductCategoriesEndpoint,
+  deleteProductCategories: deleteProductCategoriesEndpoint,
   getProductsForGetProducts: getProductsForGetProductsEndpoint,
   postProducts: postProductsEndpoint,
   postProductsBatchCreate: postProductsBatchCreateEndpoint,
@@ -29572,8 +29708,11 @@ export const endpoints = {
   postProductsActivate: postProductsActivateEndpoint,
   postProductsArchive: postProductsArchiveEndpoint,
   postProductsDeactivate: postProductsDeactivateEndpoint,
+  getProductsAvailability: getProductsAvailabilityEndpoint,
+  putProductsInventory: putProductsInventoryEndpoint,
   getProductsPricing: getProductsPricingEndpoint,
   putProductsPricing: putProductsPricingEndpoint,
+  getProductsRecommendations: getProductsRecommendationsEndpoint,
   getProjectsForGetProjects: getProjectsForGetProjectsEndpoint,
   postProjects: postProjectsEndpoint,
   getProjectsForGetProjectsById: getProjectsForGetProjectsByIdEndpoint,
