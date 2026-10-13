@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Users;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -145,6 +146,51 @@ public class OidcFederationQueryHandlerTests
         var response = await handler.Handle(new DiscoverOidcProvidersQuery { Email = "jane@corp.example.test" }, CancellationToken.None);
 
         response.Providers.Should().ContainSingle().Which.DisplayName.Should().Be("Corp SSO");
+    }
+
+    [Theory]
+    [InlineData("private-person@corp.example.test", "corp.example.test", 0)]
+    [InlineData("private-person@corp.example.test", "corp.example.test", 2)]
+    [InlineData("  private-person@corp.example.test  ", "corp.example.test", 0)]
+    [InlineData("  private-person@corp.example.test  ", "corp.example.test", 2)]
+    [InlineData("corp.example.test", "corp.example.test", 0)]
+    [InlineData("corp.example.test", "corp.example.test", 2)]
+    [InlineData("private-person", "private-person", 0)]
+    [InlineData("private-person", "private-person", 2)]
+    [InlineData("private-person@", "private-person@", 0)]
+    [InlineData("private-person@", "private-person@", 2)]
+    [InlineData("private-person@corp.example.test\r\nforged-entry", "corp.example.test\r\nforged-entry", 0)]
+    [InlineData("private-person@corp.example.test\r\nforged-entry", "corp.example.test\r\nforged-entry", 2)]
+    [InlineData("private-person@corp.example.test\u2028forged-entry", "corp.example.test\u2028forged-entry", 0)]
+    [InlineData("private-person@corp.example.test\u2028forged-entry", "corp.example.test\u2028forged-entry", 2)]
+    public async Task DiscoverProviders_LogsOnlyCountAndPreservesRouting(string email, string expectedDomain, int providerCount)
+    {
+        IReadOnlyList<OidcDiscoveredProvider> providers = Enumerable.Range(0, providerCount)
+            .Select(index => new OidcDiscoveredProvider { Slug = $"idp-{index}", DisplayName = $"Provider {index}" })
+            .ToArray();
+        var federation = new Mock<IOidcFederationService>(MockBehavior.Strict);
+        federation.Setup(service => service.FindProvidersForEmailDomain(expectedDomain)).Returns(providers);
+        var logger = new TestLogger<DiscoverOidcProvidersQueryHandler>();
+        var handler = new DiscoverOidcProvidersQueryHandler(federation.Object, logger);
+
+        var response = await handler.Handle(new DiscoverOidcProvidersQuery { Email = email }, CancellationToken.None);
+
+        response.Providers.Should().BeSameAs(providers);
+        federation.Verify(service => service.FindProvidersForEmailDomain(expectedDomain), Times.Once);
+        federation.VerifyNoOtherCalls();
+        var entry = logger.Entries.Should().ContainSingle().Subject;
+        entry.Level.Should().Be(LogLevel.Information);
+        entry.Exception.Should().BeNull();
+        entry.Message.Should().Be($"OIDC provider discovery matched {providerCount} provider(s)");
+        entry.Properties.Select(property => property.Key).Should().BeEquivalentTo(new[] { "Count", "{OriginalFormat}" });
+        entry.Properties.Single(property => property.Key == "Count").Value.Should().Be(providerCount);
+        entry.Properties.Single(property => property.Key == "{OriginalFormat}").Value.Should()
+            .Be("OIDC provider discovery matched {Count} provider(s)");
+        entry.Message.Should().NotContain(email.Trim()).And.NotContain(expectedDomain)
+            .And.NotContain("\r").And.NotContain("\n").And.NotContain("\u2028");
+        string.Join("|", entry.Properties.Select(property => property.Value)).Should()
+            .NotContain(email.Trim()).And.NotContain(expectedDomain)
+            .And.NotContain("\r").And.NotContain("\n").And.NotContain("\u2028");
     }
 
     [Fact]
