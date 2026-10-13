@@ -7,9 +7,9 @@ namespace GameGuild.Identity.Authentication;
 public interface ITotpMfaService
 {
     /// <summary>
-    ///     Sets up TOTP-based MFA for a user. Returns QR code URI and secret key.
+    ///     Sets up TOTP-based MFA for a user. Returns QR code URI, secret key, and setup expiry.
     /// </summary>
-    Task<(string QrCodeUri, string SecretKey)> SetupTotpAsync(Guid userId, string userEmail, CancellationToken cancellationToken = default);
+    Task<(string QrCodeUri, string SecretKey, DateTimeOffset ExpiresAt)> SetupTotpAsync(Guid userId, string userEmail, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Verifies TOTP code and enables MFA if first-time setup.

@@ -65,6 +65,7 @@ public sealed class MfaController(IMfaService mfaService, ISender sender) : Auth
         {
             SecretKey = result.SecretKey,
             QrCodeUri = result.QrCodeUrl,
+            ExpiresAt = result.ExpiresAt,
             BackupCodes = []
         });
     }

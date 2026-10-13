@@ -728,7 +728,7 @@ public class TotpMfaServiceCovTests
             It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMfaConfiguration c, CancellationToken _) => c);
 
-        var (qrUri, secret) = await _svc.SetupTotpAsync(userId, "user@test.com");
+        var (qrUri, secret, _) = await _svc.SetupTotpAsync(userId, "user@test.com");
 
         qrUri.Should().StartWith("otpauth://totp/");
         secret.Should().NotBeNullOrEmpty();
@@ -751,7 +751,7 @@ public class TotpMfaServiceCovTests
             It.IsAny<UserMfaConfiguration>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMfaConfiguration c, CancellationToken _) => c);
 
-        var (qrUri, secret) = await _svc.SetupTotpAsync(userId, "user@test.com");
+        var (qrUri, secret, _) = await _svc.SetupTotpAsync(userId, "user@test.com");
         qrUri.Should().NotBeNullOrEmpty();
     }
 
