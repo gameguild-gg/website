@@ -66,6 +66,7 @@ public sealed class SecurityEventPipelineTests : IDisposable
             alertEvaluator ?? new SecurityAlertRuleEvaluator(Options.Create(options), NullLogger<SecurityAlertRuleEvaluator>.Instance),
             Options.Create(options),
             _fallbackAudit.Object,
+            new NoopPiiRedactionService(),
             NullLogger<SecurityEventLogger>.Instance);
     }
 
@@ -210,6 +211,7 @@ public sealed class SecurityEventPipelineTests : IDisposable
             new SecurityAlertRuleEvaluator(Options.Create(options), NullLogger<SecurityAlertRuleEvaluator>.Instance),
             Options.Create(options),
             _fallbackAudit.Object,
+            new NoopPiiRedactionService(),
             NullLogger<SecurityEventLogger>.Instance);
 
         var result = await failingLogger.RecordAsync(SecurityRequest(), CancellationToken.None);
@@ -249,6 +251,7 @@ public sealed class SecurityEventPipelineTests : IDisposable
             new SecurityAlertRuleEvaluator(Options.Create(options), NullLogger<SecurityAlertRuleEvaluator>.Instance),
             Options.Create(options),
             _fallbackAudit.Object,
+            new NoopPiiRedactionService(),
             NullLogger<SecurityEventLogger>.Instance);
 
         var result = await logger.RecordAsync(SecurityRequest(), CancellationToken.None);

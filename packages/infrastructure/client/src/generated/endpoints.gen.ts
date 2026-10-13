@@ -393,6 +393,136 @@ export const postApiAuditExportJsonEndpoint = {
 } as const;
 
 /**
+ * Pipeline status: cached rule snapshots, enabled rule counts (global and tenant), vault size,
+ * and the last rule-refresh outcome.
+ */
+export type GetApiAuditRedactionPipelineInput = void;
+export type GetApiAuditRedactionPipelineOutput = Types.ComplianceAuditPiiRedactionPipelineStatusOutput;
+export const getApiAuditRedactionPipelineEndpoint = {
+  operationId: 'getApiAuditRedactionPipeline' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the tenant's rules plus the platform-global rules visible to it.
+ */
+export type GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesInput = void;
+export type GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput[];
+export const getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRules' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a redaction rule. Guarded to tenant administrators; audited; invalidates the rule cache.
+ */
+export interface PostApiAuditRedactionPipelineRulesInput {
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PostApiAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const postApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'postApiAuditRedactionPipelineRules' as const,
+  method: 'POST' as const,
+  path: '/api/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets one rule by id.
+ */
+export interface GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdEndpoint = {
+  operationId: 'getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a rule. Versioned: the request must carry the revision observed on read; a stale
+ * revision returns 409 Conflict.
+ */
+export interface PutApiAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PutApiAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const putApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'putApiAuditRedactionPipelineRules' as const,
+  method: 'PUT' as const,
+  path: '/api/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a rule. Versioned like the update; audited at high risk.
+ */
+export interface DeleteApiAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+}
+export type DeleteApiAuditRedactionPipelineRulesOutput = void;
+export const deleteApiAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'deleteApiAuditRedactionPipelineRules' as const,
+  method: 'DELETE' as const,
+  path: '/api/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dry-runs the enabled rules against sample field values without persisting anything — the
+ * pattern-recognition verification surface for administrators.
+ */
+export interface PostApiAuditRedactionPipelineTestInput {
+  body?: Types.ComplianceAuditPiiRedactionTestRunInput;
+}
+export type PostApiAuditRedactionPipelineTestOutput = Types.ComplianceAuditPiiRedactionTestRunOutput;
+export const postApiAuditRedactionPipelineTestEndpoint = {
+  operationId: 'postApiAuditRedactionPipelineTest' as const,
+  method: 'POST' as const,
+  path: '/api/audit/redaction-pipeline/test' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a deterministic token to its original value from the token vault for an authorized
+ * investigation. Requires a reason; audited at critical risk.
+ */
+export interface GetApiAuditRedactionPipelineTokensInput {
+  token: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type GetApiAuditRedactionPipelineTokensOutput = Types.ComplianceAuditPiiTokenResolutionOutput;
+export const getApiAuditRedactionPipelineTokensEndpoint = {
+  operationId: 'getApiAuditRedactionPipelineTokens' as const,
+  method: 'GET' as const,
+  path: '/api/audit/redaction-pipeline/tokens/{token}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Captures up to10000events and16MiB of safe canonical JSON; oversized selections fail atomically.
  *
  * Null tenant context selects global-only rows. SHA256 detects content changes against
@@ -14421,6 +14551,136 @@ export const getAuditCompliancePackagingTemplatesEndpoint = {
   method: 'GET' as const,
   path: '/v1/audit/compliance-packaging/templates' as const,
   tags: ['ComplianceAuditCompliancePackaging'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Pipeline status: cached rule snapshots, enabled rule counts (global and tenant), vault size,
+ * and the last rule-refresh outcome.
+ */
+export type GetAuditRedactionPipelineInput = void;
+export type GetAuditRedactionPipelineOutput = Types.ComplianceAuditPiiRedactionPipelineStatusOutput;
+export const getAuditRedactionPipelineEndpoint = {
+  operationId: 'getAuditRedactionPipeline' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Lists the tenant's rules plus the platform-global rules visible to it.
+ */
+export type GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesInput = void;
+export type GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput[];
+export const getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRules' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Creates a redaction rule. Guarded to tenant administrators; audited; invalidates the rule cache.
+ */
+export interface PostAuditRedactionPipelineRulesInput {
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PostAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const postAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'postAuditRedactionPipelineRules' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/redaction-pipeline/rules' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Gets one rule by id.
+ */
+export interface GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdInput {
+  ruleId: string;
+}
+export type GetAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdEndpoint = {
+  operationId: 'getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleId' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Updates a rule. Versioned: the request must carry the revision observed on read; a stale
+ * revision returns 409 Conflict.
+ */
+export interface PutAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+  body?: Types.ComplianceAuditUpsertPiiRedactionRuleInput;
+}
+export type PutAuditRedactionPipelineRulesOutput = Types.ComplianceAuditPiiRedactionRuleOutput;
+export const putAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'putAuditRedactionPipelineRules' as const,
+  method: 'PUT' as const,
+  path: '/v1/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Deletes a rule. Versioned like the update; audited at high risk.
+ */
+export interface DeleteAuditRedactionPipelineRulesInput {
+  ruleId: string;
+  query?: {
+    expectedRevision?: number;
+  };
+}
+export type DeleteAuditRedactionPipelineRulesOutput = void;
+export const deleteAuditRedactionPipelineRulesEndpoint = {
+  operationId: 'deleteAuditRedactionPipelineRules' as const,
+  method: 'DELETE' as const,
+  path: '/v1/audit/redaction-pipeline/rules/{ruleId}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Dry-runs the enabled rules against sample field values without persisting anything — the
+ * pattern-recognition verification surface for administrators.
+ */
+export interface PostAuditRedactionPipelineTestInput {
+  body?: Types.ComplianceAuditPiiRedactionTestRunInput;
+}
+export type PostAuditRedactionPipelineTestOutput = Types.ComplianceAuditPiiRedactionTestRunOutput;
+export const postAuditRedactionPipelineTestEndpoint = {
+  operationId: 'postAuditRedactionPipelineTest' as const,
+  method: 'POST' as const,
+  path: '/v1/audit/redaction-pipeline/test' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
+ * Resolves a deterministic token to its original value from the token vault for an authorized
+ * investigation. Requires a reason; audited at critical risk.
+ */
+export interface GetAuditRedactionPipelineTokensInput {
+  token: string;
+  query?: {
+    reason?: string;
+  };
+}
+export type GetAuditRedactionPipelineTokensOutput = Types.ComplianceAuditPiiTokenResolutionOutput;
+export const getAuditRedactionPipelineTokensEndpoint = {
+  operationId: 'getAuditRedactionPipelineTokens' as const,
+  method: 'GET' as const,
+  path: '/v1/audit/redaction-pipeline/tokens/{token}' as const,
+  tags: ['ComplianceAuditRedactionPipeline'] as const,
   requiresAuth: true,
 } as const;
 
@@ -28700,6 +28960,15 @@ export const endpoints = {
   getApiAuditCompliancePackagingTemplates: getApiAuditCompliancePackagingTemplatesEndpoint,
   postApiAuditExportCsv: postApiAuditExportCsvEndpoint,
   postApiAuditExportJson: postApiAuditExportJsonEndpoint,
+  getApiAuditRedactionPipeline: getApiAuditRedactionPipelineEndpoint,
+  getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRules: getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesEndpoint,
+  postApiAuditRedactionPipelineRules: postApiAuditRedactionPipelineRulesEndpoint,
+  getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleId:
+    getApiAuditRedactionPipelineRulesForGetApiAuditRedactionPipelineRulesByRuleIdEndpoint,
+  putApiAuditRedactionPipelineRules: putApiAuditRedactionPipelineRulesEndpoint,
+  deleteApiAuditRedactionPipelineRules: deleteApiAuditRedactionPipelineRulesEndpoint,
+  postApiAuditRedactionPipelineTest: postApiAuditRedactionPipelineTestEndpoint,
+  getApiAuditRedactionPipelineTokens: getApiAuditRedactionPipelineTokensEndpoint,
   postApiAuditReplaySnapshots: postApiAuditReplaySnapshotsEndpoint,
   getApiAuditRetentionPoliciesForGetApiAuditRetentionPolicies: getApiAuditRetentionPoliciesForGetApiAuditRetentionPoliciesEndpoint,
   postApiAuditRetentionPolicies: postApiAuditRetentionPoliciesEndpoint,
@@ -29600,6 +29869,14 @@ export const endpoints = {
     getAuditCompliancePackagingDocumentsForGetAuditCompliancePackagingDocumentsByIdEndpoint,
   postAuditCompliancePackagingDocumentsReview: postAuditCompliancePackagingDocumentsReviewEndpoint,
   getAuditCompliancePackagingTemplates: getAuditCompliancePackagingTemplatesEndpoint,
+  getAuditRedactionPipeline: getAuditRedactionPipelineEndpoint,
+  getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRules: getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesEndpoint,
+  postAuditRedactionPipelineRules: postAuditRedactionPipelineRulesEndpoint,
+  getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleId: getAuditRedactionPipelineRulesForGetAuditRedactionPipelineRulesByRuleIdEndpoint,
+  putAuditRedactionPipelineRules: putAuditRedactionPipelineRulesEndpoint,
+  deleteAuditRedactionPipelineRules: deleteAuditRedactionPipelineRulesEndpoint,
+  postAuditRedactionPipelineTest: postAuditRedactionPipelineTestEndpoint,
+  getAuditRedactionPipelineTokens: getAuditRedactionPipelineTokensEndpoint,
   getAuditRetentionPoliciesForGetAuditRetentionPolicies: getAuditRetentionPoliciesForGetAuditRetentionPoliciesEndpoint,
   postAuditRetentionPolicies: postAuditRetentionPoliciesEndpoint,
   getAuditRetentionPoliciesForGetAuditRetentionPoliciesById: getAuditRetentionPoliciesForGetAuditRetentionPoliciesByIdEndpoint,

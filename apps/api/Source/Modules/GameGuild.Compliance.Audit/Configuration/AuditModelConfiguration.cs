@@ -210,6 +210,48 @@ public sealed class AuditModelConfiguration : IModelConfiguration
             entity.HasIndex(execution => new { execution.TenantId, execution.ExecutedAtUtc });
         });
 
+        modelBuilder.Entity<PiiRedactionRule>(entity =>
+        {
+            entity.ToTable("PiiRedactionRules");
+            entity.HasKey(rule => rule.Id);
+            entity.Property(rule => rule.TenantId);
+            entity.Property(rule => rule.RuleName).HasMaxLength(200).IsRequired();
+            entity.Property(rule => rule.Description).HasMaxLength(1000);
+            entity.Property(rule => rule.PatternType).HasConversion<int>();
+            entity.Property(rule => rule.Preset).HasConversion<int>();
+            entity.Property(rule => rule.Action).HasConversion<int>();
+            entity.Property(rule => rule.Scope).HasConversion<int>();
+            entity.Property(rule => rule.RegexPattern).HasMaxLength(1000);
+            entity.Property(rule => rule.Replacement).HasMaxLength(100).IsRequired();
+            entity.Property(rule => rule.TargetFields).HasColumnType("text[]");
+            entity.Property(rule => rule.Revision).IsConcurrencyToken();
+            entity.HasIndex(rule => new { rule.TenantId, rule.IsEnabled });
+        });
+
+        modelBuilder.Entity<PiiTokenVaultEntry>(entity =>
+        {
+            entity.ToTable("PiiTokenVaultEntries");
+            entity.HasKey(vault => vault.Id);
+            entity.Property(vault => vault.TenantId);
+            entity.Property(vault => vault.ScopeKey).HasMaxLength(40).IsRequired();
+            entity.Property(vault => vault.Token).HasMaxLength(64).IsRequired();
+            entity.Property(vault => vault.EncryptedValue).IsRequired();
+            entity.HasIndex(vault => new { vault.ScopeKey, vault.Token }).IsUnique();
+            entity.HasIndex(vault => vault.TenantId);
+        });
+
+        modelBuilder.Entity<PiiRedactionOperation>(entity =>
+        {
+            entity.ToTable("PiiRedactionOperations");
+            entity.HasKey(operation => operation.Id);
+            entity.Property(operation => operation.TenantId);
+            entity.Property(operation => operation.Source).HasConversion<int>();
+            entity.Property(operation => operation.AppliedRuleIds).HasColumnType("uuid[]");
+            entity.Property(operation => operation.FailureReason).HasMaxLength(1000);
+            entity.HasIndex(operation => new { operation.TenantId, operation.AppliedAt });
+            entity.HasIndex(operation => new { operation.TenantId, operation.FailClosed });
+        });
+
         modelBuilder.Entity<SavedAuditQuery>(entity =>
         {
             entity.ToTable("SavedAuditQueries");

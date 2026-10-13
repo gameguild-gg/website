@@ -95,6 +95,16 @@ public static class AuditModule
         services.AddScoped<IAuditReplayCaptureService, AuditReplayCaptureService>();
         services.TryAddSingleton(TimeProvider.System);
 
+        // PII redaction & tokenization pipeline (issue #192): rule cache, deterministic HMAC tokenizer,
+        // the pipeline itself, its administration surface, and the save interceptor applied at the
+        // central audit sink.
+        services.AddSingleton<IPiiRedactionRuleProvider, PiiRedactionRuleProvider>();
+        services.AddSingleton<IPiiTokenSource, PiiHmacTokenizer>();
+        services.AddScoped<IPiiRedactionService, PiiRedactionService>();
+        services.AddScoped<IPiiRedactionAdminService, PiiRedactionAdminService>();
+        services.AddScoped<AuditLogPiiRedactionInterceptor>();
+        services.AddHostedService<PiiRedactionRuleRefreshService>();
+
         // Durable security event pipeline: taxonomy-driven capture, alerting, and retention enforcement.
         services.AddSingleton<ISecurityEventSpool>(provider =>
         {
