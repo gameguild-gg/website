@@ -98,6 +98,9 @@ public class PermissionTemplateLifecycleTests
         var set = rows.AsQueryable().BuildMockDbSet();
         set.Setup(s => s.Add(It.IsAny<T>())).Callback<T>(add);
         set.Setup(s => s.AddRange(It.IsAny<IEnumerable<T>>())).Callback<IEnumerable<T>>(rs => rs.ToList().ForEach(add));
+        // Deletes go through Remove + SaveChanges; reflect them in the shared row list so
+        // post-handler assertions observe the persisted state.
+        set.Setup(s => s.Remove(It.IsAny<T>())).Callback<T>(row => rows.Remove(row));
         return set;
     }
 
