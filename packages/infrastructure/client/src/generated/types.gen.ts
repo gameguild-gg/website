@@ -6691,6 +6691,84 @@ export interface ComplianceAuditPermissionAuditOutput {
   totalCount?: number;
 }
 
+/** OpenAPI schema for Compliance Audit Pii Preset Pattern. */
+export type ComplianceAuditPiiPresetPattern = 'Email' | 'Phone' | 'NationalId' | 'CreditCard';
+
+/** Data model for Compliance Audit Pii Redaction Pipeline Status Response. */
+export interface ComplianceAuditPiiRedactionPipelineStatusOutput {
+  cachedScopeCount?: number;
+  globalEnabledRuleCount?: number;
+  globalSnapshotLoaded?: boolean;
+  globalSnapshotLoadedAt?: string | null;
+  lastRefreshAttemptAt?: string | null;
+  lastRefreshError?: string | null;
+  tenantEnabledRuleCount?: number;
+  vaultEntryCount?: number;
+}
+
+/** Data model for Compliance Audit Pii Redaction Rule Response. */
+export interface ComplianceAuditPiiRedactionRuleOutput {
+  id?: string;
+  action?: ComplianceAuditPiiRuleAction;
+  createdAt?: string;
+  description?: string | null;
+  isEnabled?: boolean;
+  patternType?: ComplianceAuditPiiRulePatternType;
+  preset?: ComplianceAuditPiiPresetPattern;
+  priority?: number;
+  regexPattern?: string | null;
+  replacement?: string | null;
+  revision?: number;
+  ruleName?: string | null;
+  scope?: ComplianceAuditPiiRuleScope;
+  targetFields?: string[] | null;
+  tenantId?: string | null;
+  updatedAt?: string | null;
+}
+
+/** Data model for Compliance Audit Pii Redaction Test Run Field Result. */
+export interface ComplianceAuditPiiRedactionTestRunFieldResult {
+  appliedAction?: string | null;
+  appliedRuleId?: string | null;
+  changed?: boolean;
+  field?: string | null;
+  original?: string | null;
+  redacted?: string | null;
+}
+
+/** Data model for Compliance Audit Pii Redaction Test Run Request. */
+export interface ComplianceAuditPiiRedactionTestRunInput {
+  sampleFields?: Record<string, string> | null;
+}
+
+/** Data model for Compliance Audit Pii Redaction Test Run Response. */
+export interface ComplianceAuditPiiRedactionTestRunOutput {
+  changed?: boolean;
+  failClosed?: boolean;
+  failureReason?: string | null;
+  fields?: ComplianceAuditPiiRedactionTestRunFieldResult[] | null;
+  redactedValueCount?: number;
+  tokenizedValueCount?: number;
+}
+
+/** OpenAPI schema for Compliance Audit Pii Rule Action. */
+export type ComplianceAuditPiiRuleAction = 'Redact' | 'Tokenize';
+
+/** OpenAPI schema for Compliance Audit Pii Rule Pattern Type. */
+export type ComplianceAuditPiiRulePatternType = 'Regex' | 'Preset';
+
+/** OpenAPI schema for Compliance Audit Pii Rule Scope. */
+export type ComplianceAuditPiiRuleScope = 'FieldName' | 'Global';
+
+/** Data model for Compliance Audit Pii Token Resolution Response. */
+export interface ComplianceAuditPiiTokenResolutionOutput {
+  firstSeenAt?: string;
+  tenantId?: string | null;
+  token?: string | null;
+  useCount?: number;
+  value?: string | null;
+}
+
 /** Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
 export interface ComplianceAuditResolveSecurityAlertInput {
   /** Resolution note recorded on the alert and in the resolution audit event. */
@@ -7013,6 +7091,21 @@ export interface ComplianceAuditUploadComplianceDocumentInput {
   validationFields: Record<string, string>;
   validFromUtc?: string;
   validUntilUtc?: string;
+}
+
+/** Data model for Compliance Audit Upsert Pii Redaction Rule Request. */
+export interface ComplianceAuditUpsertPiiRedactionRuleInput {
+  action?: ComplianceAuditPiiRuleAction;
+  description?: string | null;
+  isEnabled?: boolean;
+  patternType?: ComplianceAuditPiiRulePatternType;
+  preset?: ComplianceAuditPiiPresetPattern;
+  priority?: number;
+  regexPattern?: string | null;
+  replacement?: string | null;
+  ruleName?: string | null;
+  scope?: ComplianceAuditPiiRuleScope;
+  targetFields?: string[] | null;
 }
 
 /** Data model for Compliance Consent Consent Policy Dto. */
@@ -23520,6 +23613,16 @@ export let ComplianceAuditExportStatusSchema: z.ZodType<ComplianceAuditExportSta
 export let ComplianceAuditFailureReasonCountSchema: z.ZodType<ComplianceAuditFailureReasonCount>;
 export let ComplianceAuditPermissionAuditEntrySchema: z.ZodType<ComplianceAuditPermissionAuditEntry>;
 export let ComplianceAuditPermissionAuditOutputSchema: z.ZodType<ComplianceAuditPermissionAuditOutput>;
+export let ComplianceAuditPiiPresetPatternSchema: z.ZodType<ComplianceAuditPiiPresetPattern>;
+export let ComplianceAuditPiiRedactionPipelineStatusOutputSchema: z.ZodType<ComplianceAuditPiiRedactionPipelineStatusOutput>;
+export let ComplianceAuditPiiRedactionRuleOutputSchema: z.ZodType<ComplianceAuditPiiRedactionRuleOutput>;
+export let ComplianceAuditPiiRedactionTestRunFieldResultSchema: z.ZodType<ComplianceAuditPiiRedactionTestRunFieldResult>;
+export let ComplianceAuditPiiRedactionTestRunInputSchema: z.ZodType<ComplianceAuditPiiRedactionTestRunInput>;
+export let ComplianceAuditPiiRedactionTestRunOutputSchema: z.ZodType<ComplianceAuditPiiRedactionTestRunOutput>;
+export let ComplianceAuditPiiRuleActionSchema: z.ZodType<ComplianceAuditPiiRuleAction>;
+export let ComplianceAuditPiiRulePatternTypeSchema: z.ZodType<ComplianceAuditPiiRulePatternType>;
+export let ComplianceAuditPiiRuleScopeSchema: z.ZodType<ComplianceAuditPiiRuleScope>;
+export let ComplianceAuditPiiTokenResolutionOutputSchema: z.ZodType<ComplianceAuditPiiTokenResolutionOutput>;
 export let ComplianceAuditResolveSecurityAlertInputSchema: z.ZodType<ComplianceAuditResolveSecurityAlertInput>;
 export let ComplianceAuditReviewComplianceDocumentInputSchema: z.ZodType<ComplianceAuditReviewComplianceDocumentInput>;
 export let ComplianceAuditRunAuditRetentionSimulationInputSchema: z.ZodType<ComplianceAuditRunAuditRetentionSimulationInput>;
@@ -23544,6 +23647,7 @@ export let ComplianceAuditUnifiedSecurityAuditEntrySchema: z.ZodType<ComplianceA
 export let ComplianceAuditUnifiedSecurityAuditInputSchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditInput>;
 export let ComplianceAuditUnifiedSecurityAuditOutputSchema: z.ZodType<ComplianceAuditUnifiedSecurityAuditOutput>;
 export let ComplianceAuditUploadComplianceDocumentInputSchema: z.ZodType<ComplianceAuditUploadComplianceDocumentInput>;
+export let ComplianceAuditUpsertPiiRedactionRuleInputSchema: z.ZodType<ComplianceAuditUpsertPiiRedactionRuleInput>;
 export let ComplianceConsentConsentPolicyDtoSchema: z.ZodType<ComplianceConsentConsentPolicyDto>;
 export let ComplianceConsentContentTypeSchema: z.ZodType<ComplianceConsentContentType>;
 export let ComplianceConsentCreateConsentPolicyCommandSchema: z.ZodType<ComplianceConsentCreateConsentPolicyCommand>;
@@ -30919,6 +31023,87 @@ ComplianceAuditPermissionAuditOutputSchema = z.object({
   totalCount: z.number().int().optional(),
 });
 
+/** Zod schema for ComplianceAuditPiiPresetPattern. OpenAPI schema for Compliance Audit Pii Preset Pattern. */
+ComplianceAuditPiiPresetPatternSchema = z.enum(['Email', 'Phone', 'NationalId', 'CreditCard']);
+
+/** Zod schema for ComplianceAuditPiiRedactionPipelineStatusOutput. Data model for Compliance Audit Pii Redaction Pipeline Status Response. */
+ComplianceAuditPiiRedactionPipelineStatusOutputSchema = z.object({
+  cachedScopeCount: z.number().int().optional(),
+  globalEnabledRuleCount: z.number().int().optional(),
+  globalSnapshotLoaded: z.boolean().optional(),
+  globalSnapshotLoadedAt: z.string().datetime().nullable().optional(),
+  lastRefreshAttemptAt: z.string().datetime().nullable().optional(),
+  lastRefreshError: z.string().nullable().optional(),
+  tenantEnabledRuleCount: z.number().int().optional(),
+  vaultEntryCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditPiiRedactionRuleOutput. Data model for Compliance Audit Pii Redaction Rule Response. */
+ComplianceAuditPiiRedactionRuleOutputSchema = z.object({
+  id: z.string().uuid().optional(),
+  action: z.lazy(() => ComplianceAuditPiiRuleActionSchema).optional(),
+  createdAt: z.string().datetime().optional(),
+  description: z.string().nullable().optional(),
+  isEnabled: z.boolean().optional(),
+  patternType: z.lazy(() => ComplianceAuditPiiRulePatternTypeSchema).optional(),
+  preset: z.lazy(() => ComplianceAuditPiiPresetPatternSchema).optional(),
+  priority: z.number().int().optional(),
+  regexPattern: z.string().nullable().optional(),
+  replacement: z.string().nullable().optional(),
+  revision: z.number().int().optional(),
+  ruleName: z.string().nullable().optional(),
+  scope: z.lazy(() => ComplianceAuditPiiRuleScopeSchema).optional(),
+  targetFields: z.array(z.string()).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  updatedAt: z.string().datetime().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditPiiRedactionTestRunFieldResult. Data model for Compliance Audit Pii Redaction Test Run Field Result. */
+ComplianceAuditPiiRedactionTestRunFieldResultSchema = z.object({
+  appliedAction: z.string().nullable().optional(),
+  appliedRuleId: z.string().uuid().nullable().optional(),
+  changed: z.boolean().optional(),
+  field: z.string().nullable().optional(),
+  original: z.string().nullable().optional(),
+  redacted: z.string().nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditPiiRedactionTestRunInput. Data model for Compliance Audit Pii Redaction Test Run Request. */
+ComplianceAuditPiiRedactionTestRunInputSchema = z.object({
+  sampleFields: z.record(z.string(), z.string()).nullable().optional(),
+});
+
+/** Zod schema for ComplianceAuditPiiRedactionTestRunOutput. Data model for Compliance Audit Pii Redaction Test Run Response. */
+ComplianceAuditPiiRedactionTestRunOutputSchema = z.object({
+  changed: z.boolean().optional(),
+  failClosed: z.boolean().optional(),
+  failureReason: z.string().nullable().optional(),
+  fields: z
+    .array(z.lazy(() => ComplianceAuditPiiRedactionTestRunFieldResultSchema))
+    .nullable()
+    .optional(),
+  redactedValueCount: z.number().int().optional(),
+  tokenizedValueCount: z.number().int().optional(),
+});
+
+/** Zod schema for ComplianceAuditPiiRuleAction. OpenAPI schema for Compliance Audit Pii Rule Action. */
+ComplianceAuditPiiRuleActionSchema = z.enum(['Redact', 'Tokenize']);
+
+/** Zod schema for ComplianceAuditPiiRulePatternType. OpenAPI schema for Compliance Audit Pii Rule Pattern Type. */
+ComplianceAuditPiiRulePatternTypeSchema = z.enum(['Regex', 'Preset']);
+
+/** Zod schema for ComplianceAuditPiiRuleScope. OpenAPI schema for Compliance Audit Pii Rule Scope. */
+ComplianceAuditPiiRuleScopeSchema = z.enum(['FieldName', 'Global']);
+
+/** Zod schema for ComplianceAuditPiiTokenResolutionOutput. Data model for Compliance Audit Pii Token Resolution Response. */
+ComplianceAuditPiiTokenResolutionOutputSchema = z.object({
+  firstSeenAt: z.string().datetime().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  token: z.string().nullable().optional(),
+  useCount: z.number().int().optional(),
+  value: z.string().nullable().optional(),
+});
+
 /** Zod schema for ComplianceAuditResolveSecurityAlertInput. Body of `POST /api/audit/security-events/alerts/{id}:resolve`. */
 ComplianceAuditResolveSecurityAlertInputSchema = z.object({
   notes: z.string().max(1000).nullable().optional(),
@@ -31227,6 +31412,21 @@ ComplianceAuditUploadComplianceDocumentInputSchema = z.object({
   validationFields: z.record(z.string(), z.string()),
   validFromUtc: z.string().datetime().optional(),
   validUntilUtc: z.string().datetime().optional(),
+});
+
+/** Zod schema for ComplianceAuditUpsertPiiRedactionRuleInput. Data model for Compliance Audit Upsert Pii Redaction Rule Request. */
+ComplianceAuditUpsertPiiRedactionRuleInputSchema = z.object({
+  action: z.lazy(() => ComplianceAuditPiiRuleActionSchema).optional(),
+  description: z.string().nullable().optional(),
+  isEnabled: z.boolean().optional(),
+  patternType: z.lazy(() => ComplianceAuditPiiRulePatternTypeSchema).optional(),
+  preset: z.lazy(() => ComplianceAuditPiiPresetPatternSchema).optional(),
+  priority: z.number().int().optional(),
+  regexPattern: z.string().nullable().optional(),
+  replacement: z.string().nullable().optional(),
+  ruleName: z.string().nullable().optional(),
+  scope: z.lazy(() => ComplianceAuditPiiRuleScopeSchema).optional(),
+  targetFields: z.array(z.string()).nullable().optional(),
 });
 
 /** Zod schema for ComplianceConsentConsentPolicyDto. Data model for Compliance Consent Consent Policy Dto. */
