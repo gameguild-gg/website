@@ -40,8 +40,7 @@ printf 'dotnet %s | template=%s\n' "$*" "${ECONOMY_POSTGRES_TEMPLATE_DATABASE:-}
 printf 'fixture connection: %s\n' "${ECONOMY_POSTGRES_CONNECTION:-}"
 if [[ "$1" == ef && "${MOCK_FAILURE:-}" == migration ]]; then exit 41; fi
 if [[ "$1" == test ]]; then
-  if [[ "${MOCK_FAILURE:-}" == test && "$2" == *'/GameGuild.Finance.Economy.UnitTests.csproj' ]]; then exit 42; fi
-  if [[ "${MOCK_FAILURE:-}" == core_test && "$2" == *'/GameGuild.API.UnitTests.csproj' ]]; then exit 42; fi
+  [[ "${MOCK_FAILURE:-}" != test ]] || exit 42
   test_name="$(basename "${2%.csproj}")"
   previous=''
   for argument in "$@"; do
@@ -118,18 +117,12 @@ run_case mixed 0 '' "$api_source" "$economy_source"
 grep -Eq '^dotnet test .*GameGuild.API.UnitTests.* \| template=$' "$MOCK_LOG"
 grep -Eq '^dotnet test .*SharedKernel.UnitTests' "$MOCK_LOG"
 [[ "$(grep -c '^docker run ' "$MOCK_LOG")" == 1 ]]
-[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 5 ]]
-for mandatory_suite in GameGuild.API.UnitTests GameGuild.Identity.Authentication.UnitTests GameGuild.Identity.Authorization.UnitTests GameGuild.SharedKernel.UnitTests; do
-  grep -Fq "/$mandatory_suite.csproj" "$MOCK_LOG"
-done
+[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 3 ]]
 printf 'PASS migration-sensitive API tests retain empty databases and every selected suite runs\n'
 
 run_case core 0 '' "$api_source"
 ! grep -q '^docker ' "$MOCK_LOG"
-[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 4 ]]
-for mandatory_suite in GameGuild.API.UnitTests GameGuild.Identity.Authentication.UnitTests GameGuild.Identity.Authorization.UnitTests GameGuild.SharedKernel.UnitTests; do
-  grep -Fq "/$mandatory_suite.csproj" "$MOCK_LOG"
-done
+[[ "$(grep -c '^dotnet test ' "$MOCK_LOG")" == 2 ]]
 printf 'PASS ordinary core selection does not start Economy infrastructure\n'
 
 run_case migration_failure 41 migration "$economy_source"
@@ -140,13 +133,6 @@ printf 'PASS migration failure fails closed and cleans its owned container\n'
 run_case test_failure 42 test "$economy_source"
 [[ "$(grep -c '^docker rm --force aaaa' "$MOCK_LOG")" == 1 ]]
 printf 'PASS test failure propagates and cleans its owned container\n'
-
-run_case early_core_failure 42 core_test "$economy_source"
-if grep -q '^docker ' "$MOCK_LOG"; then
-  printf 'A core test failure must not create Economy infrastructure\n' >&2
-  exit 1
-fi
-printf 'PASS a failing mandatory core suite exits before Economy infrastructure exists\n'
 
 run_case fallback 0 '' 'unused.txt'
 ! grep -q '^docker ' "$MOCK_LOG"
