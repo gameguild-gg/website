@@ -71,6 +71,7 @@
       "appearance": "Appearance",
       "localization": "Language & region",
       "privacy": "Privacy",
+      "security": "Security",
       "accessibility": "Accessibility"
     },
     "profile": {
@@ -153,6 +154,28 @@
       "personalizedContent": {
         "label": "Personalized content",
         "description": "Allow content recommendations to use your preferences."
+      }
+    },
+    "security": {
+      "title": "Security",
+      "description": "Manage the security preferences that protect your GameGuild account.",
+      "statusEnabled": "Two-factor authentication is enabled.",
+      "statusDisabled": "Two-factor authentication is disabled.",
+      "setUp": "Set up two-factor authentication",
+      "qrAlt": "Scan this QR code with your authenticator app.",
+      "manualSecret": "Or enter this code manually in your authenticator app.",
+      "expiresAt": "This code expires at {expiresAt}.",
+      "codeLabel": "Verification code",
+      "verify": "Verify and enable",
+      "backupCodesTitle": "Backup codes",
+      "backupCodesOnce": "Each backup code can be used only once. Store them somewhere safe.",
+      "regenerate": "Regenerate codes",
+      "disableTitle": "Disable two-factor authentication",
+      "disableConfirmCode": "Enter a verification code from your authenticator app, or a backup code, to confirm.",
+      "disable": "Disable",
+      "recoveryHint": "Use a backup code to sign in if you lose access to your authenticator app.",
+      "errors": {
+        "saveFailed": "We could not save your security preferences."
       }
     },
     "accessibility": {
