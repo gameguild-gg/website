@@ -42,6 +42,7 @@ public class AuditServiceTests : IDisposable
         _auditService = new AuditService(
             _serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             _mockHttpContextAccessor.Object,
+            new NoopPiiRedactionService(),
             _mockLogger.Object);
     }
 

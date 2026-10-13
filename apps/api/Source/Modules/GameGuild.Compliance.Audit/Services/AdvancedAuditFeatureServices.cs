@@ -96,10 +96,11 @@ public sealed class AdvancedAuditFeatureServices : IAdvancedAuditFeatureServices
         return await _repository.GetRetentionPoliciesAsync(tenantId).ConfigureAwait(false);
     }
 
-    // Feature 4: PII redaction
+    // Feature 4: PII redaction (delegates to the canonical pipeline in Services/PiiRedaction)
     public async Task<string> RedactPiiAsync(string content, Guid tenantId)
     {
-        return await _redactionService.RedactAsync(content, tenantId).ConfigureAwait(false);
+        var result = await _redactionService.RedactTextAsync(content, tenantId, PiiRedactionSource.Manual, null, CancellationToken.None).ConfigureAwait(false);
+        return result.RedactedContent;
     }
 
     public async Task<PiiRedactionRule> CreateRedactionRuleAsync(PiiRedactionRule rule)
@@ -180,10 +181,7 @@ public interface IScheduledExportService
     Task<AuditExportHistory> ExecuteExportAsync(Guid scheduledExportId);
 }
 
-public interface IPiiRedactionService
-{
-    Task<string> RedactAsync(string content, Guid tenantId);
-}
+// IPiiRedactionService now lives in Services/PiiRedaction/PiiRedactionService.cs (issue #192 pipeline).
 
 public interface IAuditQueryService
 {

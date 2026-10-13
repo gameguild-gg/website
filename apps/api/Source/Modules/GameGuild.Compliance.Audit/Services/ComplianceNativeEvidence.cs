@@ -7,7 +7,8 @@ internal static class ComplianceNativeEvidence
 {
     internal static bool IsNative(ComplianceFrameworkTemplate template) =>
         template.Id is ComplianceFrameworkCatalog.IsoIsmsId or ComplianceFrameworkCatalog.GdprId ||
-        FedRampComplianceCatalog.Find(template.Id) is not null || Soc2ComplianceCatalog.Find(template.Id) is not null;
+        FedRampComplianceCatalog.Find(template.Id) is not null || Soc2ComplianceCatalog.Find(template.Id) is not null ||
+        HipaaComplianceCatalog.Find(template.Id) is not null || PciDssComplianceCatalog.Find(template.Id) is not null;
 
     internal static void ValidateDocument(ComplianceFrameworkTemplate template, ComplianceDocumentSnapshot document,
         JsonElement root, DateTime capturedAtUtc, List<ComplianceEvidenceGap> gaps)
@@ -24,6 +25,8 @@ internal static class ComplianceNativeEvidence
         }
         else if (template.Id == ComplianceFrameworkCatalog.GdprId) { GdprComplianceEvidence.ValidateDocument(document, root, capturedAtUtc, gaps); }
         else if (Soc2ComplianceCatalog.Find(template.Id) is not null) { Soc2ComplianceEvidence.ValidateDocument(template, document, root, capturedAtUtc, gaps); }
+        else if (HipaaComplianceCatalog.Find(template.Id) is not null) { HipaaComplianceEvidence.ValidateDocument(document, root, capturedAtUtc, gaps); }
+        else if (PciDssComplianceCatalog.Find(template.Id) is not null) { PciDssComplianceEvidence.ValidateDocument(document, root, capturedAtUtc, gaps); }
         else { FedRampComplianceEvidence.ValidateDocument(template, document, root, capturedAtUtc, gaps); }
     }
 
@@ -38,8 +41,11 @@ internal static class ComplianceNativeEvidence
             ComplianceFrameworkCatalog.GdprId => GdprComplianceEvidence.InspectScope(request, documents, roots, cancellationToken),
             _ => Soc2ComplianceCatalog.Find(template.Id) is not null
                 ? Soc2ComplianceEvidence.InspectScope(template, request, documents, roots, capturedAtUtc, cancellationToken)
-                : FedRampComplianceCatalog.Find(template.Id) is not null
-                ? FedRampComplianceEvidence.InspectScope(template, request, documents, roots, capturedAtUtc, cancellationToken) : []
+                : HipaaComplianceCatalog.Find(template.Id) is not null
+                ? HipaaComplianceEvidence.InspectScope(template, request, documents, roots, capturedAtUtc, cancellationToken)
+                : PciDssComplianceCatalog.Find(template.Id) is not null
+                ? PciDssComplianceEvidence.InspectScope(template, request, documents, roots, capturedAtUtc, cancellationToken)
+                : FedRampComplianceEvidence.InspectScope(template, request, documents, roots, capturedAtUtc, cancellationToken)
         };
     }
 

@@ -179,6 +179,15 @@ public class PermissionTemplate : EntityBase
     public string[] Permissions { get; set; } = Array.Empty<string>();
 
     /// <summary>
+    ///     Dynamic role names granted by this template (issue #369: role templates).
+    ///     A template with a non-empty set is a <b>role template</b>: instantiating it
+    ///     assigns the named tenant-scoped dynamic roles in addition to (or instead of,
+    ///     when <see cref="Permissions"/> is empty) granting raw permissions.
+    /// </summary>
+    [Column(TypeName = "text[]")]
+    public string[] RoleKeys { get; set; } = Array.Empty<string>();
+
+    /// <summary>
     ///     Whether this is a system-defined template (cannot be modified/deleted)
     /// </summary>
     public bool IsSystemTemplate { get; set; }

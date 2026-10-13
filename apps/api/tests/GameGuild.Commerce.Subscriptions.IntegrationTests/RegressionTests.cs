@@ -49,6 +49,11 @@ public class RegressionTests : IClassFixture<WebApplicationFactory<GameGuild.API
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
                     options.UseInMemoryDatabase(DatabaseName);
+                    // Renewal quotes now append a durable pricing-decision ledger entry (issue #400)
+                    // inside a DB transaction; the in-memory provider ignores transactions, which is
+                    // an error-level warning unless suppressed (same pattern as the other InMemory hosts).
+                    options.ConfigureWarnings(warnings =>
+                        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
                 });
                 services.AddScoped<DbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 

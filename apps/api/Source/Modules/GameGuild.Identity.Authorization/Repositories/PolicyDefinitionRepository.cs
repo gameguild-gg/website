@@ -5,8 +5,20 @@ namespace GameGuild.Identity.Authorization;
 /// <summary>
 ///     Entity Framework implementation of the policy definition repository.
 /// </summary>
-public class PolicyDefinitionRepository(IApplicationDbContext context) : IPolicyDefinitionRepository
+/// <remarks>
+///     Every mutating method appends an immutable <see cref="PolicyVersionHistory"/>
+///     snapshot inside the same unit of work (issue #188 policy version history), so a
+///     snapshot exists for each committed policy state; a snapshotting failure aborts
+///     the mutation before anything is persisted (fail closed — state and history never
+///     diverge).
+/// </remarks>
+public class PolicyDefinitionRepository(
+    IApplicationDbContext context,
+    IPolicyVersionSnapshotService policyVersionSnapshotService) : IPolicyDefinitionRepository
 {
+    private readonly IPolicyVersionSnapshotService _policyVersionSnapshotService =
+        policyVersionSnapshotService ?? throw new ArgumentNullException(nameof(policyVersionSnapshotService));
+
     public async Task<PolicyDefinitionEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await context.Set<PolicyDefinitionEntity>()
@@ -75,22 +87,29 @@ public class PolicyDefinitionRepository(IApplicationDbContext context) : IPolicy
     public async Task AddAsync(PolicyDefinitionEntity policy, CancellationToken cancellationToken = default)
     {
         await context.Set<PolicyDefinitionEntity>().AddAsync(policy, cancellationToken).ConfigureAwait(false);
+        await _policyVersionSnapshotService
+            .SnapshotPolicyDefinitionAsync(policy, PolicyVersionChangeType.Created, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(PolicyDefinitionEntity policy, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(PolicyDefinitionEntity policy, CancellationToken cancellationToken = default)
     {
         policy.Touch();
         policy.PolicyVersion++;
         context.Set<PolicyDefinitionEntity>().Update(policy);
-        return Task.CompletedTask;
+        await _policyVersionSnapshotService
+            .SnapshotPolicyDefinitionAsync(policy, PolicyVersionChangeType.Updated, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    public Task DeleteAsync(PolicyDefinitionEntity policy, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(PolicyDefinitionEntity policy, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(policy);
         policy.SoftDelete();
         context.Set<PolicyDefinitionEntity>().Update(policy);
-        return Task.CompletedTask;
+        await _policyVersionSnapshotService
+            .SnapshotPolicyDefinitionAsync(policy, PolicyVersionChangeType.Deleted, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

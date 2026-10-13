@@ -1,6 +1,8 @@
 using FluentAssertions;
 using GameGuild.CQRS;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -9,7 +11,7 @@ namespace GameGuild.Commerce.Subscriptions.UnitTests.Queries;
 public class GetActiveSubscriptionPlansQueryHandlerTests
 {
     [Fact]
-    public async Task Handle_ShouldReturnActivePlans_FromRepository()
+    public async Task Handle_ShouldReturnActivePlans_ThroughTheListCache()
     {
         // Arrange
         var plans = new[]
@@ -23,7 +25,7 @@ public class GetActiveSubscriptionPlansQueryHandlerTests
             .Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(plans);
 
-        var handler = new GetActiveSubscriptionPlansQueryHandler(repository.Object);
+        var handler = new GetActiveSubscriptionPlansQueryHandler(repository.Object, CreateCache());
 
         // Act
         var result = await handler.Handle(new GetActiveSubscriptionPlansQuery(), CancellationToken.None);
@@ -34,10 +36,31 @@ public class GetActiveSubscriptionPlansQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldServeSubsequentReads_FromCacheWithoutHittingTheRepository()
+    {
+        // Arrange — issue #416: "Plan list queries cached for 5 minutes"
+        var repository = new Mock<ISubscriptionPlanRepository>();
+        repository
+            .Setup(r => r.GetActiveAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<SubscriptionPlan>());
+
+        var handler = new GetActiveSubscriptionPlansQueryHandler(repository.Object, CreateCache());
+
+        // Act
+        await handler.Handle(new GetActiveSubscriptionPlansQuery(), CancellationToken.None);
+        await handler.Handle(new GetActiveSubscriptionPlansQuery(), CancellationToken.None);
+
+        // Assert
+        repository.Verify(r => r.GetActiveAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public void AddSubscriptionsModule_ShouldResolveActivePlansQueryHandler()
     {
         // Arrange
         var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddMemoryCache();
         services.AddSubscriptionsModule();
 
         services.AddScoped<ISubscriptionPlanRepository>(_ => Mock.Of<ISubscriptionPlanRepository>());
@@ -51,6 +74,16 @@ public class GetActiveSubscriptionPlansQueryHandlerTests
         // Assert
         handler.Should().NotBeNull();
         handler.Should().BeOfType<GetActiveSubscriptionPlansQueryHandler>();
+    }
+
+    internal static ISubscriptionPlanListCache CreateCache()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        return new SubscriptionPlanListCache(
+            memoryCache,
+            services.BuildServiceProvider().GetRequiredService<ILogger<SubscriptionPlanListCache>>());
     }
 
     private static SubscriptionPlan CreatePlan(string slug, long monthlyPriceInCents)

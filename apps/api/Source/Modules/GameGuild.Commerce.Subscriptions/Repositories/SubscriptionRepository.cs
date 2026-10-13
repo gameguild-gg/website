@@ -104,6 +104,36 @@ public class SubscriptionRepository(IApplicationDbContext context)
         return await Query.GroupBy(s => s.Status).ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<SubscriptionIntervalBreakdown>> GetIntervalBreakdownAsync(CancellationToken cancellationToken = default)
+    {
+        // Issue #392: interval breakdown of active subscriptions. Grouping is done on a
+        // narrow projection; the monthly-equivalent normalization runs in memory so the
+        // translated query stays a plain GroupBy/Sum that the persistence providers accept.
+        var projections = await Query
+            .Where(s => s.Status == SubscriptionStatus.Active)
+            .GroupBy(s => s.BillingCycle)
+            .Select(group => new { Interval = group.Key, Count = group.Count(), Total = group.Sum(s => s.Amount.Amount) })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var breakdowns = new List<SubscriptionIntervalBreakdown>(projections.Count);
+        foreach (var projection in projections)
+        {
+            var months = projection.Interval.GetMonths();
+            breakdowns.Add(new SubscriptionIntervalBreakdown(
+                projection.Interval,
+                months,
+                projection.Interval.GetDisplayName(),
+                projection.Count,
+                projection.Total,
+                months > 0 ? projection.Total / months : projection.Total));
+        }
+
+        return breakdowns
+            .OrderBy(item => item.IntervalMonths)
+            .ToList();
+    }
+
     public async Task<decimal> GetRevenueForPeriodAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
         return await Query.Where(s => s.CreatedAt >= startDate && s.CreatedAt <= endDate && s.Status == SubscriptionStatus.Active)

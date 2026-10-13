@@ -214,11 +214,47 @@ public class AuditLogQueryService(
         };
     }
 
+    /// <summary>
+    ///     Collect unified audit entries for a bounded window with a per-source row cap,
+    ///     as required by the audit query DSL executor. Applies no other filtering.
+    /// </summary>
+    public async Task<IReadOnlyList<UnifiedSecurityAuditEntry>> CollectUnifiedEntriesAsync(
+        DateTime startDateUtc,
+        DateTime endDateUtc,
+        SecurityAuditSourceType? restrictToSource,
+        int rowLimit,
+        CancellationToken cancellationToken = default)
+    {
+        if (rowLimit <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(rowLimit), "Row limit must be positive.");
+        }
+
+        var entries = new List<UnifiedSecurityAuditEntry>();
+
+        if (restrictToSource is null or SecurityAuditSourceType.Authentication)
+        {
+            entries.AddRange(await GetAuthenticationEntriesAsync(startDateUtc, endDateUtc, null, null, null, cancellationToken, rowLimit).ConfigureAwait(false));
+        }
+
+        if (restrictToSource is null or SecurityAuditSourceType.Permission)
+        {
+            entries.AddRange(await GetPermissionEntriesAsync(startDateUtc, endDateUtc, null, null, null, cancellationToken, rowLimit).ConfigureAwait(false));
+        }
+
+        if (restrictToSource is null or SecurityAuditSourceType.General)
+        {
+            entries.AddRange(await GetGeneralEntriesAsync(startDateUtc, endDateUtc, null, null, null, null, null, cancellationToken, rowLimit).ConfigureAwait(false));
+        }
+
+        return entries;
+    }
+
     #region Private Data Collection Helpers
 
     internal async Task<List<UnifiedSecurityAuditEntry>> GetAuthenticationEntriesAsync(
         DateTime startDate, DateTime endDate, Guid? userId, bool? successOnly, string? ipAddress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, int? limit = null)
     {
         var query = context.Set<AuthenticationAttempt>().AsNoTracking()
             .Where(a => a.AttemptedAt >= startDate && a.AttemptedAt <= endDate);
@@ -231,6 +267,9 @@ public class AuditLogQueryService(
 
         if (!string.IsNullOrEmpty(ipAddress))
             query = query.Where(a => a.IpAddress == ipAddress);
+
+        if (limit.HasValue)
+            query = query.Take(limit.Value);
 
         var attempts = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 
@@ -260,9 +299,12 @@ public class AuditLogQueryService(
 
     internal async Task<List<UnifiedSecurityAuditEntry>> GetPermissionEntriesAsync(
         DateTime startDate, DateTime endDate, Guid? tenantId, Guid? userId, bool? successOnly,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, int? limit = null)
     {
-        var logs = await permissionAuditRepository.GetByDateRangeAsync(startDate, endDate, tenantId, cancellationToken).ConfigureAwait(false);
+        var logs = await permissionAuditRepository.GetByDateRangeAsync(startDate, endDate, tenantId, cancellationToken);
+
+        if (limit.HasValue)
+            logs = logs.OrderByDescending(l => l.Timestamp).Take(limit.Value).ToList();
 
         if (userId.HasValue)
             logs = logs.Where(l => l.UserId == userId.Value).ToList();
@@ -295,7 +337,7 @@ public class AuditLogQueryService(
     internal async Task<List<UnifiedSecurityAuditEntry>> GetGeneralEntriesAsync(
         DateTime startDate, DateTime endDate, Guid? tenantId, Guid? userId, bool? successOnly,
         string? actionType, AuditRiskLevel? riskLevel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, int? limit = null)
     {
         var query = context.Set<AuditLog>().AsNoTracking()
             .Where(a => a.CreatedAt >= startDate && a.CreatedAt <= endDate);
@@ -314,6 +356,9 @@ public class AuditLogQueryService(
 
         if (riskLevel.HasValue)
             query = query.Where(a => a.RiskLevel == riskLevel.Value);
+
+        if (limit.HasValue)
+            query = query.OrderByDescending(a => a.CreatedAt).Take(limit.Value);
 
         var logs = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
 

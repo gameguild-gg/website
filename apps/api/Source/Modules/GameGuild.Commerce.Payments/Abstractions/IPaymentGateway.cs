@@ -62,6 +62,27 @@ public interface IPaymentGateway
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Accepts a gateway dispute, acknowledging it as lost so the disputed funds are
+    ///     returned to the customer (issue #419).
+    /// </summary>
+    /// <param name="request">Dispute action request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result of the dispute action</returns>
+    Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Challenges a gateway dispute by submitting the merchant evidence (issue #419).
+    /// </summary>
+    /// <param name="request">Dispute challenge request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result of the dispute action</returns>
+    Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Validates a webhook signature from this gateway
     /// </summary>
     /// <param name="payload">Raw webhook payload</param>
@@ -209,6 +230,40 @@ public sealed record GatewayRefundResult(
     GatewayFailureKind FailureKind = GatewayFailureKind.NotApplicable);
 
 /// <summary>
+///     Request to accept a gateway dispute (issue #419). Accepting acknowledges the dispute
+/// as lost; the actual money movement is settled by the gateway.
+/// </summary>
+/// <param name="IdempotencyKey">Idempotency key for the gateway call.</param>
+/// <param name="ExternalDisputeId">Gateway dispute identifier.</param>
+/// <param name="ProviderId">
+///     Owner gateway for the disputed payment; dispute actions are pinned to it and never
+///     rerouted (issue #413 routing rules).
+/// </param>
+public sealed record GatewayDisputeActionRequest(
+    string IdempotencyKey,
+    string ExternalDisputeId,
+    string? ProviderId = null);
+
+/// <summary>
+///     Request to challenge a gateway dispute by submitting merchant evidence (issue #419).
+/// </summary>
+/// <param name="IdempotencyKey">Idempotency key for the gateway call.</param>
+/// <param name="ExternalDisputeId">Gateway dispute identifier.</param>
+/// <param name="EvidenceSummary">Free-text evidence bundle submitted with the challenge.</param>
+/// <param name="ProviderId">Owner gateway for the disputed payment (issue #413 routing rules).</param>
+public sealed record GatewayDisputeChallengeRequest(
+    string IdempotencyKey,
+    string ExternalDisputeId,
+    string? EvidenceSummary = null,
+    string? ProviderId = null);
+
+/// <summary>Result of a dispute accept or challenge action (issue #419).</summary>
+public sealed record GatewayDisputeActionResult(
+    bool Success,
+    string? ErrorCode,
+    string? ErrorMessage);
+
+/// <summary>
 ///     Request for creating a customer
 /// </summary>
 public sealed record GatewayCustomerRequest(
@@ -276,5 +331,7 @@ public enum PaymentStatus
     /// <summary>Payment was refunded</summary>
     Refunded,
     /// <summary>Payment is disputed</summary>
-    Disputed
+    Disputed,
+    /// <summary>Payment was partially refunded; further refunds allowed up to the original amount (issue #419)</summary>
+    PartiallyRefunded
 }

@@ -32,6 +32,20 @@ public interface IStripePaymentService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Accepts a Stripe dispute (closes it as lost) so the disputed funds return to the customer (issue #419).
+    /// </summary>
+    Task<GatewayDisputeActionResult> AcceptDisputeAsync(
+        GatewayDisputeActionRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Challenges a Stripe dispute by submitting merchant evidence (issue #419).
+    /// </summary>
+    Task<GatewayDisputeActionResult> ChallengeDisputeAsync(
+        GatewayDisputeChallengeRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Validates a Stripe webhook signature.
     /// </summary>
     Task<bool> ValidateWebhookSignatureAsync(

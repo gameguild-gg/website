@@ -18,6 +18,7 @@ namespace GameGuild.Commerce.Products;
 /// <param name="MaxAffiliateDiscount">Maximum affiliate discount</param>
 /// <param name="AffiliateCommissionPercentage">Affiliate commission percentage</param>
 /// <param name="TenantId">Optional tenant ID</param>
+/// <param name="CategoryId">Optional catalog category (single category, v1)</param>
 [RequiresQuota(ResourceUsageType.Products, Source = "CreateProduct")]
 public sealed record CreateProductCommand(
     string Name,
@@ -31,5 +32,6 @@ public sealed record CreateProductCommand(
     decimal ReferralCommissionPercentage = 30m,
     decimal MaxAffiliateDiscount = 0m,
     decimal AffiliateCommissionPercentage = 30m,
-    Guid? TenantId = null
+    Guid? TenantId = null,
+    Guid? CategoryId = null
 ) : ICommand<ProductDto>;

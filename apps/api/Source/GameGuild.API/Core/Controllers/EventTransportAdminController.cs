@@ -11,7 +11,10 @@ namespace GameGuild.API;
 [Microsoft.AspNetCore.Http.Tags("admin/events")]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/admin/events")]
-[Authorize(Policy = Policies.SystemAdmin)]
+// Issue #386: event-transport recovery (dead-letter inspection and replay) is a
+// restore operation - gated by the backup/restore permission tier (SystemAdmin role
+// or a delegated system:backup-restore grant). Platform-scoped.
+[Authorize(Policy = Policies.SystemBackupRestore)]
 public sealed class EventTransportAdminController(IEventReplayService replayService, ISender sender) : BaseApiController
 {
     [HttpGet("status")]

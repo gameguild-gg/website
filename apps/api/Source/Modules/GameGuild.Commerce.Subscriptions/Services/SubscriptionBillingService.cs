@@ -1,3 +1,4 @@
+using GameGuild.Commerce;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Commerce.Subscriptions;
@@ -9,11 +10,13 @@ public class SubscriptionBillingService(
     ISubscriptionRepository repository,
     ISubscriptionPlanService planService,
     ISubscriptionNotificationService notificationService,
+    IPricingDecisionLedgerWriter pricingLedgerWriter,
     ILogger<SubscriptionBillingService> logger) : ISubscriptionBillingService
 {
     private readonly ISubscriptionRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     private readonly ISubscriptionPlanService _planService = planService ?? throw new ArgumentNullException(nameof(planService));
     private readonly ISubscriptionNotificationService _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+    private readonly IPricingDecisionLedgerWriter _pricingLedgerWriter = pricingLedgerWriter ?? throw new ArgumentNullException(nameof(pricingLedgerWriter));
     private readonly ILogger<SubscriptionBillingService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     private async Task<Subscription> GetRequiredAsync(Guid subscriptionId, CancellationToken ct)
@@ -35,7 +38,56 @@ public class SubscriptionBillingService(
             subscription.NextBillingDate
         );
 
-        return subscription.PrepareRenewal(idempotencyKey);
+        var result = subscription.PrepareRenewal(idempotencyKey);
+
+        // Durable pricing-decision ledger entry (issue #400): every renewal quote that
+        // produces a final payable amount is recorded with its full breakdown (locked
+        // plan amount, no rule/promo adjustments at renewal, final due amount), the
+        // billing cycle and the renewal idempotency key. Idempotent per cycle, so
+        // retried renewals or webhook redeliveries never duplicate the decision.
+        if (result.PaymentRequired && result.AmountDue is not null && result.RequiredBillingCycle.HasValue)
+        {
+            var amountDue = result.AmountDue;
+            var breakdown = PricingDecisionBreakdown.Empty(amountDue.Currency, 1)
+                with
+            {
+                BaseUnitPrice = amountDue.Amount,
+                BaseAmount = amountDue.Amount,
+                FinalAmount = amountDue.Amount
+            };
+
+            var (ledgerStatus, _) = await _pricingLedgerWriter
+                .RecordAsync(
+                    new PricingDecisionRecord(
+                        DecisionType: PricingDecisionType.RenewalQuote,
+                        TenantId: subscription.TenantId,
+                        ActorUserId: subscription.CreatedByUserId,
+                        ActorIpAddress: null,
+                        Order: null,
+                        OrderLineItem: null,
+                        PaymentId: null,
+                        Subscription: subscription.Id,
+                        BillingCycleNumber: result.RequiredBillingCycle.Value,
+                        Product: subscription.PlanId,
+                        Breakdown: breakdown,
+                        AppliedPricingRuleId: subscription.LockedPriceVersionId,
+                        AppliedStackingRuleName: null,
+                        IdempotencyKey: $"renewal:{idempotencyKey}:pricing"),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (ledgerStatus == PricingDecisionRecordingStatus.Rejected)
+            {
+                _logger.LogError(
+                    "Pricing decision ledger rejected the renewal quote for subscription {SubscriptionId} cycle {Cycle}",
+                    subscriptionId,
+                    result.RequiredBillingCycle.Value);
+                throw new InvalidOperationException(
+                    $"Failed to record the renewal pricing decision for subscription {subscriptionId}.");
+            }
+        }
+
+        return result;
     }
 
     public async Task<Subscription> RecordPaymentAsync(Guid subscriptionId, decimal amount, string currency, DateTime paymentDate, CancellationToken cancellationToken = default)

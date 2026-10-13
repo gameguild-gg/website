@@ -17,10 +17,16 @@ internal sealed class PaymentsPersistenceTestDbContext(DbContextOptions<Payments
         modelBuilder.Entity<PaymentMethod>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserWallet).Assembly);
         modelBuilder.Entity<Payment>();
+        modelBuilder.Entity<PaymentRetryAttempt>();
         modelBuilder.Entity<CustomerTaxExemption>();
         modelBuilder.Entity<RevenueReconciliationRun>();
         modelBuilder.Entity<RevenueReconciliationDiscrepancy>();
         modelBuilder.Entity<RevenueAnomalyAlert>();
+        modelBuilder.Entity<AccountCreditGrant>();
+        modelBuilder.Entity<AccountCreditTransaction>();
+        modelBuilder.Entity<AccountCreditInvoiceSettlement>();
+        modelBuilder.Entity<GiftSubscription>();
+        modelBuilder.Entity<Referral>();
         base.OnModelCreating(modelBuilder);
     }
 }

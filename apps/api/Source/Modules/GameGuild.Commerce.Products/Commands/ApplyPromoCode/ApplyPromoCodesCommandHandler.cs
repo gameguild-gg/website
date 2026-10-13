@@ -8,12 +8,17 @@ namespace GameGuild.Commerce.Products;
 /// pricing engine and then records one usage row per applied code atomically. Usage
 /// recording is idempotent on the supplied key and fails closed on usage limits: a code
 /// whose usage cannot be recorded is dropped from the applied set and reported as rejected.
+/// The final price decision is also appended to the durable pricing-decision ledger
+/// (issue #400) whenever the command carries a stable correlation key (an explicit
+/// idempotency key or order linkage), with the full per-code breakdown and the stacking
+/// rule that governed resolution.
 /// </summary>
 public sealed class ApplyPromoCodesCommandHandler(
     IPricingEngineService pricingEngine,
     IPromoCodeRepository promoCodeRepository,
     IPromoCodeUsageRecorder usageRecorder,
     IPromoCodeAuditLogger auditLogger,
+    GameGuild.Commerce.IPricingDecisionLedgerWriter pricingLedgerWriter,
     ILogger<ApplyPromoCodesCommandHandler> logger)
     : ICommandHandler<ApplyPromoCodesCommand, PromoCodeApplicationResult>
 {
@@ -103,6 +108,80 @@ public sealed class ApplyPromoCodesCommandHandler(
             };
         }
 
+        await RecordPricingDecisionAsync(request, result, cancellationToken).ConfigureAwait(false);
+
         return result with { UsageRecorded = usageRecorded };
+    }
+
+    /// <summary>
+    /// Appends the order-level promo pricing decision to the durable ledger (issue #400).
+    /// Only decisions with a stable correlation key are recorded — an explicit idempotency
+    /// key or an order linkage — so anonymous preview calls never write unattributable
+    /// rows and every recorded row replays safely.
+    /// </summary>
+    private async Task RecordPricingDecisionAsync(
+        ApplyPromoCodesCommand request,
+        PromoCodeApplicationResult result,
+        CancellationToken cancellationToken)
+    {
+        var ledgerKey = !string.IsNullOrWhiteSpace(request.IdempotencyKey)
+            ? $"{request.IdempotencyKey.Trim()}:pricing"
+            : request.OrderId.HasValue
+                ? $"promo-apply:{request.OrderId.Value:N}:pricing"
+                : null;
+
+        if (ledgerKey is null)
+        {
+            return;
+        }
+
+        var currency = result.AppliedCodes.Count > 0
+            ? (await promoCodeRepository.GetByCodeAsync(result.AppliedCodes[0].Code, cancellationToken).ConfigureAwait(false))?.Currency
+            : null;
+
+        var breakdown = GameGuild.Commerce.PricingDecisionBreakdown.Empty(currency ?? "USD", 1)
+            with
+        {
+            BaseUnitPrice = request.OrderAmount,
+            BaseAmount = request.OrderAmount,
+            PromoApplications = result.AppliedCodes
+                .Select((application, index) => new GameGuild.Commerce.PromoApplicationBreakdown(
+                    application.Code,
+                    null,
+                    application.Type?.ToString(),
+                    application.DiscountPercentage,
+                    application.DiscountAmount,
+                    index + 1))
+                .ToList(),
+            PromoDiscountTotal = result.TotalDiscount,
+            FinalAmount = result.FinalAmount
+        };
+
+        var (status, _) = await pricingLedgerWriter
+            .RecordAsync(
+                new GameGuild.Commerce.PricingDecisionRecord(
+                    DecisionType: GameGuild.Commerce.PricingDecisionType.OrderPromoApply,
+                    TenantId: null,
+                    ActorUserId: request.UserId,
+                    ActorIpAddress: null,
+                    Order: request.OrderId,
+                    OrderLineItem: null,
+                    PaymentId: null,
+                    Subscription: null,
+                    BillingCycleNumber: null,
+                    Product: request.ProductId,
+                    Breakdown: breakdown,
+                    AppliedPricingRuleId: null,
+                    AppliedStackingRuleName: result.StackingRuleName,
+                    IdempotencyKey: ledgerKey),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (status == GameGuild.Commerce.PricingDecisionRecordingStatus.Rejected)
+        {
+            logger.LogWarning(
+                "Pricing decision ledger rejected the order promo application for order {OrderId}",
+                request.OrderId);
+        }
     }
 }

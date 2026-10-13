@@ -514,7 +514,6 @@ public sealed class AuthenticationOrchestrationService(
         CurrentStep = record.CurrentStep,
         RequiredSteps = DeserializeSteps(record.RequiredStepsJson),
         CompletedSteps = DeserializeSteps(record.CompletedStepsJson),
-        IsComplete = record.IsComplete,
         RiskScore = record.RiskScore,
         InitiatedAt = record.InitiatedAt,
         ExpiresAt = record.ExpiresAt,

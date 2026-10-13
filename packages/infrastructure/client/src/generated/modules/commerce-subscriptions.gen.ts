@@ -492,6 +492,33 @@ export class CommerceSubscriptionsModule {
   }
 
   /**
+   * Get the current price breakdown of a subscription (issue #417)
+   *
+   * Returns the itemized price breakdown of a subscription's current plan through the unified pricing engine: base plan, discounts, totals and a calculation explanation.
+   */
+  async getSubscriptionsBreakdown(
+    subscriptionId: string,
+    query?: { promoCode?: string },
+  ): Promise<Result<Types.CommercePaymentsPricingCalculationResult, ApiError>> {
+    const url = `/api/v1/subscriptions/${subscriptionId}/breakdown`;
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      params: query,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsPricingCalculationResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
    * Get subscription invoices
    *
    * Retrieves the invoice history for a specific subscription.
@@ -507,6 +534,36 @@ export class CommerceSubscriptionsModule {
     });
 
     return result as Result<void, ApiError>;
+  }
+
+  /**
+   * Preview a plan change for a subscription before finalizing (issue #417)
+   *
+   * Previews what switching this subscription to a new plan costs before anything is applied: the immediate prorated charge and the next renewal amount, using the subscription's real billing period.
+   */
+  async postSubscriptionsPricingPreview(
+    subscriptionId: string,
+    body: Types.CommerceSubscriptionsPreviewSubscriptionPlanChangeInput,
+  ): Promise<Result<Types.CommercePaymentsPricingPreviewResult, ApiError>> {
+    const url = `/api/v1/subscriptions/${subscriptionId}/pricing:preview`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.CommerceSubscriptionsPreviewSubscriptionPlanChangeInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.CommercePaymentsPricingPreviewResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
   }
 
   /**

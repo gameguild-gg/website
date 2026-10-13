@@ -31,7 +31,18 @@ public sealed class TenantMembershipRolePermissionProvider(
             return [];
         }
 
-        return [AdminPermission.Keys.TenantAdmin];
+        // Administrative-tier capabilities (issue #294): administrative membership roles
+        // carry tenant administration plus member management, tenant settings and the
+        // self-service audit-read tier. Role administration (roles:manage) and audit
+        // exports (audit:export) stay delegation-only.
+        return
+        [
+            AdminPermission.Keys.TenantAdmin,
+            ManageMembersPermission.Keys.Manage,
+            ManageSettingsPermission.Keys.Read,
+            ManageSettingsPermission.Keys.Manage,
+            AuditPermission.Keys.Read
+        ];
     }
 
     private static bool IsAdministrativeRole(string? role) =>

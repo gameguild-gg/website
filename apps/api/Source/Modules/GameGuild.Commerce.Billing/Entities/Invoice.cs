@@ -358,6 +358,41 @@ public class Invoice : EntityBase
     }
 
     /// <summary>
+    ///     Applies an account-credit tender to the invoice (issue #410 multi-tender
+    ///     settlement). Credit tenders are tracked separately from provider payments
+    ///     (<see cref="PaymentId" /> keeps identifying the provider tender); this only
+    ///     advances <see cref="AmountPaid" /> and completes the invoice when fully covered.
+    ///     Replays of the same settlement are guarded by the settlement table's unique
+    ///     idempotency key at the endpoint layer.
+    /// </summary>
+    public void ApplyAccountCredit(decimal amount, DateTime appliedAtUtc)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Credit tender amount must be positive", nameof(amount));
+        }
+
+        if (Status is InvoiceStatus.Draft or InvoiceStatus.Void or InvoiceStatus.Uncollectible)
+        {
+            throw new InvalidOperationException($"Cannot apply account credit to an invoice in status {Status}.");
+        }
+
+        if (Status == InvoiceStatus.Paid)
+        {
+            throw new InvalidOperationException("Invoice is already paid.");
+        }
+
+        AmountPaid += amount;
+        if (AmountPaid >= Total)
+        {
+            Status = InvoiceStatus.Paid;
+            PaidAt = appliedAtUtc;
+        }
+
+        Touch();
+    }
+
+    /// <summary>
     ///     Marks invoice as uncollectible (bad debt)
     /// </summary>
     public void MarkUncollectible()
