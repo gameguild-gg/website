@@ -44,6 +44,8 @@ public static class AssetsModuleExtensions
             configuration.GetSection(VirusScanOptions.SectionName));
         services.Configure<AssetGarbageCollectionOptions>(
             configuration.GetSection(AssetGarbageCollectionOptions.SectionName));
+        services.Configure<BackgroundServices.TransformedAssetCleanupOptions>(
+            configuration.GetSection(BackgroundServices.TransformedAssetCleanupOptions.SectionName));
         services.Configure<TenantIsolationOptions>(
             configuration.GetSection(TenantIsolationOptions.SectionName));
         services.Configure<DownloadWindowOptions>(
@@ -107,6 +109,8 @@ public static class AssetsModuleExtensions
         services.AddScoped<IVirusScanService, VirusScanService>();
         services.AddScoped<BackgroundServices.IAssetVirusScanProcessor, BackgroundServices.AssetVirusScanProcessor>();
         services.AddHostedService<BackgroundServices.VirusScanBackgroundService>();
+        services.AddHostedService<BackgroundServices.AssetGarbageCollectionService>();
+        services.AddHostedService<BackgroundServices.TransformedAssetCleanupService>();
         services.AddScoped<IAssetGarbageCollectionService, AssetGarbageCollectionService>();
         services.AddScoped<ITenantAssetValidationService, TenantAssetValidationService>();
         services.AddScoped<IDownloadWindowService, DownloadWindowService>();
