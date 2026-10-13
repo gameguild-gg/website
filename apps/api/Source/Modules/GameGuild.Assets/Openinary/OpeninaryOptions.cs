@@ -8,6 +8,12 @@ public class OpeninaryOptions
 {
     public const string SectionName = "Assets:Openinary";
 
+    /// <summary>
+    /// Bucket name recorded on <see cref="AssetContent"/> rows whose binary lives
+    /// in Openinary (vs. the legacy S3-style storage).
+    /// </summary>
+    public const string StorageBackendName = "openinary";
+
     public const string DefaultBaseUrl = "https://openinary.gameguild.gg";
 
     /// <summary>
