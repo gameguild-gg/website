@@ -15,7 +15,7 @@ namespace GameGuild.Identity.Authorization;
 /// </summary>
 [Microsoft.AspNetCore.Http.Tags("access-control/permission-simulation")]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/authorization/permissions")]
+[Route("api/v{version:apiVersion}/authorization")]
 [Authorize]
 [Produces("application/json")]
 public sealed class PermissionSimulationController(ISender sender) : BaseApiController
@@ -32,7 +32,7 @@ public sealed class PermissionSimulationController(ISender sender) : BaseApiCont
     /// <response code="400">Invalid request (empty delta, grant/revoke overlap).</response>
     /// <response code="401">User not authenticated.</response>
     /// <response code="403">Simulating another subject requires administration.</response>
-    [HttpPost(":simulate")]
+    [HttpPost("permissions:simulate")]
     [NoBusinessMutationEndpoint("Policy simulation is a read-only what-if evaluation: it computes the before/after effective permission diff without applying any change.")]
     [ProducesResponseType(typeof(PermissionSimulationResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

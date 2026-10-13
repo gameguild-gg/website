@@ -10987,6 +10987,27 @@ export interface IdentityAuthorizationCreatePermissionApprovalCommand {
   tenantId?: CQRSModelsTenantId;
 }
 
+/** Creates a permission template (issue #369 template CRUD lifecycle). */
+export interface IdentityAuthorizationCreatePermissionTemplateCommand {
+  /** Optional category for organization. */
+  category?: string | null;
+  /** Optional change note recorded on the version snapshot. */
+  changeNotes?: string | null;
+  /** Template description. */
+  description: string | null;
+  /** Whether the template is a system template (immutable once created). */
+  isSystemTemplate?: boolean;
+  /** Optional minimum tenant tier. */
+  minimumTier?: string | null;
+  /** Template name (unique). */
+  name: string | null;
+  /** Raw permissions the template grants. */
+  permissions?: string[] | null;
+  /** Dynamic role names the template grants (issue #369 role templates). A
+non-empty set makes this a role template. */
+  roleKeys?: string[] | null;
+}
+
 /** Request payload for declining an invitation. */
 export interface IdentityAuthorizationDeclineInvitationInput {
   /** Optional reason for declining. */
@@ -11278,6 +11299,18 @@ export interface IdentityAuthorizationInheritanceHistoryEvent {
   timestamp?: string;
 }
 
+/** Request body for template instantiation. */
+export interface IdentityAuthorizationInstantiateTemplateInput {
+  /** When true, return the preview without applying anything. */
+  dryRun?: boolean;
+  /** Reason recorded in the audit log. */
+  reason?: string | null;
+  /** The target users. */
+  targetUserIds?: string[] | null;
+  /** The tenant receiving the template (defaults to the acting tenant). */
+  tenantId?: string | null;
+}
+
 /** Result of performing an invitation lifecycle action. */
 export interface IdentityAuthorizationInvitationActionResult {
   errorMessage?: string | null;
@@ -11313,6 +11346,23 @@ export interface IdentityAuthorizationJitElevationInput {
   tenantId?: CQRSModelsTenantId;
   updatedAt?: string | null;
 }
+
+/** Request body for template migration. */
+export interface IdentityAuthorizationMigrateTemplateInput {
+  /** Batch size for per-batch progress commits (default 25). */
+  batchSize?: number;
+  /** When true, return the plan without applying anything. */
+  dryRun?: boolean;
+  /** Reason recorded in the audit log. */
+  reason?: string | null;
+  /** Optional tenant filter (null = every tenant that instantiated the template). */
+  tenantIds?: string[] | null;
+  /** The target version number. */
+  toVersion: number;
+}
+
+/** Migration status */
+export type IdentityAuthorizationMigrationStatus = 'None' | 'Planned' | 'Scheduled' | 'InProgress' | 'Completed' | 'Failed' | 'RolledBack' | 'Cancelled';
 
 /** A user affected by a simulated permission change, with the reason. */
 export interface IdentityAuthorizationModelsImpactedUser {
@@ -11666,6 +11716,41 @@ export interface IdentityAuthorizationPermissionRestorationResult {
   tenantId?: string | null;
 }
 
+/** Result of a what-if permission simulation (issue #374). GameGuild.Identity.Authorization.PermissionSimulationResult.Applied is
+always false: a simulation never mutates state. */
+export interface IdentityAuthorizationPermissionSimulationResult {
+  /** The effective permission set after the hypothetical change. */
+  after?: string[] | null;
+  /** Always false — a simulation is a pure dry-run. */
+  applied?: boolean;
+  /** The effective permission set before the hypothetical change. */
+  before?: string[] | null;
+  /** False when the resolution context was invalid and the before set is fail-closed empty. */
+  contextValid?: boolean;
+  /** Permissions the hypothetical change would grant. */
+  granted?: string[] | null;
+  /** Revokes that cannot apply because the grant is static and non-deniable. */
+  nonRevocableRevokes?: string[] | null;
+  /** The resource scope id (user subjects with a resource scope). */
+  resourceId?: string | null;
+  /** The resource scope type (user subjects with a resource scope). */
+  resourceType?: string | null;
+  /** Permissions the hypothetical change would revoke. */
+  revoked?: string[] | null;
+  /** The simulated role name (role subjects). */
+  roleKey?: string | null;
+  subjectKind?: IdentityAuthorizationPermissionSimulationSubjectKind;
+  /** The tenant scope. */
+  tenantId?: string;
+  /** Permissions unaffected by the hypothetical change. */
+  unchanged?: string[] | null;
+  /** The simulated user (user subjects). */
+  userId?: string | null;
+}
+
+/** Kind of subject a what-if simulation is run against (issue #374). */
+export type IdentityAuthorizationPermissionSimulationSubjectKind = 'User' | 'Role' | 'Tenant';
+
 /** One planned change of a synchronization import. */
 export interface IdentityAuthorizationPermissionSyncChange {
   /** Change kind: `role.create`, `role.update`, `permissions.grant`, `permissions.revoke`, `permissions.deny`, `permissions.removeDeny`. */
@@ -11688,6 +11773,148 @@ export interface IdentityAuthorizationPermissionSyncImportResult {
   isValid?: boolean;
   /** Validation problems (empty when valid). */
   validationErrors?: string[] | null;
+}
+
+/** Per-target entry of a template instantiation result / dry-run preview. */
+export interface IdentityAuthorizationPermissionTemplateInstantiationEntryResult {
+  /** Permissions that would be (or were) granted from the template. */
+  permissionsToGrant?: string[] | null;
+  /** Dynamic roles that would be (or were) assigned from the template. */
+  rolesToAssign?: string[] | null;
+  /** The target user. */
+  userId?: string;
+}
+
+/** Result of instantiating a permission template into a tenant (or its dry-run
+preview), issue #369. */
+export interface IdentityAuthorizationPermissionTemplateInstantiationResult {
+  /** Whether the instantiation was applied (false for dry runs). */
+  applied?: boolean;
+  /** Targets with at least one change. */
+  appliedTargets?: number;
+  /** Per-target plan detail. */
+  entries?: IdentityAuthorizationPermissionTemplateInstantiationEntryResult[] | null;
+  /** Total permission grants in the plan. */
+  permissionGrants?: number;
+  /** Total role assignments in the plan. */
+  roleAssignments?: number;
+  /** Targets already fully covered (no change needed). */
+  skippedTargets?: number;
+  /** The instantiated template id. */
+  templateId?: string;
+  /** The instantiated template name. */
+  templateName: string | null;
+  /** The template version that was (or would be) applied. */
+  templateVersion?: number;
+  /** The tenant scope (null in the result when it came from the actor context). */
+  tenantId?: string | null;
+  /** Total targets considered. */
+  totalTargets?: number;
+}
+
+/** Result of a permission template migration (or dry-run preview) / rollback,
+issue #370. */
+export interface IdentityAuthorizationPermissionTemplateMigrationResult {
+  /** Permissions the migration adds across targets. */
+  addedPermissions?: string[] | null;
+  /** How many distinct tenants are affected. */
+  affectedTenantCount?: number;
+  /** Whether this was a dry run. */
+  dryRun?: boolean;
+  /** Failed targets. */
+  failureCount?: number;
+  /** The lowest source version among the targets. */
+  fromVersion?: number;
+  /** The migration id (durable progress handle). */
+  migrationId?: string;
+  /** Migration progress percentage (0 for dry runs). */
+  progressPercentage?: number;
+  /** Permissions the migration removes across targets. */
+  removedPermissions?: string[] | null;
+  /** Skipped targets (unknown source version or no effective change). */
+  skippedCount?: number;
+  status?: IdentityAuthorizationMigrationStatus;
+  /** Successfully migrated targets. */
+  successCount?: number;
+  /** The migrated template id. */
+  templateId?: string;
+  /** The migrated template name. */
+  templateName: string | null;
+  /** Total targets considered. */
+  totalCount?: number;
+  /** The target version. */
+  toVersion?: number;
+}
+
+/** Result of a permission template mutation (create/update, issue #369). */
+export interface IdentityAuthorizationPermissionTemplateMutationResult {
+  /** Whether the template was created (as opposed to updated). */
+  created?: boolean;
+  /** Whether the template is active. */
+  isActive?: boolean;
+  /** Whether the template is a system template. */
+  isSystemTemplate?: boolean;
+  /** The template's raw permissions after the mutation. */
+  permissions?: string[] | null;
+  /** The template's role keys after the mutation (role templates). */
+  roleKeys?: string[] | null;
+  /** The template id. */
+  templateId?: string;
+  /** The template name. */
+  templateName: string | null;
+  /** The template version number after the mutation. */
+  version?: number;
+}
+
+/** Read model for one permission template (issue #369). */
+export interface IdentityAuthorizationPermissionTemplateSummary {
+  /** The template id. */
+  id?: string;
+  /** Template category. */
+  category?: string | null;
+  /** Latest version number from the append-only history. */
+  currentVersion?: number;
+  /** The template description. */
+  description?: string | null;
+  /** Whether the template is active. */
+  isActive?: boolean;
+  /** True when the template grants at least one role (role template). */
+  isRoleTemplate?: boolean;
+  /** Whether this is an immutable system template. */
+  isSystemTemplate?: boolean;
+  /** Minimum tenant tier required to use the template. */
+  minimumTier?: string | null;
+  /** The unique template name. */
+  name: string | null;
+  /** Raw permissions the template grants. */
+  permissions?: string[] | null;
+  /** Dynamic role names the template grants (role templates). */
+  roleKeys?: string[] | null;
+}
+
+/** Read model for one permission template version snapshot (issue #370). */
+export interface IdentityAuthorizationPermissionTemplateVersionSummary {
+  /** Permissions added relative to the previous version. */
+  addedPermissions?: string[] | null;
+  /** The change note. */
+  changeNotes?: string | null;
+  changeType?: IdentityAuthorizationTemplateChangeType;
+  /** When the version was created. */
+  createdAt?: string;
+  /** Who created the version. */
+  createdByUserId?: string;
+  /** The template name at this version. */
+  name?: string | null;
+  /** Checksum of the permission set. */
+  permissionHash?: string | null;
+  /** The full permission set at this version. */
+  permissions?: string[] | null;
+  /** Permissions removed relative to the previous version. */
+  removedPermissions?: string[] | null;
+  /** Permissions unchanged relative to the previous version. */
+  unchangedPermissions?: string[] | null;
+  /** The version number. */
+  versionNumber?: number;
 }
 
 /** Data model for Identity Authorization Permission Trend. */
@@ -11854,6 +12081,14 @@ last known state before removal). */
 /** Which policy family a GameGuild.Identity.Authorization.PolicyVersionHistory row snapshots. */
 export type IdentityAuthorizationPolicyVersionKind = 'None' | 'ConditionalPolicy' | 'PolicyDefinition';
 
+/** Request body for the instantiation dry-run preview. */
+export interface IdentityAuthorizationPreviewInstantiationInput {
+  /** The target users. */
+  targetUserIds?: string[] | null;
+  /** The tenant receiving the template (defaults to the acting tenant). */
+  tenantId?: string | null;
+}
+
 /** Command to remove deny entries from a user's permissions. */
 export interface IdentityAuthorizationRemoveDenyPermissionsCommand {
   /** Gets the deny permissions to remove. */
@@ -11951,6 +12186,12 @@ export interface IdentityAuthorizationRevokeTenantPermissionCommand {
   userId: string;
 }
 
+/** Request body for migration rollback. */
+export interface IdentityAuthorizationRollbackMigrationInput {
+  /** Reason recorded in the audit log. */
+  reason: string | null;
+}
+
 /** Command to set global default permissions.
 These are baseline permissions applied to all users across all tenants. */
 export interface IdentityAuthorizationSetGlobalDefaultPermissionsCommand {
@@ -12018,6 +12259,29 @@ export interface IdentityAuthorizationShareResult {
   userId?: string | null;
 }
 
+/** What-if permission simulation (issue #374): computes the before/after effective
+permission diff for a hypothetical grant/revoke delta <b>without applying
+anything</b>. The command is a pure dry-run — it performs no writes, bumps no
+security versions and writes no audit entries. */
+export interface IdentityAuthorizationSimulatePermissionChangeCommand {
+  /** Hypothetical permission grants. */
+  grants?: string[] | null;
+  /** Optional resource scope for user-subject resolution (type + id). */
+  resourceId?: string | null;
+  /** Optional resource scope for user-subject resolution (type + id). */
+  resourceType?: string | null;
+  /** Hypothetical permission revokes (applied as DENY-WINS denies). */
+  revokes?: string[] | null;
+  /** The subject role name (required for GameGuild.Identity.Authorization.PermissionSimulationSubjectKind.Role). */
+  roleKey?: string | null;
+  subjectKind: IdentityAuthorizationPermissionSimulationSubjectKind;
+  /** The tenant scope. Defaults to the acting tenant. A system administrator may
+target any tenant; every other actor is pinned to their own tenant. */
+  tenantId?: string | null;
+  /** The subject user (required for GameGuild.Identity.Authorization.PermissionSimulationSubjectKind.User). */
+  userId?: string | null;
+}
+
 /** Action taken to resolve SoD violation */
 export type IdentityAuthorizationSoDResolutionAction =
   'None' | 'RevokePermission' | 'RevokeRole' | 'GrantException' | 'ImplementCompensatingControl' | 'TransferOwnership' | 'NoAction';
@@ -12079,6 +12343,34 @@ export interface IdentityAuthorizationSoDViolation {
 
 /** Status of SoD violation */
 export type IdentityAuthorizationSoDViolationStatus = 'None' | 'Active' | 'Acknowledged' | 'Mitigated' | 'Resolved' | 'Excepted' | 'FalsePositive';
+
+/** Template change type for versioning */
+export type IdentityAuthorizationTemplateChangeType = 'None' | 'Major' | 'Minor' | 'Patch' | 'Hotfix';
+
+/** Updates a permission template (issue #369 template CRUD lifecycle). Every accepted
+update appends a new GameGuild.Identity.Authorization.PermissionTemplateVersion snapshot with the
+computed permission diff (issue #370 version bump on template update). */
+export interface IdentityAuthorizationUpdatePermissionTemplateCommand {
+  /** The new category (unchanged when null). */
+  category?: string | null;
+  /** Change note recorded on the new version snapshot. */
+  changeNotes?: string | null;
+  changeType?: IdentityAuthorizationTemplateChangeType;
+  /** The new description (unchanged when null). */
+  description?: string | null;
+  /** The new active flag (unchanged when null). */
+  isActive?: boolean | null;
+  /** The new minimum tier (unchanged when null). */
+  minimumTier?: string | null;
+  /** The new name (unchanged when null). */
+  name?: string | null;
+  /** The new permission set (replaces the current set when provided). */
+  permissions?: string[] | null;
+  /** The new role-key set (replaces the current set when provided). */
+  roleKeys?: string[] | null;
+  /** The template to update. */
+  templateId: string;
+}
 
 /** Command to update a specific user's permissions on a resource. */
 export interface IdentityAuthorizationUpdateUserPermissionsCommand {
@@ -23944,6 +24236,7 @@ export let IdentityAuthorizationControllersRevokeElevationInputSchema: z.ZodType
 export let IdentityAuthorizationControllersRevokeItemInputSchema: z.ZodType<IdentityAuthorizationControllersRevokeItemInput>;
 export let IdentityAuthorizationControllersUpdateSoDRuleInputSchema: z.ZodType<IdentityAuthorizationControllersUpdateSoDRuleInput>;
 export let IdentityAuthorizationCreatePermissionApprovalCommandSchema: z.ZodType<IdentityAuthorizationCreatePermissionApprovalCommand>;
+export let IdentityAuthorizationCreatePermissionTemplateCommandSchema: z.ZodType<IdentityAuthorizationCreatePermissionTemplateCommand>;
 export let IdentityAuthorizationDeclineInvitationInputSchema: z.ZodType<IdentityAuthorizationDeclineInvitationInput>;
 export let IdentityAuthorizationDelegatedAdminScopeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScope>;
 export let IdentityAuthorizationDelegatedAdminScopeTypeSchema: z.ZodType<IdentityAuthorizationDelegatedAdminScopeType>;
@@ -23970,8 +24263,11 @@ export let IdentityAuthorizationHistoricalRoleAssignmentSchema: z.ZodType<Identi
 export let IdentityAuthorizationImpactSeveritySchema: z.ZodType<IdentityAuthorizationImpactSeverity>;
 export let IdentityAuthorizationImportPermissionSyncInputSchema: z.ZodType<IdentityAuthorizationImportPermissionSyncInput>;
 export let IdentityAuthorizationInheritanceHistoryEventSchema: z.ZodType<IdentityAuthorizationInheritanceHistoryEvent>;
+export let IdentityAuthorizationInstantiateTemplateInputSchema: z.ZodType<IdentityAuthorizationInstantiateTemplateInput>;
 export let IdentityAuthorizationInvitationActionResultSchema: z.ZodType<IdentityAuthorizationInvitationActionResult>;
 export let IdentityAuthorizationJitElevationInputSchema: z.ZodType<IdentityAuthorizationJitElevationInput>;
+export let IdentityAuthorizationMigrateTemplateInputSchema: z.ZodType<IdentityAuthorizationMigrateTemplateInput>;
+export let IdentityAuthorizationMigrationStatusSchema: z.ZodType<IdentityAuthorizationMigrationStatus>;
 export let IdentityAuthorizationModelsImpactedUserSchema: z.ZodType<IdentityAuthorizationModelsImpactedUser>;
 export let IdentityAuthorizationModelsPermissionGraphSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraph>;
 export let IdentityAuthorizationModelsPermissionGraphCycleSchema: z.ZodType<IdentityAuthorizationModelsPermissionGraphCycle>;
@@ -23995,8 +24291,16 @@ export let IdentityAuthorizationPermissionComplianceReportSchema: z.ZodType<Iden
 export let IdentityAuthorizationPermissionDelegationSchema: z.ZodType<IdentityAuthorizationPermissionDelegation>;
 export let IdentityAuthorizationPermissionHistoryAtSnapshotSchema: z.ZodType<IdentityAuthorizationPermissionHistoryAtSnapshot>;
 export let IdentityAuthorizationPermissionRestorationResultSchema: z.ZodType<IdentityAuthorizationPermissionRestorationResult>;
+export let IdentityAuthorizationPermissionSimulationResultSchema: z.ZodType<IdentityAuthorizationPermissionSimulationResult>;
+export let IdentityAuthorizationPermissionSimulationSubjectKindSchema: z.ZodType<IdentityAuthorizationPermissionSimulationSubjectKind>;
 export let IdentityAuthorizationPermissionSyncChangeSchema: z.ZodType<IdentityAuthorizationPermissionSyncChange>;
 export let IdentityAuthorizationPermissionSyncImportResultSchema: z.ZodType<IdentityAuthorizationPermissionSyncImportResult>;
+export let IdentityAuthorizationPermissionTemplateInstantiationEntryResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateInstantiationEntryResult>;
+export let IdentityAuthorizationPermissionTemplateInstantiationResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateInstantiationResult>;
+export let IdentityAuthorizationPermissionTemplateMigrationResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateMigrationResult>;
+export let IdentityAuthorizationPermissionTemplateMutationResultSchema: z.ZodType<IdentityAuthorizationPermissionTemplateMutationResult>;
+export let IdentityAuthorizationPermissionTemplateSummarySchema: z.ZodType<IdentityAuthorizationPermissionTemplateSummary>;
+export let IdentityAuthorizationPermissionTemplateVersionSummarySchema: z.ZodType<IdentityAuthorizationPermissionTemplateVersionSummary>;
 export let IdentityAuthorizationPermissionTrendSchema: z.ZodType<IdentityAuthorizationPermissionTrend>;
 export let IdentityAuthorizationPermissionTypeSchema: z.ZodType<IdentityAuthorizationPermissionType>;
 export let IdentityAuthorizationPermissionUpdateResultSchema: z.ZodType<IdentityAuthorizationPermissionUpdateResult>;
@@ -24004,23 +24308,28 @@ export let IdentityAuthorizationPermissionUsageMetricsSchema: z.ZodType<Identity
 export let IdentityAuthorizationPolicyVersionChangeTypeSchema: z.ZodType<IdentityAuthorizationPolicyVersionChangeType>;
 export let IdentityAuthorizationPolicyVersionHistorySchema: z.ZodType<IdentityAuthorizationPolicyVersionHistory>;
 export let IdentityAuthorizationPolicyVersionKindSchema: z.ZodType<IdentityAuthorizationPolicyVersionKind>;
+export let IdentityAuthorizationPreviewInstantiationInputSchema: z.ZodType<IdentityAuthorizationPreviewInstantiationInput>;
 export let IdentityAuthorizationRemoveDenyPermissionsCommandSchema: z.ZodType<IdentityAuthorizationRemoveDenyPermissionsCommand>;
 export let IdentityAuthorizationRemoveUserAccessCommandSchema: z.ZodType<IdentityAuthorizationRemoveUserAccessCommand>;
 export let IdentityAuthorizationResourceAccessPatternSchema: z.ZodType<IdentityAuthorizationResourceAccessPattern>;
 export let IdentityAuthorizationResourceInvitationDtoSchema: z.ZodType<IdentityAuthorizationResourceInvitationDto>;
 export let IdentityAuthorizationResourceUserSchema: z.ZodType<IdentityAuthorizationResourceUser>;
 export let IdentityAuthorizationRevokeTenantPermissionCommandSchema: z.ZodType<IdentityAuthorizationRevokeTenantPermissionCommand>;
+export let IdentityAuthorizationRollbackMigrationInputSchema: z.ZodType<IdentityAuthorizationRollbackMigrationInput>;
 export let IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetGlobalDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantDefaultPermissionsCommandSchema: z.ZodType<IdentityAuthorizationSetTenantDefaultPermissionsCommand>;
 export let IdentityAuthorizationSetTenantPermissionExpirationCommandSchema: z.ZodType<IdentityAuthorizationSetTenantPermissionExpirationCommand>;
 export let IdentityAuthorizationShareResourceCommandSchema: z.ZodType<IdentityAuthorizationShareResourceCommand>;
 export let IdentityAuthorizationShareResultSchema: z.ZodType<IdentityAuthorizationShareResult>;
+export let IdentityAuthorizationSimulatePermissionChangeCommandSchema: z.ZodType<IdentityAuthorizationSimulatePermissionChangeCommand>;
 export let IdentityAuthorizationSoDResolutionActionSchema: z.ZodType<IdentityAuthorizationSoDResolutionAction>;
 export let IdentityAuthorizationSoDRuleSchema: z.ZodType<IdentityAuthorizationSoDRule>;
 export let IdentityAuthorizationSoDRuleTypeSchema: z.ZodType<IdentityAuthorizationSoDRuleType>;
 export let IdentityAuthorizationSoDSeveritySchema: z.ZodType<IdentityAuthorizationSoDSeverity>;
 export let IdentityAuthorizationSoDViolationSchema: z.ZodType<IdentityAuthorizationSoDViolation>;
 export let IdentityAuthorizationSoDViolationStatusSchema: z.ZodType<IdentityAuthorizationSoDViolationStatus>;
+export let IdentityAuthorizationTemplateChangeTypeSchema: z.ZodType<IdentityAuthorizationTemplateChangeType>;
+export let IdentityAuthorizationUpdatePermissionTemplateCommandSchema: z.ZodType<IdentityAuthorizationUpdatePermissionTemplateCommand>;
 export let IdentityAuthorizationUpdateUserPermissionsCommandSchema: z.ZodType<IdentityAuthorizationUpdateUserPermissionsCommand>;
 export let IdentityAuthorizationUserActivitySummarySchema: z.ZodType<IdentityAuthorizationUserActivitySummary>;
 export let IdentityProvisioningCreateScimProvisioningTokenInputSchema: z.ZodType<IdentityProvisioningCreateScimProvisioningTokenInput>;
@@ -35138,6 +35447,18 @@ IdentityAuthorizationCreatePermissionApprovalCommandSchema = z.object({
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema).optional(),
 });
 
+/** Zod schema for IdentityAuthorizationCreatePermissionTemplateCommand. Creates a permission template (issue #369 template CRUD lifecycle). */
+IdentityAuthorizationCreatePermissionTemplateCommandSchema = z.object({
+  category: z.string().nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
+  description: z.string().nullable(),
+  isSystemTemplate: z.boolean().optional(),
+  minimumTier: z.string().nullable().optional(),
+  name: z.string().nullable(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationDeclineInvitationInput. Request payload for declining an invitation. */
 IdentityAuthorizationDeclineInvitationInputSchema = z.object({
   reason: z.string().nullable().optional(),
@@ -35369,6 +35690,14 @@ IdentityAuthorizationInheritanceHistoryEventSchema = z.object({
   timestamp: z.string().datetime().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationInstantiateTemplateInput. Request body for template instantiation. */
+IdentityAuthorizationInstantiateTemplateInputSchema = z.object({
+  dryRun: z.boolean().optional(),
+  reason: z.string().nullable().optional(),
+  targetUserIds: z.array(z.string().uuid()).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationInvitationActionResult. Result of performing an invitation lifecycle action. */
 IdentityAuthorizationInvitationActionResultSchema = z.object({
   errorMessage: z.string().nullable().optional(),
@@ -35404,6 +35733,18 @@ IdentityAuthorizationJitElevationInputSchema = z.object({
   tenantId: z.lazy(() => CQRSModelsTenantIdSchema).optional(),
   updatedAt: z.string().datetime().nullable().optional(),
 });
+
+/** Zod schema for IdentityAuthorizationMigrateTemplateInput. Request body for template migration. */
+IdentityAuthorizationMigrateTemplateInputSchema = z.object({
+  batchSize: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  reason: z.string().nullable().optional(),
+  tenantIds: z.array(z.string().uuid()).nullable().optional(),
+  toVersion: z.number().int(),
+});
+
+/** Zod schema for IdentityAuthorizationMigrationStatus. Migration status */
+IdentityAuthorizationMigrationStatusSchema = z.enum(['None', 'Planned', 'Scheduled', 'InProgress', 'Completed', 'Failed', 'RolledBack', 'Cancelled']);
 
 /** Zod schema for IdentityAuthorizationModelsImpactedUser. A user affected by a simulated permission change, with the reason. */
 IdentityAuthorizationModelsImpactedUserSchema = z.object({
@@ -35711,6 +36052,28 @@ IdentityAuthorizationPermissionRestorationResultSchema = z.object({
   tenantId: z.string().uuid().nullable().optional(),
 });
 
+/** Zod schema for IdentityAuthorizationPermissionSimulationResult. Result of a what-if permission simulation (issue #374). GameGuild.Identity.Authorization.PermissionSimulationResult.Applied is
+always false: a simulation never mutates state. */
+IdentityAuthorizationPermissionSimulationResultSchema = z.object({
+  after: z.array(z.string()).nullable().optional(),
+  applied: z.boolean().optional(),
+  before: z.array(z.string()).nullable().optional(),
+  contextValid: z.boolean().optional(),
+  granted: z.array(z.string()).nullable().optional(),
+  nonRevocableRevokes: z.array(z.string()).nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  revoked: z.array(z.string()).nullable().optional(),
+  roleKey: z.string().nullable().optional(),
+  subjectKind: z.lazy(() => IdentityAuthorizationPermissionSimulationSubjectKindSchema).optional(),
+  tenantId: z.string().uuid().optional(),
+  unchanged: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionSimulationSubjectKind. Kind of subject a what-if simulation is run against (issue #374). */
+IdentityAuthorizationPermissionSimulationSubjectKindSchema = z.enum(['User', 'Role', 'Tenant']);
+
 /** Zod schema for IdentityAuthorizationPermissionSyncChange. One planned change of a synchronization import. */
 IdentityAuthorizationPermissionSyncChangeSchema = z.object({
   kind: z.string().nullable().optional(),
@@ -35728,6 +36091,94 @@ IdentityAuthorizationPermissionSyncImportResultSchema = z.object({
   dryRun: z.boolean().optional(),
   isValid: z.boolean().optional(),
   validationErrors: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateInstantiationEntryResult. Per-target entry of a template instantiation result / dry-run preview. */
+IdentityAuthorizationPermissionTemplateInstantiationEntryResultSchema = z.object({
+  permissionsToGrant: z.array(z.string()).nullable().optional(),
+  rolesToAssign: z.array(z.string()).nullable().optional(),
+  userId: z.string().uuid().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateInstantiationResult. Result of instantiating a permission template into a tenant (or its dry-run
+preview), issue #369. */
+IdentityAuthorizationPermissionTemplateInstantiationResultSchema = z.object({
+  applied: z.boolean().optional(),
+  appliedTargets: z.number().int().optional(),
+  entries: z
+    .array(z.lazy(() => IdentityAuthorizationPermissionTemplateInstantiationEntryResultSchema))
+    .nullable()
+    .optional(),
+  permissionGrants: z.number().int().optional(),
+  roleAssignments: z.number().int().optional(),
+  skippedTargets: z.number().int().optional(),
+  templateId: z.string().uuid().optional(),
+  templateName: z.string().nullable(),
+  templateVersion: z.number().int().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+  totalTargets: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateMigrationResult. Result of a permission template migration (or dry-run preview) / rollback,
+issue #370. */
+IdentityAuthorizationPermissionTemplateMigrationResultSchema = z.object({
+  addedPermissions: z.array(z.string()).nullable().optional(),
+  affectedTenantCount: z.number().int().optional(),
+  dryRun: z.boolean().optional(),
+  failureCount: z.number().int().optional(),
+  fromVersion: z.number().int().optional(),
+  migrationId: z.string().uuid().optional(),
+  progressPercentage: z.number().optional(),
+  removedPermissions: z.array(z.string()).nullable().optional(),
+  skippedCount: z.number().int().optional(),
+  status: z.lazy(() => IdentityAuthorizationMigrationStatusSchema).optional(),
+  successCount: z.number().int().optional(),
+  templateId: z.string().uuid().optional(),
+  templateName: z.string().nullable(),
+  totalCount: z.number().int().optional(),
+  toVersion: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateMutationResult. Result of a permission template mutation (create/update, issue #369). */
+IdentityAuthorizationPermissionTemplateMutationResultSchema = z.object({
+  created: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  isSystemTemplate: z.boolean().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+  templateId: z.string().uuid().optional(),
+  templateName: z.string().nullable(),
+  version: z.number().int().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateSummary. Read model for one permission template (issue #369). */
+IdentityAuthorizationPermissionTemplateSummarySchema = z.object({
+  id: z.string().uuid().optional(),
+  category: z.string().nullable().optional(),
+  currentVersion: z.number().int().optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  isRoleTemplate: z.boolean().optional(),
+  isSystemTemplate: z.boolean().optional(),
+  minimumTier: z.string().nullable().optional(),
+  name: z.string().nullable(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationPermissionTemplateVersionSummary. Read model for one permission template version snapshot (issue #370). */
+IdentityAuthorizationPermissionTemplateVersionSummarySchema = z.object({
+  addedPermissions: z.array(z.string()).nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
+  changeType: z.lazy(() => IdentityAuthorizationTemplateChangeTypeSchema).optional(),
+  createdAt: z.string().datetime().optional(),
+  createdByUserId: z.string().uuid().optional(),
+  name: z.string().nullable().optional(),
+  permissionHash: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  removedPermissions: z.array(z.string()).nullable().optional(),
+  unchangedPermissions: z.array(z.string()).nullable().optional(),
+  versionNumber: z.number().int().optional(),
 });
 
 /** Zod schema for IdentityAuthorizationPermissionTrend. Data model for Identity Authorization Permission Trend. */
@@ -35884,6 +36335,12 @@ IdentityAuthorizationPolicyVersionHistorySchema = z.object({
 /** Zod schema for IdentityAuthorizationPolicyVersionKind. Which policy family a GameGuild.Identity.Authorization.PolicyVersionHistory row snapshots. */
 IdentityAuthorizationPolicyVersionKindSchema = z.enum(['None', 'ConditionalPolicy', 'PolicyDefinition']);
 
+/** Zod schema for IdentityAuthorizationPreviewInstantiationInput. Request body for the instantiation dry-run preview. */
+IdentityAuthorizationPreviewInstantiationInputSchema = z.object({
+  targetUserIds: z.array(z.string().uuid()).nullable().optional(),
+  tenantId: z.string().uuid().nullable().optional(),
+});
+
 /** Zod schema for IdentityAuthorizationRemoveDenyPermissionsCommand. Command to remove deny entries from a user's permissions. */
 IdentityAuthorizationRemoveDenyPermissionsCommandSchema = z.object({
   permissions: z.array(z.string()).nullable(),
@@ -35948,6 +36405,11 @@ IdentityAuthorizationRevokeTenantPermissionCommandSchema = z.object({
   userId: z.string().uuid(),
 });
 
+/** Zod schema for IdentityAuthorizationRollbackMigrationInput. Request body for migration rollback. */
+IdentityAuthorizationRollbackMigrationInputSchema = z.object({
+  reason: z.string().nullable(),
+});
+
 /** Zod schema for IdentityAuthorizationSetGlobalDefaultPermissionsCommand. Command to set global default permissions.
 These are baseline permissions applied to all users across all tenants. */
 IdentityAuthorizationSetGlobalDefaultPermissionsCommandSchema = z.object({
@@ -35995,6 +36457,21 @@ IdentityAuthorizationShareResultSchema = z.object({
   invitationLink: z.string().nullable().optional(),
   isNewUser: z.boolean().optional(),
   success: z.boolean().optional(),
+  userId: z.string().uuid().nullable().optional(),
+});
+
+/** Zod schema for IdentityAuthorizationSimulatePermissionChangeCommand. What-if permission simulation (issue #374): computes the before/after effective
+permission diff for a hypothetical grant/revoke delta <b>without applying
+anything</b>. The command is a pure dry-run — it performs no writes, bumps no
+security versions and writes no audit entries. */
+IdentityAuthorizationSimulatePermissionChangeCommandSchema = z.object({
+  grants: z.array(z.string()).nullable().optional(),
+  resourceId: z.string().nullable().optional(),
+  resourceType: z.string().nullable().optional(),
+  revokes: z.array(z.string()).nullable().optional(),
+  roleKey: z.string().nullable().optional(),
+  subjectKind: z.lazy(() => IdentityAuthorizationPermissionSimulationSubjectKindSchema),
+  tenantId: z.string().uuid().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
 });
 
@@ -36075,6 +36552,25 @@ IdentityAuthorizationSoDViolationSchema = z.object({
 
 /** Zod schema for IdentityAuthorizationSoDViolationStatus. Status of SoD violation */
 IdentityAuthorizationSoDViolationStatusSchema = z.enum(['None', 'Active', 'Acknowledged', 'Mitigated', 'Resolved', 'Excepted', 'FalsePositive']);
+
+/** Zod schema for IdentityAuthorizationTemplateChangeType. Template change type for versioning */
+IdentityAuthorizationTemplateChangeTypeSchema = z.enum(['None', 'Major', 'Minor', 'Patch', 'Hotfix']);
+
+/** Zod schema for IdentityAuthorizationUpdatePermissionTemplateCommand. Updates a permission template (issue #369 template CRUD lifecycle). Every accepted
+update appends a new GameGuild.Identity.Authorization.PermissionTemplateVersion snapshot with the
+computed permission diff (issue #370 version bump on template update). */
+IdentityAuthorizationUpdatePermissionTemplateCommandSchema = z.object({
+  category: z.string().nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
+  changeType: z.lazy(() => IdentityAuthorizationTemplateChangeTypeSchema).optional(),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean().nullable().optional(),
+  minimumTier: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  permissions: z.array(z.string()).nullable().optional(),
+  roleKeys: z.array(z.string()).nullable().optional(),
+  templateId: z.string().uuid(),
+});
 
 /** Zod schema for IdentityAuthorizationUpdateUserPermissionsCommand. Command to update a specific user's permissions on a resource. */
 IdentityAuthorizationUpdateUserPermissionsCommandSchema = z.object({
