@@ -258,5 +258,5 @@ public sealed class MfaRecoveryPostgreSqlTests(ApiPostgreSqlFixture fixture)
 
     private static MfaAttemptTrackingService CreateTracking(IUserMfaConfigurationRepository repository) =>
         new(NullLogger<MfaAttemptTrackingService>.Instance, repository, new Mock<IMfaAttemptRepository>().Object,
-            new HttpContextAccessor());
+            new HttpContextAccessor(), new InMemoryTokenRevocationService(NullLogger<InMemoryTokenRevocationService>.Instance));
 }

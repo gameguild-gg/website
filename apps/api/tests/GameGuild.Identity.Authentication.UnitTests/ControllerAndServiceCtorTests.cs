@@ -47,7 +47,8 @@ public class ControllerAndServiceCtorTests
             NullLogger<MfaAttemptTrackingService>.Instance,
             Mock.Of<IUserMfaConfigurationRepository>(),
             Mock.Of<IMfaAttemptRepository>(),
-            Mock.Of<IHttpContextAccessor>());
+            Mock.Of<IHttpContextAccessor>(),
+            Mock.Of<ITokenRevocationService>());
         svc.Should().NotBeNull();
     }
 
