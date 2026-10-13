@@ -576,7 +576,10 @@ public sealed class SessionManagementService(
     {
         var now = SystemClock.UtcNow;
         var recentSessions = await sessionRepository.GetByUserIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        var activeSessions = recentSessions.Where(s => s.IsActive && s.ExpiresAt > now)
+        // A default ExpiresAt means "unset/legacy": such a row is treated as not expired so
+        // the analysis keeps counting genuinely active sessions (matching IsActive alone).
+        var activeSessions = recentSessions
+            .Where(s => s.IsActive && (s.ExpiresAt == default || s.ExpiresAt > now))
             .OrderByDescending(s => s.LastUsedAt)
             .ToList();
         var activeCount = activeSessions.Count;
@@ -585,26 +588,27 @@ public sealed class SessionManagementService(
         var uniqueDevices = recentSessions.Select(s => s.DeviceFingerprint).Where(fp => !string.IsNullOrEmpty(fp)).Distinct().Count();
 
         // ── Additive risk score ─────────────────────────────────────────────
-        // Count-based factors remain the baseline (they work with no location data);
-        // geo factors only fire when real location metadata is present.
+        // The count-based tiers preserve the historical classification guarantees
+        // (>10 IPs or >5 devices ⇒ Medium; >10 active sessions ⇒ High); geo factors
+        // only fire when real location metadata is present and stack on top.
         var riskScore = 0;
         var riskFactors = new List<string>();
 
         if (uniqueIps > 10)
         {
-            riskScore += 20;
+            riskScore += 30;
             riskFactors.Add($"Multiple IPs: {uniqueIps}");
         }
 
         if (uniqueDevices > 5)
         {
-            riskScore += 20;
+            riskScore += 30;
             riskFactors.Add($"Multiple devices: {uniqueDevices}");
         }
 
         if (activeCount > 10)
         {
-            riskScore += 30;
+            riskScore += 60;
             riskFactors.Add($"High active session count: {activeCount}");
         }
 
@@ -672,20 +676,48 @@ public sealed class SessionManagementService(
         }
 
         // Per-session anomaly detection: an active session located outside the account's
-        // majority country (when at least one location is known) is flagged individually.
+        // usual country is flagged individually. The usual-country baseline is the country
+        // of the active session matching the request IP (where the user is right now); when
+        // no session matches, a strict majority country (strictly more sessions than any
+        // other country) is required — a tie flags nothing.
         var anomalousSessionIds = new List<string>();
-        var majorityCountry = sessionLocations
-            .Where(l => !string.IsNullOrEmpty(l.Country))
-            .GroupBy(l => l.Country!, StringComparer.Ordinal)
-            .OrderByDescending(g => g.Count())
-            .Select(g => g.Key)
-            .FirstOrDefault();
+        var countriesBySession = activeSessions
+            .Select(s => (Session: s, Country: SessionEnrichmentJson.DeserializeLocation(s.Location)?.Country))
+            .Where(pair => !string.IsNullOrEmpty(pair.Country))
+            .Select(pair => (pair.Session, Country: pair.Country!))
+            .ToList();
+        string? majorityCountry = null;
+        // Where the user is right now: prefer the session whose resolved location carries
+        // the request IP (the geo record is the resolution source), falling back to the
+        // session's raw IP. Without a match, a strict majority is required.
+        var requestMatching = countriesBySession
+            .Where(pair => SessionEnrichmentJson.DeserializeLocation(pair.Session.Location)?.IpAddress is { } locationIp
+                           ? string.Equals(locationIp, ipAddress, StringComparison.Ordinal)
+                           : string.Equals(pair.Session.IpAddress, ipAddress, StringComparison.Ordinal))
+            .ToList();
+        if (requestMatching.Count > 0)
+        {
+            majorityCountry = requestMatching[0].Country;
+        }
+        else
+        {
+            var countryCounts = countriesBySession
+                .GroupBy(pair => pair.Country, StringComparer.Ordinal)
+                .Select(g => (Country: g.Key, Count: g.Count()))
+                .ToList();
+            if (countryCounts.Count > 0 &&
+                countryCounts.Max(c => c.Count) > countryCounts.Sum(c => c.Count) / 2)
+            {
+                majorityCountry = countryCounts
+                    .OrderByDescending(c => c.Count)
+                    .First().Country;
+            }
+        }
         if (majorityCountry is not null)
         {
-            anomalousSessionIds = activeSessions
-                .Where(s => SessionEnrichmentJson.DeserializeLocation(s.Location)?.Country is { } country &&
-                            !string.Equals(country, majorityCountry, StringComparison.Ordinal))
-                .Select(s => s.Id.ToString())
+            anomalousSessionIds = countriesBySession
+                .Where(pair => !string.Equals(pair.Country, majorityCountry, StringComparison.Ordinal))
+                .Select(pair => pair.Session.Id.ToString())
                 .ToList();
             if (anomalousSessionIds.Count > 0)
             {
