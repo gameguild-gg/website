@@ -30,7 +30,10 @@ public sealed record AuditReplaySnapshotResponse(int SchemaVersion, string? Tena
 [Route("v{version:apiVersion}/admin/audit-logs/replay")]
 [Route("api/audit/replay")]
 [Tags("compliance/audit/replay")]
-[Authorize(Policy = Policies.SystemAdmin)]
+// Issue #386: audit snapshot capture and replay are backup/restore operations for
+// compliance data - gated by the backup/restore permission tier (SystemAdmin role or a
+// delegated system:backup-restore grant). Platform-scoped.
+[Authorize(Policy = Policies.SystemBackupRestore)]
 [EnableRateLimiting(RateLimitPolicies.Api)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(StatusCodes.Status403Forbidden)]

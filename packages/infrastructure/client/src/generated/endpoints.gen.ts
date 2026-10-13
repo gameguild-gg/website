@@ -12723,6 +12723,12 @@ export const postAdminSecurityAuditExportEndpoint = {
 
 /**
  * Get authentication attempt logs specifically.
+ *
+ * Deliberately kept on the SystemAdmin policy: the authentication-attempt surface
+ * has no tenant-scoped filter today (the request and the underlying query are
+ * platform-wide), so opening it to the Audit.Read self-service tier would leak
+ * cross-tenant authentication data. Revisit together with a tenant filter on
+ * GameGuild.Compliance.Audit.AuthenticationAuditRequest.
  */
 export interface GetAdminSecurityAuditAuthenticationInput {
   query?: {
