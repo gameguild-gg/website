@@ -273,6 +273,17 @@ public static class InfrastructureLayerExtensions
         // registration for the promo apply/checkout flows to resolve.
         services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeUsageRecorder, global::GameGuild.Commerce.Products.PromoCodeUsageRecorder>();
         services.AddScoped<global::GameGuild.Commerce.Products.IPromoCodeAuditLogger, global::GameGuild.Commerce.Products.PromoCodeAuditLogger>();
+        // Unified pricing engine seam (issue #417): the Products promo engine backs the
+        // Payments-owned promo-discount abstraction; same explicit-registration reason as above.
+        services.AddScoped<global::GameGuild.Commerce.Payments.IPromoDiscountCalculator, global::GameGuild.Commerce.Products.PromoDiscountCalculatorAdapter>();
+
+        // Product catalog & bundling (issue #401): the hierarchy validator, the catalog
+        // audit logger and the bundle-savings calculator do not match the
+        // I{Name}Service/Repository/Reader convention scan, so they need explicit
+        // registration for the category and recommendation flows to resolve.
+        services.AddScoped<global::GameGuild.Commerce.Products.IProductCategoryValidator, global::GameGuild.Commerce.Products.ProductCategoryValidator>();
+        services.AddScoped<global::GameGuild.Commerce.Products.IProductCatalogAuditLogger, global::GameGuild.Commerce.Products.ProductCatalogAuditLogger>();
+        services.AddScoped<global::GameGuild.Commerce.Products.IBundleSavingsCalculator, global::GameGuild.Commerce.Products.BundleSavingsCalculator>();
         logger.LogInformation("Commerce Orders Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10aa. Assets Module (S3 storage, upload/access services, asset security helpers)
@@ -359,6 +370,15 @@ public static class InfrastructureLayerExtensions
         services.AddScoped<ICostTelemetryRecorder>(provider => provider.GetRequiredService<CostTelemetryContext>());
         services.AddScoped<CostTelemetryDbCommandInterceptor>();
         services.AddScoped<RefreshTokenLifecycleMetricBuffer>();
+        // The DbContext interceptor chain below resolves the PII redaction interceptor
+        // unconditionally, so its dependency chain must be composable even when the
+        // full audit module is not (unit-test service collections). TryAdd keeps the
+        // audit module's registrations authoritative when both run.
+        services.TryAddScoped<GameGuild.Compliance.Audit.IPiiRedactionRuleProvider, GameGuild.Compliance.Audit.PiiRedactionRuleProvider>();
+        services.TryAddScoped<GameGuild.Compliance.Audit.IPiiTokenSource, GameGuild.Compliance.Audit.PiiHmacTokenizer>();
+        services.TryAddScoped<GameGuild.Identity.Authentication.IEncryptionService, GameGuild.Identity.Authentication.EncryptionService>();
+        services.TryAddScoped<GameGuild.Compliance.Audit.IPiiRedactionService, GameGuild.Compliance.Audit.PiiRedactionService>();
+        services.TryAddScoped<GameGuild.Compliance.Audit.AuditLogPiiRedactionInterceptor>();
         services.AddScoped<IRefreshTokenLifecycleRecorder, RefreshTokenLifecycleRecorder>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddOptions<RefreshTokenCleanupOptions>()
@@ -378,6 +398,9 @@ public static class InfrastructureLayerExtensions
         {
             options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());
             options.AddInterceptors(provider.GetRequiredService<RefreshTokenLifecycleMetricBuffer>());
+            // Central audit-sink integration for the PII redaction pipeline (issue #192): every
+            // AuditLog entity passes through the redaction rules before persistence.
+            options.AddInterceptors(provider.GetRequiredService<AuditLogPiiRedactionInterceptor>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

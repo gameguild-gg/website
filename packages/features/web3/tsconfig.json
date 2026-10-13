@@ -3,13 +3,21 @@
   "extends": "../../tooling/typescript/react.library.tsconfig.json",
   "display": "Web3",
   "compilerOptions": {
-    "composite": true,
     "paths": {
-      "@game-guild/web3/*": ["./src/*"]
+      "@game-guild/web3": [
+        "./src/index.ts"
+      ],
+      "@game-guild/web3/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "files": [],
-  "references": [],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

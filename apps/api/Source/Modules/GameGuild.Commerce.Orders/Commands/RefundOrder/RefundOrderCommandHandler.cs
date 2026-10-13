@@ -8,7 +8,8 @@ namespace GameGuild.Commerce.Orders;
 /// </summary>
 public sealed class RefundOrderCommandHandler(
     IOrderRepository orderRepository,
-    IEntitlementService entitlementService)
+    IEntitlementService entitlementService,
+    IProductInventoryService? inventoryService = null)
     : ICommandHandler<RefundOrderCommand, Result<OrderOperationResult>>
 {
     public async Task<Result<OrderOperationResult>> Handle(
@@ -34,6 +35,14 @@ public sealed class RefundOrderCommandHandler(
             {
                 await entitlementService.RevokeEntitlementAsync(
                     order.UserId, lineItem.ProductId, "Order refunded", cancellationToken).ConfigureAwait(false);
+            }
+
+            // Inventory restore (issue #401): a full refund returns tracked units to stock.
+            if (inventoryService is not null && order.LineItems.Count > 0)
+            {
+                await inventoryService.RestoreAsync(
+                    order.LineItems.Select(lineItem => (lineItem.ProductId, lineItem.Quantity)).ToList(),
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 

@@ -108,12 +108,49 @@ public class ProductsController(IMediator mediator, IActorContextAccessor actorC
     }
 
     /// <summary>
+    /// Get a product's real-time availability (issue #401)
+    /// </summary>
+    /// <param name="productId">Product ID</param>
+    /// <returns>Stock state; untracked products report always-in-stock</returns>
+    [HttpGet("{productId:guid}/availability")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ProductAvailabilityDto>> GetProductAvailability(Guid productId)
+    {
+        var availability = await mediator.Send(new GetProductAvailabilityQuery(productId)).ConfigureAwait(false);
+        return availability is null ? NotFound() : Ok(availability);
+    }
+
+    /// <summary>
+    /// Create or replace a product's inventory configuration (issue #401)
+    /// </summary>
+    /// <param name="productId">Product ID</param>
+    /// <param name="request">Inventory configuration request</param>
+    /// <returns>Inventory state after the change</returns>
+    [HttpPut("{productId:guid}/inventory")]
+    [RequirePermission(ProductsPermission.Keys.Manage)]
+    public async Task<ActionResult<ProductInventoryDto>> SetProductInventory(
+        Guid productId,
+        [FromBody] SetProductInventoryRequest request)
+    {
+        var command = new SetProductInventoryCommand(
+            productId,
+            request.StockQuantity,
+            request.TrackInventory,
+            request.LowStockThreshold,
+            actorContextAccessor.ActorContext.SubjectIdAsGuid);
+        var inventory = await mediator.Send(command).ConfigureAwait(false);
+        return Ok(inventory);
+    }
+
+    /// <summary>
     /// Get paginated list of products
     /// </summary>
     /// <param name="type">Filter by product type</param>
     /// <param name="creatorId">Filter by creator ID</param>
     /// <param name="searchTerm">Search term</param>
     /// <param name="isBundle">Filter by bundle status</param>
+    /// <param name="categoryId">Filter by category, including all descendant categories</param>
+    /// <param name="inStock">Filter by real-time availability (true = in stock only)</param>
     /// <param name="includeUnpublished">Include drafts when authenticated</param>
     /// <param name="skip">Items to skip</param>
     /// <param name="take">Items to take</param>
@@ -127,6 +164,8 @@ public class ProductsController(IMediator mediator, IActorContextAccessor actorC
         [FromQuery] Guid? creatorId = null,
         [FromQuery] string? searchTerm = null,
         [FromQuery] bool? isBundle = null,
+        [FromQuery] Guid? categoryId = null,
+        [FromQuery] bool? inStock = null,
         [FromQuery] bool includeUnpublished = false,
         [FromQuery] int skip = 0,
         [FromQuery] int take = 50,
@@ -149,7 +188,9 @@ public class ProductsController(IMediator mediator, IActorContextAccessor actorC
             take,
             sortBy,
             sortDirection,
-            includeDrafts ? tenantId : null);
+            includeDrafts ? tenantId : null,
+            CategoryId: categoryId,
+            InStockOnly: inStock);
         var result = await mediator.Send(query).ConfigureAwait(false);
         return Ok(result);
     }
@@ -176,7 +217,8 @@ public class ProductsController(IMediator mediator, IActorContextAccessor actorC
             request.ReferralCommissionPercentage,
             request.MaxAffiliateDiscount,
             request.AffiliateCommissionPercentage,
-            tenantId
+            tenantId,
+            request.CategoryId
         );
 
         var product = await mediator.Send(command).ConfigureAwait(false);
@@ -222,7 +264,8 @@ public class ProductsController(IMediator mediator, IActorContextAccessor actorC
             request.ReferralCommissionPercentage,
             request.MaxAffiliateDiscount,
             request.AffiliateCommissionPercentage,
-            request.ExpectedVersion
+            request.ExpectedVersion,
+            request.CategoryId
         );
 
         var product = await mediator.Send(command).ConfigureAwait(false);
@@ -252,7 +295,8 @@ public class ProductsController(IMediator mediator, IActorContextAccessor actorC
             request.ReferralCommissionPercentage,
             request.MaxAffiliateDiscount,
             request.AffiliateCommissionPercentage,
-            request.ExpectedVersion
+            request.ExpectedVersion,
+            request.CategoryId
         );
 
         var product = await mediator.Send(command).ConfigureAwait(false);
@@ -366,6 +410,7 @@ public sealed record CreateProductRequest
     public string? ImageUrl { get; init; }
     public ProductType Type { get; init; } = ProductType.Program;
     public bool IsBundle { get; init; }
+    public Guid? CategoryId { get; init; }
     public List<Guid>? BundleItems { get; init; }
     public decimal ReferralCommissionPercentage { get; init; } = 30m;
     public decimal MaxAffiliateDiscount { get; init; }
@@ -383,6 +428,7 @@ public sealed record UpdateProductRequest
     public string? ImageUrl { get; init; }
     public ProductType? Type { get; init; }
     public bool? IsBundle { get; init; }
+    public Guid? CategoryId { get; init; }
     public List<Guid>? BundleItems { get; init; }
     public decimal? ReferralCommissionPercentage { get; init; }
     public decimal? MaxAffiliateDiscount { get; init; }
@@ -401,6 +447,7 @@ public sealed record PatchProductRequest
     public string? ImageUrl { get; init; }
     public ProductType? Type { get; init; }
     public bool? IsBundle { get; init; }
+    public Guid? CategoryId { get; init; }
     public List<Guid>? BundleItems { get; init; }
     public decimal? ReferralCommissionPercentage { get; init; }
     public decimal? MaxAffiliateDiscount { get; init; }
@@ -425,4 +472,19 @@ public sealed record SetProductPricingRequest(
     DateTime? SaleEndDate,
     bool IsDefault,
     Guid? PricingId);
+
+/// <summary>
+/// Request model for configuring a product's inventory (issue #401)
+/// </summary>
+public sealed record SetProductInventoryRequest
+{
+    /// <summary>Units on hand.</summary>
+    public int StockQuantity { get; init; }
+
+    /// <summary>Whether stock should be tracked for this product.</summary>
+    public bool TrackInventory { get; init; }
+
+    /// <summary>Low-stock threshold.</summary>
+    public int LowStockThreshold { get; init; } = 5;
+}
 

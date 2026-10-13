@@ -78,6 +78,12 @@ public interface ISubscriptionRepository
     Task<Dictionary<SubscriptionStatus, int>> GetCountByStatusAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    ///     Gets the interval breakdown of active subscriptions: counts and recurring
+    ///     billing amounts per billing cycle (issue #392).
+    /// </summary>
+    Task<IReadOnlyList<SubscriptionIntervalBreakdown>> GetIntervalBreakdownAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     ///     Gets revenue statistics for a date range
     /// </summary>
     Task<decimal> GetRevenueForPeriodAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);

@@ -159,14 +159,13 @@ public sealed class DeleteSubscriptionPlanCommandHandler(
 }
 
 public sealed class ChangeSubscriptionBillingCycleCommandHandler(ISubscriptionLifecycleService lifecycleService)
-    : ICommandHandler<ChangeSubscriptionBillingCycleCommand>
+    : ICommandHandler<ChangeSubscriptionBillingCycleCommand, ChangeBillingCycleResult>
 {
-    public async Task<Unit> Handle(ChangeSubscriptionBillingCycleCommand request, CancellationToken cancellationToken)
+    public async Task<ChangeBillingCycleResult> Handle(ChangeSubscriptionBillingCycleCommand request, CancellationToken cancellationToken)
     {
-        await lifecycleService.ChangeBillingCycleAsync(
+        return await lifecycleService.ChangeBillingCycleAsync(
             request.SubscriptionId,
             request.NewBillingCycle,
             cancellationToken).ConfigureAwait(false);
-        return Unit.Value;
     }
 }

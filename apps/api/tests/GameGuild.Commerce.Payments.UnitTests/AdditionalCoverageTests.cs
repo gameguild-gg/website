@@ -1889,79 +1889,57 @@ public class CalculatePricingQueryHandlerTests
     [Fact]
     public void CanBeConstructed()
     {
-        var handler = new CalculatePricingQueryHandler(new Mock<IPlanPricingResolver>().Object);
+        var handler = new CalculatePricingQueryHandler(new Mock<IPricingEngine>().Object);
         handler.Should().NotBeNull();
     }
 
     [Fact]
-    public void Constructor_NullResolver_Throws()
+    public void Constructor_NullEngine_Throws()
     {
         var act = () => new CalculatePricingQueryHandler(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("pricingResolver");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("pricingEngine");
     }
 
     [Fact]
-    public async Task Handle_PlanNotExists_Throws()
+    public async Task Handle_DelegatesToUnifiedEngine()
     {
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
-
-        var act = () => handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null), CancellationToken.None);
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not found*");
-    }
-
-    [Fact]
-    public async Task Handle_NullPrice_Throws()
-    {
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Money?)null);
-
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
-
-        var act = () => handler.Handle(new CalculatePricingQuery(Guid.NewGuid(), null), CancellationToken.None);
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*pricing*");
-    }
-
-    [Fact]
-    public async Task Handle_ValidPlan_ReturnsPricing()
-    {
+        // Issue #417: the query is a read view over the unified IPricingEngine path.
         var planId = Guid.NewGuid();
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Money(9.99m, "USD"));
+        var engine = new Mock<IPricingEngine>();
+        engine.Setup(x => x.CalculateAsync(It.IsAny<PricingCalculationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PricingCalculationResult
+            {
+                BasePlanPrice = new Money(9.99m, "USD"),
+                Subtotal = new Money(9.99m, "USD"),
+                SubtotalAfterDiscounts = new Money(9.99m, "USD"),
+                Total = new Money(9.99m, "USD"),
+                AmountDue = new Money(9.99m, "USD")
+            });
 
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
+        var handler = new CalculatePricingQueryHandler(engine.Object);
         var result = await handler.Handle(new CalculatePricingQuery(planId, null), CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.BasePrice.Amount.Should().Be(9.99m);
-        result.TotalPrice.Amount.Should().Be(9.99m);
+        result.BasePlanPrice.Amount.Should().Be(9.99m);
+        result.AmountDue.Amount.Should().Be(9.99m);
+
+        engine.Verify(
+            x => x.CalculateAsync(
+                It.Is<PricingCalculationRequest>(request =>
+                    request.PlanId == planId &&
+                    request.RecordDecision == false &&
+                    request.ApplyCredits == false &&
+                    request.IncludeTax == false),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task Handle_DiscountCode_AppliesDeterministicDiscount()
+    public async Task Handle_NullRequest_Throws()
     {
-        var planId = Guid.NewGuid();
-        var resolver = new Mock<IPlanPricingResolver>();
-        resolver.Setup(x => x.PlanExistsAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        resolver.Setup(x => x.GetPlanMonthlyPriceAsync(planId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Money(100m, "USD"));
-
-        var handler = new CalculatePricingQueryHandler(resolver.Object);
-        var result = await handler.Handle(new CalculatePricingQuery(planId, null, "SAVE20"), CancellationToken.None);
-
-        result.Discount.Amount.Should().Be(20m);
-        result.TotalPrice.Amount.Should().Be(80m);
-        result.AppliedDiscounts.Should().ContainSingle(item => item.Code == "SAVE20");
+        var handler = new CalculatePricingQueryHandler(new Mock<IPricingEngine>().Object);
+        var act = () => handler.Handle(null!, CancellationToken.None);
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 }
 
