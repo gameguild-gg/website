@@ -181,7 +181,7 @@ public sealed class AdminSystemPermissionsTests
             .Returns(Task.CompletedTask);
 
         var seeder = new PolicyDefinitionSeeder(repo.Object, NullLogger<PolicyDefinitionSeeder>.Instance);
-        await seeder.SeedAsync(CancellationToken.None).ConfigureAwait(false);
+        await seeder.SeedAsync(CancellationToken.None);
 
         var seeded = added.ToDictionary(policy => policy.PolicyName, policy => policy);
 
