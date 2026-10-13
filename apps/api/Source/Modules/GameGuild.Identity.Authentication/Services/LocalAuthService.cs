@@ -872,6 +872,8 @@ public class LocalAuthService(
                      sessionId,
                      replacementTokenHash,
                      refreshTokenExpiresAt,
+                     ipAddress,
+                     userAgent,
                      cancellationToken).ConfigureAwait(false))
         {
             logger.LogWarning("Refresh token session {SessionId} was no longer active for user {UserId}; invalidating sessions", sessionId, userId);

@@ -16156,6 +16156,24 @@ export const deleteAuthSessionsEndpoint = {
 } as const;
 
 /**
+ * Name or rename one of the current user's own sessions
+ *
+ * Assigns a user-defined name to one of the current user's own active sessions. The acting user is taken from the authenticated principal, never from the body.
+ */
+export interface PatchAuthSessionsNameInput {
+  sessionId: string;
+  body?: Types.IdentityAuthenticationRenameSessionInput;
+}
+export type PatchAuthSessionsNameOutput = Types.IdentityAuthenticationSessionSuccessOutput;
+export const patchAuthSessionsNameEndpoint = {
+  operationId: 'patchAuthSessionsName' as const,
+  method: 'PATCH' as const,
+  path: '/v1/auth/sessions/{sessionId}/name' as const,
+  tags: ['AuthSessions'] as const,
+  requiresAuth: true,
+} as const;
+
+/**
  * Authenticate a user with email and password
  *
  * Authenticates a user with email and password credentials, returning access and refresh tokens.
@@ -29968,6 +29986,7 @@ export const endpoints = {
   postAuthSessionsTerminateAll: postAuthSessionsTerminateAllEndpoint,
   postAuthSessionsTerminateOthers: postAuthSessionsTerminateOthersEndpoint,
   deleteAuthSessions: deleteAuthSessionsEndpoint,
+  patchAuthSessionsName: patchAuthSessionsNameEndpoint,
   postAuthSignIn: postAuthSignInEndpoint,
   postAuthSignUp: postAuthSignUpEndpoint,
   getAuthSigningKeys: getAuthSigningKeysEndpoint,

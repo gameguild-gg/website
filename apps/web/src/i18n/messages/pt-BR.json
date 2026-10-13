@@ -68,6 +68,7 @@
     "nav": {
       "profile": "Perfil",
       "account": "Conta",
+      "security": "Segurança",
       "appearance": "Aparência",
       "localization": "Idioma e região",
       "privacy": "Privacidade",
@@ -178,7 +179,65 @@
       }
     },
     "notificationsTitle": "Configurações de notificações",
-    "notificationsDescription": "Escolha como você recebe notificações e e-mails."
+    "notificationsDescription": "Escolha como você recebe notificações e e-mails.",
+    "security": {
+      "title": "Segurança e sessões",
+      "description": "Revise todas as sessões ativas, nomeie os dispositivos que você reconhece e encerre qualquer atividade suspeita.",
+      "actionFailed": "A solicitação falhou. Tente novamente.",
+      "analysis": {
+        "title": "Análise de segurança da sessão",
+        "description": "{sessions, plural, =1 {1 sessão ativa} other {# sessões ativas}} em {devices, plural, =1 {1 dispositivo} other {# dispositivos}}.",
+        "risk": {
+          "low": "Risco baixo",
+          "medium": "Risco médio",
+          "high": "Risco alto",
+          "critical": "Risco crítico"
+        }
+      },
+      "sessions": {
+        "title": "Sessões ativas",
+        "description": "Dispositivos conectados à sua conta. Encerrar uma sessão desconecta o dispositivo imediatamente.",
+        "empty": "Nenhuma sessão ativa.",
+        "current": "Este dispositivo",
+        "trusted": "Confiável",
+        "lastUsed": "Usado por último {time}",
+        "terminate": "Encerrar",
+        "terminateAria": "Encerrar sessão {name}",
+        "terminated": "Sessão encerrada.",
+        "terminateOthers": "Encerrar outras sessões",
+        "othersTerminated": "As outras sessões foram encerradas.",
+        "terminateAll": "Encerrar todas as sessões",
+        "confirmTerminateAllTitle": "Encerrar todas as sessões?",
+        "confirmTerminateAllDescription": "Isso desconecta todos os dispositivos, incluindo o que você está usando agora. Você precisará entrar novamente.",
+        "confirmTerminateAll": "Encerrar tudo",
+        "confirmCancel": "Cancelar",
+        "allTerminated": "Todas as sessões foram encerradas."
+      },
+      "rename": {
+        "trigger": "Renomear",
+        "aria": "Renomear sessão {name}",
+        "label": "Nome da sessão",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "success": "Sessão renomeada.",
+        "nameRequired": "Informe um nome para a sessão.",
+        "nameTooLong": "O nome da sessão deve ter no máximo 64 caracteres."
+      },
+      "trustedDevices": {
+        "title": "Dispositivos confiáveis",
+        "description": "Dispositivos marcados como confiáveis pulam algumas solicitações de reautenticação.",
+        "empty": "Nenhum dispositivo confiável ainda.",
+        "unnamed": "Dispositivo sem nome",
+        "trustedAt": "Confiável desde {time}",
+        "expiresAt": "expira {time}",
+        "revoke": "Remover",
+        "revoked": "Dispositivo confiável removido.",
+        "trustCurrent": "Confiar neste dispositivo",
+        "trustCurrentDescription": "Marque o dispositivo que você está usando agora como confiável.",
+        "trustCurrentButton": "Confiar",
+        "trustedCurrent": "Este dispositivo agora é confiável."
+      }
+    }
   },
   "connectedAccounts": {
     "title": "Contas conectadas",
