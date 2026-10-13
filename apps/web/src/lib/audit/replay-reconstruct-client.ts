@@ -84,7 +84,7 @@ export async function reconstructAuditReplaySnapshot(
     await importAuditReplaySnapshot(json, expectedSha256, authorizedTenantId);
   signal?.throwIfAborted();
 
-  const document = JSON.parse(json) as unknown;
+  const document: unknown = JSON.parse(json);
   const request = Object.freeze({ sha256: imported.sha256, document });
   const response = await client.requestRaw<unknown>({
     method: 'POST',

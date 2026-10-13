@@ -31,7 +31,7 @@ const document = (tenantId = tenant) => ({
   events: events.map(e => ({ ...e, tenantId })),
 });
 const hash = value => createHash('sha256').update(value).digest('hex');
-const journeys = (tenantId = tenant) => [{
+const journeys = () => [{
   userId: id(91), eventCount: 2, failedCount: 0,
   firstSeenAtUtc: range.start, lastSeenAtUtc: range.end, sessionIds: [id(92)],
 }];
