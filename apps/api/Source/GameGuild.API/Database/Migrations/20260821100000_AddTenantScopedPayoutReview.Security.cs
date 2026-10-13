@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddTenantScopedPayoutReview
+public partial class AddTenantScopedPayoutReview : Migration
 {
     private static void InstallPayoutRequestReviewSecurity(MigrationBuilder migrationBuilder)
     {

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GameGuild.API.Database.Migrations;
 
-public partial class AddEconomyLegacyShadowMigration
+public partial class AddEconomyLegacyShadowMigration : Migration
 {
     private static void InstallLegacyShadowSecurity(MigrationBuilder migrationBuilder)
     {
